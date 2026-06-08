@@ -39,9 +39,11 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
   tools/      standalone HTML tools (see below)
   maps/       rcn_map.html — civic infrastructure campfire
   data/       PostGIS Python load scripts
+  docs/       tool documentation (nrm-tripod-beta.md, graph-tool-intro.html, graph-tool-manual.html)
   vester/     Vester chapter notes and SensiMod context
   archive/    old numbered drafts
   veramo/     SODOTO credential infrastructure (see SODOTO section below)
+  database.rules.json   Firebase Realtime DB security rules (scoped to sessions/ and topics/ paths)
   SODOTO-CLAUDE-CODE-CONTEXT.md   full SODOTO onboarding doc (authoritative)
 
 ~/sensimod/   Vite/React app — Vester Sensitivity Model (keep separate, has node_modules)
@@ -53,41 +55,103 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 
 | File | Purpose | Status |
 |------|---------|--------|
-| `graph-tool-v22.html` | CLD/EIP/OPM/VSM graph diagramming, MDL/.dot/XMILE/Cypher I/O | **Active** |
-| `sofi-aggregator.html` | SOFI 11-sphere visualizer, multi-respondent synthesis, Claude API streaming | Active |
-| `sofi-svg-v3.html` | SOFI-VSM directed edge assessment (Agree/Disagree/Unknown) | Active |
-| `sofi-report.html` | SOFI survey report generator | Active |
+| `graph-tool-v22.html` | CLD/EIP/NRM/OPM/Trace/Wardley/Triples graph diagramming, MDL/.dot/XMILE/Cypher/Wardley JSON I/O, multi-trace edges, reifiable triples with meta-edges, canvas legend, node+edge layers, Print; **→ Wiki** button sends enriched SVG ghost page to FedWiki lineup (node labels become clickable internal links) | **Active** |
+| `nrm-tripod-beta.html` | Standalone Tripod Beta / NRM incident analysis tool — full canvas, barriers, save/load | **Active** |
+| `evsm-aggregator.html` | eVSM 11-sphere visualizer, multi-respondent synthesis, Claude API streaming | Active |
+| `evsm-svg-v3.html` | eVSM directed edge assessment (Agree/Disagree/Unknown) | Active |
+| `evsm-report.html` | eVSM survey report generator | Active |
 | `ibis-map-rcn.html` | IBIS argument mapping (post-hoc mode preferred) | Active |
-| `rcn_map.html` (in maps/) | Leaflet map, embedded PostGIS GeoJSON, 4 NDC locations | Active |
+| `rcn_map.html` (in maps/) | Leaflet map, PostGIS/FastAPI backend, 7 NDCs, 7 base layers, shift+click legend | Active |
+| `issue-polygon-map.html` | Polycentric governance / Issue Polygon viewer — data-driven via `?issue=` URL param; loads `issue-data/*.json`; parcel stances, layer toggles, draw polygon, GeoJSON export | Active |
+| `more-outliner.html` | Outliner with autosave, MD/HTML/FedWiki export, Hoist; **→ Wiki Ghost** button sends outline as ghost page to FedWiki lineup | Active |
 | `graphjson_to_vensim_cld.html` | Canonical MDL format reference — read before fixing MDL bugs | Reference |
 | `wardley-map-generator.html` | Wardley mapping tool | Active |
 | `eip_integration_explorer.html` | EIP sketch explorer | Active |
 | `eip_local_finance_diagram.html` | EIP applied to local finance | Active |
+| `bias-checker.html` | Conversation Navigator — real-time multi-participant intent/bias self-reporting, conflict detection, interactive framework models (Cynefin/eVSM/15Ps/Six Hats/Six Questions), custom graph upload, Firebase Realtime DB | **Active** — hosted at Wiki Café: `https://ndcgroup.relocalizecreativity.net/assets/NDC/bias-checker%20(1).html`; Firebase rules scoped to valid session IDs only (`database.rules.json`) |
+| `bias-checker-intro.html` | Conversation Navigator — Introduction & positioning | Docs |
+| `bias-checker-manual.html` | Conversation Navigator — User Manual | Docs |
 | `cfa-dsc-creator.html` | Conversations for Action / Dyadic Smart Contract creator | Active |
 | `contract-creator.html` | Contract UI | Active |
-| `sofi_excel_tool.html` | SOFI Excel export | Active |
+| `evsm_excel_tool.html` | eVSM Excel export | Active |
+| `sodoto-issuer.html` | SODOTO credential issuance — gate-by-gate workflow, people registry, Ed25519 signing, FedWiki portfolio + ledger writes | **Active** |
 
 ---
 
 ## Map (`~/rcn/maps/rcn_map.html`)
 
-Self-contained HTML, all GeoJSON embedded. No server required.
-PostGIS source: Docker container `rcn-postgis`, database `rcn_geo`, table `place_geo`.
-Connection: `docker exec rcn-postgis psql -U postgres -d rcn_geo`
+Leaflet map served from a live FastAPI/PostGIS backend. Requires the API server running.
 
-NDC locations loaded:
-- Leo's NDC — 52 N Pinal Ave, Superior AZ
-- The Fledge — 1300 Eureka St, Lansing MI
-- East Whatcom RRC — 8251 Kendall Rd, Maple Falls WA
-- Green Gate Farms — Austin TX + Bastrop TX
+**Start API server:**
+```bash
+cd ~/Desktop && source ~/rcn-venv/bin/activate
+uvicorn rcn_api:app --reload --port 8000
+```
+Open `~/rcn/maps/rcn_map.html` directly in browser (file://). The map fetches from `http://127.0.0.1:8000`.
 
-Boundaries loaded: Superior AZ, Lansing MI, Whatcom County WA, Austin TX,
-Bastrop TX, Queen Creek Watershed, Upper Grand River Watershed, Nooksack Watershed,
-Kendall CDP, Mt Baker School District, Austin-Travis Lakes HUC8, Lower Colorado-Cummins HUC8,
-Bastrop County.
+**PostGIS:** localhost:5432, db `rcn_geo`, table `place_geo`
+**API canonical source:** `~/rcn/data/rcn_api.py` (repo copy is authoritative — Desktop copy may be stale)
+**Virtual env:** `~/rcn-venv/` (python3.14 also has required packages installed system-wide)
 
-To update map: dump GeoJSON from PostGIS → upload here → rebuild HTML.
-Load scripts: `~/rcn/data/load_austin.py`, `load_lansing.py`, `load_superior.py`
+### NDC locations (7)
+
+| NDC | Address | State |
+|-----|---------|-------|
+| Leo's NDC | 52 N Pinal Ave, Superior AZ | AZ |
+| The Fledge | 1300 Eureka St, Lansing MI | MI |
+| East Whatcom RRC | 8251 Kendall Rd, Maple Falls WA | WA |
+| Green Gate Farms | 8254 Canoga Ave, Austin TX | TX |
+| Green Gate Farms Bastrop | 156 Howard Lane, Bastrop TX | TX |
+| Carter Center Library | 453 Freedom Parkway NE, Atlanta GA | GA |
+| Porthmadog | Gwynedd, Wales UK | WLS |
+
+### Boundaries loaded per state
+
+**AZ — Leo's NDC (Superior)**
+Superior city, Pinal County, Queen Creek Watershed (HUC8 15050100),
+Middle Gila Watershed (HUC6 150501), Lower Gila Watershed (HUC4 1507 — extends to Yuma),
+484 copper deposits (USGS MRDS, ~30mi radius, individual named points with dev status),
+3 churches (OpenStreetMap Overpass: St Francis of Assisi, El Camino Baptist, Jehovah's Witnesses)
+
+**MI — The Fledge (Lansing)**
+Lansing city, Upper Grand River Watershed
+
+**WA — East Whatcom RRC (Maple Falls)**
+Whatcom County, Kendall CDP, Mount Baker School District, Nooksack Watershed
+
+**TX — Green Gate Farms (Austin + Bastrop)**
+Austin city, Bastrop city, Bastrop County, Austin-Travis Lakes (HUC8), Lower Colorado-Cummins (HUC8)
+
+**GA — Carter Center Library (Atlanta)**
+Atlanta city, Upper Chattahoochee Watershed (HUC8 03130001 — contains Lake Lanier, primary water supply),
+Middle Chattahoochee Watershed (HUC8 03130002 — west Atlanta / river corridor),
+Upper Ocmulgee Watershed (HUC8 03070103 — east Atlanta / Carter Center drainage)
+
+**WLS — Porthmadog (Wales)**
+Porthmadog town boundary, Gwynedd county boundary
+
+### Map features
+
+- **7 base layers:** Topo (default), Light, OpenStreetMap Voyager, Satellite, CyclOSM, Transport, Dark
+- **5 data layer types:** admin_boundary (blue), ecological_zone (purple), ndc_zone (red), mineral_deposit (bronze), church (purple #7B5EA7 — radius 11, high-visibility)
+- **Legend:** named features grouped by NDC/state, click to highlight + zoom, Shift+click to multi-select
+- **Popups:** name, type, area in mi², data source; copper deposits show individual name + dev status; churches show denomination
+- **Render order:** largest polygons drawn first so smaller ones (e.g. Porthmadog inside Gwynedd) stay clickable
+- **Areas:** displayed in mi²
+
+### place_geo schema
+
+| Column | Type | Notes |
+|--------|------|-------|
+| place_id | serial PK | |
+| name | text | |
+| place_type | text | ndc_zone, admin_boundary, ecological_zone, mineral_deposit, church |
+| street_address, city, state, postal_code | text | |
+| location | geometry(Point, 4326) | NDC address pin |
+| boundary | geometry(*, 4326) | polygon/multipolygon/multipoint |
+| boundary_source | text | census_tiger, usgs_wbd, openstreetmap_nominatim, usgs_mrds |
+| boundary_updated | date | |
+| site_data | jsonb | per-point metadata (copper deposit names, dev status) |
 
 ---
 
@@ -95,13 +159,31 @@ Load scripts: `~/rcn/data/load_austin.py`, `load_lansing.py`, `load_superior.py`
 
 | File | Purpose |
 |------|---------|
-| `load_austin.py` | Load Austin/Green Gate Farms TX boundaries into PostGIS |
-| `load_lansing.py` | Load Lansing MI boundaries |
-| `load_superior.py` | Load Superior AZ boundaries |
-| `fetch_boundaries.py` | Fetch boundary geometries from external sources |
-| `find_superior.py` | Locate Superior AZ geometry |
-| `rcn_api.py` | RCN API utilities |
-| `sofi-proxy.py` | Anthropic API proxy for SOFI aggregator (launchd: com.sofi.proxy.plist) |
+| `rcn_api.py` | FastAPI server — `/places`, `/ndc/{name}`, `/ndcs` endpoints |
+| `load_superior.py` | Initial Superior AZ city + Queen Creek Watershed |
+| `load_superior_layers.py` | Pinal County, Gila watersheds, copper deposits (MRDS) |
+| `update_superior_layers.py` | Middle/Lower Gila rename, deposit names → site_data JSONB |
+| `load_superior_churches.py` | 3 churches from OSM Overpass API → place_type='church', site_data with denomination |
+| `load_austin.py` | Austin/Green Gate Farms TX boundaries |
+| `load_lansing.py` | Lansing MI boundaries |
+| `load_atlanta.py` | Carter Center Library NDC, Atlanta city, 3 GA watersheds |
+| `fetch_boundaries.py` | Utility: fetch boundary geometries from TIGER/WBD |
+| `find_superior.py` | Locate Superior AZ geometry (reference) |
+| `evsm-proxy.py` | Anthropic API proxy for eVSM aggregator (launchd: com.evsm.proxy.plist) |
+
+**Porthmadog + Gwynedd** boundaries loaded inline (no separate script) — Nominatim polygons.
+
+### Deployment checklist (to go beyond localhost)
+
+```
+□ Consolidate rcn_api.py — single copy in repo, not ~/Desktop
+□ Make API base URL configurable (env var)
+□ Serve map HTML as static file through FastAPI
+□ pg_dump rcn_geo → restore to cloud Postgres + PostGIS
+□ Deploy to VPS or Railway/Render (~$10-20/mo)
+□ Domain name + Let's Encrypt SSL
+□ Switch to Gunicorn + uvicorn workers (production mode)
+```
 
 ---
 
@@ -143,41 +225,47 @@ Kept outside ~/rcn/ because of node_modules size.
 
 | System | Details |
 |--------|---------|
-| PostGIS | Docker: `rcn-postgis`, port 5432, db `rcn_geo` |
+| PostGIS | localhost:5432, db `rcn_geo`, table `place_geo` (venv: `~/rcn-venv/`) |
+| FastAPI | uvicorn from `~/Desktop/rcn_api.py`, port 8000, auto-reload |
 | Neo4j | Relational/temporal truth, point types, H3 arrays |
-| FedWiki | `localfedwiki.relocalizecreativity.net`, launchd auto-start |
-| SOFI proxy | launchd: `~/Library/LaunchAgents/com.sofi.proxy.plist` |
+| FedWiki | `localfedwiki.relocalizecreativity.net`, launchd auto-start, port 3000 |
+| sofi-proxy | `~/rcn/sofi-proxy.py`, port 8765 — Anthropic API relay + FedWiki filesystem write API + static file server for `~/rcn/` |
 
 Spatial architecture: PostGIS (precise polygon operations) + Neo4j (point types, H3 arrays)
 linked via shared `place_id` UUID.
 
 ---
 
-## Active threads (as of April 2026)
+## Active threads (as of June 2026)
 
-- Graph tool v22: EIP mode, .dot import/export added. Next: OPM node types, SODOTO credential export
-  - DOT import/export fidelity substantially improved (April 2026):
-    - Named colors (purple, orange, blue, etc.) map to real CSS hex on import
-    - Node/edge label `\n`/`\l`/`\r` Graphviz escapes stripped on import
-    - Edge colors and penwidths round-trip correctly
-    - `pos=` stripped from export (use JSON/SVG for layout preservation)
-    - Graph-level attrs (`rankdir`, `splines`, `overlap`, etc.) parsed on import into `graphAttrs` global, re-exported in `graph []` block, persisted in JSON/URL state
-    - `node [...]` defaults block parsed — `shape=circle` etc. apply to nodes without explicit shape
-    - `dotNodeId` simplified to `n{id}` — no label mangling
-    - Export uses one attribute per line (readable, diff-friendly)
-    - Export uses `labelLines(n)` to write actual wrapped lines joined with Graphviz `\n` — Graphviz renders same line breaks as the tool
-    - graph-tool-v22 replaces Arrows for Neo4j import workflow
-    - Dagre layout engine added (LR↔TB toggle, lazy CDN load); picks up `rankdir` from import
-    - Canvas background color selector added (picker + presets, persists in JSON/URL/exports)
-    - Edge label font color picker added (separate from edge line color, Auto revert)
-    - PNG export arrowheads fixed — drawn as filled triangles sized to match SVG markers (length=sw×8, half-width=sw×3.2); handles straight, curved, and self-loop edges
-    - Long-press node highlight renders connected edges in their assigned colors (was hardcoded black); stroke width increase retained
-    - Graphviz Brewer color scheme not supported — unknown colors fall back to default blue on import; decision: leave as-is (hand-authored graphs unlikely to use Brewer)
-- RCN map: 4 NDC locations live. Next: connect PostGIS boundaries to Neo4j via place_id
-- SOFI: municipal + neighborhood versions designed. Next: FedWiki EIP page template
-- SensiMod: Steps 0–2 built. Next: multi-group Impact Matrix workflow
-- SODOTO credentials: 8 credentials issued to Marc (CLD, e-VSM Basic/Intermediate/Site Manager, EIP Basic/Intermediate/Expert, Stock and Flow Diagramming), all cryptographically valid. Keys persistent in ~/rcn/veramo/. Next: real gate histories for e-VSM/EIP/SFD; v0.4 (learner JWT, student JWT, Neo4j debt record)
-- Meadows leverage points: extended to 16 (added time + place). Next: variable name registry, FedWiki book
+- **Foothills Outlook automation**: Convert monthly local newspaper (PDF) into FedWiki newspaper pages, going back 2 years. Goal: put the tool in the hands of the writers and editor by end of Summer 2026.
+
+- **Vester's Sensitivity Model platform**: SensiMod — Vite/React app at `~/sensimod/`. Steps 0–2 built (variable definition, influence matrix, active/passive/critical/buffering classification). Next: multi-group Impact Matrix workflow.
+
+- **Haier Group Workbench**: A platform of tools to collect and share information that makes RenDanHeYi work at scale across the Haier Group (multinational enterprise), tuned for neighborhood entrepreneurship. Early stage.
+
+- **eVSM survey tool**: Port to Wiki Café.
+
+- **SCP + Groove**: Shared Care Plan as FedWiki health record + Groove workspace (port 3001) for coordination. Pilot: Superior AZ NDC (Leo's). See `scp-groove-handoff.md`.
+
+- **SODOTO Mac Mini deployment**: issuer tool and FedWiki running on shared Mac Mini. Each issuer accesses sodoto-issuer.html through their own browser; keys never leave the signer's machine. Next steps: launchd plists for auto-start, network config, private key storage (out of plain JSON), people registry portability (localStorage → SEED_PEOPLE or server-side file), PROXY constant in sodoto-issuer.html updated from localhost to Mac Mini hostname.
+
+---
+
+## FedWiki Plugins (`~/rcn/wiki-plugin-*/`)
+
+Solo popup plugins — open full-window tools linked to the wiki lineup. Install path: `/usr/local/lib/node_modules/wiki/node_modules/wiki-plugin-{name}/`. Source in `~/rcn/wiki-plugin-{name}/`, sync with `cp client/*.js` to install path after edits.
+
+| Plugin | Tool opened | Ghost page export |
+|--------|------------|------------------|
+| `wiki-plugin-rcn-graph` | `graph-tool-v22.html` | SVG with enriched internal links via **→ Wiki** button |
+| `wiki-plugin-rcn-outliner` | `more-outliner.html` | Outline as FedWiki page via **→ Wiki Ghost** button |
+
+**Pattern:** `window.open()` named popup → tool runs full-window → `window.opener.postMessage({action:'showResult', page:{...}}, '*')` → plugin listener calls `wiki.showResult(wiki.newPage(page))` → ghost page appears in lineup.
+
+**sofi-proxy** (port 8765, launchd `com.evsm.proxy`) serves `~/rcn/` as static files. Tools must be opened via `http://localhost:8765/tools/` — not `file://`. Plugin URLs point to `http://localhost:8765/tools/{tool}.html`.
+
+**SVG enrichment:** before sending to wiki, all `<text>` elements in the graph SVG are wrapped in `<a class="internal" data-title="...">` anchors following Ward Cunningham's Enrich Any SVG pattern. Node labels become clickable wiki internal links.
 
 ---
 
@@ -192,16 +280,110 @@ Full detail in `SODOTO-CLAUDE-CODE-CONTEXT.md`. Orientation summary:
 | Private keys (gitignored) | `~/rcn/veramo/keys.json` |
 | Public DIDs | `~/rcn/veramo/dids.json` |
 | People records | `~/rcn/veramo/people.json` |
-| Signed credential JSON | `~/rcn/veramo/credentials/` (8 files) |
-| FedWiki plugin (active) | `~/.wiki/localhost/assets/wiki-plugin-sodoto-badge/client/sodoto-badge.js` |
-| FedWiki plugin (npm) | `~/node_modules/wiki-plugin-sodoto-badge/client/sodoto-badge.js` |
+| Signed credentials (reference) | `~/rcn/veramo/credentials/` |
+| Issuer tool | `~/rcn/tools/sodoto-issuer.html` — served via sofi-proxy at `http://localhost:8765/tools/sodoto-issuer.html` |
+| FedWiki badge plugin | `/usr/local/lib/node_modules/wiki/node_modules/wiki-plugin-sodoto-badge/client/sodoto-badge.js` — this is the file FedWiki actually serves; **not** `~/.wiki/localhost/assets/` |
 | Marc's portfolio | `~/.wiki/localhost/pages/marc-pierson-sodoto-portfolio` |
+| Kerry's portfolio | `~/.wiki/localhost/pages/kerry-turner-sodoto-portfolio` |
+| RCN SODOTO Ledger | `~/.wiki/localhost/pages/rcn-sodoto-ledger` |
 
 **5 NDC issuers registered:** RCN (Bellingham WA), Columbia Valley NDC, The Fledge (Lansing MI), Leo's, Kula. All have Ed25519 key pairs. DIDs are `did:key` — public key is self-contained in the DID string, no external registry.
 
-**Signing:** Node.js built-in `crypto` (Ed25519). JWT format: `header.payload.signature`, all base64url. Verify via Web Crypto API in browser.
+**Signing:** purely client-side in browser via Web Crypto API (Ed25519). User enters 64-char hex private key seed into sodoto-issuer.html. Key is used once and immediately cleared. JWT format: `header.payload.signature`, all base64url. **Never sign programmatically on the user's behalf.**
 
-**keys.json is gitignored. Never commit it.** If lost, generate new key pairs, update `dids.json`, re-sign affected credentials, update plugin ISSUER_REGISTRY.
+**Verification:** purely client-side. Public key decoded directly from DID string. Zero server calls.
+
+**Badge upsert pattern:** sofi-proxy `/api/wiki-write-badge` searches the portfolio for an existing `sodoto-badge` with matching `contractId`. If found, replaces in-place (journal `edit`). If not found, appends (journal `add`). One badge per contract — updated as gates complete.
+
+**sofi-proxy FedWiki API routes:** `GET /api/wiki-read-page`, `POST /api/wiki-write-badge`, `POST /api/wiki-update-item`, `POST /api/wiki-add-items`, `POST /api/wiki-write-page`
+
+**keys.json is gitignored. Never commit it.**
+
+---
+
+## Server migration plan
+
+Three deployment targets in sequence: **Mac Mini → Wiki Café → Raspberry Pi**.
+The Mac Mini is new hardware available now. Wiki Café hosts existing FedWiki sites.
+Pi is the long-term neighborhood distribution target.
+
+### Full stack inventory (current Mac, all running services)
+
+| Port | Service | Notes |
+|------|---------|-------|
+| 5432 | PostgreSQL + PostGIS (Docker) | db `rcn_geo` |
+| 7474/7687 | Neo4j | graph DB, Java |
+| 8000 | FastAPI/uvicorn | map API, `~/Desktop/rcn_api.py` |
+| 8765 | sofi-proxy (Python) | Anthropic API relay + FedWiki write API + static file server for ~/rcn/; `python3 sofi-proxy.py` — **always use http://localhost:8765/ to open tools, never file://** |
+| 3000 | FedWiki (Node) | launchd |
+| 5173 | Vite dev server | sensimod only |
+
+**Known apps not yet fully in repo** (some built in Claude.ai Chat, not Claude Code):
+- All 13 tools in `rcn/tools/` are here
+- `graph-tool-v22UPDATE.html` on Desktop — not yet merged
+- Unknown number of Chat-built apps not yet inventoried
+- `~/sensimod/` — React/Vite app, kept separate
+
+### Architecture decisions (made, don't revisit)
+
+**Docker Compose** is the packaging unit. One `docker-compose.yml` defines the full stack. Run it on Mac Mini, push to Wiki Café, shrink for Pi. Write once, deploy everywhere.
+
+**nginx as single entry point** — all apps under one domain, no more hardcoded `localhost:8000`:
+```
+/              → map (rcn_map.html)
+/tools/        → all HTML tools (static)
+/api/          → FastAPI
+/proxy/        → evsm-proxy (Anthropic relay)
+/sensimod/     → Vite build output (static)
+/wiki/         → FedWiki (proxied)
+```
+
+**Raspberry Pi sovereignty model** — Pi runs full local stack (not thin client). Neighborhoods own their data. Sync to Wiki Café when online, operate offline when not. Pi 4 (4GB) can run everything except Neo4j (too heavy — skip or replace for Pi).
+
+### Phase 0 — Inventory (Claude Chat → Claude Code handoff)
+
+**Do this before writing any infrastructure code.**
+
+In Claude Chat, produce for every app built there:
+1. Name and one-line purpose
+2. External calls (Anthropic API — which model/endpoint? PostGIS? Neo4j? evsm-proxy port?)
+3. State — does it save anything, where?
+4. Latest version location
+
+Bring that list to Claude Code. Then:
+- [ ] Merge `graph-tool-v22UPDATE.html` from Desktop into repo
+- [ ] Consolidate `rcn_api.py` from Desktop into `rcn/api/`
+- [ ] All Chat-built tools into `rcn/tools/`
+- [ ] Audit evsm-proxy.py — port, what it accepts, key handling
+- [ ] Single inventory table: every app, its deps, its home
+
+### Phase 1 — Mac Mini
+
+- Repo consolidated (Phase 0 done)
+- `docker-compose.yml` for full stack
+- nginx routing all apps
+- PostGIS + Neo4j data volumes migrated from current Mac
+- `.env` for secrets (Anthropic key, DB password) — gitignored
+- `docker-compose up` starts everything; auto-restart on boot
+- Mac Mini at fixed LAN IP → `http://[mini-ip]/` serves full toolkit
+
+### Phase 2 — Wiki Café (public)
+
+- Same Docker Compose, production `.env`
+- Domain + Let's Encrypt SSL (free, auto-renew via certbot)
+- Deploy: `git pull && docker-compose up -d`
+- FedWiki decision: stay on own subdomain or merge into this stack
+- `pg_dump` + Neo4j dump migrated to production DB volumes
+
+### Phase 3 — Raspberry Pi neighborhood kit
+
+- ARM64 Docker images for all services (available for Postgres, nginx, Node)
+- Neo4j omitted (too heavy) or replaced with lighter graph DB
+- `./setup.sh --neighborhood "Superior AZ"` — one command seeds local data
+  (pulls city boundary, watershed, NDC location from TIGER/WBD/Nominatim automatically)
+- Pi advertises as `http://rcn.local` on local network
+- Sync protocol: push changes to Wiki Café when online (FedWiki federation for wiki content)
+- Goal: flash SD card, plug in, full RCN toolkit available to neighborhood
 
 ---
 

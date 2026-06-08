@@ -180,7 +180,7 @@ The dSC is the economic record layer; the CfA state machine is the governance la
 ## Naming
 
 - Credentialing system: **SODOTO**
-- Survey/diagnostic tool: **e-VSM** (SOFI / SOFI-VSM retired — do not use)
+- Survey/diagnostic tool: **e-VSM** 
 
 ---
 
