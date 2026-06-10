@@ -62,7 +62,115 @@
       .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // ── Search text generation ──────────────────────────────────────────────────
+  // Populates item.text so FedWiki's search index can find SCP content.
+  // Called automatically by save() for every type.
+
+  function scpText(item) {
+    var p = [];
+    function add(label, val) { if (val) p.push(label ? label + ' ' + val : val); }
+    switch (item.type) {
+      case 'scp-medication':
+        add('Medication:', item.label);
+        if (item.med_type)   p.push('(' + item.med_type + ')');
+        add('Prescribed by', item.prescribed_by ? item.prescribed_by + '.' : null);
+        add('Started',       item.started ? item.started + '.' : null);
+        add('',              item.directions);
+        add('Use:',          item.use);
+        if (item.timing && item.timing.length) p.push('Timing: ' + item.timing.join(', ') + '.');
+        add('Not as prescribed:', item.not_prescribed);
+        break;
+      case 'scp-vital':
+        if (item.measurement) p.push(item.measurement + ' reading:');
+        add('', item.value);
+        add('', item.unit);
+        add('on', item.date);
+        add('at', item.time);
+        add('', item.notes);
+        break;
+      case 'scp-symptom':
+        add('Symptom:', item.symptom);
+        if (item.severity) p.push('(' + item.severity + ')');
+        add('on',              item.date);
+        add('Duration:',       item.duration ? item.duration + '.' : null);
+        add('Possible cause:', item.possible_cause);
+        add('Action taken:',   item.action_taken);
+        break;
+      case 'scp-visit':
+        add('Visit with', item.provider);
+        if (item.visit_type) p.push('(' + item.visit_type + ')');
+        add('on',        item.date ? item.date + '.' : null);
+        add('Reason:',   item.reason);
+        add('Outcome:',  item.outcome);
+        add('Follow up:', item.follow_up);
+        break;
+      case 'scp-about':
+        var name = item.preferred_name || item.legal_name;
+        add('About:', name);
+        if (item.preferred_name && item.legal_name) p.push('(legal: ' + item.legal_name + ')');
+        add('Born',     item.dob ? item.dob + '.' : null);
+        add('Pronouns:', item.pronouns ? item.pronouns + '.' : null);
+        add('Language:', item.language ? item.language + '.' : null);
+        add('Phone:',    item.phone ? item.phone + '.' : null);
+        add('Emergency contact:', item.emergency_contact);
+        add('',          item.emergency_phone ? item.emergency_phone + '.' : null);
+        add('',          item.notes);
+        break;
+      case 'scp-provider':
+        if (item.name) {
+          var role = [item.role, item.specialty].filter(Boolean).join(', ');
+          p.push('Care team: ' + item.name + (role ? ' (' + role + ')' : '') + '.');
+        }
+        add('Phone:', item.phone ? item.phone + '.' : null);
+        add('When to call:', item.when_to_call);
+        add('', item.notes);
+        break;
+      case 'scp-diagnosis':
+        if (item.condition) p.push('Diagnosis: ' + item.condition + (item.status ? ' (' + item.status + ')' : '') + '.');
+        add('ICD:', item.icd_code ? item.icd_code + '.' : null);
+        add('Diagnosed', item.diagnosed_date ? item.diagnosed_date + '.' : null);
+        add('By',        item.diagnosing_provider ? item.diagnosing_provider + '.' : null);
+        add('',          item.notes);
+        break;
+      case 'scp-reaction':
+        add('Reaction to:', item.substance ? item.substance + '.' : null);
+        add('',             item.reaction);
+        add('Severity:',    item.severity ? item.severity + '.' : null);
+        add('Identified',   item.date_identified ? item.date_identified + '.' : null);
+        add('',             item.notes);
+        break;
+      case 'scp-history':
+        add('Medical history:', item.event);
+        add('on',      item.date ? item.date + '.' : null);
+        add('Provider:', item.provider ? item.provider + '.' : null);
+        add('',          item.notes);
+        break;
+      case 'scp-next-step':
+        if (item.action) p.push('Next step: ' + item.action + (item.status ? ' (' + item.status + ').' : '.'));
+        add('Who:',    item.who ? item.who + '.' : null);
+        add('By:',     item.by_when ? item.by_when + '.' : null);
+        add('',        item.notes);
+        break;
+      case 'scp-directive':
+        add('Advanced directive:', item.directive_type ? item.directive_type + '.' : null);
+        add('',          item.details);
+        add('Proxy:',    item.proxy_name);
+        add('',          item.proxy_phone ? item.proxy_phone + '.' : null);
+        add('Document:', item.document_location ? item.document_location + '.' : null);
+        add('Signed',    item.date_signed ? item.date_signed + '.' : null);
+        break;
+      case 'scp-access':
+        add('Plan accessed by:', item.accessor);
+        if (item.role) p.push('(' + item.role + ')');
+        add('on',      item.date ? item.date + '.' : null);
+        add('Reason:', item.reason);
+        break;
+    }
+    return p.join(' ');
+  }
+
   function save($item, item) {
+    item.text = scpText(item);
     var $page = $item.parents('.page:first');
     wiki.pageHandler.put($page, { type: 'edit', id: item.id, item: item });
   }
