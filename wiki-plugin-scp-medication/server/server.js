@@ -5,7 +5,11 @@
 
 var path = require('path');
 var clientFile = path.join(__dirname, '..', 'client', 'scp-medication.js');
-var aliasTypes = ['scp-vital', 'scp-symptom', 'scp-visit'];
+var aliasTypes = [
+  'scp-vital', 'scp-symptom', 'scp-visit',
+  'scp-about', 'scp-provider', 'scp-diagnosis', 'scp-reaction',
+  'scp-history', 'scp-next-step', 'scp-directive', 'scp-access'
+];
 
 module.exports = {
   startServer: function (params) {
