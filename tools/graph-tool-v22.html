@@ -746,12 +746,14 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
       <div class="io-btns">
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportSVG()">SVG</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#7c3aed" onclick="sendToWikiSVG()" title="Send SVG to FedWiki lineup as ghost page">→ Wiki</button>
+        <button class="tb-btn" style="background:transparent;border-color:transparent;color:#2563eb" onclick="sendToWikiItem()" title="Save graph JSON + SVG back into the originating FedWiki plugin item">→ Item</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportPNG()">PNG</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="copyPNG()" title="Copy diagram to clipboard — paste into Word or PowerPoint">Copy</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="printCanvas()" title="Print the current canvas view">Print</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportCypher()">Cypher</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportURL()">URL</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportJSON()">JSON</button>
+        <button class="tb-btn" style="background:transparent;border-color:transparent;color:#b45309" onclick="exportSnapshot()" title="Download a single HTML file with this diagram baked in — share without a separate JSON file">Snapshot</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#7c3aed" onclick="exportXMILE()">XMILE</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#0d9488" onclick="exportMDL()">MDL</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#0369a1" onclick="exportDOT()">.dot</button>
@@ -818,6 +820,7 @@ var EDGE_COLOR_LABELS=['Charcoal','Red','Orange','Gold','Green','Blue','Purple',
 var DEF_EDGE={color:'#444444',width:1.5,fontSize:10,curved:false,polarity:'none',delay:false,dash:'solid',note:'',traces:[],layer:''};
 var DEF_NFS=12;
 var panelColorTarget='fill';
+var EMBEDDED_DIAGRAM = null; // sentinel — exportSnapshot() replaces this with live JSON
 var nodes=[],edges=[],lines=[],metaEdges=[],nextId=1,nextTripleNum=1;
 var hiddenLayers={};
 var canvasBg='#f9f9f7';
@@ -3978,6 +3981,16 @@ function cLNode(n){var parts=[cL(n.label)];(n.extraLabels||[]).forEach(function(
 function exportCypher(){var im={},out='// Model: '+modelName()+'\n';nodes.forEach(function(n,i){var v='n'+i;im[n.id]=v;var pr=Object.keys(n.props||{}).map(function(k){return k+': "'+n.props[k]+'"';});if(n.note&&n.note.trim())pr.push('note: "'+n.note.trim().replace(/"/g,'\\"')+'"');out+='CREATE ('+v+':'+cLNode(n)+(pr.length?' {'+pr.join(', ')+'} ':'')+' )\n';});edges.forEach(function(e){var sv=im[e.src],tv=im[e.tgt];if(!sv||!tv)return;var pr=Object.keys(e.props||{}).map(function(k){return k+': "'+e.props[k]+'"';});if(e.polarity&&e.polarity!=='none')pr.push('polarity: "'+e.polarity+'"');if(e.delay)pr.push('delay: "true"');if(e.note&&e.note.trim())pr.push('note: "'+e.note.trim().replace(/"/g,'\\"')+'"');out+='CREATE ('+sv+')-[:'+cL(e.label||'REL')+(pr.length?' {'+pr.join(', ')+'} ':'')+' ]->('+tv+')\n';});showExport('Cypher — '+modelName(),out||'// No nodes yet');}
 function exportURL(){var st=JSON.stringify(buildState());var url=location.href.split('#')[0]+'#graph='+btoa(unescape(encodeURIComponent(st)));var warn=url.length>4000?'\n\n\u26a0\ufe0f This URL is '+url.length.toLocaleString()+' characters long and may be truncated when shared via email or chat. For large diagrams, use JSON Export instead.':'';showExport('URL — '+modelName(),url,warn);}
 function exportJSON(){download(dlName('json'),'application/json',JSON.stringify(buildState(),null,2));toast('Downloaded '+dlName('json'));}
+function exportSnapshot(){
+  var state=buildState();
+  var sentinel='var EMBEDDED_DIAGRAM = null; // sentinel — exportSnapshot() replaces this with live JSON';
+  var replacement='var EMBEDDED_DIAGRAM = '+JSON.stringify(state)+';';
+  var src='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  var out=src.replace(sentinel,replacement);
+  if(out===src){toast('⚠️ Snapshot failed — sentinel not found');return;}
+  download(dlName('html'),'text/html',out);
+  toast('Snapshot downloaded — share as a single file');
+}
 function exportMDL(){
   var CRLF='\r\n';
   var bs=String.fromCharCode(92);
@@ -4429,7 +4442,8 @@ function sendToWikiSVG(){
   ['onmousedown','onmousemove','onmouseup','ondblclick','onclick'].forEach(function(ev){clone.removeAttribute(ev);});
   // Enrich text elements as internal wiki links (Ward's "Enrich Any SVG" pattern)
   Array.prototype.slice.call(clone.querySelectorAll('text')).forEach(function(textEl){
-    var title=textEl.textContent.trim().replace(/\s+/g,' ');
+    var tspans=Array.prototype.slice.call(textEl.querySelectorAll('tspan'));
+    var title=(tspans.length?tspans.map(function(s){return s.textContent;}).join(' '):textEl.textContent).trim().replace(/\s+/g,' ');
     if(!title)return;
     var slug=title.replace(/\s/g,'-').replace(/[^A-Za-z0-9-]/g,'').toLowerCase();
     var anchor=document.createElementNS('http://www.w3.org/2000/svg','a');
@@ -4451,7 +4465,7 @@ function sendToWikiSVG(){
     journal:[{type:'create',item:{title:mn},date:t}]
   };
   if(window.opener){
-    window.opener.postMessage({action:'showResult',page:page},'*');
+    window.opener.postMessage({toolType:'rcn-graph',action:'showResult',page:page},'*');
     window.opener.focus();
     toast('Sent to wiki as ghost page');
   }else{
@@ -4470,9 +4484,41 @@ var toastT;
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},2400);}
 function loadFromURL(){var h=location.hash;if(h.indexOf('#graph=')<0)return;try{var raw=h.split('#graph=')[1];var st=JSON.parse(decodeURIComponent(escape(atob(raw))));nodes=st.nodes||[];edges=st.edges||[];if(st.modelName)document.getElementById('model-name').value=st.modelName;if(st.canvasBg)setBgColor(st.canvasBg);if(st.graphAttrs)graphAttrs=st.graphAttrs;if(st.cldLoopNames)cldLoopNames=st.cldLoopNames;var _mn2=document.getElementById('model-note');_mn2.value=st.modelNote||'';renderModelNote();edges.forEach(function(e){e.polarity=e.polarity||'none';e.delay=!!e.delay;e.dash=e.dash||'solid';if(!e.note)e.note='';if(e.color)getMarkerId(e.color);if(e.opmMarker&&e.color)getOPMMarkerId(e.opmMarker,e.color);});nodes.forEach(function(n){if(!n.fontSize)n.fontSize=DEF_NFS;if(!n.fontColor)n.fontColor='auto';if(!n.borderColor)n.borderColor='';if(!n.borderWidth)n.borderWidth=1.5;if(!n.borderDash)n.borderDash='solid';if(!n.note)n.note='';if(!n.extraLabels)n.extraLabels=[];autoSize(n);});var ids=nodes.map(function(n){return+String(n.id).replace(/\D/g,'')||0;}).concat(edges.map(function(e){return+String(e.id).replace(/\D/g,'')||0;}));nextId=(ids.length?Math.max.apply(null,ids):0)+1;renderAll();zoomFit();syncCC();toast('Loaded: '+nodes.length+' nodes, '+edges.length+' edges');}catch(err){console.warn('URL load failed',err);setTimeout(function(){toast('\u26a0\ufe0f URL load failed \u2014 link may be truncated. Use JSON export for large diagrams.');},400);}}
 function loadFromQueryParam(){var params=new URLSearchParams(window.location.search);var url=params.get('url');if(!url)return;fetch(url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(text){loadGraphJSON(text);zoomFit();}).catch(function(err){console.warn('?url= load failed',err);setTimeout(function(){toast('\u26a0\ufe0f Could not load model \u2014 check URL and CORS headers');},400);});}
+function sendToWikiItem(){
+  if(!window.opener){toast('Not running as wiki popup — use → Wiki for ghost page');return;}
+  var clone=buildExportSVG();
+  var W=clone.getAttribute('width')||600,H=clone.getAttribute('height')||400;
+  clone.setAttribute('viewBox','0 0 '+W+' '+H);
+  clone.setAttribute('preserveAspectRatio','xMidYMid meet');
+  clone.setAttribute('style','width:100%;height:auto;display:block');
+  clone.removeAttribute('id');
+  clone.removeAttribute('onmousedown');
+  clone.removeAttribute('onmousemove');
+  clone.removeAttribute('onmouseup');
+  clone.removeAttribute('ondblclick');
+  clone.removeAttribute('onclick');
+  var svgString=new XMLSerializer().serializeToString(clone);
+  window.opener.postMessage({toolType:'rcn-graph',action:'saveGraph',graphJSON:buildState(),svgString:svgString},'*');
+  window.opener.focus();
+  toast('Saved to wiki item');
+}
+
+// Opener handshake — signal ready, listen for loadGraph
+if(window.opener){
+  window.opener.postMessage({toolType:'rcn-graph',action:'graphToolReady'},'*');
+  window.addEventListener('message',function(ev){
+    if(!ev.source||ev.source!==window.opener)return;
+    if(ev.data&&ev.data.action==='loadGraph'&&ev.data.graphJSON){
+      loadGraphJSON(JSON.stringify(ev.data.graphJSON));
+      zoomFit();
+    }
+  });
+}
+
 renderAll();
 loadFromURL();
 loadFromQueryParam();
+if(EMBEDDED_DIAGRAM){loadGraphJSON(JSON.stringify(EMBEDDED_DIAGRAM));zoomFit();}
 </script>
 </body>
 </html>
