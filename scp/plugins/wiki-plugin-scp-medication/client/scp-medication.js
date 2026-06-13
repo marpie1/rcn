@@ -193,6 +193,27 @@
     }
   }
 
+  // ── Shared fold-toggle helper for committed items ───────────────────────────
+
+  function bindFoldToggle($item) {
+    $item.find('.scp-fold-btn').on('click', function () {
+      if ($item.find('.scp-detail').is(':visible')) {
+        $item.find('.scp-detail').hide();
+        $item.find('.scp-summary').show();
+        $(this).text('▼');
+      } else {
+        $item.find('.scp-detail').show();
+        $item.find('.scp-summary').hide();
+        $(this).text('▲');
+      }
+    });
+    $item.find('.scp-summary').on('click', function () {
+      $item.find('.scp-detail').show();
+      $item.find('.scp-summary').hide();
+      $item.find('.scp-fold-btn').text('▲');
+    });
+  }
+
   // ── DOM helpers ─────────────────────────────────────────────────────────────
 
   function row(lbl, html) {
@@ -242,11 +263,37 @@
   var TIMING   = ['Morning / Breakfast', 'Midday / Lunch', 'Evening / Dinner',
                   'Bedtime', 'As Needed (PRN)', 'Other'];
 
+  function medicationSummaryHtml(item) {
+    var s = esc(item.label || 'Medication');
+    if (item.med_type) s += ' (' + esc(item.med_type) + ')';
+    if (item.started)  s += ' — started ' + esc(item.started);
+    return s;
+  }
+
+  function medicationDetailHtml(item) {
+    return '<div class="scp-row"><span class="scp-lbl">Medication</span><div class="scp-val">'    + esc(item.label || '')        + '</div></div>' +
+      '<div class="scp-row"><span class="scp-lbl">Type</span><div class="scp-val">'               + esc(item.med_type || '')     + '</div></div>' +
+      (item.rxnorm_code   ? '<div class="scp-row"><span class="scp-lbl">RxNorm</span><div class="scp-val">'        + esc(item.rxnorm_code)   + '</div></div>' : '') +
+      (item.prescribed_by ? '<div class="scp-row"><span class="scp-lbl">Prescribed By</span><div class="scp-val">' + esc(item.prescribed_by) + '</div></div>' : '') +
+      (item.started       ? '<div class="scp-row"><span class="scp-lbl">Started</span><div class="scp-val">'       + esc(item.started)       + '</div></div>' : '') +
+      (item.directions    ? '<div class="scp-row"><span class="scp-lbl">Directions</span><div class="scp-val">'    + esc(item.directions)    + '</div></div>' : '') +
+      (item.use           ? '<div class="scp-row"><span class="scp-lbl">Use / Purpose</span><div class="scp-val">' + esc(item.use)           + '</div></div>' : '') +
+      (item.timing && item.timing.length ? '<div class="scp-row"><span class="scp-lbl">Timing</span><div class="scp-val">' + esc(item.timing.join(', ')) + '</div></div>' : '') +
+      (item.not_prescribed ? '<div class="scp-flag">Not taken as prescribed: ' + esc(item.not_prescribed) + '</div>' : '');
+  }
+
   function emitMedication($item, item) {
     injectStyles();
-    var flag = item.not_prescribed
-      ? '<div class="scp-flag">Not taken as prescribed: ' + esc(item.not_prescribed) + '</div>'
-      : '';
+    if (item.committed) {
+      $item.append(
+        '<div class="scp scp-done">' +
+        '<div class="scp-head">Medication<button class="scp-fold-btn">▲</button></div>' +
+        '<div class="scp-detail">' + medicationDetailHtml(item) + '</div>' +
+        '<div class="scp-summary" style="display:none">' + medicationSummaryHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
     $item.append(
       '<div class="scp">' +
       '<div class="scp-head">' + esc(item.label || 'New Medication') + '</div>' +
@@ -259,12 +306,14 @@
       row('Use / Purpose',   ta('scp-use', item.use)) +
       row('Timing',          chks('scp-timing', TIMING, item.timing)) +
       row('Not as prescribed', ta('scp-not-prescribed', item.not_prescribed)) +
-      flag +
+      '<button class="scp-commit-btn">Save Entry</button>' +
       '</div>'
     );
   }
 
   function bindMedication($item, item) {
+    if (item.committed) { bindFoldToggle($item); return; }
+
     $item.find('.scp-directions, .scp-use, .scp-not-prescribed').each(function () { grow(this); });
 
     // input: update item data + live preview only, no save
@@ -279,14 +328,18 @@
     $item.find('.scp-use').on('input',           function () { grow(this); item.use            = this.value; });
     $item.find('.scp-not-prescribed').on('input',function () { grow(this); item.not_prescribed = this.value; });
 
-    // focusout: save when leaving any text field (FedWiki pattern)
-    $item.on('focusout', 'input, textarea', function () { save($item, item); });
-
-    // selects and checkboxes: save immediately on change
-    $item.find('.scp-med-type').on('change', function () { item.med_type = this.value; save($item, item); });
+    // selects and checkboxes: update only
+    $item.find('.scp-med-type').on('change', function () { item.med_type = this.value; });
     $item.find('.scp-timing').on('change', function () {
       var v = []; $item.find('.scp-timing:checked').each(function () { v.push(this.value); });
-      item.timing = v; save($item, item);
+      item.timing = v;
+    });
+
+    // Commit: write ONE journal entry, re-render as read-only
+    $item.find('.scp-commit-btn').on('click', function () {
+      item.committed = true;
+      save($item, item);
+      $item.empty(); emitMedication($item, item); bindMedication($item, item);
     });
   }
 
@@ -640,28 +693,6 @@
       moveToTop($item, item);
     }
   };
-
-
-  // ── Shared fold-toggle helper for log-style committed items ─────────────────
-
-  function bindFoldToggle($item) {
-    $item.find('.scp-fold-btn').on('click', function () {
-      if ($item.find('.scp-detail').is(':visible')) {
-        $item.find('.scp-detail').hide();
-        $item.find('.scp-summary').show();
-        $(this).text('▼');
-      } else {
-        $item.find('.scp-detail').show();
-        $item.find('.scp-summary').hide();
-        $(this).text('▲');
-      }
-    });
-    $item.find('.scp-summary').on('click', function () {
-      $item.find('.scp-detail').show();
-      $item.find('.scp-summary').hide();
-      $item.find('.scp-fold-btn').text('▲');
-    });
-  }
 
 
   // ══════════════════════════════════════════════════════════════════════════
