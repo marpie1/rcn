@@ -316,7 +316,7 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
 #model-name{font-size:12px;padding:3px 8px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#1e293b;width:130px}
 #model-name:focus{outline:none;border-color:#93c5fd}
 #main{display:flex;flex:1;overflow:hidden}
-#canvas-wrap{flex:1;position:relative;overflow:hidden;background:#f9f9f7;touch-action:none}
+#canvas-wrap{flex:1;position:relative;overflow:hidden;background:#ffffff;touch-action:none}
 #canvas{width:100%;height:100%;display:block;touch-action:none}
 #search-bar{position:absolute;top:8px;left:8px;display:flex;align-items:center;gap:5px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:4px 8px}
 #search-bar input{font-size:12px;border:none;background:transparent;color:#1e293b;outline:none;width:130px}
@@ -668,9 +668,22 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
         <button class="tb-btn" id="btn-wardley" onclick="setMode('wardley')" style="border-color:#0369a1;color:#0369a1">Wardley</button>
         <button class="tb-btn" id="btn-opm" onclick="setMode('opm')" style="border-color:#0f766e;color:#0f766e">OPM</button>
       </div>
+      <div id="drive-tree-section" style="display:none;margin-top:5px;padding-top:4px;border-top:1px solid #f1f5f9">
+        <div style="font-size:10px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Driver Trees</div>
+        <div id="drive-tree-node" style="font-size:10px;color:#334155;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic;padding:0 1px"></div>
+        <div style="display:flex;gap:3px">
+          <button class="tb-btn" style="flex:1;font-size:10px;text-align:center" onclick="openDriveTree('effects')">Effects ▶</button>
+          <button class="tb-btn" style="flex:1;font-size:10px;text-align:center" onclick="openDriveTree('causes')">◀ Causes</button>
+          <button class="tb-btn" style="flex:1;font-size:10px;text-align:center" onclick="openDriveTree('center')">◀ Both ▶</button>
+        </div>
+      </div>
       <div id="cld-mode-opts" style="display:none;margin-top:4px">
         <button id="btn-loops" class="tb-btn active" onclick="toggleCLDLoops()" style="font-size:10px;border-color:#7c3aed;color:#7c3aed;width:100%">Loop labels</button>
-        <div id="cld-node-loops" style="margin-top:6px;display:none;flex-direction:column;gap:2px"></div>
+        <div id="cld-loops-list-hdr" style="display:none;margin-top:5px;cursor:pointer;align-items:center;justify-content:space-between;padding:1px 2px" onclick="toggleCLDLoopsList()">
+          <span id="cld-loops-list-title" style="font-size:10px;font-weight:600;color:#7c3aed;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0"></span>
+          <span id="cld-loops-chevron" style="font-size:9px;color:#7c3aed;flex-shrink:0;margin-left:4px">▼</span>
+        </div>
+        <div id="cld-node-loops" style="margin-top:3px;display:none;flex-direction:column;gap:2px"></div>
       </div>
       <div id="trace-mode-opts" style="display:none;margin-top:4px">
         <div style="font-size:10px;color:#64748b;margin-bottom:3px;padding:0 2px">Animate trace path:</div>
@@ -717,7 +730,7 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
     <div id="bg-section">
       <div class="ctrl-lbl" style="margin-bottom:4px">Canvas BG</div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-        <input type="color" id="canvas-bg-picker" value="#f9f9f7" title="Canvas background color" oninput="setBgColor(this.value)" onchange="setBgColor(this.value)" style="width:26px;height:22px;border:1px solid #e2e8f0;border-radius:4px;padding:1px;cursor:pointer">
+        <input type="color" id="canvas-bg-picker" value="#ffffff" title="Canvas background color" oninput="setBgColor(this.value)" onchange="setBgColor(this.value)" style="width:26px;height:22px;border:1px solid #e2e8f0;border-radius:4px;padding:1px;cursor:pointer">
         <div style="display:flex;gap:2px">
           <div title="Off-white" style="width:14px;height:14px;border-radius:3px;background:#f9f9f7;border:1px solid #e2e8f0;cursor:pointer" onclick="setBgColor('#f9f9f7');document.getElementById('canvas-bg-picker').value='#f9f9f7'"></div>
           <div title="White" style="width:14px;height:14px;border-radius:3px;background:#ffffff;border:1px solid #e2e8f0;cursor:pointer" onclick="setBgColor('#ffffff');document.getElementById('canvas-bg-picker').value='#ffffff'"></div>
@@ -823,7 +836,7 @@ var panelColorTarget='fill';
 var EMBEDDED_DIAGRAM = null; // sentinel — exportSnapshot() replaces this with live JSON
 var nodes=[],edges=[],lines=[],metaEdges=[],nextId=1,nextTripleNum=1;
 var hiddenLayers={};
-var canvasBg='#f9f9f7';
+var canvasBg='#ffffff';
 var graphAttrs={}; // graph-level attrs preserved from DOT import
 var selected={nodes:[],edges:[],lines:[],triples:[]};
 var mode='select',dragging=null,edgeDrag={active:false,srcId:null};
@@ -2209,6 +2222,7 @@ var cldPropEdges={};      // edgeId -> 'up'|'down'|'ambiguous'
 var cldLoopCounter={R:0,B:0,U:0};
 var cldShowLoops=true;
 var cldNodePopupId=null;  // node id whose loops popup is currently shown
+var cldLoopsListCollapsed=false; // user-collapsed state for the node-loops sidebar list
 var TRACE_COLORS=['#f97316','#8b5cf6','#06b6d4','#f43f5e'];
 var traceAnimEdges={};
 var traceAnimNodes={};
@@ -2456,6 +2470,28 @@ function toggleCLDLoops(){
   if(b)b.classList.toggle('active',cldShowLoops);
   renderAll();
 }
+function openDriveTree(treeMode){
+  var sN=selected.nodes.map(nodeById).filter(Boolean);
+  if(sN.length!==1)return;
+  openTreeView(treeMode,sN[0].id);
+}
+function updateDriveTreeSection(){
+  var sec=document.getElementById('drive-tree-section');
+  var lbl=document.getElementById('drive-tree-node');
+  if(!sec)return;
+  var sN=selected.nodes.map(nodeById).filter(Boolean);
+  if(sN.length===1){
+    sec.style.display='block';
+    if(lbl)lbl.textContent=sN[0].label||'(unnamed)';
+  }else{
+    sec.style.display='none';
+    if(lbl)lbl.textContent='';
+  }
+}
+function toggleCLDLoopsList(){
+  cldLoopsListCollapsed=!cldLoopsListCollapsed;
+  renderCLDNodeLoopsPanel();
+}
 function updateTraceBtns(){
   var TC=[null,'#c2410c','#6b21a8','#0e7490','#9f1239'];
   for(var i=1;i<=4;i++){
@@ -2699,13 +2735,32 @@ function getNodeLoops(nodeId){
 }
 function renderCLDNodeLoopsPanel(){
   var sec=document.getElementById('cld-node-loops');
+  var hdr=document.getElementById('cld-loops-list-hdr');
+  var titleEl=document.getElementById('cld-loops-list-title');
+  var chevron=document.getElementById('cld-loops-chevron');
   if(!sec)return;
-  if(mode!=='cld'||selected.nodes.length!==1){sec.style.display='none';return;}
+  if(mode!=='cld'||selected.nodes.length!==1){
+    sec.style.display='none';
+    if(hdr)hdr.style.display='none';
+    return;
+  }
   var nodeId=selected.nodes[0];
   var n=nodeById(nodeId);
-  if(!n){sec.style.display='none';return;}
+  if(!n){
+    sec.style.display='none';
+    if(hdr)hdr.style.display='none';
+    return;
+  }
+  // show collapsible header
+  if(hdr){
+    hdr.style.display='flex';
+    if(titleEl)titleEl.textContent=n.label;
+    if(chevron)chevron.textContent=cldLoopsListCollapsed?'▶':'▼';
+  }
+  // if collapsed, hide the list
+  if(cldLoopsListCollapsed){sec.style.display='none';return;}
   var loops=getNodeLoops(nodeId);
-  var html='<div class="cld-nl-title">'+escH(n.label)+'</div>';
+  var html='';
   if(!loops.length){
     html+='<div class="cld-nl-empty">Not in any loop</div>';
   }else{
@@ -3495,7 +3550,7 @@ svgEl.addEventListener('touchstart',_onTouchStart,{passive:false});
 svgEl.addEventListener('touchmove',_onTouchMove,{passive:false});
 svgEl.addEventListener('touchend',_onTouchEnd,{passive:false});
 document.addEventListener('mouseup',function(){if(edgeMarkDrag){edgeMarkDrag=null;}if(resizeDrag){resizeDrag=null;buildPanel();renderAll();}if(lineMarkDrag){lineMarkDrag=null;}if(lineBodyDrag){lineBodyDrag=null;}if(lineEndpointDrag){lineEndpointDrag=null;}if(mode!=='cld')clearLongPress();else if(longPressActive)clearLongPress();else if(dragging&&dragging.moved)clearLongPress();});
-function makeNode(x,y,label,color,shape){var n={id:'n'+nextId++,label:label||'Node',extraLabels:[],x:x,y:y,w:108,h:46,shape:shape||'rounded',color:color||'#93c5fd',fontColor:'#0f172a',borderColor:'',borderWidth:1.5,borderDash:'solid',note:'',props:{},fontSize:DEF_NFS};autoSize(n);nodes.push(n);return n;}
+function makeNode(x,y,label,color,shape){var n={id:'n'+nextId++,label:label||'Node',extraLabels:[],x:x,y:y,w:108,h:46,shape:shape||'rounded',color:color||'#ffffff',fontColor:'#000000',borderColor:'#000000',borderWidth:1.5,borderDash:'solid',note:'',props:{},fontSize:DEF_NFS};autoSize(n);nodes.push(n);return n;}
 // ── DAGRE HIERARCHICAL LAYOUT ────────────────────────────────────────
 var dagreRankdir='LR';
 function applyDagreLayout(){
@@ -3532,7 +3587,7 @@ function paletteHTML(sel,fn){var h='<div style="display:grid;grid-template-colum
 function fontColorPaletteHTML(sel,fn){var h='<div style="display:flex;flex-wrap:wrap;gap:3px;padding:6px 12px 8px;border-bottom:1px solid #f1f5f9">';for(var i=0;i<FONT_COLORS.length;i++){h+='<div class="cs'+(FONT_COLORS[i]===sel?' selected':'')+'" style="background:'+FONT_COLORS[i]+'" title="'+FONT_COLORS[i]+'" onclick="'+fn+'(\''+FONT_COLORS[i]+'\')"></div>';}var autoSel=(sel==='auto'||!sel);h+='<div class="cs'+(autoSel?' selected':'')+'" style="background:linear-gradient(135deg,#94a3b8 50%,#f1f5f9 50%)" title="Auto" onclick="'+fn+'(\'auto\')"></div>';return h+'</div>';}
 function dashBtns(cur,fn){return['solid','dashed','dotted'].map(function(d){return'<button class="dash-btn'+(cur===d?' active':'')+'" onclick="'+fn+'(\''+d+'\')">'+d+'</button>';}).join('');}
 function setPanelColorTarget(t){panelColorTarget=t;buildPanel();}
-function buildPanel(){var pc=document.getElementById('panel-content');var sN=selected.nodes.map(nodeById).filter(Boolean),sE=selected.edges.map(edgeById).filter(Boolean),sL=(selected.lines||[]).map(lineById).filter(Boolean);
+function buildPanel(){updateDriveTreeSection();var pc=document.getElementById('panel-content');var sN=selected.nodes.map(nodeById).filter(Boolean),sE=selected.edges.map(edgeById).filter(Boolean),sL=(selected.lines||[]).map(lineById).filter(Boolean);
 // Triple selected — show triple panel
 if(!sN.length&&!sE.length&&!sL.length&&selected.triples&&selected.triples.length){buildTriplePanel(pc);return;}
 // Meta-edge selected — show meta-edge panel
@@ -3638,7 +3693,7 @@ if(mode==='eip'){
   pc.appendChild(extraPC);
   return;
 }
-buildSelectionPanel(pc,sN,sE);renderCLDNodeLoopsPanel();}
+buildSelectionPanel(pc,sN,sE);renderCLDNodeLoopsPanel();updateDriveTreeSection();}
 function buildSelectionPanel(pc,sN,sE){if(!sN.length&&!sE.length){pc.innerHTML='<div style="padding:12px;font-size:12px;color:#64748b">Select a node, edge, or line to edit.</div>';return;}
 if(sN.length&&!sE.length){if(panelColorTarget!=='fill'&&panelColorTarget!=='font'&&panelColorTarget!=='border')panelColorTarget='fill';var multi=sN.length>1,n=sN[0],nfs=nodeFontSize(n),nfc=n.fontColor||'auto',bw=n.borderWidth||1.5,bc=n.borderColor||'',bd=n.borderDash||'solid',pr='';if(!multi){var pKeys=Object.keys(n.props||{});pKeys.forEach(function(k,i){var v=n.props[k];pr+='<div class="prop-kv-row"><button style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:10px;padding:0 1px;line-height:1" onclick="moveProp(\''+n.id+'\','+i+',-1)"'+(i===0?' disabled':'')+'>↑</button><button style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:10px;padding:0 1px;line-height:1" onclick="moveProp(\''+n.id+'\','+i+',1)"'+(i===pKeys.length-1?' disabled':'')+'>↓</button><input placeholder="key" value="'+escH(k)+'" onchange="uPK(\''+n.id+'\',\''+escH(k)+'\',this.value)"/><input placeholder="value" value="'+escH(v)+'" onchange="uPV(\''+n.id+'\',\''+escH(k)+'\',this.value)"/>'+(isURL(v)?'<a href="'+escH(v)+'" target="_blank" rel="noopener" style="color:#2563eb;font-size:13px;text-decoration:none;padding:0 1px;flex-shrink:0" title="Open URL">&#8599;</a>':'')+'<button style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:14px;padding:0 2px" onclick="rP(\''+n.id+'\',\''+escH(k)+'\')">x</button></div>';});}
 pc.innerHTML=(multi?'<div style="padding:8px 12px 4px;font-size:12px;color:#64748b">'+sN.length+' nodes &mdash; edits apply to all</div>':'')
@@ -3656,7 +3711,6 @@ pc.innerHTML=(multi?'<div style="padding:8px 12px 4px;font-size:12px;color:#6474
 +'<div class="section-hd">Border thickness &amp; style'+(multi?' (all)':'')+'</div>'
 +'<div class="inline-row"><label>Thickness</label><input type="range" min="0.5" max="8" step="0.5" value="'+bw+'" oninput="sNBW_all(+this.value);document.getElementById(\'nbwv\').textContent=this.value"/><span id="nbwv">'+bw+'</span></div>'
 +'<div class="dash-row">'+dashBtns(bd,'sNBD_all')+'</div>'
-+(!multi?'<div class="section-hd">Driver Trees</div><div style="display:flex;gap:4px;padding:6px 12px;border-bottom:1px solid #f1f5f9;flex-wrap:wrap"><button class="tb-btn" style="flex:1;text-align:center;min-width:60px" onclick="openTreeView(\'effects\',\''+n.id+'\')">Effects ▶</button><button class="tb-btn" style="flex:1;text-align:center;min-width:60px" onclick="openTreeView(\'causes\',\''+n.id+'\')">◀ Causes</button><button class="tb-btn" style="flex:1;text-align:center;min-width:60px" onclick="openTreeView(\'center\',\''+n.id+'\')">◀ Both ▶</button></div>':'')
 +'<div style="padding:6px 12px 8px;border-top:1px solid #f1f5f9"><button class="tb-btn" style="width:100%;text-align:center" onclick="copySelection()" title="Copy selection to clipboard (Ctrl+C) — paste into Word or PowerPoint">Copy selection</button></div>';
 setTimeout(function(){var t=pc.querySelector('textarea.note-ta');if(t){_rTA(t);}},0);
 return;}
@@ -4429,7 +4483,11 @@ function exportDOT(){
 function dotNodeId(n){return 'n'+String(n.id).replace(/\D/g,'');}
 function dotEsc(s){return String(s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');}
 function dotShape(sh){var map={rounded:'box',rect:'rectangle',ellipse:'ellipse',diamond:'diamond',hexagon:'hexagon',cylinder:'cylinder',barrel:'box'};return map[sh]||'box';}
-function buildExportSVG(){var W=svgEl.clientWidth||600,H=svgEl.clientHeight||400;var clone=svgEl.cloneNode(true);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');clone.setAttribute('width',String(W));clone.setAttribute('height',String(H));var bg=document.createElementNS('http://www.w3.org/2000/svg','rect');bg.setAttribute('width',String(W));bg.setAttribute('height',String(H));bg.setAttribute('fill',canvasBg);clone.insertBefore(bg,clone.firstChild);var rl=clone.querySelector('#rubber-layer');if(rl)rl.parentNode.removeChild(rl);Array.prototype.forEach.call(clone.querySelectorAll('path[stroke="transparent"]'),function(el){el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('rect'),function(el){if((el.style.cursor||'').indexOf('resize')>=0)el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('ellipse[stroke-dasharray]'),function(el){el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('circle[stroke="#3b82f6"]'),function(el){el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('line'),function(el){if((el.getAttribute('stroke')||'').indexOf('rgba(59,130,246')===0)el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('rect[fill="transparent"][stroke="none"]'),function(el){el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('circle[fill="transparent"]'),function(el){el.parentNode.removeChild(el);});return clone;}
+function buildExportSVG(){var W=svgEl.clientWidth||600,H=svgEl.clientHeight||400;var clone=svgEl.cloneNode(true);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');clone.setAttribute('width',String(W));clone.setAttribute('height',String(H));var bg=document.createElementNS('http://www.w3.org/2000/svg','rect');bg.setAttribute('width',String(W));bg.setAttribute('height',String(H));bg.setAttribute('fill',canvasBg);clone.insertBefore(bg,clone.firstChild);var rl=clone.querySelector('#rubber-layer');if(rl)rl.parentNode.removeChild(rl);Array.prototype.forEach.call(clone.querySelectorAll('path[stroke="transparent"]'),function(el){el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('rect'),function(el){if((el.style.cursor||'').indexOf('resize')>=0)el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('ellipse[stroke-dasharray]'),function(el){el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('circle[stroke="#3b82f6"]'),function(el){el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('line'),function(el){if((el.getAttribute('stroke')||'').indexOf('rgba(59,130,246')===0)el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('rect[fill="transparent"][stroke="none"]'),function(el){el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('circle[fill="transparent"]'),function(el){el.parentNode.removeChild(el);});
+// inject <title> elements so browsers show note+props on hover
+nodes.forEach(function(n){var g=clone.querySelector('#node-'+n.id);if(!g)return;var parts=[];if(n.note&&n.note.trim())parts.push('📌 '+n.note.trim());Object.keys(n.props||{}).forEach(function(k){if(k)parts.push(k+': '+n.props[k]);});if(!parts.length)return;var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=parts.join('\n');g.insertBefore(t,g.firstChild);});
+edges.forEach(function(e){var g=clone.querySelector('#edge-'+e.id);if(!g)return;var parts=[];if(e.opl&&e.opl.trim())parts.push('OPL: '+e.opl.trim());if(e.note&&e.note.trim())parts.push('📌 '+e.note.trim());Object.keys(e.props||{}).forEach(function(k){if(k)parts.push(k+': '+e.props[k]);});if(!parts.length)return;var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=parts.join('\n');g.insertBefore(t,g.firstChild);});
+return clone;}
 function exportSVG(){var clone=buildExportSVG();var str=new XMLSerializer().serializeToString(clone);download(dlName('svg'),'image/svg+xml',str);toast('Downloaded '+dlName('svg'));}
 function sendToWikiSVG(){
   var mn=modelName();
@@ -4508,9 +4566,9 @@ if(window.opener){
   window.opener.postMessage({toolType:'rcn-graph',action:'graphToolReady'},'*');
   window.addEventListener('message',function(ev){
     if(!ev.source||ev.source!==window.opener)return;
-    if(ev.data&&ev.data.action==='loadGraph'&&ev.data.graphJSON){
-      loadGraphJSON(JSON.stringify(ev.data.graphJSON));
-      zoomFit();
+    if(ev.data&&ev.data.action==='loadGraph'){
+      if(ev.data.pageTitle)document.title=ev.data.pageTitle;
+      if(ev.data.graphJSON){loadGraphJSON(JSON.stringify(ev.data.graphJSON));zoomFit();}
     }
   });
 }
