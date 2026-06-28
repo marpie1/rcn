@@ -4567,7 +4567,7 @@ if(window.opener){
   window.addEventListener('message',function(ev){
     if(!ev.source||ev.source!==window.opener)return;
     if(ev.data&&ev.data.action==='loadGraph'){
-      if(ev.data.pageTitle)document.title=ev.data.pageTitle;
+      if(ev.data.pageTitle){document.title=ev.data.pageTitle;var mn=document.getElementById('model-name');if(mn&&mn.value==='Untitled')mn.value=ev.data.pageTitle;}
       if(ev.data.graphJSON){loadGraphJSON(JSON.stringify(ev.data.graphJSON));zoomFit();}
     }
   });
