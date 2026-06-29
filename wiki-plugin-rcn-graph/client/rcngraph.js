@@ -3,6 +3,7 @@
   const GRAPH_URL = 'https://marc.relocalizecreativity.net/assets/Drag/graph-tool-v22.html'
   const WINDOW_NAME = 'rcngraph'
 
+  // Track which item/element opened the current popup
   let pendingItem = null
   let pending$item = null
 
@@ -47,17 +48,19 @@
   function graphListener(event) {
     if (!event.source || !event.source.opener) return
     if (!event.data || event.data.toolType !== 'rcn-graph') return
-    if (!pendingItem || !pending$item) return
 
     const { data } = event
 
     switch (data.action) {
       case 'graphToolReady': {
-        const pageTitle = pending$item.parents('.page').data('title')
-        event.source.postMessage({ action: 'loadGraph', graphJSON: pendingItem.graphJSON || null, pageTitle }, '*')
+        if (pendingItem) {
+          const pageTitle = pending$item ? pending$item.parents('.page').data('title') : undefined
+          event.source.postMessage({ action: 'loadGraph', graphJSON: pendingItem.graphJSON || null, pageTitle }, '*')
+        }
         break
       }
       case 'saveGraph': {
+        if (!pendingItem || !pending$item) break
         pendingItem.graphJSON = data.graphJSON
         pendingItem.svgString = data.svgString
         const $page = pending$item.parents('.page:first')
@@ -79,14 +82,14 @@
         break
       }
       default:
-        if (wiki.debug) console.log('rcn-graph listener — unknown action:', data)
+        if (wiki.debug) console.log('rcngraph listener — unknown action:', data)
     }
   }
 
   if (typeof window !== 'undefined') {
-    window.plugins['rcn-graph'] = { emit, bind }
-    if (!window.rcnGraphLegacyListener) {
-      window.rcnGraphLegacyListener = graphListener
+    window.plugins['rcngraph'] = { emit, bind }
+    if (!window.rcnGraphListener) {
+      window.rcnGraphListener = graphListener
       window.addEventListener('message', graphListener)
     }
   }

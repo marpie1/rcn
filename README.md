@@ -37,7 +37,7 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 ```
 ~/rcn/
   tools/      standalone HTML tools (see below)
-  maps/       rcn_map.html — civic infrastructure campfire
+  maps/       rcn_map.html — NDC map; rcn-map-intro.html, rcn-map-manual.html — docs
   data/       PostGIS Python load scripts
   docs/       tool documentation (nrm-tripod-beta.md, graph-tool-intro.html, graph-tool-manual.html)
   vester/     Vester chapter notes and SensiMod context
@@ -61,7 +61,7 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 | `evsm-svg-v3.html` | eVSM directed edge assessment (Agree/Disagree/Unknown) | Active |
 | `evsm-report.html` | eVSM survey report generator | Active |
 | `ibis-map-rcn.html` | IBIS argument mapping (post-hoc mode preferred) | Active |
-| `rcn_map.html` (in maps/) | Leaflet map, PostGIS/FastAPI backend, 7 NDCs, 7 base layers, shift+click legend | Active |
+| `rcn_map.html` (in maps/) | Leaflet NDC map — 7 NDCs, 7 base layers, geographic context layers, issue overlay, shift+click legend, custom location pins, NDC location correction, user boundary layer builder (OSM search + Claude bridge); all user data in localStorage | Active |
 | `issue-polygon-map.html` | Polycentric governance / Issue Polygon viewer — data-driven via `?issue=` URL param; loads `issue-data/*.json`; parcel stances, layer toggles, draw polygon, GeoJSON export | Active |
 | `more-outliner.html` | Outliner with autosave, MD/HTML/FedWiki export, Hoist; **→ Wiki Ghost** button sends outline as ghost page to FedWiki lineup | Active |
 | `graphjson_to_vensim_cld.html` | Canonical MDL format reference — read before fixing MDL bugs | Reference |
@@ -134,10 +134,22 @@ Porthmadog town boundary, Gwynedd county boundary
 
 - **7 base layers:** Topo (default), Light, OpenStreetMap Voyager, Satellite, CyclOSM, Transport, Dark
 - **5 data layer types:** admin_boundary (blue), ecological_zone (purple), ndc_zone (red), mineral_deposit (bronze), church (purple #7B5EA7 — radius 11, high-visibility)
-- **Legend:** named features grouped by NDC/state, click to highlight + zoom, Shift+click to multi-select
+- **Legend:** named features grouped by NDC/state, click to highlight + zoom, Shift+click to multi-select; custom user layers appear with U or + badge
 - **Popups:** name, type, area in mi², data source; copper deposits show individual name + dev status; churches show denomination
 - **Render order:** largest polygons drawn first so smaller ones (e.g. Porthmadog inside Gwynedd) stay clickable
 - **Areas:** displayed in mi²
+
+### User-editable data (localStorage, no server)
+
+All user data is stored in `localStorage` under three keys. Export buttons in the Saved tab download JSON for permanent backup.
+
+| Feature | How | localStorage key |
+|---------|-----|-----------------|
+| **Custom location pins** | Click **+ Add location** in sidebar → click anywhere on map (works over polygons) → name it → sky-blue marker placed and saved | `rcn_user_locations` |
+| **NDC location correction** | Click any red NDC marker → popup → **📍 Correct location** → click correct spot | `rcn_ndc_corrections` |
+| **Custom location correction** | Click any sky-blue custom marker → popup → **📍 Correct location** → click correct spot | `rcn_user_locations` (lat/lng updated in-place) |
+| **Boundary layer (OSM)** | Add boundary layer panel → Search OSM → pick result → name + type → Add to map | `rcn_user_polygons` |
+| **Boundary layer (Claude)** | Add boundary layer panel → Ask Claude tab → describe boundary → copy prompt → paste response → Import polygon | `rcn_user_polygons` |
 
 ### place_geo schema
 
@@ -246,7 +258,7 @@ linked via shared `place_id` UUID.
 
 - **eVSM survey tool**: Port to Wiki Café.
 
-- **SCP + Groove**: Shared Care Plan as FedWiki health record + Groove workspace (port 3001) for coordination. Pilot: Superior AZ NDC (Leo's). See `scp-groove-handoff.md`.
+- **SCP + Groove**: Shared Care Plan as native FedWiki plugins + Groove workspace (port 3001). 12 typed item plugins built and working on localhost (June 2026). Pilot: Superior AZ NDC (Leo's). See `scp-groove-handoff.md` and the FedWiki SCP Plugins section below.
 
 - **SODOTO Mac Mini deployment**: issuer tool and FedWiki running on shared Mac Mini. Each issuer accesses sodoto-issuer.html through their own browser; keys never leave the signer's machine. Next steps: launchd plists for auto-start, network config, private key storage (out of plain JSON), people registry portability (localStorage → SEED_PEOPLE or server-side file), PROXY constant in sodoto-issuer.html updated from localhost to Mac Mini hostname.
 
@@ -254,18 +266,95 @@ linked via shared `place_id` UUID.
 
 ## FedWiki Plugins (`~/rcn/wiki-plugin-*/`)
 
-Solo popup plugins — open full-window tools linked to the wiki lineup. Install path: `/usr/local/lib/node_modules/wiki/node_modules/wiki-plugin-{name}/`. Source in `~/rcn/wiki-plugin-{name}/`, sync with `cp client/*.js` to install path after edits.
+### Naming convention
 
-| Plugin | Tool opened | Ghost page export |
-|--------|------------|------------------|
-| `wiki-plugin-rcn-graph` | `graph-tool-v22.html` | SVG with enriched internal links via **→ Wiki** button |
-| `wiki-plugin-rcn-outliner` | `more-outliner.html` | Outline as FedWiki page via **→ Wiki Ghost** button |
+FedWiki plugin npm packages **must** use the form `wiki-plugin-singleword` — no hyphens after the `wiki-plugin-` prefix. The word after `wiki-plugin-` becomes the FedWiki item type and the URL path (`/plugins/singleword/singleword.js`). Example: `wiki-plugin-rcngraph` → item type `rcngraph` → served at `/plugins/rcngraph/rcngraph.js`.
 
-**Pattern:** `window.open()` named popup → tool runs full-window → `window.opener.postMessage({action:'showResult', page:{...}}, '*')` → plugin listener calls `wiki.showResult(wiki.newPage(page))` → ghost page appears in lineup.
+### Localhost dev (symlink pattern — set up once per machine)
+
+Each plugin repo is symlinked directly into the wiki's node_modules. Edits to the source are live immediately — no copy step.
+
+```bash
+# For each plugin:
+ln -sf ~/rcn/wiki-plugin-{name} /usr/local/lib/node_modules/wiki/node_modules/wiki-plugin-{name}
+```
+
+Current symlinks (both point to same repo dir `~/rcn/wiki-plugin-rcn-graph`):
+```
+wiki-plugin-rcngraph  → ~/rcn/wiki-plugin-rcn-graph
+wiki-plugin-rcn-graph → ~/rcn/wiki-plugin-rcn-graph   (backward compat for old items)
+wiki-plugin-rcn-outliner → ~/rcn/wiki-plugin-rcn-outliner
+```
+
+### WikiCafe farm deployment (npm)
+
+Plugins are published to npm and installed on the server. npm account: `marcpierson`.
+
+```bash
+# Publish a new version (bump version in package.json first):
+cd ~/rcn/wiki-plugin-{name}
+npm publish --access=public
+
+# On WikiCafe server — install or update:
+npm install -g wiki-plugin-{name}
+npm update -g wiki-plugin-{name}
+# Then restart the wiki process.
+```
+
+### Plugin structure (required files)
+
+```
+wiki-plugin-{name}/
+  client/{name}.js    ← registers window.plugins['{name}'] = { emit, bind }
+  factory.json        ← {"name":"Pluginname","title":"...","category":"..."}
+  index.js            ← module.exports = {}  (server-side stub, usually empty)
+  package.json        ← "name": "wiki-plugin-{name}", "files": ["client/...","factory.json","index.js"]
+```
+
+`pageHandler.put` must receive a jQuery object: `$item.parents('.page:first')` — not a raw DOM element (`[0]`).
+
+### Published plugins
+
+| npm package | Item type | Tool opened | Notes |
+|------------|-----------|------------|-------|
+| `wiki-plugin-rcngraph` | `rcngraph` | `graph-tool-v22.html` (popup) | Also handles legacy `rcn-graph` items via `client/rcn-graph.js` shim |
+| `wiki-plugin-rcn-outliner` | `rcn-outliner` | `more-outliner.html` (popup) | localhost only for now |
+
+### Solo popup pattern (graph tool, outliner)
+
+`window.open()` named popup → tool signals ready via `postMessage({toolType:'...', action:'graphToolReady'})` → plugin sends `loadGraph` with saved data + page title → user edits → tool posts `saveGraph` back → plugin calls `wiki.pageHandler.put` → re-renders item with SVG preview.
 
 **sofi-proxy** (port 8765, launchd `com.evsm.proxy`) serves `~/rcn/` as static files. Tools must be opened via `http://localhost:8765/tools/` — not `file://`. Plugin URLs point to `http://localhost:8765/tools/{tool}.html`.
 
 **SVG enrichment:** before sending to wiki, all `<text>` elements in the graph SVG are wrapped in `<a class="internal" data-title="...">` anchors following Ward Cunningham's Enrich Any SVG pattern. Node labels become clickable wiki internal links.
+
+### SCP plugins (Shared Care Plan health record)
+
+12 typed item plugins for the Shared Care Plan. All route through one JS file (`wiki-plugin-scp-medication/client/scp-medication.js`) via `server/server.js` alias routes.
+
+**Design principles:**
+- Uses FedWiki's native factory system — items created via the factory menu, not pre-loaded JSON
+- All saves via `wiki.pageHandler.put()` — the correct FedWiki API
+- `item.text` populated on every save so FedWiki's built-in search indexes all SCP content
+- Log-style items (vitals, symptoms, visits, history, access) use a commit button → one journal entry per completed card, reverse chronological ordering via `move` action
+- Record-style items (medications, diagnoses, providers, etc.) save on focusout or commit
+
+| Plugin type | SCP page | Notes |
+|---|---|---|
+| `scp-medication` | Medications | Focusout saves; persistent record |
+| `scp-vital` | Health Log | Commit + fold; thumb events for chart data flow |
+| `scp-symptom` | Health Log | Commit + fold |
+| `scp-visit` | Health Log | Commit + fold |
+| `scp-about` | About Me | Commit + fold |
+| `scp-provider` | Care Team | Commit + fold |
+| `scp-diagnosis` | Diagnoses | Commit + fold |
+| `scp-reaction` | Reactions | Commit + fold |
+| `scp-history` | History | Commit + fold + reverse chron |
+| `scp-next-step` | Next Steps | Commit + fold |
+| `scp-directive` | Advanced Directives | Commit + fold |
+| `scp-access` | Who's Accessed My Plan | Commit + fold + reverse chron |
+
+**Remaining before pilot:** backend-driven access log, federation, Wiki Café deployment.
 
 ---
 
