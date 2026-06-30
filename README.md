@@ -315,10 +315,10 @@ wiki-plugin-{name}/
 
 ### Published plugins
 
-| npm package | Item type | Tool opened | Notes |
-|------------|-----------|------------|-------|
-| `wiki-plugin-rcngraph` | `rcngraph` | `graph-tool-v22.html` (popup) | Also handles legacy `rcn-graph` items via `client/rcn-graph.js` shim |
-| `wiki-plugin-rcn-outliner` | `rcn-outliner` | `more-outliner.html` (popup) | localhost only for now |
+| npm package | Item type | Tool opened | GitHub | Notes |
+|------------|-----------|------------|--------|-------|
+| `wiki-plugin-rcngraph` | `rcngraph` | `graph-tool-v22.html` (popup) | [marpie1/wiki-plugin-rcngraph](https://github.com/marpie1/wiki-plugin-rcngraph) | Also handles legacy `rcn-graph` items via `client/rcn-graph.js` shim |
+| `wiki-plugin-rcnoutliner` | `rcnoutliner` | `more-outliner.html` (popup) | [marpie1/wiki-plugin-rcnoutliner](https://github.com/marpie1/wiki-plugin-rcnoutliner) | localhost only for now |
 
 ### Solo popup pattern (graph tool, outliner)
 
