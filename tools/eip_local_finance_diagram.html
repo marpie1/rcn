@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EIP Local Finance Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #1a472a;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+        
+        .stage-container {
+            display: flex;
+            gap: 20px;
+            min-height: 800px;
+            margin: 20px 0;
+        }
+        
+        .stage-side {
+            flex: 1;
+            padding: 20px;
+            border-radius: 8px;
+            border: 3px solid;
+            position: relative;
+        }
+        
+        .stage-left {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-color: #4caf50;
+        }
+        
+        .stage-center {
+            flex: 2;
+            background: linear-gradient(135deg, #fff9e6 0%, #ffe0b2 100%);
+            border: 3px solid #ff9800;
+            padding: 20px;
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .stage-right {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-color: #2196f3;
+        }
+        
+        .stage-label {
+            font-weight: bold;
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0,0,0,0.2);
+        }
+        
+        .recursion-item {
+            background: white;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 2px solid rgba(0,0,0,0.1);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .recursion-item:hover {
+            transform: translateX(-5px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .stage-right .recursion-item:hover {
+            transform: translateX(5px);
+        }
+        
+        .recursion-label {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .recursion-detail {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .institution-box {
+            background: white;
+            border: 2px solid;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .commons { border-color: #4caf50; background: #f1f8f4; }
+        .private { border-color: #ff9800; background: #fff8f0; }
+        .public { border-color: #9c27b0; background: #f8f4f9; }
+        .extractive { border-color: #c62828; background: #ffebee; }
+        
+        .variable-name {
+            font-weight: bold;
+            color: #d84315;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+        
+        .connection-note {
+            font-size: 0.85em;
+            color: #555;
+            margin-top: 5px;
+            padding: 5px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 3px;
+        }
+        
+        .legend {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .legend h3 {
+            margin-bottom: 15px;
+            color: #1a472a;
+        }
+        
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            border: 2px solid #333;
+        }
+        
+        .notes {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 6px;
+        }
+        
+        .center-variable {
+            background: #fff9e6;
+            border: 3px solid #d84315;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .section-divider {
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+            color: #666;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>EIP Stage Sketch: Local Finance</h1>
+    <div class="subtitle">Exploring Causal Relations Across Ecological, Institutional, and Political Domains</div>
+    
+    <div class="stage-container">
+        <!-- STAGE LEFT: ECOLOGY -->
+        <div class="stage-side stage-left">
+            <div class="stage-label">STAGE LEFT<br>🌍 ECOLOGY</div>
+            
+            <div class="recursion-item">
+                <div class="recursion-label">🌎 Global/Gaia</div>
+                <div class="recursion-detail">
+                    → Finite planet constrains real wealth (energy, materials, biological productivity)<br>
+                    ← Global financial flows drive extraction, Climate change, Inequality
+                </div>
+                <div class="connection-note">
+                    <strong>To Finance:</strong> Planetary boundaries limit real economy; Climate risks threaten financial stability; Resource depletion affects values<br>
+                    <strong>From Finance:</strong> Speculation drives commodity booms; Debt forces extraction; Carbon markets commodify atmosphere; Financial crises triggered by ecological limits
+                </div>
+            </div>
+            
+            <div class="recursion-item">
+                <div class="recursion-label">🌊 Bioregion/Watershed</div>
+                <div class="recursion-detail">
+                    → Regional productive capacity (soil, water, forests, fisheries) is real wealth<br>
+                    ← Financial extraction depletes bioregional wealth without reinvestment
+                </div>
+                <div class="connection-note">
+                    <strong>To Finance:</strong> Natural resources as collateral; Agricultural land values; Water rights; Tourism value<br>
+                    <strong>From Finance:</strong> Absentee ownership extracts profits without ecological care; Debt forces overexploitation; Financialization separates ownership from stewardship
+                </div>
+            </div>
+            
+            <div class="recursion-item">
+                <div class="recursion-label">🏞️ Local Ecosystem</div>
+                <div class="recursion-detail">
+                    → Ecosystem services provide value (pollination, water filtration, climate regulation)<br>
+                    ← Unpriced in markets; Financial decisions ignore ecological costs
+                </div>
+                <div class="connection-note">
+                    <strong>To Finance:</strong> Ecosystem collapse affects property values, Agriculture, Insurance costs<br>
+                    <strong>From Finance:</strong> Short-term profit horizons ignore long-term ecological degradation; Externalized costs; "Discount rate" devalues future
+                </div>
+            </div>
+            
+            <div class="recursion-item">
+                <div class="recursion-label">🏡 Homestead/Property</div>
+                <div class="recursion-detail">
+                    → Property as financial asset vs. home vs. productive land<br>
+                    ← Mortgage debt, Property taxes, Speculation affect land use
+                </div>
+                <div class="connection-note">
+                    <strong>To Finance:</strong> Property values determined by location, Improvements, Market speculation<br>
+                    <strong>From Finance:</strong> Mortgage debt shapes what people can afford; Property taxes force monetization; Speculation disconnects property from use; Foreclosure = displacement
+                </div>
+            </div>
+            
+            <div class="section-divider">Ecological Variables</div>
+            
+            <div class="recursion-item" style="background: #e8f5e9;">
+                <div class="variable-name">Real Wealth vs. Financial Wealth</div>
+                <div class="recursion-detail">
+                    Real: Soil, Water, Energy, Skills, Tools; Financial: Numbers in accounts (can be created infinitely)
+                </div>
+            </div>
+            
+            <div class="recursion-item" style="background: #e8f5e9;">
+                <div class="variable-name">Discount Rate / Short-Termism</div>
+                <div class="recursion-detail">
+                    Financial logic devalues future; 7% discount = $100 in 50 years worth $3 today
+                </div>
+            </div>
+            
+            <div class="recursion-item" style="background: #e8f5e9;">
+                <div class="variable-name">Ecological Debt</div>
+                <div class="recursion-detail">
+                    Resource extraction, Pollution exported from Global North to South; Financial debt flows opposite direction
+                </div>
+            </div>
+            
+            <div class="recursion-item" style="background: #e8f5e9;">
+                <div class="variable-name">Bioregional Economic Resilience</div>
+                <div class="recursion-detail">
+                    Capacity to meet needs locally if global finance collapses
+                </div>
+            </div>
+        </div>
+        
+        <!-- CENTER STAGE: INSTITUTIONS -->
+        <div class="stage-center">
+            <div class="stage-label">CENTER STAGE<br>🏛️ INSTITUTIONS & FINANCE</div>
+            
+            <div class="center-variable">
+                <div style="font-size: 1.5em; color: #d84315; font-weight: bold; margin-bottom: 10px;">
+                    LOCAL FINANCE
+                </div>
+                <div style="color: #666;">
+                    (Primary Variable - Local Control Can Increase or Decrease)
+                </div>
+            </div>
+            
+            <div class="institution-box commons">
+                <div class="variable-name">Community Development Financial Institutions (CDFIs) / Credit Unions</div>
+                <div class="connection-note">
+                    <strong>Type:</strong> Commons/Member-owned<br>
+                    <strong>Affects:</strong> Local lending (+), Affordable credit (+), Community ownership (+), Wealth circulation (+)<br>
+                    <strong>Affected by:</strong> Federal CDFI Fund, State regulation, Member deposits, Mission drift risk<br>
+                    <strong>Ecology link:</strong> Can prioritize green lending, Local food systems, Renewable energy<br>
+                    <strong>Politics link:</strong> Federal CDFI certification; State credit union laws; Alternative to extractive banks
+                </div>
+            </div>
+            
+            <div class="institution-box commons">
+                <div class="variable-name">Local Currencies / Time Banks / Mutual Credit Systems</div>
+                <div class="connection-note">
+                    <strong>Type:</strong> Commons-based<br>
+                    <strong>Affects:</strong> Local economic circulation (+), Non-extractive exchange (+), Community building (+), Limited scale (-)<br>
+                    <strong>Affected by:</strong> Legal status, Community participation, Merchant acceptance, Tax treatment<br>
+                    <strong>Ecology link:</strong> Favor local exchange; Reduce long-distance trade; Can't extract compound interest from living world<br>
+                    <strong>Politics link:</strong> Municipal tolerance; Federal currency laws; Seen as threat by mainstream finance
+                </div>
+            </div>
+            
+            <div class="institution-box public">
+                <div class="variable-name">Public Banks / Municipal Banks</div>
+                <div class="connection-note">
+                    <strong>Type:</strong> Public/Government-owned<br>
+                    <strong>Affects:</strong> Public ownership of finance (+), Local investment (+), Lower costs (+), Rare in US (-)<br>
+                    <strong>Affected by:</strong> State enabling legislation, Political will, Banking lobby opposition, Initial capitalization<br>
+                    <strong>Ecology link:</strong> Can prioritize green infrastructure, Local renewable energy, Sustainable projects<br>
+                    <strong>Politics link:</strong> State legislation required; Bank of North Dakota only US example; Massive bank lobbying against
+                </div>
+            </div>
+            
+            <div class="institution-box extractive">
+                <div class="variable-name">Commercial Banks / Wall Street Banks</div>
+                <div class="connection-note">
+                    <strong>Type:</strong> EXTRACTIVE<br>
+                    <strong>Affects:</strong> Wealth extraction (-), Redlining (-), Fees/penalties (-), Credit denial (-), Speculation (-), Too big to fail (-)<br>
+                    <strong>Affected by:</strong> Federal Reserve, FDIC, Regulations (weak post-2008), Shareholder demands<br>
+                    <strong>Ecology link:</strong> Indifferent to ecological impact; Fund fossil fuels, Mining, Deforestation; Short-term profit only<br>
+                    <strong>Politics link:</strong> Federal regulation (captured); Campaign finance; Revolving door; 2008 bailouts; "Too big to fail"
+                </div>
+            </div>
+            
+            <div class="institution-box extractive">
+                <div class="variable-name">Payday Lenders / Check Cashers / Predatory Finance</div>
+                <div class="connection-note">
+                    <strong>Type:</strong> EXTRACTIVE - Debt traps<br>
+                    <strong>Affects:</strong> Poverty deepening (-), Debt spirals (-), Desperation exploitation (-), Wealth extraction from poorest (-)<br>
+                    <strong>Affected by:</strong> State usury laws (often preempted), Federal CFPB (gutted), Desperation of unbanked<br>
+                    <strong>Ecology link:</strong> No ecological connection; Pure financial extraction<br>
+                    <strong>Politics link:</strong> State usury law fights; Industry lobbying; Targets communities of color; Financial apartheid
+                </div>
+            </div>
+            
+            <div class="institution-box commons">
+                <div class="variable-name">Crowdfunding / Community Investment</div>
+                <div class="connection-note">
+                    <strong>Type:</strong> Commons (when non-extractive) / Private (when equity-based)<br>
+                    <strong>Affects:</strong> Access to capital (+), Community ownership (+/-), Speculation risk (-), Democratization (+)<br>
+                    <strong>Affected by:</strong> SEC regulations, Platform fees, Community trust, Project quality<br>
+                    <strong>Ecology link:</strong> Can fund community solar, Local food, Green projects; Or anything<br>
+                    <strong>Politics link:</strong> JOBS Act opened equity crowdfunding; SEC oversight; Can bypass traditional gatekeepers
+                </div>
+            </div>
+            
+            <div class="institution-box public">
+                <div class="variable-name">Municipal Bonds / Local Government Borrowing</div>
+                <div class="connection-note">
+                    <strong>Type:</strong> Public (but investors extract interest)<br>
+                    <strong>Affects:</strong> Infrastructure funding (+), Debt burden (-), Tax-free interest for wealthy (-), Future obligations (-)<br>
+                    <strong>Affected by:</strong> Credit ratings, Interest rates, State debt limits, Voter approval, Federal tax exemption<br>
+                    <strong>Ecology link:</strong> Can fund green infrastructure or highways/sprawl depending on politics<br>
+                    <strong>Politics link:</strong> Municipal/county financing; Rating agencies; Bondholders extract wealth; Detroit bankruptcy
+                </div>
+            </div>
+            
+            <div class="institution-box extractive">
+                <div class="variable-name">Private Equity / Hedge Funds / Vulture Funds</div>
+                <div class="connection-note">
+                    <strong>Type:</strong> EXTRACTIVE - Maximum extraction<br>
+                    <strong>Affects:</strong> Asset stripping (-), Debt loading (-), Job cuts (-), Community destruction (-), Short-term profit (-)<br>
+                    <strong>Affected by:</strong> Securities regulation, Tax treatment, Access to cheap credit, Bankruptcy law shields<br>
+                    <strong>Ecology link:</strong> Indifferent or hostile; Buy nursing homes, Newspapers, Housing = extract maximum, Abandon<br>
+                    <strong>Politics link:</strong> Federal tax treatment; Buy distressed municipal bonds; Profit from austerity; Political capture
+                </div>
+            </div>
+            
+            <div class="institution-box commons">
+                <div class="variable-name">Revolving Loan Funds / Community Investment Funds</div>
+                <div class="connection-note">
+                    <strong>Type:</strong> Commons-based<br>
+                    <strong>Affects:</strong> Capital recycling (+), Mission-driven (+), Patient capital (+), Limited scale (-)<br>
+                    <strong>Affected by:</strong> Initial capital, Repayment rates, Administrative capacity, Community need<br>
+                    <strong>Ecology link:</strong> Can fund ecological projects with long payback periods<br>
+                    <strong>Politics link:</strong> Often seeded with federal/state grants; Neighborhood level; Alternative to banks
+                </div>
+            </div>
+            
+            <div class="section-divider">Key Institutional Variables</div>
+            
+            <div class="institution-box" style="background: #fff9e6; border-color: #d84315;">
+                <div class="variable-name">Local Wealth Circulation vs. Extraction</div>
+                <div class="recursion-detail">
+                    Does money circulate locally or leak out immediately?<br>
+                    <strong>Affected by:</strong> Local ownership, Banking structure, Import dependence, Chain stores vs. Local<br>
+                    <strong>Affects:</strong> Local prosperity, Multiplier effect, Community resilience, Tax base
+                </div>
+            </div>
+            
+            <div class="institution-box" style="background: #fff9e6; border-color: #d84315;">
+                <div class="variable-name">Interest / Usury / Compound Growth</div>
+                <div class="recursion-detail">
+                    Interest = wealth transfer from borrowers to lenders; Compound growth impossible on finite planet<br>
+                    <strong>Affected by:</strong> Federal Reserve, Usury laws, Cultural norms, Religious prohibitions<br>
+                    <strong>Affects:</strong> Debt burdens, Inequality, Extraction pressure, Growth imperative
+                </div>
+            </div>
+            
+            <div class="institution-box" style="background: #fff9e6; border-color: #d84315;">
+                <div class="variable-name">Financialization / Speculation</div>
+                <div class="recursion-detail">
+                    Everything becomes asset class for speculation (housing, Food, Water, Carbon)<br>
+                    <strong>Affected by:</strong> Deregulation, Technology, Wealth concentration, Global capital flows<br>
+                    <strong>Affects:</strong> Price volatility, Disconnection from use value, Extraction, Crises
+                </div>
+            </div>
+            
+            <div class="institution-box" style="background: #fff9e6; border-color: #d84315;">
+                <div class="variable-name">Credit Access Inequality</div>
+                <div class="recursion-detail">
+                    Redlining, Credit scores, Collateral requirements exclude poor/communities of color<br>
+                    <strong>Affected by:</strong> Racism, Wealth inequality, Banking practices, Regulation<br>
+                    <strong>Affects:</strong> Business formation, Home ownership, Wealth building, Opportunity
+                </div>
+            </div>
+            
+            <div class="institution-box" style="background: #fff9e6; border-color: #d84315;">
+                <div class="variable-name">Debt Burden / Debt Peonage</div>
+                <div class="recursion-detail">
+                    Student debt, Medical debt, Payday loans trap people in permanent debt<br>
+                    <strong>Affected by:</strong> Wage stagnation, Costs (education, Healthcare, Housing), Predatory lending, Bankruptcy law<br>
+                    <strong>Affects:</strong> Economic freedom, Risk-taking, Organizing capacity, Political power
+                </div>
+            </div>
+        </div>
+        
+        <!-- STAGE RIGHT: POLITICS -->
+        <div class="stage-side stage-right">
+            <div class="stage-label">STAGE RIGHT<br>🗳️ POLITICS</div>
+            
+            <div class="recursion-item">
+                <div class="recursion-label">🌍 International/UN</div>
+                <div class="recursion-detail">
+                    → IMF, World Bank, BIS, Global financial architecture<br>
+                    ← Debt crises, Capital flight, Tax havens
+                </div>
+                <div class="connection-note">
+                    <strong>To Finance:</strong> IMF/World Bank structural adjustment forces privatization; BIS sets banking rules; Tax havens enable capital flight<br>
+                    <strong>From Finance:</strong> Debt crises trigger austerity; Capital mobility constrains national policy; Race to bottom
+                </div>
+            </div>
+            
+            <div class="recursion-item">
+                <div class="recursion-label">🌐 National</div>
+                <div class="recursion-detail">
+                    → Federal Reserve, Treasury, Banking regulation, Currency monopoly<br>
+                    ← Financial crises, Bank failures, Debt crises
+                </div>
+                <div class="connection-note">
+                    <strong>To Finance:</strong> Fed controls money supply, Interest rates; FDIC insurance; Banking regulation (weakened); Currency creation monopoly<br>
+                    <strong>From Finance:</strong> 2008 crisis = bailouts; Banks "too big to fail"; Regulatory capture; Revolving door; Campaign finance
+                </div>
+            </div>
+            
+            <div class="recursion-item">
+                <div class="recursion-label">🗺️ State/Province</div>
+                <div class="recursion-detail">
+                    → Banking charters, Usury laws, Public bank authorization<br>
+                    ← Tax revenue from financial sector, Bank failures
+                </div>
+                <div class="connection-note">
+                    <strong>To Finance:</strong> State banking laws; Usury caps (often preempted); Public bank enabling legislation<br>
+                    <strong>From Finance:</strong> Bank lobbying against regulation; Public bank blocked in most states; Payday lender influence
+                </div>
+            </div>
+            
+            <div class="recursion-item">
+                <div class="recursion-label">📍 County/Region</div>
+                <div class="recursion-detail">
+                    → County bonds, Regional economic development, Investment incentives<br>
+                    ← Tax base, Credit rating, Fiscal health
+                </div>
+                <div class="connection-note">
+                    <strong>To Finance:</strong> County can issue bonds, Create loan funds, Incentivize investment<br>
+                    <strong>From Finance:</strong> Credit ratings constrain; Debt crises; Financial sector taxes or leaves
+                </div>
+            </div>
+            
+            <div class="recursion-item">
+                <div class="recursion-label">🏙️ Municipality</div>
+                <div class="recursion-detail">
+                    → Municipal bonds, Tax increment financing, Local banks<br>
+                    ← Revenue, Debt burden, Bank branches (or not)
+                </div>
+                <div class="connection-note">
+                    <strong>To Finance:</strong> Cities borrow via bonds; TIF districts; Can support credit unions; Divest from Wall St<br>
+                    <strong>From Finance:</strong> Bond rating agencies control; Debt limits action; Bank branch deserts in poor neighborhoods
+                </div>
+            </div>
+            
+            <div class="recursion-item">
+                <div class="recursion-label">🏘️ Neighborhood</div>
+                <div class="recursion-detail">
+                    → Informal lending, Mutual aid, Collective purchasing<br>
+                    ← Redlining, Bank branch deserts, Payday lender predation
+                </div>
+                <div class="connection-note">
+                    <strong>To Finance:</strong> Lending circles, Time banks, Local currencies, Collective buying<br>
+                    <strong>From Finance:</strong> Redlining = disinvestment; No bank branches; Payday lenders cluster in poor neighborhoods
+                </div>
+            </div>
+            
+            <div class="recursion-item">
+                <div class="recursion-label">👨‍👩‍👧‍👦 Family/Household</div>
+                <div class="recursion-detail">
+                    → Saving, Borrowing, Investing, Bankruptcy decisions<br>
+                    ← Debt burden, Asset building, Financial stress
+                </div>
+                <div class="connection-note">
+                    <strong>To Finance:</strong> Credit union membership, Local banking, Debt resistance, Financial literacy<br>
+                    <strong>From Finance:</strong> Debt = stress, Health impacts, Limits choices; Assets = security or Speculation
+                </div>
+            </div>
+            
+            <div class="recursion-item">
+                <div class="recursion-label">👤 Individual</div>
+                <div class="recursion-detail">
+                    → Banking choices, Credit, Saving, Resistance<br>
+                    ← Financial inclusion/exclusion, Debt, Credit score
+                </div>
+                <div class="connection-note">
+                    <strong>To Finance:</strong> Bank choice, Credit union, Divestment, Debt strike<br>
+                    <strong>From Finance:</strong> Credit score = life opportunities; Debt = control; Financial literacy programs (blame individuals)
+                </div>
+            </div>
+            
+            <div class="section-divider">Political Variables</div>
+            
+            <div class="recursion-item" style="background: #e3f2fd;">
+                <div class="variable-name">Financial Sector Political Capture</div>
+                <div class="recursion-detail">
+                    Wall Street writes regulations, Campaign finance, Revolving door, "Too big to fail"
+                </div>
+            </div>
+            
+            <div class="recursion-item" style="background: #e3f2fd;">
+                <div class="variable-name">Public Banking Movement</div>
+                <div class="recursion-detail">
+                    Organizing for state/municipal banks; North Dakota model; Massive bank opposition
+                </div>
+            </div>
+            
+            <div class="recursion-item" style="background: #e3f2fd;">
+                <div class="variable-name">Debt Resistance / Jubilee Movements</div>
+                <div class="recursion-detail">
+                    Student debt strikes, Medical debt abolition, Rolling Jubilee
+                </div>
+            </div>
+            
+            <div class="recursion-item" style="background: #e3f2fd;">
+                <div class="variable-name">Divestment Campaigns</div>
+                <div class="recursion-detail">
+                    Fossil fuel divestment, Prison divestment, Weapons divestment; Move money power
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="legend">
+        <h3>Legend: Institutional Types</h3>
+        <div class="legend-grid">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f1f8f4; border-color: #4caf50;"></div>
+                <div><strong>Commons</strong> - Credit unions, Local currencies</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #fff8f0; border-color: #ff9800;"></div>
+                <div><strong>Private</strong> - Individual saving/investing</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f8f4f9; border-color: #9c27b0;"></div>
+                <div><strong>Public/Gov</strong> - Public banks (rare), Municipal bonds</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ffebee; border-color: #c62828;"></div>
+                <div><strong>EXTRACTIVE</strong> - Wall Street, Payday lenders, Private equity</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notes">
+        <h3>Key Insights from This EIP Analysis</h3>
+        <ul style="margin-left: 20px; margin-top: 10px;">
+            <li><strong>Money is Created by Banks Through Lending:</strong> 97% of money supply is created by private banks making loans, not government printing. Banks create money out of nothing when they lend, then collect interest. This is enormous power given to private corporations.</li>
+            
+            <li><strong>Interest Requires Perpetual Growth:</strong> Compound interest means debt grows exponentially. On finite planet, this is impossible. System requires continuous extraction to service debt. This is structural driver of ecological destruction.</li>
+            
+            <li><strong>Federal Reserve Serves Banks, Not Public:</strong> Fed is privately owned by member banks. "Federal" is misleading. Controls money supply and interest rates to manage inflation and bank stability, not public good. 2008 bailouts revealed whose interests matter.</li>
+            
+            <li><strong>Local Wealth Leakage is Massive:</strong> Chain stores, National banks, Absentee landlords extract wealth from communities. Money spent locally circulates 2-3x creating multiplier effect. Money sent to Wall Street or corporate HQ never returns.</li>
+            
+            <li><strong>Debt is Social Control:</strong> Student debt, Medical debt, Mortgage debt constrain life choices. Can't strike, Can't organize, Can't take risks, Can't leave bad jobs when you're servicing debt. This is political function of debt, not just economic.</li>
+            
+            <li><strong>Public Banks Would be Transformative:</strong> Bank of North Dakota partners with local banks, Keeps profits in-state, Funds infrastructure cheaply, Enables student loans at 2%. Banking lobby blocks replication elsewhere. Only one

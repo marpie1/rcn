@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Stock &amp; Flow — Stella Approach Illustrated</title>
+<style>
+  body{font-family:system-ui,sans-serif;background:#f8fafc;margin:0;padding:24px 32px;color:#1e293b}
+  h1{font-size:18px;font-weight:700;margin:0 0 4px}
+  .subtitle{font-size:13px;color:#64748b;margin-bottom:28px}
+  .diagram-wrap{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px 24px;margin-bottom:28px}
+  .diagram-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:14px}
+  svg{display:block}
+  .legend{display:flex;gap:24px;flex-wrap:wrap;margin-top:20px}
+  .legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#334155}
+  .legend-swatch{flex-shrink:0}
+  .explainer{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:14px 18px;font-size:13px;line-height:1.6;color:#0c4a6e;margin-bottom:28px}
+  .explainer b{color:#0369a1}
+  .impl-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+  .impl-card{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px}
+  .impl-card h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin:0 0 8px}
+  .impl-card ul{margin:0;padding:0 0 0 16px;font-size:12px;line-height:1.7;color:#334155}
+  .impl-card code{font-size:11px;background:#f1f5f9;padding:1px 4px;border-radius:3px;font-family:monospace}
+  h2{font-size:14px;font-weight:700;margin:0 0 10px;color:#1e293b}
+</style>
+</head>
+<body>
+
+<h1>Stock &amp; Flow Modeling — The Stella Approach</h1>
+<p class="subtitle">How STELLA/iThink represents stocks, flows, and valves — and how it maps to an implementation strategy</p>
+
+<!-- DIAGRAM 1: element dictionary -->
+<div class="diagram-wrap">
+  <div class="diagram-title">Element Dictionary</div>
+  <svg width="740" height="180" viewBox="0 0 740 180">
+    <defs>
+      <!-- arrowhead -->
+      <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#334155"/>
+      </marker>
+      <marker id="arr-thin" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+        <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" opacity=".8"/>
+      </marker>
+    </defs>
+
+    <!-- STOCK -->
+    <rect x="30" y="60" width="110" height="52" rx="2" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2.5"/>
+    <text x="85" y="91" text-anchor="middle" font-size="13" font-weight="600" fill="#1e3a8a">Population</text>
+    <text x="85" y="150" text-anchor="middle" font-size="11" fill="#64748b">Stock</text>
+    <text x="85" y="164" text-anchor="middle" font-size="10" fill="#94a3b8">(rectangle)</text>
+
+    <!-- FLOW pipe + valve -->
+    <!-- pipe line left segment -->
+    <line x1="200" y1="86" x2="258" y2="86" stroke="#334155" stroke-width="5" stroke-linecap="round"/>
+    <!-- pipe line right segment -->
+    <line x1="298" y1="86" x2="358" y2="86" stroke="#334155" stroke-width="5" stroke-linecap="round" marker-end="url(#arr)"/>
+    <!-- valve circle -->
+    <circle cx="278" cy="86" r="20" fill="#fff" stroke="#334155" stroke-width="2"/>
+    <!-- valve X / spokes -->
+    <line x1="264" y1="72" x2="292" y2="100" stroke="#334155" stroke-width="1.5"/>
+    <line x1="292" y1="72" x2="264" y2="100" stroke="#334155" stroke-width="1.5"/>
+    <!-- flow label -->
+    <text x="278" y="120" text-anchor="middle" font-size="11" fill="#1e293b">Birth Rate</text>
+    <text x="278" y="150" text-anchor="middle" font-size="11" fill="#64748b">Flow + Valve</text>
+    <text x="278" y="164" text-anchor="middle" font-size="10" fill="#94a3b8">(pipe edge + valve node)</text>
+
+    <!-- AUXILIARY circle -->
+    <circle cx="455" cy="86" r="26" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+    <text x="455" y="90" text-anchor="middle" font-size="11" fill="#713f12">Fertility</text>
+    <text x="455" y="150" text-anchor="middle" font-size="11" fill="#64748b">Auxiliary</text>
+    <text x="455" y="164" text-anchor="middle" font-size="10" fill="#94a3b8">(circle)</text>
+
+    <!-- CONNECTOR thin curved arrow -->
+    <path d="M 510 86 C 540 60 580 60 610 86" stroke="#7c3aed" stroke-width="1.5" fill="none" stroke-dasharray="none" marker-end="url(#arr-thin)" opacity=".85"/>
+    <text x="560" y="52" text-anchor="middle" font-size="11" fill="#64748b">Connector</text>
+    <text x="560" y="64" text-anchor="middle" font-size="10" fill="#94a3b8">(thin curved arrow)</text>
+    <text x="510" y="104" text-anchor="middle" font-size="10" fill="#94a3b8">from</text>
+    <text x="620" y="104" text-anchor="middle" font-size="10" fill="#94a3b8">to</text>
+
+    <!-- CLOUD -->
+    <g transform="translate(660,66)">
+      <ellipse cx="0" cy="0" rx="18" ry="12" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+      <ellipse cx="-10" cy="-6" rx="12" ry="9" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+      <ellipse cx="10" cy="-6" rx="12" ry="9" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+      <ellipse cx="0" cy="-10" rx="10" ry="8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+    </g>
+    <text x="660" y="150" text-anchor="middle" font-size="11" fill="#64748b">Cloud</text>
+    <text x="660" y="164" text-anchor="middle" font-size="10" fill="#94a3b8">(boundary/∞ reservoir)</text>
+  </svg>
+</div>
+
+<!-- DIAGRAM 2: complete population model -->
+<div class="diagram-wrap">
+  <div class="diagram-title">Complete Example — Simple Population Model</div>
+  <svg width="740" height="240" viewBox="0 0 740 240">
+    <defs>
+      <marker id="arr2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#334155"/>
+      </marker>
+      <marker id="arr-c" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+        <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" opacity=".8"/>
+      </marker>
+      <marker id="arr-c2" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+        <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" opacity=".8"/>
+      </marker>
+    </defs>
+
+    <!-- Left cloud (birth source) -->
+    <g transform="translate(80,110)">
+      <ellipse cx="0" cy="0" rx="18" ry="12" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+      <ellipse cx="-10" cy="-6" rx="12" ry="9" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+      <ellipse cx="10" cy="-6" rx="12" ry="9" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+      <ellipse cx="0" cy="-10" rx="10" ry="8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+    </g>
+
+    <!-- Birth flow pipe: cloud → valve → stock -->
+    <line x1="100" y1="110" x2="148" y2="110" stroke="#334155" stroke-width="5" stroke-linecap="round"/>
+    <line x1="188" y1="110" x2="238" y2="110" stroke="#334155" stroke-width="5" stroke-linecap="round" marker-end="url(#arr2)"/>
+    <!-- Birth valve -->
+    <circle cx="168" cy="110" r="20" fill="#fff" stroke="#334155" stroke-width="2"/>
+    <line x1="154" y1="96" x2="182" y2="124" stroke="#334155" stroke-width="1.5"/>
+    <line x1="182" y1="96" x2="154" y2="124" stroke="#334155" stroke-width="1.5"/>
+    <text x="168" y="146" text-anchor="middle" font-size="11" fill="#1e293b" font-weight="500">Births</text>
+
+    <!-- STOCK: Population -->
+    <rect x="240" y="82" width="130" height="56" rx="2" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2.5"/>
+    <text x="305" y="113" text-anchor="middle" font-size="13" font-weight="600" fill="#1e3a8a">Population</text>
+    <text x="305" y="155" text-anchor="middle" font-size="10" fill="#94a3b8">stocks: P(t) = INTEG(births − deaths, P₀)</text>
+
+    <!-- Death flow pipe: stock → valve → cloud -->
+    <line x1="370" y1="110" x2="418" y2="110" stroke="#334155" stroke-width="5" stroke-linecap="round"/>
+    <line x1="458" y1="110" x2="508" y2="110" stroke="#334155" stroke-width="5" stroke-linecap="round" marker-end="url(#arr2)"/>
+    <!-- Death valve -->
+    <circle cx="438" cy="110" r="20" fill="#fff" stroke="#334155" stroke-width="2"/>
+    <line x1="424" y1="96" x2="452" y2="124" stroke="#334155" stroke-width="1.5"/>
+    <line x1="452" y1="96" x2="424" y2="124" stroke="#334155" stroke-width="1.5"/>
+    <text x="438" y="146" text-anchor="middle" font-size="11" fill="#1e293b" font-weight="500">Deaths</text>
+
+    <!-- Right cloud (death sink) -->
+    <g transform="translate(528,110)">
+      <ellipse cx="0" cy="0" rx="18" ry="12" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+      <ellipse cx="-10" cy="-6" rx="12" ry="9" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+      <ellipse cx="10" cy="-6" rx="12" ry="9" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+      <ellipse cx="0" cy="-10" rx="10" ry="8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+    </g>
+
+    <!-- Auxiliary: Birth Rate -->
+    <circle cx="168" cy="34" r="24" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+    <text x="168" y="30" text-anchor="middle" font-size="10" fill="#713f12">Birth</text>
+    <text x="168" y="43" text-anchor="middle" font-size="10" fill="#713f12">Rate</text>
+    <!-- connector: Birth Rate → Births valve -->
+    <line x1="168" y1="58" x2="168" y2="88" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#arr-c)" opacity=".8"/>
+
+    <!-- Auxiliary: Death Rate -->
+    <circle cx="438" cy="34" r="24" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+    <text x="438" y="30" text-anchor="middle" font-size="10" fill="#713f12">Death</text>
+    <text x="438" y="43" text-anchor="middle" font-size="10" fill="#713f12">Rate</text>
+    <!-- connector: Death Rate → Deaths valve -->
+    <line x1="438" y1="58" x2="438" y2="88" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#arr-c)" opacity=".8"/>
+
+    <!-- connector: Population → Births valve (feedback) -->
+    <path d="M 305 82 C 305 30 210 14 168 58" stroke="#7c3aed" stroke-width="1.5" fill="none" marker-end="url(#arr-c)" opacity=".8"/>
+
+    <!-- connector: Population → Deaths valve (feedback) -->
+    <path d="M 305 82 C 305 30 400 14 438 58" stroke="#7c3aed" stroke-width="1.5" fill="none" marker-end="url(#arr-c2)" opacity=".8"/>
+
+    <!-- labels -->
+    <text x="305" y="220" text-anchor="middle" font-size="11" fill="#64748b">Connectors (purple) carry information. Flows (black pipes) carry the actual material — people, dollars, water.</text>
+  </svg>
+</div>
+
+<!-- Stella approach explainer -->
+<div class="explainer">
+  <b>The Stella approach, spelled out:</b> The valve (the ✕ circle) is stored as a <b>regular node</b> in the nodes array — it just has a special <code>type:'valve'</code> field and renders differently. The pipe segments on either side are stored as <b>two regular edges</b> with a special <code>type:'flow'</code> style — drawn thick with no arrowheads except the final one. This means connectors can point at the valve node exactly the same way they point at any other node. No new architecture needed.
+</div>
+
+<!-- Implementation mapping -->
+<h2>How Stella elements map to this tool's data model</h2>
+<div class="impl-grid">
+  <div class="impl-card">
+    <h3>Stock</h3>
+    <ul>
+      <li>A node with <code>type:'stock'</code></li>
+      <li>Shape: <code>rect</code>, thick border (e.g. 3px), light blue fill</li>
+      <li>Extra fields: <code>initialValue</code>, <code>equation</code></li>
+      <li>Displayed name + initial value below</li>
+    </ul>
+  </div>
+  <div class="impl-card">
+    <h3>Valve (Flow node)</h3>
+    <ul>
+      <li>A node with <code>type:'valve'</code></li>
+      <li>Renders as circle with ✕ through it</li>
+      <li>Extra field: <code>equation</code> (the rate formula)</li>
+      <li>Can receive connectors like any node</li>
+      <li>Placed by user on the canvas; pipe edges auto-attach</li>
+    </ul>
+  </div>
+  <div class="impl-card">
+    <h3>Flow (pipe edges)</h3>
+    <ul>
+      <li>Two edges with <code>type:'flow'</code></li>
+      <li>Rendered as thick stroked lines (no box, no label)</li>
+      <li>Source edge: Cloud/Stock → Valve</li>
+      <li>Target edge: Valve → Cloud/Stock</li>
+      <li>Arrow only on final segment</li>
+    </ul>
+  </div>
+  <div class="impl-card">
+    <h3>Auxiliary &amp; Cloud</h3>
+    <ul>
+      <li><b>Auxiliary:</b> node with <code>type:'aux'</code>, renders as circle, has <code>equation</code></li>
+      <li><b>Cloud:</b> node with <code>type:'cloud'</code>, renders as bumpy cloud shape, no label, no equation — just a boundary marker</li>
+      <li>Connectors are existing edges, thin, curved, purple-ish</li>
+    </ul>
+  </div>
+</div>
+
+<div class="explainer" style="background:#f0fdf4;border-color:#bbf7d0;color:#14532d">
+  <b>Why this fits the existing codebase:</b> nodes[], edges[], and renderNode()/renderEdge() already handle type-based dispatch — OPM and NRM already do this. Adding <code>type:'stock'</code>, <code>'valve'</code>, <code>'aux'</code>, <code>'cloud'</code>, and <code>'flow'</code> slots into the same pattern. The equation field is just another node property. The pipe rendering is a new edge draw style alongside curved/dashed/etc.
+</div>
+
+</body>
+</html>

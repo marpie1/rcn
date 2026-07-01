@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EIP Integration Explorer - 12 Artifacts Interactive Network</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header h1 {
+            text-align: center;
+            color: #1a472a;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-tab {
+            padding: 10px 20px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .nav-tab:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+        
+        .nav-tab.active {
+            background: #1a472a;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        
+        .view {
+            display: none;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .view.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Network View */
+        .network-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .artifact-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .artifact-card:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        
+        .artifact-card.selected {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            transform: scale(1.1);
+        }
+        
+        .artifact-card h3 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        
+        .artifact-card p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .artifact-card .type-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.3);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: bold;
+        }
+        
+        /* Connections Display */
+        .connections-panel {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .connections-panel.visible {
+            display: block;
+        }
+        
+        .connection-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        
+        .connection-item.strong {
+            border-left-color: #e74c3c;
+        }
+        
+        .connection-item.medium {
+            border-left-color: #f39c12;
+        }
+        
+        .connection-item.weak {
+            border-left-color: #95a5a6;
+        }
+        
+        .connection-item h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        
+        .connection-item p {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        /* Matrix View */
+        .matrix-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        
+        .matrix-table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 1200px;
+            background: white;
+        }
+        
+        .matrix-table th,
+        .matrix-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .matrix-table th {
+            background: #1a472a;
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .matrix-table th.row-header {
+            background: #2c5f3f;
+            text-align: left;
+            position: sticky;
+            left: 0;
+            z-index: 11;
+        }
+        
+        .matrix-cell {
+            cursor: pointer;
+            transition: all 0.3s;
+            min-height: 40px;
+        }
+        
+        .matrix-cell:hover {
+            background: #e8f5e9;
+            transform: scale(1.05);
+        }
+        
+        .matrix-cell.strength-high {
+            background: #e74c3c;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .matrix-cell.strength-medium {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .matrix-cell.strength-low {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .matrix-cell.strength-none {
+            background: #ecf0f1;
+            color: #bdc3c7;
+        }
+        
+        /* Search View */
+        .search-box {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .search-results {
+            margin-top: 20px;
+        }
+        
+        .search-result {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .search-result h3 {
+            color: #1a472a;
+            margin-bottom: 10px;
+        }
+        
+        .search-result .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        /* Leverage Points View */
+        .leverage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .leverage-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border-top: 4px solid;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        
+        .leverage-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .leverage-card.high {
+            border-top-color: #e74c3c;
+        }
+        
+        .leverage-card.medium {
+            border-top-color: #f39c12;
+        }
+        
+        .leverage-card.low {
+            border-top-color: #3498db;
+        }
+        
+        .leverage-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .leverage-card .level {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .leverage-card .level.high {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .leverage-card .level.medium {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .leverage-card .level.low {
+            background: #3498db;
+            color: white;
+        }
+        
+        .leverage-card ul {
+            margin-left: 20px;
+            color: #666;
+            line-height: 1.8;
+        }
+        
+        /* Feedback Loops View */
+        .loops-container {
+            display: grid;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .loop-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 6px solid;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .loop-card.vicious {
+            border-left-color: #e74c3c;
+        }
+        
+        .loop-card.virtuous {
+            border-left-color: #2ecc71;
+        }
+        
+        .loop-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .loop-card .loop-type {
+            display: inline-block;
+            padding: 6px 15px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .loop-card .loop-type.vicious {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .loop-card .loop-type.virtuous {
+            background: #2ecc71;
+            color: white;
+        }
+        
+        .loop-diagram {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            line-height: 1.8;
+            color: #555;
+        }
+        
+        .loop-card .artifacts-involved {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 6px;
+        }
+        
+        .loop-card .artifacts-involved strong {
+            color: #1a472a;
+        }
+        
+        .loop-card .artifacts-involved .tag {
+            display: inline-block;
+            background: #1a472a;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin: 3px;
+        }
+        
+        /* Filters */
+        .filter-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .filter-group {
+            margin-bottom: 15px;
+        }
+        
+        .filter-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        
+        .filter-btn:hover {
+            background: #e8f5e9;
+            border-color: #1a472a;
+        }
+        
+        .filter-btn.active {
+            background: #1a472a;
+            color: white;
+            border-color: #1a472a;
+        }
+        
+        /* Info boxes */
+        .info-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .info-box h3 {
+            margin-bottom: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+            
+            .nav-tabs {
+                gap: 5px;
+            }
+            
+            .nav-tab {
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+            
+            .network-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .leverage-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌍 EIP Integration Explorer</h1>
+        <div class="subtitle">Interactive Network Analysis of 12 Fundamental Systems</div>
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showView('overview')">Overview</button>
+            <button class="nav-tab" onclick="showView('network')">Network</button>
+            <button class="nav-tab" onclick="showView('matrix')">Connection Matrix</button>
+            <button class="nav-tab" onclick="showView('search')">Search Connections</button>
+            <button class="nav-tab" onclick="showView('leverage')">Leverage Points</button>
+            <button class="nav-tab" onclick="showView('loops')">Feedback Loops</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- OVERVIEW VIEW -->
+        <div id="overview" class="view active">
+            <div class="info-box">
+                <h3>Welcome to the EIP Integration Explorer</h3>
+                <p>This tool helps you explore the interconnections between 12 fundamental systems that shape local communities, analyzed through the Ecology-Institutions-Politics (EIP) framework.</p>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="number">12</div>
+                        <div class="label">Core Systems</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">132</div>
+                        <div class="label">Connections</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">18</div>
+                        <div class="label">Critical Leverage Points</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">24</div>
+                        <div class="label">Feedback Loops</div>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 style="margin: 30px 0 20px 0; color: #1a472a;">The 12 Artifacts</h2>
+            
+            <div class="network-container">
+                <div class="artifact-card">
+                    <div class="type-badge">Necessity</div>
+                    <h3>🏠 Housing</h3>
+                    <p>Affordable, Sustainable Housing</p>
+                </div>
+                <div class="artifact-card">
+                    <div class="type-badge">Necessity</div>
+                    <h3>💼 Jobs</h3>
+                    <p>Living Wage Employment</p>
+                </div>
+                <div class="artifact-card">
+                    <div class="type-badge">Necessity</div>
+                    <h3>🌾 Food</h3>
+                    <p>Local, Nutritious Food Systems</p>
+                </div>
+                <div class="artifact-card">
+                    <div class="type-badge">Necessity</div>
+                    <h3>⚡ Energy</h3>
+                    <p>Local, Sustainable Energy</p>
+                </div>
+                <div class="artifact-card">
+                    <div class="type-badge">Infrastructure</div>
+                    <h3>📰 Media</h3>
+                    <p>Local Communication & Information</p>
+                </div>
+                <div class="artifact-card">
+                    <div class="type-badge">Outcome</div>
+                    <h3>🏥 Health</h3>
+                    <p>Local Wellbeing & Health</p>
+                </div>
+                <div class="artifact-card">
+                    <div class="type-badge">Infrastructure</div>
+                    <h3>💰 Finance</h3>
+                    <p>Local Financial Systems</p>
+                </div>
+                <div class="artifact-card">
+                    <div class="type-badge">Infrastructure</div>
+                    <h3>🤝 Care</h3>
+                    <p>Social Services & Care Work</p>
+                </div>
+                <div class="artifact-card">
+                    <div class="type-badge">Infrastructure</div>
+                    <h3>🎓 Education</h3>
+                    <p>Learning & Skills Development</p>
+                </div>
+                <div class="artifact-card">
+                    <div class="type-badge">Framework</div>
+                    <h3>🗺️ Land Use</h3>
+                    <p>Local Control of Land</p>
+                </div>
+                <div class="artifact-card">
+                    <div class="type-badge">Necessity</div>
+                    <h3>💧 Water</h3>
+                    <p>Water Access & Control</p>
+                </div>
+                <div class="artifact-card">
+                    <div class="type-badge">Meta-System</div>
+                    <h3>🏛️ Governance</h3>
+                    <p>Local Democracy & Power</p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h3 style="color: #1a472a; margin-bottom: 15px;">Key Insights</h3>
+                <ul style="margin-left: 20px; line-height: 1.8; color: #555;">
+                    <li><strong>Governance is the Meta-System</strong> - It shapes how all other systems function</li>
+                    <li><strong>Finance Controls Access</strong> - Financial systems determine access to all necessities</li>
+                    <li><strong>Health is Downstream</strong> - Health outcomes result from all other systems</li>
+                    <li><strong>Municipal Level is Critical</strong> - Most direct democracy and most corporate capture</li>
+                    <li><strong>State Preemption Blocks Local Control</strong> - States limit city authority on critical issues</li>
+                    <li><strong>Commons vs. Extractive</strong> - Each system has commons-based and extractive institutional forms</li>
+                    <li><strong>Ecological Boundaries ≠ Political Boundaries</strong> - Watersheds cross jurisdictions</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- NETWORK VIEW -->
+        <div id="network" class="view">
+            <h2 style="color: #1a472a; margin-bottom: 20px;">Interactive Network Explorer</h2>
+            <p style="margin-bottom: 20px; color: #666;">Click on any artifact to see its connections to other systems. Click again to deselect.</p>
+            
+            <div class="network-container" id="networkGrid">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            
+            <div class="connections-panel" id="connectionsPanel">
+                <h3 style="color: #1a472a; margin-bottom: 20px;">Connections for: <span id="selectedArtifact"></span></h3>
+                <div id="connectionsList"></div>
+            </div>
+        </div>
+        
+        <!-- MATRIX VIEW -->
+        <div id="matrix" class="view">
+            <h2 style="color: #1a472a; margin-bottom: 20px;">Connection Strength Matrix</h2>
+            <p style="margin-bottom: 20px; color: #666;">Hover over cells to see connection strength. Red = Strong, Orange = Medium, Gray = Weak</p>
+            
+            <div class="matrix-container">
+                <table class="matrix-table" id="matrixTable">
+                    <!-- Will be populated by JavaScript -->
+                </table>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h3 style="color: #1a472a; margin-bottom: 15px;">Matrix Insights</h3>
+                <ul style="margin-left: 20px; line-height: 1.8; color: #555;">
+                    <li><strong>Governance</strong> has strong connections to ALL other artifacts (meta-system)</li>
+                    <li><strong>Finance</strong> controls access to Housing, Jobs, Food, Energy, Education</li>
+                    <li><strong>Health</strong> is affected by (downstream from) all other systems</li>
+                    <li><strong>Land Use</strong> determines spatial organization of Housing, Food, Energy, Water</li>
+                    <li><strong>Water</strong> and <strong>Food</strong> are tightly coupled (80% of water for agriculture)</li>
+                    <li><strong>Energy</strong> and <strong>Housing</strong> strongly connected (40% of energy for buildings)</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- SEARCH VIEW -->
+        <div id="search" class="view">
+            <h2 style="color: #1a472a; margin-bottom: 20px;">Search Cross-System Connections</h2>
+            <input type="text" class="search-box" id="searchInput" placeholder="Search for connections, keywords, institutions, or concepts..." oninput="performSearch()">
+            
+            <div class="filter-panel">
+                <div class="filter-group">
+                    <label>Filter by Artifact:</label>
+                    <div class="filter-buttons" id="artifactFilters">
+                        <button class="filter-btn active" onclick="toggleFilter('artifact', 'all')">All</button>
+                        <button class="filter-btn" onclick="toggleFilter('artifact', 'housing')">Housing</button>
+                        <button class="filter-btn" onclick="toggleFilter('artifact', 'jobs')">Jobs</button>
+                        <button class="filter-btn" onclick="toggleFilter('artifact', 'food')">Food</button>
+                        <button class="filter-btn" onclick="toggleFilter('artifact', 'energy')">Energy</button>
+                        <button class="filter-btn" onclick="toggleFilter('artifact', 'media')">Media</button>
+                        <button class="filter-btn" onclick="toggleFilter('artifact', 'health')">Health</button>
+                        <button class="filter-btn" onclick="toggleFilter('artifact', 'finance')">Finance</button>
+                        <button class="filter-btn" onclick="toggleFilter('artifact', 'care')">Care</button>
+                        <button class="filter-btn" onclick="toggleFilter('artifact', 'education')">Education</button>
+                        <button class="filter-btn" onclick="toggleFilter('artifact', 'landuse')">Land Use</button>
+                        <button class="filter-btn" onclick="toggleFilter('artifact', 'water')">Water</button>
+                        <button class="filter-btn" onclick="toggleFilter('artifact', 'governance')">Governance</button>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Filter by Connection Type:</label>
+                    <div class="filter-buttons" id="connectionFilters">
+                        <button class="filter-btn active" onclick="toggleFilter('connection', 'all')">All</button>
+                        <button class="filter-btn" onclick="toggleFilter('connection', 'ecological')">Ecological</button>
+                        <button class="filter-btn" onclick="toggleFilter('connection', 'institutional')">Institutional</button>
+                        <button class="filter-btn" onclick="toggleFilter('connection', 'political')">Political</button>
+                        <button class="filter-btn" onclick="toggleFilter('connection', 'financial')">Financial</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-results" id="searchResults">
+                <div style="text-align: center; color: #999; padding: 40px;">
+                    Enter a search term to explore connections
+                </div>
+            </div>
+        </div>
+        
+        <!-- LEVERAGE POINTS VIEW -->
+        <div id="leverage" class="view">
+            <h2 style="color: #1a472a; margin-bottom: 20px;">High-Leverage Intervention Points</h2>
+            <p style="margin-bottom: 20px; color: #666;">These are critical points where intervention could create cascading positive effects across multiple systems.</p>
+            
+            <div class="leverage-grid" id="leverageGrid">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <!-- FEEDBACK LOOPS VIEW -->
+        <div id="loops" class="view">
+            <h2 style="color: #1a472a; margin-bottom: 20px;">Critical Feedback Loops</h2>
+            <p style="margin-bottom: 20px; color: #666;">Vicious loops that reinforce problems, and virtuous loops that could create systemic change.</p>
+            
+            <div class="filter-panel">
+                <div class="filter-group">
+                    <label>Show:</label>
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" onclick="filterLoops('all')">All Loops</button>
+                        <button class="filter-btn" onclick="filterLoops('vicious')">Vicious Only</button>
+                        <button class="filter-btn" onclick="filterLoops('virtuous')">Virtuous Only</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="loops-container" id="loopsContainer">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Data structure for all artifacts and their connections
+        const artifacts = {
+            housing: {
+                name: "Housing",
+                icon: "🏠",
+                description: "Affordable, Sustainable Housing",
+                type: "necessity"
+            },
+            jobs: {
+                name: "Jobs",
+                icon: "💼",
+                description: "Living Wage Employment",
+                type: "necessity"
+            },
+            food: {
+                name: "Food",
+                icon: "🌾",
+                description: "Local, Nutritious Food Systems",
+                type: "necessity"
+            },
+            energy: {
+                name: "Energy",
+                icon: "⚡",
+                description: "Local, Sustainable Energy",
+                type: "necessity"
+            },
+            media: {
+                name: "Media",
+                icon: "📰",
+                description: "Local Communication & Information",
+                type: "infrastructure"
+            },
+            health: {
+                name: "Health",
+                icon: "🏥",
+                description: "Local Wellbeing & Health",
+                type: "outcome"
+            },
+            finance: {
+                name: "Finance",
+                icon: "💰",
+                description: "Local Financial Systems",
+                type: "infrastructure"
+            },
+            care: {
+                name: "Care",
+                icon: "🤝",
+                description: "Social Services & Care Work",
+                type: "infrastructure"
+            },
+            education: {
+                name: "Education",
+                icon: "🎓",
+                description: "Learning & Skills Development",
+                type: "infrastructure"
+            },
+            landuse: {
+                name: "Land Use",
+                icon: "🗺️",
+                description: "Local Control of Land",
+                type: "framework"
+            },
+            water: {
+                name: "Water",
+                icon: "💧",
+                description: "Water Access & Control",
+                type: "necessity"
+            },
+            governance: {
+                name: "Governance",
+                icon: "🏛️",
+                description: "Local Democracy & Power",
+                type: "meta-system"
+            }
+        };
+        
+        // Connection strengths and descriptions
+        const connections = {
+            // Housing connections
+            "housing-jobs": {
+                strength: "high",
+                description: "Living wage determines housing affordability. Housing costs define what constitutes living wage. Housing insecurity forces people to accept exploitative work.",
+                type: "economic"
+            },
+            "housing-food": {
+                strength: "medium",
+                description: "Housing costs compete with food budgets. Urban agriculture requires housing with land access. Food apartheid correlates with housing segregation.",
+                type: "spatial"
+            },
+            "housing-energy": {
+                strength: "high",
+                description: "Buildings consume 40% of energy. Housing quality determines energy burden. 'Heat or eat' choices when costs are high.",
+                type: "ecological"
+            },
+            "housing-media": {
+                strength: "medium",
+                description: "News deserts correlate with housing displacement. Local journalism needed to cover housing issues. Housing organizing requires communication infrastructure.",
+                type: "political"
+            },
+            "housing-health": {
+                strength: "high",
+                description: "Housing quality (mold, lead, crowding) directly affects health. Housing insecurity creates stress and poor health outcomes. Zip code predicts life expectancy.",
+                type: "outcome"
+            },
+            "housing-finance": {
+                strength: "high",
+                description: "Mortgages determine access to homeownership. Financialization drives speculation and rent extraction. REITs and private equity buy up housing stock.",
+                type: "financial"
+            },
+            "housing-care": {
+                strength: "medium",
+                description: "Housing quality affects care needs. Nursing homes vs aging in place. CPS uses housing conditions to remove children.",
+                type: "institutional"
+            },
+            "housing-education": {
+                strength: "medium",
+                description: "'Good schools' drive gentrification. School quality tied to property values. Housing segregation = school segregation.",
+                type: "spatial"
+            },
+            "housing-landuse": {
+                strength: "high",
+                description: "Zoning determines housing type, density, affordability. Single-family exclusive zoning = spatial apartheid. Land use decisions shape who can live where.",
+                type: "political"
+            },
+            "housing-water": {
+                strength: "medium",
+                description: "Lead pipes = housing crisis. Water bills force housing insecurity. Lack of water limits housing development.",
+                type: "necessity"
+            },
+            "housing-governance": {
+                strength: "high",
+                description: "Municipal zoning is THE tool for housing policy. State preemption blocks rent control, inclusionary zoning. City councils approve/deny development.",
+                type: "political"
+            },
+            
+            // Jobs connections
+            "jobs-food": {
+                strength: "high",
+                description: "Farm labor conditions. Food processing jobs. Agricultural employment. Food service work (often exploitative).",
+                type: "economic"
+            },
+            "jobs-energy": {
+                strength: "medium",
+                description: "Just transition for fossil fuel workers. Renewable energy job creation. Utility jobs (public vs private).",
+                type: "economic"
+            },
+            "jobs-media": {
+                strength: "medium",
+                description: "Journalism jobs disappeared. Media worker organizing. Job insecurity prevents civic journalism.",
+                type: "economic"
+            },
+            "jobs-health": {
+                strength: "high",
+                description: "Job insecurity = stress and poor health. Low wages = can't afford healthcare/food/housing. Workplace conditions = injury/illness.",
+                type: "outcome"
+            },
+            "jobs-finance": {
+                strength: "high",
+                description: "Access to capital determines business formation. Private equity strips assets and cuts jobs. Debt forces people into wage labor.",
+                type: "financial"
+            },
+            "jobs-care": {
+                strength: "high",
+                description: "Care work IS work but unpaid/underpaid. 75% done by women unpaid. Childcare enables employment. Caregiver burnout = job loss.",
+                type: "institutional"
+            },
+            "jobs-education": {
+                strength: "high",
+                description: "Credentialism determines job access. Skills training. Student debt forces wage labor. Vocational tracking reproduces class.",
+                type: "institutional"
+            },
+            "jobs-landuse": {
+                strength: "medium",
+                description: "Commercial/industrial zoning determines job locations. Home-based business rules. Jobs determine housing affordability in area.",
+                type: "spatial"
+            },
+            "jobs-water": {
+                strength: "low",
+                description: "Water availability determines agricultural jobs. Jobs in water infrastructure.",
+                type: "economic"
+            },
+            "jobs-governance": {
+                strength: "high",
+                description: "Municipal minimum wage, labor standards. Public employment. Economic development policy. Union rights.",
+                type: "political"
+            },
+            
+            // Food connections
+            "food-energy": {
+                strength: "high",
+                description: "Industrial ag = massive energy consumer. Food miles = embodied energy. Cold storage, refrigeration, processing. Local food = lower energy footprint.",
+                type: "ecological"
+            },
+            "food-media": {
+                strength: "low",
+                description: "Food system coverage dominated by agribusiness. Local food needs media attention.",
+                type: "institutional"
+            },
+            "food-health": {
+                strength: "high",
+                description: "Industrial food = chronic disease epidemic (diabetes, heart disease). Food insecurity = malnutrition. Pesticide exposure = cancer, developmental delays.",
+                type: "outcome"
+            },
+            "food-finance": {
+                strength: "high",
+                description: "Farm debt forces commodity agriculture. Land prices lock out new farmers. Futures speculation drives food price volatility. Credit unions can support local food.",
+                type: "financial"
+            },
+            "food-care": {
+                strength: "medium",
+                description: "School meals = nutrition access. Food as medicine programs. Elder nutrition programs.",
+                type: "institutional"
+            },
+            "food-education": {
+                strength: "medium",
+                description: "Agricultural extension taught chemical farming. School gardens. Nutrition education. Food literacy.",
+                type: "institutional"
+            },
+            "food-landuse": {
+                strength: "high",
+                description: "Agricultural zoning. Urban agriculture allowances. Farmland preservation vs development pressure. Zoning determines food production capacity.",
+                type: "spatial"
+            },
+            "food-water": {
+                strength: "high",
+                description: "Agriculture uses 80% of water. Aquifer depletion ends farming. Agricultural runoff pollutes drinking water. Irrigation rights dominate water allocation.",
+                type: "ecological"
+            },
+            "food-governance": {
+                strength: "high",
+                description: "Farm Bill controls subsidies. Municipal urban ag rules. County agricultural zoning. State food safety regulations. Food policy councils.",
+                type: "political"
+            },
+            
+            // Energy connections
+            "energy-media": {
+                strength: "low",
+                description: "Data centers = 2-3% of electricity. Energy democracy organizing needs communication.",
+                type: "infrastructure"
+            },
+            "energy-health": {
+                strength: "high",
+                description: "Fossil fuel pollution = respiratory disease, cancer. Energy burden = 'heat or eat' choices. Climate change = health crisis.",
+                type: "outcome"
+            },
+            "energy-finance": {
+                strength: "medium",
+                description: "Utility monopolies extract wealth. Solar needs upfront capital. Community solar needs financing. Fossil fuel industry propped up by finance.",
+                type: "financial"
+            },
+            "energy-care": {
+                strength: "low",
+                description: "Healthcare facilities = energy consumers. Energy shutoffs = health crisis.",
+                type: "infrastructure"
+            },
+            "energy-education": {
+                strength: "low",
+                description: "Schools = energy consumers. Energy literacy education needed.",
+                type: "institutional"
+            },
+            "energy-landuse": {
+                strength: "medium",
+                description: "Solar farm siting. Transmission corridors. Zoning affects renewable energy deployment.",
+                type: "spatial"
+            },
+            "energy-water": {
+                strength: "high",
+                description: "Water for cooling power plants. Hydropower. Energy for pumping/treatment. Nexus critical.",
+                type: "ecological"
+            },
+            "energy-governance": {
+                strength: "high",
+                description: "Municipal utilities vs IOUs. Net metering policy. Building codes for solar. Community Choice Aggregation. Municipalization campaigns.",
+                type: "political"
+            },
+            
+            // Media connections
+            "media-health": {
+                strength: "medium",
+                description: "Health literacy depends on information access. News deserts = no watchdog on environmental health violations. Social media = mental health crisis.",
+                type: "outcome"
+            },
+            "media-finance": {
+                strength: "high",
+                description: "Hedge funds gutted newspapers. No capital for local journalism. Surveillance capitalism advertising model.",
+                type: "financial"
+            },
+            "media-care": {
+                strength: "low",
+                description: "Media coverage of care crises. Mutual aid organizing needs communication.",
+                type: "institutional"
+            },
+            "media-education": {
+                strength: "medium",
+                description: "Media literacy education. News deserts affect civic education. School journalism programs.",
+                type: "institutional"
+            },
+            "media-landuse": {
+                strength: "low",
+                description: "News coverage of development issues. Zoning battles need media attention.",
+                type: "political"
+            },
+            "media-water": {
+                strength: "low",
+                description: "Water crisis coverage. Investigative journalism on water contamination.",
+                type: "political"
+            },
+            "media-governance": {
+                strength: "high",
+                description: "Local news essential for democracy. News deserts = no accountability. Open government laws. Public access channels.",
+                type: "political"
+            },
+            
+            // Health connections
+            "health-finance": {
+                strength: "high",
+                description: "Medical debt = bankruptcy. Insurance companies extract wealth. Hospital chains bought by private equity. Healthcare costs determined by finance.",
+                type: "financial"
+            },
+            "health-care": {
+                strength: "high",
+                description: "80% of health is social determinants (housing, food, jobs). 20% is medical care. Preventive care reduces medical costs.",
+                type: "outcome"
+            },
+            "health-education": {
+                strength: "medium",
+                description: "Parent education = children's health outcomes. Health literacy crucial. School health programs.",
+                type: "institutional"
+            },
+            "health-landuse": {
+                strength: "medium",
+                description: "Environmental justice - toxic facility siting. Green space access affects health. Zoning affects health outcomes.",
+                type: "spatial"
+            },
+            "health-water": {
+                strength: "high",
+                description: "Water contamination (lead, PFAS, nitrates) = illness. Water shutoffs = sanitation crisis. Water quality = health.",
+                type: "necessity"
+            },
+            "health-governance": {
+                strength: "high",
+                description: "Public health departments. Environmental health enforcement. Health equity policy. County health systems.",
+                type: "political"
+            },
+            
+            // Finance connections
+            "finance-care": {
+                strength: "high",
+                description: "Medicaid = largest care funder. For-profit nursing homes extract wealth. Medical debt drives need for social services. Care workers earn poverty wages.",
+                type: "financial"
+            },
+            "finance-education": {
+                strength: "high",
+                description: "Student debt = $1.7 trillion, constrains life choices. For-profit colleges extract wealth. Property tax funding = inequality.",
+                type: "financial"
+            },
+            "finance-landuse": {
+                strength: "high",
+                description: "Land speculation drives prices. Absentee ownership = extraction. Community land trusts remove land from market. Property values determine development.",
+                type: "financial"
+            },
+            "finance-water": {
+                strength: "medium",
+                description: "Water as commodity attracts speculation. Private equity buys water companies. Privatization = extraction. Municipal bonds fund water infrastructure.",
+                type: "financial"
+            },
+            "finance-governance": {
+                strength: "high",
+                description: "Campaign finance = legalized corruption. Public banks vs Wall Street. Municipal bonds. Tax policy. Budget priorities.",
+                type: "political"
+            },
+            
+            // Care connections
+            "care-education": {
+                strength: "high",
+                description: "Childcare enables education. School health services. Early childhood education. Care work teaches skills.",
+                type: "institutional"
+            },
+            "care-landuse": {
+                strength: "low",
+                description: "Nursing home/childcare facility zoning. Aging in place vs institutionalization.",
+                type: "spatial"
+            },
+            "care-water": {
+                strength: "low",
+                description: "Water access essential for sanitation, care work. Nursing homes = water users.",
+                type: "necessity"
+            },
+            "care-governance": {
+                strength: "high",
+                description: "County social services. Medicaid policy. Childcare subsidies. Elder services. Disability services.",
+                type: "political"
+            },
+            
+            // Education connections
+            "education-landuse": {
+                strength: "medium",
+                description: "School siting. Neighborhood stability affects school quality. 'Good schools' drive gentrification.",
+                type: "spatial"
+            },
+            "education-water": {
+                strength: "low",
+                description: "Schools need water infrastructure. Water literacy education.",
+                type: "institutional"
+            },
+            "education-governance": {
+                strength: "high",
+                description: "School board elections. State curriculum control. Property tax funding. Federal mandates.",
+                type: "political"
+            },
+            
+            // Land Use connections
+            "landuse-water": {
+                strength: "high",
+                description: "Water availability determines viable land uses. Sprawl affects watershed. Zoning affects infiltration. Development patterns affect water quality/quantity.",
+                type: "ecological"
+            },
+            "landuse-governance": {
+                strength: "high",
+                description: "Zoning IS governance. Municipal planning. County comprehensive planning. State preemption of local land use authority.",
+                type: "political"
+            },
+            
+            // Water connections
+            "water-governance": {
+                strength: "high",
+                description: "State water law controls allocation. Municipal utilities. Watershed governance fragmentation. Water rights = political power.",
+                type: "political"
+            }
+        };
+        
+        // Leverage points
+        const leveragePoints = [
+            {
+                title: "Community Land Trusts",
+                level: "high",
+                description: "Remove land from speculative market permanently. Ensure affordability in perpetuity. Enable democratic control. Can integrate ecological design.",
+                artifacts: ["housing", "landuse", "governance", "finance"],
+                why: "Addresses root cause of housing crisis (commodification), creates permanent alternative, builds community power.",
+                interventions: ["Municipal land dedication", "State enabling legislation", "Philanthropic seed capital", "Community organizing"]
+            },
+            {
+                title: "State-Level Groundwater Regulation",
+                level: "high",
+                description: "Most Western states lack groundwater law. Tragedy of commons depleting aquifers. California finally acted in 2014 after crisis.",
+                artifacts: ["water", "food", "governance"],
+                why: "Without regulation, aquifers deplete irreversibly. Agricultural lobby blocks action. State legislation required.",
+                interventions: ["Sustainable yield mandates", "Monitoring wells", "Pumping limits", "Enforcement mechanisms"]
+            },
+            {
+                title: "Public Banks",
+                level: "high",
+                description: "Bank of North Dakota model: Partners with local banks, keeps profits in-state, funds infrastructure cheaply. Transforms finance from extractive to generative.",
+                artifacts: ["finance", "housing", "jobs", "energy", "governance"],
+                why: "Banking system is extraction infrastructure. Public ownership changes incentives completely.",
+                interventions: ["State enabling legislation", "Initial capitalization", "Governance structure", "Resist bank lobby"]
+            },
+            {
+                title: "Municipal Utility Ownership",
+                level: "high",
+                description: "Public control of water and energy utilities enables rapid renewable transition, affordable rates, democratic accountability.",
+                artifacts: ["water", "energy", "governance"],
+                why: "Investor-owned utilities profit from selling more, resist efficiency/renewables. Public ownership changes everything.",
+                interventions: ["Municipalization campaigns", "State PUC reform", "Community organizing", "Bond financing"]
+            },
+            {
+                title: "Participatory Budgeting",
+                level: "medium",
+                description: "Residents directly allocate public money. Porto Alegre model spreading globally. Civic education + redistribution + community power.",
+                artifacts: ["governance", "finance"],
+                why: "Direct democracy builds capacity, redistributes power, creates visible wins that motivate further organizing.",
+                interventions: ["City council adoption", "Staff capacity", "Outreach to excluded communities", "Scale up from pilot"]
+            },
+            {
+                title: "Rent Control + Just Cause Eviction",
+                level: "high",
+                description: "Stabilizes communities, prevents displacement, enables organizing. Blocked by state preemption in many places.",
+                artifacts: ["housing", "governance"],
+                why: "Displacement destroys organizing base. Stability is precondition for political power. But state preemption is barrier.",
+                interventions: ["Overcome state preemption", "Strong enforcement", "Cover all units", "Pair with production"]
+            },
+            {
+                title: "Campaign Finance Reform / Public Financing",
+                level: "high",
+                description: "Small-donor matching, public financing, strict limits. Break corporate capture of democracy.",
+                artifacts: ["governance"],
+                why: "Money in politics is THE crisis. Without this, all other reforms face corporate opposition.",
+                interventions: ["Municipal public financing", "State constitutional amendments", "Federal reform", "Enforcement"]
+            },
+            {
+                title: "State Preemption Resistance",
+                level: "high",
+                description: "ALEC writes laws blocking local authority on rent control, minimum wage, environment. Cities must organize collectively against preemption.",
+                artifacts: ["governance"],
+                why: "State preemption is weapon against local democracy. Without overcoming it, municipal action limited.",
+                interventions: ["Coalition of cities", "Legal challenges", "State legislative campaigns", "Home rule expansion"]
+            },
+            {
+                title: "Worker Cooperatives at Scale",
+                level: "medium",
+                description: "Democratic ownership of workplaces. Keeps wealth local. Cleveland Evergreen model shows path.",
+                artifacts: ["jobs", "governance", "finance"],
+                why: "Transforms relation of production. Builds class power. Keeps surplus in community.",
+                interventions: ["Cooperative development centers", "Financing access", "Legal support", "Procurement preferences"]
+            },
+            {
+                title: "Watershed-Scale Governance",
+                level: "medium",
+                description: "Political boundaries don't match ecological boundaries. Need governance at watershed/bioregional scale with democratic legitimacy.",
+                artifacts: ["water", "food", "landuse", "governance"],
+                why: "Current jurisdictional fragmentation prevents coherent ecological management. But creating new institutions is hard.",
+                interventions: ["Watershed councils with authority (not just advisory)", "Bioregional assemblies", "Indigenous co-management"]
+            },
+            {
+                title: "Neighborhood Councils with Real Power",
+                level: "medium",
+                description: "Most neighborhood councils are advisory only. Give them budget authority, veto power on development, service delivery decisions.",
+                artifacts: ["governance"],
+                why: "Closest governance to people. Most direct democracy. But usually powerless. Real authority would transform participation.",
+                interventions: ["Municipal charter change", "Participatory budgeting at neighborhood level", "Development veto power"]
+            },
+            {
+                title: "Food Policy Councils",
+                level: "medium",
+                description: "Multi-stakeholder bodies coordinating food system policy at city/county/state level. Connect farmers, consumers, health, environment.",
+                artifacts: ["food", "governance"],
+                why: "Food system is fragmented across agencies. FPCs can coordinate holistically. But often lack authority.",
+                interventions: ["Official recognition", "Budget authority", "Procurement power", "Diverse membership"]
+            },
+            {
+                title: "Community Choice Aggregation (CCA)",
+                level: "medium",
+                description: "Cities aggregate electricity purchasing, choose renewable sources, keep revenue local. Alternative to IOU monopoly.",
+                artifacts: ["energy", "governance"],
+                why: "Breaks utility monopoly without full municipalization. Easier path to local control and renewables.",
+                interventions: ["State enabling legislation", "Startup capital", "Community organizing", "Resist utility opposition"]
+            },
+            {
+                title: "Tribal Water Rights Enforcement",
+                level: "high",
+                description: "Winters Doctrine reserves water for Tribes. Senior rights. Enables salmon recovery, ecosystem restoration, decolonization.",
+                artifacts: ["water", "governance"],
+                why: "Tribal rights can force instream flows, challenge extractive ag, restore ecosystems. Legal but often unenforced.",
+                interventions: ["Federal trust responsibility enforcement", "Co-management agreements", "Dam removal", "Rights quantification"]
+            },
+            {
+                title: "Universal Basic Services",
+                level: "high",
+                description: "Free/affordable housing, healthcare, childcare, education, transit. Decommodifies necessities. Reduces compulsion to exploitative wage labor.",
+                artifacts: ["housing", "health", "care", "education", "governance"],
+                why: "Addresses root causes across systems. Reduces extraction pressure. Enables organizing. Recognized human rights.",
+                interventions: ["Municipal pilots", "State programs", "Federal policy", "Shift from means-tested to universal"]
+            },
+            {
+                title: "Agricultural Extension Reform",
+                level: "medium",
+                description: "Extension system taught chemical agriculture for decades. Reform to teach regenerative, agroecological methods.",
+                artifacts: ["food", "education", "water"],
+                why: "Extension determines farming practices. Shift from extraction to regeneration. Enormous ecological impact.",
+                interventions: ["Land-grant university reform", "Hire agroecologists", "Farmer-to-farmer networks", "Indigenous knowledge"]
+            },
+            {
+                title: "Inclusive Zoning / Abundant Housing",
+                level: "high",
+                description: "Mandatory affordable housing in new developments. Upzone near transit. Abolish single-family exclusive zoning. But ensure true affordability and community control, not just developer handout.",
+                artifacts: ["housing", "landuse", "governance"],
+                why: "Supply is necessary (not sufficient). But must be paired with anti-speculation, tenant power, social housing.",
+                interventions: ["Strong inclusionary requirements", "Social housing production", "Community land trusts", "Tenant organizing"]
+            },
+            {
+                title: "Municipalist Electoral Strategy",
+                level: "high",
+                description: "Take city governments to enact transformative local policy, build power from below. Barcelona, Jackson MS, Preston UK models.",
+                artifacts: ["governance"],
+                why: "Municipal level is most accessible, most direct, can implement alternatives immediately. Network of cities can challenge higher levels.",
+                interventions: ["Run candidates", "Community organizing base", "Clear platform", "Governance not just service delivery", "Build movement"]
+            }
+        ];
+        
+        // Feedback loops
+        const feedbackLoops = [
+            {
+                type: "vicious",
+                title: "Housing Financialization Death Spiral",
+                description: "Global capital seeks returns → Buys housing → Prices rise → Residents can't afford → Displacement → Community destabilization → Organizing capacity destroyed → No resistance to more investment → More financialization",
+                artifacts: ["housing", "finance", "governance"],
+                interventions: ["Community land trusts", "Rent control", "Anti-speculation taxes", "Organized tenant power"]
+            },
+            {
+                type: "vicious",
+                title: "Aquifer Depletion",
+                description: "Weak groundwater regulation → More pumping → Water table drops → Deeper wells needed → Higher costs, some wells dry → Desperation pumping by those who can afford → Faster depletion → Aquifer collapse → Permanent loss",
+                artifacts: ["water", "food", "governance"],
+                interventions: ["State groundwater regulation", "Sustainable yield limits", "Monitoring", "Agricultural transition support"]
+            },
+            {
+                type: "vicious",
+                title: "Corporate Capture of Democracy",
+                description: "Corporate money → Elect pro-business politicians → Pass policies favoring corporations → Weaken regulations → More extraction → More wealth concentration → More political spending → Deeper capture → Democracy hollowed out",
+                artifacts: ["governance", "finance"],
+                interventions: ["Campaign finance reform", "Public financing", "Organized people power", "Municipal resistance"]
+            },
+            {
+                type: "vicious",
+                title: "News Desert Accountability Loss",
+                description: "Hedge funds gut newspapers → No local journalism → No watchdog on government → Corruption increases → Developer capture → Bad development → Community decline → No tax base for journalism → Worse news desert",
+                artifacts: ["media", "governance", "finance"],
+                interventions: ["Nonprofit journalism", "Public media funding", "Resist hedge funds", "Community media"]
+            },
+            {
+                type: "vicious",
+                title: "State Preemption Trap",
+                description: "Local innovation (rent control, climate policy) → Threatens corporate profits → Corporate lobby at state level → Preemption law → Local authority stripped → Innovation blocked → Momentum lost → Corporate power secured",
+                artifacts: ["governance"],
+                interventions: ["Coalition of cities", "Overcome preemption", "State legislative campaigns", "Home rule expansion"]
+            },
+            {
+                type: "vicious",
+                title: "Care Work Exploitation",
+                description: "Care work devalued → Poverty wages → Women/people of color do care work → Burnout, turnover → Quality suffers → Families forced into unpaid care → Women out of labor market → Economic dependence → Care work still devalued",
+                artifacts: ["care", "jobs", "governance"],
+                interventions: ["Living wages for care work", "Universal care services", "Recognize care as work", "Reduce care burden"]
+            },
+            {
+                type: "vicious",
+                title: "Industrial Agriculture Collapse",
+                description: "Federal subsidies favor commodity crops → Farmers plant monocultures → Soil depletes, pests resistant → More chemical inputs needed → Higher costs, lower margins → Farm consolidation → Rural depopulation → Loss of local food infrastructure → More dependence on industrial system",
+                artifacts: ["food", "finance", "governance"],
+                interventions: ["Farm Bill reform", "Support small farms", "Agroecology", "Regional food infrastructure"]
+            },
+            {
+                type: "vicious",
+                title: "Student Debt Trap",
+                description: "Rising costs → More student debt → Graduates in debt → Take corporate jobs → Can't organize/resist → Debt service → No savings → Economic stress → Can't afford to have kids/buy home → Support cuts to education → Costs rise more",
+                artifacts: ["education", "finance", "jobs"],
+                interventions: ["Debt cancellation", "Free college", "Public financing of education", "Credentialism reform"]
+            },
+            {
+                type: "vicious",
+                title: "Displacement Organizing Death",
+                description: "Gentrification → Rent increases → Displacement → Organizing base destroyed → Less resistance → More development → More displacement → Community hollowed out → No political power → Extraction continues",
+                artifacts: ["housing", "governance"],
+                interventions: ["Rent control", "Community land trusts", "Just cause eviction", "Tenant unions before displacement"]
+            },
+            {
+                type: "vicious",
+                title: "Water Privatization Spiral",
+                description: "Municipal austerity → Deferred infrastructure maintenance → Crisis → Private company offers buyout → Rates increase, service declines → Profit extraction → Community impoverishment → Less capacity to municipalize → More private control",
+                artifacts: ["water", "finance", "governance"],
+                interventions: ["Resist privatization", "Public infrastructure investment", "Municipalization campaigns", "Anti-austerity"]
+            },
+            {
+                type: "vicious",
+                title: "Democratic Alienation",
+                description: "Government unresponsive → People don't participate → Lower civic capacity → Elites fill vacuum → Worse policy → More alienation → Less participation → Democracy atrophies → Oligarchy",
+                artifacts: ["governance"],
+                interventions: ["Participatory democracy", "Visible wins", "Remove barriers to participation", "Direct democracy"]
+            },
+            {
+                type: "vicious",
+                title: "Utility Monopoly Lock-In",
+                description: "IOU monopoly → Rate-of-return regulation → Profit from capital investment → Build infrastructure → Ratepayers pay → IOU makes guaranteed profit → Resist efficiency/renewables → More sales, more profit → Lobby to maintain monopoly",
+                artifacts: ["energy", "governance", "finance"],
+                interventions: ["Municipalization", "Community Choice Aggregation", "PUC reform", "Break monopoly"]
+            },
+            {
+                type: "virtuous",
+                title: "Community Land Trust Power",
+                description: "CLT forms → Affordable housing → Community stability → Organizing base grows → Political power → Win more land dedication → More CLT housing → Wealth stays local → Community control → More CLTs",
+                artifacts: ["housing", "landuse", "governance", "finance"],
+                interventions: ["Seed CLTs", "Municipal land dedication", "Philanthropic capital", "Community organizing"]
+            },
+            {
+                type: "virtuous",
+                title: "Participatory Budget Capacity",
+                description: "Participatory budgeting → People see impact of participation → Civic education → More participation → Better policy → Community benefits → Trust increases → Organizing capacity grows → More ambitious democracy",
+                artifacts: ["governance", "finance"],
+                interventions: ["Start participatory budgeting", "Resource adequately", "Remove barriers", "Scale up"]
+            },
+            {
+                type: "virtuous",
+                title: "Municipalism From Below",
+                description: "Take city government → Enact progressive policy → Material improvements + hope → Organizing grows → Electoral base expands → More cities fall → Network emerges → Challenge higher levels → Transform from below",
+                artifacts: ["governance"],
+                interventions: ["Electoral organizing", "Clear platform", "Movement not just candidates", "Network of cities"]
+            },
+            {
+                type: "virtuous",
+                title: "Worker Cooperative Ecosystem",
+                description: "Worker co-op forms → Democratic ownership → Profits shared → Workers empowered → Community wealth → Support more co-ops → Cooperative ecosystem → Class power → Challenge capitalist hegemony",
+                artifacts: ["jobs", "governance", "finance"],
+                interventions: ["Cooperative development", "Financing access", "Legal support", "Procurement preferences"]
+            },
+            {
+                type: "virtuous",
+                title: "Watershed Restoration",
+                description: "Watershed council forms → Restoration projects (riparian, beaver, culverts) → Salmon return → Community pride + ecosystem services → More participation + funding → More restoration → Watershed health → Water quality + quantity improve",
+                artifacts: ["water", "food", "governance"],
+                interventions: ["Empower watershed councils", "Restoration funding", "Beaver reintroduction", "Remove barriers"]
+            },
+            {
+                type: "virtuous",
+                title: "Food Sovereignty",
+                description: "Community gardens → Skills + relationships + food → Health + organizing capacity → Political power → Policy changes (zoning, markets, land access) → More gardens/farms → Food sovereignty",
+                artifacts: ["food", "governance", "health"],
+                interventions: ["Land access", "Seeds/tools/knowledge", "Policy support", "Community organizing"]
+            },
+            {
+                type: "virtuous",
+                title: "Neighborhood Democracy",
+                description: "Neighborhood council → Direct decision power → Visible improvements → Neighbors participate → Relationships build → Mutual aid networks → Organizing capacity → Political power → More neighborhood control",
+                artifacts: ["governance"],
+                interventions: ["Real authority for councils", "Budget control", "Remove barriers", "Build trust"]
+            },
+            {
+                type: "virtuous",
+                title: "Community Media Power",
+                description: "Community radio/journalism → Local news/analysis → Accountability → Corruption exposed → Policy change → Community improvement → Pride + capacity → Support media → Stronger journalism",
+                artifacts: ["media", "governance"],
+                interventions: ["Fund community media", "Training", "Infrastructure", "Protect from corporate takeover"]
+            },
+            {
+                type: "virtuous",
+                title: "Energy Democracy",
+                description: "Community solar → Renewable access → Lower bills → Visible success → Peer adoption → Aggregate impact → Grid transformation → Energy democracy organizing → More community energy",
+                artifacts: ["energy", "governance"],
+                interventions: ["State enabling laws", "Financing", "Remove barriers", "Organizing"]
+            },
+            {
+                type: "virtuous",
+                title: "Distributed Water Harvesting",
+                description: "Rainwater catchment → Reduced municipal demand → Lower infrastructure costs → More water security → Demonstration effect → Neighbors adopt → Aggregate watershed impact → More infiltration, less runoff → Aquifer recharge",
+                artifacts: ["water"],
+                interventions: ["Legalize rainwater/greywater", "Education", "Technical support", "Demonstration sites"]
+            },
+            {
+                type: "virtuous",
+                title: "Care Commons",
+                description: "Childcare co-op → Affordable care → Parents can work/organize → Relationships build → Mutual aid expands → Elder care co-op → Disability mutual support → Care commons → Decommodification → Community resilience",
+                artifacts: ["care", "governance"],
+                interventions: ["Support care co-ops", "Reduce licensing barriers", "Subsidize participation", "Build culture of mutual care"]
+            },
+            {
+                type: "virtuous",
+                title: "Public Banking Ecosystem",
+                description: "Public bank → Low-cost capital for community projects → Co-ops, CLTs, social housing, renewables → Wealth stays local → Tax revenue → More public investment → Thriving local economy → Support public bank expansion",
+                artifacts: ["finance", "governance"],
+                interventions: ["Create public banks", "Capitalize adequately", "Clear mission", "Democratic governance"]
+            }
+        ];
+        
+        // Current selection
+        let selectedArtifact = null;
+        let currentFilters = {
+            artifact: 'all',
+            connection: 'all'
+        };
+        
+        // Initialize
+        window.onload = function() {
+            populateNetworkGrid();
+            buildMatrix();
+            populateLeveragePoints();
+            populateLoops();
+        };
+        
+        // View switching
+        function showView(viewId) {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            // Show selected view
+            document.getElementById(viewId).classList.add('active');
+            
+            // Update nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        
+        // Network view functions
+        function populateNetworkGrid() {
+            const grid = document.getElementById('networkGrid');
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            for (const [key, artifact] of Object.entries(artifacts)) {
+                const card = document.createElement('div');
+                card.className = 'artifact-card';
+                card.onclick = () => selectArtifact(key);
+                card.innerHTML = `
+                    <div class="type-badge">${artifact.type}</div>
+                    <h3>${artifact.icon} ${artifact.name}</h3>
+                    <p>${artifact.description}</p>
+                `;
+                grid.appendChild(card);
+            }
+        }
+        
+        function selectArtifact(artifactKey) {
+            if (selectedArtifact === artifactKey) {
+                // Deselect
+                selectedArtifact = null;
+                document.querySelectorAll('.artifact-card').forEach(c => c.classList.remove('selected'));
+                document.getElementById('connectionsPanel').classList.remove('visible');
+            } else {
+                // Select
+                selectedArtifact = artifactKey;
+                
+                // Update UI
+                document.querySelectorAll('.artifact-card').forEach(c => c.classList.remove('selected'));
+                event.currentTarget.classList.add('selected');
+                
+                // Show connections
+                displayConnections(artifactKey);
+            }
+        }
+        
+        function displayConnections(artifactKey) {
+            const panel = document.getElementById('connectionsPanel');
+            const selectedName = document.getElementById('selectedArtifact');
+            const connectionsList = document.getElementById('connectionsList');
+            
+            selectedName.textContent = artifacts[artifactKey].name;
+            connectionsList.innerHTML = '';
+            
+            // Find all connections involving this artifact
+            const artifactConnections = [];
+            for (const [key, conn] of Object.entries(connections)) {
+                const [art1, art2] = key.split('-');
+                if (art1 === artifactKey || art2 === artifactKey) {
+                    const otherArtifact = art1 === artifactKey ? art2 : art1;
+                    artifactConnections.push({
+                        to: otherArtifact,
+                        ...conn
+                    });
+                }
+            }
+            
+            // Sort by strength
+            artifactConnections.sort((a, b) => {
+                const order = { high: 3, medium: 2, low: 1 };
+                return order[b.strength] - order[a.strength];
+            });
+            
+            // Display connections
+            artifactConnections.forEach(conn => {
+                const item = document.createElement('div');
+                item.className = `connection-item ${conn.strength}`;
+                item.innerHTML = `
+                    <h4>${artifacts[artifactKey].icon} → ${artifacts[conn.to].icon} ${artifacts[conn.to].name}</h4>
+                    <p><strong>Strength:</strong> ${conn.strength.toUpperCase()}</p>
+                    <p>${conn.description}</p>
+                `;
+                connectionsList.appendChild(item);
+            });
+            
+            panel.classList.add('visible');
+        }
+        
+        // Matrix view
+        function buildMatrix() {
+            const table = document.getElementById('matrixTable');
+            if (!table) return;
+            
+            const artifactKeys = Object.keys(artifacts);
+            
+            // Header row
+            let html = '<tr><th class="row-header">From \\ To</th>';
+            artifactKeys.forEach(key => {
+                html += `<th>${artifacts[key].icon}<br>${artifacts[key].name}</th>`;
+            });
+            html += '</tr>';
+            
+            // Data rows
+            artifactKeys.forEach(fromKey => {
+                html += `<tr><th class="row-header">${artifacts[fromKey].icon} ${artifacts[fromKey].name}</th>`;
+                
+                artifactKeys.forEach(toKey => {
+                    if (fromKey === toKey) {
+                        html += '<td class="matrix-cell strength-none">—</td>';
+                    } else {
+                        const connKey1 = `${fromKey}-${toKey}`;
+                        const connKey2 = `${toKey}-${fromKey}`;
+                        const conn = connections[connKey1] || connections[connKey2];
+                        
+                        if (conn) {
+                            const strengthClass = `strength-${conn.strength === 'high' ? 'high' : conn.strength === 'medium' ? 'medium' : 'low'}`;
+                            html += `<td class="matrix-cell ${strengthClass}" title="${conn.description.substring(0, 100)}...">${conn.strength[0].toUpperCase()}</td>`;
+                        } else {
+                            html += '<td class="matrix-cell strength-none">—</td>';
+                        }
+                    }
+                });
+                
+                html += '</tr>';
+            });
+            
+            table.innerHTML = html;
+        }
+        
+        // Search functions
+        function performSearch() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const resultsDiv = document.getElementById('searchResults');
+            
+            if (query.length < 2) {
+                resultsDiv.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">Enter at least 2 characters to search</div>';
+                return;
+            }
+            
+            const results = [];
+            
+            // Search connections
+            for (const [key, conn] of Object.entries(connections)) {
+                if (conn.description.toLowerCase().includes(query) || 
+                    conn.type.toLowerCase().includes(query)) {
+                    const [art1, art2] = key.split('-');
+                    
+                    // Apply filters
+                    if (currentFilters.artifact !== 'all' && 
+                        art1 !== currentFilters.artifact && 
+                        art2 !== currentFilters.artifact) {
+                        continue;
+                    }
+                    
+                    if (currentFilters.connection !== 'all' && 
+                        conn.type.toLowerCase() !== currentFilters.connection) {
+                        continue;
+                    }
+                    
+                    results.push({
+                        type: 'connection',
+                        from: art1,
+                        to: art2,
+                        connection: conn
+                    });
+                }
+            }
+            
+            // Search leverage points
+            leveragePoints.forEach((point, idx) => {
+                if (point.title.toLowerCase().includes(query) ||
+                    point.description.toLowerCase().includes(query) ||
+                    point.why.toLowerCase().includes(query)) {
+                    results.push({
+                        type: 'leverage',
+                        point: point
+                    });
+                }
+            });
+            
+            // Display results
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">No results found</div>';
+                return;
+            }
+            
+            resultsDiv.innerHTML = '';
+            results.forEach(result => {
+                const div = document.createElement('div');
+                div.className = 'search-result';
+                
+                if (result.type === 'connection') {
+                    const highlight = result.connection.description.replace(
+                        new RegExp(query, 'gi'),
+                        match => `<span class="highlight">${match}</span>`
+                    );
+                    
+                    div.innerHTML = `
+                        <h3>${artifacts[result.from].icon} ${artifacts[result.from].name} ↔ ${artifacts[result.to].icon} ${artifacts[result.to].name}</h3>
+                        <p><strong>Connection Type:</strong> ${result.connection.type} | <strong>Strength:</strong> ${result.connection.strength}</p>
+                        <p>${highlight}</p>
+                    `;
+                } else if (result.type === 'leverage') {
+                    const highlight = result.point.description.replace(
+                        new RegExp(query, 'gi'),
+                        match => `<span class="highlight">${match}</span>`
+                    );
+                    
+                    div.innerHTML = `
+                        <h3>🎯 Leverage Point: ${result.point.title}</h3>
+                        <p><strong>Level:</strong> ${result.point.level} | <strong>Artifacts:</strong> ${result.point.artifacts.map(a => artifacts[a].name).join(', ')}</p>
+                        <p>${highlight}</p>
+                    `;
+                }
+                
+                resultsDiv.appendChild(div);
+            });
+        }
+        
+        function toggleFilter(type, value) {
+            if (type === 'artifact') {
+                currentFilters.artifact = value;
+                document.querySelectorAll('#artifactFilters .filter-btn').forEach(b => b.classList.remove('active'));
+            } else if (type === 'connection') {
+                currentFilters.connection = value;
+                document.querySelectorAll('#connectionFilters .filter-btn').forEach(b => b.classList.remove('active'));
+            }
+            
+            event.target.classList.add('active');
+            performSearch();
+        }
+        
+        // Leverage points
+        function populateLeveragePoints() {
+            const grid = document.getElementById('leverageGrid');
+            if (!grid) return;
+            
+            leveragePoints.forEach(point => {
+                const card = document.createElement('div');
+                card.className = `leverage-card ${point.level}`;
+                card.innerHTML = `
+                    <h3>${point.title}</h3>
+                    <div class="level ${point.level}">${point.level.toUpperCase()} LEVERAGE</div>
+                    <p style="margin-bottom: 15px;">${point.description}</p>
+                    <p><strong>Why High Leverage:</strong> ${point.why}</p>
+                    <p style="margin-top: 10px;"><strong>Key Interventions:</strong></p>
+                    <ul>
+                        ${point.interventions.map(i => `<li>${i}</li>`).join('')}
+                    </ul>
+                    <p style="margin-top: 10px; font-size: 0.85em; color: #666;">
+                        <strong>Artifacts involved:</strong> ${point.artifacts.map(a => artifacts[a].icon + ' ' + artifacts[a].name).join(', ')}
+                    </p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+        
+        // Feedback loops
+        function populateLoops() {
+            const container = document.getElementById('loopsContainer');
+            if (!container) return;
+            
+            feedbackLoops.forEach(loop => {
+                const card = document.createElement('div');
+                card.className = `loop-card ${loop.type}`;
+                card.innerHTML = `
+                    <h3>${loop.title}</h3>
+                    <div class="loop-type ${loop.type}">${loop.type.toUpperCase()} LOOP</div>
+                    <div class="loop-diagram">${loop.description}</div>
+                    <div class="artifacts-involved">
+                        <strong>Systems Involved:</strong><br>
+                        ${loop.artifacts.map(a => `<span class="tag">${artifacts[a].icon} ${artifacts[a].name}</span>`).join('')}
+                    </div>
+                    <p style="margin-top: 15px;"><strong>Interventions to Break/Strengthen:</strong></p>
+                    <ul style="margin-left: 20px; margin-top: 8px;">
+                        ${loop.interventions.map(i => `<li>${i}</li>`).join('')}
+                    </ul>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        function filterLoops(type) {
+            const cards = document.querySelectorAll('.loop-card');
+            
+            document.querySelectorAll('.filter-buttons .filter-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            cards.forEach(card => {
+                if (type === 'all') {
+                    card.style.display = 'block';
+                } else if (card.classList.contains(type)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

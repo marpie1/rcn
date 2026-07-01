@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eVSM — Survey Tool Manual</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; background: #fafaf8; }
+.page { max-width: 820px; margin: 0 auto; padding: 48px 32px 80px; }
+nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 48px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+nav a { color: #2d6a4f; text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+nav .current { color: #1a1a1a; font-weight: 500; }
+.doc-header { margin-bottom: 48px; }
+.doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 600px; }
+.filename { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #888; margin-top: 8px; }
+h2 { font-size: 19px; font-weight: 600; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
+h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: #2d6a4f; }
+h4 { font-size: 13px; font-weight: 600; margin: 18px 0 6px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; }
+p { margin-bottom: 14px; }
+ul, ol { padding-left: 22px; margin-bottom: 14px; }
+li { margin-bottom: 6px; }
+code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f0ec; padding: 1px 5px; border-radius: 3px; }
+.note { background: #f0f9f4; border-left: 3px solid #2d6a4f; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0; }
+.warn { background: #fff8e1; border-left: 3px solid #f59e0b; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0; }
+.step-list { counter-reset: steps; list-style: none; padding: 0; margin-bottom: 14px; }
+.step-list li { counter-increment: steps; display: flex; gap: 14px; margin-bottom: 12px; align-items: flex-start; }
+.step-list li::before { content: counter(steps); flex-shrink: 0; width: 24px; height: 24px; background: #2d6a4f; color: #fff; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+.control-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+.control-table th { text-align: left; padding: 8px 12px; background: #f0f0ec; font-weight: 600; font-size: 12px; border: 1px solid #ddd; }
+.control-table td { padding: 8px 12px; border: 1px solid #e0e0da; vertical-align: top; }
+.control-table tr:nth-child(even) td { background: #fafaf7; }
+.status-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 8px 0 16px; }
+.status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.layout-diagram { border: 1px solid #dde; border-radius: 6px; background: #fff; padding: 16px; margin: 16px 0; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+.layout-diagram .row { display: flex; gap: 8px; margin-bottom: 4px; }
+.layout-diagram .panel { border: 1px solid #ccc; border-radius: 3px; padding: 8px 10px; }
+.layout-diagram .left { width: 160px; flex-shrink: 0; background: #f8f8f4; }
+.layout-diagram .center { flex: 1; background: #2a2a26; color: #aaa; min-height: 60px; }
+.layout-diagram .right { width: 180px; flex-shrink: 0; background: #f8f8f4; }
+.layout-diagram .label { font-size: 10px; color: #888; margin-top: 4px; }
+@media print { nav { display: none; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav>
+  <a href="evsm-intro.html">Introduction</a>
+  <a href="evsm-workflow.html">Workflow</a>
+  <span class="current">Survey Tool</span>
+  <a href="evsm-manual-aggregator.html">Aggregator</a>
+  <a href="evsm-manual-report.html">Report</a>
+  <a href="evsm-manual-excel.html">Excel Tool</a>
+</nav>
+
+<div class="doc-header">
+  <div class="suite">eVSM Documentation — User Manual</div>
+  <h1>Survey Tool</h1>
+  <p class="lead">Design the survey and collect individual respondent assessments. Used in two distinct modes: Setup (facilitator) and Survey (respondent).</p>
+  <div class="filename">evsm-svg-v3.html</div>
+</div>
+
+<h2>Overview</h2>
+
+<p>The Survey Tool is the starting point for every eVSM engagement. It serves two roles in one file:</p>
+<ul>
+  <li><strong>Setup mode</strong> — used by the facilitator to configure sphere labels, descriptions, world categories, and survey metadata. Produces a config JSON file shared with respondents.</li>
+  <li><strong>Survey mode</strong> — used by respondents to work through assessments of all eleven spheres and their relationships. Produces a response JSON file returned to the facilitator.</li>
+</ul>
+
+<p>The tool switches between modes using the tabs in the header bar. The same config JSON is used in both modes — respondents import it to begin the survey.</p>
+
+<h2>Layout</h2>
+
+<div class="layout-diagram">
+  <div style="display:flex;gap:8px;align-items:stretch;">
+    <div class="panel left">
+      <div style="font-weight:600;">Left Panel</div>
+      <div class="label">Survey identity<br>Sphere labels (Setup)<br>Worlds<br>Navigation (Survey)<br>Export / Import</div>
+    </div>
+    <div class="panel center" style="color:#ccc;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:80px;">
+      <div style="font-weight:600;">Center — SVG Diagram</div>
+      <div style="font-size:10px;color:#aaa;">11 spheres + relationships<br>Click to select</div>
+    </div>
+    <div class="panel right">
+      <div style="font-weight:600;">Right Panel</div>
+      <div class="label">Selected element detail<br>Description editor (Setup)<br>Assessment form (Survey)</div>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:#666;">Header: eVSM · Mode tabs (Setup / Survey) · Progress bar (Survey mode)</div>
+</div>
+
+<h2>Setup Mode</h2>
+
+<p>Setup mode is for facilitators. Use it to define the content of the survey before distributing it to respondents.</p>
+
+<h3>Survey Identity</h3>
+<p>Fill in the fields in the upper portion of the left panel:</p>
+<table class="control-table">
+  <tr><th>Field</th><th>Purpose</th></tr>
+  <tr><td>Enterprise</td><td>Name of the organization or neighborhood being assessed</td></tr>
+  <tr><td>Focal Point</td><td>Longer description of what specifically is being assessed; shown to respondents as context</td></tr>
+  <tr><td>Date</td><td>Date of the survey</td></tr>
+  <tr><td>Time Frame</td><td>Period covered by the assessment (e.g., "Spring 2026")</td></tr>
+  <tr><td>Survey ID</td><td>An identifier for this survey instance</td></tr>
+  <tr><td>Respondent ID</td><td>Pre-assigned ID for the respondent (used in anonymous mode)</td></tr>
+  <tr><td>Anonymous Mode</td><td>Check to hide the respondent name field; shows Respondent ID instead</td></tr>
+</table>
+
+<h3>Sphere Labels</h3>
+<p>The left panel lists all eleven spheres (S-1 through S-11). Click any label field to rename a sphere. Labels support line breaks — press Enter within the field to wrap text into multiple lines as it appears in the diagram.</p>
+
+<h3>Diagram Display Controls</h3>
+<p>Four sliders adjust the visual appearance of the SVG diagram:</p>
+<table class="control-table">
+  <tr><th>Slider</th><th>Effect</th><th>Range</th></tr>
+  <tr><td>Radius</td><td>Size of the sphere circles</td><td>15 – 90 (default 45)</td></tr>
+  <tr><td>Space</td><td>Distance between spheres</td><td>30 – 120 (default 90)</td></tr>
+  <tr><td>Bend</td><td>Curvature of relationship arrows</td><td>0 – 45 (default 4)</td></tr>
+  <tr><td>Label size</td><td>Font size of text inside spheres</td><td>6 – 16 px (default 9)</td></tr>
+</table>
+<p>Changes apply in real-time. These settings are stored in the exported config JSON.</p>
+
+<h3>Sphere and Edge Descriptions</h3>
+<p>Click any sphere or edge in the diagram (or click the sphere label in the right panel's element list) to open the detail editor on the right. You can:</p>
+<ul>
+  <li>Write a <strong>description</strong> in the text area — this is what respondents see when they assess this element. Supports basic markdown: <code>**bold**</code> and <code>_italic_</code>.</li>
+  <li>Set a preliminary <strong>status</strong> — useful for planning, not part of respondent output.</li>
+</ul>
+
+<h3>World Categories</h3>
+<p>In the Worlds section of the left panel, define the demographic and role categories relevant to your survey population. Examples: <em>Longtime resident, Under 30, Business owner, Renter.</em></p>
+<ul>
+  <li>Type a category name and press Enter or click Add to create it</li>
+  <li>Click an existing tag to edit its name inline</li>
+  <li>Drag tags to reorder them</li>
+  <li>Click <strong>×</strong> on a tag to delete it</li>
+</ul>
+
+<h3>Exporting the Config</h3>
+<p>When your setup is complete, click <strong>Export Config</strong> in the left panel. This downloads a <code>sofi-config.json</code> file. Send this file to all respondents — it is everything they need to start the survey.</p>
+
+<div class="note">
+  The config JSON contains no respondent assessments — only the structure, labels, descriptions, and metadata you defined. It is safe to share publicly.
+</div>
+
+<h2>Survey Mode</h2>
+
+<p>Survey mode is for respondents. To switch to it, click the <strong>◎ Survey</strong> tab in the header. Respondents should import the facilitator's config JSON before beginning.</p>
+
+<h3>Starting the Survey</h3>
+<ol class="step-list">
+  <li>Click <strong>Import</strong> and select the config JSON file the facilitator sent you. The sphere labels and descriptions will load.</li>
+  <li>Enter your name in the <strong>Respondent Name</strong> field (or leave blank if the survey is anonymous).</li>
+  <li>In the <strong>My Worlds</strong> section, check all categories that apply to you. These tags will be attached to your response and used to filter results in the Aggregator.</li>
+  <li>Begin the assessment — click any sphere or edge in the diagram, or use the navigation list in the left panel to move through items in order.</li>
+</ol>
+
+<h3>Completing an Assessment</h3>
+<p>When you click a sphere or relationship, the right panel opens an assessment form with three parts:</p>
+<ul>
+  <li><strong>Description</strong> — the facilitator's text explaining what this sphere or relationship means in the context of your organization.</li>
+  <li><strong>Status</strong> — choose one option from the dropdown. See status definitions below.</li>
+  <li><strong>Evidence / Example</strong> — describe a specific situation, observation, or example that supports your assessment.</li>
+  <li><strong>Suggestions for Improvement</strong> — optional; write what you think should change or be strengthened.</li>
+</ul>
+<p>All fields save automatically as you type. You do not need to click a Save button.</p>
+
+<h4>Node (Sphere) Status Options</h4>
+<div class="status-row">
+  <span class="status-pill"><span class="dot" style="background:#86efac;"></span> Go — functioning well</span>
+  <span class="status-pill"><span class="dot" style="background:#fde68a;"></span> Caution — needs attention</span>
+  <span class="status-pill"><span class="dot" style="background:#fca5a5;"></span> Stop — urgent concern</span>
+  <span class="status-pill"><span class="dot" style="background:#93c5fd;"></span> Unsure — don't know</span>
+</div>
+
+<h4>Edge (Relationship) Status Options</h4>
+<div class="status-row">
+  <span class="status-pill"><span class="dot" style="background:#86efac;"></span> Agree — relationship is working</span>
+  <span class="status-pill"><span class="dot" style="background:#fca5a5;"></span> Disagree — relationship is blocked</span>
+  <span class="status-pill"><span class="dot" style="background:#93c5fd;"></span> Unknown — can't say</span>
+</div>
+
+<h3>Navigating the Assessment</h3>
+<p>There are three ways to move between items:</p>
+<ul>
+  <li><strong>Click the diagram</strong> — click any sphere or arrow directly</li>
+  <li><strong>Navigation list</strong> — the left panel shows all eleven spheres followed by all relationships, each with a colored dot indicating whether it has been assessed. Click any item to jump to it.</li>
+  <li><strong>Previous / Next buttons</strong> — at the bottom of the right panel assessment form, these move sequentially through all items in order.</li>
+</ul>
+
+<h3>Progress Bar</h3>
+<p>The header shows a progress bar and a count (e.g., <em>23 / 77</em>) reflecting how many items have been given a status. There are 11 spheres and 66 directed relationships, for a total of 77 assessments. You do not need to complete all of them — partial responses are accepted.</p>
+
+<h3>Exporting Your Response</h3>
+<p>Click <strong>Export</strong> to download your response as a JSON file. The filename includes your name and a timestamp: <code>sofi-response-{name}-{timestamp}.json</code>. Send this file to the facilitator. You can export at any time — mid-survey exports capture your progress so far.</p>
+
+<h3>Resuming a Partial Survey</h3>
+<p>The survey auto-saves your work in the browser's local storage — if you close the tab and reopen the tool, your previous session will be offered. You can also click <strong>Import</strong> and load a previously exported response JSON to continue from where you left off.</p>
+
+<h3>Printing Your Report</h3>
+<p>Click <strong>Print</strong> to open the Respondent Report tool with your data pre-loaded. This generates a formatted, print-ready summary of all your assessments. Use the browser's print dialog to save as PDF.</p>
+
+<h2>Error Messages</h2>
+<table class="control-table">
+  <tr><th>Message</th><th>Cause and fix</th></tr>
+  <tr><td>✗ Could not read file — is it a valid eVSM response?</td><td>The imported file is not a valid eVSM JSON. Check that you are importing the correct file.</td></tr>
+  <tr><td>Nothing yet (in description preview)</td><td>No description has been written for this element. Normal during setup before filling in descriptions.</td></tr>
+</table>
+
+</div>
+</body>
+</html>

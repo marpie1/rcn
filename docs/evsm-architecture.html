@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>eVSM Architecture</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f4f4f0; margin: 0; padding: 24px; }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 32px; }
+  svg { display: block; width: 100%; max-width: 960px; margin: 0 auto; }
+  .legend { max-width: 960px; margin: 24px auto 0; display: flex; gap: 24px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #444; }
+  .legend-swatch { width: 24px; height: 12px; border-radius: 3px; }
+  .migration { max-width: 960px; margin: 32px auto 0; }
+  .migration h2 { font-size: 15px; font-weight: 600; margin: 0 0 12px; }
+  .migration ol { font-size: 13px; line-height: 1.9; color: #333; padding-left: 20px; }
+  .migration li { margin-bottom: 6px; }
+  .migration code { background: #e8e8e4; padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: monospace; }
+  .warn { background: #fff8e1; border-left: 3px solid #f59e0b; padding: 10px 14px; margin: 16px 0; border-radius: 0 6px 6px 0; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>eVSM Survey — Component Architecture</h1>
+<p class="subtitle">User-supplied API keys — no shared proxy needed on a server</p>
+
+<svg viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#3b82f6"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#f97316"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#16a34a"/>
+    </marker>
+  </defs>
+
+  <!-- Background zones -->
+  <!-- Browser zone -->
+  <rect x="10" y="10" width="580" height="450" rx="10" fill="#f0f9ff" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="24" y="30" font-size="11" fill="#3b82f6" font-weight="600">BROWSER (no server-side logic)</text>
+
+  <!-- Server zone -->
+  <rect x="610" y="10" width="340" height="250" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="624" y="30" font-size="11" fill="#16a34a" font-weight="600">THIS MACHINE — SERVER SIDE</text>
+
+  <!-- External zone -->
+  <rect x="610" y="280" width="340" height="180" rx="10" fill="#fefce8" stroke="#fde047" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="624" y="300" font-size="11" fill="#b45309" font-weight="600">EXTERNAL (internet)</text>
+
+  <!-- File store zone -->
+  <rect x="10" y="475" width="580" height="110" rx="10" fill="#faf5ff" stroke="#c4b5fd" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="24" y="495" font-size="11" fill="#7c3aed" font-weight="600">DATA EXCHANGE (files)</text>
+
+  <!-- ── Nodes ── -->
+
+  <!-- Respondent (person) -->
+  <ellipse cx="90" cy="110" rx="52" ry="30" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="90" y="106" text-anchor="middle" font-size="12" font-weight="600" fill="#1e3a8a">Respondent</text>
+  <text x="90" y="120" text-anchor="middle" font-size="10" fill="#1e3a8a">(person)</text>
+
+  <!-- evsm-svg-v3 -->
+  <rect x="30" y="180" width="170" height="60" rx="7" fill="#bfdbfe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="115" y="207" text-anchor="middle" font-size="12" font-weight="600" fill="#1e3a8a">evsm-svg-v3.html</text>
+  <text x="115" y="222" text-anchor="middle" font-size="10" fill="#1e40af">Survey collection</text>
+  <text x="115" y="235" text-anchor="middle" font-size="10" fill="#1e40af">11 nodes, 39 edges</text>
+
+  <!-- evsm-aggregator -->
+  <rect x="230" y="180" width="185" height="60" rx="7" fill="#bfdbfe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="322" y="207" text-anchor="middle" font-size="12" font-weight="600" fill="#1e3a8a">evsm-aggregator.html</text>
+  <text x="322" y="222" text-anchor="middle" font-size="10" fill="#1e40af">Multi-respondent synthesis</text>
+  <text x="322" y="235" text-anchor="middle" font-size="10" fill="#1e40af">World-set filtering + Claude</text>
+
+  <!-- evsm-report -->
+  <rect x="30" y="300" width="170" height="50" rx="7" fill="#bfdbfe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="115" y="322" text-anchor="middle" font-size="12" font-weight="600" fill="#1e3a8a">evsm-report.html</text>
+  <text x="115" y="337" text-anchor="middle" font-size="10" fill="#1e40af">Print-ready individual report</text>
+
+  <!-- evsm-excel -->
+  <rect x="230" y="300" width="185" height="50" rx="7" fill="#bfdbfe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="322" y="322" text-anchor="middle" font-size="12" font-weight="600" fill="#1e3a8a">evsm_excel_tool.html</text>
+  <text x="322" y="337" text-anchor="middle" font-size="10" fill="#1e40af">JSON ↔ Excel conversion</text>
+
+  <!-- Static file server (port 8766) -->
+  <rect x="440" y="180" width="140" height="70" rx="7" fill="#d1fae5" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="510" y="204" text-anchor="middle" font-size="11" font-weight="600" fill="#14532d">Static server</text>
+  <text x="510" y="219" text-anchor="middle" font-size="10" fill="#166534">Python http.server</text>
+  <text x="510" y="233" text-anchor="middle" font-size="10" fill="#166534">port 8766</text>
+  <text x="510" y="247" text-anchor="middle" font-size="10" fill="#166534">serves HTML files</text>
+
+  <!-- evsm-proxy.py -->
+  <rect x="630" y="50" width="300" height="80" rx="7" fill="#bbf7d0" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="780" y="78" text-anchor="middle" font-size="12" font-weight="600" fill="#14532d">evsm-proxy.py</text>
+  <text x="780" y="94" text-anchor="middle" font-size="10" fill="#166534">Python HTTP server, port 8765</text>
+  <text x="780" y="108" text-anchor="middle" font-size="10" fill="#166534">Forwards /api/anthropic → Claude</text>
+  <text x="780" y="122" text-anchor="middle" font-size="10" fill="#166534">Serves static files (same port)</text>
+
+  <!-- Anthropic API -->
+  <rect x="630" y="310" width="300" height="70" rx="7" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="780" y="338" text-anchor="middle" font-size="12" font-weight="600" fill="#78350f">Anthropic Claude API</text>
+  <text x="780" y="354" text-anchor="middle" font-size="10" fill="#92400e">api.anthropic.com/v1/messages</text>
+  <text x="780" y="369" text-anchor="middle" font-size="10" fill="#92400e">claude-sonnet-4-20250514</text>
+
+  <!-- launchd -->
+  <rect x="630" y="155" width="300" height="50" rx="7" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="780" y="178" text-anchor="middle" font-size="11" font-weight="600" fill="#14532d">launchd</text>
+  <text x="780" y="194" text-anchor="middle" font-size="10" fill="#166534">com.evsm.proxy · com.rcn.tools</text>
+
+  <!-- JSON files -->
+  <rect x="30" y="508" width="160" height="55" rx="7" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="110" y="531" text-anchor="middle" font-size="12" font-weight="600" fill="#4c1d95">respondent-*.json</text>
+  <text x="110" y="547" text-anchor="middle" font-size="10" fill="#5b21b6">Downloaded to disk</text>
+  <text x="110" y="560" text-anchor="middle" font-size="10" fill="#5b21b6">by respondent</text>
+
+  <!-- localStorage -->
+  <rect x="210" y="508" width="150" height="55" rx="7" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="285" y="531" text-anchor="middle" font-size="12" font-weight="600" fill="#4c1d95">localStorage</text>
+  <text x="285" y="547" text-anchor="middle" font-size="10" fill="#5b21b6">Auto-save in browser</text>
+  <text x="285" y="560" text-anchor="middle" font-size="10" fill="#5b21b6">Resume partial survey</text>
+
+  <!-- sessionStorage -->
+  <rect x="380" y="508" width="150" height="55" rx="7" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="455" y="531" text-anchor="middle" font-size="12" font-weight="600" fill="#4c1d95">sessionStorage</text>
+  <text x="455" y="547" text-anchor="middle" font-size="10" fill="#5b21b6">Pass data to</text>
+  <text x="455" y="560" text-anchor="middle" font-size="10" fill="#5b21b6">report (print flow)</text>
+
+  <!-- ── Edges ── -->
+
+  <!-- Respondent → survey -->
+  <line x1="90" y1="140" x2="100" y2="178" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="68" y="163" font-size="10" fill="#555">fills out</text>
+
+  <!-- Static server serves HTML files -->
+  <line x1="440" y1="210" x2="420" y2="210" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <line x1="440" y1="210" x2="420" y2="220" stroke="#16a34a" stroke-width="1.5"/>
+  <!-- Arrow from static server to survey -->
+  <text x="428" y="200" font-size="10" fill="#15803d" text-anchor="middle">serves</text>
+
+  <!-- survey → JSON -->
+  <line x1="95" y1="240" x2="95" y2="505" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="35" y="390" font-size="10" fill="#7c3aed">export JSON</text>
+
+  <!-- survey → localStorage -->
+  <line x1="145" y1="240" x2="255" y2="505" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+  <!-- survey → sessionStorage (print flow) -->
+  <line x1="165" y1="325" x2="370" y2="530" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+  <text x="230" y="440" font-size="10" fill="#7c3aed">print flow</text>
+
+  <!-- sessionStorage → report -->
+  <line x1="430" y1="508" x2="165" y2="350" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+  <!-- JSON → aggregator -->
+  <line x1="140" y1="535" x2="280" y2="240" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="168" y="400" font-size="10" fill="#7c3aed">load N files</text>
+
+  <!-- JSON → excel tool -->
+  <line x1="155" y1="540" x2="295" y2="350" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+  <!-- aggregator → proxy (LOCAL) -->
+  <path d="M415,205 C520,170 570,100 628,90" stroke="#f97316" stroke-width="2" fill="none" marker-end="url(#arrow-orange)"/>
+  <text x="490" y="148" font-size="10" fill="#ea580c" font-weight="600">POST /api/anthropic</text>
+  <text x="490" y="160" font-size="10" fill="#ea580c">(localhost only)</text>
+
+  <!-- proxy → Anthropic -->
+  <line x1="780" y1="130" x2="780" y2="308" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <text x="788" y="225" font-size="10" fill="#15803d">HTTPS relay</text>
+
+  <!-- launchd → proxy + static -->
+  <line x1="780" y1="155" x2="780" y2="130" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
+  <line x1="680" y1="155" x2="520" y2="250" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
+  <text x="575" y="165" font-size="10" fill="#15803d">starts</text>
+
+  <!-- Problem annotation -->
+  <rect x="610" y="390" width="340" height="72" rx="6" fill="#fff1f2" stroke="#f43f5e" stroke-width="1.5"/>
+  <text x="780" y="410" text-anchor="middle" font-size="11" font-weight="700" fill="#be123c">PROBLEM on a server:</text>
+  <text x="780" y="426" text-anchor="middle" font-size="10" fill="#9f1239">When hostname ≠ localhost,</text>
+  <text x="780" y="440" text-anchor="middle" font-size="10" fill="#9f1239">aggregator calls Anthropic directly</text>
+  <text x="780" y="454" text-anchor="middle" font-size="10" fill="#9f1239">— no API key in browser = fails</text>
+
+  <!-- Arrow from aggregator to problem box -->
+  <path d="M415,215 C520,215 560,430 608,430" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#arrow-orange)"/>
+
+</svg>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#bfdbfe;border:1.5px solid #2563eb"></div> Browser-only HTML tool</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#bbf7d0;border:1.5px solid #16a34a"></div> Server process</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#ede9fe;border:1.5px solid #7c3aed"></div> Data / storage</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#fef9c3;border:1.5px solid #ca8a04"></div> External service</div>
+  <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#444">
+    <svg width="40" height="12"><line x1="0" y1="6" x2="34" y2="6" stroke="#f97316" stroke-width="2" marker-end="url(#arrow-orange)"/></svg> API call
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#444">
+    <svg width="40" height="12"><line x1="0" y1="6" x2="34" y2="6" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="4,3"/></svg> Data transfer (file/storage)
+  </div>
+</div>
+
+<div class="migration">
+  <h2>What you need to do to move to a server</h2>
+
+  <div class="warn">
+    <strong>Core issue:</strong> <code>evsm-aggregator.html</code> has a hostname check — on localhost it routes the Claude API call through <code>evsm-proxy.py</code>; anywhere else it tries to call <code>api.anthropic.com</code> directly from the browser (no API key → fails). You must fix this before anything else works.
+  </div>
+
+  <ol>
+    <li>
+      <strong>Pick a server.</strong> Any Linux VPS works (Linode, DigitalOcean, AWS EC2). You need Python 3 and a static file server. No database required for eVSM.
+    </li>
+    <li>
+      <strong>Copy the files.</strong> Upload <code>tools/evsm-svg-v3.html</code>, <code>tools/evsm-aggregator.html</code>, <code>tools/evsm-report.html</code>, <code>tools/evsm_excel_tool.html</code>, and <code>data/evsm-proxy.py</code> to the server.
+    </li>
+    <li>
+      <strong>Set the API key on the server.</strong> Add <code>ANTHROPIC_API_KEY=sk-ant-...</code> to the server's environment (e.g., in a systemd unit file or <code>/etc/environment</code>).
+    </li>
+    <li>
+      <strong>Fix the API URL in evsm-aggregator.html.</strong> Change lines 1021–1023 from the hostname-sniffing logic to always use a relative path: <code>const apiUrl = '/api/anthropic';</code> — then the proxy handles it regardless of hostname.
+    </li>
+    <li>
+      <strong>Run evsm-proxy.py on the server.</strong> It already serves static files AND relays the API. Run it on port 443/80 or put nginx in front of it. The proxy serves <code>evsm-aggregator.html</code> from its own directory, so point it at the folder where you uploaded the files.
+    </li>
+    <li>
+      <strong>Set up a process manager.</strong> Use systemd (not launchd — that's Mac-only) to keep <code>evsm-proxy.py</code> running. Create a <code>/etc/systemd/system/evsm-proxy.service</code> unit file.
+    </li>
+    <li>
+      <strong>Open firewall port 8765</strong> (or 80/443 if behind nginx). eVSM has no other server-side dependencies.
+    </li>
+    <li>
+      <strong>Optional: put nginx in front.</strong> Nginx on port 443 (HTTPS) proxying to <code>localhost:8765</code> gives you TLS and a clean URL. The proxy's CORS headers will still work.
+    </li>
+  </ol>
+
+  <h2 style="margin-top:24px">What does NOT need to change</h2>
+  <ol>
+    <li>The HTML tools themselves are pure browser code — no rewrites needed beyond the one URL fix.</li>
+    <li>JSON file exchange still happens via download/upload — no shared filesystem needed between respondents and facilitator.</li>
+    <li>sessionStorage print flow works as long as evsm-svg-v3 and evsm-report are served from the same origin.</li>
+    <li>Firebase, Neo4j, PostGIS — none of these are used by eVSM. Leave them on this machine.</li>
+  </ol>
+
+  <h2 style="margin-top:24px">One-line code fix required</h2>
+  <p style="font-size:13px">In <code>tools/evsm-aggregator.html</code>, lines 1021–1023, replace:</p>
+  <pre style="background:#1e1e2e;color:#cdd6f4;padding:14px;border-radius:6px;font-size:12px;overflow-x:auto">const apiUrl = (window.location.hostname === 'localhost' || window.location.hostname === '')
+  ? 'http://localhost:8765/api/anthropic'
+  : 'https://api.anthropic.com/v1/messages';</pre>
+  <p style="font-size:13px">with:</p>
+  <pre style="background:#1e1e2e;color:#cdd6f4;padding:14px;border-radius:6px;font-size:12px;overflow-x:auto">const apiUrl = '/api/anthropic';</pre>
+  <p style="font-size:13px">This makes the call always go through the proxy, regardless of where the tool is hosted.</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<!-- Conversation Navigator — Introduction & Positioning
+     Update this file when new major features land or the session model changes.
+     Sections marked with UPDATE: comments are the most likely to need refreshing. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Conversation Navigator — Introduction</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+
+.page{max-width:820px;margin:0 auto;padding:40px 24px 80px}
+
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:40px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:32px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569;line-height:1.5}
+.doc-meta{margin-top:14px;font-size:12px;color:#94a3b8}
+
+.doc-nav{display:flex;gap:12px;margin-bottom:40px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff;transition:background .15s}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#fce7d6;color:#9a3412;border-color:#fdba74}
+
+h2{font-size:20px;font-weight:700;color:#0f172a;margin:48px 0 14px;padding-top:8px;border-top:1px solid #e2e8f0}
+h3{font-size:15px;font-weight:600;color:#1e293b;margin:28px 0 8px}
+p{margin-bottom:14px;color:#334155}
+p:last-child{margin-bottom:0}
+
+.lead{font-size:17px;line-height:1.7;color:#1e293b;margin-bottom:28px;padding:20px 24px;background:#fff7ed;border-left:4px solid #c84b2f;border-radius:0 8px 8px 0}
+
+.highlight-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin:20px 0 28px}
+.hl-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px}
+.hl-card h4{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:6px}
+.hl-card p{font-size:12px;color:#475569;margin:0;line-height:1.55}
+
+.comparator{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;margin-bottom:14px}
+.comparator-header{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+.comparator-name{font-size:14px;font-weight:700;color:#0f172a}
+.comparator-verdict{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.verdict-good{background:#dcfce7;color:#166534}
+.verdict-partial{background:#fef9c3;color:#854d0e}
+.verdict-diff{background:#fee2e2;color:#991b1b}
+.comparator p{font-size:13px;color:#334155;line-height:1.6;margin:0}
+
+.unique-list{list-style:none;margin:12px 0 24px}
+.unique-list li{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:#334155;line-height:1.5}
+.unique-list li:last-child{border-bottom:none}
+.unique-list .badge{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#fce7d6;color:#9a3412;border-radius:6px;padding:2px 7px;flex-shrink:0;align-self:flex-start;margin-top:2px}
+.unique-list .badge.orig{background:#f3e8ff;color:#6b21a8}
+
+.gaps-table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0 24px}
+.gaps-table th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+.gaps-table td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+.gaps-table td:first-child{font-weight:600;color:#0f172a;white-space:nowrap}
+
+.positioning{background:#0f172a;color:#f1f5f9;border-radius:12px;padding:28px 30px;margin-top:40px}
+.positioning h3{color:#f8fafc;font-size:16px;margin:0 0 12px}
+.positioning p{color:#cbd5e1;font-size:14px;line-height:1.7;margin:0}
+
+.doc-footer{margin-top:48px;padding-top:20px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="doc-header">
+    <div class="doc-tag">ReLocalize Creativity Network · Open source · Free by design</div>
+    <h1 class="doc-title">Conversation Navigator</h1>
+    <p class="doc-sub">Introduction — what it is, what it does, and why it exists</p>
+    <!-- UPDATE: date when tool changes significantly -->
+    <div class="doc-meta">Document updated: June 2026 &nbsp;·&nbsp; Hosted at Wiki Café</div>
+  </div>
+
+  <nav class="doc-nav">
+    <a href="bias-checker-intro.html" class="current">Introduction</a>
+    <a href="bias-checker-manual.html">User Manual</a>
+    <a href="conversation-navigator-flow.html">Process Flow</a>
+    <a href="bias-checker.html">Open the Tool ↗</a>
+  </nav>
+
+  <div class="lead">
+    The Conversation Navigator is a real-time, multi-participant tool for making the
+    <strong>intent and cognitive biases</strong> of everyone in a conversation visible to each other —
+    before and during the conversation, not in a debrief afterward. It runs in a browser, requires
+    no account, and syncs across all participants through a shared session URL.
+  </div>
+
+  <h2>Why it exists</h2>
+  <p>
+    Most facilitation breakdowns are not failures of method — they are failures of transparency.
+    Someone in the room is trying to convince, and framing every contribution toward that end.
+    Someone else is venting, and cannot hear what is being said to them. A third person notices
+    both dynamics but cannot name them without disrupting the conversation.
+  </p>
+  <p>
+    The standard interventions — retrospectives, post-hoc bias audits, team health checks — come
+    too late. They describe what went wrong after the conversation is over. What is needed is a
+    lightweight, non-threatening way to make intent and bias visible <em>in the room</em>, so the
+    group can self-correct in real time.
+  </p>
+  <p>
+    The Conversation Navigator operationalizes a simple insight: if everyone can see what everyone
+    else is trying to do and what cognitive habits they are noticing in themselves, the conversation
+    has a much better chance of going somewhere useful.
+  </p>
+
+  <h2>Who it is for</h2>
+  <p>
+    Any group that meets regularly and wants to improve the quality of its conversations — RCN
+    neighborhood development teams, community governance sessions, design workshops, strategy
+    meetings, learning circles. It is especially useful when the group has learned to be honest
+    with each other about their own reasoning patterns, because the tool rewards that honesty
+    by making mismatches visible rather than letting them fester.
+  </p>
+  <p>
+    It is not designed for adversarial settings or anonymous use. It assumes good faith and a
+    shared interest in having a better conversation.
+  </p>
+
+  <!-- UPDATE: add new capability cards when major features land -->
+  <h2>What it does</h2>
+  <div class="highlight-grid">
+    <div class="hl-card">
+      <h4>Intent declaration</h4>
+      <p>Each participant selects what they are trying to do: Learning, Exploring, Convincing, Producing, Socializing, Venting, Being heard, or Sharing/Teaching. Multiple intents can be active at once. Custom intents can be added.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Bias self-reporting</h4>
+      <p>Each participant checks any cognitive biases they are noticing in themselves right now — divided attention, doubling down when challenged, tone that limits participation, more statements than questions, and others. Custom biases can be added.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Intent–bias conflict detection</h4>
+      <p>The tool knows which biases work against which intents. "Doubling down when challenged" conflicts with Learning. "Tone limiting participation" conflicts with Healing. Conflicts are flagged visibly on each participant's card — a yellow warning the whole group can see.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Live participant view</h4>
+      <p>Every participant's intent, active biases, and conflict warnings are visible in real time on a shared card grid. Your own card is highlighted. The group can see the full picture without anyone having to narrate it.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Aggregate stats</h4>
+      <p>Switch from Cards to Stats to see bar charts of intent and bias distributions across the whole group — useful for a facilitator making sense of the room at a glance.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Interactive framework models</h4>
+      <p>Five built-in thinking models — Six Questions, Cynefin, eVSM v2, 15 Ps, Six Thinking Hats — rendered as clickable SVG diagrams. Participants click nodes and edges to mark relevance; clicks aggregate across the group and show in Stats.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Custom graph models</h4>
+      <p>Upload any JSON exported from the RCN Graph Tool to create a custom interactive model. Every node and edge becomes clickable; the group's attention pattern across the diagram is tracked and shown in Stats.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Shared topic list</h4>
+      <p>The Topics tab gives the group a lightweight shared agenda. Any participant can add a topic; topics can be checked off as done. The list is visible and editable by everyone in the session in real time.</p>
+    </div>
+    <div class="hl-card">
+      <h4>FedWiki export</h4>
+      <p>The Export tab generates a FedWiki-formatted JSON page capturing the session's intent and bias snapshot, a facilitator-written summary, and a carry-forward note. The JSON can be dragged into any FedWiki server to create a durable session record.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Session sharing</h4>
+      <p>One URL, no accounts. The session ID is encoded in the URL. Share it and anyone who opens it joins the same live session. Sessions persist as long as at least one participant is present.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Real-time sync</h4>
+      <p>All intent, bias, model interaction, and topic data syncs across participants via Firebase Realtime Database. Changes appear within a second on all connected browsers. A live indicator in the header shows connection status.</p>
+    </div>
+  </div>
+
+  <h2>How it differs from the alternatives</h2>
+  <p>
+    Several tools touch adjacent territory. Here is the honest comparison.
+  </p>
+
+  <!-- UPDATE: revise comparators as tools evolve -->
+
+  <div class="comparator">
+    <div class="comparator-header">
+      <span class="comparator-name">Retrospective / team health tools (Miro, FunRetro, TeamRetro)</span>
+      <span class="comparator-verdict verdict-diff">After the fact</span>
+    </div>
+    <p>
+      Retrospective tools are excellent for reflecting on a completed sprint or project. They
+      are the right tool for structured post-hoc analysis. But they operate after the conversation
+      is over — they describe what happened, not what is happening. By the time the retro runs,
+      the bias that derailed Tuesday's meeting is a memory, not a live dynamic that can be shifted.
+      The Conversation Navigator is designed to operate during the conversation, not after it.
+    </p>
+  </div>
+
+  <div class="comparator">
+    <div class="comparator-header">
+      <span class="comparator-name">Meeting facilitation apps (Mentimeter, Slido, Poll Everywhere)</span>
+      <span class="comparator-verdict verdict-partial">Polling, not metacognition</span>
+    </div>
+    <p>
+      These tools collect votes, word clouds, and sentiment ratings. They are good at aggregating
+      opinions about external topics. None of them ask participants to report on their own cognitive
+      state — what they are trying to do or what reasoning patterns they are noticing in themselves.
+      They poll the conversation's content; the Conversation Navigator surfaces its dynamics.
+    </p>
+  </div>
+
+  <div class="comparator">
+    <div class="comparator-header">
+      <span class="comparator-name">Check-in / personal board practices (Six Thinking Hats, etc.)</span>
+      <span class="comparator-verdict verdict-partial">Framework without aggregation</span>
+    </div>
+    <p>
+      Practices like Six Thinking Hats or structured check-ins ask participants to name their
+      current mode or emotional state. This is the right instinct. What is missing is aggregation
+      and conflict detection: when a facilitator asks "which hat are you wearing?" verbally,
+      the answers are sequential and forgettable. The Conversation Navigator makes all answers
+      simultaneously visible, persists them for the session, and flags when a participant's
+      stated intent and self-reported behavior are in tension.
+    </p>
+  </div>
+
+  <div class="comparator">
+    <div class="comparator-header">
+      <span class="comparator-name">Cognitive bias reference tools (bias lists, checklists)</span>
+      <span class="comparator-verdict verdict-diff">Reference, not live</span>
+    </div>
+    <p>
+      Cognitive bias glossaries and checklists are useful for education and reflection. They are
+      not designed for use during a live conversation — they are too slow to consult and produce
+      no shared output. The Conversation Navigator distills the most practically relevant biases
+      for group conversation into a checklist that takes five seconds to update and immediately
+      communicates to everyone in the room.
+    </p>
+  </div>
+
+  <h2>What exists only here</h2>
+  <ul class="unique-list">
+    <li>
+      <span class="badge">Unique</span>
+      <div>
+        <strong>Intent–bias conflict detection.</strong> The tool maps which cognitive biases
+        work against which conversational intents and flags the mismatch in real time — visible
+        to the whole group. This specific combination does not exist in any facilitation tool surveyed.
+        A participant who says they are "Learning" and checks "Doubling down when challenged" gets
+        a yellow warning card. The group sees it. That is the intervention.
+      </div>
+    </li>
+    <li>
+      <span class="badge">Unique</span>
+      <div>
+        <strong>Interactive framework models with group click aggregation.</strong>
+        Built-in diagrams of Cynefin, eVSM, Six Thinking Hats, the 15 Ps, and Six Questions
+        are not just reference images — they are live canvases where each participant clicks
+        nodes and edges to mark relevance, and those clicks aggregate in real time. No other
+        facilitation tool combines interactive framework diagrams with multi-participant click
+        tracking.
+      </div>
+    </li>
+    <li>
+      <span class="badge orig">Original</span>
+      <div>
+        <strong>Custom graph model upload.</strong> Any JSON diagram exported from the RCN
+        Graph Tool can be uploaded as a custom interactive model. The group's attention pattern
+        across a custom causal diagram, data model, or knowledge graph becomes a live data feed.
+        This closes the loop between the RCN's diagramming and conversation tools.
+      </div>
+    </li>
+    <li>
+      <span class="badge orig">Original</span>
+      <div>
+        <strong>FedWiki session export.</strong> The Export tab produces a structured FedWiki
+        page JSON — including intent and bias data, a facilitator summary, and a carry-forward
+        note — that can be dragged directly into any FedWiki server. No other facilitation tool
+        produces output that integrates with a federated wiki infrastructure.
+      </div>
+    </li>
+    <li>
+      <span class="badge">Unique</span>
+      <div>
+        <strong>No-account shared sessions.</strong> The entire session state — participants,
+        intents, biases, model interactions — lives in a Firebase database keyed to a six-character
+        session ID embedded in the URL. Share the link, join the session. No login, no installation,
+        no configuration. The only comparator with comparable frictionlessness is anonymous
+        polling tools like Mentimeter — which do not do intent or bias tracking.
+      </div>
+    </li>
+  </ul>
+
+  <!-- UPDATE: remove rows when gaps are addressed -->
+  <h2>Honest gaps</h2>
+  <table class="gaps-table">
+    <thead>
+      <tr><th>Gap</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>No session history</td>
+        <td>Sessions are ephemeral. When all participants leave, the Firebase data is cleaned up. There is no save or export for a session's full state. Model SVGs can be downloaded; the rest is not persisted.</td>
+      </tr>
+      <tr>
+        <td>No facilitator role</td>
+        <td>All participants see the same interface. There is no elevated facilitator view, no ability to control what others see, and no presentation mode. Anyone can reset interactions or start a new session.</td>
+      </tr>
+      <tr>
+        <td>Firebase dependency</td>
+        <td>Real-time sync requires a Firebase Realtime Database connection. The tool does not work offline. In an air-gapped or low-connectivity setting, participants cannot see each other.</td>
+      </tr>
+      <tr>
+        <td>Mobile layout</td>
+        <td>The two-column layout collapses on small screens but is not optimized for phone use. Intended for laptop or tablet in a meeting context.</td>
+      </tr>
+      <tr>
+        <td>Bias list is fixed (mostly)</td>
+        <td>The six built-in biases reflect the RCN's specific conversational concerns. Custom biases can be added per session, but custom additions are not persisted across sessions or shared as defaults.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="positioning">
+    <h3>Positioning statement</h3>
+    <p>
+      The Conversation Navigator is the only free, no-account, real-time browser tool that makes
+      each participant's conversational intent and self-reported cognitive biases simultaneously
+      visible to the whole group — with automatic conflict detection, live aggregate stats, and
+      interactive framework models that track group attention across shared diagrams. It is built
+      for groups that have decided to be honest about how they think, and want tooling that
+      rewards that honesty immediately rather than in a debrief three weeks later.
+    </p>
+  </div>
+
+  <div class="doc-footer">
+    <span>Conversation Navigator · © Marc Pierson &amp; Kerry Turner, RCN Co-Founders · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></span>
+    <span>
+      <a href="bias-checker-manual.html">User Manual →</a>
+      &nbsp;·&nbsp;
+      <a href="conversation-navigator-flow.html">Process Flow →</a>
+      &nbsp;·&nbsp;
+      <a href="bias-checker.html">Open the Tool →</a>
+    </span>
+  </div>
+
+</div>
+</body>
+</html>

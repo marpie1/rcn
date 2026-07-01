@@ -1,0 +1,41 @@
+services:
+
+  sofi-proxy:
+    build:
+      context: ../..                          # repo root (sofi-proxy.py is there)
+      dockerfile: deploy/docker/Dockerfile.sofi-proxy
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SODOTO_PROXY_SECRET=${SODOTO_PROXY_SECRET}
+    volumes:
+      - wiki-data:/root/.wiki                 # shares pages with FedWiki
+      - sodoto-data:/root/.sodoto             # people-registry.json
+    restart: unless-stopped
+
+  fedwiki:
+    build:
+      context: .
+      dockerfile: Dockerfile.fedwiki
+    volumes:
+      - wiki-data:/root/.wiki                 # same volume as sofi-proxy
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - sofi-proxy
+      - fedwiki
+    restart: unless-stopped
+
+volumes:
+  wiki-data:
+  sodoto-data:
+  caddy-data:
+  caddy-config:

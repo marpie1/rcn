@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session Instruction Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBFAF5;
+    --ink:#000000;
+    --accent:#9B3B23;        /* terracotta, used only on interactive affordances */
+    --rule:#000000;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Newsreader",Georgia,serif;
+    font-size:17px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0;
+    min-height:100vh;
+  }
+  /* ---------- left: the form ---------- */
+  .form{
+    padding:48px 48px 96px;
+    border-right:2px solid var(--rule);
+  }
+  header h1{
+    font-family:"Fraunces",serif;
+    font-weight:900;
+    font-size:42px;
+    line-height:1.0;
+    letter-spacing:-0.02em;
+    margin:0 0 8px;
+  }
+  header p{
+    font-size:16px;
+    margin:0 0 4px;
+    max-width:46ch;
+  }
+  header .sub{
+    font-family:"JetBrains Mono",monospace;
+    font-size:12px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px solid var(--rule);
+  }
+  section{
+    margin-top:38px;
+    padding-top:20px;
+    border-top:2px solid var(--rule);
+  }
+  section h2{
+    font-family:"Fraunces",serif;
+    font-weight:600;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    margin:0 0 4px;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  section h2 .num{
+    font-family:"JetBrains Mono",monospace;
+    font-size:12px;
+    color:var(--accent);
+    font-weight:500;
+  }
+  section .note{
+    font-size:14px;
+    font-style:italic;
+    opacity:0.72;
+    margin:0 0 14px;
+    max-width:48ch;
+  }
+  /* checkbox rows */
+  label.check{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    padding:7px 0;
+    cursor:pointer;
+    border-bottom:1px solid rgba(0,0,0,0.08);
+  }
+  label.check:last-of-type{border-bottom:none;}
+  label.check input{display:none;}
+  label.check .box{
+    flex:0 0 auto;
+    width:18px;height:18px;
+    margin-top:3px;
+    border:2px solid var(--ink);
+    background:var(--paper);
+    position:relative;
+    transition:background .12s;
+  }
+  label.check input:checked + .box{
+    background:var(--accent);
+    border-color:var(--accent);
+  }
+  label.check input:checked + .box::after{
+    content:"";
+    position:absolute;
+    left:4px;top:0px;
+    width:6px;height:11px;
+    border:solid var(--paper);
+    border-width:0 2.5px 2.5px 0;
+    transform:rotate(42deg);
+  }
+  label.check .txt{flex:1;}
+  label.check .txt b{font-weight:500;}
+  label.check input:checked ~ .txt{font-weight:500;}
+
+  /* preset chips (role / purpose / domain) */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 12px;}
+  label.chip{
+    display:inline-flex;align-items:center;
+    border:1.5px solid var(--ink);
+    padding:5px 12px;
+    font-size:14.5px;
+    line-height:1.2;
+    cursor:pointer;
+    user-select:none;
+    transition:background .12s,color .12s;
+  }
+  label.chip input{display:none;}
+  label.chip:has(input:checked){
+    background:var(--accent);
+    color:var(--paper);
+    border-color:var(--accent);
+  }
+  .chips-label{
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:0.05em;text-transform:uppercase;
+    opacity:0.7;margin:6px 0 6px;
+  }
+
+  /* clickable task examples */
+  .examples{margin-top:14px;}
+  .ex-label{
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:0.05em;text-transform:uppercase;
+    opacity:0.6;margin-bottom:8px;
+  }
+  button.ex{
+    display:block;width:100%;text-align:left;
+    background:#fff;
+    border:1px solid var(--ink);
+    border-left:3px solid var(--accent);
+    padding:9px 12px;margin-bottom:8px;
+    font-family:"Newsreader",serif;font-size:15px;font-style:italic;
+    line-height:1.4;color:var(--ink);cursor:pointer;
+    transition:background .12s;
+  }
+  button.ex:hover{background:#FFF4EF;}
+
+  /* free-text */
+  .field{margin:10px 0 4px;}
+  .field label{
+    display:block;
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    margin-bottom:5px;
+    opacity:0.7;
+  }
+  .field input[type=text], .field textarea{
+    width:100%;
+    font-family:"Newsreader",serif;
+    font-size:16px;
+    color:var(--ink);
+    background:#fff;
+    border:1.5px solid var(--ink);
+    padding:8px 10px;
+    border-radius:0;
+    resize:vertical;
+  }
+  .field textarea{min-height:54px;line-height:1.4;}
+  .field input:focus, .field textarea:focus{
+    outline:2px solid var(--accent);
+    outline-offset:-1px;
+  }
+
+  /* ---------- right: live prompt ---------- */
+  .out{
+    position:sticky;
+    top:0;
+    align-self:start;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding:48px 40px 40px;
+  }
+  .out .bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .out .bar h2{
+    font-family:"Fraunces",serif;
+    font-weight:900;
+    font-size:22px;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  button.copy{
+    font-family:"JetBrains Mono",monospace;
+    font-size:12px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    background:var(--ink);
+    color:var(--paper);
+    border:2px solid var(--ink);
+    padding:9px 16px;
+    cursor:pointer;
+    transition:background .12s,color .12s;
+  }
+  button.copy:hover{background:var(--accent);border-color:var(--accent);}
+  button.copy.done{background:var(--paper);color:var(--accent);}
+  #prompt{
+    flex:1;
+    overflow-y:auto;
+    background:#fff;
+    border:2px solid var(--ink);
+    padding:24px;
+    font-family:"JetBrains Mono",monospace;
+    font-size:13.5px;
+    line-height:1.62;
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+  #prompt .ph{opacity:0.35;font-style:italic;}
+  #prompt .hd{color:var(--accent);font-weight:500;}
+  .count{
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;
+    opacity:0.55;
+    margin-top:10px;
+    letter-spacing:0.04em;
+  }
+  .lean{
+    margin-top:14px;
+    border:1.5px solid var(--ink);
+    border-left:3px solid var(--accent);
+    padding:12px 14px;
+    background:#fff;
+  }
+  .lean .tag{
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:0.07em;text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:6px;
+  }
+  .lean .tag b{font-weight:500;color:var(--ink);}
+  .lean p{
+    margin:0;
+    font-size:14px;
+    line-height:1.45;
+  }
+  @media (max-width:920px){
+    .wrap{grid-template-columns:1fr;}
+    .form{border-right:none;border-bottom:2px solid var(--rule);}
+    .out{position:static;height:auto;}
+    #prompt{min-height:340px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ================= FORM ================= -->
+  <div class="form">
+    <header>
+      <h1>Session<br>Instruction Builder</h1>
+      <p>Check what this session needs. The prompt assembles itself on the right.</p>
+      <div class="sub">Tick boxes &middot; fill blanks &middot; copy the block</div>
+    </header>
+
+    <!-- 1 ROLE -->
+    <section>
+      <h2><span class="num">01</span> Role &amp; purpose</h2>
+      <p class="note">One sentence. What I am for, this session. Pick presets or write your own.</p>
+
+      <div class="chips-label">You are a&hellip;</div>
+      <div class="chips">
+        <label class="chip"><input type="checkbox" data-role="technical research assistant" checked onchange="render()">technical research assistant</label>
+        <label class="chip"><input type="checkbox" data-role="design and planning partner" onchange="render()">design &amp; planning partner</label>
+        <label class="chip"><input type="checkbox" data-role="critical interlocutor (whetstone)" onchange="render()">critical interlocutor</label>
+        <label class="chip"><input type="checkbox" data-role="editor and writing partner" onchange="render()">editor</label>
+        <label class="chip"><input type="checkbox" data-role="implementation collaborator" onchange="render()">implementation collaborator</label>
+      </div>
+      <div class="field">
+        <input type="text" id="role" placeholder="&hellip;or write your own" oninput="render()">
+      </div>
+
+      <div class="chips-label" style="margin-top:14px;">Your purpose is&hellip;</div>
+      <div class="chips">
+        <label class="chip"><input type="checkbox" data-purpose="detailed, technically accurate analysis" checked onchange="render()">detailed analysis</label>
+        <label class="chip"><input type="checkbox" data-purpose="stress-testing and extending my thinking" onchange="render()">stress-test my thinking</label>
+        <label class="chip"><input type="checkbox" data-purpose="design and planning before implementation" onchange="render()">design before building</label>
+        <label class="chip"><input type="checkbox" data-purpose="finding what is wrong before I commit" onchange="render()">find what's wrong</label>
+        <label class="chip"><input type="checkbox" data-purpose="drafting and refining writing" onchange="render()">draft &amp; refine writing</label>
+      </div>
+      <div class="field">
+        <input type="text" id="purpose" placeholder="&hellip;or write your own" oninput="render()">
+      </div>
+    </section>
+
+    <!-- 2 AUDIENCE -->
+    <section>
+      <h2><span class="num">02</span> Audience calibration</h2>
+      <label class="check"><input type="checkbox" data-line="expert" checked onchange="render()"><span class="box"></span><span class="txt">Assume <b>expert (CS-equivalent)</b>. Calibrate depth; do not pad with background I already have.</span></label>
+
+      <div class="chips-label" style="margin-top:14px;">I am familiar with&hellip;</div>
+      <div class="chips">
+        <label class="chip"><input type="checkbox" data-domain="Neo4j and Cypher" onchange="render()">Neo4j / Cypher</label>
+        <label class="chip"><input type="checkbox" data-domain="PostGIS and spatial GIS" onchange="render()">PostGIS / GIS</label>
+        <label class="chip"><input type="checkbox" data-domain="the Viable System Model and management cybernetics (Beer)" onchange="render()">VSM / cybernetics</label>
+        <label class="chip"><input type="checkbox" data-domain="Ostrom commons and polycentric governance" onchange="render()">Ostrom / polycentric governance</label>
+        <label class="chip"><input type="checkbox" data-domain="Alexander pattern languages" onchange="render()">pattern languages</label>
+        <label class="chip"><input type="checkbox" data-domain="the Vester Sensitivity Model and biocybernetics" onchange="render()">Vester / SensiMod</label>
+        <label class="chip"><input type="checkbox" data-domain="Meadows leverage points and causal loop diagrams" onchange="render()">Meadows / CLDs</label>
+        <label class="chip"><input type="checkbox" data-domain="system dynamics, stock-and-flow, and XMILE" onchange="render()">system dynamics / XMILE</label>
+        <label class="chip"><input type="checkbox" data-domain="verifiable credentials (Ed25519, did:key, Veramo)" onchange="render()">verifiable credentials</label>
+        <label class="chip"><input type="checkbox" data-domain="Marlowe and smart contracts" onchange="render()">Marlowe / smart contracts</label>
+        <label class="chip"><input type="checkbox" data-domain="FedWiki (Cunningham)" onchange="render()">FedWiki</label>
+        <label class="chip"><input type="checkbox" data-domain="IBIS, speech acts, and RDF/semantic triples" onchange="render()">IBIS / RDF</label>
+        <label class="chip"><input type="checkbox" data-domain="React and Vite frontend development" onchange="render()">React / Vite</label>
+        <label class="chip"><input type="checkbox" data-domain="Ashby's Law, ERT, and requisite variety" onchange="render()">Ashby's Law / ERT</label>
+      </div>
+      <div class="field">
+        <label>Anything else (optional)</label>
+        <input type="text" id="audience" placeholder="e.g. OPM (ISO 19450), libsodium" oninput="render()">
+      </div>
+    </section>
+
+    <!-- 3 STYLE -->
+    <section>
+      <h2><span class="num">03</span> Response style</h2>
+      <label class="check"><input type="checkbox" data-line="concise" checked onchange="render()"><span class="box"></span><span class="txt">Concise, direct, objective.</span></label>
+      <label class="check"><input type="checkbox" data-line="notrans" checked onchange="render()"><span class="box"></span><span class="txt">No conversational transitions; no engagement-optimizing appendixes.</span></label>
+      <label class="check"><input type="checkbox" data-line="terminate" checked onchange="render()"><span class="box"></span><span class="txt">Terminate after the requested material is delivered.</span></label>
+      <label class="check"><input type="checkbox" data-line="nomirror" onchange="render()"><span class="box"></span><span class="txt">Do not mirror my diction or affect.</span></label>
+      <label class="check"><input type="checkbox" data-line="twain" checked onchange="render()"><span class="box"></span><span class="txt">Twain discipline: say it once, plainly, then stop. Cut sentences that explain the prior sentence.</span></label>
+    </section>
+
+    <!-- 4 EVIDENCE -->
+    <section>
+      <h2><span class="num">04</span> Evidence &amp; sourcing</h2>
+      <label class="check"><input type="checkbox" data-line="charclaim" onchange="render()"><span class="box"></span><span class="txt">Characterize each substantive claim: <b>established / contested / inferred / unknown</b>.</span></label>
+      <label class="check"><input type="checkbox" data-line="evtype" onchange="render()"><span class="box"></span><span class="txt">Name the evidence type: specification, benchmark, documentation, theoretical result, personal inference.</span></label>
+    </section>
+
+    <!-- 5 FACT VS JUDGMENT -->
+    <section>
+      <h2><span class="num">05</span> Facts vs. judgment</h2>
+      <label class="check"><input type="checkbox" data-line="separate" onchange="render()"><span class="box"></span><span class="txt">Separate underlying facts from assumptions and analytic conclusions. Flag assumptions <b>as assumptions</b>.</span></label>
+    </section>
+
+    <!-- 6 UNCERTAINTY -->
+    <section>
+      <h2><span class="num">06</span> Uncertainty</h2>
+      <label class="check"><input type="checkbox" data-line="ladder" onchange="render()"><span class="box"></span><span class="txt">Likelihood on the scale: almost no chance &middot; very unlikely &middot; unlikely &middot; roughly even &middot; likely &middot; very likely &middot; almost certain.</span></label>
+      <label class="check"><input type="checkbox" data-line="confidence" onchange="render()"><span class="box"></span><span class="txt">State confidence (low / moderate / high) separately, justified by source quality and reasoning strength. Do not overstate.</span></label>
+    </section>
+
+    <!-- 7 ALTERNATIVES -->
+    <section>
+      <h2><span class="num">07</span> Alternatives</h2>
+      <label class="check"><input type="checkbox" data-line="alts" onchange="render()"><span class="box"></span><span class="txt">For non-trivial conclusions, give the leading alternative hypotheses and why the stated one is preferred.</span></label>
+    </section>
+
+    <!-- 8 ARGUMENTATION -->
+    <section>
+      <h2><span class="num">08</span> Argumentation</h2>
+      <label class="check"><input type="checkbox" data-line="chains" onchange="render()"><span class="box"></span><span class="txt">Make reasoning chains explicit and traceable.</span></label>
+      <label class="check"><input type="checkbox" data-line="causation" onchange="render()"><span class="box"></span><span class="txt">Distinguish correlation from causation.</span></label>
+      <label class="check"><input type="checkbox" data-line="falsify" onchange="render()"><span class="box"></span><span class="txt">Identify what evidence would change the conclusion.</span></label>
+    </section>
+
+    <!-- 9 CLOSING -->
+    <section>
+      <h2><span class="num">09</span> Closing diagnostic</h2>
+      <label class="check"><input type="checkbox" data-line="diagnostic" onchange="render()"><span class="box"></span><span class="txt">End substantive analysis with: overall confidence, the main factor limiting it, and the principal failure mode.</span></label>
+    </section>
+
+    <!-- 10 ESCAPE HATCHES -->
+    <section>
+      <h2><span class="num">10</span> Escape hatches</h2>
+      <p class="note">So the protocol doesn't become ceremony.</p>
+      <label class="check"><input type="checkbox" data-line="plainprose" onchange="render()"><span class="box"></span><span class="txt">When a question is settled and simple, drop to plain prose. Don't tag trivia with evidence-type and confidence.</span></label>
+      <label class="check"><input type="checkbox" data-line="resolve" onchange="render()"><span class="box"></span><span class="txt">Where uncertainty is cheap to resolve, resolve it (search, check) rather than only labeling it.</span></label>
+    </section>
+
+    <!-- 11 REFERENCE RESOLUTION -->
+    <section>
+      <h2><span class="num">11</span> Reference resolution</h2>
+      <label class="check"><input type="checkbox" data-line="confirmrefs" onchange="render()"><span class="box"></span><span class="txt">Before producing work, confirm which files / versions / threads I mean. Surface your assumptions in one line first.</span></label>
+    </section>
+
+    <!-- 12 WHETSTONE -->
+    <section>
+      <h2><span class="num">12</span> Whetstone mode</h2>
+      <p class="note">For thinking sessions, not production.</p>
+      <label class="check"><input type="checkbox" data-line="whet" onchange="render()"><span class="box"></span><span class="txt">Extend and argue, don't affirm. Don't smooth over disagreement.</span></label>
+      <div class="field">
+        <label>My dissatisfaction would look like&hellip; (optional)</label>
+        <textarea id="dissat" placeholder="e.g. agreeing too fast; restating my point back to me; hedging where I wanted a claim" oninput="render()"></textarea>
+      </div>
+    </section>
+
+    <!-- 13 OUTPUT FORMAT -->
+    <section>
+      <h2><span class="num">13</span> Output &amp; deliverables</h2>
+      <label class="check"><input type="checkbox" data-line="md" checked onchange="render()"><span class="box"></span><span class="txt">Documents as <b>.md</b>; call present_files on .md deliverables.</span></label>
+      <label class="check"><input type="checkbox" data-line="graphjson" onchange="render()"><span class="box"></span><span class="txt">Diagrams: RCN Graph Tool native JSON v1.0 alongside any inline graph.</span></label>
+      <label class="check"><input type="checkbox" data-line="cite" onchange="render()"><span class="box"></span><span class="txt">Hyperlink any law or important document cited from the web.</span></label>
+    </section>
+
+    <!-- 14 TASK -->
+    <section>
+      <h2><span class="num">14</span> The task</h2>
+      <div class="field">
+        <label>Topic / request for this session</label>
+        <textarea id="task" placeholder="What you want done. Appended verbatim to the end of the prompt." oninput="render()"></textarea>
+      </div>
+      <div class="examples">
+        <div class="ex-label">Examples &mdash; click to use</div>
+        <button class="ex" onclick="setTask(this)">Assess whether a symmetric three-handshake Marlowe contract is the right primitive for SODOTO credential issuance. Name the leading alternatives and the principal failure modes of the v0.4 attempt-array format.</button>
+        <button class="ex" onclick="setTask(this)">Compare context-preserving RDF federation against context-stripping architectures for IBIS. Where does each keep or lose the provenance of a contested issue, and what would change your assessment?</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= OUTPUT ================= -->
+  <div class="out">
+    <div class="bar">
+      <h2>Your prompt</h2>
+      <button class="copy" id="copyBtn" onclick="copyPrompt()">Copy</button>
+    </div>
+    <div id="prompt"></div>
+    <div class="count" id="count"></div>
+    <div class="lean" id="lean"></div>
+  </div>
+
+</div>
+
+<script>
+const LINES = {
+  expert:     "Audience: assume expertise equivalent to an experienced computer scientist. Calibrate depth accordingly; do not pad with background I already have.",
+  concise:    "Concise, direct, objective.",
+  notrans:    "No conversational transitions, no engagement optimization, no interaction-extending appendixes.",
+  terminate:  "Terminate after the requested material is delivered.",
+  nomirror:   "Do not mirror my diction or affect.",
+  twain:      "Twain discipline: say it once, plainly, then stop. Cut sentences that explain the sentence before them.",
+  charclaim:  "Characterize the basis of each substantive claim: established and well-corroborated, contested in the field, inferred, or unknown.",
+  evtype:     "Name the type of evidence (specification, empirical benchmark, documentation, theoretical result, personal inference).",
+  separate:   "Explicitly separate underlying facts from assumptions and analytic conclusions. Flag assumptions as assumptions.",
+  ladder:     "Express likelihood using the scale: almost no chance, very unlikely, unlikely, roughly even chance, likely, very likely, almost certain.",
+  confidence: "State confidence in the judgment separately as low, moderate, or high, justified by source quality and reasoning strength. Do not overstate certainty.",
+  alts:       "For non-trivial conclusions, state the leading alternative hypotheses and the reason for preferring the stated one.",
+  chains:     "Make reasoning chains explicit and logically traceable.",
+  causation:  "Distinguish correlation from causation.",
+  falsify:    "Identify what evidence would change the conclusion.",
+  diagnostic: "End substantive analytical responses with a brief diagnostic: overall confidence (low/moderate/high), the main factor limiting it, and the principal failure mode of the analysis.",
+  plainprose: "When a question is settled and simple, drop to plain prose. Do not tag trivial facts with evidence-type and confidence labels.",
+  resolve:    "Where uncertainty is cheap to resolve, resolve it (search, check the alternative) rather than only labeling it.",
+  confirmrefs:"Before producing work, confirm which files, versions, or threads are meant. Surface any assumptions in one line first.",
+  whet:       "Act as a whetstone: extend and argue, do not affirm. Do not smooth over disagreement.",
+  md:         "Deliver documents as .md and call present_files on .md deliverables.",
+  graphjson:  "For diagrams, produce RCN Graph Tool native JSON v1.0 alongside any inline graph.",
+  cite:       "Hyperlink any law or important document cited from the web."
+};
+
+// which checkbox lines belong to which prompt block, in order
+const BLOCKS = [
+  { hd:null,            keys:["expert"] },
+  { hd:"Response style",keys:["concise","notrans","terminate","nomirror","twain"] },
+  { hd:"Evidence",      keys:["charclaim","evtype"] },
+  { hd:"Facts vs. judgment", keys:["separate"] },
+  { hd:"Uncertainty",   keys:["ladder","confidence"] },
+  { hd:"Alternatives",  keys:["alts"] },
+  { hd:"Argumentation", keys:["chains","causation","falsify"] },
+  { hd:"Closing",       keys:["diagnostic"] },
+  { hd:"Calibration discipline", keys:["plainprose","resolve"] },
+  { hd:"Reference resolution", keys:["confirmrefs"] },
+  { hd:"Whetstone",     keys:["whet"] },
+  { hd:"Output",        keys:["md","graphjson","cite"] }
+];
+
+function val(id){ return (document.getElementById(id).value || "").trim(); }
+function on(key){ const el=document.querySelector('[data-line="'+key+'"]'); return el && el.checked; }
+function chips(attr){
+  return Array.from(document.querySelectorAll('[data-'+attr+']'))
+    .filter(c=>c.checked).map(c=>c.getAttribute('data-'+attr));
+}
+function setTask(btn){
+  document.getElementById("task").value = btn.textContent.trim();
+  render();
+  document.getElementById("task").focus();
+}
+
+function buildText(){
+  const roleStr = [...chips("role"), ...(val("role")?[val("role")]:[])].join(" and ") || "technical research assistant";
+  const purpStr = [...chips("purpose"), ...(val("purpose")?[val("purpose")]:[])].join(" and ") || "detailed, technically accurate analysis for an expert user";
+  let out = "You are a " + roleStr + ". Your purpose is " + purpStr + ".";
+
+  const doms = [...chips("domain"), ...(val("audience")?[val("audience")]:[])];
+  if(doms.length) out += "\n\nDomain context: I am familiar with " + doms.join(", ") + ".";
+
+  for(const b of BLOCKS){
+    const lines = b.keys.filter(on).map(k=>LINES[k]);
+    if(!lines.length) continue;
+    out += "\n\n";
+    if(b.hd) out += "[" + b.hd + "]\n";
+    out += lines.join("\n");
+  }
+
+  const dissat = val("dissat");
+  if(dissat && on("whet")) out += "\nMy dissatisfaction would look like: " + dissat + ".";
+
+  const task = val("task");
+  out += "\n\n---\n\nTask:\n" + (task || "<state the request>");
+  return out;
+}
+
+// rendered version with header coloring + placeholder styling
+function render(){
+  const roleArr = [...chips("role"), ...(val("role")?[val("role")]:[])];
+  const purpArr = [...chips("purpose"), ...(val("purpose")?[val("purpose")]:[])];
+  const task = val("task");
+
+  let html = "You are a " +
+    (roleArr.length ? esc(roleArr.join(" and ")) : '<span class="ph">technical research assistant</span>') +
+    ". Your purpose is " +
+    (purpArr.length ? esc(purpArr.join(" and ")) : '<span class="ph">detailed, technically accurate analysis for an expert user</span>') +
+    ".";
+
+  const doms = [...chips("domain"), ...(val("audience")?[val("audience")]:[])];
+  if(doms.length) html += "\n\nDomain context: I am familiar with " + esc(doms.join(", ")) + ".";
+
+  for(const b of BLOCKS){
+    const lines = b.keys.filter(on).map(k=>LINES[k]);
+    if(!lines.length) continue;
+    html += "\n\n";
+    if(b.hd) html += '<span class="hd">[' + b.hd + ']</span>\n';
+    html += esc(lines.join("\n"));
+  }
+
+  const dissat = val("dissat");
+  if(dissat && on("whet")) html += "\nMy dissatisfaction would look like: " + esc(dissat) + ".";
+
+  html += '\n\n<span class="hd">---</span>\n\nTask:\n' +
+    (task ? esc(task) : '<span class="ph">&lt;state the request&gt;</span>');
+
+  document.getElementById("prompt").innerHTML = html;
+  const words = buildText().split(/\s+/).filter(Boolean).length;
+  document.getElementById("count").textContent = words + " words";
+  assessLean();
+}
+
+function assessLean(){
+  const roleArr = chips("role");
+  const purpArr = chips("purpose");
+  let d = 0, c = 0;
+
+  // dialogic signals — value is in the back-and-forth
+  if(on("whet")) d += 2;
+  if(roleArr.includes("critical interlocutor (whetstone)")) d += 1;
+  if(roleArr.includes("design and planning partner")) d += 1;
+  if(purpArr.includes("stress-testing and extending my thinking")) d += 1;
+  if(purpArr.includes("design and planning before implementation")) d += 1;
+  if(purpArr.includes("finding what is wrong before I commit")) d += 1;
+
+  // cumulative signals — work has to hold many pieces in view at once
+  ["charclaim","evtype","ladder","confidence","alts","chains","causation","falsify","diagnostic","graphjson"]
+    .forEach(k=>{ if(on(k)) c += 1; });
+  if(roleArr.includes("technical research assistant")) c += 1;
+  if(purpArr.includes("detailed, technically accurate analysis")) c += 1;
+
+  const el = document.getElementById("lean");
+  const diff = d - c;
+  let tag, body;
+
+  if(d + c < 2){
+    tag = '<span class="tag">Tilts &mdash; <b>too few signals</b></span>';
+    body = "Check a few more boxes to see whether this session leans dialogic or cumulative.";
+  } else if(diff >= 2){
+    tag = '<span class="tag">Tilts &mdash; <b>dialogic</b></span>';
+    body = "The value is in the back-and-forth. Run it as short, frequent exchanges in a fresh context; a faster working model suits this, escalating only for a hard synthesis pass. Watch for drift toward agreement over a long arc.";
+  } else if(diff <= -2){
+    tag = '<span class="tag">Tilts &mdash; <b>cumulative</b></span>';
+    body = "The work has to hold many pieces in view at once. Run it as one sustained session &mdash; chopping it adds seams where contradictions hide. Favors the stronger model holding the whole thing.";
+  } else {
+    tag = '<span class="tag">Tilts &mdash; <b>mixed</b></span>';
+    body = "Heavy analysis aimed at dialogue. A faster model for the exchanges, escalated for the synthesis pass; keep the session from running so long that coherence or candor slips.";
+  }
+  el.innerHTML = tag + "<p>" + body + "</p>";
+}
+
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function copyPrompt(){
+  const text = buildText();
+  const btn = document.getElementById("copyBtn");
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent = "Copied";
+    btn.classList.add("done");
+    setTimeout(()=>{ btn.textContent="Copy"; btn.classList.remove("done"); }, 1400);
+  }).catch(()=>{
+    // fallback
+    const ta=document.createElement("textarea");
+    ta.value=text; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); document.body.removeChild(ta);
+    btn.textContent="Copied"; btn.classList.add("done");
+    setTimeout(()=>{ btn.textContent="Copy"; btn.classList.remove("done"); }, 1400);
+  });
+}
+
+render();
+</script>
+</body>
+</html>

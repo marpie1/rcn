@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eVSM — Survey</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:         #1a1a18;
+  --paper:       #f5f2eb;
+  --rule:        #d4cfc4;
+  --muted:       #8a8278;
+  --accent:      #2a5c3f;
+  --accent2:     #8b3a1e;
+  --panel-bg:    #eeebe2;
+  --input-bg:    #faf9f5;
+  --survey-bg:   #ffffff;
+  --survey-panel:#f5f2eb;
+  --survey-rule: #d4cfc4;
+  --survey-muted:#8a8278;
+  --survey-text: #1a1a18;
+
+  --go:          #b8d9b0;
+  --caution:     #f0e4a0;
+  --stop:        #e8b0a8;
+  --unsure:      #a8c4d8;
+  --agree:       #b8d9b0;
+  --disagree:    #e8b0a8;
+  --unknown:     #a8c4d8;
+  --edge-default:#ccc;
+  --node-default:#fff;
+}
+
+html, body { height: 100%; background: var(--paper); color: var(--ink);
+  font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 1.5; }
+
+/* ══ SHARED LAYOUT ══════════════════════════════════════════════════════════ */
+#setup-view {
+  display: grid;
+  grid-template-columns: 300px 1fr 340px;
+  grid-template-rows: 48px 1fr;
+  grid-template-areas: "hd hd hd" "lp mn rp";
+  height: 100vh; min-height: 0;
+}
+header {
+  grid-area: hd;
+  background: var(--ink); color: var(--paper);
+  display: flex; align-items: center; padding: 0 20px; gap: 14px;
+  border-bottom: 2px solid var(--accent);
+}
+header h1 {
+  font-family: 'Libre Baskerville', serif; font-size: 16px;
+  font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.hdr-sub { font-size: 11px; color: #999; font-family: 'IBM Plex Mono', monospace; }
+.hdr-spacer { flex: 1; }
+.hdr-attr { font-size: 10px; color: #555; font-style: italic; }
+.mode-tabs { display: flex; gap: 2px; margin-left: 16px; }
+.mode-tab {
+  padding: 5px 14px; font-size: 10px; font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+  border: 1px solid #444; background: transparent; color: #aaa;
+  cursor: pointer; border-radius: 2px; transition: all 0.15s;
+}
+.mode-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.mode-tab:not(.active):hover { background: #333; color: #ddd; }
+
+.panel {
+  overflow-y: auto; min-height: 0; padding: 16px;
+  background: var(--panel-bg); border-right: 1px solid var(--rule);
+}
+.panel-right { border-right: none; border-left: 1px solid var(--rule); }
+.ps { margin-bottom: 20px; }
+.ps + .ps { padding-top: 16px; border-top: 1px solid var(--rule); }
+.pt {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+}
+
+/* ══ SETUP MODE ══════════════════════════════════════════════════════════════ */
+#setup-left  { grid-area: lp; }
+#setup-main  { grid-area: mn; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; overflow: hidden; padding: 16px; }
+#setup-right { grid-area: rp; }
+#svg-container { width:100%; height:100%; display:flex;
+  align-items:center; justify-content:center; overflow:auto; }
+#svg-container svg { max-width:100%; max-height:100%; cursor:pointer; }
+
+.label-row { display: grid; grid-template-columns: 36px 1fr;
+  align-items: center; gap: 6px; margin-bottom: 5px; }
+.label-key { font-family:'IBM Plex Mono',monospace; font-size:9px;
+  color:var(--muted); text-align:right; }
+.label-input {
+  background: var(--input-bg); border: 1px solid var(--rule); border-radius: 2px;
+  padding: 4px 7px; font-family:'IBM Plex Sans',sans-serif; font-size:11px;
+  font-weight:500; color:var(--ink); width:100%; transition: border-color 0.15s;
+}
+.label-input:focus { outline:none; border-color:var(--accent); background:#fff; }
+
+.btn-row { display:flex; gap:6px; margin-top:4px; }
+.btn {
+  flex:1; padding:6px 10px; font-family:'IBM Plex Mono',monospace;
+  font-size:10px; font-weight:500; letter-spacing:0.04em;
+  border:1px solid var(--rule); background:var(--input-bg); color:var(--ink);
+  cursor:pointer; border-radius:2px; transition:all 0.15s;
+}
+.btn:hover { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.btn-accent { background:var(--accent); color:#fff; border-color:var(--accent); }
+.btn-accent:hover { background:#1e4530; border-color:#1e4530; }
+.btn-warn { background:var(--accent2); color:#fff; border-color:var(--accent2); }
+.btn-warn:hover { background:#6e2e18; }
+.io-msg { font-size:10px; color:var(--accent); margin-top:6px;
+  font-family:'IBM Plex Mono',monospace; min-height:16px; }
+
+.status-row { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-bottom:4px; }
+.status-label { font-family:'IBM Plex Mono',monospace; font-size:9px;
+  color:var(--muted); align-self:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.status-label:hover { color:var(--accent); text-decoration:underline dotted; }
+.status-select {
+  background:var(--input-bg); border:1px solid var(--rule); border-radius:2px;
+  padding:3px 5px; font-size:10px; font-family:'IBM Plex Sans',sans-serif;
+  color:var(--ink); cursor:pointer;
+}
+.status-select:focus { outline:none; border-color:var(--accent); }
+
+.slider-row { margin-bottom:10px; }
+.slider-row label { display:flex; justify-content:space-between; font-size:10px;
+  color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-bottom:3px; }
+.slider-row label span { color:var(--ink); font-weight:500; }
+input[type=range] { width:100%; accent-color:var(--accent); height:3px; cursor:pointer; }
+
+.legend-item { display:flex; align-items:center; gap:8px; font-size:10px; margin-bottom:5px; }
+.legend-swatch { width:14px; height:14px; border-radius:50%;
+  border:1px solid rgba(0,0,0,0.15); flex-shrink:0; }
+.legend-edge-swatch { width:24px; height:3px; border-radius:2px; flex-shrink:0; }
+
+#setup-detail {
+  background:var(--input-bg); border:1px solid var(--rule); border-radius:2px;
+  padding:10px; font-size:11px; min-height:60px; color:var(--muted); font-style:italic;
+}
+#setup-detail.active { color:var(--ink); font-style:normal; }
+
+/* Description editor in setup detail */
+.desc-editor-label {
+  font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:500;
+  letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:5px;
+}
+.desc-textarea {
+  width:100%; background:#fff; border:1px solid var(--rule); border-radius:2px;
+  padding:7px 9px; font-size:11px; color:var(--ink); font-family:'IBM Plex Sans',sans-serif;
+  line-height:1.5; resize:vertical; min-height:72px;
+}
+.desc-textarea:focus { outline:none; border-color:var(--accent); }
+.desc-readonly {
+  background:var(--panel-bg); border:1px solid var(--rule); border-radius:2px;
+  padding:8px 10px; font-size:11px; color:var(--ink); line-height:1.5;
+  font-style:italic; white-space:pre-wrap;
+}
+
+/* Worlds editor */
+.worlds-tag-row { display:flex; flex-direction:column; gap:3px; margin-bottom:8px; }
+.world-tag {
+  display:flex; align-items:center; gap:4px;
+  background:var(--input-bg); border:1px solid var(--rule); border-radius:2px;
+  padding:3px 6px 3px 6px; font-size:10px; font-family:'IBM Plex Sans',sans-serif;
+  cursor:default; user-select:none;
+}
+.world-tag.drag-over { border-color:var(--accent); background:#eef4f0; }
+.world-tag .drag-handle {
+  color:var(--muted); font-size:11px; cursor:grab; padding:0 3px 0 0;
+  line-height:1; flex-shrink:0;
+}
+.world-tag .drag-handle:active { cursor:grabbing; }
+.world-tag span:hover { text-decoration:underline dotted var(--muted); }
+.world-tag button {
+  background:none; border:none; color:var(--muted); cursor:pointer;
+  font-size:12px; line-height:1; padding:0 0 1px;
+}
+.world-tag button:hover { color:var(--accent2); }
+.world-add-row { display:flex; gap:6px; }
+.world-add-input {
+  flex:1; background:var(--input-bg); border:1px solid var(--rule);
+  border-radius:2px; padding:4px 7px; font-size:11px; color:var(--ink);
+}
+.world-add-input:focus { outline:none; border-color:var(--accent); }
+.world-add-btn {
+  padding:4px 10px; font-size:11px; background:var(--accent); color:#fff;
+  border:none; border-radius:2px; cursor:pointer;
+}
+.world-add-btn:hover { background:#1e4530; }
+
+/* ══ SURVEY MODE ═════════════════════════════════════════════════════════════ */
+#survey-view {
+  display: none;
+  grid-template-columns: 320px 1fr 360px;
+  grid-template-rows: 48px 1fr;
+  grid-template-areas: "hd hd hd" "sl sm sr";
+  height: 100vh; min-height: 0;
+}
+#survey-view.active { display: grid; }
+#survey-left  { grid-area: sl; background:var(--survey-panel);
+  border-right:1px solid var(--survey-rule); overflow-y:auto; padding:16px; }
+#survey-main  { grid-area: sm; background:var(--survey-bg);
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; overflow:hidden; padding:16px; position:relative; }
+#survey-right { grid-area: sr; background:var(--survey-panel);
+  border-left:1px solid var(--survey-rule); overflow-y:auto; padding:0; }
+
+/* survey typography */
+.s-pt {
+  font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:500;
+  letter-spacing:0.12em; text-transform:uppercase; color:var(--survey-muted);
+  margin-bottom:10px;
+}
+.s-ps { margin-bottom:20px; }
+.s-ps + .s-ps { padding-top:16px; border-top:1px solid var(--survey-rule); }
+
+/* Worlds checkboxes in survey */
+.world-check-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.world-check-row input[type=checkbox] { accent-color:var(--accent); width:14px; height:14px; cursor:pointer; }
+.world-check-row label { font-size:12px; color:var(--survey-text); cursor:pointer; }
+
+/* Respondent name */
+.survey-name-input {
+  width:100%; background:#fff; border:1px solid var(--survey-rule);
+  border-radius:2px; padding:6px 10px; font-size:12px; color:var(--survey-text);
+  font-family:'IBM Plex Sans',sans-serif;
+}
+.survey-name-input:focus { outline:none; border-color:var(--accent); }
+
+/* Progress */
+.progress-bar-outer {
+  width:100%; height:4px; background:var(--survey-rule); border-radius:2px; margin-bottom:4px;
+}
+.progress-bar-inner { height:4px; background:var(--accent); border-radius:2px; transition:width 0.3s; }
+.progress-label { font-size:10px; color:var(--survey-muted); font-family:'IBM Plex Mono',monospace; }
+
+/* SVG container in survey (dark bg) */
+#survey-svg-container {
+  width:100%; height:100%; display:flex;
+  align-items:center; justify-content:center; overflow:auto;
+}
+#survey-svg-container svg { max-width:100%; max-height:100%; cursor:pointer; }
+
+/* ── Assessment Form (right panel in survey) ──────────── */
+#assessment-panel {
+  height:100%; display:flex; flex-direction:column;
+}
+.ap-header {
+  padding:14px 16px 10px;
+  border-bottom:1px solid var(--survey-rule);
+  flex-shrink:0;
+}
+.ap-id {
+  font-family:'IBM Plex Mono',monospace; font-size:10px;
+  color:var(--ink); font-weight:500; margin-bottom:2px;
+}
+.ap-label {
+  font-family:'Libre Baskerville',serif; font-size:15px;
+  font-weight:700; color:var(--survey-text); line-height:1.3;
+}
+.ap-description {
+  font-size:11px; color:var(--survey-muted); margin-top:4px; line-height:1.45;
+}
+.ap-body { flex:1; overflow-y:auto; padding:14px 16px; }
+.ap-field { margin-bottom:16px; }
+.ap-field-label {
+  font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600;
+  letter-spacing:0.08em; text-transform:uppercase; color:var(--ink); margin-bottom:6px;
+}
+.ap-select {
+  width:100%; background:#fff; border:1px solid var(--survey-rule);
+  border-radius:2px; padding:6px 8px; font-size:12px;
+  color:var(--survey-text); cursor:pointer;
+}
+.ap-select:focus { outline:none; border-color:var(--accent); }
+.ap-textarea {
+  width:100%; background:#fff; border:1px solid var(--survey-rule);
+  border-radius:2px; padding:8px 10px; font-size:12px; color:var(--survey-text);
+  font-family:'IBM Plex Sans',sans-serif; line-height:1.5;
+  resize:vertical; min-height:70px;
+}
+.ap-textarea:focus { outline:none; border-color:var(--accent); }
+.ap-nav {
+  display:flex; gap:8px; padding:12px 16px;
+  border-top:1px solid var(--survey-rule); flex-shrink:0;
+}
+.ap-nav-btn {
+  flex:1; padding:8px; font-family:'IBM Plex Mono',monospace; font-size:10px;
+  font-weight:500; letter-spacing:0.04em; border:1px solid var(--survey-rule);
+  background:#e8e4d8; color:var(--survey-text); cursor:pointer; border-radius:2px;
+  transition:all 0.15s;
+}
+.ap-nav-btn:hover { background:var(--accent); border-color:var(--accent); color:#fff; }
+.ap-nav-btn:disabled { opacity:0.3; cursor:default; }
+.ap-nav-btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+.ap-nav-btn.primary:hover { background:#1e4530; }
+
+/* sphere-grouped nav list */
+.sphere-nav-item {
+  padding:6px 10px; font-size:11px; cursor:pointer;
+  display:flex; justify-content:space-between; align-items:center;
+  border-bottom:1px solid var(--survey-rule); transition:background 0.1s;
+}
+.sphere-nav-item:hover { background:#e8e4d8; }
+.sphere-nav-item.active { background:#e8e4d8; border-left:2px solid var(--accent); }
+.sphere-nav-item .sphere-name { color:var(--survey-text); font-weight:500; }
+.sphere-nav-item .sphere-count { font-size:9px; color:var(--survey-muted);
+  font-family:'IBM Plex Mono',monospace; }
+
+/* ── Survey export ─── */
+.survey-export-btn {
+  width:100%; padding:10px; font-family:'IBM Plex Mono',monospace; font-size:11px;
+  font-weight:500; letter-spacing:0.04em; background:var(--accent); color:#fff;
+  border:none; border-radius:2px; cursor:pointer; transition:background 0.15s; margin-top:8px;
+}
+.survey-export-btn:hover { background:#1e4530; }
+.survey-import-btn {
+  width:100%; padding:8px 10px; font-family:'IBM Plex Mono',monospace; font-size:11px;
+  font-weight:500; letter-spacing:0.04em; background:var(--input-bg); color:var(--ink);
+  border:1px solid var(--rule); border-radius:2px; cursor:pointer;
+  transition:all 0.15s; margin-top:6px;
+}
+.survey-import-btn:hover { background:var(--ink); color:var(--paper); }
+
+/* ── No-selection placeholder ─── */
+.ap-placeholder {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; padding:24px; text-align:center; color:var(--survey-muted);
+}
+.ap-placeholder .big { font-size:32px; margin-bottom:12px; opacity:0.4; }
+.ap-placeholder p { font-size:12px; line-height:1.6; }
+
+/* ── Completion dots in nav ─── */
+.dot { width:7px; height:7px; border-radius:50%; display:inline-block;
+  border:1px solid var(--survey-rule); flex-shrink:0; }
+.dot.go,.dot.agree    { background:var(--agree);    border-color:var(--agree); }
+.dot.caution          { background:var(--caution);  border-color:var(--caution); }
+.dot.stop,.dot.disagree { background:var(--stop);   border-color:var(--stop); }
+.dot.unsure,.dot.unknown { background:var(--unsure); border-color:var(--unsure); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SETUP VIEW
+═══════════════════════════════════════════════════════════════════════ -->
+<div id="setup-view">
+
+  <header>
+    <h1>eVSM</h1>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tab-setup" onclick="switchMode('setup')">⚙ Setup</button>
+      <button class="mode-tab" id="tab-survey" onclick="switchMode('survey')">◎ Survey</button>
+    </div>
+    <div class="hdr-spacer"></div>
+  </header>
+
+  <!-- Setup Left: Labels + Sliders + Save/Load -->
+  <aside class="panel" id="setup-left">
+    <div class="ps">
+      <div class="pt">Survey Identity
+        <span style="font-size:8px;font-weight:normal;color:var(--muted);margin-left:4px;">shown read-only in survey</span>
+      </div>
+      <div class="label-row" style="grid-template-columns:90px 1fr;margin-bottom:6px;">
+        <div class="label-key" style="text-align:left;font-size:10px;">Enterprise</div>
+        <input class="label-input" id="meta-enterprise" type="text" placeholder="Organization name…">
+      </div>
+      <div style="margin-bottom:6px;">
+        <div class="label-key" style="text-align:left;font-size:10px;margin-bottom:4px;">Focal Point</div>
+        <textarea class="label-input" id="meta-focalpoint" rows="3" placeholder="Statement of purpose or focus being assessed…" style="resize:vertical;min-height:56px;line-height:1.45;"></textarea>
+      </div>
+      <div class="label-row" style="grid-template-columns:90px 1fr;margin-bottom:6px;">
+        <div class="label-key" style="text-align:left;font-size:10px;">Date</div>
+        <input class="label-input" id="meta-date" type="text" placeholder="e.g. 2025-01…">
+      </div>
+      <div class="label-row" style="grid-template-columns:90px 1fr;margin-bottom:6px;">
+        <div class="label-key" style="text-align:left;font-size:10px;">Time Frame</div>
+        <input class="label-input" id="meta-timeframe" type="text" placeholder="e.g. Q1 2025…">
+      </div>
+      <div class="label-row" style="grid-template-columns:90px 1fr;margin-bottom:6px;">
+        <div class="label-key" style="text-align:left;font-size:10px;">Survey ID</div>
+        <input class="label-input" id="meta-surveyid" type="text" placeholder="Unique survey code…">
+      </div>
+      <div class="label-row" style="grid-template-columns:90px 1fr;margin-bottom:6px;">
+        <div class="label-key" style="text-align:left;font-size:10px;">Respondent ID</div>
+        <input class="label-input" id="meta-respondentid" type="text" placeholder="Unique respondent code…">
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--rule);">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="meta-anonymous" style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer;">
+          <span style="font-size:10px;font-weight:500;color:var(--ink);">Anonymous mode</span>
+        </label>
+        <div style="font-size:9px;color:var(--muted);margin-top:4px;line-height:1.5;padding-left:22px;">
+          Respondent names are hidden from each other. Use for organizational surveys where hierarchy creates risk. Turn off for neighborhood and cooperative contexts where accountability supports trust.
+        </div>
+      </div>
+    </div>
+    <div class="ps">
+      <div class="pt">Sphere Labels</div>
+      <div id="label-editor"></div>
+    </div>
+    <div class="ps">
+      <div class="pt">Display</div>
+      <div class="slider-row">
+        <label>radius <span id="val-radius">45</span></label>
+        <input type="range" id="sl-radius" min="15" max="90" step="5" value="45">
+      </div>
+      <div class="slider-row">
+        <label>space <span id="val-space">90</span></label>
+        <input type="range" id="sl-space" min="30" max="120" step="10" value="90">
+      </div>
+      <div class="slider-row">
+        <label>bend <span id="val-bend">4</span></label>
+        <input type="range" id="sl-bend" min="0" max="45" step="1" value="4">
+      </div>
+      <div class="slider-row">
+        <label>label size <span id="val-fontsize">9</span>px</label>
+        <input type="range" id="sl-fontsize" min="6" max="16" step="1" value="9">
+      </div>
+    </div>
+    <div class="ps">
+      <div class="pt">Roles &amp; Categories
+        <span style="font-size:8px;font-weight:normal;color:var(--muted);margin-left:4px;">shown in survey</span>
+      </div>
+      <div class="worlds-tag-row" id="worlds-tags"></div>
+      <div class="world-add-row">
+        <input class="world-add-input" id="world-add-input" placeholder="Add a World…" type="text">
+        <button class="world-add-btn" id="world-add-btn">+</button>
+      </div>
+    </div>
+    <div class="ps">
+      <div class="pt">Save / Load Config</div>
+      <div class="btn-row">
+        <button class="btn" id="exportConfigBtn">⬇ Export</button>
+        <button class="btn btn-accent" id="importConfigBtn">⬆ Import</button>
+      </div>
+      <input type="file" id="configFileInput" accept=".json" style="display:none">
+      <div class="io-msg" id="config-msg"></div>
+    </div>
+  </aside>
+
+  <!-- Setup Main (SVG) -->
+  <main id="setup-main">
+    <div id="svg-container"></div>
+  </main>
+
+  <!-- Setup Right: Selected element editing + status + legend -->
+  <aside class="panel panel-right" id="setup-right">
+    <div class="ps">
+      <div class="pt">Selected Element
+        <span style="font-size:8px;font-weight:normal;color:var(--muted);margin-left:4px;">click sphere or edge to edit</span>
+      </div>
+      <div id="setup-detail">
+        <div style="padding-top:4px;font-size:11px;color:var(--muted);font-style:italic;">Click any sphere or edge in the diagram to edit its description and status.</div>
+      </div>
+    </div>
+
+    <div class="ps">
+      <div class="pt">Node Status</div>
+      <div id="node-status-editor"></div>
+    </div>
+
+    <div class="ps">
+      <div class="pt">Edge Status
+
+      </div>
+      <div id="edge-status-editor" style="max-height:200px;overflow-y:auto;"></div>
+    </div>
+
+    <div class="ps">
+      <div class="pt">Color Legend</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-family:'IBM Plex Mono',monospace;">Nodes</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--go)"></div>go — functioning well</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--caution)"></div>caution — needs attention</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--stop)"></div>stop — urgent issue</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--unsure)"></div>unsure — don't know</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--node-default);border:1px solid #ccc"></div>unassessed</div>
+      <div style="font-size:10px;color:var(--muted);margin:8px 0 6px;font-family:'IBM Plex Mono',monospace;">Edges</div>
+      <div class="legend-item"><div class="legend-edge-swatch" style="background:var(--agree)"></div>agree — working</div>
+      <div class="legend-item"><div class="legend-edge-swatch" style="background:var(--disagree)"></div>disagree — blocked</div>
+      <div class="legend-item"><div class="legend-edge-swatch" style="background:var(--unknown)"></div>unknown</div>
+      <div class="legend-item"><div class="legend-edge-swatch" style="background:var(--edge-default)"></div>unassessed</div>
+    </div>
+  </aside>
+</div><!-- /setup-view -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SURVEY VIEW
+═══════════════════════════════════════════════════════════════════════ -->
+<div id="survey-view">
+
+  <header>
+    <h1>eVSM</h1>
+    <span class="hdr-sub">Survey</span>
+    <div class="mode-tabs">
+      <button class="mode-tab" id="stab-setup" onclick="switchMode('setup')">⚙ Setup</button>
+      <button class="mode-tab active" id="stab-survey" onclick="switchMode('survey')">◎ Survey</button>
+    </div>
+    <div class="hdr-spacer"></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="progress-bar-outer" style="width:120px;">
+        <div class="progress-bar-inner" id="survey-progress-bar" style="width:0%"></div>
+      </div>
+      <span class="progress-label" id="survey-progress-label">0 / 77</span>
+    </div>
+  </header>
+
+  <!-- Survey Left: Worlds + respondent + sphere nav -->
+  <aside id="survey-left">
+    <div class="s-ps" id="survey-meta-display" style="background:var(--panel-bg);border-radius:2px;padding:10px;margin-bottom:0;">
+    </div>
+
+    <div class="s-ps" id="survey-name-block">
+      <div class="s-pt">Respondent</div>
+      <input class="survey-name-input" id="survey-name" type="text" placeholder="Your name">
+    </div>
+    <div class="s-ps" id="survey-respondent-id-row" style="display:none;">
+      <div class="s-pt">Your ID</div>
+      <input class="survey-name-input" id="survey-respondent-id-display" type="text"
+        placeholder="Enter your respondent ID" readonly
+        style="background:var(--panel-bg);color:var(--survey-muted);cursor:default;">
+      <div style="font-size:9px;color:var(--survey-muted);font-family:'IBM Plex Mono',monospace;margin-top:4px;">
+        Your ID was provided by the facilitator. Your name is not recorded.
+      </div>
+    </div>
+
+    <div class="s-ps">
+      <button class="survey-export-btn" id="surveyExportBtn">⬇ Save / Export My Responses</button>
+      <button class="survey-import-btn" id="surveyImportBtn">⬆ Resume / Import Saved Response</button>
+      <button class="survey-export-btn" id="surveyPrintBtn" style="margin-top:6px;background:var(--accent);color:#fff;border-color:var(--accent);">⎙ Print My Report</button>
+      <input type="file" id="surveyFileInput" accept=".json" style="display:none">
+      <div style="font-size:9px;color:var(--survey-muted);font-family:'IBM Plex Mono',monospace;margin-top:4px;text-align:center;">when complete or if taking a break</div>
+    </div>
+
+    <div class="s-ps">
+      <div class="s-pt">My Roles &amp; Categories</div>
+      <div id="survey-worlds-list"></div>
+    </div>
+
+    <div class="s-ps">
+      <div class="s-pt">Navigate by Sphere</div>
+      <div id="sphere-nav-list"></div>
+    </div>
+
+    <div class="s-ps" style="padding:0 0 4px;">
+      <button class="survey-export-btn" id="surveyExportBtn2">⬇ Save / Export My Responses</button>
+      <button class="survey-import-btn" id="surveyImportBtn2">⬆ Resume / Import Saved Response</button>
+      <button class="survey-export-btn" id="surveyPrintBtn2" style="margin-top:6px;background:var(--accent);color:#fff;border-color:var(--accent);">⎙ Print My Report</button>
+      <div style="font-size:9px;color:var(--survey-muted);font-family:'IBM Plex Mono',monospace;margin-top:4px;text-align:center;">when complete or if taking a break</div>
+      <div class="io-msg" id="survey-msg" style="color:#6a9;margin-top:6px;"></div>
+    </div>
+  </aside>
+
+  <!-- Survey Main: dark SVG -->
+  <main id="survey-main">
+    <div id="survey-svg-container"></div>
+  </main>
+
+  <!-- Survey Right: assessment form -->
+  <aside id="survey-right">
+    <div id="assessment-panel">
+      <div class="ap-placeholder" id="ap-placeholder">
+        <div class="big">◎</div>
+        <p>Click any sphere or edge in the diagram to begin your assessment.<br><br>
+        Or use the sphere list on the left to navigate by topic.</p>
+      </div>
+    </div>
+  </aside>
+
+</div><!-- /survey-view -->
+
+<script>
+'use strict';
+
+// ══ CONFIG DATA ═══════════════════════════════════════════════════════════════
+
+let nodeLabels = {
+  "S-1":"COORDINATION ACROSS THE NHOOD",
+  "S-2":"INVOLVEMENT",
+  "S-3":"TOOLS AND WORKSPACES",
+  "S-4":"AWARENESS WITHIN THE NHOOD",
+  "S-5":"QUALITY OF LEARNING AND CHANGE",
+  "S-6":"ABILITY TO GET THINGS DONE WITHIN THE NHOOD",
+  "S-7":"RESOURCES\n(FINANCE)",
+  "S-8":"QUALITY OF NEIGHBORHOOD PLANNING",
+  "S-9":"AWARENESS BEYOND THE NHOOD",
+  "S-10":"LEADERSHIP IN THE NHOOD",
+  "S-11":"CULTURE"
+};
+
+let nodeStatus = {
+  "S-1":"","S-2":"","S-3":"","S-4":"","S-5":"",
+  "S-6":"","S-7":"","S-8":"","S-9":"","S-10":"","S-11":""
+};
+
+let edgeStatus = {};
+
+let nodeDescriptions = {
+  "S-1":"_S-1 is the integration function \u2014 the neighborhood's capacity to connect its parts into coherent collective action rather than a collection of separate efforts._\n**Our neighborhood's people, groups, and initiatives are aware of each other, working in alignment, and not duplicating or undermining each other's efforts.**",
+  "S-2":"_S-2 is the participation function \u2014 the breadth and depth of who is actually engaged in neighborhood life, not just present in it._\n**Our neighborhood draws people in. Residents, organizations, and newcomers find meaningful ways to contribute, and no one who wants to participate is left out.**",
+  "S-3":"_S-3 is the infrastructure function \u2014 the physical spaces, digital tools, and shared resources that make it possible for people to work together effectively._\n**Our neighborhood has the spaces, tools, and shared resources people need to meet, organize, communicate, and get things done together.**",
+  "S-4":"_S-4 is the community-facing awareness function \u2014 knowing who is here, what they need, and how to reach them._\n**We know our neighbors, what they need from us, what they can contribute, and how to communicate with them.**",
+  "S-5":"_S-5 is the adaptive function \u2014 the neighborhood's capacity to notice what is and isn't working, take that seriously, and actually change course._\n**Our neighborhood learns from experience. We notice what is working and what isn't, we talk about it honestly, and we use what we learn to do better.**",
+  "S-6":"_S-6 is the execution function \u2014 the neighborhood's actual capacity to follow through on intentions and turn plans and commitments into completed work._\n**Our neighborhood can turn decisions into action. When we commit to something, we have the people, coordination, and follow-through to actually make it happen.**",
+  "S-7":"_S-7 is the resource function \u2014 the flow of money, funding, and material support that sustains neighborhood activity and makes sustained effort possible._\n**Our neighborhood has enough financial resources to sustain the work we care about. Resources are raised, managed, and distributed in ways people trust.**",
+  "S-8":"_S-8 is the planning function \u2014 the neighborhood's capacity to think ahead, set intentions, coordinate future action._\n**Our neighborhood makes plans that are realistic, shared, and actually guide what we do together.**",
+  "S-9":"S-9 is the external awareness function \u2014 sensing and communicating with the larger environment beyond the neighborhood boundary.\n**Our neighborhood understands what is going on  around us. We know our supporters as well as extractors.**",
+  "S-10":"_S-10 is the self-organizing capacity \u2014 the neighborhood's ability to actually mobilize around problems and opportunities as they arise._ \n**Our neighborhood can self-organize to understand and solve our problems and take advantage of opportunities.**",
+  "S-11":"_S-11 is the values-in-action function \u2014 the actual norms, habits, and shared expectations that shape how people treat each other and what they believe is possible together._\n**Our neighborhood has a culture of mutual respect, honest conversation, and shared responsibility. How we treat each other reflects what we say we believe.**"
+};
+
+let edgeDescriptions = {
+  "1->2":"_Does coordination make it easier for more people to find their place and get involved?_ **When the neighborhood's efforts are well-coordinated, people can find their entry point and contribute without duplicating work or falling through the cracks.**",
+  "2->1":"_Does broad, deep involvement make it easier to coordinate across the neighborhood?_ **When more people are genuinely engaged, coordination becomes richer \u2014 more perspectives are in the room, more connections are made, and collective action becomes more possible.**",
+  "3->1":"_Do shared tools and workspaces enable better coordination?_ **When people have the right spaces to meet and the right tools to communicate, coordinating across the neighborhood becomes practical rather than aspirational.**",
+  "9->10":"_Does our collective awareness of the outside world actually sharpen how we organize ourselves to act?_ **Our neighborhood's awareness of outside forces, opportunities, and threats is actively shaping how we come together to solve problems and take advantage of opportunities.**",
+  "10->9":"_Does active neighborhood self-organization focus and sharpen what outside information we seek and use?_ **When our neighborhood comes together around a problem or opportunity, we get better at knowing what outside information we need.**",
+  "8->10":"_Does neighborhood planning actually enable and focus our collective capacity to act, rather than replacing it?_\n**Our neighborhood planning gives people the context and direction they need to step up and organize around real problems and opportunities.**",
+  "10->8":"_Does our lived experience of working together actually improve the quality of our planning?_\n**When our neighborhood comes together to act, what we learn shapes and improves our plans.**",
+  "8->9":"_Does our neighborhood planning actively direct what we look for and pay attention to beyond our boundaries?_\n**Our neighborhood's plans and priorities are actively shaping what outside information we seek out and pay attention to.**",
+  "9->8":"_Does our awareness of the outside world actually update and improve our neighborhood's plans?_\n**What we learn about the world beyond our neighborhood is regularly finding its way into how we plan and set priorities.**",
+  "1->4":"_Does coordination across the neighborhood deepen how well we know who is here and what they need?_ **When the neighborhood's people and groups work in alignment, we get better at knowing our neighbors \u2014 who they are, what they bring, and what they need from us.**",
+  "1->3":"_Does coordination drive investment in the shared tools and spaces that make collaboration possible?_ **When our neighborhood coordinates well, we identify what tools and workspaces we actually need and make sure they are available to everyone.**",
+  "2->3":"_Does the breadth of involvement shape what tools and spaces the neighborhood develops?_ **When a wide range of people are involved, the tools and spaces we build reflect actual needs rather than the preferences of a narrow group.**",
+  "2->4":"_Does broad involvement deepen the neighborhood's knowledge of itself?_ **When more people participate, we collectively know more about who lives here, what people need, and what resources and capacities exist among us.**",
+  "2->5":"_Does the range of who is involved improve the quality of the neighborhood's learning?_ **When diverse people are genuinely engaged, the neighborhood hears more honest feedback, catches blind spots earlier, and learns faster from both success and failure.**",
+  "2->6":"_Does involvement translate into actual capacity to execute?_ **When people are genuinely engaged, the neighborhood has more hands, more skills, and more follow-through to turn commitments into completed work.**",
+  "2->7":"_Does broad involvement strengthen the neighborhood's resource base?_ **When more people are engaged, the neighborhood is better positioned to attract funding, generate in-kind contributions, and steward resources with broad accountability.**",
+  "3->2":"_Do shared tools and accessible workspaces lower the barriers to participation?_ **When spaces are welcoming and tools are easy to use, more people can find their way into neighborhood life \u2014 especially those who might otherwise be left out.**",
+  "3->4":"_Do shared tools and workspaces help the neighborhood know itself better?_ **Good tools for communication and shared spaces for gathering help us stay current on who is here, what is happening, and what people need.**",
+  "3->5":"_Do shared tools and workspaces support honest reflection and real learning?_ **When people have good places to meet and share information, the neighborhood can have the kinds of conversations that lead to genuine learning and course correction.**",
+  "3->6":"_Do shared tools and workspaces increase the neighborhood's execution capacity?_ **When people have what they need to organize and work together, getting things done becomes less dependent on heroic individual effort and more supported by shared infrastructure.**",
+  "3->11":"_Do the tools and spaces we build reflect and reinforce the values we hold?_ **The spaces we create and the tools we adopt send a message about who belongs and how we work together. Inclusive, accessible infrastructure builds an inclusive, accessible culture.**",
+  "4->1":"_Does knowing our neighbors well make it easier to coordinate across the neighborhood?_ **When we know who is here, what they do, and what they care about, coordination becomes more targeted \u2014 we connect the right people to the right efforts.**",
+  "4->2":"_Does deep internal awareness help us draw more people into participation?_ **When we know our neighbors \u2014 their interests, capacities, and barriers \u2014 we can reach out in ways that actually resonate and make involvement feel possible for more people.**",
+  "4->3":"_Does knowing what people need shape what tools and spaces we build?_ **When we understand who is here and how they work, we can design and maintain tools and spaces that actually serve the full range of people in the neighborhood.**",
+  "4->5":"_Does knowing our neighbors deeply improve the quality of how we learn and adapt?_ **When we have honest knowledge of who is here and how things are going for them, we have better raw material for learning \u2014 closer to what is actually true rather than what we assume.**",
+  "4->6":"_Does internal awareness make the neighborhood more capable of acting effectively?_ **Knowing who can do what \u2014 and who needs what \u2014 means we can mobilize the right people and resources when action is needed, rather than working blind.**",
+  "4->11":"_Does genuine knowledge of our neighbors shape the kind of community we become?_ **When we actually know each other \u2014 not just as categories but as people \u2014 the neighborhood develops a culture of real relationship rather than surface-level coexistence.**",
+  "5->2":"_Does the neighborhood's capacity to learn and change make participation more meaningful?_ **When people see that the neighborhood actually learns from feedback and changes course, they are more likely to stay engaged \u2014 their participation feels like it matters.**",
+  "5->3":"_Does learning from experience improve how we develop and maintain our shared tools and spaces?_ **When we reflect honestly on what is and isn't working, we update our tools and spaces to better serve actual needs rather than perpetuating what has always been done.**",
+  "5->4":"_Does the neighborhood's learning process deepen its knowledge of who is here and what they need?_ **Honest reflection surfaces gaps in what we know about our neighbors. Good learning processes reveal who we have been missing and what we have been misunderstanding.**",
+  "5->6":"_Does learning from experience make the neighborhood more effective at executing?_ **When we learn from what has worked and what hasn't, we get better at turning commitments into results \u2014 less wasted effort, more targeted action.**",
+  "5->7":"_Does the quality of the neighborhood's learning strengthen its resource base?_ **When we can demonstrate honest reflection and adaptive management, funders and contributors are more willing to invest. Learning is what makes trust sustainable over time.**",
+  "5->8":"_Does the neighborhood's learning actually feed back into better planning?_ **When we learn from experience \u2014 from both successes and failures \u2014 that knowledge improves the plans we make. Plans grounded in real learning are more realistic and more shared.**",
+  "5->9":"_Does strong internal learning sharpen how we attend to and use outside information?_ **A neighborhood that learns well from its own experience also gets better at knowing what outside information matters and how to make use of it.**",
+  "5->11":"_Does the neighborhood's capacity for honest learning shape its culture?_ **When a neighborhood can acknowledge mistakes, celebrate growth, and change course together, it builds a culture of honesty and shared accountability rather than defensiveness.**",
+  "6->2":"_Does the neighborhood's ability to deliver on commitments attract and sustain involvement?_ **When people see that things actually get done, they stay engaged. Demonstrated effectiveness is one of the most powerful invitations to participate.**",
+  "6->3":"_Does getting things done generate investment in the tools and spaces needed to sustain that capacity?_ **As the neighborhood accomplishes things together, it learns what infrastructure it needs and builds the case for maintaining and improving shared tools and workspaces.**",
+  "6->5":"_Does the experience of getting things done generate the neighborhood's best learning?_ **Working together on real tasks reveals what we know and what we don't, what works and what doesn't. Execution is where the neighborhood's learning happens most concretely.**",
+  "6->8":"_Does the experience of getting things done improve the quality of the neighborhood's planning?_ **Plans made by people who have worked together on real things are better \u2014 more grounded, more realistic, more attentive to what actually matters.**",
+  "6->7":"_Does the neighborhood's track record of getting things done strengthen its resource base?_ **Demonstrated capacity to execute attracts funding and in-kind support. When people can see that the neighborhood delivers, they are more willing to invest in it.**",
+  "6->10":"_Does the experience of getting things done together develop and reveal neighborhood leadership?_ **Working on real tasks together is where people discover their own capacity and others discover it in them. Execution is where leadership grows.**",
+  "6->11":"_Does getting things done together shape the neighborhood's culture?_ **Shared accomplishment builds confidence, trust, and a sense of collective identity. A neighborhood that does things together develops a culture of we can.**",
+  "7->2":"_Does having adequate resources make involvement more accessible and sustainable?_ **When the neighborhood has resources, it can reduce barriers to participation \u2014 covering costs, compensating time, and making it possible for people who cannot volunteer freely to stay engaged.**",
+  "7->4":"_Does adequate resourcing enable the neighborhood to know itself better?_ **With resources, the neighborhood can invest in the outreach, listening, and relationship-building needed to actually know who is here, especially those who are hardest to reach.**",
+  "7->5":"_Does adequate resourcing support the neighborhood's capacity to learn and change?_ **Learning takes time and attention. When the neighborhood has resources, it can invest in honest reflection, evaluation, and the conversations needed to adapt and improve.**",
+  "7->6":"_Do financial resources translate into execution capacity?_ **Resources enable action \u2014 paying for materials, compensating labor, sustaining effort over time. A neighborhood with adequate resources can follow through on what it commits to.**",
+  "7->9":"_Does having resources improve the neighborhood's capacity to engage with the world beyond its boundaries?_ **Resources make it possible to attend events, build external relationships, hire expertise, and engage with the broader environment in ways that voluntary effort alone cannot sustain.**",
+  "7->11":"_Does the way resources flow through the neighborhood reflect and shape its culture?_ **How money is raised, managed, and distributed is a direct expression of neighborhood values. Transparent, equitable resource stewardship builds trust and reinforces a culture of shared ownership.**",
+  "7->10":"_Does having adequate resources enable and sustain neighborhood leadership?_ **Leadership without resources burns people out. When the neighborhood can compensate, support, and develop its leaders, leadership becomes more sustainable and more broadly distributed.**",
+  "8->5":"_Does the quality of neighborhood planning create conditions for genuine learning?_ **Good plans include honest assessment of what worked before. When plans are made with reflection built in, the neighborhood gets better at learning from experience rather than just moving on.**",
+  "8->6":"_Does good neighborhood planning actually increase the capacity to execute?_ **Clear, shared, realistic plans reduce confusion and duplication. When people know what the priorities are and who is doing what, getting things done becomes more possible.**",
+  "8->11":"_Does the way the neighborhood plans together reflect and reinforce its culture?_ **A planning process that is open, honest, and inclusive builds a culture of shared ownership. When people help shape the plans, they are more likely to feel responsible for carrying them out.**",
+  "9->5":"_Does awareness of the outside world enrich the neighborhood's learning?_ **Knowing what is happening beyond our boundaries \u2014 what other neighborhoods have tried, what forces are shaping our environment \u2014 gives the neighborhood richer material to learn from.**",
+  "9->7":"_Does awareness of the outside world improve the neighborhood's ability to attract and manage resources?_ **Knowing what funders are prioritizing, what programs are available, and what the broader landscape looks like helps the neighborhood position itself to attract and sustain the resources it needs.**",
+  "9->11":"_Does awareness of the world beyond the neighborhood shape its internal culture?_ **Knowing what is happening elsewhere \u2014 both threats and possibilities \u2014 helps the neighborhood develop a culture that is confident and grounded rather than fearful or parochial.**",
+  "10->6":"_Does neighborhood self-organization translate into actual execution capacity?_ **When the neighborhood can mobilize around problems and opportunities, things actually get done. Leadership that is distributed and responsive is what turns energy into results.**",
+  "10->7":"_Does active neighborhood self-organization strengthen the resource base?_ **When people are organizing around real issues, they generate the energy, visibility, and credibility that attract funding, in-kind support, and the contributions of time and skill.**",
+  "10->11":"_Does the way the neighborhood self-organizes shape its culture?_ **Who steps up, who is welcomed in, and how people organize together sends a constant signal about what the neighborhood values and who belongs. Leadership practice is culture in action.**",
+  "11->3":"_Does the neighborhood's culture shape what tools and spaces it builds and how they are maintained?_ **A culture of inclusion and shared ownership produces tools and spaces that are accessible to everyone and maintained by everyone. Culture determines whether shared infrastructure is cared for or neglected.**",
+  "11->4":"_Does the neighborhood's culture affect how well it knows itself?_ **A culture of honest conversation and genuine curiosity about neighbors produces richer, more accurate internal knowledge. A closed or defensive culture produces blind spots.**",
+  "11->5":"_Does the neighborhood's culture enable or inhibit genuine learning and change?_ **Learning requires honesty about failure and openness to being wrong. A culture of psychological safety \u2014 where people can speak honestly without fear \u2014 is the precondition for real learning.**",
+  "11->6":"_Does the neighborhood's culture affect its capacity to follow through and execute?_ **A culture of shared responsibility and mutual accountability means people show up, follow through, and cover for each other. Culture is what makes collective execution possible or impossible.**",
+  "11->7":"_Does the neighborhood's culture affect its ability to attract and steward resources?_ **Funders and contributors want to invest in communities with healthy cultures \u2014 where accountability is real, relationships are genuine, and resources will be used well. Culture is what makes the neighborhood trustworthy.**",
+  "11->8":"_Does the neighborhood's culture affect the quality of its planning?_ **A culture that values honesty and shared ownership produces planning processes that surface real issues, hear dissenting voices, and generate plans people actually believe in.**",
+  "11->9":"_Does the neighborhood's culture shape how it engages with the outside world?_ **A confident, grounded neighborhood culture enables engagement with outside forces without being captured or overwhelmed by them. Culture is what makes external engagement generative rather than threatening.**",
+  "11->10":"_Does the neighborhood's culture shape who leads and how?_ **Culture determines whether leadership is hoarded or distributed, whether stepping up is welcomed or punished, whether new voices find their way in. A healthy culture grows leaders constantly.**"
+};
+
+const nodeColor = {
+  "unsure":"var(--unsure)","stop":"var(--stop)",
+  "caution":"var(--caution)","go":"var(--go)","default":"var(--node-default)"
+};
+const edgeColor = {
+  "agree":"var(--agree)","disagree":"var(--disagree)",
+  "unknown":"var(--unknown)","default":"var(--edge-default)"
+};
+
+let worldsCategories = [
+  "Volunteer",
+  "Community Member",
+  "Funder",
+  "Male",
+  "Female",
+  "Age 18 or younger",
+  "Age  19 to 30",
+  "Age 31 to 40",
+  "Age 41 to 50",
+  "Age 51 to 60",
+  "Age 61 to 70",
+  "Age 71 to 80",
+  "Age 81 to 90",
+  "Age 91 and over",
+  "Live here less than a year",
+  "Lived here 2-5 years",
+  "Lived here 5-10 years",
+  "Lived here most of my life",
+  "Parent(s) live or lived here",
+  "Financially Secure",
+  "Financially Insecure",
+  "Own home",
+  "Rent home",
+  "Housing Secure",
+  "Housing Insecure",
+  "Employeed",
+  "Retired",
+  "Healthy",
+  "Health Issues",
+  "Student"
+];
+
+let surveyMeta = {
+  "enterprise": "Generic Neighborhood Development Center",
+  "focalPoint": "Neighborhood Center Functioning",
+  "date": "03-02-2026",
+  "timeFrame": "Spring 2026",
+  "surveyId": "",
+  "respondentId": "",
+  "anonymousMode": false
+};
+
+// ══ SURVEY RESPONSE DATA ══════════════════════════════════════════════════════
+
+let surveyResponse = {
+  respondentName: "",
+  selectedWorlds: [],
+  nodeAssessments: {},  // { "S-1": { status:"go" } }
+  edgeAssessments: {}   // { "1->2": { status:"agree", evidence:"...", suggestions:"..." } }
+};
+
+// ══ EDGE LIST ═════════════════════════════════════════════════════════════════
+
+const EDGE_LIST = [
+  [1,4],[1,3],[1,2],[2,1],[2,3],[2,4],[2,5],[2,6],[2,7],
+  [3,1],[3,2],[3,4],[3,5],[3,6],[3,11],
+  [4,1],[4,2],[4,3],[4,5],[4,7],[4,11],
+  [5,2],[5,3],[5,4],[5,6],[5,7],[5,8],[5,9],[5,11],
+  [6,2],[6,3],[6,5],[6,8],[6,7],[6,10],[6,11],
+  [7,2],[7,4],[7,5],[7,6],[7,9],[7,11],[7,10],
+  [8,5],[8,6],[8,9],[8,10],[8,11],
+  [9,5],[9,7],[9,8],[9,10],[9,11],
+  [10,6],[10,7],[10,8],[10,9],[10,11],
+  [11,3],[11,4],[11,5],[11,6],[11,7],[11,8],[11,9],[11,10]
+].map(([tail,head]) => ({tail,head}));
+
+// Flat sequence for Prev/Next: nodes first, then edges
+function buildAssessmentSequence() {
+  const nodes = Object.keys(nodeLabels).map(id => ({type:'node', id}));
+  const edges = EDGE_LIST.map(({tail,head}) => ({type:'edge', id:`${tail}->${head}`}));
+  return [...nodes, ...edges];
+}
+
+// ══ DISPLAY PARAMS ════════════════════════════════════════════════════════════
+
+// ── MARKDOWN RENDERER ─────────────────────────────────────────────────────────
+// Handles: **bold**, _italic_, line breaks. Safe for FedWiki embedding.
+function miniMd(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/_(.*?)_/g,'<em>$1</em>')
+    .replace(/\n/g,'<br>');
+}
+
+
+let radius = 45, space = 90, bend = 4, labelFontSize = 9;
+const nudge = Math.PI / 40;
+const mw = () => 3*space + 4.5*radius;
+const ht = () => 10*radius + 4*space + 6;
+
+// ══ NODE POSITIONS ════════════════════════════════════════════════════════════
+
+function buildNodes() {
+  const ex = 3;
+  const oy = i => 2*radius*(i+1) + (i+0.5)*space + ex;
+  const iy = i => (2*i+1)*radius + i*space + ex;
+  return [
+    ...[10,11,5,2,1].map((n,i) => ({n, x:mw()/2, y:iy(i)})),
+    ...[8,6,3].map((n,i) => ({n, x:radius+3, y:oy(i)})),
+    ...[9,7,4].map((n,i) => ({n, x:mw()-radius-3, y:oy(i)}))
+  ].sort((a,b) => a.n - b.n);
+}
+
+// ══ SVG ENGINE ════════════════════════════════════════════════════════════════
+
+const NS  = 'http://www.w3.org/2000/svg';
+const XNS = 'http://www.w3.org/1999/xhtml';
+
+function el(tag, attrs={}) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k,v] of Object.entries(attrs)) e.setAttribute(k,v);
+  return e;
+}
+
+function colorFor(name, mode='setup') {
+  if (name.startsWith('S-')) {
+    const s = (mode==='survey'
+      ? (surveyResponse.nodeAssessments[name]?.status || '')
+      : nodeStatus[name]) || 'default';
+    return nodeColor[s] || nodeColor.default;
+  }
+  const s = (mode==='survey'
+    ? (surveyResponse.edgeAssessments[name]?.status || '')
+    : edgeStatus[name]) || 'default';
+  return edgeColor[s] || edgeColor.default;
+}
+
+function edgeConstructions({tail,head}, nodes) {
+  const ename = `${tail}->${head}`;
+  const described = !!edgeDescriptions[ename];
+  const {sin,cos,atan2,PI} = Math;
+  const hn = nodes.find(n => +n.n===+head);
+  const tn = nodes.find(n => +n.n===+tail);
+  const sl = atan2(hn.y-tn.y, hn.x-tn.x);
+  const p  = sl + PI/2;
+  const h  = {angle: sl-nudge};
+  const ew = 1;
+  const dtip  = radius+3, dtail = dtip+8+ew;
+  h.x  = hn.x - cos(h.angle)*dtip;
+  h.y  = hn.y - sin(h.angle)*dtip;
+  h.ax = hn.x - cos(h.angle)*dtail;
+  h.ay = hn.y - sin(h.angle)*dtail;
+  const t = {angle: sl+nudge};
+  t.x = tn.x + cos(t.angle)*(radius+3);
+  t.y = tn.y + sin(t.angle)*(radius+3);
+  const m = {x: t.x+(h.ax-t.x)/2, y: t.y+(h.ay-t.y)/2};
+  const c = {x: cos(p)*bend+m.x,   y: sin(p)*bend+m.y};
+  return {hn,tn,ename,ew,sl,p,t,h,m,c};
+}
+
+function arrowPath(x,y,deg,ew) {
+  const r  = Math.atan2(3,8);
+  const ln = Math.sqrt(73)+ew;
+  const tx = Math.cos(r)*ln, ty = Math.sin(r)*ln;
+  return el('path',{
+    transform:`translate(${x} ${y}) rotate(${deg})`,
+    d:`M -${tx} -${ty} L 0 0 L -${tx} ${ty} Z`
+  });
+}
+
+function buildSVG(containerId, mode='setup', highlightId=null) {
+  const nodes = buildNodes();
+  const W = mw(), H = ht();
+
+  const svg = el('svg', {
+    viewBox:`0 0 ${W} ${H}`,
+    xmlns:NS, style:'position:relative;overflow:visible;'
+  });
+
+  // style
+  const st = document.createElementNS(NS,'style');
+  const bgNode = mode==='survey' ? '#2a2a26' : 'transparent';
+  st.textContent = `
+    .nodelabel { display:table-cell; vertical-align:middle; text-align:center;
+      font-size:9px; position:absolute; width:${2*radius}px; height:${2*radius}px; }
+    .edgelabel { position:absolute; font-size:8px; }
+    .edgelabel p { position:absolute; width:36px; height:14px; transform:translate(0,-4px); }
+    p { margin:0; }
+    circle { transition: stroke-width 0.1s, stroke 0.1s; }
+    circle:hover { stroke-width:2.5px !important; }
+  `;
+  svg.appendChild(st);
+
+  // circles
+  const cg = el('g',{stroke: mode==='survey'?'#888':'black', fill:'transparent'});
+  for (const {n,x,y} of nodes) {
+    const id   = `S-${n}`;
+    const fill = colorFor(id, mode);
+    const hi   = highlightId===id;
+    const c    = el('circle',{
+      r:radius, cx:0, cy:0, fill,
+      transform:`translate(${x} ${y})`,
+      'data-type':'node','data-id':id,
+      style:`cursor:pointer;stroke-width:${hi?2.5:1}px;stroke:${hi?'#4a9':mode==='survey'?'#888':'black'};`
+    });
+    cg.appendChild(c);
+  }
+  svg.appendChild(cg);
+
+  // edges
+  const eg = el('g');
+  for (const {tail,head} of EDGE_LIST) {
+    const ec  = edgeConstructions({tail,head},nodes);
+    const col = colorFor(ec.ename, mode);
+    const hi  = highlightId===ec.ename;
+    const deg = ec.h.angle*180/Math.PI;
+    const g   = el('g',{
+      stroke: hi ? '#4a9' : col,
+      'data-type':'edge','data-id':ec.ename,
+      style:'cursor:pointer;'
+    });
+    const ag = el('g',{fill: hi ? '#4a9' : col});
+    ag.appendChild(arrowPath(ec.h.x,ec.h.y,deg,ec.ew));
+    g.appendChild(ag);
+    g.appendChild(el('path',{
+      'stroke-width': hi ? Math.max(ec.ew,2) : ec.ew,
+      fill:'transparent',
+      d:`M ${ec.h.ax} ${ec.h.ay} Q ${ec.c.x} ${ec.c.y} ${ec.t.x} ${ec.t.y}`
+    }));
+    eg.appendChild(g);
+  }
+  svg.appendChild(eg);
+
+  // foreignObject labels
+  const fo = el('foreignObject',{x:0,y:0,width:W,height:H});
+  const labelColor = '#1a1a18';
+  const idColor    = '#1a1a18';
+
+  for (const {n,x,y} of nodes) {
+    const id    = `S-${n}`;
+    const title = (nodeLabels[id]||id).replace(/\\n/g,'\n');
+    const div   = document.createElementNS(XNS,'div');
+    div.setAttribute('xmlns',XNS);
+    div.className='nodelabel';
+    div.setAttribute('data-type','node');
+    div.setAttribute('data-id',id);
+    div.style.cssText=`left:${x-radius}px;top:${y-radius}px;width:${radius*2}px;height:${radius*2}px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-family:'Libre Baskerville',serif;`;
+    div.innerHTML=`<p style="color:${idColor};font-family:'Libre Baskerville',serif;font-size:${Math.max(6,labelFontSize-2)}px;font-weight:700;line-height:1.2;">${id}</p><p style="margin-top:2px;font-size:${labelFontSize}px;font-weight:700;color:${labelColor};line-height:1.25;white-space:pre-wrap;">${title}</p>`;
+    fo.appendChild(div);
+  }
+
+  for (const {tail,head} of EDGE_LIST) {
+    const ec  = edgeConstructions({tail,head},nodes);
+    const {sin,cos,PI} = Math;
+    const x = ec.t.x+cos(ec.t.angle)*25+cos(ec.p)*4;
+    const y = ec.t.y+sin(ec.t.angle)*25+sin(ec.p)*4;
+    const described = edgeDescriptions.hasOwnProperty(ec.ename) && !!edgeDescriptions[ec.ename];
+    const fromFull = (nodeLabels[`S-${tail}`]||`S-${tail}`).replace(/\n/g,' ');
+    const toFull   = (nodeLabels[`S-${head}`]||`S-${head}`).replace(/\n/g,' ');
+    const tooltip  = `${fromFull} → ${toFull}`;
+
+    let summary, angle, ta;
+    if (ec.h.x-ec.t.x>0) { summary=`${tail}→${head}`; angle=ec.sl; ta='left'; }
+    else { summary=`${head}←${tail}`; angle=ec.sl+PI; ta='right'; }
+    const div = document.createElementNS(XNS,'div');
+    div.setAttribute('xmlns',XNS);
+    div.className='edgelabel';
+    div.setAttribute('data-type','edge');
+    div.setAttribute('data-id',ec.ename);
+    div.title=tooltip;
+    div.style.cssText=`left:${x}px;top:${y}px;transform-origin:center;transform:rotate(${angle}rad) translate(-20px,0);`;
+    const sc = described
+      ? 'color:#1a1a18;font-weight:bold;'
+      : 'color:#1a1a18;';
+    div.innerHTML=`<p style="${sc}text-align:${ta};">${summary}</p>`;
+    fo.appendChild(div);
+  }
+  svg.appendChild(fo);
+
+  const container = document.getElementById(containerId);
+  container.innerHTML='';
+  container.appendChild(svg);
+  return svg;
+}
+
+// ══ SETUP MODE ════════════════════════════════════════════════════════════════
+
+function renderSetup(highlightId=null) {
+  const svg = buildSVG('svg-container','setup',highlightId);
+  svg.addEventListener('click', e => {
+    const target = e.target.closest('[data-type]');
+    if (!target) return;
+    const type = target.getAttribute('data-type');
+    const id   = target.getAttribute('data-id');
+    showSetupDetail(type, id);
+    renderSetup(id);
+  });
+}
+
+function showSetupDetail(type, id) {
+  const box    = document.getElementById('setup-detail');
+  const isEdge = type==='edge';
+  const curSt  = isEdge ? (edgeStatus[id]||'') : (nodeStatus[id]||'');
+  const opts   = isEdge ? ['','agree','disagree','unknown'] : ['','go','caution','stop','unsure'];
+  const curDesc = isEdge ? (edgeDescriptions[id]||'') : (nodeDescriptions[id]||'');
+
+  // Display name for header
+  let headerName, headerSub;
+  if (isEdge) {
+    const [t,h] = id.split('->').map(Number);
+    headerName = `${(nodeLabels[`S-${t}`]||`S-${t}`).replace(/\n/g,' ')} → ${(nodeLabels[`S-${h}`]||`S-${h}`).replace(/\n/g,' ')}`;
+    headerSub  = id;
+  } else {
+    headerName = (nodeLabels[id]||id).replace(/\n/g,' ');
+    headerSub  = id;
+  }
+
+  box.className='active';
+  box.innerHTML=`
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:2px;">${headerSub}</div>
+    <div style="font-family:'Libre Baskerville',serif;font-size:13px;font-weight:700;margin-bottom:10px;">${headerName}</div>
+    <div class="desc-editor-label">Description <span style="font-size:8px;font-weight:normal;color:var(--muted);margin-left:4px;">markdown supported</span></div>
+    <textarea class="desc-textarea" id="sd-desc" placeholder="Explain the meaning of this ${isEdge?'relationship':'sphere'} for survey respondents…">${curDesc}</textarea>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:8px;margin-bottom:3px;">Preview</div>
+    <div id="sd-desc-preview" style="font-size:11px;line-height:1.55;color:var(--ink);background:var(--input-bg);border:1px solid var(--rule);border-radius:2px;padding:7px 9px;min-height:32px;">${curDesc ? miniMd(curDesc) : '<span style="color:var(--muted);font-style:italic;">Nothing yet</span>'}</div>
+    <div style="margin-top:10px;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--muted);">status</span>
+      <select id="sd-status" class="status-select" style="flex:1;">
+        ${opts.map(s=>`<option value="${s}" ${curSt===s?'selected':''}>${s||'—'}</option>`).join('')}
+      </select>
+    </div>`;
+
+  document.getElementById('sd-desc').addEventListener('input', e => {
+    if (isEdge) edgeDescriptions[id] = e.target.value;
+    else nodeDescriptions[id] = e.target.value;
+    buildEdgeStatusEditor();
+    const prev = document.getElementById('sd-desc-preview');
+    if (prev) prev.innerHTML = e.target.value
+      ? miniMd(e.target.value)
+      : '<span style="color:var(--muted);font-style:italic;">Nothing yet</span>';
+  });
+
+  document.getElementById('sd-status').addEventListener('change', e => {
+    if (isEdge) {
+      edgeStatus[id] = e.target.value;
+      const s = document.querySelector(`#edge-status-editor select[data-edge="${id}"]`);
+      if (s) s.value = e.target.value;
+    } else {
+      nodeStatus[id] = e.target.value;
+      const s = document.querySelector(`#node-status-editor select[data-node="${id}"]`);
+      if (s) s.value = e.target.value;
+    }
+    renderSetup(id);
+  });
+}
+
+function buildLabelEditor() {
+  const c = document.getElementById('label-editor');
+  c.innerHTML='';
+  for (const key of Object.keys(nodeLabels)) {
+    const row = document.createElement('div'); row.className='label-row';
+    const lbl = document.createElement('div'); lbl.className='label-key'; lbl.textContent=key;
+    const inp = document.createElement('input'); inp.type='text'; inp.className='label-input';
+    inp.value=nodeLabels[key].replace(/\n/g,'\\n'); inp.dataset.key=key;
+    inp.addEventListener('input', e => {
+      nodeLabels[key]=e.target.value.replace(/\\n/g,'\n');
+      renderSetup(); buildNodeStatusEditor(); buildEdgeStatusEditor();
+    });
+    row.appendChild(lbl); row.appendChild(inp); c.appendChild(row);
+  }
+}
+
+function buildNodeStatusEditor() {
+  const c = document.getElementById('node-status-editor'); c.innerHTML='';
+  for (const key of Object.keys(nodeStatus)) {
+    const row=document.createElement('div'); row.className='status-row';
+    const lbl=document.createElement('div'); lbl.className='status-label';
+    lbl.textContent=`${key} ${(nodeLabels[key]||'').replace(/\n/g,'')}`;
+    lbl.style.cursor='pointer';
+    lbl.title='Click to open in detail panel';
+    lbl.addEventListener('click', () => {
+      showSetupDetail('node', key);
+      renderSetup(key);
+      document.getElementById('setup-detail').scrollIntoView({behavior:'smooth',block:'start'});
+    });
+    const sel=document.createElement('select'); sel.className='status-select'; sel.dataset.node=key;
+    for (const s of ['','go','caution','stop','unsure']) {
+      const o=document.createElement('option'); o.value=s; o.textContent=s||'—';
+      if (nodeStatus[key]===s) o.selected=true; sel.appendChild(o);
+    }
+    sel.addEventListener('change', e => { nodeStatus[key]=e.target.value; renderSetup(); });
+    row.appendChild(lbl); row.appendChild(sel); c.appendChild(row);
+  }
+}
+
+function buildEdgeStatusEditor() {
+  const c = document.getElementById('edge-status-editor'); c.innerHTML='';
+  for (const {tail,head} of EDGE_LIST) {
+    const key=`${tail}->${head}`;
+    const fromFull = (nodeLabels[`S-${tail}`]||`S-${tail}`).replace(/\n/g,' ');
+    const toFull   = (nodeLabels[`S-${head}`]||`S-${head}`).replace(/\n/g,' ');
+    const row=document.createElement('div'); row.className='status-row';
+    const lbl=document.createElement('div'); lbl.className='status-label';
+    lbl.textContent=`${tail}→${head}`;
+    lbl.title=`${fromFull} → ${toFull}`;
+    lbl.style.cursor='pointer';
+    lbl.addEventListener('click', () => {
+      showSetupDetail('edge', key);
+      renderSetup(key);
+      document.getElementById('setup-detail').scrollIntoView({behavior:'smooth',block:'start'});
+    });
+    const sel=document.createElement('select'); sel.className='status-select'; sel.dataset.edge=key;
+    for (const s of ['','agree','disagree','unknown']) {
+      const o=document.createElement('option'); o.value=s; o.textContent=s||'—';
+      if ((edgeStatus[key]||'')===s) o.selected=true; sel.appendChild(o);
+    }
+    sel.addEventListener('change', e => { edgeStatus[key]=e.target.value; renderSetup(); });
+    row.appendChild(lbl); row.appendChild(sel); c.appendChild(row);
+  }
+}
+
+// ── Worlds editor ────────────────────────────────────────
+
+function renderWorldsTags() {
+  const c = document.getElementById('worlds-tags'); c.innerHTML='';
+  let dragSrc = null;
+
+  for (let i=0; i<worldsCategories.length; i++) {
+    const w = worldsCategories[i];
+    const tag=document.createElement('div');
+    tag.className='world-tag';
+    tag.draggable=true;
+    tag.dataset.idx=i;
+
+    // Drag handle
+    const handle=document.createElement('span');
+    handle.className='drag-handle'; handle.textContent='⠿'; handle.title='Drag to reorder';
+
+    // Editable label — click to edit inline
+    const span=document.createElement('span');
+    span.textContent=w; span.title='Click to edit'; span.style.cursor='text'; span.style.flex='1';
+    span.addEventListener('click', () => {
+      const inp=document.createElement('input');
+      inp.type='text'; inp.value=w;
+      inp.style.cssText='border:none;outline:none;background:transparent;font:inherit;color:inherit;flex:1;min-width:40px;padding:0;';
+      tag.replaceChild(inp, span);
+      inp.focus(); inp.select();
+      const commit = () => {
+        const v = inp.value.trim();
+        if (v && v!==w) {
+          worldsCategories[i]=v;
+          surveyResponse.selectedWorlds=surveyResponse.selectedWorlds.map(s=>s===w?v:s);
+        }
+        renderWorldsTags(); buildSurveyWorldsList();
+      };
+      inp.addEventListener('blur', commit);
+      inp.addEventListener('keydown', e=>{
+        if(e.key==='Enter'){ inp.blur(); }
+        if(e.key==='Escape'){ inp.value=w; inp.blur(); }
+      });
+    });
+
+    // Remove button
+    const btn=document.createElement('button'); btn.title='Remove'; btn.textContent='×';
+    btn.addEventListener('click', () => {
+      worldsCategories=worldsCategories.filter(x=>x!==w);
+      surveyResponse.selectedWorlds=surveyResponse.selectedWorlds.filter(x=>x!==w);
+      renderWorldsTags(); buildSurveyWorldsList();
+    });
+
+    // Drag events for reordering
+    tag.addEventListener('dragstart', e=>{
+      dragSrc=i;
+      e.dataTransfer.effectAllowed='move';
+      tag.style.opacity='0.4';
+    });
+    tag.addEventListener('dragend', ()=>{ tag.style.opacity=''; });
+    tag.addEventListener('dragover', e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; tag.classList.add('drag-over'); });
+    tag.addEventListener('dragleave', ()=>tag.classList.remove('drag-over'));
+    tag.addEventListener('drop', e=>{
+      e.preventDefault(); tag.classList.remove('drag-over');
+      if(dragSrc===null||dragSrc===i) return;
+      const moved=worldsCategories.splice(dragSrc,1)[0];
+      worldsCategories.splice(i,0,moved);
+      dragSrc=null;
+      renderWorldsTags(); buildSurveyWorldsList();
+    });
+
+    tag.appendChild(handle); tag.appendChild(span); tag.appendChild(btn);
+    c.appendChild(tag);
+  }
+}
+
+function initWorldsEditor() {
+  const inp=document.getElementById('world-add-input');
+  const btn=document.getElementById('world-add-btn');
+  const add=() => {
+    const v=inp.value.trim(); if (!v) return;
+    if (!worldsCategories.includes(v)) {
+      worldsCategories.push(v);
+      renderWorldsTags(); buildSurveyWorldsList();
+    }
+    inp.value='';
+  };
+  btn.addEventListener('click',add);
+  inp.addEventListener('keydown',e => { if (e.key==='Enter') add(); });
+}
+
+// ── Config export/import ─────────────────────────────────
+
+function initConfigIO() {
+  const msg = id => { const m=document.getElementById('config-msg'); m.textContent=id; setTimeout(()=>m.textContent='',2200); };
+
+  document.getElementById('exportConfigBtn').addEventListener('click',()=>{
+    const payload={ surveyMeta, nodeLabels, nodeDescriptions, nodeStatus, edgeStatus, edgeDescriptions, worldsCategories };
+    const a=Object.assign(document.createElement('a'),{
+      href:URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'})),
+      download:'evsm-config.json'
+    }); a.click(); msg('✓ Exported evsm-config.json');
+  });
+
+  document.getElementById('importConfigBtn').addEventListener('click',()=>
+    document.getElementById('configFileInput').click());
+
+  document.getElementById('configFileInput').addEventListener('change',e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try {
+        const d=JSON.parse(ev.target.result);
+        if(d.nodeLabels) Object.assign(nodeLabels,d.nodeLabels);
+        if(d.nodeDescriptions) Object.assign(nodeDescriptions,d.nodeDescriptions);
+        if(d.nodeStatus) Object.assign(nodeStatus,d.nodeStatus);
+        if(d.edgeStatus) Object.assign(edgeStatus,d.edgeStatus);
+        if(d.edgeDescriptions) Object.assign(edgeDescriptions,d.edgeDescriptions);
+        if(d.worldsCategories) worldsCategories=[...d.worldsCategories];
+        if(d.surveyMeta) Object.assign(surveyMeta, d.surveyMeta);
+        initMetaEditor(); renderSurveyMeta();
+        buildLabelEditor(); buildNodeStatusEditor(); buildEdgeStatusEditor();
+        renderWorldsTags(); buildSurveyWorldsList(); buildSphereNavList();
+        renderSetup(); msg('✓ Config loaded!');
+      } catch { msg('✗ Invalid JSON'); }
+    };
+    r.readAsText(file); e.target.value='';
+  });
+}
+
+// ── Sliders ──────────────────────────────────────────────
+
+function initSliders() {
+  const sr=document.getElementById('sl-radius');
+  const ss=document.getElementById('sl-space');
+  const sb=document.getElementById('sl-bend');
+  sr.addEventListener('input',e=>{ radius=+e.target.value;
+    document.getElementById('val-radius').textContent=radius;
+    sb.max=Math.floor(radius/2); if(bend>radius/2){bend=Math.floor(radius/2);sb.value=bend;document.getElementById('val-bend').textContent=bend;}
+    renderSetup(); buildNodeStatusEditor(); buildEdgeStatusEditor(); });
+  ss.addEventListener('input',e=>{ space=+e.target.value;
+    document.getElementById('val-space').textContent=space; renderSetup(); });
+  sb.addEventListener('input',e=>{ bend=+e.target.value;
+    document.getElementById('val-bend').textContent=bend; renderSetup(); });
+  const sf=document.getElementById('sl-fontsize');
+  sf.addEventListener('input',e=>{ labelFontSize=+e.target.value;
+    document.getElementById('val-fontsize').textContent=labelFontSize;
+    renderSetup(); renderSurvey(); });
+}
+
+// ══ SURVEY MODE ═══════════════════════════════════════════════════════════════
+
+let surveyHighlight = null;
+let currentSeqIndex = null;
+const SEQ = () => buildAssessmentSequence();
+
+function buildSurveyWorldsList() {
+  const c=document.getElementById('survey-worlds-list'); c.innerHTML='';
+  for (const w of worldsCategories) {
+    const row=document.createElement('div'); row.className='world-check-row';
+    const id=`wc-${w.replace(/\s+/g,'_')}`;
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.id=id;
+    cb.checked=surveyResponse.selectedWorlds.includes(w);
+    cb.addEventListener('change',()=>{
+      if(cb.checked){ if(!surveyResponse.selectedWorlds.includes(w)) surveyResponse.selectedWorlds.push(w); }
+      else { surveyResponse.selectedWorlds=surveyResponse.selectedWorlds.filter(x=>x!==w); }
+    });
+    const lbl=document.createElement('label'); lbl.htmlFor=id; lbl.textContent=w;
+    row.appendChild(cb); row.appendChild(lbl); c.appendChild(row);
+  }
+}
+
+function buildSphereNavList() {
+  const c=document.getElementById('sphere-nav-list'); c.innerHTML='';
+  // Node item
+  for (const key of Object.keys(nodeLabels)) {
+    const a=surveyResponse.nodeAssessments[key];
+    const item=document.createElement('div'); item.className='sphere-nav-item';
+    item.dataset.id=key; item.dataset.type='node';
+    item.innerHTML=`
+      <span class="sphere-name">${(nodeLabels[key]||key).replace(/\n/g,' ')}</span>
+      <span class="sphere-count">
+        <span class="dot ${a?.status||''}"></span>
+      </span>`;
+    item.addEventListener('click',()=>openAssessment('node',key));
+    c.appendChild(item);
+  }
+  // Edge items grouped by sphere label
+  // Just list all edges compactly
+  const edgeSection=document.createElement('div');
+  edgeSection.style.cssText='margin-top:8px;padding-top:8px;border-top:1px solid var(--survey-rule);';
+  edgeSection.innerHTML=`<div style="font-family:'Libre Baskerville',serif;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--survey-muted);padding:0 10px 6px;">Edges (${EDGE_LIST.length})</div>`;
+  for (const {tail,head} of EDGE_LIST) {
+    const key=`${tail}->${head}`;
+    const a=surveyResponse.edgeAssessments[key];
+    const fromL=(nodeLabels[`S-${tail}`]||`S-${tail}`).replace(/\n/g,' ');
+    const toL  =(nodeLabels[`S-${head}`]||`S-${head}`).replace(/\n/g,' ');
+    const item=document.createElement('div'); item.className='sphere-nav-item';
+    item.dataset.id=key; item.dataset.type='edge';
+    item.title=`${fromL} → ${toL}`;
+    item.innerHTML=`
+      <span class="sphere-name" style="font-size:10px;font-weight:400;">${tail}→${head}</span>
+      <span class="dot ${a?.status||''}"></span>`;
+    item.addEventListener('click',()=>openAssessment('edge',key));
+    edgeSection.appendChild(item);
+  }
+  c.appendChild(edgeSection);
+}
+
+function renderSurvey() {
+  const svg=buildSVG('survey-svg-container','survey',surveyHighlight);
+  svg.addEventListener('click',e=>{
+    const target=e.target.closest('[data-type]'); if(!target) return;
+    openAssessment(target.getAttribute('data-type'), target.getAttribute('data-id'));
+  });
+  updateProgress();
+}
+
+function openAssessment(type, id) {
+  surveyHighlight=id;
+  renderSurvey();
+
+  // Update nav highlight
+  document.querySelectorAll('.sphere-nav-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.id===id);
+  });
+
+  // Find index in sequence for prev/next
+  const seq=SEQ();
+  currentSeqIndex=seq.findIndex(x=>x.id===id);
+
+  const panel=document.getElementById('assessment-panel');
+  const isEdge=type==='edge';
+
+  if (isEdge) {
+    const [tail,head]=id.split('->').map(Number);
+    const fromLabel=(nodeLabels[`S-${tail}`]||`S-${tail}`).replace(/\n/g,' ');
+    const toLabel  =(nodeLabels[`S-${head}`]||`S-${head}`).replace(/\n/g,' ');
+    const desc=edgeDescriptions[id]||'';
+    const a=surveyResponse.edgeAssessments[id]||{};
+    panel.innerHTML=`
+      <div class="ap-header">
+        <div class="ap-id">${id}</div>
+        <div class="ap-label">${fromLabel} → ${toLabel}</div>
+        ${desc?`<div class="ap-description">${miniMd(desc)}</div>`:''}
+      </div>
+      <div class="ap-body">
+        <div class="ap-field">
+          <div class="ap-field-label">Assessment</div>
+          <select class="ap-select" id="ap-status">
+            ${['','agree','disagree','unknown'].map(s=>`<option value="${s}" ${(a.status||'')===s?'selected':''}>${s||'— not assessed —'}</option>`).join('')}
+          </select>
+        </div>
+        <div class="ap-field">
+          <div class="ap-field-label">Evidence / Example</div>
+          <textarea class="ap-textarea" id="ap-evidence" placeholder="Describe what you observe that informs your assessment…">${a.evidence||''}</textarea>
+        </div>
+        <div class="ap-field">
+          <div class="ap-field-label">Suggestions for Improvement</div>
+          <textarea class="ap-textarea" id="ap-suggestions" placeholder="What could make this relationship work better?">${a.suggestions||''}</textarea>
+        </div>
+      </div>
+      <div class="ap-nav">
+        <button class="ap-nav-btn" id="ap-prev" ${currentSeqIndex===0?'disabled':''}>← Prev</button>
+        <button class="ap-nav-btn" id="ap-next" ${currentSeqIndex===seq.length-1?'disabled':''}>Next →</button>
+      </div>`;
+
+    const save=()=>{
+      surveyResponse.edgeAssessments[id]={
+        status:document.getElementById('ap-status').value,
+        evidence:document.getElementById('ap-evidence').value,
+        suggestions:document.getElementById('ap-suggestions').value
+      };
+      renderSurvey(); buildSphereNavList(); updateProgress();
+      // re-highlight current
+      document.querySelectorAll('.sphere-nav-item').forEach(el=>el.classList.toggle('active',el.dataset.id===id));
+    };
+    document.getElementById('ap-status').addEventListener('change',save);
+    document.getElementById('ap-evidence').addEventListener('input',save);
+    document.getElementById('ap-suggestions').addEventListener('input',save);
+
+  } else {
+    // Node assessment
+    const label=(nodeLabels[id]||id).replace(/\n/g,' ');
+    const nodeDesc=nodeDescriptions[id]||'';
+    const a=surveyResponse.nodeAssessments[id]||{};
+    panel.innerHTML=`
+      <div class="ap-header">
+        <div class="ap-id">${id}</div>
+        <div class="ap-label">${label}</div>
+        ${nodeDesc?`<div class="ap-description">${miniMd(nodeDesc)}</div>`:`<div class="ap-description" style="font-style:italic;color:#aaa;">No description provided.</div>`}
+      </div>
+      <div class="ap-body">
+        <div class="ap-field">
+          <div class="ap-field-label">Assessment</div>
+          <select class="ap-select" id="ap-status">
+            ${['','go','caution','stop','unsure'].map(s=>`<option value="${s}" ${(a.status||'')===s?'selected':''}>${s||'— not assessed —'}</option>`).join('')}
+          </select>
+        </div>
+        <div class="ap-field">
+          <div class="ap-field-label">Evidence / Example</div>
+          <textarea class="ap-textarea" id="ap-evidence" placeholder="What do you observe about this sphere?">${a.evidence||''}</textarea>
+        </div>
+        <div class="ap-field">
+          <div class="ap-field-label">Suggestions for Improvement</div>
+          <textarea class="ap-textarea" id="ap-suggestions" placeholder="What would make this sphere stronger?">${a.suggestions||''}</textarea>
+        </div>
+      </div>
+      <div class="ap-nav">
+        <button class="ap-nav-btn" id="ap-prev" ${currentSeqIndex===0?'disabled':''}>← Prev</button>
+        <button class="ap-nav-btn" id="ap-next" ${currentSeqIndex===seq.length-1?'disabled':''}>Next →</button>
+      </div>`;
+
+    const save=()=>{
+      surveyResponse.nodeAssessments[id]={
+        status:document.getElementById('ap-status').value,
+        evidence:document.getElementById('ap-evidence').value,
+        suggestions:document.getElementById('ap-suggestions').value
+      };
+      renderSurvey(); buildSphereNavList(); updateProgress();
+      document.querySelectorAll('.sphere-nav-item').forEach(el=>el.classList.toggle('active',el.dataset.id===id));
+    };
+    document.getElementById('ap-status').addEventListener('change',save);
+    document.getElementById('ap-evidence').addEventListener('input',save);
+    document.getElementById('ap-suggestions').addEventListener('input',save);
+  }
+
+  // Prev / Next
+  document.getElementById('ap-prev').addEventListener('click',()=>{
+    if(currentSeqIndex>0){ const prev=seq[currentSeqIndex-1]; openAssessment(prev.type,prev.id); }
+  });
+  document.getElementById('ap-next').addEventListener('click',()=>{
+    if(currentSeqIndex<seq.length-1){ const next=seq[currentSeqIndex+1]; openAssessment(next.type,next.id); }
+  });
+}
+
+function updateProgress() {
+  const nodeCount = Object.keys(nodeLabels).length;
+  const edgeCount = EDGE_LIST.length;
+  const total = nodeCount + edgeCount;
+  const doneNodes = Object.values(surveyResponse.nodeAssessments).filter(a=>a.status).length;
+  const doneEdges = Object.values(surveyResponse.edgeAssessments).filter(a=>a.status).length;
+  const done = doneNodes + doneEdges;
+  document.getElementById('survey-progress-bar').style.width = `${(done/total)*100}%`;
+  document.getElementById('survey-progress-label').textContent = `${done} / ${total}`;
+}
+
+function initMetaEditor() {
+  // Wire setup meta inputs → surveyMeta object
+  const fields = [
+    ['meta-enterprise',   'enterprise'],
+    ['meta-focalpoint',   'focalPoint'],
+    ['meta-date',         'date'],
+    ['meta-timeframe',    'timeFrame'],
+    ['meta-surveyid',     'surveyId'],
+    ['meta-respondentid', 'respondentId']
+  ];
+  for (const [eid, key] of fields) {
+    const el = document.getElementById(eid);
+    if (!el) continue;
+    el.value = surveyMeta[key] || '';
+    el.addEventListener('input', e => {
+      surveyMeta[key] = e.target.value;
+      renderSurveyMeta();
+    });
+  }
+  // Anonymous mode checkbox
+  const anonCb = document.getElementById('meta-anonymous');
+  if (anonCb) {
+    anonCb.checked = !!surveyMeta.anonymousMode;
+    anonCb.addEventListener('change', () => {
+      surveyMeta.anonymousMode = anonCb.checked;
+      applyAnonymousMode();
+      renderSurveyMeta();
+    });
+  }
+}
+
+function applyAnonymousMode() {
+  // In survey mode: show/hide respondent name field based on anonymity setting
+  const nameBlock = document.getElementById('survey-name-block');
+  if (nameBlock) nameBlock.style.display = surveyMeta.anonymousMode ? 'none' : '';
+  // Show/hide respondent ID field (always show in anonymous mode as alternative identifier)
+  const ridRow = document.getElementById('survey-respondent-id-row');
+  if (ridRow) ridRow.style.display = surveyMeta.anonymousMode ? '' : 'none';
+}
+
+function renderSurveyMeta() {
+  const box = document.getElementById('survey-meta-display');
+  if (!box) return;
+  const rows = [
+    ['Enterprise',    surveyMeta.enterprise],
+    ['Date',          surveyMeta.date],
+    ['Time Frame',    surveyMeta.timeFrame],
+    ['Survey ID',     surveyMeta.surveyId],
+    ['Respondent ID', surveyMeta.respondentId]
+  ];
+  box.style.display = '';
+  const mono = "font-family:'IBM Plex Mono',monospace";
+  const heading = `<div style="${mono};font-size:9px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--survey-muted);margin-bottom:8px;">Survey Identity</div>`;
+  const rowsHtml = rows.map(([label, val]) => {
+    const valHtml = val
+      ? `<span style="font-size:11px;font-weight:500;color:var(--ink);">${val}</span>`
+      : `<span style="font-size:11px;color:var(--survey-muted);font-style:italic;">—</span>`;
+    return `<div style="display:grid;grid-template-columns:80px 1fr;gap:6px;margin-bottom:5px;align-items:baseline;">
+      <span style="${mono};font-size:9px;color:var(--survey-muted);">${label}</span>
+      ${valHtml}
+    </div>`;
+  }).join('');
+  const fp = surveyMeta.focalPoint;
+  const focalHtml = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--rule);">
+    <div style="${mono};font-size:9px;color:var(--survey-muted);margin-bottom:4px;">Focal Point</div>
+    <div style="font-size:11px;color:${fp?'var(--ink)':'var(--survey-muted)'};font-style:${fp?'normal':'italic'};line-height:1.5;white-space:pre-wrap;">${fp||'—'}</div>
+  </div>`;
+  box.innerHTML = heading + rowsHtml + focalHtml;
+}
+
+function initSurveyExport() {
+  document.getElementById('survey-name').addEventListener('input', e => {
+    surveyResponse.respondentName=e.target.value;
+  });
+
+  // Show respondent ID in the survey panel when in anonymous mode
+  const ridDisplay = document.getElementById('survey-respondent-id-display');
+  if (ridDisplay) {
+    ridDisplay.value = surveyMeta.respondentId || '';
+  }
+
+  // Apply anonymous mode state on survey init
+  applyAnonymousMode();
+
+  function doSurveyExport() {
+    const anon = !!surveyMeta.anonymousMode;
+    const payload={
+      meta:{ exportedAt: new Date().toISOString(), tool:'eVSM SVG v3' },
+      respondent:{
+        name: anon ? null : surveyResponse.respondentName,
+        respondentId: surveyMeta.respondentId || null,
+        worlds: surveyResponse.selectedWorlds
+      },
+      surveyMeta,
+      config:{ nodeLabels, nodeDescriptions, edgeDescriptions, worldsCategories },
+      assessments:{
+        nodes: surveyResponse.nodeAssessments,
+        edges: surveyResponse.edgeAssessments
+      }
+    };
+    const ident = anon
+      ? (surveyMeta.respondentId || 'anonymous')
+      : (surveyResponse.respondentName || 'anonymous');
+    const filename=`evsm-response-${ident.replace(/\s+/g,'-').toLowerCase()}-${Date.now()}.json`;
+    const a=Object.assign(document.createElement('a'),{
+      href:URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'})),
+      download:filename
+    }); a.click();
+    const m=document.getElementById('survey-msg');
+    m.textContent=`✓ Saved ${filename}`; setTimeout(()=>m.textContent='',3000);
+  }
+  document.getElementById('surveyExportBtn').addEventListener('click', doSurveyExport);
+  document.getElementById('surveyExportBtn2').addEventListener('click', doSurveyExport);
+
+  function doSurveyPrint() {
+    const anon = !!surveyMeta.anonymousMode;
+    const payload={
+      meta:{ exportedAt: new Date().toISOString(), tool:'eVSM SVG v3' },
+      respondent:{
+        name: anon ? null : surveyResponse.respondentName,
+        respondentId: surveyMeta.respondentId || null,
+        worlds: surveyResponse.selectedWorlds
+      },
+      surveyMeta,
+      config:{ nodeLabels, nodeDescriptions, edgeDescriptions, worldsCategories },
+      assessments:{
+        nodes: surveyResponse.nodeAssessments,
+        edges: surveyResponse.edgeAssessments
+      }
+    };
+    // Encode as base64 data URI in sessionStorage key, open report tool
+    try {
+      sessionStorage.setItem('evsm-print-payload', JSON.stringify(payload));
+      window.open('evsm-report.html?from=session','_blank');
+    } catch(e) {
+      // Fallback: pass as URL fragment (for same-origin local file)
+      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+      window.open('evsm-report.html#data='+b64, '_blank');
+    }
+  }
+  document.getElementById('surveyPrintBtn').addEventListener('click', doSurveyPrint);
+  document.getElementById('surveyPrintBtn2').addEventListener('click', doSurveyPrint);
+
+  function doSurveyImport() {
+    document.getElementById('surveyFileInput').click();
+  }
+  document.getElementById('surveyImportBtn').addEventListener('click', doSurveyImport);
+  document.getElementById('surveyImportBtn2').addEventListener('click', doSurveyImport);
+
+  document.getElementById('surveyFileInput').addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        // Restore respondent identity
+        if (data.respondent) {
+          surveyResponse.respondentName = data.respondent.name || '';
+          surveyResponse.selectedWorlds = data.respondent.worlds || [];
+          document.getElementById('survey-name').value = surveyResponse.respondentName;
+        }
+        if (data.surveyMeta) { Object.assign(surveyMeta, data.surveyMeta); renderSurveyMeta(); initMetaEditor(); }
+        // Restore assessments
+        if (data.assessments) {
+          if (data.assessments.nodes) Object.assign(surveyResponse.nodeAssessments, data.assessments.nodes);
+          if (data.assessments.edges) Object.assign(surveyResponse.edgeAssessments, data.assessments.edges);
+        }
+        // Restore config labels/descriptions if present
+        if (data.config) {
+          if (data.config.nodeLabels) Object.assign(nodeLabels, data.config.nodeLabels);
+          if (data.config.nodeDescriptions) Object.assign(nodeDescriptions, data.config.nodeDescriptions);
+          if (data.config.edgeDescriptions) Object.assign(edgeDescriptions, data.config.edgeDescriptions);
+          if (data.config.worldsCategories) worldsCategories = [...data.config.worldsCategories];
+        }
+        // Rebuild all UI
+        buildSurveyWorldsList();
+        buildSphereNavList();
+        renderSurvey();
+        updateProgress();
+        const m = document.getElementById('survey-msg');
+        m.textContent = '✓ Response loaded — you can continue where you left off.';
+        m.style.color = 'var(--accent)';
+        setTimeout(() => m.textContent = '', 4000);
+      } catch(err) {
+        const m = document.getElementById('survey-msg');
+        m.textContent = '✗ Could not read file — is it a valid eVSM response?';
+        m.style.color = 'var(--accent2)';
+        setTimeout(() => m.textContent = '', 4000);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+}
+
+// ══ MODE SWITCHING ════════════════════════════════════════════════════════════
+
+function switchMode(mode) {
+  const setup  = document.getElementById('setup-view');
+  const survey = document.getElementById('survey-view');
+  document.getElementById('tab-setup').classList.toggle('active',  mode==='setup');
+  document.getElementById('tab-survey').classList.toggle('active', mode==='survey');
+  document.getElementById('stab-setup').classList.toggle('active',  mode==='setup');
+  document.getElementById('stab-survey').classList.toggle('active', mode==='survey');
+
+  if (mode==='setup') {
+    setup.style.display=''; survey.classList.remove('active');
+    renderSetup();
+  } else {
+    setup.style.display='none'; survey.classList.add('active');
+    buildSurveyWorldsList(); buildSphereNavList(); renderSurvey();
+  }
+}
+
+// ══ INIT ══════════════════════════════════════════════════════════════════════
+
+buildLabelEditor();
+buildNodeStatusEditor();
+buildEdgeStatusEditor();
+renderWorldsTags();
+initWorldsEditor();
+initConfigIO();
+initSliders();
+initSurveyExport();
+buildSurveyWorldsList();
+buildSphereNavList();
+initMetaEditor();
+renderSurveyMeta();
+renderSetup();
+</script>
+</body>
+</html>

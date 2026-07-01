@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Contract Creator</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Georgia, serif; max-width: 620px; margin: 40px auto; padding: 0 24px; color: #1a1a1a; }
+  h2 { font-size: 20px; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 28px; }
+  h3 { font-size: 14px; font-weight: 600; margin: 24px 0 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #444; }
+  .field { margin-bottom: 14px; font-size: 14px; }
+  .field label { display: block; margin-bottom: 5px; }
+  input[type=text], input[type=number], select {
+    width: 100%; padding: 8px 12px; border: 1px solid #ccc;
+    border-radius: 4px; font-size: 14px; font-family: Georgia, serif;
+  }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .gift-row { display: flex; align-items: center; gap: 10px; font-size: 14px; margin-bottom: 14px; }
+  .section { border-top: 1px solid #e0e0e0; padding-top: 20px; margin-top: 20px; }
+  button {
+    background: #1a1a1a; color: #fff; border: none; border-radius: 4px;
+    padding: 10px 20px; font-size: 14px; cursor: pointer; margin-right: 10px; margin-top: 8px;
+  }
+  button.secondary {
+    background: #fff; color: #1a1a1a; border: 1px solid #1a1a1a;
+  }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .sig-block {
+    margin-top: 12px; padding: 12px; background: #f7f5f0;
+    border-radius: 4px; font-size: 12px; font-family: monospace; word-break: break-all; line-height: 1.6;
+  }
+  .sig-block .label { font-family: Georgia, serif; font-size: 12px; color: #666; margin-bottom: 4px; }
+  .signed { color: #2a7a2a; font-weight: 600; }
+  .unsigned { color: #999; }
+  #json-output {
+    margin-top: 20px; padding: 16px; background: #f0f4f8;
+    border-radius: 6px; font-size: 12px; font-family: monospace;
+    white-space: pre-wrap; word-break: break-all; line-height: 1.6;
+    display: none;
+  }
+  .status { font-size: 13px; margin-top: 16px; padding: 12px 16px; border-radius: 6px; }
+  .status.complete { background: #f0faf0; border: 1px solid #a3d9a3; color: #2a7a2a; }
+  .status.incomplete { background: #fffbf0; border: 1px solid #f0d080; color: #7a5a00; }
+</style>
+</head>
+<body>
+
+<h2>Contract Creator</h2>
+<p class="subtitle">Three-currency value exchange · v0.5</p>
+
+<h3>Parties</h3>
+<div class="row">
+  <div class="field">
+    <label>Provider name</label>
+    <input type="text" id="provider-name" value="Community Health Worker" oninput="reset()">
+  </div>
+  <div class="field">
+    <label>Recipient name</label>
+    <input type="text" id="recipient-name" value="Patient" oninput="reset()">
+  </div>
+</div>
+
+<h3>Service</h3>
+<div class="field">
+  <label>Service description</label>
+  <input type="text" id="service" value="Community Health Worker Visit" oninput="reset()">
+</div>
+
+<h3>Payment Terms</h3>
+<div class="row">
+  <div class="field">
+    <label>Total value (USD)</label>
+    <input type="number" id="total" value="100" min="1" oninput="reset()">
+  </div>
+  <div class="field">
+    <label>Fiat minimum (USD)</label>
+    <input type="number" id="fiat-min" value="50" min="0" oninput="reset()">
+  </div>
+</div>
+<div class="row">
+  <div class="field">
+    <label>Time max (%)</label>
+    <input type="number" id="time-pct" value="25" min="0" max="100" oninput="reset()">
+  </div>
+  <div class="field">
+    <label>Time rate ($/hr)</label>
+    <input type="number" id="time-rate" value="25" min="1" oninput="reset()">
+  </div>
+</div>
+
+<div class="gift-row">
+  <input type="checkbox" id="gift-enabled" checked onchange="toggleGift()" style="width:16px;height:16px;">
+  <label for="gift-enabled">Include gift</label>
+</div>
+<div id="gift-fields" class="row">
+  <div class="field">
+    <label>Gift amount (USD)</label>
+    <input type="number" id="gift-amount" value="25" min="0" oninput="reset()">
+  </div>
+  <div class="field">
+    <label>Gift type</label>
+    <select id="gift-type" onchange="reset()">
+      <option value="unconditional">Unconditional</option>
+      <option value="conditional">Conditional</option>
+    </select>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Signatures</h3>
+
+  <div class="field">
+    <label>Provider DID (mock)</label>
+    <input type="text" id="provider-did" value="did:key:provider123" oninput="reset()">
+  </div>
+  <button onclick="signAs('provider')">Sign as Provider</button>
+  <div class="sig-block" id="provider-sig-block">
+    <div class="label">Provider signature</div>
+    <div class="unsigned" id="provider-sig">— not signed —</div>
+  </div>
+
+  <div class="field" style="margin-top:20px">
+    <label>Recipient DID (mock)</label>
+    <input type="text" id="recipient-did" value="did:key:recipient456" oninput="reset()">
+  </div>
+  <button onclick="signAs('recipient')">Sign as Recipient</button>
+  <div class="sig-block" id="recipient-sig-block">
+    <div class="label">Recipient signature</div>
+    <div class="unsigned" id="recipient-sig">— not signed —</div>
+  </div>
+</div>
+
+<div class="section">
+  <button onclick="generateContract()" id="generate-btn">Generate Contract JSON</button>
+  <div id="contract-status"></div>
+  <div id="json-output"></div>
+</div>
+
+<script>
+  let providerSigned = false;
+  let recipientSigned = false;
+
+  function reset() {
+    providerSigned = false;
+    recipientSigned = false;
+    document.getElementById('provider-sig').textContent = '— not signed —';
+    document.getElementById('provider-sig').className = 'unsigned';
+    document.getElementById('recipient-sig').textContent = '— not signed —';
+    document.getElementById('recipient-sig').className = 'unsigned';
+    document.getElementById('json-output').style.display = 'none';
+    document.getElementById('contract-status').innerHTML = '';
+  }
+
+  function toggleGift() {
+    document.getElementById('gift-fields').style.display =
+      document.getElementById('gift-enabled').checked ? 'grid' : 'none';
+    reset();
+  }
+
+  function buildContractBody() {
+    const giftEnabled = document.getElementById('gift-enabled').checked;
+    return {
+      contract_id: 'contract-' + Date.now(),
+      version: '0.5',
+      created_at: new Date().toISOString(),
+      parties: {
+        provider: {
+          name: document.getElementById('provider-name').value,
+          did: document.getElementById('provider-did').value
+        },
+        recipient: {
+          name: document.getElementById('recipient-name').value,
+          did: document.getElementById('recipient-did').value
+        }
+      },
+      service: document.getElementById('service').value,
+      total_value_usd: parseFloat(document.getElementById('total').value),
+      payment_spec: {
+        fiat_min_usd: parseFloat(document.getElementById('fiat-min').value),
+        time_max_pct: parseFloat(document.getElementById('time-pct').value),
+        time_fiat_rate: parseFloat(document.getElementById('time-rate').value),
+        gift: giftEnabled ? {
+          amount_usd: parseFloat(document.getElementById('gift-amount').value),
+          type: document.getElementById('gift-type').value
+        } : null
+      }
+    };
+  }
+
+  // Mock signing: hash the contract body + signer DID into a fake signature string
+  async function mockSign(contractBody, did) {
+    const payload = JSON.stringify(contractBody) + did;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(payload);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return 'mock-ed25519.' + hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  async function signAs(party) {
+    const body = buildContractBody();
+    const did = document.getElementById(party + '-did').value;
+    const sig = await mockSign(body, did);
+    document.getElementById(party + '-sig').textContent = sig;
+    document.getElementById(party + '-sig').className = 'signed';
+    if (party === 'provider') providerSigned = true;
+    if (party === 'recipient') recipientSigned = true;
+  }
+
+  async function generateContract() {
+    const statusEl = document.getElementById('contract-status');
+    if (!providerSigned || !recipientSigned) {
+      statusEl.innerHTML = '<div class="status incomplete">Both parties must sign before generating the contract.</div>';
+      return;
+    }
+    const body = buildContractBody();
+    const providerSig = document.getElementById('provider-sig').textContent;
+    const recipientSig = document.getElementById('recipient-sig').textContent;
+    const contract = {
+      ...body,
+      signatures: {
+        provider: { did: body.parties.provider.did, signature: providerSig },
+        recipient: { did: body.parties.recipient.did, signature: recipientSig }
+      },
+      status: 'open'
+    };
+    const out = document.getElementById('json-output');
+    out.textContent = JSON.stringify(contract, null, 2);
+    out.style.display = 'block';
+    statusEl.innerHTML = '<div class="status complete">✓ Contract created and signed by both parties.</div>';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+FROM node:lts-slim
+
+# Install FedWiki globally.
+# Build context is the rcn repo root so SCP plugins can be copied in.
+RUN npm install -g wiki
+
+# Install all 13 SCP plugins into wiki's node_modules directory.
+COPY scp/plugins/ /tmp/scp-plugins/
+RUN for d in /tmp/scp-plugins/*/; do \
+      name=$(basename "$d"); \
+      cp -r "$d" "/usr/local/lib/node_modules/wiki/node_modules/$name"; \
+    done && rm -rf /tmp/scp-plugins
+
+EXPOSE 3000
+
+# FedWiki writes page data to /root/.wiki inside the container.
+# Mount a named volume there — patient data persists across image rebuilds.
+CMD ["wiki", "--port", "3000"]

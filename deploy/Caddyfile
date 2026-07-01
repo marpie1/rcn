@@ -1,0 +1,39 @@
+# SODOTO reverse proxy — Caddy 2
+# Install: brew install caddy
+# Run:     caddy run --config Caddyfile
+# Docs:    https://caddyserver.com/docs/caddyfile
+#
+# This config assumes:
+#   - sofi-proxy running on port 8765
+#   - FedWiki running on port 3000
+#   - DNS A record for sodoto.example.com pointing to Mac Mini's public IP
+#   - Caddy handles TLS automatically via Let's Encrypt
+
+sodoto.example.com {
+    # sofi-proxy API and tool files (port 8765)
+    reverse_proxy localhost:8765
+
+    # Optional: restrict /api/ endpoints to known issuer IPs
+    # @api path /api/*
+    # handle @api {
+    #     @allowed remote_ip 1.2.3.4 5.6.7.8
+    #     reverse_proxy @allowed localhost:8765
+    #     respond "Forbidden" 403
+    # }
+}
+
+wiki.example.com {
+    # FedWiki (port 3000)
+    reverse_proxy localhost:3000
+}
+
+# If you want both on subpaths of a single domain instead:
+# sodoto.example.com {
+#     handle /wiki/* {
+#         uri strip_prefix /wiki
+#         reverse_proxy localhost:3000
+#     }
+#     handle {
+#         reverse_proxy localhost:8765
+#     }
+# }

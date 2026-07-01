@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<!-- RCN Graph Tool — User Manual
+     HOW TO UPDATE THIS FILE:
+     - Each major section is marked with a Section comment: <!-- §N: SECTION NAME
+     - To add a new section: copy an existing <section> block, increment the id, add a <li> to the TOC
+     - To update a section: find it by its § comment and edit the content inside
+     - The version badge in the header should be updated when tool version changes
+     - UPDATE: comments mark specific spots that change with new features
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN Graph Tool — User Manual</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Layout */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:240px;flex-shrink:0;background:#fff;border-right:1px solid #e2e8f0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:20px 0}
+.content{flex:1;min-width:0;padding:40px 40px 80px;max-width:800px}
+
+/* Sidebar */
+.sb-logo{font-size:12px;font-weight:700;color:#0f172a;padding:0 16px 14px;letter-spacing:.03em;border-bottom:1px solid #e2e8f0;margin-bottom:12px}
+.sb-logo span{display:block;font-size:10px;font-weight:400;color:#94a3b8;margin-top:2px}
+.sb-nav{list-style:none}
+.sb-nav li a{display:block;font-size:12px;padding:5px 16px;color:#475569;transition:background .12s;line-height:1.4}
+.sb-nav li a:hover{background:#f1f5f9;color:#1e293b;text-decoration:none}
+.sb-nav li a.active{color:#1d4ed8;background:#eff6ff}
+.sb-section-hd{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:10px 16px 4px}
+.sb-links{padding:14px 16px;border-top:1px solid #e2e8f0;margin-top:8px}
+.sb-links a{display:block;font-size:12px;color:#475569;padding:3px 0}
+
+/* Header */
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:20px;margin-bottom:36px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:6px}
+.doc-title{font-size:28px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:8px}
+.doc-sub{font-size:14px;color:#475569}
+.doc-meta{margin-top:12px;font-size:12px;color:#94a3b8}
+.version-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;background:#dbeafe;color:#1d4ed8;border-radius:10px;letter-spacing:.04em;margin-right:6px}
+
+/* Sections */
+section{margin-bottom:48px;padding-top:8px;border-top:1px solid #e2e8f0}
+section:first-of-type{border-top:none}
+h2{font-size:19px;font-weight:700;color:#0f172a;margin-bottom:14px}
+h3{font-size:14px;font-weight:700;color:#1e293b;margin:22px 0 8px}
+h4{font-size:13px;font-weight:600;color:#334155;margin:16px 0 6px}
+p{font-size:13px;margin-bottom:12px;color:#334155;line-height:1.65}
+p:last-child{margin-bottom:0}
+
+/* Steps / lists */
+ol,ul{padding-left:20px;font-size:13px;color:#334155;margin-bottom:12px}
+li{margin-bottom:5px;line-height:1.6}
+ul ul,ol ol{margin-top:4px;margin-bottom:4px}
+
+/* Key callout */
+kbd{font-family:system-ui,monospace;font-size:11px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;padding:1px 6px;color:#1e293b;white-space:nowrap}
+
+/* Code / values */
+code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;padding:1px 5px;border-radius:4px;color:#1e293b}
+
+/* Tip/note callouts */
+.tip{background:#f0fdf4;border-left:3px solid #22c55e;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#166534;margin:12px 0;line-height:1.55}
+.note{background:#eff6ff;border-left:3px solid #3b82f6;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#1d4ed8;margin:12px 0;line-height:1.55}
+.warn{background:#fff7ed;border-left:3px solid #f97316;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#c2410c;margin:12px 0;line-height:1.55}
+
+/* Feature table */
+.feat-table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0 20px}
+.feat-table th{text-align:left;padding:7px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+.feat-table td{padding:8px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+.feat-table td:first-child{font-weight:600;color:#1e293b;white-space:nowrap}
+.feat-table td code{font-size:11px}
+
+/* Keyboard shortcut table */
+.kb-table{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0 16px}
+.kb-table td{padding:7px 10px;border-bottom:1px solid #f1f5f9;color:#334155}
+.kb-table td:first-child{width:160px}
+
+/* Section label pill */
+.section-pill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#f1f5f9;color:#64748b;border-radius:8px;padding:1px 8px;margin-bottom:10px}
+
+/* Footer */
+.doc-footer{margin-top:48px;padding-top:20px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+
+/* Responsive */
+@media(max-width:700px){
+  .sidebar{display:none}
+  .content{padding:24px 16px 60px}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── SIDEBAR / TOC ────────────────────────────────────────── -->
+  <!-- UPDATE: add new <li> entries here when new sections are added -->
+  <nav class="sidebar">
+    <div class="sb-logo">RCN Graph Tool<span>User Manual · v22</span></div>
+    <ul class="sb-nav">
+      <li class="sb-section-hd">Getting Started</li>
+      <li><a href="#s1">1. Interface overview</a></li>
+      <li><a href="#s2">2. Canvas navigation</a></li>
+      <li><a href="#s3">3. Model name</a></li>
+
+      <li class="sb-section-hd">Drawing</li>
+      <li><a href="#s4">4. Nodes</a></li>
+      <li><a href="#s5">5. Edges</a></li>
+      <li><a href="#s5b">5b. Free lines &amp; annotations</a></li>
+      <li><a href="#s6">6. Selection &amp; bulk editing</a></li>
+
+      <li class="sb-section-hd">Analysis Modes</li>
+      <li><a href="#s7">7. Graph modes overview</a></li>
+      <li><a href="#s8">8. CLD mode — loops &amp; propagation</a></li>
+      <li><a href="#s9">9. EIP mode</a></li>
+      <li><a href="#s9b">9b. NRM mode</a></li>
+      <li><a href="#s9c">9c. Trace mode</a></li>
+      <li><a href="#s9d">9d. Wardley mode</a></li>
+      <li><a href="#s9e">9e. Legend</a></li>
+      <li><a href="#s9f">9f. OPM mode</a></li>
+      <li><a href="#s9g">9g. Layers</a></li>
+      <li><a href="#s9h">9h. Triples</a></li>
+      <li><a href="#s10">10. Driver trees</a></li>
+
+      <li class="sb-section-hd">Layout &amp; Search</li>
+      <li><a href="#s11">11. Layout engines</a></li>
+      <li><a href="#s12">12. Node search</a></li>
+
+      <li class="sb-section-hd">Data Exchange</li>
+      <li><a href="#s13">13. Import formats</a></li>
+      <li><a href="#s14">14. Export formats</a></li>
+
+      <li class="sb-section-hd">Reference</li>
+      <li><a href="#s15">15. Keyboard shortcuts</a></li>
+      <li><a href="#s16">16. Tips &amp; patterns</a></li>
+    </ul>
+    <div class="sb-links">
+      <a href="graph-tool-intro.html">← Introduction</a>
+      <a href="graph-tool-v22.html" style="margin-top:4px">Open the Tool ↗</a>
+    </div>
+  </nav>
+
+  <!-- ── MAIN CONTENT ─────────────────────────────────────────── -->
+  <main class="content">
+
+    <!-- Header -->
+    <div class="doc-header">
+      <div class="doc-tag">ReLocalize Creativity Network</div>
+      <h1 class="doc-title">Graph Tool — User Manual</h1>
+      <p class="doc-sub">Complete reference for all features</p>
+      <!-- UPDATE: version badge and date when tool version changes -->
+      <div class="doc-meta">
+        <span class="version-badge">v22</span>
+        Updated June 13 2026 &nbsp;·&nbsp;
+        <a href="graph-tool-intro.html">Introduction &amp; comparisons →</a>
+      </div>
+    </div>
+
+    <!-- §1: INTERFACE OVERVIEW -->
+    <section id="s1">
+      <div class="section-pill">Getting Started</div>
+      <h2>1. Interface overview</h2>
+      <p>
+        The tool is a single HTML file. Open it in any modern browser — no install, no server,
+        no internet connection required (after the initial load, which fetches the D3 layout
+        library from a CDN).
+      </p>
+      <p>The interface has three areas:</p>
+      <ul>
+        <li><strong>Canvas</strong> — the drawing area, left side. Pan and zoom freely.</li>
+        <li><strong>Right sidebar</strong> — model name, graph mode, controls, properties panel, import, and export.</li>
+        <li><strong>Properties panel</strong> — appears in the sidebar when a node or edge is selected. Shows all editable fields for that element.</li>
+      </ul>
+      <p>
+        The sidebar is divided into color-coded sections: the green <strong>Import</strong> band
+        and amber <strong>Export</strong> band at the bottom make it easy to find the data
+        exchange controls at a glance.
+      </p>
+      <div class="note">The tool contains built-in example graphs. Click <strong>Examples</strong> in the Import section to explore them — each loads into a fresh canvas (undoable).</div>
+    </section>
+
+    <!-- §2: CANVAS NAVIGATION -->
+    <section id="s2">
+      <h2>2. Canvas navigation</h2>
+      <table class="feat-table">
+        <thead><tr><th>Action</th><th>How</th></tr></thead>
+        <tbody>
+          <tr><td>Pan</td><td>Click and drag on empty canvas area (in Select mode)</td></tr>
+          <tr><td>Zoom</td><td>Scroll wheel</td></tr>
+          <tr><td>Fit to view</td><td>Click <strong>Fit</strong> button in the sidebar</td></tr>
+          <tr><td>Background color</td><td><strong>BG</strong> color picker in the sidebar — includes presets (off-white, white, light blue, grey, dark)</td></tr>
+        </tbody>
+      </table>
+      <p>Background color is preserved in JSON export, URL export, SVG, and PNG.</p>
+    </section>
+
+    <!-- §3: MODEL NAME -->
+    <section id="s3">
+      <h2>3. Model name</h2>
+      <p>
+        The <strong>Model Name</strong> field at the top of the sidebar sets the filename used for
+        all downloads (JSON, SVG, PNG, MDL, DOT, XMILE). Set it before exporting.
+        It accepts letters, numbers, spaces, hyphens, and underscores.
+      </p>
+    </section>
+
+    <!-- §4: NODES -->
+    <section id="s4">
+      <div class="section-pill">Drawing</div>
+      <h2>4. Nodes</h2>
+
+      <h3>Adding a node</h3>
+      <p>
+        Click <strong>+ Node</strong> in the sidebar, then click anywhere on the canvas to place
+        it. The tool immediately returns to Select mode — one node per click. To place multiple
+        nodes, click <strong>+ Node</strong> again each time.
+      </p>
+      <p>
+        To place many nodes in a row without clicking <strong>+ Node</strong> each time, press
+        <kbd>n</kbd> on the canvas. This enters <strong>sticky Node mode</strong> — the tool stays
+        in Node mode after each placement. Click empty canvas to place, press <kbd>Escape</kbd> or
+        click a different mode button when done.
+      </p>
+      <p>Double-tap (or double-click) a new node to enter its label.</p>
+
+      <h3>In-place editing</h3>
+      <p>
+        Double-tap any node to open the in-place editor. Type the label; press <kbd>Enter</kbd>
+        to commit or click elsewhere. The node automatically resizes to fit the text.
+        Multi-line labels are supported — use <kbd>Shift+Enter</kbd> to insert a line break.
+      </p>
+
+      <h3>Shapes</h3>
+      <!-- UPDATE: add new shapes here if more are added to SHAPES array -->
+      <p>Available shapes: <code>ellipse</code>, <code>rect</code>, <code>rounded</code> (default),
+        <code>diamond</code>, <code>hexagon</code>, <code>cylinder</code>, <code>barrel</code>.
+        Select a node and choose a shape in the Properties panel.
+      </p>
+
+      <h3>Fill color</h3>
+      <p>
+        80 preset colors shown as a palette in the Properties panel. Click any swatch to apply.
+        A custom color picker at the bottom of the palette accepts any color.
+        Selecting multiple nodes and changing fill color applies the change to all of them.
+      </p>
+
+      <h3>Border</h3>
+      <p>
+        Three border controls in the Properties panel:
+      </p>
+      <ul>
+        <li><strong>Color</strong> — custom picker, defaults to a darkened version of the fill color</li>
+        <li><strong>Style</strong> — solid, dashed, or dotted</li>
+        <li><strong>Thickness</strong> — slider (1–6px)</li>
+      </ul>
+
+      <h3>Font</h3>
+      <ul>
+        <li><strong>Font size</strong> — per-node slider</li>
+        <li><strong>Font color</strong> — 16-color palette; <code>auto</code> selects dark or light based on fill</li>
+      </ul>
+
+      <h3>Resize</h3>
+      <p>
+        Select a single node in Select mode. Eight handles appear around it. Drag any handle to
+        resize. Resizing is symmetric: dragging the right edge also moves the left edge equally,
+        keeping the center in place. Minimum size: 40×40px.
+      </p>
+
+      <h3>Multi-label nodes (Neo4j)</h3>
+      <p>
+        Nodes can carry multiple Neo4j labels. The first label appears as the primary node text.
+        Additional labels (e.g. <code>:Person:Employee</code>) are entered in the
+        <strong>Extra labels</strong> field in the Properties panel, separated by colons.
+        They render as small italic text below the primary label and export in Cypher as
+        <code>CREATE (n:Primary:Extra1:Extra2 {...})</code>.
+      </p>
+
+      <h3>Notes</h3>
+      <p>
+        The <strong>Note</strong> field in the Properties panel (always visible at the top of the
+        panel) stores a free-text annotation. Notes appear in hover tooltips with a 📌 icon.
+        They survive all import/export round-trips except MDL (Vensim does not have a note field).
+      </p>
+
+      <h3>Key/value properties</h3>
+      <p>
+        Below the note field, add arbitrary key/value properties to any node. Click <strong>+ Add
+        property</strong>. Each property row has ↑↓ reorder buttons and a delete button.
+        Properties export to Cypher as node attributes and to DOT as node attribute strings.
+      </p>
+
+      <h3>URL properties</h3>
+      <p>
+        Any property value beginning with <code>https://</code> or <code>http://</code> is
+        automatically rendered as a clickable ↗ link in hover tooltips and in the Properties
+        panel. Links open in a new tab. This is Neo4j-compatible — the value exports as a
+        plain string property.
+      </p>
+
+      <h3>Hover tooltips</h3>
+      <p>
+        Hover over any node to see its note and properties in a frosted-glass tooltip. To disable
+        tooltips, check <strong>no hover</strong> in the Properties panel header.
+      </p>
+    </section>
+
+    <!-- §5: EDGES -->
+    <section id="s5">
+      <h2>5. Edges</h2>
+
+      <h3>Adding an edge</h3>
+      <ol>
+        <li>Click <strong>+ Edge</strong> in the sidebar.</li>
+        <li>Click the source node (it highlights).</li>
+        <li>Drag to the target node and release.</li>
+      </ol>
+      <p>The tool returns to Select mode after each edge. To add multiple edges, click <strong>+ Edge</strong> again.</p>
+      <p>
+        To draw many edges in a row without clicking <strong>+ Edge</strong> each time, press
+        <kbd>e</kbd> on the canvas. This enters <strong>sticky Edge mode</strong> — after each
+        completed edge the tool stays in Edge mode ready for the next. Clicking on empty canvas
+        or a missed drop exits back to Select mode. Press <kbd>Escape</kbd> to exit at any time.
+      </p>
+      <p>Clicking on empty canvas in Edge mode cancels without adding an edge.</p>
+
+      <h3>Self-loops</h3>
+      <p>Drag from a node back to itself to create a self-loop.</p>
+
+      <h3>Straight vs curved</h3>
+      <p>
+        Edges default to straight. Toggle <strong>Curved</strong> or <strong>Straight</strong>
+        in the sidebar to change all edges at once. To change individual edges, select the edge
+        and toggle in the Properties panel.
+      </p>
+
+      <h3>Reshaping curved edges</h3>
+      <p>
+        In Select mode, drag the midpoint of a curved edge to move the bezier control point.
+        A hint appears at the bottom of the canvas. Double-click a curved edge to reset its
+        curve to the default arc.
+      </p>
+
+      <h3>Polarity</h3>
+      <p>
+        In the edge Properties panel, set polarity to <strong>+</strong> (reinforcing) or
+        <strong>−</strong> (balancing). The polarity mark renders near the arrowhead.
+        Polarity exports to Cypher as a property, to MDL as the Vensim polarity field, and
+        to XMILE.
+      </p>
+      <div class="tip">Polarity is central to CLD mode. Set it before switching to CLD to get accurate loop detection.</div>
+
+      <h3>Delay mark</h3>
+      <p>
+        Check <strong>Delay</strong> in the edge Properties panel to add a delay mark (double
+        bar) to the edge. Delay exports to MDL correctly and persists in JSON round-trips.
+      </p>
+
+      <h3>Dash style</h3>
+      <p>
+        Edge style options: <code>solid</code> (default), <code>dashed</code>, <code>dotted</code>.
+        Select in the edge Properties panel.
+      </p>
+
+      <h3>Color</h3>
+      <p>
+        10 preset edge colors with names (Charcoal, Red, Orange, Gold, Green, Blue, Purple, Pink,
+        Teal, Navy). A custom color picker is also available. Edge color exports to DOT as a
+        named or hex attribute and persists in all JSON round-trips.
+      </p>
+
+      <h3>Thickness</h3>
+      <p>Slider in the edge Properties panel (1–6px). Also available for bulk change on multi-selection.</p>
+
+      <h3>Edge labels</h3>
+      <p>
+        Enter a label in the <strong>Relationship type</strong> field in the edge Properties panel.
+        Use <kbd>Enter</kbd> in that field to insert a line break in the label.
+      </p>
+      <p>Two global label orientation modes (sidebar toggles):</p>
+      <ul>
+        <li><strong>Horizontal</strong> — all labels render horizontally regardless of edge direction</li>
+        <li><strong>Wrap</strong> — labels auto-wrap at ~16 characters on word boundaries</li>
+      </ul>
+      <p>Per-edge overrides are available in the edge Properties panel.</p>
+
+      <h3>Edge label font color</h3>
+      <p>
+        Separate from edge line color. Set in the edge Properties panel. <code>Auto</code>
+        matches the edge line color.
+      </p>
+
+      <h3>Edge notes and properties</h3>
+      <p>Same as nodes: free-text note and key/value properties, both shown in hover tooltips.</p>
+
+      <h3>Sequential edge adding</h3>
+      <p>
+        Press <kbd>e</kbd> on the canvas to enter <strong>sticky edge mode</strong>. After each
+        successfully drawn edge the tool stays in Edge mode, ready for the next one.
+        Clicking on empty canvas or pressing <kbd>Escape</kbd> exits back to Select.
+        Clicking <strong>+ Edge</strong> in the toolbar (instead of pressing <kbd>e</kbd>) is
+        still one-shot — it returns to Select after each edge.
+      </p>
+    </section>
+
+    <!-- §5b: FREE LINES & ANNOTATIONS -->
+    <section id="s5b">
+      <div class="section-pill">Drawing</div>
+      <h2>5b. Free lines &amp; annotations</h2>
+      <p>
+        <strong>+ Line</strong> and <strong>+ Arrow</strong> in the toolbar draw lines that are
+        <em>not</em> connected to nodes — they are purely visual annotations. Use them for
+        grouping brackets, call-out arrows, dividers, and other labels that belong on the canvas
+        but not in the graph data.
+      </p>
+
+      <h3>Drawing a line or arrow</h3>
+      <ol>
+        <li>Click <strong>+ Line</strong> (no arrowhead) or <strong>+ Arrow</strong> (arrowhead at end) in the topbar.</li>
+        <li>Click and drag on the canvas to set start and end points.</li>
+        <li>Hold <kbd>Shift</kbd> while dragging to snap to 45° angles.</li>
+        <li>Release — the tool returns to Select mode.</li>
+      </ol>
+
+      <h3>Properties</h3>
+      <p>Click a free line to select it. The Properties panel shows:</p>
+      <table class="feat-table">
+        <thead><tr><th>Property</th><th>Options</th></tr></thead>
+        <tbody>
+          <tr><td>Color</td><td>Custom color picker</td></tr>
+          <tr><td>Width</td><td>Slider (1–6px)</td></tr>
+          <tr><td>Dash</td><td>Solid, dashed, dotted</td></tr>
+          <tr><td>Arrowhead</td><td>None (—), → (end), ← (start), ↔ (both)</td></tr>
+          <tr><td>Label</td><td>Text field; label renders at the midpoint of the line</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Moving and editing</h3>
+      <p>
+        Drag the body of a selected line to move it. Drag either endpoint to reposition just that end.
+        Double-click a free line to open the in-place label editor.
+      </p>
+      <p>Free lines are saved in JSON and appear in SVG and PNG exports. They are not part of the graph data — they do not export to Cypher, MDL, or DOT.</p>
+    </section>
+
+    <!-- §6: SELECTION & BULK EDITING -->
+    <section id="s6">
+      <h2>6. Selection &amp; bulk editing</h2>
+
+      <h3>Selecting elements</h3>
+      <table class="feat-table">
+        <thead><tr><th>Action</th><th>How</th></tr></thead>
+        <tbody>
+          <tr><td>Select one</td><td>Click a node or edge</td></tr>
+          <tr><td>Add to selection</td><td><kbd>Shift</kbd>+click</td></tr>
+          <tr><td>Rubber-band select</td><td>Click and drag on empty canvas — selects all nodes in the rectangle</td></tr>
+          <tr><td>Select all nodes</td><td><strong>All nodes</strong> button in sidebar</td></tr>
+          <tr><td>Select all edges</td><td><strong>All edges</strong> button in sidebar</td></tr>
+          <tr><td>Deselect</td><td>Click empty canvas</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Bulk style changes</h3>
+      <p>
+        When multiple nodes are selected, the Properties panel shows shared controls — fill color,
+        border, font size, shape. Changes apply to all selected nodes at once. Same for multiple
+        edges: color and thickness changes apply to all.
+      </p>
+
+      <h3>Other bulk operations</h3>
+      <table class="feat-table">
+        <thead><tr><th>Operation</th><th>Button / Shortcut</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Duplicate</td><td><strong>Dupe</strong> or <kbd>Ctrl</kbd>+<kbd>D</kbd></td><td>Duplicates selected nodes and their internal edges, offset slightly</td></tr>
+          <tr><td>Delete</td><td><strong>Delete</strong> or <kbd>Delete</kbd> / <kbd>Backspace</kbd></td><td>Deletes selected nodes and all edges connected to them</td></tr>
+          <tr><td>Reverse selected</td><td><strong>Rev.sel</strong></td><td>Reverses direction of selected edges</td></tr>
+          <tr><td>Reverse all</td><td><strong>Rev.all</strong></td><td>Reverses all edges in the graph</td></tr>
+          <tr><td>Clear canvas</td><td><strong>Clear</strong> (red)</td><td>Deletes everything — undoable</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Undo / Redo</h3>
+      <p>
+        80-step undo history. Use <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd>
+        (or the ↩ / ↪ buttons in the sidebar). The undo stack is cleared on import.
+      </p>
+    </section>
+
+    <!-- §7: GRAPH MODES -->
+    <section id="s7">
+      <div class="section-pill">Analysis Modes</div>
+      <h2>7. Graph modes overview</h2>
+      <p>
+        The <strong>Graph Mode</strong> section at the top of the sidebar switches between six
+        analytical framings of the same graph. Switching modes does not alter the graph data —
+        it changes what overlays and controls are active.
+      </p>
+      <table class="feat-table">
+        <thead><tr><th>Mode</th><th>When to use</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Basic</strong></td><td>General graph drawing. No special overlays. Default mode. Select a node to access Driver Tree buttons in the right panel.</td></tr>
+          <tr><td><strong>CLD</strong></td><td>Causal Loop Diagram analysis. Activates loop detection, loop labels, and polarity propagation.</td></tr>
+          <tr><td><strong>EIP</strong></td><td>Ecology–Institutions–Politics framework. Activates column overlay and EIP node color palette.</td></tr>
+          <tr><td><strong>NRM</strong></td><td>Neighborhood Risk Management / Tripod Beta. Activates a typed node palette — click a type, click the canvas to place a pre-colored, pre-labeled node.</td></tr>
+          <tr><td><strong>Trace</strong></td><td>Pathway animation. Assign edges to named paths (T1–T4) and animate each path in sequence. Edges can belong to multiple traces.</td></tr>
+          <tr><td><strong>Wardley</strong></td><td>Renders a Wardley Map grid behind the graph — evolution axis (Genesis → Commodity) across the bottom, value chain (Invisible → Visible) on the left. Auto-activates when importing a Wardley Map Generator JSON.</td></tr>
+          <tr><td><strong>OPM</strong></td><td>Object Process Methodology (ISO 19450). Place Objects and Processes, then use + Edge to draw typed relationships. A picker suggests valid link types based on what you connected. OPL sentences are auto-generated and shown in the collapsible OPL panel. Export as OPM→OPL (plain text), OPM→Cypher, or OPM→CSV.</td></tr>
+        </tbody>
+      </table>
+      <div class="note">Switching back to Basic always clears all mode-specific overlays cleanly. Use Basic as the escape hatch if a mode overlay becomes distracting.</div>
+    </section>
+
+    <!-- §8: CLD MODE -->
+    <section id="s8">
+      <h2>8. CLD mode — loops &amp; propagation</h2>
+      <p>
+        CLD mode activates when you click <strong>CLD</strong> in the Graph Mode section.
+        A purple banner appears at the top of the canvas.
+      </p>
+
+      <h3>Automatic loop detection</h3>
+      <p>
+        On entry to CLD mode, the tool automatically traces all feedback loops in the graph and
+        classifies each as <strong>R</strong> (Reinforcing) or <strong>B</strong> (Balancing),
+        based on the product of edge polarities around the loop. Labeled circular badges appear
+        on the canvas — yellow for R, blue for B, grey for undetermined (missing polarity data).
+      </p>
+      <p>Click a loop label to highlight the edges in that loop. Click again or click empty canvas to clear.</p>
+      <p>A <strong>Loop labels</strong> toggle button appears below the mode buttons whenever CLD is active. Click it to suppress all loop label badges — useful when presenting or when the labels obscure the diagram. Click again to restore them. The button is active (purple) when labels are visible and dimmed when suppressed.</p>
+      <p>When a single node is selected in CLD mode, a collapsible list appears below the Loop labels button showing every loop that node belongs to, with R/B type badge and loop name. Click the header row (showing the node name and a ▼/▶ chevron) to collapse or expand the list.</p>
+
+      <h3>Long-press polarity propagation</h3>
+      <ol>
+        <li>In CLD mode, long-press any node (hold ~600ms). A popup appears with ↑ and ↓ buttons.</li>
+        <li>Choose ↑ (increasing) or ↓ (decreasing) as the initial perturbation.</li>
+        <li>The tool animates the causal effect rippling outward hop by hop — green for reinforcing, red for balancing — following edge polarities.</li>
+      </ol>
+      <p>A control panel appears at the bottom-right of the canvas with:</p>
+      <ul>
+        <li><strong>Speed</strong> — 100ms to 1200ms per hop</li>
+        <li><strong>Serialized</strong> — when checked, each hop completes before the next begins (clearer for teaching)</li>
+        <li><strong>↺ Replay</strong> — replay the propagation from the beginning</li>
+        <li><kbd>Space</kbd> — pause or resume</li>
+      </ul>
+
+      <h3>Shift+long-press — edge highlight</h3>
+      <p>
+        <kbd>Shift</kbd>+long-press a node to highlight all edges directly connected to it
+        (incoming and outgoing), rendered in their assigned colors. Releases on mouse up.
+      </p>
+
+      <div class="tip">Set polarity on all edges before entering CLD mode. Edges without polarity contribute to loop detection but are counted as neutral, which can produce incorrect R/B classifications.</div>
+    </section>
+
+    <!-- §9: EIP MODE -->
+    <section id="s9">
+      <h2>9. EIP mode</h2>
+      <p>
+        EIP mode overlays three labeled columns on the canvas representing the three domains of
+        the Ecology–Institutions–Politics framework:
+      </p>
+      <ul>
+        <li><strong>Ecology</strong> (green column, left)</li>
+        <li><strong>Institutions</strong> (purple column, center)</li>
+        <li><strong>Politics</strong> (blue column, right)</li>
+      </ul>
+      <p>
+        A color palette appears in the Properties panel with pre-assigned colors for each domain.
+        Click an EIP color swatch to apply it to the selected node(s) and visually anchor them
+        in the appropriate column.
+      </p>
+      <p>
+        The column positions are visual guides — there is no automatic snapping. Arrange nodes
+        intentionally within the columns. The EIP column layout and node colors export normally
+        to SVG and PNG for presentation.
+      </p>
+      <div class="note">EIP column positions scale with the canvas zoom and pan. The proportions stay consistent as you zoom in to work on a section of the diagram.</div>
+    </section>
+
+    <!-- §9b: NRM MODE -->
+    <section id="s9b">
+      <h2>9b. NRM mode — Neighborhood Risk Management</h2>
+      <p>
+        NRM mode implements the <strong>Tripod Beta</strong> accident causation model, adapted for
+        neighborhood risk analysis. An orange banner appears at the top of the canvas when active.
+      </p>
+
+      <h3>Node types</h3>
+      <p>
+        The Properties panel shows a color-coded palette organized into three groups. Click a type
+        to make it active — the banner updates to confirm. Click anywhere on the canvas to place
+        a node pre-labeled and pre-colored for that type. The tool remains in that type until you
+        click a different one.
+      </p>
+      <table class="feat-table">
+        <thead><tr><th>Group</th><th>Types</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Causal Chain</strong></td>
+            <td>Underlying Cause (dark red) → Precondition (orange) → Immediate Cause (salmon). Reads left to right, roots to event.</td>
+          </tr>
+          <tr>
+            <td><strong>Incident Trio</strong></td>
+            <td>Agent (yellow), Object (light green), Event (pink). One Agent and one Object per Event. Combination nodes (Event/Agent, Event/Object) handle cases where an Event feeds into a subsequent Trio.</td>
+          </tr>
+          <tr>
+            <td><strong>Barriers</strong></td>
+            <td>Failed Barrier (blue), Missing Barrier (lavender), Intact Barrier (medium blue). Place on trajectories between Agent/Object and Event.</td>
+          </tr>
+          <tr>
+            <td><strong>Other</strong></td>
+            <td>Narrative — a light grey clarification node attached to a connection.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Basic Risk Factors</h3>
+      <p>
+        Underlying Cause nodes can be further classified using Basic Risk Factor (BRF) codes
+        (Annex 4 of the Tripod Beta standard): Hardware, Design, Maintenance Mgmt, Procedures,
+        Error-enforcing Conditions, Housekeeping, Incompatible Goals, Communication, Organisation,
+        Training, Defences. Add the BRF code as a node property or append it to the label.
+      </p>
+
+      <h3>Combining with CLD</h3>
+      <p>
+        NRM and CLD modes are mutually exclusive overlays, but the underlying graph is the same.
+        A causal chain built in NRM mode can be switched to CLD mode to run polarity propagation —
+        useful when the causal pathways also carry feedback dynamics.
+      </p>
+
+      <div class="tip">Build the causal chain (Underlying Causes → Preconditions → Immediate Cause → Event) first, then add Barriers on the trajectories. Export SVG or PNG for reporting.</div>
+    </section>
+
+    <!-- §9c: TRACE MODE -->
+    <section id="s9c">
+      <div class="section-pill">Analysis Modes</div>
+      <h2>9c. Trace mode — pathway animation</h2>
+      <p>
+        Trace mode lets you mark edges as members of named pathways (T1, T2, T3, T4) and then
+        animate each pathway in sequence. Use it to walk an audience through a causal chain,
+        a process flow, a decision path, or a scenario.
+      </p>
+      <h3>Assigning edges to traces</h3>
+      <ol>
+        <li>Switch to <strong>Trace</strong> mode in the Graph Mode section.</li>
+        <li>Select one or more edges (click an edge, or shift-click for multiple).</li>
+        <li>In the Properties panel, find the <strong>Trace path</strong> row.</li>
+        <li>Click any combination of <strong>T1 / T2 / T3 / T4</strong> — each button toggles membership independently. An edge can belong to multiple traces at once.</li>
+        <li>Click <strong>∅</strong> to remove the selected edges from all traces.</li>
+      </ol>
+      <p>
+        Edges in multiple traces show stacked colored dots at their midpoint — one per trace, ordered T1→T4 along the edge direction.
+      </p>
+      <h3>Animating a trace</h3>
+      <ol>
+        <li>In the sidebar Trace controls, click <strong>▶ T1</strong> (or T2/T3/T4).</li>
+        <li>The animation propagates wave by wave along the assigned edges, lighting each edge then each target node.</li>
+        <li>Use the <strong>Speed</strong> slider to control timing. Press <kbd>Space</kbd> to pause/resume.</li>
+        <li>Click the <strong>■</strong> stop button or click the active ▶ button again to stop.</li>
+      </ol>
+      <div class="note">Traces are stored in the JSON export and survive round-trips. Old JSON files with single-trace edges (<code>trace: 1</code>) are automatically migrated to the multi-trace format on load.</div>
+    </section>
+
+    <!-- §9d: WARDLEY MODE -->
+    <section id="s9d">
+      <div class="section-pill">Analysis Modes</div>
+      <h2>9d. Wardley mode</h2>
+      <p>
+        Wardley mode renders a Wardley Map grid behind the graph. Node positions become
+        meaningful: horizontal position encodes <strong>evolution stage</strong> (Genesis on the left,
+        Commodity on the right); vertical position encodes <strong>value chain visibility</strong>
+        (Visible at top, Invisible at bottom).
+      </p>
+      <h3>Importing from the Wardley Map Generator</h3>
+      <ol>
+        <li>In the Wardley Map Generator, click <strong>Export Map Data</strong> to download a <code>.json</code> file.</li>
+        <li>In the graph tool, click <strong>JSON</strong> in the Import section.</li>
+        <li>Drag the <code>.json</code> file into the drop zone (or paste its contents) and click Load.</li>
+        <li>The tool auto-detects the Wardley format, places all components on the correct grid positions, draws dependency edges, sets the model name, and switches to Wardley mode automatically.</li>
+      </ol>
+      <h3>The grid</h3>
+      <p>
+        The four evolution stages are delineated by vertical dividers with subtle background tints.
+        Stage labels appear at the top and bottom of the grid. The grid lives in SVG space — it
+        pans and zooms with the diagram.
+      </p>
+      <table class="feat-table">
+        <thead><tr><th>Stage</th><th>Approx. x range</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>Genesis</td><td>Left 20%</td><td>Novel, uncertain, rare — competitive advantage</td></tr>
+          <tr><td>Custom Built</td><td>20–40%</td><td>Emerging practices, custom solutions</td></tr>
+          <tr><td>Product</td><td>40–65%</td><td>Productized, established offerings</td></tr>
+          <tr><td>Commodity</td><td>Right 35%</td><td>Utility, widespread, well-understood</td></tr>
+        </tbody>
+      </table>
+      <div class="note">Dagre auto-layout is disabled in Wardley mode — it would scramble the positional meaning. Move nodes manually to adjust their evolution/visibility position.</div>
+    </section>
+
+    <!-- §9e: LEGEND -->
+    <section id="s9e">
+      <div class="section-pill">Analysis Modes</div>
+      <h2>9e. Legend</h2>
+      <p>
+        The <strong>Legend</strong> section in the sidebar (between Graph Mode and Properties) manages
+        a color legend for the diagram. The legend can be shown as a frosted-glass overlay in the
+        bottom-right corner of the canvas.
+      </p>
+      <h3>Auto-derive</h3>
+      <p>
+        Click <strong>Auto</strong> to scan all node colors and generate legend entries automatically.
+        Known Wardley palette colors are labeled by their scheme name (User Needs, Services / Apps,
+        Platform, Infrastructure, Genesis, etc.). Unknown colors are labeled with the first one or two
+        node labels that use them.
+      </p>
+      <p>When a Wardley JSON is imported, Auto runs automatically and the legend appears immediately.</p>
+      <h3>Manual entries</h3>
+      <p>
+        Click <strong>+ Add entry</strong> to add a blank entry. Each entry has a color swatch
+        (click to open a color picker) and an editable label. Click <strong>×</strong> to remove
+        an entry.
+      </p>
+      <h3>Show / Hide</h3>
+      <p>
+        Click <strong>Show</strong> to display the legend overlay on the canvas. The button toggles
+        to <strong>Hide</strong> while the overlay is visible. The legend overlay is
+        pointer-events-none — it does not block clicks on the canvas.
+      </p>
+      <div class="note">Legend entries and visibility are saved in the JSON export and restored on load.</div>
+    </section>
+
+    <!-- §9f: OPM MODE -->
+    <section id="s9f">
+      <div class="section-pill">Analysis Modes</div>
+      <h2>9f. OPM mode — Object Process Methodology</h2>
+      <p>
+        OPM mode implements <strong>ISO 19450 Object Process Methodology</strong> (Dov Dori, 2002 / ISO 2015, 2024).
+        Every edge drawn in OPM mode carries a typed relationship chosen from a picker, and an
+        Object Process Language (OPL) sentence is generated automatically. The OPD (diagram) and
+        the OPL (plain-text sentences) are mirrors of the same model — they cannot drift apart
+        because they are generated from the same data.
+      </p>
+
+      <h3>Entering OPM mode</h3>
+      <p>Click <strong>OPM</strong> in the Graph Mode section. A teal banner appears at the top of the canvas.</p>
+
+      <h3>Node types</h3>
+      <p>
+        OPM has two node types. Select a type from the palette at the top of the Properties panel,
+        then click the canvas to place it:
+      </p>
+      <ul>
+        <li><strong>Object</strong> — things that exist; drawn as a rounded rectangle (blue tint)</li>
+        <li><strong>Process</strong> — things that transform objects; drawn as an ellipse (green tint)</li>
+      </ul>
+      <p>You can also assign or change the OPM type of any existing node by selecting it in OPM mode and clicking <strong>Object</strong> or <strong>Process</strong> in the Properties panel.</p>
+
+      <h3>Drawing typed edges — critical step</h3>
+      <p>
+        In OPM mode, typed edges are drawn by clicking <strong>+ Edge</strong> in the toolbar first,
+        then dragging from source to target. <strong>You must use the + Edge button — dragging
+        directly from a node in OPM mode creates an untyped edge with no picker.</strong>
+      </p>
+      <ol>
+        <li>Click <strong>+ Edge</strong> in the toolbar.</li>
+        <li>Drag from a source node to a target node and release.</li>
+        <li>A relationship picker appears — choose the link type.</li>
+        <li>Click <strong>Apply</strong>. The tool returns to OPM mode.</li>
+      </ol>
+      <p>When only one valid link type exists for a given source/target combination, it is applied immediately without showing the picker.</p>
+
+      <h3>Link types</h3>
+      <p>Ten link types from ISO 19450, grouped by relationship context. The picker shows only the types valid for the source and target node types you connected.</p>
+
+      <h4>Structural relations (Object → Object)</h4>
+      <table class="feat-table">
+        <thead><tr><th>OPL phrase on edge</th><th>Formal name</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><strong>is part of</strong></td><td>Aggregation-Participation</td><td>Part → Whole. "Engine is part of Car."</td></tr>
+          <tr><td><strong>is a type of</strong></td><td>Generalization-Specialization</td><td>Specific class → General class. "Restaurant is a type of On Street Business."</td></tr>
+          <tr><td><strong>exhibits</strong></td><td>Exhibition-Characterization</td><td>Attribute → Object. "Seating Capacity exhibits Restaurant."</td></tr>
+          <tr><td><strong>is an instance of</strong></td><td>Classification-Instantiation</td><td>Individual → Class. "Bantam Restaurant is an instance of Restaurant."</td></tr>
+        </tbody>
+      </table>
+
+      <h4>Procedural relations (Object ↔ Process)</h4>
+      <table class="feat-table">
+        <thead><tr><th>OPL phrase on edge</th><th>Direction</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><strong>handles</strong></td><td>Object → Process</td><td>Agent: the Object drives the Process</td></tr>
+          <tr><td><strong>required by</strong></td><td>Object → Process</td><td>Instrument: the Object enables but does not drive; not consumed</td></tr>
+          <tr><td><strong>consumed by</strong></td><td>Object → Process</td><td>The Object is used up by the Process</td></tr>
+          <tr><td><strong>yields</strong></td><td>Process → Object</td><td>The Process creates a new Object</td></tr>
+          <tr><td><strong>affects</strong></td><td>Process → Object</td><td>The Process changes the state of an existing Object</td></tr>
+        </tbody>
+      </table>
+
+      <h4>Process relation</h4>
+      <table class="feat-table">
+        <thead><tr><th>OPL phrase on edge</th><th>Direction</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><strong>invokes</strong></td><td>Process → Process</td><td>One Process triggers another</td></tr>
+        </tbody>
+      </table>
+
+      <div class="tip">
+        The four structural relations cover different kinds of "is related to":
+        <strong>is part of</strong> (composition), <strong>is a type of</strong> (class hierarchy),
+        <strong>exhibits</strong> (attribute), <strong>is an instance of</strong> (individual in a class).
+        Being forced to choose among them clarifies thinking that diagrams with unlabeled lines leave ambiguous.
+      </div>
+
+      <h3>OPL sentences panel</h3>
+      <p>
+        An <strong>OPL Sentences</strong> panel appears in the right sidebar in OPM mode.
+        It is <strong>collapsed by default</strong> — click the header to expand it.
+        The panel lists one auto-generated OPL sentence per typed edge and updates live
+        as edges are added or nodes are renamed.
+      </p>
+      <p>Example output for a neighborhood commercial district diagram:</p>
+      <ul style="font-style:italic;font-size:12px;color:#334155;margin:8px 0 12px 20px;line-height:2">
+        <li>City of Bellingham consists of On Street Business and Waterfront Businesses.</li>
+        <li>Restaurant is a type of On Street Business.</li>
+        <li>Bantam Restaurant is an instance of Restaurant.</li>
+        <li>Bantam Restaurant handles Ordering, Cooking, and Serving.</li>
+      </ul>
+      <p>Note that when the same subject has multiple edges of the same type, they are combined into one compound sentence automatically.</p>
+
+      <h3>Exporting OPM data</h3>
+      <p>Three export buttons appear while OPM mode is active — in the Export section and in the OPL Sentences panel header:</p>
+      <ul>
+        <li><strong>Export OPL</strong> (in the OPL panel header) — exports a plain-text .txt file with Object and Process declarations followed by all OPL relation sentences, using compound sentences where the same subject has multiple relations of the same type.</li>
+        <li><strong>OPM→Cypher</strong> — exports the OPM graph as Neo4j CREATE statements with typed nodes (<code>:Object</code> or <code>:Process</code>) and OPL-labeled relationships.</li>
+        <li><strong>OPM→CSV</strong> — exports a CSV of triples: source label, link type, target label, OPL sentence.</li>
+      </ul>
+
+      <div class="note">OPM link types, markers, and node types are stored in the JSON export and restored on load. Switching back to Basic mode preserves all OPM annotations — you can return to OPM mode and continue where you left off.</div>
+    </section>
+
+    <!-- §9g: LAYERS -->
+    <section id="s9g">
+      <div class="section-pill">Analysis Modes</div>
+      <h2>9g. Layers</h2>
+      <p>
+        Layers let you assign a named category to any node or edge and then show or hide
+        everything on that layer at once. Unlike graph modes, layers are a data annotation —
+        they persist in JSON and are independent of which mode is active.
+      </p>
+
+      <h3>Assigning a layer</h3>
+      <p>
+        Select a node or edge. In the Properties panel, find the <strong>Layer</strong> field.
+        Type any name — <code>Financial</code>, <code>Physical</code>, <code>Information</code>,
+        or anything meaningful to your diagram. Press Enter or click elsewhere to commit.
+      </p>
+      <p>
+        Multiple nodes and edges can share the same layer name. Layer names are free-text —
+        there is no predefined list.
+      </p>
+
+      <h3>Toggling layer visibility</h3>
+      <p>
+        As soon as any node or edge has a layer name, a <strong>Layers</strong> panel appears
+        in the left sidebar. Each layer name is shown as a toggle button:
+      </p>
+      <ul>
+        <li>Button <strong>active</strong> (highlighted) — the layer is visible</li>
+        <li>Button <strong>dimmed</strong> — the layer is hidden</li>
+      </ul>
+      <p>Click a button to toggle. Hidden nodes disappear from the canvas. Hidden edges disappear too. <strong>Edges whose source or target node is on a hidden layer are also hidden automatically</strong> — you do not need to assign the same layer name to both nodes and their connecting edges.</p>
+
+      <h3>Persistence</h3>
+      <p>Layer names are saved in JSON export and restored on load. Layer visibility state resets on load — all layers start visible.</p>
+
+      <div class="tip">Layers are useful when a single diagram covers multiple domains (e.g., Physical infrastructure and Financial flows). Assign each domain a layer name, then toggle between them to present one domain at a time without maintaining separate diagrams.</div>
+    </section>
+
+    <!-- §9h: TRIPLES -->
+    <section id="s9h">
+      <div class="section-pill">Analysis Modes</div>
+      <h2>9h. Triples — reifiable edges</h2>
+      <p>
+        Triples make any edge a first-class entity that can itself be the target of other edges.
+        This is the graph-theory equivalent of RDF reification: instead of only saying
+        <em>A → B</em>, you can say <em>C relates to the fact that A → B</em>.
+        Use it to attach agreements, interventions, barriers, trust ratings, or contested
+        claims directly to specific causal links — without restructuring the underlying diagram.
+      </p>
+
+      <h3>Promoting an edge to a triple</h3>
+      <ol>
+        <li>Select an edge in Select mode.</li>
+        <li>In the Properties panel, find the <strong>Triple</strong> section.</li>
+        <li>Check <strong>Create Triple</strong> — or press <kbd>T</kbd> while one edge is selected.</li>
+        <li>A circle dot appears at the edge midpoint, labeled <strong>T01</strong> (auto-incremented for each new triple).</li>
+      </ol>
+      <p>To remove a triple: uncheck <strong>Create Triple</strong> (or press <kbd>T</kbd> again). If any meta-edges point to that triple, a confirmation prompt appears before removal.</p>
+
+      <h3>Triple panel fields</h3>
+      <p>Click a triple dot to select it. The Properties panel shows:</p>
+      <table class="feat-table">
+        <thead><tr><th>Field</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Subject / Predicate / Object</strong></td><td>Auto-derived from the edge's source node, relationship label, and target node. Read-only display.</td></tr>
+          <tr><td><strong>Triple label</strong></td><td>Editable name for this triple. Double-tap the triple dot on the canvas to edit it in-place.</td></tr>
+          <tr><td><strong>Status</strong></td><td><code>healthy</code> (green), <code>degraded</code> (amber), or <code>broken</code> (red). Indicates the current state of the relationship the triple represents.</td></tr>
+          <tr><td><strong>Strength</strong></td><td>A 0–1 slider. Records the perceived strength or confidence of the relationship.</td></tr>
+          <tr><td><strong>Notes</strong></td><td>Free-text annotation for the triple — evidence, sources, caveats.</td></tr>
+          <tr><td><strong>Meta-edges</strong></td><td>Lists all meta-edges pointing to this triple (node label → triple ID), each with a delete button.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Drawing meta-edges</h3>
+      <p>
+        A meta-edge connects a node to a triple dot — it says "this node relates to that relationship."
+      </p>
+      <ol>
+        <li>Click <strong>+ Edge</strong> (or press <kbd>e</kbd> for sticky mode).</li>
+        <li>Click a source node to start the edge.</li>
+        <li>Drag to a triple dot and release — the dot highlights when your cursor is within range.</li>
+      </ol>
+      <p>Meta-edges render as dashed blue lines. They behave like regular edges for selection and deletion, and carry a label field in the Properties panel.</p>
+      <p>When a triple dot has at least one meta-edge, it renders slightly larger (hit radius 14px instead of 10px) to make it easier to target.</p>
+
+      <h3>Visual indicators</h3>
+      <ul>
+        <li><strong>Triple dot</strong> — a circle at the edge midpoint labeled with the triple ID (T01, T02…).</li>
+        <li><strong>Node glow</strong> — when a node has a meta-edge pointing to a triple, a soft halo appears around it in the triples rendering layer.</li>
+        <li><strong>Meta-edge count badge</strong> — shown inside the triple dot when there are incoming meta-edges.</li>
+      </ul>
+
+      <h3>Deletion</h3>
+      <ul>
+        <li>Deleting a triple dot removes the triple annotation from the edge and all meta-edges pointing to it.</li>
+        <li>Deleting an edge that is a triple also removes all its meta-edges.</li>
+        <li>Deleting a node removes all meta-edges sourced from that node.</li>
+      </ul>
+
+      <h3>Persistence</h3>
+      <p>Triple data (all fields) and meta-edges are stored in the JSON export and restored on load. They are not currently exported in Cypher, MDL, or DOT formats.</p>
+
+      <div class="tip">Triples are most useful in knowledge-graph and governance work — attach a "contested" or "under review" annotation to a specific causal link, connect an intervention node to the relationship it targets, or record which agreement governs which dependency.</div>
+    </section>
+
+    <!-- §10: DRIVER TREES -->
+    <section id="s10">
+      <h2>10. Driver trees</h2>
+      <p>
+        Driver trees provide a radial expansion view centered on a single node — showing what
+        it affects, what drives it, or both. This feature is unique to the RCN tool.
+      </p>
+
+      <h3>Opening a driver tree</h3>
+      <ol>
+        <li>Select a single node (any mode).</li>
+        <li>A <strong>Driver Trees</strong> section appears in the right panel, between the mode buttons and the Loop labels button, showing the selected node's name.</li>
+        <li>Click one of three buttons:<br>
+          <strong>Effects ▶</strong> — what does this node affect (outgoing edges)?<br>
+          <strong>◀ Causes</strong> — what drives this node (incoming edges)?<br>
+          <strong>◀ Both ▶</strong> — full upstream and downstream view simultaneously.
+        </li>
+      </ol>
+      <p>The Driver Trees section is hidden when no node (or multiple nodes) is selected. The tree view opens as a full-screen overlay over the main canvas.</p>
+
+      <h3>Navigating the tree</h3>
+      <ul>
+        <li><strong>Depth selector</strong> — controls how many hops to expand (1–6 or Full)</li>
+        <li><strong>Repeated nodes</strong> — nodes that appear more than once are shown in yellow with [brackets]. Click a repeated node to highlight the first occurrence.</li>
+        <li>Polarity marks (+ or −) appear on connecting lines between nodes.</li>
+        <li>Click <strong>← Back</strong> to return to the main canvas.</li>
+      </ul>
+
+      <div class="tip">Use <strong>Full</strong> depth to see all paths, then reduce depth to clean up the view for presentation. The Depth selector rebuilds the tree instantly.</div>
+    </section>
+
+    <!-- §11: LAYOUT ENGINES -->
+    <section id="s11">
+      <div class="section-pill">Layout &amp; Search</div>
+      <h2>11. Layout engines</h2>
+      <table class="feat-table">
+        <thead><tr><th>Button</th><th>Algorithm</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Force</strong></td><td>D3 force-directed</td><td>Physics simulation — nodes repel, edges attract. Best for discovering natural clusters. Animates for graphs ≤30 nodes; runs synchronously for larger graphs.</td></tr>
+          <tr><td><strong>Grid</strong></td><td>Uniform grid</td><td>Arranges all nodes in a regular grid. Good starting point for manual arrangement.</td></tr>
+          <tr><td><strong>Dagre LR</strong></td><td>Dagre hierarchical</td><td>Left-to-right directed layout (lazy-loads from CDN on first use). Toggle button changes between LR and TB (top-to-bottom). Used automatically after Merge import.</td></tr>
+          <tr><td><strong>Fit</strong></td><td>Zoom to fit</td><td>Adjusts zoom and pan so all nodes are visible. Runs automatically after Force and Dagre layouts complete.</td></tr>
+        </tbody>
+      </table>
+      <div class="warn">Layout operations overwrite current node positions. They are undoable — press <kbd>Ctrl</kbd>+<kbd>Z</kbd> immediately if the result is not what you wanted.</div>
+    </section>
+
+    <!-- §12: NODE SEARCH -->
+    <section id="s12">
+      <h2>12. Node search</h2>
+      <p>
+        A search bar is always visible in the top-left corner of the canvas. Type to filter:
+        matching nodes highlight in purple and non-matching nodes dim. The match count appears
+        next to the search field.
+      </p>
+      <p>Search matches on node labels, extra labels, and key/value property names and values (all case-insensitive, substring). Clear the field to restore normal view.</p>
+    </section>
+
+    <!-- §13: IMPORT FORMATS -->
+    <section id="s13">
+      <div class="section-pill">Data Exchange</div>
+      <h2>13. Import formats</h2>
+      <p>
+        All imports are available in the green <strong>Import</strong> section at the bottom of
+        the sidebar. Most open a modal with a text area for pasting; file drag-and-drop is
+        supported where noted.
+      </p>
+      <!-- UPDATE: add new import formats here as they are added to the tool -->
+      <table class="feat-table">
+        <thead><tr><th>Button</th><th>Format</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Examples</strong></td>
+            <td>Built-in graphs</td>
+            <td>Loads a preset example graph. Replaces current canvas (undoable). Good for learning the tool.</td>
+          </tr>
+          <tr>
+            <td><strong>Cypher</strong></td>
+            <td>Neo4j CREATE statements</td>
+            <td>Paste <code>CREATE (n:Label {...})</code> and <code>CREATE (a)-[r:TYPE]->(b)</code> statements. Supports multi-label nodes.</td>
+          </tr>
+          <tr>
+            <td><strong>MATCH</strong></td>
+            <td>Neo4j MATCH results</td>
+            <td>Paste the output of a Neo4j MATCH query (node/relationship records).</td>
+          </tr>
+          <tr>
+            <td><strong>JSON</strong></td>
+            <td>Native graph JSON <em>or</em> Wardley Map Generator JSON</td>
+            <td>Replaces current canvas. Lossless round-trip for native JSON. Drag-and-drop a .json file supported. Wardley Map Generator exports are auto-detected: components become nodes on the Wardley grid, dependencies become edges, and Wardley mode activates automatically.</td>
+          </tr>
+          <tr>
+            <td><strong>Merge</strong></td>
+            <td>Native graph JSON (additive)</td>
+            <td>Adds a second graph JSON into the current canvas. Nodes with matching labels (case-insensitive) are merged rather than duplicated. Layout resets to Dagre TB after merge.</td>
+          </tr>
+          <tr>
+            <td><strong>Arrows</strong></td>
+            <td>Neo4j Arrows Tool JSON</td>
+            <td>Import diagrams from the Arrows Tool (arrows.app). Node styles and Cypher labels are preserved.</td>
+          </tr>
+          <tr>
+            <td><strong>XMILE</strong></td>
+            <td>XMILE / Vensim XML</td>
+            <td>Imports system dynamics models in XMILE format. Polarity is preserved where present in the source file.</td>
+          </tr>
+          <tr>
+            <td><strong>.mdl</strong></td>
+            <td>Vensim MDL</td>
+            <td>Imports Vensim .mdl files. Handles both old RCN format and current Vensim export format. Node positions, edge polarity, delay marks, and curve control points are imported.</td>
+          </tr>
+          <tr>
+            <td><strong>.dot</strong></td>
+            <td>Graphviz DOT</td>
+            <td>Imports .dot graph description files. Named colors, node shapes, edge colors, penwidths, graph-level attributes (rankdir, splines, etc.), and node/edge labels round-trip cleanly. Drag-and-drop a .dot file supported.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">All imports except Merge replace the current canvas. Use <kbd>Ctrl</kbd>+<kbd>Z</kbd> immediately after an import if you want to undo it.</div>
+    </section>
+
+    <!-- §14: EXPORT FORMATS -->
+    <section id="s14">
+      <h2>14. Export formats</h2>
+      <p>All exports are in the amber <strong>Export</strong> section at the bottom of the sidebar.</p>
+      <!-- UPDATE: add new export formats here as they are added to the tool -->
+      <table class="feat-table">
+        <thead><tr><th>Button</th><th>Format</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>SVG</strong></td>
+            <td>Scalable vector</td>
+            <td>Full-fidelity vector export. Preserves colors, fonts, shapes, arrowheads, and canvas background. Use for publication or as source for PDF (via browser print).</td>
+          </tr>
+          <tr>
+            <td><strong>PNG</strong></td>
+            <td>Raster image (2×)</td>
+            <td>Exports at 2× pixel density for sharp display on high-DPI screens. Canvas background and all node shapes included. Arrowheads render as filled triangles matching SVG appearance.</td>
+          </tr>
+          <tr>
+            <td><strong>Copy</strong></td>
+            <td>PNG to clipboard</td>
+            <td>Copies the full diagram as a PNG image to the system clipboard. Paste directly into Word, PowerPoint, Keynote, or any app that accepts images. Falls back to a toast message if the browser blocks clipboard access.</td>
+          </tr>
+          <tr>
+            <td><strong>Print</strong></td>
+            <td>Browser print dialog</td>
+            <td>Renders the current canvas viewport as a PNG and opens the browser print dialog. Prints only the canvas area — no sidebar, no browser chrome. What you see is what prints. Allow pop-ups for this tab if the print window is blocked.</td>
+          </tr>
+          <tr>
+            <td><strong>Cypher</strong></td>
+            <td>Neo4j CREATE statements</td>
+            <td>Exports the graph as <code>CREATE</code> statements ready to paste into Neo4j Browser or a migration script. Multi-label nodes export correctly (<code>:Primary:Extra</code>). Node and edge properties included.</td>
+          </tr>
+          <tr>
+            <td><strong>URL</strong></td>
+            <td>Shareable link</td>
+            <td>Encodes the full graph state (nodes, edges, positions, styles, background) into the URL. Copy and share — the recipient opens the exact same diagram with no file transfer needed. Large graphs may produce very long URLs.</td>
+          </tr>
+          <tr>
+            <td><strong>JSON</strong></td>
+            <td>Native graph JSON</td>
+            <td>Lossless export of everything: node positions, colors, shapes, properties, notes, edge curves, polarity, delay, graph attributes. This is the save format. Keep a JSON copy whenever you finish a working session.</td>
+          </tr>
+          <tr>
+            <td><strong>Snapshot</strong></td>
+            <td>Self-contained HTML file</td>
+            <td>Downloads a complete copy of the tool with the current diagram embedded as data. The recipient opens one <code>.html</code> file in any browser — no separate JSON needed, no server, no install. Works from <code>file://</code>. Ideal for sharing via email, Slack, USB, or shared folders.</td>
+          </tr>
+          <tr>
+            <td><strong>XMILE</strong></td>
+            <td>XMILE / Vensim XML</td>
+            <td>Exports to XMILE format with polarity preserved. Compatible with Vensim and other system dynamics tools that read XMILE.</td>
+          </tr>
+          <tr>
+            <td><strong>MDL</strong></td>
+            <td>Vensim MDL</td>
+            <td>Exports a .mdl file importable into Vensim. Node positions, polarity, delay marks, and layout are preserved. Use this to move a diagram from the RCN tool into Vensim for simulation work.</td>
+          </tr>
+          <tr>
+            <td><strong>.dot</strong></td>
+            <td>Graphviz DOT</td>
+            <td>Exports a .dot file for use with Graphviz, Gephi, or any other tool in that ecosystem. One attribute per line for readability and diff-friendliness. Node and edge custom properties round-trip back on import.</td>
+          </tr>
+          <tr>
+            <td><strong>NRM→Cypher</strong></td>
+            <td>Neo4j Cypher (NRM)</td>
+            <td>Exports an NRM causal diagram as typed Neo4j CREATE statements — nodes carry <code>:NRM</code> label plus their NRM type, and a <code>ndc_id</code> property for linking to the place_geo table. Appears whenever the graph contains NRM-typed nodes.</td>
+          </tr>
+          <tr>
+            <td><strong>OPM→Cypher</strong></td>
+            <td>Neo4j Cypher (OPM)</td>
+            <td>Exports the OPM graph as typed Neo4j CREATE statements with OPL-labeled relationships. Visible only while OPM mode is active.</td>
+          </tr>
+          <tr>
+            <td><strong>OPM→CSV</strong></td>
+            <td>CSV triples</td>
+            <td>Exports a CSV of OPM triples: source, link type, target, OPL sentence. Useful for loading into a spreadsheet or importing into another tool. Visible only while OPM mode is active.</td>
+          </tr>
+          <tr>
+            <td><strong>OPM→OPL</strong></td>
+            <td>Object Process Language (.txt)</td>
+            <td>Exports the full OPL document as plain text: Object and Process declarations first, then relation sentences with compound grouping (same subject + same verb → one sentence). Also accessible via the <strong>Export OPL</strong> button in the OPL Sentences panel in the sidebar. Visible only while OPM mode is active.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="tip"><strong>Save habit:</strong> the tool has no auto-save. Export JSON at the end of every working session. The model name becomes the filename — set it before exporting.</div>
+    </section>
+
+    <!-- §15: KEYBOARD SHORTCUTS -->
+    <section id="s15">
+      <div class="section-pill">Reference</div>
+      <h2>15. Keyboard shortcuts</h2>
+      <!-- UPDATE: add new shortcuts here when added to the keydown handler -->
+      <table class="kb-table">
+        <tbody>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Undo</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Y</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Redo</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd></td><td>Select all nodes</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd></td><td>Copy selected elements as PNG image to clipboard</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd></td><td>Duplicate selected nodes</td></tr>
+          <tr><td><kbd>Delete</kbd> or <kbd>Backspace</kbd></td><td>Delete selected elements (when not in a text field)</td></tr>
+          <tr><td><kbd>Escape</kbd></td><td>Return to Select mode; cancel active mode or edge drag</td></tr>
+          <tr><td><kbd>e</kbd></td><td>Enter sticky Edge mode — stays in Edge mode after each edge is drawn. Click empty canvas or press Escape to exit.</td></tr>
+          <tr><td><kbd>n</kbd></td><td>Enter sticky Node mode — stays in Node mode after each node is placed. Click empty canvas or press Escape to exit.</td></tr>
+          <tr><td><kbd>Space</kbd></td><td>Pause / resume propagation or trace animation</td></tr>
+          <tr><td><kbd>Shift</kbd>+click</td><td>Add to selection</td></tr>
+          <tr><td><kbd>Shift</kbd>+long-press</td><td>Highlight connected edges (CLD mode) or all edges (Basic mode)</td></tr>
+          <tr><td><kbd>Shift</kbd>+<kbd>Enter</kbd></td><td>Insert line break in in-place node label editor</td></tr>
+          <tr><td><kbd>Shift</kbd>+drag (Line/Arrow)</td><td>Snap to 45° angles while drawing a free line</td></tr>
+          <tr><td>Double-tap node</td><td>Open in-place label editor</td></tr>
+          <tr><td>Double-click curved edge</td><td>Reset curve to default arc</td></tr>
+          <tr><td>Drag midpoint of curved edge</td><td>Reshape the bezier curve</td></tr>
+          <tr><td>Long-press node (Basic mode)</td><td>Open Driver Tree popup (Effects / Causes / Both)</td></tr>
+          <tr><td>Long-press node (CLD mode)</td><td>Open propagation popup (↑/↓)</td></tr>
+          <tr><td><kbd>T</kbd></td><td>Toggle triple on the selected edge — promotes or demotes it as a reifiable triple (when one edge is selected)</td></tr>
+          <tr><td><kbd>Alt</kbd>+click edge</td><td>Cycle arrow direction (→ / ← / —) without opening the Properties panel</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- §16: TIPS & PATTERNS -->
+    <section id="s16">
+      <h2>16. Tips &amp; patterns</h2>
+
+      <h3>Working session pattern</h3>
+      <ol>
+        <li>Set the model name first.</li>
+        <li>Build the graph in Basic mode.</li>
+        <li>Add polarity to all edges that represent causal relationships.</li>
+        <li>Switch to CLD mode to check loop structure and animate propagation.</li>
+        <li>Export JSON before closing the browser tab.</li>
+      </ol>
+
+      <h3>Using merge for modular diagrams</h3>
+      <p>
+        Build sub-diagrams as separate JSON files (one per subsystem). Use <strong>Merge</strong>
+        to combine them. Shared nodes (same label) are unified — this is how you assemble a large
+        system diagram from pieces without duplicating shared variables.
+      </p>
+
+      <h3>Neo4j workflow</h3>
+      <p>
+        Design your graph schema here, export Cypher, paste into Neo4j Browser.
+        When you have data in Neo4j and want to visualize it, run a MATCH query and use
+        the <strong>MATCH</strong> import button to bring the result back into the tool.
+      </p>
+
+      <h3>Vensim workflow</h3>
+      <p>
+        Sketch the causal structure here (faster than in Vensim), export MDL, open in Vensim
+        to add equations and run simulations. When the Vensim diagram is updated, export MDL
+        from Vensim and re-import here for analysis in CLD or EIP mode.
+      </p>
+
+      <h3>Sharing and archiving</h3>
+      <p>
+        For a quick share via link: use <strong>URL</strong> export and paste it — the full diagram
+        is encoded in the URL, nothing to attach.
+        For sharing as a file: use <strong>Snapshot</strong> — one <code>.html</code> file the
+        recipient opens directly in any browser, diagram pre-loaded, no JSON companion needed.
+        For archiving: keep a <strong>JSON</strong> export. It is the only lossless format and the
+        only one that can be re-imported. SVG/PNG are for presentation only.
+      </p>
+
+      <h3>Large graphs</h3>
+      <p>
+        Above ~100 nodes, Force layout slows down. Use <strong>Dagre</strong> instead — it runs
+        synchronously and handles large graphs well. Use <strong>Search</strong> to locate nodes
+        quickly when the graph is dense. Driver trees are especially useful in large graphs:
+        they let you focus on one variable's neighborhood without navigating the full diagram.
+      </p>
+
+      <h3>Presenting a diagram</h3>
+      <p>
+        Set a clean background color (white or off-white), export PNG at 2× for slide decks,
+        or export SVG for documents where you need to scale without loss. Use <strong>Copy</strong>
+        to paste directly into PowerPoint or Keynote without a file. Use <strong>Print</strong>
+        to send the current viewport to the browser print dialog — useful for paper handouts or
+        saving to PDF. The model name sets the filename, so name your diagram before exporting.
+      </p>
+
+    </section>
+
+    <!-- Footer -->
+    <div class="doc-footer">
+      <span>RCN Graph Tool · Open source · Free by design</span>
+      <span>
+        <a href="graph-tool-intro.html">← Introduction</a>
+        &nbsp;·&nbsp;
+        <a href="graph-tool-v22.html">Open the Tool →</a>
+      </span>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

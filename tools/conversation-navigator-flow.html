@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Conversation Navigator — Process Flow</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+
+.page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:40px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:32px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569;line-height:1.5}
+.doc-meta{margin-top:14px;font-size:12px;color:#94a3b8}
+
+.doc-nav{display:flex;gap:12px;margin-bottom:40px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff;transition:background .15s}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#fce7d6;color:#9a3412;border-color:#fdba74}
+
+.diagram-wrap{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:24px;overflow-x:auto}
+
+.legend{display:flex;gap:20px;flex-wrap:wrap;margin-top:24px;padding:16px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px}
+.legend-item{display:flex;align-items:center;gap:7px;color:#475569}
+.legend-swatch{width:18px;height:18px;border-radius:4px;flex-shrink:0}
+
+.doc-footer{margin-top:48px;padding-top:20px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="doc-header">
+    <div class="doc-tag">ReLocalize Creativity Network · Open source · Free by design</div>
+    <h1 class="doc-title">Conversation Navigator</h1>
+    <p class="doc-sub">Process flow — from session setup through close</p>
+    <div class="doc-meta">Document updated: June 2026 &nbsp;·&nbsp; Derived from Introduction &amp; User Manual</div>
+  </div>
+
+  <nav class="doc-nav">
+    <a href="bias-checker-intro.html">Introduction</a>
+    <a href="bias-checker-manual.html">User Manual</a>
+    <a href="conversation-navigator-flow.html" class="current">Process Flow</a>
+    <a href="bias-checker.html">Open the Tool ↗</a>
+  </nav>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 840 1420" xmlns="http://www.w3.org/2000/svg"
+         style="width:100%;max-width:840px;display:block;margin:0 auto;font-family:system-ui,sans-serif">
+      <defs>
+        <!-- standard downward arrow -->
+        <marker id="arr" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#94a3b8"/>
+        </marker>
+        <!-- orange arrow for self-report -->
+        <marker id="arr-o" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#c84b2f"/>
+        </marker>
+        <!-- yellow arrow for conflict -->
+        <marker id="arr-y" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#ca8a04"/>
+        </marker>
+        <!-- blue arrow for models -->
+        <marker id="arr-b" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#0891b2"/>
+        </marker>
+        <!-- grey dashed for no-conflict path -->
+        <marker id="arr-g" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#64748b"/>
+        </marker>
+      </defs>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- PHASE BAND 1: SETUP -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <rect x="0" y="0" width="840" height="220" rx="10" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1"/>
+      <text x="18" y="20" font-size="9" font-weight="700" letter-spacing=".1em" fill="#0369a1" text-anchor="start">SESSION SETUP</text>
+
+      <!-- Box: Host opens tool URL -->
+      <rect x="270" y="28" width="300" height="52" rx="8" fill="#fff" stroke="#93c5fd" stroke-width="1.5"/>
+      <text x="420" y="50" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Host opens tool URL</text>
+      <text x="420" y="68" text-anchor="middle" font-size="11" fill="#64748b">bias-checker.html (no install, no account)</text>
+
+      <!-- Arrow down -->
+      <line x1="420" y1="80" x2="420" y2="100" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Box: Session ID auto-generated -->
+      <rect x="270" y="100" width="300" height="52" rx="8" fill="#fff" stroke="#93c5fd" stroke-width="1.5"/>
+      <text x="420" y="122" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Session ID auto-generated</text>
+      <text x="420" y="140" text-anchor="middle" font-size="11" fill="#64748b">URL updated: ?s=ABC123</text>
+
+      <!-- Arrow down -->
+      <line x1="420" y1="152" x2="420" y2="172" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Box: Copy & share URL -->
+      <rect x="270" y="172" width="300" height="36" rx="8" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"/>
+      <text x="420" y="195" text-anchor="middle" font-size="13" font-weight="600" fill="#1d4ed8">Copy link → share with participants</text>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- PHASE BAND 2: JOINING -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <rect x="0" y="236" width="840" height="200" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+      <text x="18" y="256" font-size="9" font-weight="700" letter-spacing=".1em" fill="#166534" text-anchor="start">JOINING</text>
+
+      <!-- Arrow down -->
+      <line x1="420" y1="208" x2="420" y2="256" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Box: Each participant opens URL -->
+      <rect x="270" y="260" width="300" height="48" rx="8" fill="#fff" stroke="#86efac" stroke-width="1.5"/>
+      <text x="420" y="281" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Each participant opens the URL</text>
+      <text x="420" y="298" text-anchor="middle" font-size="11" fill="#64748b">Same link joins the same session</text>
+
+      <!-- Arrow down -->
+      <line x1="420" y1="308" x2="420" y2="326" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Box: Enter name + join -->
+      <rect x="270" y="326" width="300" height="48" rx="8" fill="#fff" stroke="#86efac" stroke-width="1.5"/>
+      <text x="420" y="347" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Enter name → click Join</text>
+      <text x="420" y="364" text-anchor="middle" font-size="11" fill="#64748b">Name locks · Firebase participant key registered</text>
+
+      <!-- Arrow down -->
+      <line x1="420" y1="374" x2="420" y2="394" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Box: Card appears -->
+      <rect x="250" y="394" width="340" height="36" rx="8" fill="#dcfce7" stroke="#86efac" stroke-width="1.5"/>
+      <text x="420" y="417" text-anchor="middle" font-size="12" font-weight="600" fill="#166534">Participant card appears in shared view (all browsers)</text>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- PHASE BAND 3: SELF-REPORT (ongoing) -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <rect x="0" y="448" width="840" height="296" rx="10" fill="#fff7ed" stroke="#fdba74" stroke-width="1"/>
+      <text x="18" y="468" font-size="9" font-weight="700" letter-spacing=".1em" fill="#9a3412" text-anchor="start">SELF-REPORT  (ongoing — update anytime during conversation)</text>
+
+      <!-- Arrow down -->
+      <line x1="420" y1="430" x2="420" y2="460" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Left box: Intent -->
+      <rect x="110" y="468" width="250" height="84" rx="8" fill="#fff" stroke="#fdba74" stroke-width="1.5"/>
+      <text x="235" y="490" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Select Intent(s)</text>
+      <text x="235" y="509" text-anchor="middle" font-size="10.5" fill="#64748b">📖 Learning  ☕ Socializing</text>
+      <text x="235" y="524" text-anchor="middle" font-size="10.5" fill="#64748b">🏆 Convincing  🔍 Exploring</text>
+      <text x="235" y="539" text-anchor="middle" font-size="10.5" fill="#64748b">🎯 Producing  💨 Venting  ❤️ Being heard  📢 Sharing</text>
+      <text x="235" y="551" text-anchor="middle" font-size="10" fill="#94a3b8">+ custom intents</text>
+
+      <!-- Right box: Biases -->
+      <rect x="480" y="468" width="250" height="84" rx="8" fill="#fff" stroke="#fdba74" stroke-width="1.5"/>
+      <text x="605" y="490" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Check Biases</text>
+      <text x="605" y="509" text-anchor="middle" font-size="10.5" fill="#64748b">Divided attention</text>
+      <text x="605" y="524" text-anchor="middle" font-size="10.5" fill="#64748b">Assuming communication success</text>
+      <text x="605" y="539" text-anchor="middle" font-size="10.5" fill="#64748b">Doubling down · Statements &gt; Questions</text>
+      <text x="605" y="551" text-anchor="middle" font-size="10.5" fill="#64748b">Tone limiting participation · Need a model</text>
+
+      <!-- Arrow from intent → conflict diamond -->
+      <line x1="235" y1="552" x2="235" y2="584" stroke="#c84b2f" stroke-width="1.5"/>
+      <line x1="235" y1="584" x2="392" y2="584" stroke="#c84b2f" stroke-width="1.5" marker-end="url(#arr-o)"/>
+
+      <!-- Arrow from biases → conflict diamond -->
+      <line x1="605" y1="552" x2="605" y2="584" stroke="#c84b2f" stroke-width="1.5"/>
+      <line x1="605" y1="584" x2="448" y2="584" stroke="#c84b2f" stroke-width="1.5" marker-end="url(#arr-o)"/>
+
+      <!-- Conflict detection diamond -->
+      <!-- center: 420, 600 — half-w=100, half-h=36 -->
+      <polygon points="420,564 520,600 420,636 320,600" fill="#fff" stroke="#c84b2f" stroke-width="1.5"/>
+      <text x="420" y="596" text-anchor="middle" font-size="11" font-weight="700" fill="#9a3412">Conflict detected?</text>
+      <text x="420" y="611" text-anchor="middle" font-size="10" fill="#64748b">(intent ↔ bias map)</text>
+
+      <!-- NO branch: right side, no warning -->
+      <text x="542" y="597" font-size="10" fill="#64748b">No</text>
+      <line x1="520" y1="600" x2="580" y2="600" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4,3"/>
+      <text x="600" y="597" font-size="10.5" fill="#64748b">Card shows normally</text>
+
+      <!-- YES branch: down -->
+      <text x="427" y="648" font-size="10" fill="#9a3412">Yes</text>
+      <line x1="420" y1="636" x2="420" y2="658" stroke="#ca8a04" stroke-width="1.5" marker-end="url(#arr-y)"/>
+
+      <!-- Warning box -->
+      <rect x="250" y="658" width="340" height="48" rx="8" fill="#fef9c3" stroke="#eab308" stroke-width="1.5"/>
+      <text x="420" y="679" text-anchor="middle" font-size="13" font-weight="700" fill="#854d0e">⚠ Intent–bias warning on participant card</text>
+      <text x="420" y="696" text-anchor="middle" font-size="11" fill="#92400e">Visible to whole group · not punitive — it is information</text>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- PHASE BAND 4: SHARED VIEWS -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <rect x="0" y="762" width="840" height="184" rx="10" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1"/>
+      <text x="18" y="782" font-size="9" font-weight="700" letter-spacing=".1em" fill="#6b21a8" text-anchor="start">SHARED VIEWS  (Participants tab)</text>
+
+      <!-- Arrow down from warning -->
+      <line x1="420" y1="706" x2="420" y2="780" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Left: Cards view -->
+      <rect x="80" y="786" width="290" height="96" rx="8" fill="#fff" stroke="#c4b5fd" stroke-width="1.5"/>
+      <text x="225" y="808" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Cards View  (default)</text>
+      <text x="225" y="826" text-anchor="middle" font-size="11" fill="#64748b">One card per participant</text>
+      <text x="225" y="841" text-anchor="middle" font-size="11" fill="#64748b">Name · intent badges · bias tags</text>
+      <text x="225" y="856" text-anchor="middle" font-size="11" fill="#64748b">⚠ conflict warning if present</text>
+      <text x="225" y="872" text-anchor="middle" font-size="10" fill="#94a3b8">Your card is outlined in red</text>
+
+      <!-- Right: Stats view -->
+      <rect x="470" y="786" width="290" height="96" rx="8" fill="#fff" stroke="#c4b5fd" stroke-width="1.5"/>
+      <text x="615" y="808" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Stats View</text>
+      <text x="615" y="826" text-anchor="middle" font-size="11" fill="#64748b">Bar charts: intent distribution</text>
+      <text x="615" y="841" text-anchor="middle" font-size="11" fill="#64748b">Bar charts: bias distribution</text>
+      <text x="615" y="856" text-anchor="middle" font-size="11" fill="#64748b">Model interaction counts (if used)</text>
+      <text x="615" y="872" text-anchor="middle" font-size="10" fill="#94a3b8">In Open mode: hover shows names</text>
+
+      <!-- Toggle arrow between them -->
+      <line x1="370" y1="834" x2="470" y2="834" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="420" y="828" text-anchor="middle" font-size="10" fill="#7c3aed">toggle</text>
+
+      <!-- Arrows down from both to models phase -->
+      <line x1="225" y1="882" x2="225" y2="950" stroke="#94a3b8" stroke-width="1.5"/>
+      <line x1="615" y1="882" x2="615" y2="950" stroke="#94a3b8" stroke-width="1.5"/>
+      <line x1="225" y1="950" x2="395" y2="950" stroke="#94a3b8" stroke-width="1.5"/>
+      <line x1="615" y1="950" x2="445" y2="950" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- PHASE BAND 5: MODELS (optional) -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <rect x="0" y="964" width="840" height="264" rx="10" fill="#ecfeff" stroke="#67e8f9" stroke-width="1"/>
+      <text x="18" y="984" font-size="9" font-weight="700" letter-spacing=".1em" fill="#155e75" text-anchor="start">MODELS TAB  (optional — any participant can open)</text>
+
+      <!-- Models tab header box -->
+      <rect x="270" y="990" width="300" height="36" rx="8" fill="#0f172a"/>
+      <text x="420" y="1013" text-anchor="middle" font-size="12" font-weight="700" fill="white">Open Models Tab → choose a model</text>
+
+      <!-- Arrow down -->
+      <line x1="420" y1="1026" x2="420" y2="1046" stroke="#0891b2" stroke-width="1.5" marker-end="url(#arr-b)"/>
+
+      <!-- Six model small boxes -->
+      <!-- Row 1: Six Questions, Cynefin, eVSM v2 -->
+      <rect x="32"  y="1050" width="130" height="38" rx="6" fill="#fff" stroke="#67e8f9" stroke-width="1.5"/>
+      <text x="97"  y="1066" text-anchor="middle" font-size="11" font-weight="600" fill="#0f172a">Six Questions</text>
+      <text x="97"  y="1081" text-anchor="middle" font-size="10" fill="#64748b">Editable Q&amp;A · timeline</text>
+
+      <rect x="178" y="1050" width="130" height="38" rx="6" fill="#fff" stroke="#67e8f9" stroke-width="1.5"/>
+      <text x="243" y="1066" text-anchor="middle" font-size="11" font-weight="600" fill="#0f172a">Cynefin</text>
+      <text x="243" y="1081" text-anchor="middle" font-size="10" fill="#64748b">5 domains · transitions</text>
+
+      <rect x="324" y="1050" width="130" height="38" rx="6" fill="#fff" stroke="#67e8f9" stroke-width="1.5"/>
+      <text x="389" y="1066" text-anchor="middle" font-size="11" font-weight="600" fill="#0f172a">eVSM v2</text>
+      <text x="389" y="1081" text-anchor="middle" font-size="10" fill="#64748b">VSM systems 1–5</text>
+
+      <!-- Row 2: 15 Ps, Six Thinking Hats, Custom Graph -->
+      <rect x="470" y="1050" width="130" height="38" rx="6" fill="#fff" stroke="#67e8f9" stroke-width="1.5"/>
+      <text x="535" y="1066" text-anchor="middle" font-size="11" font-weight="600" fill="#0f172a">15 Ps</text>
+      <text x="535" y="1081" text-anchor="middle" font-size="10" fill="#64748b">Community dev framework</text>
+
+      <rect x="616" y="1050" width="130" height="38" rx="6" fill="#fff" stroke="#67e8f9" stroke-width="1.5"/>
+      <text x="681" y="1066" text-anchor="middle" font-size="11" font-weight="600" fill="#0f172a">Six Thinking Hats</text>
+      <text x="681" y="1081" text-anchor="middle" font-size="10" fill="#64748b">De Bono 6 modes</text>
+
+      <rect x="472" y="1096" width="344" height="38" rx="6" fill="#e0f2fe" stroke="#67e8f9" stroke-width="1.5"/>
+      <text x="644" y="1111" text-anchor="middle" font-size="11" font-weight="600" fill="#0369a1">Custom Graph (RCN Graph Tool JSON)</text>
+      <text x="644" y="1126" text-anchor="middle" font-size="10" fill="#0369a1">Upload JSON export → any diagram becomes a live canvas</text>
+
+      <!-- Arrows from model boxes → interaction box -->
+      <line x1="97"  y1="1088" x2="97"  y2="1148" stroke="#0891b2" stroke-width="1.2"/>
+      <line x1="243" y1="1088" x2="243" y2="1148" stroke="#0891b2" stroke-width="1.2"/>
+      <line x1="389" y1="1088" x2="389" y2="1148" stroke="#0891b2" stroke-width="1.2"/>
+      <line x1="535" y1="1088" x2="535" y2="1148" stroke="#0891b2" stroke-width="1.2"/>
+      <line x1="681" y1="1088" x2="681" y2="1148" stroke="#0891b2" stroke-width="1.2"/>
+      <line x1="644" y1="1134" x2="644" y2="1148" stroke="#0891b2" stroke-width="1.2"/>
+      <line x1="97"  y1="1148" x2="743" y2="1148" stroke="#0891b2" stroke-width="1.2"/>
+      <line x1="420" y1="1148" x2="420" y2="1160" stroke="#0891b2" stroke-width="1.5" marker-end="url(#arr-b)"/>
+
+      <!-- Box: click interaction -->
+      <rect x="180" y="1162" width="480" height="48" rx="8" fill="#fff" stroke="#67e8f9" stroke-width="1.5"/>
+      <text x="420" y="1183" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Click nodes/edges → count aggregates across participants</text>
+      <text x="420" y="1200" text-anchor="middle" font-size="11" fill="#64748b">Click again to remove your vote · counts persist while session is live</text>
+
+      <!-- Arrow up-right to Stats (loopback) -->
+      <path d="M 660 1186 Q 800 1186 800 884 Q 800 834 760 834"
+            fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-b)"/>
+      <text x="812" y="1060" font-size="10" fill="#7c3aed" transform="rotate(-90,812,1060)">→ Stats view</text>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- PHASE BAND 6: SESSION MANAGEMENT & CLOSE -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <rect x="0" y="1238" width="840" height="174" rx="10" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+      <text x="18" y="1258" font-size="9" font-weight="700" letter-spacing=".1em" fill="#7f1d1d" text-anchor="start">SESSION CLOSE</text>
+
+      <!-- Arrow down -->
+      <line x1="420" y1="1210" x2="420" y2="1256" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Left: Download SVGs -->
+      <rect x="60" y="1264" width="280" height="68" rx="8" fill="#fff" stroke="#fca5a5" stroke-width="1.5"/>
+      <text x="200" y="1287" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Download SVGs (optional)</text>
+      <text x="200" y="1304" text-anchor="middle" font-size="11" fill="#64748b">Export model diagrams with</text>
+      <text x="200" y="1319" text-anchor="middle" font-size="11" fill="#64748b">click-count annotations before leaving</text>
+
+      <!-- Right: Leave tab -->
+      <rect x="500" y="1264" width="280" height="68" rx="8" fill="#fff" stroke="#fca5a5" stroke-width="1.5"/>
+      <text x="640" y="1287" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Close browser tab</text>
+      <text x="640" y="1304" text-anchor="middle" font-size="11" fill="#64748b">Participant entry removed from</text>
+      <text x="640" y="1319" text-anchor="middle" font-size="11" fill="#64748b">Firebase within a few seconds</text>
+
+      <!-- Arrows down from both → final box -->
+      <line x1="200" y1="1332" x2="200" y2="1372" stroke="#94a3b8" stroke-width="1.5"/>
+      <line x1="640" y1="1332" x2="640" y2="1372" stroke="#94a3b8" stroke-width="1.5"/>
+      <line x1="200" y1="1372" x2="395" y2="1372" stroke="#94a3b8" stroke-width="1.5"/>
+      <line x1="640" y1="1372" x2="445" y2="1372" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Final box -->
+      <rect x="240" y="1386" width="360" height="28" rx="8" fill="#fca5a5" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="420" y="1405" text-anchor="middle" font-size="12" font-weight="700" fill="#7f1d1d">Session data removed from Firebase — not recoverable</text>
+
+      <!-- SESSION MANAGEMENT aside (top-right of close phase) -->
+      <!-- Note on Reset vs New Session -->
+
+    </svg>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch" style="background:#f0f9ff;border:1.5px solid #93c5fd"></div> Session Setup</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#f0fdf4;border:1.5px solid #86efac"></div> Joining</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#fff7ed;border:1.5px solid #fdba74"></div> Self-Report (ongoing)</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#fef9c3;border:1.5px solid #eab308"></div> Conflict warning</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#f5f3ff;border:1.5px solid #c4b5fd"></div> Shared Views</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#ecfeff;border:1.5px solid #67e8f9"></div> Models (optional)</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#fef2f2;border:1.5px solid #fca5a5"></div> Session Close</div>
+    <div class="legend-item">
+      <svg width="36" height="14"><defs><marker id="arr-leg" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#a78bfa"/></marker></defs><line x1="0" y1="7" x2="28" y2="7" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-leg)"/></svg>
+      Loopback / optional path
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    <span>Conversation Navigator · © Marc Pierson &amp; Kerry Turner, RCN Co-Founders · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></span>
+    <span>
+      <a href="bias-checker-intro.html">Introduction →</a>
+      &nbsp;·&nbsp;
+      <a href="bias-checker-manual.html">User Manual →</a>
+      &nbsp;·&nbsp;
+      <a href="bias-checker.html">Open the Tool →</a>
+    </span>
+  </div>
+
+</div>
+</body>
+</html>

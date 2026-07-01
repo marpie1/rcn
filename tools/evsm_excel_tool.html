@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>eVSM — Excel Import / Export</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f4f6f9; color: #222; }
+
+  header {
+    background: #1a3a5c; color: white; padding: 18px 32px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header p  { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+  main { max-width: 900px; margin: 32px auto; padding: 0 24px; }
+
+  .card {
+    background: white; border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    padding: 28px 32px; margin-bottom: 24px;
+  }
+  .card h2 {
+    font-size: 14px; font-weight: bold; color: #1a3a5c;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    border-bottom: 2px solid #d6e4f0; padding-bottom: 10px; margin-bottom: 18px;
+  }
+  .card p { font-size: 13px; color: #555; margin-bottom: 16px; line-height: 1.6; }
+
+  .row { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+
+  textarea {
+    width: 100%; height: 160px; font-family: monospace; font-size: 12px;
+    border: 1px solid #ccc; border-radius: 4px; padding: 10px;
+    resize: vertical; color: #333;
+  }
+  textarea:focus { outline: none; border-color: #2d6a9f; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 5px; border: none;
+    font-size: 13px; font-weight: bold; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-primary   { background: #1a3a5c; color: white; }
+  .btn-primary:hover { background: #2d6a9f; }
+  .btn-secondary { background: #2d6a9f; color: white; }
+  .btn-secondary:hover { background: #1a3a5c; }
+  .btn-outline   { background: white; color: #1a3a5c; border: 2px solid #1a3a5c; }
+  .btn-outline:hover { background: #d6e4f0; }
+
+  .file-label {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 5px;
+    background: white; color: #1a3a5c; border: 2px solid #1a3a5c;
+    font-size: 13px; font-weight: bold; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .file-label:hover { background: #d6e4f0; }
+  input[type="file"] { display: none; }
+
+  .status {
+    margin-top: 14px; padding: 10px 14px; border-radius: 4px;
+    font-size: 13px; display: none;
+  }
+  .status.ok    { background: #d4edda; color: #155724; display: block; }
+  .status.error { background: #f8d7da; color: #721c24; display: block; }
+  .status.info  { background: #d1ecf1; color: #0c5460; display: block; }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  .swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid #ccc; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+  th { background: #1a3a5c; color: white; padding: 8px; text-align: left; }
+  td { padding: 7px 8px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+  tr:hover td { background: #f0f4f8; }
+  .tag {
+    display: inline-block; padding: 2px 7px; border-radius: 10px;
+    font-size: 11px; font-weight: bold;
+  }
+  .tag-sensory  { background: #d4edda; color: #155724; }
+  .tag-internal { background: #fff3cd; color: #856404; }
+  .tag-align    { background: #d1ecf1; color: #0c5460; }
+  .tag-filled   { background: #d4edda; color: #155724; }
+  .tag-empty    { background: #f8d7da; color: #721c24; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>eVSM — Excel Import / Export</h1>
+    <p>Generic Neighborhood Development Center · Spring 2026</p>
+  </div>
+</header>
+
+<main>
+
+  <!-- EXPORT -->
+  <div class="card">
+    <h2>⬇ Export JSON → Excel</h2>
+    <p>Paste your eVSM JSON below, then click Export. The Excel file will download with five sheets: Survey Meta, Spheres, Edges, Worlds Categories, and Layer Reference.</p>
+    <textarea id="jsonInput" placeholder='Paste eVSM JSON here...'></textarea>
+    <div class="row" style="margin-top:12px;">
+      <button class="btn btn-primary" onclick="exportToExcel()">⬇ Export to Excel</button>
+      <button class="btn btn-outline" onclick="loadSample()">Load Sample JSON</button>
+      <button class="btn btn-outline" onclick="clearJson()">Clear</button>
+    </div>
+    <div id="exportStatus" class="status"></div>
+  </div>
+
+  <!-- IMPORT -->
+  <div class="card">
+    <h2>⬆ Import Excel → JSON</h2>
+    <p>Upload a filled-out eVSM Excel file. The tool will read all sheets and generate an eVSM-compatible JSON file for download.</p>
+    <div class="row">
+      <label class="file-label">
+        📂 Choose Excel File
+        <input type="file" id="xlsxInput" accept=".xlsx" onchange="importFromExcel(this)">
+      </label>
+    </div>
+    <div id="importStatus" class="status"></div>
+    <div id="importPreview" style="display:none; margin-top:16px;">
+      <div id="previewContent"></div>
+      <div style="margin-top:14px;">
+        <button class="btn btn-secondary" onclick="downloadJson()">⬇ Download JSON</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── Layer color tags ──────────────────────────────────────────────────────────
+const LAYER_BG = {
+  "Sensory / Interface":     { argb: "FFD4EDDA" },
+  "Internal Core":           { argb: "FFFFF3CD" },
+  "Alignment / Homeostatic": { argb: "FFD1ECF1" },
+};
+const NAVY  = { argb: "FF1A3A5C" };
+const BLUE  = { argb: "FF2D6A9F" };
+const GREY  = { argb: "FFF0F4F8" };
+const WHITE = { argb: "FFFFFFFF" };
+const MID   = { argb: "FFCCCCCC" };
+
+let importedJson = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function setStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = `status ${type}`;
+}
+
+function styleHeader(ws, row, cols, bg) {
+  for (let c = 1; c <= cols; c++) {
+    const cell = ws.getCell(row, c);
+    cell.font = { name: "Arial", bold: true, size: 10, color: { argb: "FFFFFFFF" } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: bg };
+    cell.border = thinBorder();
+    cell.alignment = { wrapText: true, vertical: "middle", horizontal: "center" };
+  }
+  ws.getRow(row).height = 28;
+}
+
+function styleCell(cell, bg, bold, italic) {
+  cell.font = { name: "Arial", size: 10, bold: !!bold, italic: !!italic };
+  cell.fill = { type: "pattern", pattern: "solid", fgColor: bg || WHITE };
+  cell.border = thinBorder();
+  cell.alignment = { wrapText: true, vertical: "top" };
+}
+
+function thinBorder() {
+  const s = { style: "thin", color: MID };
+  return { top: s, bottom: s, left: s, right: s };
+}
+
+function titleRow(ws, text, cols) {
+  ws.mergeCells(1, 1, 1, cols);
+  const cell = ws.getCell(1, 1);
+  cell.value = text;
+  cell.font = { name: "Arial", bold: true, size: 13, color: { argb: "FFFFFFFF" } };
+  cell.fill = { type: "pattern", pattern: "solid", fgColor: NAVY };
+  cell.alignment = { horizontal: "center", vertical: "middle" };
+  ws.getRow(1).height = 26;
+}
+
+// ── Export JSON → Excel ───────────────────────────────────────────────────────
+function exportToExcel() {
+  let json;
+  try {
+    json = JSON.parse(document.getElementById("jsonInput").value);
+  } catch(e) {
+    setStatus("exportStatus", "❌ Invalid JSON — please check your input.", "error");
+    return;
+  }
+
+  const wb = new ExcelJS.Workbook ? null : null; // fallback to SheetJS
+  // Using SheetJS (XLSX) which is loaded
+  exportWithSheetJS(json);
+}
+
+function exportWithSheetJS(json) {
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Survey Meta
+  const metaData = [["Field", "Value"]];
+  const meta = json.surveyMeta || {};
+  Object.entries(meta).forEach(([k,v]) => metaData.push([k, String(v)]));
+  const ws1 = XLSX.utils.aoa_to_sheet(metaData);
+  ws1["!cols"] = [{wch:22},{wch:50}];
+  XLSX.utils.book_append_sheet(wb, ws1, "Survey Meta");
+
+  // Sheet 2: Spheres
+  const sphereHeaders = ["ID","Label","Layer","Anatomical Framing (italic)",
+                         "Vernacular Description (bold)","Status","Notes"];
+  const sphereData = [sphereHeaders];
+  const labels = json.nodeLabels || {};
+  const descs  = json.nodeDescriptions || {};
+  const status = json.nodeStatus || {};
+
+  // Parse combined description back into two columns
+  Object.keys(labels).forEach(sid => {
+    const raw = descs[sid] || "";
+    let anat = "", vern = "";
+    const italicMatch = raw.match(/^_(.+?)_/s);
+    const boldMatch   = raw.match(/\*\*(.+?)\*\*/s);
+    if (italicMatch) anat = italicMatch[1];
+    if (boldMatch)   vern = boldMatch[1];
+    sphereData.push([sid, labels[sid], layerFor(sid), anat, vern, status[sid]||"", ""]);
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet(sphereData);
+  ws2["!cols"] = [{wch:6},{wch:28},{wch:24},{wch:44},{wch:44},{wch:14},{wch:24}];
+  XLSX.utils.book_append_sheet(wb, ws2, "Spheres");
+
+  // Sheet 3: Edges
+  const edgeHeaders = ["From","To","Edge ID","From Label","To Label",
+                       "Anatomical Framing (italic)","Domain Assertion (bold)",
+                       "Status","Evidence / Example","Suggestion"];
+  const edgeData = [edgeHeaders];
+  const edgeDescs   = json.edgeDescriptions || {};
+  const edgeStatuses = json.edgeStatus || {};
+
+  Object.entries(edgeDescs).forEach(([eid, raw]) => {
+    const parts = eid.split("->");
+    const frm = "S-" + parts[0];
+    const to  = "S-" + parts[1];
+    let anat = "", assertion = "";
+    const italicMatch = raw.match(/^_(.+?)_/s);
+    const boldMatch   = raw.match(/\*\*(.+?)\*\*/s);
+    if (italicMatch) anat      = italicMatch[1];
+    if (boldMatch)   assertion = boldMatch[1];
+    edgeData.push([frm, to, eid,
+      labels[frm]||"", labels[to]||"",
+      anat, assertion,
+      edgeStatuses[eid]||"","",""]);
+  });
+  const ws3 = XLSX.utils.aoa_to_sheet(edgeData);
+  ws3["!cols"] = [{wch:7},{wch:7},{wch:14},{wch:26},{wch:26},
+                  {wch:40},{wch:40},{wch:14},{wch:28},{wch:28}];
+  XLSX.utils.book_append_sheet(wb, ws3, "Edges");
+
+  // Sheet 4: Worlds Categories
+  const worldsData = [["#","Category","Notes"]];
+  (json.worldsCategories||[]).forEach((cat,i) => worldsData.push([i+1, cat, ""]));
+  const ws4 = XLSX.utils.aoa_to_sheet(worldsData);
+  ws4["!cols"] = [{wch:5},{wch:34},{wch:44}];
+  XLSX.utils.book_append_sheet(wb, ws4, "Worlds Categories");
+
+  // Sheet 5: Layer Reference
+  const layerData = [
+    ["Layer","Spheres","Markov Blanket Role","Edge Question Focus"],
+    ["Sensory / Interface","S-4, S-7, S-9",
+     "The Markov blanket itself — transducing signals between organism and environment.",
+     "Is signal getting through in both directions at the right resolution?"],
+    ["Internal Core","S-3, S-6, S-8",
+     "The organism's internal states — modeling, capacity, and infrastructure.",
+     "Are the organism's models accurate, current, and shared?"],
+    ["Alignment / Homeostatic","S-1, S-2, S-5, S-10, S-11",
+     "Reduces prediction error — adapts the organism AND acts on the environment.",
+     "Are the right conversations happening and converging?"],
+  ];
+  const ws5 = XLSX.utils.aoa_to_sheet(layerData);
+  ws5["!cols"] = [{wch:24},{wch:20},{wch:50},{wch:50}];
+  XLSX.utils.book_append_sheet(wb, ws5, "Layer Reference");
+
+  XLSX.writeFile(wb, "NDC_eVSM_Setup.xlsx");
+  setStatus("exportStatus", "✅ Excel file downloaded successfully.", "ok");
+}
+
+// ── Import Excel → JSON ───────────────────────────────────────────────────────
+function importFromExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb   = XLSX.read(data, { type: "array" });
+
+      const json = {};
+
+      // Survey Meta
+      const ws1   = wb.Sheets["Survey Meta"];
+      const rows1 = XLSX.utils.sheet_to_json(ws1, { header: 1 });
+      const meta  = {};
+      rows1.slice(2).forEach(r => {
+        if (r[0]) {
+          let val = r[1] !== undefined ? r[1] : "";
+          if (r[0] === "anonymousMode") val = (String(val).toLowerCase() === "true");
+          meta[r[0]] = val;
+        }
+      });
+      json.surveyMeta = meta;
+
+      // Spheres
+      const ws2   = wb.Sheets["Spheres"];
+      const rows2 = XLSX.utils.sheet_to_json(ws2, { header: 1 });
+      const nodeLabels = {}, nodeDescs = {}, nodeStatus = {};
+      rows2.slice(2).forEach(r => {
+        const sid = r[0]; if (!sid) return;
+        nodeLabels[sid] = r[1] || "";
+        const anat = r[3] || "", vern = r[4] || "";
+        if (anat && vern)      nodeDescs[sid] = `_${anat}_\n**${vern}**`;
+        else if (anat)         nodeDescs[sid] = `_${anat}_`;
+        else if (vern)         nodeDescs[sid] = vern;
+        else                   nodeDescs[sid] = "";
+        nodeStatus[sid] = r[5] || "";
+      });
+      json.nodeLabels       = nodeLabels;
+      json.nodeDescriptions = nodeDescs;
+      json.nodeStatus       = nodeStatus;
+
+      // Edges
+      const ws3   = wb.Sheets["Edges"];
+      const rows3 = XLSX.utils.sheet_to_json(ws3, { header: 1 });
+      const edgeDescs = {}, edgeStatus = {};
+      rows3.slice(2).forEach(r => {
+        const frm = r[0], to = r[1]; if (!frm || !to) return;
+        const fNum = String(frm).replace("S-","");
+        const tNum = String(to).replace("S-","");
+        const eid  = `${fNum}->${tNum}`;
+        const anat = r[5] || "", assertion = r[6] || "";
+        if (anat && assertion) edgeDescs[eid] = `_${anat}_ **${assertion}**`;
+        else if (anat)         edgeDescs[eid] = `_${anat}_`;
+        else if (assertion)    edgeDescs[eid] = `**${assertion}**`;
+        else                   edgeDescs[eid] = "";
+        if (r[7]) edgeStatus[eid] = r[7];
+      });
+      json.edgeDescriptions = edgeDescs;
+      json.edgeStatus       = edgeStatus;
+
+      // Worlds Categories
+      const ws4   = wb.Sheets["Worlds Categories"];
+      const rows4 = XLSX.utils.sheet_to_json(ws4, { header: 1 });
+      json.worldsCategories = rows4.slice(2).map(r => r[1]).filter(Boolean);
+
+      importedJson = json;
+
+      // Show preview
+      const filled = Object.values(edgeDescs).filter(v => v).length;
+      const total  = Object.keys(edgeDescs).length;
+      document.getElementById("previewContent").innerHTML = `
+        <table>
+          <tr><th>Section</th><th>Summary</th></tr>
+          <tr><td>Survey</td><td>${meta.enterprise || ""} · ${meta.timeFrame || ""}</td></tr>
+          <tr><td>Spheres</td><td>${Object.keys(nodeLabels).length} spheres defined</td></tr>
+          <tr><td>Edges</td><td>${filled} of ${total} edges have content</td></tr>
+          <tr><td>Worlds Categories</td><td>${json.worldsCategories.length} categories</td></tr>
+        </table>`;
+      document.getElementById("importPreview").style.display = "block";
+      setStatus("importStatus", `✅ Imported "${file.name}" successfully.`, "ok");
+
+    } catch(err) {
+      setStatus("importStatus", `❌ Error reading file: ${err.message}`, "error");
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function downloadJson() {
+  if (!importedJson) return;
+  const blob = new Blob([JSON.stringify(importedJson, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "NDC_eVSM_export.json";
+  a.click();
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function layerFor(sid) {
+  const sensory  = ["S-4","S-7","S-9"];
+  const internal = ["S-3","S-6","S-8"];
+  if (sensory.includes(sid))  return "Sensory / Interface";
+  if (internal.includes(sid)) return "Internal Core";
+  return "Alignment / Homeostatic";
+}
+
+function clearJson() {
+  document.getElementById("jsonInput").value = "";
+  document.getElementById("exportStatus").className = "status";
+}
+
+function loadSample() {
+  const sample = {
+    "surveyMeta": {
+      "enterprise": "Generic Neighborhood Development Center",
+      "focalPoint": "Neighborhood Center Functioning",
+      "date": "03-02-2026",
+      "timeFrame": "Spring 2026",
+      "surveyId": "",
+      "respondentId": "",
+      "anonymousMode": false
+    },
+    "nodeLabels": {
+      "S-1": "COORDINATION ACROSS THE NHOOD",
+      "S-2": "INVOLVEMENT",
+      "S-3": "TOOLS AND WORKSPACES",
+      "S-4": "AWARENESS WITHIN THE NHOOD",
+      "S-5": "QUALITY OF LEARNING AND CHANGE",
+      "S-6": "ABILITY TO GET THINGS DONE WITHIN THE NHOOD",
+      "S-7": "RESOURCES (FINANCE)",
+      "S-8": "QUALITY OF NEIGHBORHOOD PLANNING",
+      "S-9": "AWARENESS BEYOND THE NHOOD",
+      "S-10": "LEADERSHIP IN THE NHOOD",
+      "S-11": "CULTURE"
+    },
+    "nodeDescriptions": {
+      "S-4": "_S-4 is the community-facing awareness function — knowing who is here, what they need, and how to reach them._\n**We know our neighbors, what they need from us, what they can contribute, and how to communicate with them.**",
+      "S-8": "_S-8 is the planning function — the neighborhood's capacity to think ahead, set intentions, coordinate future action._\n**Our neighborhood makes plans that are realistic, shared, and actually guide what we do together.**",
+      "S-9": "_S-9 is the external awareness function — sensing and communicating with the larger environment beyond the neighborhood boundary._\n**Our neighborhood understands what is going on around us. We know our supporters as well as those who extract from us.**",
+      "S-10": "_S-10 is the self-organizing capacity — the neighborhood's ability to actually mobilize around problems and opportunities as they arise._\n**Our neighborhood can self-organize to understand and solve our problems and take advantage of opportunities.**"
+    },
+    "nodeStatus": {},
+    "edgeStatus": {},
+    "edgeDescriptions": {
+      "9->10": "_Does our collective awareness of the outside world actually sharpen how we organize ourselves to act?_ **Our neighborhood's awareness of outside forces, opportunities, and threats is actively shaping how we come together to solve problems and take advantage of opportunities.**",
+      "10->9": "_Does active neighborhood self-organization focus and sharpen what outside information we seek and use?_ **When our neighborhood comes together around a problem or opportunity, we get better at knowing what outside information we need.**",
+      "8->10": "_Does neighborhood planning actually enable and focus our collective capacity to act, rather than replacing it?_\n**Our neighborhood planning gives people the context and direction they need to step up and organize around real problems and opportunities.**",
+      "10->8": "_Does our lived experience of working together actually improve the quality of our planning?_\n**When our neighborhood comes together to act, what we learn shapes and improves our plans.**",
+      "8->9": "_Does our neighborhood planning actively direct what we look for and pay attention to beyond our boundaries?_ **Our neighborhood's plans and priorities are actively shaping what outside information we seek out and pay attention to.**",
+      "9->8": "_Does our awareness of the outside world actually update and improve our neighborhood's plans?_ **What we learn about the world beyond our neighborhood is regularly finding its way into how we plan and set priorities.**"
+    },
+    "worldsCategories": [
+      "Volunteer","Community Member","Funder","Male","Female",
+      "Age 18 or younger","Age 19 to 30","Age 31 to 40","Age 41 to 50",
+      "Age 51 to 60","Age 61 to 70","Age 71 to 80","Employed","Retired",
+      "Financially Secure","Financially Insecure","Housing Secure","Housing Insecure","Student"
+    ]
+  };
+  document.getElementById("jsonInput").value = JSON.stringify(sample, null, 2);
+  setStatus("exportStatus", "ℹ Sample JSON loaded. Click Export to download Excel.", "info");
+}
+</script>
+</body>
+</html>

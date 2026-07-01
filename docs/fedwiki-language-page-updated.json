@@ -1,0 +1,454 @@
+{
+  "title": "FedWiki Language for Claude, Marc, and Ward",
+  "story": [
+    {
+      "type": "markdown",
+      "id": "db85039bfd44d404",
+      "text": "**Marc:** FedWiki Language for Claude, Marc, and Ward: Please read this and tell me how we can use this as we continue to work on FedWiki. [H]\n\n*(attached: the \"[[What Wiki Does]]\" page JSON — Ward's specification organized by pagefolds into six concerns: fundamental, collaborative, interpretable, computational, generative, maintainable.)*"
+    },
+    {
+      "type": "markdown",
+      "id": "36fac00a7fc44deb",
+      "text": "**Claude:** This is Ward's \"What Wiki Does\" — a specification written in the federation's own voice, organized by pagefolds into six concerns: fundamental, collaborative, interpretable, computational, generative, maintainable. [C]"
+    },
+    {
+      "type": "markdown",
+      "id": "63594d8a1d38422f",
+      "text": "Reading it against how we already work, three uses stand out."
+    },
+    {
+      "type": "markdown",
+      "id": "ccfee66071a80c51",
+      "text": "**A shared vocabulary that closes the gap between us.** The page gives precise names to things we handle loosely. *Twins*, *Neighborhood*, *Origin*, *Sourcing*, *Ghosts*, *Freezing* — when I generate FedWiki JSON for Foothills Outlook or the court site, I can speak in these terms and you and Ward will mean the same thing I do. The *Items* definition matters most for my work: random 16-char identity assigned at creation, preserved through every revision including type changes, unique within a page. That's the contract my JSON output already honors; now it's written down."
+    },
+    {
+      "type": "markdown",
+      "id": "08caf5077e4ac34c",
+      "text": "**A conformance checklist for generated pages.** Several entries are quiet constraints on what I produce. *Hosting* fixes the slug rule (lowercase, alphanumeric, hyphens for spaces) and the 404 obligation. *Pages* fixes the license (CC BY-SA) and JSON encoding. *Fork* spells out the BY/SA history requirement. When I emit a page or a sitemap, **I can check it against these rather than against my memory of how FedWiki behaves**."
+    },
+    {
+      "type": "markdown",
+      "id": "78aad81d80bc72c0",
+      "text": "**The generative section is the part worth pushing on together.** *Scripts*, *Reflection*, *Ghosts*, *Imports*, *Freezing* describe exactly the loop our tools live in — automation reads and writes pages while the owner keeps the decision about persistent change. The Frame plugin running HTML in a sandboxed iFrame, scripts reaching code items out of the enclosing page and importing them as a module, computed results arriving as a reviewable ghost panel — that's **a cleaner path than the sofi-proxy write route for some of what we do**. The SODOTO badge plugin already fits the *Plugins* definition (dynamic load from origin, all-caps markup keywords); the credential-issuance UI we haven't built **could be a Frame script that assembles a contract result and offers it as a ghost to fork.**"
+    },
+    {
+      "type": "markdown",
+      "id": "af7d4b4d862b6758",
+      "text": ">One thing I'd flag for Ward rather than fix: the page still carries a few typos in the prose — \"cuatorial\" in *Sites*, \"Anciliary\" as the *Auxiliary* keyword, \"cybernetic\" nowhere but \"veresions\" in *Upward*. Whether those get cleaned depends on whether this is a living draft or a fixed reference."
+    },
+    {
+      "type": "markdown",
+      "id": "3259e6976eedbfba",
+      "text": "What's the next move — are you wanting this as a conformance reference I check generated pages against, a glossary we cite in RCN docs, or source material for the credential-issuance Frame script?"
+    },
+    {
+      "type": "markdown",
+      "id": "fead9f6a6f3d83ab",
+      "text": "**Marc:** Please create a page json for this chat: verbatim. [H]"
+    },
+    {
+      "type": "markdown",
+      "id": "acca0660e177c1b4",
+      "text": "**Claude:** I'll create a FedWiki page JSON of this conversation as a transcript, following the format: `markdown` items only, bold speaker labels, full turns from the first prompt, with inline provenance tags. [C]\n\n*(produced this page.)*"
+    },
+    {
+      "type": "pagefold",
+      "id": "ddbd7bc30f2f9653",
+      "text": "second query"
+    },
+    {
+      "type": "markdown",
+      "id": "0fe6669351ce4668",
+      "text": "Are you COMPLETELY aware of github repo of the federated wiki?10:57 AM"
+    },
+    {
+      "type": "markdown",
+      "id": "e24874049d2aa46b",
+      "text": "Claude responded: No.No. I've never been given the contents of that repo, and I can't read it from training memory reliably — code repositories change, and I'd be guessing at file layout, current APIs, and what's actually in HEAD today."
+    },
+    {
+      "type": "markdown",
+      "id": "e4d9ff51cbd931a1",
+      "text": "Two honest limits:\nThe bash environment here can reach github.com and raw.githubusercontent.com, so I can fetch specific files from the fedwiki org (e.g. fedwiki/wiki, fedwiki/wiki-server, fedwiki/wiki-client) if you point me at them. But that's fetching on demand, not \"being aware of the repo.\""
+    },
+    {
+      "type": "markdown",
+      "id": "5fdba61a7ba0a372",
+      "text": "My web tools and bash can't browse or clone the whole thing into awareness either — I'd be pulling one file at a time, and a clone via git isn't in the allowed domains for the egress proxy the way the raw/api hosts are."
+    },
+    {
+      "type": "markdown",
+      "id": "94b6b6a7a5d8948e",
+      "text": "So the accurate answer: I know FedWiki's behavior well — the page JSON shape, journal actions, the plugin model, sourcing, the slug and 404 conventions — and the \"What Wiki Does\" page you just gave me sharpens that. What I don't have is the codebase itself. If you want me grounded in the actual source for the credential-issuance Frame script or anything else, hand me the file paths or URLs and I'll read them before I write."
+    },
+    {
+      "type": "pagefold",
+      "id": "dab2b433ab340a01",
+      "text": "."
+    },
+    {
+      "type": "markdown",
+      "id": "db81a044f1126a41",
+      "text": "Now I need to figure out how to point Claude to FedWiki github repo."
+    },
+    {
+      "type": "pagefold",
+      "id": "ee02c6409b6f254c",
+      "text": "query of claude code"
+    },
+    {
+      "type": "markdown",
+      "id": "b9509de3c78f3a48",
+      "text": "Do you ever look at github FedWiki repo as we do work together that involves fedwiki?"
+    },
+    {
+      "type": "markdown",
+      "id": "a8eb04e6b5890005",
+      "text": "⏺ Not proactively, no. I work from whatever files are in the local repo and what you share in conversation. I don't have a saved reference to the FedWiki GitHub URL, and I don't browse it unless you point me to a specific URL or ask me to."
+    },
+    {
+      "type": "markdown",
+      "id": "3296357a105cf916",
+      "text": "If there's a particular FedWiki repo (or specific files/issues within it) that would be useful context for our work, I can fetch pages from it when relevant — just share the URL and I can add it as a reference memory so future sessions know to check it."
+    },
+    {
+      "type": "pagefold",
+      "id": "1cd01d08189ef83b",
+      "text": "."
+    },
+    {
+      "type": "markdown",
+      "id": "e0ca20789da89ce7",
+      "text": "I (Marc) don't know enough about FedWiki code or GitHub to be of much assistance to Claude Code."
+    },
+    {
+      "type": "pagefold",
+      "id": "53b223a6a43f69df",
+      "text": "Claude Code's Response"
+    },
+    {
+      "type": "markdown",
+      "id": "200f2f3caa7d51b6",
+      "text": "Marc--Ward and the fedwiki programmers point out that we create solutions that work for us but that do not make use of some fedwiki afforances. I am not a programmer and therefore don't know how to help you."
+    },
+    {
+      "type": "markdown",
+      "id": "28d91a443846397b",
+      "text": "That's a real and important problem. If Ward is saying that, it means there are FedWiki-native ways to do things we're building from scratch or doing awkwardly."
+    },
+    {
+      "type": "markdown",
+      "id": "de73e6e276c9db7b",
+      "text": "The gap is: I don't have deep knowledge of FedWiki's design philosophy and affordances, so I default to general web/tool patterns rather than FedWiki-idiomatic ones."
+    },
+    {
+      "type": "markdown",
+      "id": "09ccf4217d9a2dec",
+      "text": "Now I have enough to give you a substantive analysis. Here's what I found:\n\n  ---"
+    },
+    {
+      "type": "markdown",
+      "id": "02c81dcdfb8771f7",
+      "text": "What our SCP plugin does right\n\nThe plugin correctly follows FedWiki plugin conventions — it registers as window.plugins['scp-field'], implements emit and bind, and uses $item.trigger('change') plus .trigger('thumb') to signal changes to the wiki. That's proper FedWiki plugin structure.\n\n  ---"
+    },
+    {
+      "type": "markdown",
+      "id": "18d56ec542f3ebae",
+      "text": "Where we're missing FedWiki affordances\n\n  1. No factory pattern\nFedWiki has a \"factory\" affordance — you drag something onto a page or use a menu to create a new item of a given type. Our scp-field items can only be created by editing raw page JSON. A CHW can't add a new medication card without knowing JSON structure."
+    },
+    {
+      "type": "markdown",
+      "id": "50c78afdaca04161",
+      "text": "The wiki-plugin-factory repo exists specifically for this."
+    },
+    {
+      "type": "markdown",
+      "id": "cfadfee3f3548cce",
+      "text": "2. Health data is opaque to other plugins\n  FedWiki has an inter-plugin data flow — a data plugin item makes its values available to downstream plugins like method, chart, bars, etc., through jQuery events. Our scp-field items hold their data internally, but nothing else on the page can read it."
+    },
+    {
+      "type": "markdown",
+      "id": "68648ebd8f069fb9",
+      "text": "If you wanted to show a list of all medications or flag a pattern across the health log, you can't without custom code.\n\n3. Standalone tools live outside the wiki\nThe graph tool, MORE outliner, and issue polygon map are standalone HTML files. The Frame plugin (wiki-plugin-frame) exists specifically to embed external web pages inside wiki pages. These tools should probably be surfaced through wiki pages rather than being completely separate apps."
+    },
+    {
+      "type": "markdown",
+      "id": "157d60f0e4914604",
+      "text": "4. Single-site, not federated\n  FedWiki's core affordance is that a client can fork their own care plan to their own wiki site — owning their data. Right now\n  everything lives on one Groove instance. The SCP should be designed so a client's data lives on their wiki, and a CHW's wiki just\n  references it through the federation."
+    },
+    {
+      "type": "markdown",
+      "id": "9f16158aa77bcee9",
+      "text": "5. No Roster for the NDC network\n  The wiki-plugin-roster exists to list community sites without forcing them into everyone's neighborhood. For the NDC network\n  (Superior AZ and other sites), we should be using Roster pages rather than any custom site-listing we might build.\n\n  ---"
+    },
+    {
+      "type": "markdown",
+      "id": "54f856c96408c4f7",
+      "text": "What to ask Ward\n\nThe most actionable question for Ward would be: which of these is causing the most friction in practice? The factory pattern is probably the one that affects daily usability most directly.\n\nWould it help to share this analysis with Ward and get his read on priorities?"
+    },
+    {
+      "type": "pagefold",
+      "id": "a1b2c3d4e5f60001",
+      "text": "June 7 2026 — Claude Code reads FedWiki Git"
+    },
+    {
+      "type": "markdown",
+      "id": "a1b2c3d4e5f60002",
+      "text": "Marc shared the conversation above and asked Claude Code to remember it, then to read the actual FedWiki GitHub source and become grounded in it going forward. Marc introduced the term **FedWiki Git** for the GitHub org and its repos."
+    },
+    {
+      "type": "markdown",
+      "id": "a1b2c3d4e5f60003",
+      "text": "**What was accomplished.** Claude Code fetched and read the actual source for the following FedWiki Git files:\n- `wiki-client/lib/plugin.js` — the plugin API contract\n- `wiki-client/lib/factory.js` — how the factory affordance works\n- `wiki-plugin-frame/client/frame.js` — the full postMessage API\n- `wiki-plugin-roster/src/client/roster.js` — neighbor registration\n- `wiki-plugin-data/src/client/data.js` — inter-plugin data flow\n- `paul90/wiki-plugin-solo/client/solo.js` — the full-window popup pattern\n\nA briefing document was saved at `~/rcn/docs/fedwiki-git-briefing.md` and persistent memory was written so future Claude Code sessions start grounded in FedWiki Git without needing re-explanation."
+    },
+    {
+      "type": "pagefold",
+      "id": "a1b2c3d4e5f60004",
+      "text": "the five gaps — updated"
+    },
+    {
+      "type": "markdown",
+      "id": "a1b2c3d4e5f60005",
+      "text": "**Gap 1 — Factory pattern.** The `wiki-plugin-factory` repo has no client JS. Factory logic lives in `wiki-client/lib/factory.js`. For an scp-field item to appear in the factory menu, it needs an entry in `system/factories.json` on the wiki server. For CHWs to use it without editing JSON, the plugin also needs a custom `editor($item, item)` method presenting a creation form. The design of that form depends on the CHW workflow — a question for Chris Casillas, not for Claude. *Set aside; will build later.*"
+    },
+    {
+      "type": "markdown",
+      "id": "a1b2c3d4e5f60006",
+      "text": "**Gap 2 — Inter-plugin data flow.** The mechanism is jQuery thumb events. A producer fires `$(div).trigger('thumb', 'keyName')` when data changes. Consumers (chart, method, bars) listen on `$('.main').on('thumb', ...)`. For scp-field to expose health data to downstream plugins, it needs to fire thumb events with the right keys. Which fields are worth exposing is a design question — blood pressure over time is obvious; medication lists less so. *Set aside; collecting use cases first.*"
+    },
+    {
+      "type": "markdown",
+      "id": "a1b2c3d4e5f60007",
+      "text": "**Gap 3 — Standalone tools.** The Frame plugin's narrow column is too small for the graph tool, MORE outliner, and issue polygon map. The correct approach is the **Solo popup pattern** (paul90/wiki-plugin-solo): a small wiki plugin renders a button in the narrow column; clicking it opens the tool in a named full-window popup (`window.open(..., 'popup,height=720,width=1280')`); the popup passes `pageKey` back to the wiki via `window.opener.postMessage()` so it stays linked to the lineup. A dedicated `soloListener` in the wiki receives these messages. Frame ignores opener messages; Solo ignores non-opener messages. They are parallel, non-conflicting patterns. *Ready to build when tools are ready to be wired up.*"
+    },
+    {
+      "type": "markdown",
+      "id": "a1b2c3d4e5f60008",
+      "text": "**Gap 4 — Single-site, not federated.** The intended architecture is a FedWiki farm: each patient gets their own subdomain (e.g. `patient123.scp2.relocalizecreativity.net`) on a Wiki Café managed farm. Wiki Café already supports per-site secure login — a sys admin or user enables it per site. This works now. What remains before production with real health data is serious pressure testing: Can a logged-in CHW reach another patient's data via direct URL or API? Does revocation lock out immediately? Is the access log tamper-evident? Health data failure harms a real person. The CHW authorization model — how a CHW's wiki is granted access to a specific patient's SCP — still needs Ward's input. *Design conversation with Ward before any build.*"
+    },
+    {
+      "type": "markdown",
+      "id": "a1b2c3d4e5f60009",
+      "text": "**Gap 5 — Roster for NDC network.** Not a gap. Marc has been using Roster pages for the NDC network all along."
+    },
+    {
+      "type": "pagefold",
+      "id": "a1b2c3d4e5f6000a",
+      "text": "access log — pre-deployment requirement"
+    },
+    {
+      "type": "markdown",
+      "id": "a1b2c3d4e5f60010",
+      "text": "**Marc:** Re \"a patient can see who accessed their plan and trust that log\" — this was an important feature of the real SCP that interacted with Microsoft HealthVault and with the hospital EMR and with national labs and imaging repositories. We will build it before deploying."
+    },
+    {
+      "type": "markdown",
+      "id": "a1b2c3d4e5f60011",
+      "text": "This is a core design principle, not an add-on. The original SCP set the standard: a patient sees exactly who accessed their plan and when — the hospital, the lab, the imaging repository, the CHW. That transparency is what makes the SCP trustworthy to the patient rather than just useful to the care team. The Groove access log API already exists in the backend. The patient-facing UI still needs to be built, and it must be built before the Superior AZ pilot goes live with real patient data."
+    },
+    {
+      "type": "pagefold",
+      "id": "a1b2c3d4e5f60012",
+      "text": "the going-forward rule"
+    },
+    {
+      "type": "markdown",
+      "id": "a1b2c3d4e5f6000b",
+      "text": "Before writing any FedWiki-related code, fetch the relevant source from FedWiki Git and read it. Don't rely on memory or inference about how FedWiki works. The briefing document at `~/rcn/docs/fedwiki-git-briefing.md` is the standing reference — give it to any Claude Code session that will do FedWiki work."
+    },
+    {
+      "type": "pagefold",
+      "id": "a1b2c3d4e5f6000c",
+      "text": "."
+    }
+  ],
+  "journal": [
+    {
+      "type": "create",
+      "item": {
+        "title": "FedWiki Language for Claude, Marc, and Ward",
+        "story": []
+      },
+      "date": 1780853770436
+    },
+    {
+      "type": "add",
+      "id": "db85039bfd44d404",
+      "item": {
+        "type": "markdown",
+        "id": "db85039bfd44d404",
+        "text": "**Marc:** FedWiki Language for Claude, Marc, and Ward: Please read this and tell me how we can use this as we continue to work on FedWiki. [H]\n\n*(attached: the \"What Wiki Does\" page JSON — Ward's specification organized by pagefolds into six concerns: fundamental, collaborative, interpretable, computational, generative, maintainable.)*"
+      },
+      "date": 1780853770436
+    },
+    {
+      "type": "fork",
+      "date": 1780854354660
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f60001",
+      "after": "54f856c96408c4f7",
+      "item": {
+        "type": "pagefold",
+        "id": "a1b2c3d4e5f60001",
+        "text": "June 7 2026 — Claude Code reads FedWiki Git"
+      },
+      "date": 1749340800000
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f60002",
+      "after": "a1b2c3d4e5f60001",
+      "item": {
+        "type": "markdown",
+        "id": "a1b2c3d4e5f60002",
+        "text": "Marc shared the conversation above and asked Claude Code to remember it, then to read the actual FedWiki GitHub source and become grounded in it going forward. Marc introduced the term **FedWiki Git** for the GitHub org and its repos."
+      },
+      "date": 1749340800000
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f60003",
+      "after": "a1b2c3d4e5f60002",
+      "item": {
+        "type": "markdown",
+        "id": "a1b2c3d4e5f60003",
+        "text": "**What was accomplished.** Claude Code fetched and read the actual source for the following FedWiki Git files:\n- `wiki-client/lib/plugin.js` — the plugin API contract\n- `wiki-client/lib/factory.js` — how the factory affordance works\n- `wiki-plugin-frame/client/frame.js` — the full postMessage API\n- `wiki-plugin-roster/src/client/roster.js` — neighbor registration\n- `wiki-plugin-data/src/client/data.js` — inter-plugin data flow\n- `paul90/wiki-plugin-solo/client/solo.js` — the full-window popup pattern\n\nA briefing document was saved at `~/rcn/docs/fedwiki-git-briefing.md` and persistent memory was written so future Claude Code sessions start grounded in FedWiki Git without needing re-explanation."
+      },
+      "date": 1749340800000
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f60004",
+      "after": "a1b2c3d4e5f60003",
+      "item": {
+        "type": "pagefold",
+        "id": "a1b2c3d4e5f60004",
+        "text": "the five gaps — updated"
+      },
+      "date": 1749340800000
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f60005",
+      "after": "a1b2c3d4e5f60004",
+      "item": {
+        "type": "markdown",
+        "id": "a1b2c3d4e5f60005",
+        "text": "**Gap 1 — Factory pattern.** The `wiki-plugin-factory` repo has no client JS. Factory logic lives in `wiki-client/lib/factory.js`. For an scp-field item to appear in the factory menu, it needs an entry in `system/factories.json` on the wiki server. For CHWs to use it without editing JSON, the plugin also needs a custom `editor($item, item)` method presenting a creation form. The design of that form depends on the CHW workflow — a question for Chris Casillas, not for Claude. *Set aside; will build later.*"
+      },
+      "date": 1749340800000
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f60006",
+      "after": "a1b2c3d4e5f60005",
+      "item": {
+        "type": "markdown",
+        "id": "a1b2c3d4e5f60006",
+        "text": "**Gap 2 — Inter-plugin data flow.** The mechanism is jQuery thumb events. A producer fires `$(div).trigger('thumb', 'keyName')` when data changes. Consumers (chart, method, bars) listen on `$('.main').on('thumb', ...)`. For scp-field to expose health data to downstream plugins, it needs to fire thumb events with the right keys. Which fields are worth exposing is a design question — blood pressure over time is obvious; medication lists less so. *Set aside; collecting use cases first.*"
+      },
+      "date": 1749340800000
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f60007",
+      "after": "a1b2c3d4e5f60006",
+      "item": {
+        "type": "markdown",
+        "id": "a1b2c3d4e5f60007",
+        "text": "**Gap 3 — Standalone tools.** The Frame plugin's narrow column is too small for the graph tool, MORE outliner, and issue polygon map. The correct approach is the **Solo popup pattern** (paul90/wiki-plugin-solo): a small wiki plugin renders a button in the narrow column; clicking it opens the tool in a named full-window popup (`window.open(..., 'popup,height=720,width=1280')`); the popup passes `pageKey` back to the wiki via `window.opener.postMessage()` so it stays linked to the lineup. A dedicated `soloListener` in the wiki receives these messages. Frame ignores opener messages; Solo ignores non-opener messages. They are parallel, non-conflicting patterns. *Ready to build when tools are ready to be wired up.*"
+      },
+      "date": 1749340800000
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f60008",
+      "after": "a1b2c3d4e5f60007",
+      "item": {
+        "type": "markdown",
+        "id": "a1b2c3d4e5f60008",
+        "text": "**Gap 4 — Single-site, not federated.** The intended architecture is a FedWiki farm: each patient gets their own subdomain (e.g. `patient123.scp2.relocalizecreativity.net`) on a Wiki Café managed farm. Wiki Café already supports per-site secure login — a sys admin or user enables it per site. This works now. What remains before production with real health data is serious pressure testing: Can a logged-in CHW reach another patient's data via direct URL or API? Does revocation lock out immediately? Is the access log tamper-evident? Health data failure harms a real person. The CHW authorization model — how a CHW's wiki is granted access to a specific patient's SCP — still needs Ward's input. *Design conversation with Ward before any build.*"
+      },
+      "date": 1749340800000
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f60009",
+      "after": "a1b2c3d4e5f60008",
+      "item": {
+        "type": "markdown",
+        "id": "a1b2c3d4e5f60009",
+        "text": "**Gap 5 — Roster for NDC network.** Not a gap. Marc has been using Roster pages for the NDC network all along."
+      },
+      "date": 1749340800000
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f6000a",
+      "after": "a1b2c3d4e5f60009",
+      "item": {
+        "type": "pagefold",
+        "id": "a1b2c3d4e5f6000a",
+        "text": "access log — pre-deployment requirement"
+      },
+      "date": 1749344400000
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f60010",
+      "after": "a1b2c3d4e5f6000a",
+      "item": {
+        "type": "markdown",
+        "id": "a1b2c3d4e5f60010",
+        "text": "**Marc:** Re \"a patient can see who accessed their plan and trust that log\" — this was an important feature of the real SCP that interacted with Microsoft HealthVault and with the hospital EMR and with national labs and imaging repositories. We will build it before deploying."
+      },
+      "date": 1749344400000
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f60011",
+      "after": "a1b2c3d4e5f60010",
+      "item": {
+        "type": "markdown",
+        "id": "a1b2c3d4e5f60011",
+        "text": "This is a core design principle, not an add-on. The original SCP set the standard: a patient sees exactly who accessed their plan and when — the hospital, the lab, the imaging repository, the CHW. That transparency is what makes the SCP trustworthy to the patient rather than just useful to the care team. The Groove access log API already exists in the backend. The patient-facing UI still needs to be built, and it must be built before the Superior AZ pilot goes live with real patient data."
+      },
+      "date": 1749344400000
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f60012",
+      "after": "a1b2c3d4e5f60011",
+      "item": {
+        "type": "pagefold",
+        "id": "a1b2c3d4e5f60012",
+        "text": "the going-forward rule"
+      },
+      "date": 1749344400000
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f6000b",
+      "after": "a1b2c3d4e5f60012",
+      "item": {
+        "type": "markdown",
+        "id": "a1b2c3d4e5f6000b",
+        "text": "Before writing any FedWiki-related code, fetch the relevant source from FedWiki Git and read it. Don't rely on memory or inference about how FedWiki works. The briefing document at `~/rcn/docs/fedwiki-git-briefing.md` is the standing reference — give it to any Claude Code session that will do FedWiki work."
+      },
+      "date": 1749344400000
+    },
+    {
+      "type": "add",
+      "id": "a1b2c3d4e5f6000c",
+      "after": "a1b2c3d4e5f6000b",
+      "item": {
+        "type": "pagefold",
+        "id": "a1b2c3d4e5f6000c",
+        "text": "."
+      },
+      "date": 1749344400000
+    }
+  ]
+}

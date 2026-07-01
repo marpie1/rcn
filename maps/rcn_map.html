@@ -1,0 +1,2166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>RCN NDC Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="rcn_static_data.js"></script>
+<style>
+  body { margin: 0; font-family: sans-serif; }
+  #map { height: 100vh; width: 100%; }
+  #sidebar {
+    position: absolute; top: 10px; right: 10px; z-index: 1000;
+    background: white; padding: 16px; border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2); min-width: 230px; max-width: 300px;
+    max-height: calc(100vh - 40px); overflow-y: auto;
+  }
+  #sidebar h2 { margin: 0 0 8px; font-size: 16px; }
+  #sidebar > p { margin: 4px 0; font-size: 13px; color: #444; }
+  .overview-btn {
+    display: block; width: 100%; margin: 8px 0 4px; padding: 8px;
+    background: #378ADD; color: white; border: none; border-radius: 6px;
+    cursor: pointer; font-size: 13px;
+  }
+  #legend { margin-top: 10px; border-top: 1px solid #eee; padding-top: 8px; }
+  .legend-group { margin-bottom: 8px; }
+  .legend-group-header {
+    font-size: 11px; font-weight: 700; color: #555;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    margin: 6px 0 3px; padding-top: 4px; border-top: 1px solid #f0f0f0;
+  }
+  .legend-group-header:first-child { border-top: none; margin-top: 0; }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px; margin: 2px 0;
+    font-size: 12px; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+    user-select: none; transition: background 0.12s;
+  }
+  .legend-item:hover  { background: #f0f0f0; }
+  .legend-item.active { background: #e8f4ff; font-weight: 600; }
+  .legend-item.dimmed { opacity: 0.3; }
+  .legend-swatch {
+    width: 13px; height: 13px; border-radius: 2px; flex-shrink: 0;
+  }
+  .legend-swatch.circle { border-radius: 50%; }
+  .legend-hint { font-size: 10px; color: #aaa; margin-top: 6px; text-align: center; }
+
+  /* Search */
+  .search-box { position: relative; margin-bottom: 8px; }
+  .search-row { display: flex; gap: 4px; }
+  .search-input {
+    flex: 1; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px;
+    font-size: 12px; outline: none; min-width: 0;
+  }
+  .search-input:focus { border-color: #378ADD; }
+  .search-btn {
+    padding: 6px 10px; background: #378ADD; color: white; border: none;
+    border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;
+  }
+  .search-btn:hover { background: #2a6ab8; }
+  .search-results {
+    display: none; position: absolute; top: calc(100% + 2px); left: 0; right: 0; z-index: 2000;
+    background: white; border: 1px solid #ddd; border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-height: 200px; overflow-y: auto;
+  }
+  .search-result-item {
+    padding: 7px 10px; font-size: 11px; cursor: pointer;
+    border-bottom: 1px solid #f0f0f0; line-height: 1.4;
+  }
+  .search-result-item:hover { background: #f0f7ff; }
+  .search-result-item:last-child { border-bottom: none; }
+  .search-none { padding: 8px 10px; font-size: 12px; color: #888; }
+
+  /* NDC accordion */
+  #ndc-list { margin-top: 6px; border-top: 1px solid #eee; }
+  .ndc-item { border-bottom: 1px solid #f0f0f0; }
+  .ndc-header {
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 4px; cursor: pointer; user-select: none;
+    font-size: 12px; color: #333; transition: background 0.12s;
+  }
+  .ndc-header:hover { background: #f5f5f5; }
+  .ndc-header.expanded { color: #1D9E75; font-weight: 600; }
+  .ndc-arrow { font-size: 9px; color: #aaa; flex-shrink: 0; width: 10px; }
+  .ndc-body { padding: 0 4px 8px 18px; }
+
+  /* Issues sub-section */
+  .ndc-issues { margin-bottom: 4px; }
+  .ndc-issues-header {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 2px; cursor: pointer; user-select: none;
+    font-size: 11px; font-weight: 700; color: #555;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    transition: color 0.12s;
+  }
+  .ndc-issues-header:hover { color: #b8860b; }
+  .issues-arrow { font-size: 9px; color: #aaa; flex-shrink: 0; width: 10px; }
+  .issues-count {
+    margin-left: auto; background: #f0f0f0; color: #555;
+    font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px;
+  }
+  .ndc-issues-body { padding-left: 4px; margin-top: 2px; }
+  .issue-btn {
+    display: block; width: 100%; margin: 2px 0; padding: 6px 8px;
+    background: white; color: #444; border: 1px solid #ddd; border-radius: 5px;
+    cursor: pointer; font-size: 11px; text-align: left; transition: all 0.15s;
+  }
+  .issue-btn:hover { border-color: #e8c84a; color: #b8860b; }
+  .issue-btn.active { background: #fef9e7; border-color: #e8c84a; color: #b8860b; font-weight: 600; }
+  .issue-open-link {
+    display: none; font-size: 11px; margin: 1px 0 4px 2px;
+  }
+  .issue-open-link a { color: #378ADD; text-decoration: none; }
+  .issue-open-link a:hover { text-decoration: underline; }
+  .ndc-legend { margin-top: 6px; border-top: 1px solid #f0f0f0; padding-top: 6px; }
+
+  /* ── Correction mode ───────────────────────────────────────── */
+  .correction-banner {
+    background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px;
+    padding: 8px 10px; margin-bottom: 8px; font-size: 12px; color: #92400e;
+    line-height: 1.4;
+  }
+  .correction-banner b { color: #78350f; }
+  .correction-cancel {
+    display: inline-block; margin-top: 5px; padding: 3px 10px;
+    background: white; border: 1px solid #f59e0b; border-radius: 4px;
+    cursor: pointer; font-size: 11px; color: #92400e;
+  }
+  .correction-cancel:hover { background: #fef9eb; }
+  #map.crosshair-cursor { cursor: crosshair !important; }
+  .popup-btn {
+    display: inline-block; margin-top: 5px; padding: 3px 8px;
+    background: #f0f7ff; border: 1px solid #378ADD; border-radius: 4px;
+    cursor: pointer; font-size: 11px; color: #1a5fa8;
+  }
+  .popup-btn:hover { background: #dbeafe; }
+  .popup-corrected { font-size: 10px; color: #22c55e; margin-top: 3px; display: block; }
+  .popup-reset { font-size: 10px; color: #999; cursor: pointer; text-decoration: underline; }
+
+  /* ── Add polygon panel ─────────────────────────────────────── */
+  #add-poly-panel { margin-top: 8px; border-top: 1px solid #eee; padding-top: 6px; }
+  .add-poly-header {
+    display: flex; align-items: center; gap: 7px;
+    padding: 5px 4px; cursor: pointer; user-select: none;
+    font-size: 11px; font-weight: 700; color: #555;
+    text-transform: uppercase; letter-spacing: 0.04em; transition: color 0.12s;
+  }
+  .add-poly-header:hover { color: #378ADD; }
+  #add-poly-body { padding: 6px 2px 2px; }
+  .poly-tab-row { display: flex; gap: 4px; margin-bottom: 8px; }
+  .poly-tab {
+    flex: 1; padding: 4px 6px; font-size: 11px; cursor: pointer;
+    border: 1px solid #ddd; border-radius: 4px; background: white; color: #555;
+    transition: all 0.12s; text-align: center;
+  }
+  .poly-tab.active { background: #378ADD; color: white; border-color: #378ADD; }
+  .poly-tab-content { display: none; }
+  .poly-tab-content.active { display: block; }
+  .poly-search-row { display: flex; gap: 4px; margin-bottom: 6px; }
+  .poly-input {
+    flex: 1; padding: 5px 7px; border: 1px solid #ddd; border-radius: 4px;
+    font-size: 11px; outline: none; min-width: 0;
+  }
+  .poly-input:focus { border-color: #378ADD; }
+  .poly-btn {
+    padding: 5px 9px; background: #378ADD; color: white; border: none;
+    border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap;
+  }
+  .poly-btn:hover { background: #2a6ab8; }
+  .poly-btn.secondary {
+    background: white; color: #555; border: 1px solid #ddd;
+  }
+  .poly-btn.secondary:hover { background: #f5f5f5; }
+  .poly-results-list {
+    margin-bottom: 8px; border: 1px solid #eee; border-radius: 4px; overflow: hidden;
+    max-height: 150px; overflow-y: auto;
+  }
+  .poly-result-item {
+    padding: 6px 8px; font-size: 11px; cursor: pointer; border-bottom: 1px solid #f0f0f0;
+    line-height: 1.4; transition: background 0.1s;
+  }
+  .poly-result-item:hover { background: #f0f7ff; }
+  .poly-result-item.selected { background: #dbeafe; font-weight: 600; }
+  .poly-result-item:last-child { border-bottom: none; }
+  .poly-result-type { font-size: 10px; color: #888; }
+  .poly-none { padding: 8px; font-size: 11px; color: #888; text-align: center; }
+  .poly-loading { font-size: 11px; color: #888; padding: 6px; text-align: center; }
+  .poly-add-form {
+    background: #f8fafc; border-radius: 6px; padding: 8px; margin-bottom: 6px;
+    border: 1px solid #e2e8f0;
+  }
+  .poly-form-row { margin-bottom: 6px; }
+  .poly-form-row label {
+    display: block; font-size: 10px; font-weight: 700; color: #555;
+    margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .poly-form-input {
+    width: 100%; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px;
+    font-size: 11px; outline: none; box-sizing: border-box;
+  }
+  .poly-form-input:focus { border-color: #378ADD; }
+  .poly-form-actions { display: flex; gap: 4px; margin-top: 8px; }
+  /* Claude section */
+  .claude-hint { font-size: 10px; color: #888; margin-bottom: 6px; line-height: 1.4; }
+  .prompt-area {
+    width: 100%; height: 80px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;
+    font-size: 10px; font-family: ui-monospace, monospace; resize: vertical; outline: none;
+    background: #f8fafc; box-sizing: border-box; color: #334155;
+  }
+  .response-area {
+    width: 100%; height: 60px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;
+    font-size: 11px; resize: vertical; outline: none; box-sizing: border-box;
+  }
+  .response-area:focus { border-color: #378ADD; }
+  .claude-actions { display: flex; gap: 4px; margin: 4px 0 6px; }
+  .copy-ok { font-size: 10px; color: #22c55e; display: none; align-self: center; }
+  /* User polygon entries in legend */
+  .legend-user-badge {
+    font-size: 9px; background: #dcfce7; color: #166534; border-radius: 3px;
+    padding: 0 4px; font-weight: 700; flex-shrink: 0; line-height: 16px;
+  }
+  .legend-remove {
+    margin-left: auto; font-size: 13px; line-height: 1; color: #ccc;
+    cursor: pointer; flex-shrink: 0; padding: 0 2px;
+  }
+  .legend-remove:hover { color: #c0392b; }
+  /* Saved polygons list */
+  #user-poly-list { margin-top: 6px; }
+  .user-poly-row {
+    display: flex; align-items: center; gap: 5px; padding: 4px 2px;
+    font-size: 11px; border-bottom: 1px solid #f0f0f0;
+  }
+  .user-poly-name { flex: 1; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .user-poly-state { font-size: 10px; color: #888; flex-shrink: 0; }
+  .user-poly-del { font-size: 13px; color: #ccc; cursor: pointer; flex-shrink: 0; }
+  .user-poly-del:hover { color: #c0392b; }
+  .user-poly-empty { font-size: 11px; color: #aaa; padding: 4px 2px; text-align: center; }
+  .export-row { margin-top: 8px; padding-top: 8px; border-top: 1px solid #f0f0f0; display: flex; gap: 4px; flex-wrap: wrap; }
+
+  /* ── New issue panel ──────────────────────────────────────── */
+  #new-issue-panel { margin-top: 8px; border-top: 1px solid #eee; padding-top: 6px; }
+  .ni-status-ok { font-size: 10px; color: #22c55e; display: none; align-self: center; }
+
+  /* ── Add location mode ─────────────────────────────────────── */
+  .add-location-banner {
+    background: #ecfdf5; border: 1px solid #34d399; border-radius: 6px;
+    padding: 8px 10px; margin-bottom: 8px; font-size: 12px; color: #065f46;
+    line-height: 1.4;
+  }
+  .add-location-cancel {
+    display: inline-block; margin-top: 5px; padding: 3px 10px;
+    background: white; border: 1px solid #34d399; border-radius: 4px;
+    cursor: pointer; font-size: 11px; color: #065f46;
+  }
+  .add-location-cancel:hover { background: #f0fdf4; }
+  .add-location-btn {
+    display: block; width: 100%; margin: 4px 0 6px; padding: 7px 8px;
+    background: white; color: #0ea5e9; border: 1px solid #0ea5e9; border-radius: 6px;
+    cursor: pointer; font-size: 12px; text-align: left;
+  }
+  .add-location-btn:hover { background: #f0f9ff; }
+  .add-location-btn.active { background: #e0f2fe; font-weight: 600; }
+  .add-loc-popup { min-width: 190px; }
+  .add-loc-popup p { margin: 0 0 4px; font-size: 12px; font-weight: 600; }
+  .add-loc-popup input {
+    width: 100%; padding: 5px 7px; border: 1px solid #ddd; border-radius: 4px;
+    font-size: 12px; margin: 2px 0 8px; outline: none; box-sizing: border-box;
+  }
+  .add-loc-popup input:focus { border-color: #0ea5e9; }
+  .add-loc-popup-actions { display: flex; gap: 6px; }
+  .add-loc-popup-actions button {
+    flex: 1; padding: 5px 8px; font-size: 11px; border-radius: 4px;
+    cursor: pointer; border: 1px solid #ddd;
+  }
+  .btn-add-loc { background: #0ea5e9; color: white; border-color: #0ea5e9 !important; }
+  .btn-add-loc:hover { background: #0284c7 !important; }
+  .btn-cancel-loc { background: white; color: #555; }
+  .btn-cancel-loc:hover { background: #f5f5f5 !important; }
+  .legend-loc-badge {
+    font-size: 9px; background: #e0f2fe; color: #0369a1; border-radius: 3px;
+    padding: 0 4px; font-weight: 700; flex-shrink: 0; line-height: 16px;
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<!-- Add-location form: plain fixed div, no Leaflet popup machinery -->
+<div id="add-loc-form" style="display:none;position:fixed;z-index:2000;background:white;border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,0.2);padding:12px 14px;width:218px;">
+  <div style="font-size:12px;font-weight:600;color:#333;margin-bottom:6px">New location</div>
+  <input id="add-loc-name-input" type="text" placeholder="Name this place…"
+    style="width:100%;padding:5px 7px;border:1px solid #ddd;border-radius:4px;font-size:12px;margin-bottom:8px;outline:none;box-sizing:border-box;">
+  <div style="display:flex;gap:6px;">
+    <button id="add-loc-confirm-btn" style="flex:1;padding:5px 0;font-size:11px;border-radius:4px;cursor:pointer;border:none;background:#0ea5e9;color:white;font-weight:600;">Add</button>
+    <button id="add-loc-cancel-btn" style="flex:1;padding:5px 0;font-size:11px;border-radius:4px;cursor:pointer;border:1px solid #ddd;background:white;color:#555;">Cancel</button>
+  </div>
+</div>
+
+<div id="sidebar">
+
+  <!-- Correction mode banner (hidden until active) -->
+  <div id="correction-banner" class="correction-banner" style="display:none">
+    Click on the map to set the correct location for <b id="correction-ndc-name"></b>.
+    <br><button class="correction-cancel" onclick="cancelCorrection()">Cancel</button>
+  </div>
+
+  <!-- Add location mode banner (hidden until active) -->
+  <div id="add-location-banner" class="add-location-banner" style="display:none">
+    Click anywhere on the map to place a new location pin.
+    <br><button class="add-location-cancel" onclick="cancelAddLocationMode()">Cancel</button>
+  </div>
+
+  <h2>RCN NDC Map</h2>
+  <p id="sidebar-desc">Neighborhood development centers</p>
+  <div class="search-box">
+    <div class="search-row">
+      <input id="search-input" class="search-input" type="text" placeholder="Search OpenStreetMap…"
+        onkeydown="if(event.key==='Enter')doSearch()"
+        oninput="if(!this.value)document.getElementById('search-results').style.display='none'">
+      <button class="search-btn" onclick="doSearch()">Go</button>
+    </div>
+    <div id="search-results" class="search-results"></div>
+  </div>
+  <button class="overview-btn" onclick="showOverview()">Overview — all NDCs</button>
+  <button class="add-location-btn" id="add-location-mode-btn" onclick="enterAddLocationMode()">+ Add location</button>
+  <div id="ndc-list"></div>
+  <div id="legend"></div>
+  <p class="legend-hint">Click to highlight · Shift+click to multi-select</p>
+
+  <!-- ── Add boundary layer panel ────────────────────────────── -->
+  <div id="add-poly-panel">
+    <div class="add-poly-header" onclick="togglePolyPanel()">
+      <span class="ndc-arrow" id="poly-panel-arrow">▶</span>
+      <span>Add boundary layer</span>
+    </div>
+    <div id="add-poly-body" style="display:none">
+
+      <div class="poly-tab-row">
+        <button class="poly-tab active" id="tab-osm" onclick="switchPolyTab('osm')">Search OSM</button>
+        <button class="poly-tab" id="tab-claude" onclick="switchPolyTab('claude')">Ask Claude</button>
+        <button class="poly-tab" id="tab-saved" onclick="switchPolyTab('saved')">Saved</button>
+      </div>
+
+      <!-- OSM tab -->
+      <div id="poly-tab-osm" class="poly-tab-content active">
+        <div class="poly-search-row">
+          <input id="poly-osm-input" class="poly-input" type="text"
+            placeholder="e.g. Pinal County AZ"
+            onkeydown="if(event.key==='Enter')searchOSMPolygon()">
+          <button class="poly-btn" onclick="searchOSMPolygon()">Search</button>
+        </div>
+        <div id="poly-osm-results"></div>
+        <div id="poly-add-form" style="display:none" class="poly-add-form">
+          <div class="poly-form-row">
+            <label>Name</label>
+            <input id="poly-form-name" class="poly-form-input" type="text">
+          </div>
+          <div class="poly-form-row">
+            <label>Type</label>
+            <select id="poly-form-type" class="poly-form-input">
+              <option value="admin_boundary">Admin boundary</option>
+              <option value="ecological_zone">Ecological zone</option>
+              <option value="ndc_zone">NDC zone</option>
+            </select>
+          </div>
+          <div class="poly-form-row">
+            <label>State / group</label>
+            <select id="poly-form-state" class="poly-form-input">
+              <option value="AZ">AZ — Superior</option>
+              <option value="MI">MI — Lansing</option>
+              <option value="WA">WA — Maple Falls</option>
+              <option value="TX">TX — Austin / Bastrop</option>
+              <option value="GA">GA — Atlanta</option>
+              <option value="WLS">WLS — Wales</option>
+            </select>
+          </div>
+          <div class="poly-form-actions">
+            <button class="poly-btn" onclick="confirmAddPolygon()">Add to map</button>
+            <button class="poly-btn secondary" onclick="cancelPendingPolygon()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Claude tab -->
+      <div id="poly-tab-claude" class="poly-tab-content">
+        <p class="claude-hint">Describe the boundary you need. Claude will return GeoJSON you can paste back in.</p>
+        <div class="poly-search-row">
+          <input id="claude-desc-input" class="poly-input" type="text"
+            placeholder="e.g. Superior AZ city limits"
+            onkeydown="if(event.key==='Enter')generateClaudePrompt()">
+          <button class="poly-btn" onclick="generateClaudePrompt()">Build prompt</button>
+        </div>
+        <div id="claude-prompt-box" style="display:none">
+          <textarea id="claude-prompt-text" class="prompt-area" readonly></textarea>
+          <div class="claude-actions">
+            <button class="poly-btn secondary" onclick="copyClaudePrompt()">Copy prompt</button>
+            <span id="copy-ok" class="copy-ok">Copied ✓</span>
+          </div>
+          <p class="claude-hint" style="margin-top:2px">Paste Claude's response below:</p>
+          <textarea id="claude-response-input" class="response-area" placeholder='{ "name": "...", "type": "admin_boundary", "state": "AZ", "geojson": {...} }'></textarea>
+          <div class="claude-actions">
+            <button class="poly-btn" onclick="importClaudeResponse()">Import polygon</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saved tab -->
+      <div id="poly-tab-saved" class="poly-tab-content">
+        <div id="user-poly-list"></div>
+        <div class="export-row">
+          <button class="poly-btn secondary" onclick="exportUserLocations()" style="font-size:10px">Export locations</button>
+          <button class="poly-btn secondary" onclick="exportUserPolygons()" style="font-size:10px">Export polygons</button>
+          <button class="poly-btn secondary" onclick="exportCorrections()" style="font-size:10px">Export corrections</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <!-- ─────────────────────────────────────────────────────────── -->
+
+  <!-- ── New issue panel ───────────────────────────────────────── -->
+  <div id="new-issue-panel">
+    <div class="add-poly-header" onclick="toggleNewIssuePanel()">
+      <span class="ndc-arrow" id="new-issue-arrow">▶</span>
+      <span>New issue</span>
+    </div>
+    <div id="new-issue-body" style="display:none">
+
+      <div class="poly-form-row">
+        <label>Issue title</label>
+        <input id="ni-title" class="poly-form-input" type="text" placeholder="e.g. Backyard Chickens">
+      </div>
+      <div class="poly-form-row">
+        <label>NDC</label>
+        <select id="ni-ndc" class="poly-form-input"></select>
+      </div>
+      <div class="poly-form-row">
+        <label>Description</label>
+        <textarea id="ni-desc" class="poly-form-input" rows="3" style="resize:vertical;height:60px"
+          placeholder="What is the issue? For geographic access gaps (e.g. 'more than 50 miles from a clinic'), describe who is affected and what service is lacking — Claude will draw the underserved area, not just the community boundary."></textarea>
+      </div>
+      <div class="poly-form-row">
+        <label>Known addresses / stances (optional)</label>
+        <textarea id="ni-parcels" class="poly-form-input" rows="2" style="resize:vertical;height:42px"
+          placeholder="52 N Pinal Ave — pro&#10;100 Main St — con"></textarea>
+      </div>
+      <div class="poly-form-row" id="ni-key-row">
+        <label>Anthropic API key <span style="font-size:9px;color:#aaa;font-weight:400">(stored locally)</span></label>
+        <input id="ni-api-key" class="poly-form-input" type="password" placeholder="sk-ant-…"
+          oninput="saveIssueApiKey()">
+      </div>
+
+      <button class="poly-btn" id="ni-generate-btn" onclick="generateAndImportIssue()" style="width:100%;margin-bottom:6px">Generate &amp; import issue</button>
+      <div id="ni-gen-status" style="font-size:11px;color:#666;min-height:16px;text-align:center"></div>
+      <span id="ni-import-status" class="ni-status-ok" style="display:none">Imported ✓</span>
+
+    </div>
+  </div>
+  <!-- ─────────────────────────────────────────────────────────── -->
+
+  <!-- ── Add NDC panel ─────────────────────────────────────────── -->
+  <div id="add-ndc-panel">
+    <div class="add-poly-header" onclick="toggleAddNDCPanel()">
+      <span class="ndc-arrow" id="add-ndc-arrow">▶</span>
+      <span>Add NDC</span>
+    </div>
+    <div id="add-ndc-body" style="display:none">
+
+      <div class="poly-form-row">
+        <label>Name</label>
+        <input id="an-name" class="poly-form-input" type="text" placeholder="e.g. Alpujarra NDC">
+      </div>
+      <div class="poly-form-row">
+        <label>Location</label>
+        <input id="an-location" class="poly-form-input" type="text" placeholder="e.g. Alpujarras, Spain">
+      </div>
+      <div class="poly-form-row">
+        <label>Code <span style="font-size:9px;color:#aaa;font-weight:400">(state or country)</span></label>
+        <input id="an-code" class="poly-form-input" type="text" placeholder="e.g. ES, AZ, WLS" maxlength="5"
+          style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:4px">
+        <div class="poly-form-row" style="flex:1;margin:0">
+          <label>Latitude</label>
+          <input id="an-lat" class="poly-form-input" type="number" step="any" placeholder="36.884">
+        </div>
+        <div class="poly-form-row" style="flex:1;margin:0">
+          <label>Longitude</label>
+          <input id="an-lng" class="poly-form-input" type="number" step="any" placeholder="-3.434">
+        </div>
+      </div>
+      <button class="poly-btn secondary" onclick="enterPickNDCLocationMode()"
+        style="width:100%;margin-bottom:6px">📍 Pick location on map</button>
+      <button class="poly-btn" onclick="confirmAddNDC()" style="width:100%;margin-bottom:4px">Add NDC</button>
+      <div id="an-status" style="font-size:11px;color:#22c55e;min-height:14px;text-align:center"></div>
+
+      <div style="margin-top:8px;border-top:1px solid #f0f0f0;padding-top:6px">
+        <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">Saved NDCs</div>
+        <div id="an-saved-list"></div>
+      </div>
+    </div>
+  </div>
+  <!-- ─────────────────────────────────────────────────────────── -->
+
+</div>
+
+<script>
+const map = L.map('map', {zoomControl: false}).setView([39,-98],4);
+
+// ── Base layers ───────────────────────────────────────────────────────
+const baseLayers = {
+  'Light (default)': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd', maxZoom: 19
+  }),
+  'OpenStreetMap (Voyager)': L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd', maxZoom: 19
+  }),
+  'Satellite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles © Esri — Source: Esri, USGS, NOAA',
+    maxZoom: 19
+  }),
+  'Topo': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)',
+    maxZoom: 17
+  }),
+  'CyclOSM': L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.cyclosm.org">CyclOSM</a> — © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
+  }),
+  'Transport': L.tileLayer('https://tile.memomaps.de/tilegen/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://memomaps.de">MeMoMaps</a> — © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 18
+  }),
+  'Dark': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd', maxZoom: 19
+  })
+};
+baseLayers['Topo'].addTo(map);
+
+L.control.zoom({ position: 'topleft' }).addTo(map);
+L.control.layers(baseLayers, null, { position: 'topleft', collapsed: true }).addTo(map);
+
+const colors = {
+  admin_boundary:   '#378ADD',
+  ecological_zone:  '#9333EA',
+  ndc_zone:         '#E8593C',
+  mineral_deposit:  '#CD7F32',
+  church:           '#7B5EA7',
+  custom_location:  '#0ea5e9'
+};
+
+// layersById: id → { type, layers: [Leaflet layer, ...] }
+let layersById   = {};
+let activeHighlights = new Set();
+let currentLayers  = [];
+
+// Persistent layer group for user-added polygons (never cleared)
+let userPolyGroup = L.layerGroup().addTo(map);
+
+function clearLayers() {
+  currentLayers.forEach(l => map.removeLayer(l));
+  currentLayers    = [];
+  layersById       = {};
+  activeHighlights = new Set();
+  // Re-register user polygons and locations into layersById so highlight works after view change
+  reregisterUserPolyLayers();
+  reregisterUserLocLayers();
+}
+
+function registerLayer(id, type, layer) {
+  if (!layersById[id]) layersById[id] = { type, layers: [] };
+  layersById[id].layers.push(layer);
+}
+
+// ── Styles ────────────────────────────────────────────────────────────
+function baseStyle(type, isNDC) {
+  if (isNDC) return {color:'#E8593C', fillColor:'#E8593C', weight:4, opacity:1, fillOpacity:0.18};
+  return {color: colors[type]||'#888', fillColor: colors[type]||'#888', weight:3, opacity:1, fillOpacity:0.12};
+}
+
+function pointToLayer(feature, latlng) {
+  const type = feature.properties.place_type;
+  const c    = colors[type] || '#888';
+  if (type === 'church') {
+    return L.circleMarker(latlng, {
+      radius: 11, fillColor: c, color: 'white', weight: 3, fillOpacity: 1
+    });
+  }
+  return L.circleMarker(latlng, {radius:4, fillColor:c, color:'white', weight:1, fillOpacity:0.85});
+}
+
+// ── Highlight ─────────────────────────────────────────────────────────
+function highlightById(id, evt) {
+  if (evt && evt.shiftKey) {
+    if (activeHighlights.has(id)) activeHighlights.delete(id);
+    else activeHighlights.add(id);
+  } else {
+    if (activeHighlights.size === 1 && activeHighlights.has(id)) activeHighlights.clear();
+    else { activeHighlights.clear(); activeHighlights.add(id); }
+  }
+  applyHighlights();
+}
+
+function applyHighlights() {
+  const items = document.querySelectorAll('.legend-item');
+
+  if (activeHighlights.size === 0) {
+    items.forEach(el => el.classList.remove('active','dimmed'));
+    Object.values(layersById).forEach(({type, layers}) =>
+      layers.forEach(l => { if (l.setStyle) l.setStyle(baseStyle(type, false)); })
+    );
+    return;
+  }
+
+  items.forEach(el => {
+    const on = activeHighlights.has(el.dataset.id);
+    el.classList.toggle('active', on);
+    el.classList.toggle('dimmed', !on);
+  });
+
+  Object.entries(layersById).forEach(([lid, {type, layers}]) => {
+    const on = activeHighlights.has(lid);
+    const c  = colors[type] || '#888';
+    layers.forEach(l => {
+      if (!l.setStyle) return;
+      l.setStyle(on
+        ? {color:c, fillColor:c, weight:3, fillOpacity:0.45, opacity:1}
+        : {color:'#ccc', fillColor:'#ccc', weight:0.5, fillOpacity:0.02, opacity:0.3}
+      );
+    });
+  });
+
+  // Zoom to fit all currently highlighted layers
+  let bounds = null;
+  activeHighlights.forEach(id => {
+    const entry = layersById[id];
+    if (!entry) return;
+    entry.layers.forEach(l => {
+      try {
+        if (l.getBounds) {
+          const b = l.getBounds();
+          bounds = bounds ? bounds.extend(b) : b;
+        } else if (l.getLatLng) {
+          const ll = l.getLatLng();
+          bounds = bounds ? bounds.extend(ll) : L.latLngBounds([ll,ll]).pad(0.5);
+        }
+      } catch(e) {}
+    });
+  });
+  if (bounds && bounds.isValid()) map.fitBounds(bounds, {padding:[60,60]});
+}
+
+// ── Legend builder ────────────────────────────────────────────────────
+function buildLegend(ndcMeta, featuresByState, depositCounts, churchCounts = {}, targetId = 'legend') {
+  const stateOrder = ['AZ','MI','WA','TX','GA','WLS'];
+  const ndcsByState = {};
+  ndcMeta.forEach(n => {
+    if (!ndcsByState[n.state]) ndcsByState[n.state] = [];
+    ndcsByState[n.state].push(n.name);
+  });
+
+  // Bucket user polygons by state
+  const userPolys = loadUserPolygons();
+  const userByState = {};
+  userPolys.forEach((p, i) => {
+    if (!userByState[p.state]) userByState[p.state] = [];
+    userByState[p.state].push({...p, idx: i});
+  });
+
+  let html = '';
+  // Include any states that have user polygons but no static data
+  const allStates = [...new Set([...stateOrder, ...Object.keys(userByState)])];
+
+  for (const state of allStates) {
+    const ndcNames = ndcsByState[state] || [];
+    const feats    = featuresByState[state] || [];
+    const uPolys   = userByState[state] || [];
+    if (!ndcNames.length && !feats.length && !uPolys.length) continue;
+
+    const header = ndcNames.length
+      ? ndcNames.join(' / ') + ` <span style="font-weight:400;color:#888">(${state})</span>`
+      : state;
+    html += `<div class="legend-group-header">${header}</div>`;
+
+    const sorted = [...feats].sort((a,b) => {
+      const order = {admin_boundary:0, ecological_zone:1, mineral_deposit:2, ndc_zone:3};
+      return (order[a.place_type]||9) - (order[b.place_type]||9);
+    });
+    for (const p of sorted) {
+      const c = colors[p.place_type] || '#888';
+      html += `<div class="legend-item" data-id="${p.name}" onclick="highlightById('${p.name.replace(/'/g,"\\'")}',event)">` +
+        `<div class="legend-swatch" style="background:${c}"></div>${p.name}</div>`;
+    }
+
+    if (depositCounts[state]) {
+      const c = colors.mineral_deposit;
+      const id = `deposits:${state}`;
+      html += `<div class="legend-item" data-id="${id}" onclick="highlightById('${id}',event)">` +
+        `<div class="legend-swatch circle" style="background:${c}"></div>` +
+        `${depositCounts[state]} copper deposits</div>`;
+    }
+
+    if (churchCounts[state]) {
+      const c = colors.church;
+      const id = `churches:${state}`;
+      html += `<div class="legend-item" data-id="${id}" onclick="highlightById('${id}',event)">` +
+        `<div class="legend-swatch circle" style="background:${c}"></div>` +
+        `${churchCounts[state]} churches</div>`;
+    }
+
+    ndcNames.forEach(name => {
+      const id = `ndc:${name}`;
+      html += `<div class="legend-item" data-id="${id}" onclick="highlightById('${id.replace(/'/g,"\\'")}',event)">` +
+        `<div class="legend-swatch circle" style="background:#E8593C"></div>${name}</div>`;
+    });
+
+    // User-added polygons for this state
+    uPolys.forEach(p => {
+      const c  = colors[p.type] || '#888';
+      const id = `user:${p.idx}`;
+      const esc = p.name.replace(/'/g,"\\'");
+      html += `<div class="legend-item" data-id="${id}" onclick="highlightById('${id}',event)">` +
+        `<div class="legend-swatch" style="background:${c}"></div>` +
+        `${p.name} <span class="legend-user-badge">U</span>` +
+        `<span class="legend-remove" title="Remove" onclick="event.stopPropagation();removeUserPolygon(${p.idx})">×</span></div>`;
+    });
+  }
+
+  // Custom locations (flat list, not state-grouped)
+  const userLocs = loadUserLocations();
+  if (userLocs.length) {
+    html += `<div class="legend-group-header">Custom locations</div>`;
+    userLocs.forEach((loc, i) => {
+      const id = `loc:${i}`;
+      html += `<div class="legend-item" data-id="${id}" onclick="highlightById('${id}',event)">` +
+        `<div class="legend-swatch circle" style="background:#0ea5e9"></div>` +
+        `${loc.name} <span class="legend-loc-badge">+</span>` +
+        `<span class="legend-remove" title="Remove" onclick="event.stopPropagation();removeUserLocation(${i})">×</span></div>`;
+    });
+  }
+
+  document.getElementById(targetId).innerHTML = html;
+}
+
+// ── Popup helper ──────────────────────────────────────────────────────
+function ndcPopupHTML(name, address) {
+  const corrections = loadCorrections();
+  const corrected   = !!corrections[name];
+  const esc = name.replace(/'/g,"\\'");
+  return `<b>${name}</b><br>${address}` +
+    `<br><button class="popup-btn" onclick="enterCorrectionMode('${esc}')">📍 Correct location</button>` +
+    (corrected
+      ? `<span class="popup-corrected">✓ Location corrected — <span class="popup-reset" onclick="clearCorrection('${esc}')">reset</span></span>`
+      : '');
+}
+
+// ── showOverview ──────────────────────────────────────────────────────
+async function showOverview() {
+  clearLayers();
+  // Collapse any open NDC
+  if (expandedNDCKey) {
+    document.getElementById('ndc-body-'   + expandedNDCKey).style.display = 'none';
+    document.getElementById('ndc-arrow-'  + expandedNDCKey).textContent   = '▶';
+    document.getElementById('ndc-header-' + expandedNDCKey).classList.remove('expanded');
+    expandedNDCKey = null;
+  }
+  clearIssueLayer();
+  document.getElementById('legend').style.display = '';
+  document.getElementById('sidebar-desc').textContent = 'All NDCs — click legend items to highlight';
+
+  const placesData = RCN_PLACES;
+  const ndcsData   = RCN_NDCS;
+
+  const featuresByState = {};
+  const depositCounts   = {};
+  const churchCounts    = {};
+
+  placesData.features.sort((a,b) => (b.properties.area_mi2||0) - (a.properties.area_mi2||0));
+  placesData.features.forEach(f => {
+    const p    = f.properties;
+    const type = p.place_type;
+    const state = p.state;
+    const gtype = f.geometry.type;
+
+    let layer;
+    if (gtype === 'Point' || gtype === 'MultiPoint') {
+      layer = L.geoJSON(f, {
+        pointToLayer,
+        onEachFeature: (feat, lyr) => {
+          const fp = feat.properties;
+          const dev = fp.dev_stat ? `<br><small>${fp.dev_stat}</small>` : '';
+          lyr.bindPopup(`<b>${fp.name}</b>${dev}<br><small>${fp.boundary_source}</small>`);
+        }
+      }).addTo(map);
+      if (type === 'church') {
+        const id = `churches:${state}`;
+        registerLayer(id, type, layer);
+        churchCounts[state] = (churchCounts[state] || 0) + 1;
+      } else {
+        const id = `deposits:${state}`;
+        registerLayer(id, type, layer);
+        depositCounts[state] = (depositCounts[state] || 0) + 1;
+      }
+    } else {
+      layer = L.geoJSON(f, {
+        style: baseStyle(type, false),
+        onEachFeature: (feat, lyr) => {
+          const fp = feat.properties;
+          lyr.bindPopup(`<b>${fp.name}</b><br>${fp.place_type.replace(/_/g,' ')}` +
+            (fp.area_mi2 ? `<br>${Number(fp.area_mi2).toLocaleString('en-US')}\u202fmi²` : '') +
+            `<br><small>${fp.boundary_source}</small>`);
+        }
+      }).addTo(map);
+      registerLayer(p.name, type, layer);
+      if (!featuresByState[state]) featuresByState[state] = [];
+      if (!featuresByState[state].find(x => x.name === p.name)) {
+        featuresByState[state].push({name: p.name, place_type: type});
+      }
+    }
+    currentLayers.push(layer);
+  });
+
+  const corrections = loadCorrections();
+  ndcsData.features.forEach(f => {
+    const name    = f.properties.name;
+    const state   = f.properties.state;
+    const coords  = corrections[name]
+      ? corrections[name]
+      : [f.geometry.coordinates[1], f.geometry.coordinates[0]];
+    const marker = L.circleMarker(coords,
+      {radius:8, fillColor:'#E8593C', color:'white', weight:2, fillOpacity:1}
+    ).bindPopup(ndcPopupHTML(name, f.properties.address)).addTo(map);
+    currentLayers.push(marker);
+    registerLayer(`ndc:${name}`, 'ndc_zone', marker);
+  });
+
+  buildLegend(ndcsData.features.map(f => f.properties), featuresByState, depositCounts, churchCounts);
+  renderUserPolygons();
+  renderUserLocations();
+
+  const ndcLatLngs = ndcsData.features.map(f => {
+    const c = corrections[f.properties.name];
+    return c || [f.geometry.coordinates[1], f.geometry.coordinates[0]];
+  });
+  if (ndcLatLngs.length) map.fitBounds(ndcLatLngs, {padding:[80,80]});
+}
+
+// ── ndcFeatures: replicate /ndc/{name} locally ────────────────────────
+function ndcFeatures(name, state) {
+  const features = RCN_PLACES.features
+    .filter(f => f.properties.state === state)
+    .map(f => ({
+      ...f,
+      properties: { ...f.properties, is_ndc: f.properties.name === name }
+    }));
+  return { type: 'FeatureCollection', features };
+}
+
+// ── showNDC ───────────────────────────────────────────────────────────
+async function showNDC(name, state, k = null) {
+  clearLayers();
+  document.getElementById('sidebar-desc').textContent = `${name} — ${state}`;
+
+  const data     = ndcFeatures(name, state);
+  const ndcsData = RCN_NDCS;
+
+  const polyBounds      = [];
+  const featuresByState = {};
+  const depositCounts   = {};
+  const churchCounts    = {};
+
+  data.features.sort((a,b) => (b.properties.area_mi2||0) - (a.properties.area_mi2||0));
+  data.features.forEach(f => {
+    const p    = f.properties;
+    const type = p.place_type;
+    const gtype = f.geometry.type;
+    let layer;
+
+    if (gtype === 'Point' || gtype === 'MultiPoint') {
+      layer = L.geoJSON(f, {
+        pointToLayer,
+        onEachFeature: (feat, lyr) => {
+          const fp = feat.properties;
+          const dev = fp.dev_stat ? `<br><small>${fp.dev_stat}</small>` : '';
+          lyr.bindPopup(`<b>${fp.name}</b>${dev}<br><small>${fp.boundary_source}</small>`);
+        }
+      }).addTo(map);
+      if (type === 'church') {
+        const id = `churches:${p.state}`;
+        registerLayer(id, type, layer);
+        churchCounts[p.state] = (churchCounts[p.state] || 0) + 1;
+      } else {
+        const id = `deposits:${p.state}`;
+        registerLayer(id, type, layer);
+        depositCounts[p.state] = (depositCounts[p.state] || 0) + 1;
+      }
+    } else {
+      layer = L.geoJSON(f, {
+        style: baseStyle(type, p.is_ndc),
+        onEachFeature: (feat, lyr) => {
+          const fp = feat.properties;
+          lyr.bindPopup(`<b>${fp.name}</b><br>${fp.place_type.replace(/_/g,' ')}` +
+            (fp.area_mi2 ? `<br>${Number(fp.area_mi2).toLocaleString('en-US')}\u202fmi²` : '') +
+            `<br><small>${fp.boundary_source}</small>`);
+          if (lyr.getBounds) polyBounds.push(lyr.getBounds());
+        }
+      }).addTo(map);
+      registerLayer(p.name, type, layer);
+      if (!featuresByState[p.state]) featuresByState[p.state] = [];
+      if (!featuresByState[p.state].find(x => x.name === p.name)) {
+        featuresByState[p.state].push({name: p.name, place_type: type});
+      }
+    }
+    currentLayers.push(layer);
+  });
+
+  const corrections = loadCorrections();
+  ndcsData.features.filter(f => f.properties.state === state).forEach(f => {
+    const n      = f.properties.name;
+    const coords = corrections[n]
+      ? corrections[n]
+      : [f.geometry.coordinates[1], f.geometry.coordinates[0]];
+    const marker = L.circleMarker(coords,
+      {radius:10, fillColor:'#E8593C', color:'white', weight:2, fillOpacity:1}
+    ).bindPopup(ndcPopupHTML(n, f.properties.address)).addTo(map);
+    currentLayers.push(marker);
+    registerLayer(`ndc:${n}`, 'ndc_zone', marker);
+  });
+
+  if (polyBounds.length) {
+    map.fitBounds(polyBounds.reduce((a,b) => a.extend(b)), {padding:[40,40]});
+  } else {
+    // No place polygons for this state — fly to the NDC marker itself
+    const ndcFeat = RCN_NDCS.features.find(f => f.properties.name === name);
+    if (ndcFeat) {
+      const c = corrections[ndcFeat.properties.name]
+        || [ndcFeat.geometry.coordinates[1], ndcFeat.geometry.coordinates[0]];
+      map.setView(c, 12);
+    }
+  }
+
+  const ndcMeta = ndcsData.features
+    .filter(f => f.properties.state === state)
+    .map(f => f.properties);
+
+  const legendTarget = k ? 'ndc-legend-' + k : 'legend';
+  buildLegend(ndcMeta, featuresByState, depositCounts, churchCounts, legendTarget);
+  renderUserPolygons();
+  renderUserLocations();
+}
+
+// ── NDC list ──────────────────────────────────────────────────────────
+// NDCs in rcn_static_data.js need only name/state/label.
+// NDCs NOT in static data (and user-added NDCs) also carry lat/lng/address
+// so they can be injected into RCN_NDCS.features at startup.
+const NDC_LIST = [
+  { name: "Leo's NDC",                state: 'AZ',  label: "Leo's NDC — Superior, AZ" },
+  { name: "The Fledge",               state: 'MI',  label: "The Fledge — Lansing, MI" },
+  { name: "East Whatcom RRC",         state: 'WA',  label: "East Whatcom RRC — Maple Falls, WA" },
+  { name: "Green Gate Farms",         state: 'TX',  label: "Green Gate Farms — Austin, TX" },
+  { name: "Green Gate Farms Bastrop", state: 'TX',  label: "Green Gate Farms Bastrop — Bastrop, TX" },
+  { name: "Carter Center Library",    state: 'GA',  label: "Carter Center Library — Atlanta, GA" },
+  { name: "Porthmadog",   state: 'WLS', label: "Porthmadog — Gwynedd, Wales",
+    lat: 52.9279, lng: -4.1304, address: "Porthmadog, Gwynedd, Wales" },
+  { name: "Alpujarra NDC", state: 'ES',  label: "Alpujarra NDC — Alpujarras, Spain",
+    lat: 36.8840, lng: -3.4340, address: "Órgiva, Alpujarras, Spain" },
+];
+
+// Inject NDCs that have lat/lng but are absent from rcn_static_data.js,
+// plus any user-added NDCs from localStorage.
+const USER_NDCS_KEY = 'rcn_user_ndcs';
+function loadUserNDCsFromStorage() {
+  try { return JSON.parse(localStorage.getItem(USER_NDCS_KEY)) || []; }
+  catch(e) { return []; }
+}
+function saveUserNDCsToStorage(list) {
+  localStorage.setItem(USER_NDCS_KEY, JSON.stringify(list));
+}
+
+function injectExtraNDCs() {
+  // Built-in NDCs with manual coords
+  NDC_LIST.forEach(n => {
+    if (n.lat != null && !RCN_NDCS.features.find(f => f.properties.name === n.name)) {
+      RCN_NDCS.features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [n.lng, n.lat] },
+        properties: { name: n.name, state: n.state, address: n.address || '' }
+      });
+    }
+  });
+  // User-added NDCs
+  loadUserNDCsFromStorage().forEach(n => {
+    if (!NDC_LIST.find(x => x.name === n.name)) {
+      NDC_LIST.push({ name: n.name, state: n.code, label: `${n.name} — ${n.location}`,
+                      lat: n.lat, lng: n.lng, address: n.location });
+    }
+    if (!RCN_NDCS.features.find(f => f.properties.name === n.name)) {
+      RCN_NDCS.features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [n.lng, n.lat] },
+        properties: { name: n.name, state: n.code, address: n.location }
+      });
+    }
+  });
+}
+
+// ── Issue index ───────────────────────────────────────────────────────
+// Loaded at startup from issue-index.json via sofi-proxy.
+// To add a new issue: drop its JSON into tools/issue-data/ and add one
+// entry to tools/issue-data/issue-index.json — no HTML editing needed.
+const ISSUE_INDEX_URL = 'http://localhost:8765/tools/issue-data/issue-index.json';
+let ISSUE_INDEX = [];
+
+async function loadIssueIndex() {
+  try {
+    const res = await fetch(ISSUE_INDEX_URL);
+    if (res.ok) ISSUE_INDEX = await res.json();
+  } catch(e) {
+    console.warn('Issue index not available (sofi-proxy not running?) — no issues shown.');
+  }
+}
+
+let issueLayerGroup = null;
+let activeIssueKey  = null;
+let expandedNDCKey  = null;
+
+const STANCE_COLOR = { pro: '#1a7a4a', con: '#c0392b', unknown: '#8090b0' };
+
+function ndcKey(name) { return name.replace(/[^a-zA-Z0-9]/g, '-'); }
+
+// ════════════════════════════════════════════════════════════════════════
+// ── NEW ISSUE PANEL ──────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════
+
+function toggleNewIssuePanel() {
+  const body  = document.getElementById('new-issue-body');
+  const arrow = document.getElementById('new-issue-arrow');
+  const open  = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  arrow.textContent  = open ? '▶' : '▼';
+  if (!open) {
+    const sel = document.getElementById('ni-ndc');
+    sel.innerHTML = NDC_LIST.map(n =>
+      `<option value="${n.name}">${n.label}</option>`
+    ).join('');
+    loadIssueApiKey();
+  }
+}
+
+function loadIssueApiKey() {
+  const k = localStorage.getItem('rcn_anthropic_key') || '';
+  document.getElementById('ni-api-key').value = k;
+}
+function saveIssueApiKey() {
+  const k = document.getElementById('ni-api-key').value.trim();
+  if (k) localStorage.setItem('rcn_anthropic_key', k);
+}
+
+function buildIssueApiPrompt(title, ndc, desc, parcels, lat, lng, key, today) {
+  return `Create a community issue JSON file for an RCN Neighborhood Development Center map.
+
+Issue: ${title}
+NDC: ${ndc}
+NDC centre (approximate): latitude ${lat.toFixed(5)}, longitude ${lng.toFixed(5)}
+Description: ${desc || '(not provided)'}
+${parcels ? 'Known parcels / stances:\n' + parcels : ''}
+
+Return ONLY valid JSON — no explanation, no markdown fences — in exactly this format:
+{
+  "meta": {
+    "id": "${key}",
+    "title": "${title}",
+    "community": "<city, state>",
+    "ndc": "${ndc}",
+    "coordinator": "",
+    "date": "${today}",
+    "status": "active",
+    "description": "<one or two sentence summary>"
+  },
+  "issue": {
+    "centroid": [lat, lng],
+    "polygon": [[lat,lng],[lat,lng],[lat,lng],[lat,lng],[lat,lng]]
+  },
+  "parcels": [
+    { "id": "p1", "label": "<address or name>", "latLng": [lat, lng], "stance": "pro", "notes": "" }
+  ]
+}
+
+Rules:
+- All coordinates are [latitude, longitude] (GeoJSON uses lon/lat but this tool uses lat/lon throughout)
+- polygon is a closed ring — 5 to 8 points is enough for visual display
+- stance must be "pro", "con", or "unknown"
+- If this is a geographic access issue (e.g. "more than 50 miles from a clinic", "no grocery store within 20 miles"), draw the polygon to enclose the UNDERSERVED AREA — the region where that access gap exists. The polygon boundary should approximate the outer edge of the zone where the problem is present, not just the community or NDC boundary.
+- Estimate coordinates from real geographic knowledge where possible; the user will refine them in the issue editing tool
+- Include at least one parcel even if the stance is unknown`;
+}
+
+async function generateAndImportIssue() {
+  const title   = document.getElementById('ni-title').value.trim();
+  const ndc     = document.getElementById('ni-ndc').value;
+  const desc    = document.getElementById('ni-desc').value.trim();
+  const parcels = document.getElementById('ni-parcels').value.trim();
+  const apiKey  = document.getElementById('ni-api-key').value.trim() ||
+                  localStorage.getItem('rcn_anthropic_key') || '';
+
+  if (!title || !ndc) { alert('Title and NDC are required.'); return; }
+  if (!apiKey)         { alert('Enter your Anthropic API key above.'); return; }
+
+  localStorage.setItem('rcn_anthropic_key', apiKey);
+
+  const ndcFeat   = RCN_NDCS.features.find(f => f.properties.name === ndc);
+  const [lng, lat] = ndcFeat ? ndcFeat.geometry.coordinates : [0, 0];
+  const ndcEntry  = NDC_LIST.find(n => n.name === ndc);
+  const stateCode = ndcEntry ? ndcEntry.state.toLowerCase() : 'rcn';
+  const issueSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const key       = `${stateCode}--${issueSlug}`;
+  const today     = new Date().toISOString().slice(0, 10);
+
+  const prompt = buildIssueApiPrompt(title, ndc, desc, parcels, lat, lng, key, today);
+
+  const btn    = document.getElementById('ni-generate-btn');
+  const status = document.getElementById('ni-gen-status');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  status.textContent = 'Calling Claude API…';
+  document.getElementById('ni-import-status').style.display = 'none';
+
+  try {
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-allow-browser': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-6',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!aiRes.ok) {
+      const err = await aiRes.json().catch(() => ({ error: { message: aiRes.statusText } }));
+      throw new Error(err.error?.message || aiRes.statusText);
+    }
+
+    const aiData = await aiRes.json();
+    const raw    = aiData.content?.[0]?.text || '';
+    const cleaned = raw.replace(/^```[a-z]*\n?/, '').replace(/\n?```$/, '').trim();
+    let parsed;
+    try { parsed = JSON.parse(cleaned); }
+    catch(e) { throw new Error('Claude returned invalid JSON — try again.'); }
+
+    if (!parsed.meta || !parsed.issue || !parsed.meta.id) {
+      throw new Error('Response missing required fields (meta.id, issue).');
+    }
+
+    status.textContent = 'Saving…';
+    const label   = parsed.meta.title;
+    const saveRes = await fetch('http://localhost:8765/api/write-issue', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ key, label, ndc, issueData: parsed })
+    });
+    if (!saveRes.ok) throw new Error(await saveRes.text());
+
+    await loadIssueIndex();
+    buildNDCList();
+
+    const st = document.getElementById('ni-import-status');
+    st.style.display = 'inline';
+    status.textContent = '';
+    setTimeout(() => { st.style.display = 'none'; }, 3000);
+
+    // Reset form
+    document.getElementById('ni-title').value   = '';
+    document.getElementById('ni-desc').value    = '';
+    document.getElementById('ni-parcels').value = '';
+
+  } catch(e) {
+    status.textContent = '⚠ ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate & import issue';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// ── ADD NDC PANEL ────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════
+
+let pickNDCLocationMode = false;
+
+function toggleAddNDCPanel() {
+  const body  = document.getElementById('add-ndc-body');
+  const arrow = document.getElementById('add-ndc-arrow');
+  const open  = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  arrow.textContent  = open ? '▶' : '▼';
+  if (!open) renderSavedNDCs();
+}
+
+function enterPickNDCLocationMode() {
+  pickNDCLocationMode = true;
+  if (addLocationModeActive) cancelAddLocationMode();
+  if (correctionModeNDC)     cancelCorrection();
+  document.getElementById('add-location-banner').innerHTML =
+    'Click on the map to set the NDC location.' +
+    '<br><button class="add-location-cancel" onclick="cancelPickNDCLocation()">Cancel</button>';
+  document.getElementById('add-location-banner').style.display = 'block';
+  document.getElementById('map').classList.add('crosshair-cursor');
+  addLocOverlay.style.display = 'block';
+}
+
+function cancelPickNDCLocation() {
+  pickNDCLocationMode = false;
+  addLocOverlay.style.display = 'none';
+  document.getElementById('add-location-banner').style.display = 'none';
+  document.getElementById('add-location-banner').innerHTML =
+    'Click anywhere on the map to place a new location pin.' +
+    '<br><button class="add-location-cancel" onclick="cancelAddLocationMode()">Cancel</button>';
+  document.getElementById('map').classList.remove('crosshair-cursor');
+}
+
+function applyPickNDCLocation(latlng) {
+  pickNDCLocationMode = false;
+  document.getElementById('an-lat').value = latlng.lat.toFixed(5);
+  document.getElementById('an-lng').value = latlng.lng.toFixed(5);
+  document.getElementById('add-location-banner').style.display = 'none';
+  document.getElementById('add-location-banner').innerHTML =
+    'Click anywhere on the map to place a new location pin.' +
+    '<br><button class="add-location-cancel" onclick="cancelAddLocationMode()">Cancel</button>';
+  document.getElementById('map').classList.remove('crosshair-cursor');
+  // Ensure the panel stays open
+  document.getElementById('add-ndc-body').style.display = 'block';
+  document.getElementById('add-ndc-arrow').textContent = '▼';
+}
+
+function confirmAddNDC() {
+  const name     = document.getElementById('an-name').value.trim();
+  const location = document.getElementById('an-location').value.trim();
+  const code     = document.getElementById('an-code').value.trim().toUpperCase();
+  const lat      = parseFloat(document.getElementById('an-lat').value);
+  const lng      = parseFloat(document.getElementById('an-lng').value);
+
+  if (!name)                  { alert('Name is required.');                      return; }
+  if (!code)                  { alert('Code is required (e.g. ES, AZ, WLS).');   return; }
+  if (isNaN(lat)||isNaN(lng)) { alert('Latitude and longitude are required.');    return; }
+  if (NDC_LIST.find(n => n.name === name)) { alert('An NDC with that name already exists.'); return; }
+
+  // Persist to localStorage
+  const stored = loadUserNDCsFromStorage();
+  stored.push({ name, location, code, lat, lng });
+  saveUserNDCsToStorage(stored);
+
+  // Inject into in-memory lists
+  NDC_LIST.push({ name, state: code, label: `${name} — ${location}`,
+                  lat, lng, address: location });
+  RCN_NDCS.features.push({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [lng, lat] },
+    properties: { name, state: code, address: location }
+  });
+
+  // Add marker to map immediately
+  const marker = L.circleMarker([lat, lng],
+    { radius: 8, fillColor: '#E8593C', color: 'white', weight: 2, fillOpacity: 1 }
+  ).bindPopup(ndcPopupHTML(name, location)).addTo(map);
+  currentLayers.push(marker);
+  registerLayer(`ndc:${name}`, 'ndc_zone', marker);
+
+  buildNDCList();
+  rebuildLegendInPlace();
+
+  // Clear form
+  ['an-name','an-location','an-code','an-lat','an-lng'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  const st = document.getElementById('an-status');
+  st.textContent = `${name} added ✓`;
+  setTimeout(() => { st.textContent = ''; }, 3000);
+}
+
+function removeUserNDC(name) {
+  if (!confirm(`Remove "${name}" from your saved NDCs?`)) return;
+  // Remove from localStorage
+  const stored = loadUserNDCsFromStorage().filter(n => n.name !== name);
+  saveUserNDCsToStorage(stored);
+  // Remove from in-memory lists (can't un-inject from RCN_NDCS cleanly at runtime;
+  // page reload will fully remove it)
+  const idx = NDC_LIST.findIndex(n => n.name === name);
+  if (idx !== -1) NDC_LIST.splice(idx, 1);
+  alert(`"${name}" removed. Reload the page to remove its map marker.`);
+  buildNDCList();
+}
+
+function renderSavedNDCs() {
+  const list = loadUserNDCsFromStorage();
+  const el   = document.getElementById('an-saved-list');
+  if (!list.length) { el.innerHTML = '<div style="font-size:11px;color:#aaa">None saved yet.</div>'; return; }
+  el.innerHTML = list.map(n =>
+    `<div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid #f0f0f0">
+      <span>${n.name}</span>
+      <span style="color:#c00;cursor:pointer;font-size:10px" onclick="removeUserNDC('${n.name.replace(/'/g,"\\'")}')">Remove</span>
+    </div>`
+  ).join('');
+}
+
+function buildNDCList() {
+  const issuesByNDC = {};
+  ISSUE_INDEX.forEach(issue => {
+    if (!issuesByNDC[issue.ndc]) issuesByNDC[issue.ndc] = [];
+    issuesByNDC[issue.ndc].push(issue);
+  });
+
+  let html = '';
+  NDC_LIST.forEach(ndc => {
+    const k      = ndcKey(ndc.name);
+    const issues = issuesByNDC[ndc.name] || [];
+    const n      = issues.length;
+
+    let issuesSub = '';
+    if (n > 0) {
+      const btns = issues.map(issue => `
+        <button class="issue-btn" id="issue-btn-${issue.key}" onclick="toggleIssue('${issue.key}')">📍 ${issue.label}</button>
+        <div class="issue-open-link" id="issue-link-${issue.key}">
+          <a href="${issue.map || ('#')}" target="_blank" style="${issue.map ? '' : 'opacity:0.4;pointer-events:none'}">→ Open full Issue Map</a>
+        </div>`).join('');
+      issuesSub = `
+        <div class="ndc-issues">
+          <div class="ndc-issues-header" onclick="toggleIssuesList('${k}')">
+            <span class="issues-arrow" id="issues-arrow-${k}">▶</span>
+            <span>Issues</span>
+            <span class="issues-count">${n}</span>
+          </div>
+          <div class="ndc-issues-body" id="issues-body-${k}" style="display:none">${btns}</div>
+        </div>`;
+    }
+
+    html += `
+      <div class="ndc-item">
+        <div class="ndc-header" id="ndc-header-${k}" onclick="toggleNDC('${ndc.name.replace(/'/g,"\\'")}','${ndc.state}','${k}')">
+          <span class="ndc-arrow" id="ndc-arrow-${k}">▶</span>
+          <span>${ndc.label}</span>
+        </div>
+        <div class="ndc-body" id="ndc-body-${k}" style="display:none">
+          ${issuesSub}
+          <div class="ndc-legend" id="ndc-legend-${k}"></div>
+        </div>
+      </div>`;
+  });
+  document.getElementById('ndc-list').innerHTML = html;
+}
+
+function toggleNDC(name, state, k) {
+  const body   = document.getElementById('ndc-body-'   + k);
+  const arrow  = document.getElementById('ndc-arrow-'  + k);
+  const header = document.getElementById('ndc-header-' + k);
+
+  if (expandedNDCKey === k) {
+    body.style.display = 'none';
+    arrow.textContent  = '▶';
+    header.classList.remove('expanded');
+    expandedNDCKey = null;
+    clearLayers();
+    clearIssueLayer();
+    document.getElementById('legend').style.display = '';
+    showOverview();
+  } else {
+    if (expandedNDCKey) {
+      document.getElementById('ndc-body-'   + expandedNDCKey).style.display = 'none';
+      document.getElementById('ndc-arrow-'  + expandedNDCKey).textContent   = '▶';
+      document.getElementById('ndc-header-' + expandedNDCKey).classList.remove('expanded');
+      clearIssueLayer();
+    }
+    expandedNDCKey = k;
+    body.style.display = 'block';
+    arrow.textContent  = '▼';
+    header.classList.add('expanded');
+    document.getElementById('legend').style.display = 'none';
+    showNDC(name, state, k);
+  }
+}
+
+function toggleIssuesList(k) {
+  const body  = document.getElementById('issues-body-'  + k);
+  const arrow = document.getElementById('issues-arrow-' + k);
+  const open  = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  arrow.textContent  = open ? '▶' : '▼';
+}
+
+async function toggleIssue(key) {
+  if (activeIssueKey === key) { clearIssueLayer(); return; }
+  clearIssueLayer();
+
+  const entry = ISSUE_INDEX.find(i => i.key === key);
+  if (!entry || !entry.url) { console.warn('No URL for issue:', key); return; }
+
+  try {
+    const res  = await fetch(entry.url);
+    const data = await res.json();
+
+    issueLayerGroup = L.layerGroup().addTo(map);
+    activeIssueKey  = key;
+
+    if (data.boundaries) {
+      if (data.boundaries.county) {
+        L.polygon(data.boundaries.county.coords, {
+          color: '#a04ae8', weight: 1, dashArray: '6 4', fillColor: '#a04ae8', fillOpacity: 0.03
+        }).addTo(issueLayerGroup);
+      }
+      if (data.boundaries.municipality) {
+        L.polygon(data.boundaries.municipality.coords, {
+          color: '#e88a4a', weight: 1.5, dashArray: '4 3', fillColor: '#e88a4a', fillOpacity: 0.05
+        }).addTo(issueLayerGroup);
+      }
+    }
+    if (data.issue && data.issue.polygon) {
+      L.polygon(data.issue.polygon, {
+        color: '#e8c84a', weight: 2, dashArray: '8 4', fillColor: '#e8c84a', fillOpacity: 0.1
+      }).bindPopup(`<b>${data.meta.title}</b><br>${data.meta.community}`).addTo(issueLayerGroup);
+    }
+    (data.parcels || []).forEach(p => {
+      const c = STANCE_COLOR[p.stance] || STANCE_COLOR.unknown;
+      L.circleMarker(p.latLng, {
+        radius: 7, fillColor: c, color: 'white', weight: 1.5, fillOpacity: 0.9
+      }).bindPopup(
+        `<b>${p.label}</b><br>Stance: ${p.stance}` +
+        (p.notes ? `<br><span style="font-size:11px;color:#666">${p.notes}</span>` : '')
+      ).addTo(issueLayerGroup);
+    });
+    if (data.issue && data.issue.polygon) {
+      map.fitBounds(L.latLngBounds(data.issue.polygon), { padding: [48, 48] });
+    }
+  } catch(err) {
+    console.error('Issue load failed:', err);
+  }
+  updateIssueButtons();
+}
+
+function clearIssueLayer() {
+  if (issueLayerGroup) { map.removeLayer(issueLayerGroup); issueLayerGroup = null; }
+  activeIssueKey = null;
+  updateIssueButtons();
+}
+
+function updateIssueButtons() {
+  ISSUE_INDEX.forEach(issue => {
+    const btn  = document.getElementById('issue-btn-'  + issue.key);
+    const link = document.getElementById('issue-link-' + issue.key);
+    if (btn)  btn.classList.toggle('active', issue.key === activeIssueKey);
+    if (link) link.style.display = (issue.key === activeIssueKey) ? 'block' : 'none';
+  });
+}
+
+// ── OSM Search (Nominatim) ────────────────────────────────────────────
+let searchMarker = null;
+let searchResultsCache = [];
+
+async function doSearch() {
+  const query = document.getElementById('search-input').value.trim();
+  if (!query) return;
+  const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&q=' +
+    encodeURIComponent(query);
+  try {
+    const data = await fetch(url, { headers: { 'Accept-Language': 'en' } }).then(r => r.json());
+    renderSearchResults(data);
+  } catch(e) {
+    renderSearchResults([]);
+  }
+}
+
+function renderSearchResults(results) {
+  searchResultsCache = results;
+  const el = document.getElementById('search-results');
+  if (!results.length) {
+    el.innerHTML = '<div class="search-none">No results found</div>';
+  } else {
+    el.innerHTML = results.map((r, i) =>
+      `<div class="search-result-item" onclick="pickSearchResult(${i})">${r.display_name}</div>`
+    ).join('');
+  }
+  el.style.display = 'block';
+}
+
+function pickSearchResult(i) {
+  const r = searchResultsCache[i];
+  if (!r) return;
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('search-input').value = r.display_name;
+
+  if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; }
+  const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
+  searchMarker = L.marker([lat, lon]).addTo(map).bindPopup(r.display_name).openPopup();
+
+  if (r.boundingbox) {
+    const b = r.boundingbox;
+    map.fitBounds([[+b[0], +b[2]], [+b[1], +b[3]]], { padding: [40, 40], maxZoom: 16 });
+  } else {
+    map.setView([lat, lon], 14);
+  }
+}
+
+// Close results when clicking elsewhere
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-box')) {
+    document.getElementById('search-results').style.display = 'none';
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════
+// ── LOCATION CORRECTION ──────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════
+
+const LS_CORRECTIONS = 'rcn_ndc_corrections';
+let correctionModeNDC = null;
+
+function loadCorrections() {
+  try { return JSON.parse(localStorage.getItem(LS_CORRECTIONS) || '{}'); }
+  catch(e) { return {}; }
+}
+
+function saveCorrections(obj) {
+  localStorage.setItem(LS_CORRECTIONS, JSON.stringify(obj));
+}
+
+function enterCorrectionMode(ndcName) {
+  // Close any open popup
+  map.closePopup();
+  correctionModeNDC = ndcName;
+  document.getElementById('correction-ndc-name').textContent = ndcName;
+  document.getElementById('correction-banner').style.display = 'block';
+  document.getElementById('map').classList.add('crosshair-cursor');
+  // Capture a single map click to place the corrected position
+  map.once('click', onCorrectionClick);
+}
+
+function onCorrectionClick(e) {
+  if (!correctionModeNDC) return;
+  const corrections = loadCorrections();
+  corrections[correctionModeNDC] = [e.latlng.lat, e.latlng.lng];
+  saveCorrections(corrections);
+  exitCorrectionMode();
+  // Reload the current view so the moved marker appears
+  if (expandedNDCKey) {
+    const entry = NDC_LIST.find(n => ndcKey(n.name) === expandedNDCKey);
+    if (entry) showNDC(entry.name, entry.state, expandedNDCKey);
+  } else {
+    showOverview();
+  }
+}
+
+function cancelCorrection() {
+  map.off('click', onCorrectionClick);
+  if (correctionModeLocIdx !== null) {
+    correctionModeLocIdx = null;
+    addLocOverlay.style.display = 'none';
+  }
+  exitCorrectionMode();
+}
+
+function exitCorrectionMode() {
+  correctionModeNDC = null;
+  document.getElementById('correction-banner').style.display = 'none';
+  document.getElementById('map').classList.remove('crosshair-cursor');
+}
+
+function clearCorrection(ndcName) {
+  const corrections = loadCorrections();
+  delete corrections[ndcName];
+  saveCorrections(corrections);
+  map.closePopup();
+  if (expandedNDCKey) {
+    const entry = NDC_LIST.find(n => ndcKey(n.name) === expandedNDCKey);
+    if (entry) showNDC(entry.name, entry.state, expandedNDCKey);
+  } else {
+    showOverview();
+  }
+}
+
+function exportCorrections() {
+  const data = loadCorrections();
+  if (!Object.keys(data).length) { alert('No corrections saved yet.'); return; }
+  downloadJSON(data, 'rcn-ndc-corrections.json');
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// ── USER LOCATIONS ───────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════
+
+const LS_USER_LOCATIONS = 'rcn_user_locations';
+let addLocationModeActive = false;
+let pendingAddLatLng      = null;
+let correctionModeLocIdx  = null;   // index into user locations being re-positioned
+const userLocGroup         = L.layerGroup().addTo(map);
+const userLocLeafletLayers = {};
+
+// Transparent overlay for capturing map clicks in add-location mode.
+// z-index 680 = above polygon/marker panes (≤600) but below popup pane (700),
+// so the Add/Cancel popup buttons remain fully clickable.
+const addLocOverlay = document.createElement('div');
+addLocOverlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:680;display:none;cursor:crosshair';
+addLocOverlay.addEventListener('click', function(e) {
+  addLocOverlay.style.display = 'none';
+  const latlng = map.mouseEventToLatLng(e);
+  if (pickNDCLocationMode) {
+    applyPickNDCLocation(latlng);
+  } else if (correctionModeLocIdx !== null) {
+    applyUserLocCorrection(latlng);
+  } else {
+    onAddLocationClick({ latlng });
+  }
+});
+map.getContainer().appendChild(addLocOverlay);
+
+function loadUserLocations() {
+  try { return JSON.parse(localStorage.getItem(LS_USER_LOCATIONS) || '[]'); }
+  catch(e) { return []; }
+}
+
+function saveUserLocations(arr) {
+  localStorage.setItem(LS_USER_LOCATIONS, JSON.stringify(arr));
+}
+
+function enterAddLocationMode() {
+  if (addLocationModeActive) { cancelAddLocationMode(); return; }
+  if (correctionModeNDC) cancelCorrection();
+  addLocationModeActive = true;
+  document.getElementById('add-location-banner').style.display = 'block';
+  document.getElementById('add-location-mode-btn').classList.add('active');
+  document.getElementById('map').classList.add('crosshair-cursor');
+  addLocOverlay.style.display = 'block';
+}
+
+function onAddLocationClick(e) {
+  pendingAddLatLng = e.latlng;
+  // Position the form near the click using viewport coordinates
+  const rect = map.getContainer().getBoundingClientRect();
+  const pt   = map.latLngToContainerPoint(e.latlng);
+  const formEl = document.getElementById('add-loc-form');
+  const formW = 218, formH = 105;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let left = rect.left + pt.x + 14;
+  let top  = rect.top  + pt.y - 22;
+  if (left + formW > vw - 10) left = rect.left + pt.x - formW - 14;
+  if (top  + formH > vh - 10) top  = vh - formH - 10;
+  if (top < 10) top = 10;
+  formEl.style.left    = left + 'px';
+  formEl.style.top     = top  + 'px';
+  formEl.style.display = 'block';
+  const inp = document.getElementById('add-loc-name-input');
+  inp.value = '';
+  setTimeout(() => inp.focus(), 30);
+}
+
+function confirmAddLocation() {
+  const inp  = document.getElementById('add-loc-name-input');
+  const name = inp ? inp.value.trim() : '';
+  if (!name) { if (inp) inp.focus(); return; }
+  if (!pendingAddLatLng) return;
+  const locs = loadUserLocations();
+  locs.push({ name, lat: pendingAddLatLng.lat, lng: pendingAddLatLng.lng, addedAt: new Date().toISOString() });
+  saveUserLocations(locs);
+  document.getElementById('add-loc-form').style.display = 'none';
+  exitAddLocationMode();
+  renderUserLocations();
+  rebuildLegendInPlace();
+  refreshSavedTab();
+}
+
+function cancelAddLocationMode() {
+  document.getElementById('add-loc-form').style.display = 'none';
+  pendingAddLatLng = null;
+  exitAddLocationMode();
+}
+
+function exitAddLocationMode() {
+  addLocationModeActive = false;
+  pendingAddLatLng = null;
+  addLocOverlay.style.display = 'none';
+  document.getElementById('add-location-banner').style.display = 'none';
+  document.getElementById('add-location-mode-btn').classList.remove('active');
+  document.getElementById('map').classList.remove('crosshair-cursor');
+}
+
+function renderUserLocations() {
+  userLocGroup.clearLayers();
+  Object.keys(userLocLeafletLayers).forEach(k => delete userLocLeafletLayers[k]);
+  const locs = loadUserLocations();
+  locs.forEach((loc, i) => {
+    const esc    = loc.name.replace(/'/g,"\\'");
+    const marker = L.circleMarker([loc.lat, loc.lng], {
+      radius: 8, fillColor: '#0ea5e9', color: 'white', weight: 2, fillOpacity: 1
+    }).bindPopup(`<b>${loc.name}</b><br><small>Custom location</small>` +
+      `<br><button class="popup-btn" onclick="correctUserLocation(${i})">📍 Correct location</button>` +
+      `<br><span class="popup-reset" onclick="removeUserLocation(${i})">Remove</span>`);
+    marker.addTo(userLocGroup);
+    userLocLeafletLayers[i] = marker;
+    registerLayer(`loc:${i}`, 'custom_location', marker);
+  });
+}
+
+function reregisterUserLocLayers() {
+  const locs = loadUserLocations();
+  Object.entries(userLocLeafletLayers).forEach(([idx, layer]) => {
+    const loc = locs[+idx];
+    if (loc) registerLayer(`loc:${idx}`, 'custom_location', layer);
+  });
+}
+
+function removeUserLocation(idx) {
+  const locs = loadUserLocations();
+  locs.splice(idx, 1);
+  saveUserLocations(locs);
+  map.closePopup();
+  renderUserLocations();
+  rebuildLegendInPlace();
+  refreshSavedTab();
+}
+
+function correctUserLocation(idx) {
+  map.closePopup();
+  if (addLocationModeActive) cancelAddLocationMode();
+  if (correctionModeNDC) cancelCorrection();
+  correctionModeLocIdx = idx;
+  const locs = loadUserLocations();
+  const name = locs[idx] ? locs[idx].name : 'location';
+  document.getElementById('correction-ndc-name').textContent = name;
+  document.getElementById('correction-banner').style.display = 'block';
+  document.getElementById('map').classList.add('crosshair-cursor');
+  addLocOverlay.style.display = 'block';
+}
+
+function applyUserLocCorrection(latlng) {
+  const locs = loadUserLocations();
+  if (locs[correctionModeLocIdx]) {
+    locs[correctionModeLocIdx].lat = latlng.lat;
+    locs[correctionModeLocIdx].lng = latlng.lng;
+    saveUserLocations(locs);
+  }
+  correctionModeLocIdx = null;
+  document.getElementById('correction-banner').style.display = 'none';
+  document.getElementById('map').classList.remove('crosshair-cursor');
+  renderUserLocations();
+  rebuildLegendInPlace();
+}
+
+function exportUserLocations() {
+  const data = loadUserLocations();
+  if (!data.length) { alert('No custom locations saved yet.'); return; }
+  downloadJSON(data, 'rcn-user-locations.json');
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// ── USER POLYGONS ────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════
+
+const LS_USER_POLYS = 'rcn_user_polygons';
+// Maps user poly index → leaflet layer (for re-registration without re-rendering)
+const userPolyLeafletLayers = {};
+
+function loadUserPolygons() {
+  try { return JSON.parse(localStorage.getItem(LS_USER_POLYS) || '[]'); }
+  catch(e) { return []; }
+}
+
+function saveUserPolygons(arr) {
+  localStorage.setItem(LS_USER_POLYS, JSON.stringify(arr));
+}
+
+// Called after clearLayers() to put user poly layers back into layersById
+function reregisterUserPolyLayers() {
+  Object.entries(userPolyLeafletLayers).forEach(([idx, layer]) => {
+    const polys = loadUserPolygons();
+    const p = polys[+idx];
+    if (p) registerLayer(`user:${idx}`, p.type, layer);
+  });
+}
+
+// Full re-render: rebuild userPolyGroup and update layersById
+function renderUserPolygons() {
+  // Clear existing user poly Leaflet layers
+  userPolyGroup.clearLayers();
+  Object.keys(userPolyLeafletLayers).forEach(k => delete userPolyLeafletLayers[k]);
+
+  const polys = loadUserPolygons();
+  polys.forEach((p, i) => {
+    const color = colors[p.type] || '#888';
+    const layer = L.geoJSON(p.geojson, {
+      style: { color, fillColor: color, weight: 2, opacity: 1, fillOpacity: 0.12 },
+      onEachFeature: (feat, lyr) => {
+        lyr.bindPopup(`<b>${p.name}</b><br>${p.type.replace(/_/g,' ')}<br><small>User-added · ${p.state}</small>`);
+      }
+    }).addTo(userPolyGroup);
+    userPolyLeafletLayers[i] = layer;
+    registerLayer(`user:${i}`, p.type, layer);
+  });
+}
+
+function addUserPolygon(geojson, name, type, state) {
+  const polys = loadUserPolygons();
+  polys.push({ name, type, state, geojson, addedAt: new Date().toISOString() });
+  saveUserPolygons(polys);
+  renderUserPolygons();
+  rebuildLegendInPlace();
+  refreshSavedTab();
+}
+
+function removeUserPolygon(idx) {
+  const polys = loadUserPolygons();
+  polys.splice(idx, 1);
+  saveUserPolygons(polys);
+  renderUserPolygons();
+  rebuildLegendInPlace();
+  refreshSavedTab();
+}
+
+// Rebuild just the legend without reloading the whole view
+function rebuildLegendInPlace() {
+  const ndcsData = RCN_NDCS;
+  if (expandedNDCKey) {
+    // Per-NDC legend is inside the accordion — re-run showNDC silently
+    const entry = NDC_LIST.find(n => ndcKey(n.name) === expandedNDCKey);
+    if (entry) showNDC(entry.name, entry.state, expandedNDCKey);
+  } else {
+    showOverview();
+  }
+}
+
+function exportUserPolygons() {
+  const data = loadUserPolygons();
+  if (!data.length) { alert('No user polygons saved yet.'); return; }
+  downloadJSON(data, 'rcn-user-polygons.json');
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// ── ADD POLYGON PANEL ────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════
+
+function togglePolyPanel() {
+  const body  = document.getElementById('add-poly-body');
+  const arrow = document.getElementById('poly-panel-arrow');
+  const open  = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  arrow.textContent  = open ? '▶' : '▼';
+  if (!open) refreshSavedTab();
+}
+
+function switchPolyTab(tab) {
+  ['osm','claude','saved'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('poly-tab-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'saved') refreshSavedTab();
+}
+
+function refreshSavedTab() {
+  const polys       = loadUserPolygons();
+  const corrections = loadCorrections();
+  const locs        = loadUserLocations();
+  const listEl      = document.getElementById('user-poly-list');
+  if (!polys.length && !Object.keys(corrections).length && !locs.length) {
+    listEl.innerHTML = '<div class="user-poly-empty">No saved locations, polygons, or corrections yet.</div>';
+    return;
+  }
+  let html = '';
+  if (locs.length) {
+    html += '<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;padding:2px 0 4px">Custom locations</div>';
+    locs.forEach((loc, i) => {
+      html += `<div class="user-poly-row">
+        <div style="width:10px;height:10px;border-radius:50%;background:#0ea5e9;flex-shrink:0"></div>
+        <span class="user-poly-name">${loc.name}</span>
+        <span class="user-poly-del" title="Remove" onclick="removeUserLocation(${i})">×</span>
+      </div>`;
+    });
+  }
+  if (polys.length) {
+    html += '<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;padding:6px 0 4px">Polygons</div>';
+    polys.forEach((p, i) => {
+      const c = colors[p.type] || '#888';
+      html += `<div class="user-poly-row">
+        <div style="width:10px;height:10px;border-radius:2px;background:${c};flex-shrink:0"></div>
+        <span class="user-poly-name">${p.name}</span>
+        <span class="user-poly-state">${p.state}</span>
+        <span class="user-poly-del" title="Remove" onclick="removeUserPolygon(${i})">×</span>
+      </div>`;
+    });
+  }
+  if (Object.keys(corrections).length) {
+    html += '<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;padding:6px 0 4px">NDC corrections</div>';
+    Object.entries(corrections).forEach(([name, coords]) => {
+      const esc = name.replace(/'/g,"\\'");
+      html += `<div class="user-poly-row">
+        <span style="font-size:12px">📍</span>
+        <span class="user-poly-name">${name}</span>
+        <span class="user-poly-del" title="Reset" onclick="clearCorrection('${esc}')">×</span>
+      </div>`;
+    });
+  }
+  listEl.innerHTML = html;
+}
+
+// ── OSM polygon search ────────────────────────────────────────────────
+let osmPolyResults = [];
+let pendingPolygon = null;
+let pendingPreviewLayer = null;
+
+async function searchOSMPolygon() {
+  const query = document.getElementById('poly-osm-input').value.trim();
+  if (!query) return;
+  const resultsEl = document.getElementById('poly-osm-results');
+  resultsEl.innerHTML = '<div class="poly-loading">Searching…</div>';
+  document.getElementById('poly-add-form').style.display = 'none';
+  cancelPendingPreview();
+
+  const url = 'https://nominatim.openstreetmap.org/search?format=json&polygon_geojson=1' +
+    '&polygon_threshold=0.001&limit=8&addressdetails=0&q=' + encodeURIComponent(query);
+  try {
+    const data = await fetch(url, { headers: { 'Accept-Language': 'en' } }).then(r => r.json());
+    osmPolyResults = data.filter(r =>
+      r.geojson && (r.geojson.type === 'Polygon' || r.geojson.type === 'MultiPolygon')
+    );
+    renderOSMPolyResults();
+  } catch(e) {
+    resultsEl.innerHTML = '<div class="poly-none">Search failed. Check your connection.</div>';
+  }
+}
+
+function renderOSMPolyResults() {
+  const el = document.getElementById('poly-osm-results');
+  if (!osmPolyResults.length) {
+    el.innerHTML = '<div class="poly-none">No polygon boundaries found. Try a more specific name.</div>';
+    return;
+  }
+  const html = osmPolyResults.map((r, i) => {
+    const short = r.display_name.split(',').slice(0, 3).join(', ');
+    return `<div class="poly-result-item" id="poly-osm-r-${i}" onclick="selectOSMResult(${i})">
+      ${short}<br><span class="poly-result-type">${r.type} · ${r.osm_type}</span>
+    </div>`;
+  }).join('');
+  el.innerHTML = `<div class="poly-results-list">${html}</div>`;
+}
+
+function selectOSMResult(i) {
+  // Highlight selected row
+  document.querySelectorAll('.poly-result-item').forEach(el => el.classList.remove('selected'));
+  const row = document.getElementById('poly-osm-r-' + i);
+  if (row) row.classList.add('selected');
+
+  const r = osmPolyResults[i];
+  pendingPolygon = r.geojson;
+
+  // Preview on map
+  cancelPendingPreview();
+  const color = '#22c55e';
+  pendingPreviewLayer = L.geoJSON(r.geojson, {
+    style: { color, fillColor: color, weight: 2, opacity: 1, fillOpacity: 0.15, dashArray: '6 3' }
+  }).addTo(map);
+  try { map.fitBounds(pendingPreviewLayer.getBounds(), { padding: [40, 40] }); } catch(e) {}
+
+  // Pre-fill form
+  const short = r.display_name.split(',')[0].trim();
+  document.getElementById('poly-form-name').value = short;
+  // Guess type from OSM type
+  const typeMap = {
+    administrative: 'admin_boundary', city: 'admin_boundary', town: 'admin_boundary',
+    village: 'admin_boundary', county: 'admin_boundary', state: 'admin_boundary',
+    nature_reserve: 'ecological_zone', national_park: 'ecological_zone',
+    forest: 'ecological_zone', water: 'ecological_zone'
+  };
+  const guessedType = typeMap[r.type] || 'admin_boundary';
+  document.getElementById('poly-form-type').value = guessedType;
+  document.getElementById('poly-add-form').style.display = 'block';
+}
+
+function cancelPendingPreview() {
+  if (pendingPreviewLayer) { map.removeLayer(pendingPreviewLayer); pendingPreviewLayer = null; }
+}
+
+function cancelPendingPolygon() {
+  pendingPolygon = null;
+  cancelPendingPreview();
+  document.getElementById('poly-add-form').style.display = 'none';
+  document.querySelectorAll('.poly-result-item').forEach(el => el.classList.remove('selected'));
+}
+
+function confirmAddPolygon() {
+  if (!pendingPolygon) return;
+  const name  = document.getElementById('poly-form-name').value.trim();
+  const type  = document.getElementById('poly-form-type').value;
+  const state = document.getElementById('poly-form-state').value;
+  if (!name) { document.getElementById('poly-form-name').focus(); return; }
+  addUserPolygon(pendingPolygon, name, type, state);
+  cancelPendingPolygon();
+  document.getElementById('poly-osm-results').innerHTML = '';
+  document.getElementById('poly-osm-input').value = '';
+  osmPolyResults = [];
+}
+
+// ── Claude prompt helper ──────────────────────────────────────────────
+function generateClaudePrompt() {
+  const desc = document.getElementById('claude-desc-input').value.trim();
+  if (!desc) { document.getElementById('claude-desc-input').focus(); return; }
+
+  const prompt = `I need a boundary polygon for a Leaflet web map.
+
+Location: ${desc}
+
+Return ONLY valid JSON — no explanation, no markdown fences — in exactly this format:
+{
+  "name": "Human-readable name for the legend",
+  "type": "admin_boundary",
+  "state": "AZ",
+  "geojson": {
+    "type": "Polygon",
+    "coordinates": [[ [lng, lat], [lng, lat], ... ]]
+  }
+}
+
+Rules:
+- type must be one of: admin_boundary, ecological_zone, ndc_zone
+- state must be a two-letter US state code, or WLS for Wales
+- geojson coordinates use GeoJSON order: [longitude, latitude]
+- Simplify to 40–80 coordinate pairs — this is for visual display only
+- Close the polygon (last coordinate pair = first coordinate pair)
+- Use MultiPolygon if the boundary is non-contiguous`;
+
+  document.getElementById('claude-prompt-text').value = prompt;
+  document.getElementById('claude-prompt-box').style.display = 'block';
+  document.getElementById('copy-ok').style.display = 'none';
+}
+
+function copyClaudePrompt() {
+  const text = document.getElementById('claude-prompt-text').value;
+  navigator.clipboard.writeText(text).then(() => {
+    const ok = document.getElementById('copy-ok');
+    ok.style.display = 'inline';
+    setTimeout(() => { ok.style.display = 'none'; }, 2000);
+  }).catch(() => {
+    document.getElementById('claude-prompt-text').select();
+    document.execCommand('copy');
+  });
+}
+
+function importClaudeResponse() {
+  const raw = document.getElementById('claude-response-input').value.trim();
+  if (!raw) return;
+  let parsed;
+  try {
+    // Strip markdown code fences if Claude added them
+    const cleaned = raw.replace(/^```[a-z]*\n?/,'').replace(/\n?```$/,'').trim();
+    parsed = JSON.parse(cleaned);
+  } catch(e) {
+    alert('Could not parse the response as JSON. Make sure you copied only the JSON object from Claude\'s response.');
+    return;
+  }
+  if (!parsed.geojson || !parsed.name || !parsed.state) {
+    alert('Response is missing required fields (name, state, geojson).');
+    return;
+  }
+  addUserPolygon(parsed.geojson, parsed.name, parsed.type || 'admin_boundary', parsed.state);
+  document.getElementById('claude-response-input').value = '';
+  document.getElementById('claude-prompt-box').style.display = 'none';
+  document.getElementById('claude-desc-input').value = '';
+  // Switch to saved tab to confirm
+  switchPolyTab('saved');
+}
+
+// ── Shared download helper ────────────────────────────────────────────
+function downloadJSON(obj, filename) {
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// Wire add-location form buttons (addEventListener is reliable; avoids inline onclick issues)
+document.getElementById('add-loc-confirm-btn').addEventListener('click', confirmAddLocation);
+document.getElementById('add-loc-cancel-btn').addEventListener('click', cancelAddLocationMode);
+document.getElementById('add-loc-name-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') confirmAddLocation();
+});
+
+(async () => {
+  injectExtraNDCs();
+  injectDefaultPolygons();
+  await loadIssueIndex();
+  buildNDCList();
+  showOverview();
+})();
+
+function injectDefaultPolygons() {
+  // Add built-in polygons that should exist on first load.
+  // Each entry is only added if no polygon with that name already exists.
+  const defaults = [
+    {
+      name:  'Cuenca del Río Guadalfeo',
+      type:  'ecological_zone',
+      state: 'ES',
+      // Watershed of the Río Guadalfeo, southern Sierra Nevada, Granada province.
+      // Northern boundary: Sierra Nevada crest (Veleta 37.056°N, Mulhacén 37.053°N,
+      // Alcazaba 37.068°N). Eastern boundary: headwaters near Trevélez / Río Grande.
+      // Southern boundary: Sierra de la Contraviesa and Sierra de Lújar.
+      // River mouth at Salobreña / Mediterranean coast (~36.724°N, -3.585°W).
+      // Source: constructed from OSM peak nodes and river geometry — approximate.
+      geojson: {
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          properties: { name: 'Cuenca del Río Guadalfeo' },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [[
+              [-3.585, 36.724],
+              [-3.540, 36.715],
+              [-3.500, 36.695],
+              [-3.460, 36.680],
+              [-3.420, 36.672],
+              [-3.380, 36.670],
+              [-3.330, 36.680],
+              [-3.280, 36.710],
+              [-3.220, 36.755],
+              [-3.195, 36.820],
+              [-3.185, 36.900],
+              [-3.185, 36.975],
+              [-3.198, 37.035],
+              [-3.235, 37.055],
+              [-3.290, 37.065],
+              [-3.340, 37.068],
+              [-3.390, 37.065],
+              [-3.440, 37.058],
+              [-3.490, 37.048],
+              [-3.545, 37.030],
+              [-3.585, 37.005],
+              [-3.610, 36.960],
+              [-3.625, 36.900],
+              [-3.615, 36.840],
+              [-3.598, 36.785],
+              [-3.590, 36.750],
+              [-3.585, 36.724]
+            ]]
+          }
+        }]
+      }
+    }
+  ];
+
+  const existing = loadUserPolygons();
+  defaults.forEach(d => {
+    if (!existing.find(p => p.name === d.name)) {
+      existing.push({ name: d.name, type: d.type, state: d.state,
+                      geojson: d.geojson, addedAt: new Date().toISOString() });
+    }
+  });
+  saveUserPolygons(existing);
+}
+</script>
+</body>
+</html>

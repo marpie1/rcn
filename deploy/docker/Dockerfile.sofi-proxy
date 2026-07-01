@@ -1,0 +1,11 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Copy all rcn files so sofi-proxy can serve them as static files
+# (.dockerignore at repo root excludes secrets and large files)
+COPY . .
+
+EXPOSE 8765
+
+CMD ["python3", "sofi-proxy.py"]

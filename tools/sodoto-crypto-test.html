@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SODOTO Crypto Test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 740px; margin: 40px auto; padding: 0 20px; background: #f8f7f4; color: #1a1208; }
+    h1 { font-size: 18px; letter-spacing: 0.04em; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 8px; margin-bottom: 24px; }
+    label { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; margin-top: 16px; }
+    input, textarea { width: 100%; box-sizing: border-box; font-family: 'SF Mono', 'Fira Mono', monospace; font-size: 12px; padding: 8px; border: 1px solid #000; background: #fff; color: #1a1208; }
+    textarea { resize: vertical; }
+    button { margin-top: 20px; padding: 8px 24px; font-family: inherit; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; border: 1.5px solid #000; background: #000; color: #fff; cursor: pointer; }
+    button:hover { background: #333; }
+    #output { margin-top: 24px; border: 1px solid #000; padding: 16px; background: #fff; font-family: 'SF Mono', 'Fira Mono', monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; display: none; }
+    .pass { color: #2a5c3f; font-weight: 700; }
+    .fail { color: #8b1a1a; font-weight: 700; }
+    .step { margin: 4px 0; }
+    .dim  { color: #6b6055; }
+    p.note { font-size: 12px; color: #6b6055; margin: 8px 0 0; }
+  </style>
+</head>
+<body>
+
+<h1>SODOTO Ed25519 Sign / Verify Test</h1>
+
+<p style="font-size:13px;">
+  This test signs a minimal credential with an Ed25519 private key, then verifies the JWT using
+  the <strong>exact same logic</strong> as <code>sodoto-badge.js</code>.
+  A pass here means the issuance tool will produce JWTs that the badge plugin can verify.
+</p>
+
+<label>Issuer DID (from dids.json)</label>
+<input type="text" id="issuerDid" placeholder="did:key:z6Mk..." autocomplete="off" spellcheck="false">
+
+<label>Private Key Hex (from keys.json — stays in browser memory only)</label>
+<textarea id="privateKeyHex" rows="2" placeholder="64-char hex string (32-byte Ed25519 seed)..." autocomplete="off" spellcheck="false"></textarea>
+<p class="note">Never transmitted. Only used to sign the test payload in this tab.</p>
+
+<button onclick="runTest()">Run Sign + Verify Test</button>
+
+<pre id="output"></pre>
+
+<script>
+// ── Utilities ─────────────────────────────────────────────────────────────
+
+function hex2bytes(hex) {
+  hex = hex.trim()
+  if (hex.length % 2 !== 0) throw new Error('Odd-length hex string')
+  const out = new Uint8Array(hex.length / 2)
+  for (let i = 0; i < out.length; i++)
+    out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16)
+  return out
+}
+
+// base64url-encode a Uint8Array or string
+function b64url(data) {
+  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data
+  let binary = ''
+  for (let b of bytes) binary += String.fromCharCode(b)
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+// base64url-decode to Uint8Array
+function b64urlDecode(s) {
+  const padded = s.replace(/-/g, '+').replace(/_/g, '/')
+  const bin = atob(padded)
+  const out = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
+  return out
+}
+
+// ── PKCS8 wrap ────────────────────────────────────────────────────────────
+// Constructs the 48-byte PKCS8 DER for an Ed25519 32-byte seed.
+// Structure:
+//   SEQUENCE {
+//     INTEGER 0           (version)
+//     SEQUENCE { OID 1.3.101.112 }   (Ed25519 algorithm)
+//     OCTET STRING { OCTET STRING { <seed> } }
+//   }
+function seedToPkcs8(seed) {
+  // fmt: 30 2e 02 01 00 30 05 06 03 2b 65 70 04 22 04 20 <32 bytes>
+  const prefix = new Uint8Array([
+    0x30, 0x2e,             // SEQUENCE (46 bytes total body)
+    0x02, 0x01, 0x00,       // INTEGER 0
+    0x30, 0x05,             // SEQUENCE (5 bytes)
+      0x06, 0x03, 0x2b, 0x65, 0x70,  // OID Ed25519
+    0x04, 0x22,             // OCTET STRING (34 bytes)
+      0x04, 0x20            // OCTET STRING (32 bytes)
+    // <seed follows>
+  ])
+  const der = new Uint8Array(prefix.length + seed.length)
+  der.set(prefix)
+  der.set(seed, prefix.length)
+  return der
+}
+
+// ── SIGNER ────────────────────────────────────────────────────────────────
+async function signJWT(payload, privateKeyHex) {
+  const seed = hex2bytes(privateKeyHex)
+  if (seed.length !== 32) throw new Error(`Expected 32-byte seed, got ${seed.length}`)
+
+  const pkcs8 = seedToPkcs8(seed)
+
+  // Try Ed25519 (standard, Chrome 130+ / Firefox 130+), fall back to NODE-ED25519
+  let privKey
+  let algName
+  try {
+    privKey = await crypto.subtle.importKey(
+      'pkcs8', pkcs8, { name: 'Ed25519' }, false, ['sign'])
+    algName = 'Ed25519'
+  } catch (_) {
+    privKey = await crypto.subtle.importKey(
+      'pkcs8', pkcs8, { name: 'NODE-ED25519', namedCurve: 'NODE-ED25519' }, false, ['sign'])
+    algName = 'NODE-ED25519'
+  }
+
+  const header  = { alg: 'EdDSA', typ: 'JWT' }
+  const signingInput = b64url(JSON.stringify(header)) + '.' + b64url(JSON.stringify(payload))
+  const inputBytes   = new TextEncoder().encode(signingInput)
+
+  const sigBuffer = await crypto.subtle.sign({ name: algName }, privKey, inputBytes)
+  const sigB64    = b64url(new Uint8Array(sigBuffer))
+
+  return signingInput + '.' + sigB64
+}
+
+// ── VERIFIER — exact mirror of sodoto-badge.js verifyJWT ─────────────────
+async function verifyJWT(jwt, issuerDid) {
+  const parts = jwt.split('.')
+  if (parts.length !== 3) throw new Error('Malformed JWT')
+
+  const header = JSON.parse(atob(parts[0].replace(/-/g, '+').replace(/_/g, '/')))
+  if (header.alg !== 'EdDSA') throw new Error('Expected EdDSA algorithm')
+
+  // Base58btc decode — identical to sodoto-badge.js
+  const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+  function b58decode(s) {
+    let n = 0n
+    for (const c of s) n = n * 58n + BigInt(B58.indexOf(c))
+    const h = n.toString(16).padStart(66, '0')
+    return new Uint8Array(h.match(/.{2}/g).map(b => parseInt(b, 16)))
+  }
+
+  // Strip 'did:key:z' (z = base58btc multibase), decode, skip 2-byte multicodec prefix
+  const pubKeyBytes = b58decode(issuerDid.replace('did:key:z', '')).slice(2)
+
+  let cryptoKey
+  try {
+    cryptoKey = await crypto.subtle.importKey(
+      'raw', pubKeyBytes, { name: 'NODE-ED25519', namedCurve: 'NODE-ED25519' }, false, ['verify'])
+  } catch (_) {
+    cryptoKey = await crypto.subtle.importKey(
+      'raw', pubKeyBytes, { name: 'Ed25519' }, false, ['verify'])
+  }
+
+  const signingInput = new TextEncoder().encode(parts[0] + '.' + parts[1])
+  const sigBytes = b64urlDecode(parts[2])
+
+  const valid = await crypto.subtle.verify(
+    { name: cryptoKey.algorithm.name }, cryptoKey, sigBytes, signingInput)
+  return { valid, alg: cryptoKey.algorithm.name }
+}
+
+// ── TAMPER CHECK ──────────────────────────────────────────────────────────
+// Verifies that flipping a bit in the payload causes verification to fail.
+async function tamperCheck(jwt, issuerDid) {
+  const parts  = jwt.split('.')
+  // Flip the last character of the payload segment
+  const last   = parts[1]
+  const tampered = parts[0] + '.' +
+    last.slice(0, -1) + (last.slice(-1) === 'A' ? 'B' : 'A') +
+    '.' + parts[2]
+  const r = await verifyJWT(tampered, issuerDid)
+  return !r.valid  // expect false (invalid)
+}
+
+// ── MAIN ──────────────────────────────────────────────────────────────────
+async function runTest() {
+  const out = document.getElementById('output')
+  out.style.display = 'block'
+  out.innerHTML = '<span class="dim">Running…</span>'
+
+  const issuerDid     = document.getElementById('issuerDid').value.trim()
+  const privateKeyHex = document.getElementById('privateKeyHex').value.trim()
+
+  const lines = []
+  function log(msg, cls = '') {
+    lines.push(cls ? `<span class="${cls}">${msg}</span>` : msg)
+    out.innerHTML = lines.join('\n')
+  }
+
+  try {
+    if (!issuerDid.startsWith('did:key:z')) throw new Error('Issuer DID must start with did:key:z')
+    if (!/^[0-9a-fA-F]{64}$/.test(privateKeyHex))  throw new Error('Private key must be 64 hex characters (32-byte seed)')
+
+    log(`<span class="dim">Issuer DID : ${issuerDid}</span>`)
+    log(`<span class="dim">Key seed   : ${privateKeyHex.slice(0,8)}… (${privateKeyHex.length / 2} bytes)</span>`)
+    log('')
+
+    // ── Step 1: Sign ──────────────────────────────────────────
+    log('<span class="step">Step 1 — Sign minimal credential…</span>')
+    const payload = {
+      iss: issuerDid,
+      sub: 'did:key:z6MkozBoq41VqSMQVvzunaCcqFbUmG531deb2SjTDNb2Qswb',
+      iat: Math.floor(Date.now() / 1000),
+      vc: {
+        id: 'urn:uuid:sodoto-crypto-test-001',
+        skill: 'Causal Loop Diagramming',
+        contractId: 'sodoto-cld-rcn-test-0001',
+        issuedAt: new Date().toISOString().slice(0, 10),
+        gates: {
+          SeeOne:   { completedAt: '2025-10-15', mentor: 'Kerry Turner' },
+          DoOne:    { completedAt: '2025-11-10', mentor: 'Kerry Turner' },
+          TeachOne: { completedAt: '2025-12-05', mentor: 'Kerry Turner' }
+        }
+      }
+    }
+
+    const jwt = await signJWT(payload, privateKeyHex)
+    const [h, p, s] = jwt.split('.')
+    log(`  header    : ${h}`)
+    log(`  payload   : ${p.slice(0,40)}…`)
+    log(`  signature : ${s.slice(0,40)}…`)
+    log(`  total len : ${jwt.length} chars`)
+    log('', '')
+
+    // ── Step 2: Verify ────────────────────────────────────────
+    log('<span class="step">Step 2 — Verify using sodoto-badge.js logic…</span>')
+    const result = await verifyJWT(jwt, issuerDid)
+    if (result.valid) {
+      log(`  algorithm : ${result.alg}`, 'dim')
+      log('  RESULT    : PASS — signature is valid', 'pass')
+    } else {
+      log('  RESULT    : FAIL — signature did not verify', 'fail')
+      throw new Error('Verification failed on a freshly-signed JWT')
+    }
+    log('')
+
+    // ── Step 3: Tamper check ──────────────────────────────────
+    log('<span class="step">Step 3 — Tamper check (flipped payload bit should fail)…</span>')
+    const tamperPassed = await tamperCheck(jwt, issuerDid)
+    if (tamperPassed) {
+      log('  RESULT    : PASS — tampered JWT correctly rejected', 'pass')
+    } else {
+      log('  RESULT    : FAIL — tampered JWT was not rejected', 'fail')
+      throw new Error('Tamper check failed')
+    }
+    log('')
+
+    // ── Step 4: Decoded payload round-trip ───────────────────
+    log('<span class="step">Step 4 — Payload round-trip check…</span>')
+    const decoded = JSON.parse(atob(p.replace(/-/g, '+').replace(/_/g, '/')))
+    const skillOk = decoded.vc.skill === payload.vc.skill
+    const issOk   = decoded.iss === issuerDid
+    if (skillOk && issOk) {
+      log('  RESULT    : PASS — payload round-trips correctly', 'pass')
+    } else {
+      log('  RESULT    : FAIL — payload mismatch', 'fail')
+      throw new Error('Payload round-trip failed')
+    }
+    log('')
+
+    log('════════════════════════════════════════', 'dim')
+    log('ALL TESTS PASSED — safe to build sodoto-issuer.html', 'pass')
+
+  } catch (err) {
+    log('')
+    log('════════════════════════════════════════', 'dim')
+    log(`FAILED: ${err.message}`, 'fail')
+    log('')
+    log(`<span class="dim">Stack: ${err.stack || '(no stack)'}</span>`)
+  }
+}
+</script>
+
+</body>
+</html>

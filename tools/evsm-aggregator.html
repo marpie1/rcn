@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eVSM Aggregator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=Libre+Baskerville:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#1a1a18; --bg:#f5f2eb; --panel-bg:#eeeae0; --input-bg:#f9f7f2;
+  --rule:#ccc8bc; --muted:#888; --accent:#2a6040; --accent2:#c04030;
+  --go:#4a9a5a; --caution:#d4a020; --stop:#c04030; --unsure:#5588bb;
+  --agree:#4a9a5a; --disagree:#c04030; --unknown:#5588bb; --node-default:#ccc8bc;
+  --edge-default:#aaa8a0;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'IBM Plex Sans',sans-serif; font-size:13px;
+  background:var(--bg); color:var(--ink); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+
+/* ── HEADER ── */
+header {
+  display:flex; align-items:center; gap:12px; padding:7px 16px;
+  border-bottom:1px solid var(--rule); background:var(--panel-bg); flex-shrink:0;
+}
+.hdr-title { font-family:'Libre Baskerville',serif; font-size:15px; font-weight:700; }
+.hdr-sub { font-size:10px; color:var(--muted); font-family:'IBM Plex Mono',monospace; }
+.hdr-badge { font-size:9px; font-family:'IBM Plex Mono',monospace; background:var(--accent);
+  color:#fff; padding:2px 7px; border-radius:2px; }
+
+/* ── LAYOUT ── */
+.main { display:flex; flex:1; overflow:hidden; }
+
+/* ── LEFT PANEL ── */
+.left-panel {
+  width:260px; flex-shrink:0; border-right:1px solid var(--rule);
+  background:var(--panel-bg); display:flex; flex-direction:column; overflow:hidden;
+}
+.lp-section { border-bottom:1px solid var(--rule); padding:10px 12px; }
+.lp-title { font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:500;
+  letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+
+/* Drop zone */
+.drop-zone {
+  border:2px dashed var(--rule); border-radius:3px; padding:14px 10px;
+  text-align:center; font-size:10px; color:var(--muted); cursor:pointer;
+  transition:all 0.15s; background:var(--input-bg);
+}
+.drop-zone:hover, .drop-zone.drag-over { border-color:var(--accent); color:var(--accent); background:#f0f5f2; }
+.drop-zone input { display:none; }
+
+/* Respondent list */
+.respondent-list { max-height:160px; overflow-y:auto; }
+.resp-item {
+  display:flex; align-items:center; gap:6px; padding:4px 6px; border-radius:2px;
+  font-size:10px; font-family:'IBM Plex Mono',monospace; cursor:default;
+}
+.resp-item:hover { background:var(--input-bg); }
+.resp-remove { margin-left:auto; background:none; border:none; color:var(--muted);
+  cursor:pointer; font-size:11px; padding:0 2px; }
+.resp-remove:hover { color:var(--accent2); }
+.resp-worlds { font-size:8px; color:var(--muted); }
+
+/* World sets */
+.ws-row { display:flex; gap:6px; margin-bottom:6px; }
+.ws-label { font-size:10px; font-family:'IBM Plex Mono',monospace; font-weight:500;
+  color:var(--ink); margin-bottom:4px; }
+.ws-input {
+  flex:1; background:var(--input-bg); border:1px solid var(--rule); border-radius:2px;
+  padding:3px 6px; font-size:10px; font-family:'IBM Plex Sans',sans-serif; color:var(--ink);
+}
+.ws-input:focus { outline:none; border-color:var(--accent); }
+.worlds-checklist { max-height:180px; overflow-y:auto; }
+.world-check-row { display:flex; align-items:center; gap:6px; padding:2px 4px;
+  font-size:10px; cursor:pointer; border-radius:2px; }
+.world-check-row:hover { background:var(--input-bg); }
+.world-check-row input { accent-color:var(--accent); }
+.world-check-row label { cursor:pointer; }
+.ws-count { font-size:9px; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-left:auto; }
+
+/* Info */
+.info-box { font-size:10px; color:var(--muted); line-height:1.5; }
+
+/* ── CENTER: SVG DIAGRAM ── */
+.center { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.diagram-area {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  overflow:auto; padding:16px; gap:24px;
+}
+.diagram-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.diagram-title {
+  font-family:'Libre Baskerville',serif; font-size:11px; font-weight:700;
+  color:var(--muted); text-align:center; max-width:300px;
+}
+.diagram-n { font-size:9px; font-family:'IBM Plex Mono',monospace; color:var(--muted); }
+#svg-container-a, #svg-container-b { cursor:default; }
+
+/* Legend */
+.legend-bar {
+  border-top:1px solid var(--rule); padding:8px 16px; display:flex; gap:16px;
+  align-items:center; background:var(--panel-bg); flex-shrink:0; flex-wrap:wrap;
+}
+.legend-item { display:flex; align-items:center; gap:5px; font-size:9px;
+  font-family:'IBM Plex Mono',monospace; color:var(--muted); }
+.legend-swatch { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+.legend-edge { width:22px; height:3px; border-radius:2px; flex-shrink:0; }
+
+/* ── RIGHT PANEL: DETAIL ── */
+.right-panel {
+  width:280px; flex-shrink:0; border-left:1px solid var(--rule);
+  background:var(--panel-bg); display:flex; flex-direction:column; overflow:hidden;
+}
+.detail-header {
+  padding:12px 14px 8px; border-bottom:1px solid var(--rule); flex-shrink:0;
+}
+.detail-id { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--muted); }
+.detail-name { font-family:'Libre Baskerville',serif; font-size:13px; font-weight:700;
+  line-height:1.3; margin-top:2px; }
+.detail-desc { font-size:10px; color:var(--muted); line-height:1.5; margin-top:6px; }
+.detail-desc em { font-style:italic; }
+.detail-desc strong { font-weight:600; color:var(--ink); }
+.detail-body { flex:1; overflow-y:auto; padding:10px 14px; }
+.detail-empty { font-size:10px; color:var(--muted); font-style:italic; padding:20px 0; text-align:center; }
+
+/* Stat bars */
+.stat-section { margin-bottom:14px; }
+.stat-title { font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:500;
+  letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.stat-row { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+.stat-label { font-size:10px; font-family:'IBM Plex Mono',monospace; width:70px;
+  flex-shrink:0; color:var(--ink); }
+.stat-bar-wrap { flex:1; height:10px; background:var(--rule); border-radius:2px; overflow:hidden; }
+.stat-bar { height:100%; border-radius:2px; transition:width 0.3s; }
+.stat-pct { font-size:9px; font-family:'IBM Plex Mono',monospace; color:var(--muted); width:30px; text-align:right; }
+.stat-n { font-size:9px; color:var(--muted); font-family:'IBM Plex Mono',monospace; }
+
+/* Evidence blocks */
+.evidence-section { margin-bottom:14px; }
+.evidence-label { font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:500;
+  letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+.evidence-item {
+  background:var(--input-bg); border:1px solid var(--rule); border-radius:2px;
+  padding:6px 8px; margin-bottom:5px; font-size:10px; line-height:1.5;
+}
+.evidence-worlds { font-size:8px; color:var(--accent); font-family:'IBM Plex Mono',monospace;
+  margin-bottom:3px; }
+
+/* Buttons */
+.btn { background:var(--panel-bg); border:1px solid var(--rule); border-radius:2px;
+  padding:4px 10px; font-size:10px; font-family:'IBM Plex Mono',monospace;
+  cursor:pointer; color:var(--ink); transition:all 0.15s; }
+.btn:hover { background:var(--input-bg); border-color:var(--accent); }
+.btn-accent { background:var(--accent); color:#fff; border-color:var(--accent); }
+.btn-accent:hover { background:#1e4530; }
+.btn-row { display:flex; gap:6px; flex-wrap:wrap; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width:5px; } ::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--rule); border-radius:3px; }
+
+/* Synthesis */
+.synth-btn {
+  margin-top:8px; width:100%; background:var(--accent); color:#fff;
+  border:none; border-radius:2px; padding:6px 10px;
+  font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:500;
+  cursor:pointer; letter-spacing:0.05em; transition:background 0.15s;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.synth-btn:hover { background:#1e4530; }
+.synth-btn:disabled { background:var(--muted); cursor:default; }
+.api-key-area {
+  margin-top:8px; font-size:10px; color:var(--muted);
+  font-family:'IBM Plex Mono',monospace;
+}
+.api-key-area input {
+  width:100%; box-sizing:border-box; margin-top:4px;
+  padding:4px 6px; font-size:10px; font-family:'IBM Plex Mono',monospace;
+  border:1px solid var(--rule); border-radius:2px; background:#fff;
+}
+.api-key-area input:focus { outline:1px solid var(--accent); }
+.api-key-set { color:var(--accent); }
+.api-key-change { color:var(--muted); cursor:pointer; text-decoration:underline; margin-left:6px; }
+.synth-section {
+  margin-top:12px; border-top:1px solid var(--rule); padding-top:10px;
+}
+.synth-title {
+  font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:500;
+  letter-spacing:0.08em; text-transform:uppercase; color:var(--accent);
+  margin-bottom:6px;
+}
+.synth-body {
+  font-size:11px; line-height:1.65; color:var(--ink);
+}
+.synth-body em { font-style:italic; }
+.synth-body strong { font-weight:600; }
+.synth-cursor { display:inline-block; width:6px; height:11px;
+  background:var(--accent); margin-left:2px; animation:blink 0.8s step-end infinite; }
+@keyframes blink { 50% { opacity:0; } }
+
+/* Custom tooltip */
+#svg-tooltip {
+  position:fixed; pointer-events:none; z-index:9999;
+  background:rgba(26,26,24,0.92); color:#f5f2eb;
+  font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1.6;
+  padding:7px 10px; border-radius:3px; white-space:pre;
+  max-width:260px; display:none; box-shadow:0 2px 8px rgba(0,0,0,0.3);
+}
+</style>
+</head>
+<body>
+<div id="svg-tooltip"></div>
+
+<header>
+  <div>
+    <div class="hdr-title">eVSM Aggregator</div>
+    <div class="hdr-sub">Multi-respondent assessment synthesis</div>
+  </div>
+  <div class="hdr-badge" id="resp-badge">0 respondents</div>
+  <div style="margin-left:auto; display:flex; gap:6px;">
+    <button class="btn" id="btn-single" title="Single diagram — all loaded respondents">Single View</button>
+    <button class="btn" id="btn-compare" title="Compare two world sets side by side">Compare Sets</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- LEFT PANEL -->
+  <aside class="left-panel">
+
+    <div class="lp-section">
+      <div class="lp-title">Load Responses</div>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" multiple accept=".json,application/json,text/plain,*/*">
+        Drop response JSON files here<br>
+        <span style="font-size:9px;">or click to browse</span>
+      </div>
+      <div class="respondent-list" id="resp-list" style="margin-top:6px;"></div>
+    </div>
+
+    <div class="lp-section" style="flex:1;overflow-y:auto;">
+      <div class="lp-title">World Set Filter</div>
+      <div style="margin-bottom:8px;">
+        <div class="ws-label">Set A <span id="ws-a-count" class="ws-count"></span></div>
+        <input class="ws-input" id="ws-a-name" placeholder="Set A name (e.g. All)" value="All Respondents">
+        <div id="ws-a-mode-toggle" style="display:flex;margin-top:4px;border:1px solid #aaa;border-radius:4px;overflow:hidden;width:fit-content;">
+          <span id="ws-a-exclusive" style="padding:2px 8px;font-size:10px;cursor:pointer;background:#4a9a5a;color:#fff;" onclick="setWorldMode('exclusive')">Exclusive</span>
+          <span id="ws-a-inclusive" style="padding:2px 8px;font-size:10px;cursor:pointer;background:#f5f2eb;color:#555;" onclick="setWorldMode('inclusive')">Inclusive</span>
+        </div>
+      </div>
+      <div id="compare-b-row" style="display:none;margin-bottom:8px;">
+        <div class="ws-label">Set B <span id="ws-b-count" class="ws-count"></span></div>
+        <input class="ws-input" id="ws-b-name" placeholder="Set B name">
+      </div>
+      <div class="worlds-checklist" id="worlds-checklist">
+        <div class="info-box" style="padding:4px;">Load responses to see world categories.</div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- CENTER: DIAGRAMS -->
+  <div class="center">
+    <div class="diagram-area" id="diagram-area">
+      <div style="text-align:center;color:var(--muted);font-size:11px;line-height:1.8;">
+        <div style="font-size:28px;margin-bottom:8px;">⊕</div>
+        Drop response JSON files in the left panel<br>to build the aggregated diagram.
+      </div>
+    </div>
+    <div class="legend-bar">
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--stop);"></div>Red / Disagree</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--caution);"></div>Yellow</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--go);"></div>Green / Agree</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--unsure);"></div>Blue / Unknown</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--node-default);border:1px solid #bbb;"></div>Not assessed</div>
+      <div style="margin-left:auto;font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--muted);">
+        Edge width = n respondents assessed · Color = majority response
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: DETAIL -->
+  <aside class="right-panel">
+    <div class="detail-header">
+      <div class="detail-id" id="detail-id">—</div>
+      <div class="detail-name" id="detail-name">Click a sphere or edge</div>
+      <button class="synth-btn" id="synth-btn" style="display:none;" onclick="runSynthesis()">
+        ✦ Synthesize with Claude
+      </button>
+      <div class="api-key-area" id="api-key-area"></div>
+    </div>
+    <div class="detail-body" id="detail-body">
+      <div class="detail-empty">Select any sphere or edge in the diagram to see aggregated responses.</div>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+// ══ CONSTANTS ════════════════════════════════════════════════════════════════
+
+const EDGE_LIST = [
+  [1,4],[1,3],[1,2],[2,1],[2,3],[2,4],[2,5],[2,6],[2,7],
+  [3,1],[3,2],[3,4],[3,5],[3,6],[3,11],
+  [4,1],[4,2],[4,3],[4,5],[4,7],[4,11],
+  [5,2],[5,3],[5,4],[5,6],[5,7],[5,8],[5,9],[5,11],
+  [6,2],[6,3],[6,5],[6,8],[6,7],[6,10],[6,11],
+  [7,2],[7,4],[7,5],[7,6],[7,9],[7,11],[7,10],
+  [8,5],[8,6],[8,9],[8,10],[8,11],
+  [9,5],[9,7],[9,8],[9,10],[9,11],
+  [10,6],[10,7],[10,8],[10,9],[10,11],
+  [11,3],[11,4],[11,5],[11,6],[11,7],[11,8],[11,9],[11,10]
+].map(([tail,head]) => ({tail,head}));
+
+const NS  = 'http://www.w3.org/2000/svg';
+const XNS = 'http://www.w3.org/1999/xhtml';
+
+// Colour palette
+const NODE_COLORS = { stop:'#c04030', caution:'#d4a020', go:'#4a9a5a', unsure:'#5588bb', default:'#ccc8bc' };
+const EDGE_COLORS = { disagree:'#c04030', agree:'#4a9a5a', unknown:'#5588bb', default:'#aaa8a0' };
+
+// ══ STATE ════════════════════════════════════════════════════════════════════
+
+let responses   = [];   // array of loaded response JSON objects
+let currentSynthContext = null; // { type, id, subset, label, desc, counts, evidence, suggestions }
+let compareMode = false;
+let worldSetA   = { name:'All Respondents', worlds:[], mode:'exclusive' }; // empty = all
+let worldSetB   = { name:'', worlds:[] };
+let allWorlds   = [];   // union of all world categories across loaded files
+let nodeLabels  = {};
+let edgeDescriptions = {};
+let nodeDescriptions = {};
+
+// ══ GEOMETRY (copied from survey tool) ═══════════════════════════════════════
+
+let radius = 45, space = 90, bend = 4;
+const nudge = Math.PI / 40;
+const mw = () => 3*space + 4.5*radius;
+const ht = () => 10*radius + 4*space + 6;
+
+function buildNodes() {
+  const ex = 3;
+  const oy = i => 2*radius*(i+1) + (i+0.5)*space + ex;
+  const iy = i => (2*i+1)*radius + i*space + ex;
+  return [
+    ...[10,11,5,2,1].map((n,i) => ({n, x:mw()/2, y:iy(i)})),
+    ...[8,6,3].map((n,i) => ({n, x:radius+3, y:oy(i)})),
+    ...[9,7,4].map((n,i) => ({n, x:mw()-radius-3, y:oy(i)}))
+  ].sort((a,b) => a.n - b.n);
+}
+
+function el(tag, attrs={}) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k,v] of Object.entries(attrs)) e.setAttribute(k,v);
+  return e;
+}
+
+function edgeConstructions({tail,head}, nodes) {
+  const ename = `${tail}->${head}`;
+  const {sin,cos,atan2,PI} = Math;
+  const hn = nodes.find(n => +n.n===+head);
+  const tn = nodes.find(n => +n.n===+tail);
+  const sl = atan2(hn.y-tn.y, hn.x-tn.x);
+  const p  = sl + PI/2;
+  const h  = {angle: sl-nudge};
+  const ew = 1;
+  const dtip = radius+3, dtail = dtip+8+ew;
+  h.x  = hn.x - cos(h.angle)*dtip;
+  h.y  = hn.y - sin(h.angle)*dtip;
+  h.ax = hn.x - cos(h.angle)*dtail;
+  h.ay = hn.y - sin(h.angle)*dtail;
+  const t = {angle: sl+nudge};
+  t.x = tn.x + cos(t.angle)*(radius+3);
+  t.y = tn.y + sin(t.angle)*(radius+3);
+  const m = {x: t.x+(h.ax-t.x)/2, y: t.y+(h.ay-t.y)/2};
+  const c = {x: cos(p)*bend+m.x,   y: sin(p)*bend+m.y};
+  return {hn,tn,ename,ew,sl,p,t,h,m,c};
+}
+
+function arrowPath(x,y,deg,ew) {
+  const r  = Math.atan2(3,8);
+  const ln = Math.sqrt(73)+ew;
+  const tx = Math.cos(r)*ln, ty = Math.sin(r)*ln;
+  return el('path',{
+    transform:`translate(${x} ${y}) rotate(${deg})`,
+    d:`M -${tx} -${ty} L 0 0 L -${tx} ${ty} Z`
+  });
+}
+
+function miniMd(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/_(.*?)_/g,'<em>$1</em>')
+    .replace(/\n/g,'<br>');
+}
+
+// ══ AGGREGATION ENGINE ═══════════════════════════════════════════════════════
+
+// Filter responses by world set (empty worlds array = all respondents)
+function filterByWorldSet(ws) {
+  if (!ws.worlds || ws.worlds.length === 0) return responses;
+  return responses.filter(r => {
+    const rw = r.respondent?.worlds || [];
+    return ws.mode === 'inclusive'
+      ? ws.worlds.some(w => rw.includes(w))
+      : ws.worlds.every(w => rw.includes(w));
+  });
+}
+
+// Aggregate node assessments for a set of responses
+function aggregateNodes(subset) {
+  const result = {};
+  const nodeKeys = ['S-1','S-2','S-3','S-4','S-5','S-6','S-7','S-8','S-9','S-10','S-11'];
+  for (const key of nodeKeys) {
+    const counts = { go:0, caution:0, stop:0, unsure:0, total:0 };
+    const evidence = [], suggestions = [];
+    for (const r of subset) {
+      const a = r.assessments?.nodes?.[key];
+      if (!a || !a.status) continue;
+      counts[a.status] = (counts[a.status]||0) + 1;
+      counts.total++;
+      const who = respondentLabel(r);
+      const worlds = r.respondent?.worlds || [];
+      if (a.evidence?.trim()) evidence.push({ text:a.evidence.trim(), who, worlds });
+      if (a.suggestions?.trim()) suggestions.push({ text:a.suggestions.trim(), who, worlds });
+    }
+    result[key] = { counts, evidence, suggestions };
+  }
+  return result;
+}
+
+// Aggregate edge assessments for a set of responses
+function aggregateEdges(subset) {
+  const result = {};
+  for (const {tail,head} of EDGE_LIST) {
+    const key = `${tail}->${head}`;
+    const counts = { agree:0, disagree:0, unknown:0, total:0 };
+    const evidence = [], suggestions = [];
+    for (const r of subset) {
+      const a = r.assessments?.edges?.[key];
+      if (!a || !a.status) continue;
+      counts[a.status] = (counts[a.status]||0) + 1;
+      counts.total++;
+      const who = respondentLabel(r);
+      const worlds = r.respondent?.worlds || [];
+      if (a.evidence?.trim()) evidence.push({ text:a.evidence.trim(), who, worlds });
+      if (a.suggestions?.trim()) suggestions.push({ text:a.suggestions.trim(), who, worlds });
+    }
+    result[key] = { counts, evidence, suggestions };
+  }
+  return result;
+}
+
+// Edge color: based only on agree vs disagree (≥50% agree = green, ≥50% disagree = red, else grey)
+function edgeColorFromCounts(counts) {
+  const assessed = counts.agree + counts.disagree;
+  if (assessed === 0) return EDGE_COLORS.default;
+  if (counts.agree / assessed >= 0.5)    return EDGE_COLORS.agree;
+  if (counts.disagree / assessed >= 0.5) return EDGE_COLORS.disagree;
+  return EDGE_COLORS.default;
+}
+
+// Edge width scaled by total assessed (1px min, 6px max)
+function edgeWidth(n) {
+  if (n === 0) return 0.8;
+  return Math.min(1 + n * 0.7, 6);
+}
+
+// Tooltip text for an edge
+function edgeTooltip(ename, counts) {
+  const { agree=0, disagree=0, unknown=0, total } = counts;
+  const assessed = agree + disagree;
+  const pctAgree    = assessed > 0 ? Math.round(agree/assessed*100) : 0;
+  const pctDisagree = assessed > 0 ? Math.round(disagree/assessed*100) : 0;
+  const unassessed  = 7 - total; // approx
+  return `${ename}  n assessed: ${total}
+agree:    ${agree} (${pctAgree}% of assessed)
+disagree: ${disagree} (${pctDisagree}% of assessed)
+unknown:  ${unknown}`;
+}
+
+// Tooltip text for a node
+function nodeTooltip(id, counts) {
+  const { go=0, caution=0, stop=0, unsure=0, total } = counts;
+  const pct = v => total > 0 ? Math.round(v/total*100) : 0;
+  return `${id}  n assessed: ${total}
+green:  ${go} (${pct(go)}%)
+yellow: ${caution} (${pct(caution)}%)
+red:    ${stop} (${pct(stop)}%)
+blue:   ${unsure} (${pct(unsure)}%)`;
+}
+
+function respondentLabel(r) {
+  if (r.respondent?.name) return r.respondent.name;
+  if (r.respondent?.respondentId) return r.respondent.respondentId;
+  return 'Anonymous';
+}
+
+// ══ SVG BUILDER ══════════════════════════════════════════════════════════════
+
+function buildAggSVG(containerId, nodeAgg, edgeAgg, clickHandler) {
+  const nodes = buildNodes();
+  const W = mw(), H = ht();
+
+  const svg = el('svg', {
+    viewBox:`0 0 ${W} ${H}`,
+    width:W, height:H,
+    xmlns:NS, style:'display:block;overflow:visible;cursor:default;'
+  });
+
+  // inline styles for labels
+  const st = document.createElementNS(NS,'style');
+  st.textContent = `
+    .nodelabel { position:absolute; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; text-align:center;
+      font-family:'Libre Baskerville',serif; pointer-events:none; }
+    .edgelabel { position:absolute; font-size:8px; pointer-events:none; }
+    .edgelabel p { position:absolute; width:36px; height:14px; transform:translate(0,-4px); }
+    p { margin:0; }
+    circle { cursor:pointer; transition:stroke-width 0.1s; }
+    circle:hover { stroke-width:3px !important; }
+    .agg-edge { cursor:pointer; }
+    .agg-edge:hover path { stroke-width:inherit !important; opacity:0.7; }
+  `;
+  svg.appendChild(st);
+
+  // ── SPHERE STACKED BANDS ─────────────────────────────────────────────────
+  // Each sphere uses a clipPath to confine stacked colour rects to the circle.
+  // Bands ordered bottom→top: blue (unsure), green (go), yellow (caution), red (stop).
+  // Height of each band is proportional to fraction of assessments.
+  const defs = el('defs');
+  const cg = el('g');
+
+  for (const {n,x,y} of nodes) {
+    const id  = `S-${n}`;
+    const agg = nodeAgg[id] || { counts:{go:0,caution:0,stop:0,unsure:0,total:0} };
+    const { go=0, caution=0, stop=0, unsure=0, total } = agg.counts;
+
+    // ClipPath for this circle
+    const clipId = `clip-${n}`;
+    const cp = el('clipPath', {id:clipId});
+    cp.appendChild(el('circle', {r:radius, cx:x, cy:y}));
+    defs.appendChild(cp);
+
+    const g = el('g', {'clip-path':`url(#${clipId})`, 'data-type':'node', 'data-id':id, style:'cursor:pointer;'});
+
+    if (total === 0) {
+      // No assessments — grey fill
+      g.appendChild(el('rect', {x:x-radius, y:y-radius, width:radius*2, height:radius*2, fill:NODE_COLORS.default, 'data-type':'node', 'data-id':id}));
+    } else {
+      // Stacked bands bottom→top: unsure, go, caution, stop
+      const bands = [
+        { val:unsure,  color:NODE_COLORS.unsure },
+        { val:go,      color:NODE_COLORS.go },
+        { val:caution, color:NODE_COLORS.caution },
+        { val:stop,    color:NODE_COLORS.stop }
+      ];
+      const D = radius * 2; // diameter
+      let yOffset = y + radius; // start at bottom
+      for (const band of bands) {
+        if (band.val === 0) continue;
+        const h = (band.val / total) * D;
+        yOffset -= h;
+        g.appendChild(el('rect', {x:x-radius, y:yOffset, width:D, height:h, fill:band.color, 'data-type':'node', 'data-id':id}));
+      }
+    }
+
+    // Circle border on top
+    g.appendChild(el('circle', {r:radius, cx:x, cy:y, fill:'none', stroke:'#555', 'stroke-width':'1.2', 'data-type':'node', 'data-id':id}));
+
+    cg.appendChild(g);
+  }
+  svg.appendChild(defs);
+  svg.appendChild(cg);
+
+  // ── EDGES ────────────────────────────────────────────────────────────────
+  const eg = el('g');
+  for (const {tail,head} of EDGE_LIST) {
+    const ec   = edgeConstructions({tail,head},nodes);
+    const agg  = edgeAgg[ec.ename] || { counts:{agree:0,disagree:0,unknown:0,total:0} };
+    const col  = edgeColorFromCounts(agg.counts);
+    const ew   = edgeWidth(agg.counts.total);
+    const deg  = ec.h.angle * 180 / Math.PI;
+
+    const g = el('g', {
+      stroke: col, 'data-type':'edge', 'data-id':ec.ename,
+      class:'agg-edge', style:`cursor:pointer;`
+    });
+
+    const ag = el('g', {fill:col});
+    ag.appendChild(arrowPath(ec.h.x, ec.h.y, deg, ew));
+    g.appendChild(ag);
+    g.appendChild(el('path', {
+      'stroke-width': ew, fill:'transparent',
+      d:`M ${ec.h.ax} ${ec.h.ay} Q ${ec.c.x} ${ec.c.y} ${ec.t.x} ${ec.t.y}`
+    }));
+    // Invisible wider hit target
+    g.appendChild(el('path', {
+      'stroke-width': Math.max(ew, 8), fill:'transparent', stroke:'transparent',
+      d:`M ${ec.h.ax} ${ec.h.ay} Q ${ec.c.x} ${ec.c.y} ${ec.t.x} ${ec.t.y}`
+    }));
+    eg.appendChild(g);
+  }
+  svg.appendChild(eg);
+
+  // ── LABELS ───────────────────────────────────────────────────────────────
+  const fo = el('foreignObject', {x:0, y:0, width:W, height:H, style:'pointer-events:none;'});
+  // Wrapper div needed for position:absolute children
+  const foDiv = document.createElementNS(XNS,'div');
+  foDiv.setAttribute('xmlns', XNS);
+  foDiv.style.cssText = `position:relative;width:${W}px;height:${H}px;pointer-events:none;`;
+  fo.appendChild(foDiv);
+  const labelColor = '#1a1a18';
+
+  for (const {n,x,y} of nodes) {
+    const id    = `S-${n}`;
+    const title = (nodeLabels[id]||id).replace(/\\n/g,'\n');
+    const agg   = nodeAgg[id] || { counts:{total:0} };
+    const div   = document.createElementNS(XNS,'div');
+    div.setAttribute('xmlns',XNS);
+    div.className='nodelabel';
+    div.setAttribute('data-type','node');
+    div.setAttribute('data-id',id);
+    div.style.cssText=`left:${x-radius}px;top:${y-radius}px;width:${radius*2}px;height:${radius*2}px;`;
+    const nStr = agg.counts.total > 0 ? `n=${agg.counts.total}` : '';
+    div.innerHTML=`<p style="font-size:7px;font-weight:700;color:${labelColor};font-family:'Libre Baskerville',serif;">${id}</p><p style="margin-top:2px;font-size:8px;font-weight:700;color:${labelColor};line-height:1.2;white-space:pre-wrap;">${title}</p>${nStr?`<p style="font-size:7px;color:#777;font-family:'IBM Plex Mono',monospace;margin-top:2px;">${nStr}</p>`:''}`;
+    foDiv.appendChild(div);
+  }
+
+  for (const {tail,head} of EDGE_LIST) {
+    const ec  = edgeConstructions({tail,head},nodes);
+    const {cos,sin,PI} = Math;
+    const x = ec.t.x+cos(ec.t.angle)*25+cos(ec.p)*4;
+    const y = ec.t.y+sin(ec.t.angle)*25+sin(ec.p)*4;
+    let summary, angle, ta;
+    if (ec.h.x-ec.t.x>0) { summary=`${tail}→${head}`; angle=ec.sl; ta='left'; }
+    else { summary=`${head}←${tail}`; angle=ec.sl+PI; ta='right'; }
+    const div = document.createElementNS(XNS,'div');
+    div.setAttribute('xmlns',XNS);
+    div.className='edgelabel';
+    div.setAttribute('data-type','edge');
+    div.setAttribute('data-id',ec.ename);
+    div.style.cssText=`left:${x}px;top:${y}px;transform-origin:center;transform:rotate(${angle}rad) translate(-20px,0);`;
+    div.innerHTML=`<p style="color:#1a1a18;text-align:${ta};">${summary}</p>`;
+    foDiv.appendChild(div);
+  }
+
+  svg.appendChild(fo);
+
+  // ── INTERACTION HANDLERS ─────────────────────────────────────────────────
+  const tip = document.getElementById('svg-tooltip');
+
+  function svgTarget(el) {
+    let t = el;
+    while (t && t !== svg) {
+      if (t.getAttribute && t.getAttribute('data-type')) return t;
+      t = t.parentElement || t.parentNode;
+    }
+    return null;
+  }
+
+  svg.addEventListener('mousemove', e => {
+    const target = svgTarget(e.target);
+    if (!target) { tip.style.display='none'; return; }
+    const type = target.getAttribute('data-type');
+    const id   = target.getAttribute('data-id');
+    let text = '';
+    if (type === 'node') {
+      const agg = nodeAgg[id] || { counts:{go:0,caution:0,stop:0,unsure:0,total:0} };
+      text = nodeTooltip(id, agg.counts);
+    } else {
+      const agg = edgeAgg[id] || { counts:{agree:0,disagree:0,unknown:0,total:0} };
+      text = edgeTooltip(id, agg.counts);
+    }
+    tip.textContent = text;
+    tip.style.display = 'block';
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY - 10) + 'px';
+  });
+
+  svg.addEventListener('mouseleave', () => { tip.style.display='none'; });
+
+  svg.addEventListener('click', e => {
+    const target = svgTarget(e.target);
+    if (!target) return;
+    tip.style.display = 'none';
+    clickHandler(
+      target.getAttribute('data-type'),
+      target.getAttribute('data-id'),
+      e.shiftKey
+    );
+  });
+
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  container.appendChild(svg);
+}
+
+// ══ DIAGRAM RENDER ═══════════════════════════════════════════════════════════
+
+function renderDiagrams() {
+  const area = document.getElementById('diagram-area');
+  if (responses.length === 0) {
+    area.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:11px;line-height:1.8;">
+      <div style="font-size:28px;margin-bottom:8px;">⊕</div>
+      Drop response JSON files in the left panel<br>to build the aggregated diagram.</div>`;
+    return;
+  }
+
+  if (compareMode) {
+    const subA = filterByWorldSet(worldSetA);
+    const subB = filterByWorldSet(worldSetB);
+    area.innerHTML = `
+      <div class="diagram-wrap">
+        <div class="diagram-title">${worldSetA.name||'Set A'}</div>
+        <div class="diagram-n">n = ${subA.length}</div>
+        <div id="svg-container-a"></div>
+      </div>
+      <div class="diagram-wrap">
+        <div class="diagram-title">${worldSetB.name||'Set B'}</div>
+        <div class="diagram-n">n = ${subB.length}</div>
+        <div id="svg-container-b"></div>
+      </div>`;
+    buildAggSVG('svg-container-a', aggregateNodes(subA), aggregateEdges(subA),
+      (type,id,shift) => shift ? showSynthSelector(type,id,subA,subB) : showDetail(type,id,subA));
+    buildAggSVG('svg-container-b', aggregateNodes(subB), aggregateEdges(subB),
+      (type,id,shift) => shift ? showSynthSelector(type,id,subA,subB) : showDetail(type,id,subB));
+  } else {
+    const sub = filterByWorldSet(worldSetA);
+    const label = worldSetA.worlds.length > 0 ? worldSetA.name : 'All Respondents';
+    area.innerHTML = `
+      <div class="diagram-wrap">
+        <div class="diagram-title">${label}</div>
+        <div class="diagram-n">n = ${sub.length} of ${responses.length} respondents</div>
+        <div id="svg-container-a"></div>
+      </div>`;
+    buildAggSVG('svg-container-a', aggregateNodes(sub), aggregateEdges(sub),
+      (type,id,shift) => showDetail(type,id,sub));
+  }
+}
+
+// ══ DETAIL PANEL ═════════════════════════════════════════════════════════════
+
+function showDetail(type, id, subset) {
+  const isEdge = type === 'edge';
+  const idEl   = document.getElementById('detail-id');
+  const nameEl = document.getElementById('detail-name');
+  const body   = document.getElementById('detail-body');
+
+  if (isEdge) {
+    const [tail,head] = id.split('->').map(Number);
+    const fromLabel = (nodeLabels[`S-${tail}`]||`S-${tail}`).replace(/\n/g,' ');
+    const toLabel   = (nodeLabels[`S-${head}`]||`S-${head}`).replace(/\n/g,' ');
+    idEl.textContent  = id;
+    nameEl.textContent = `${fromLabel} → ${toLabel}`;
+    const agg = aggregateEdges(subset)[id] || { counts:{agree:0,disagree:0,unknown:0,total:0}, evidence:[], suggestions:[] };
+    const desc = edgeDescriptions[id] || '';
+    currentSynthContext = { type:'edge', id, subset,
+      label:`${fromLabel} → ${toLabel}`, desc, counts:agg.counts,
+      evidence:agg.evidence, suggestions:agg.suggestions };
+    document.getElementById('synth-btn').style.display = '';
+    body.innerHTML = descHtml(desc) + statBarHtml(['agree','disagree','unknown'], agg.counts, EDGE_COLORS)
+      + quotesHtml(agg.evidence, 'Evidence') + quotesHtml(agg.suggestions, 'Suggestions');
+  } else {
+    const label = (nodeLabels[id]||id).replace(/\n/g,' ');
+    idEl.textContent  = id;
+    nameEl.textContent = label;
+    const agg = aggregateNodes(subset)[id] || { counts:{go:0,caution:0,stop:0,unsure:0,total:0}, evidence:[], suggestions:[] };
+    const desc = nodeDescriptions[id] || '';
+    currentSynthContext = { type:'node', id, subset,
+      label, desc, counts:agg.counts,
+      evidence:agg.evidence, suggestions:agg.suggestions };
+    document.getElementById('synth-btn').style.display = '';
+    body.innerHTML = descHtml(desc) + statBarHtml(['stop','caution','go','unsure'], agg.counts, NODE_COLORS)
+      + quotesHtml(agg.evidence, 'Evidence') + quotesHtml(agg.suggestions, 'Suggestions');
+  }
+}
+
+function descHtml(desc) {
+  if (!desc) return '';
+  return `<div class="stat-section"><div class="detail-desc">${miniMd(desc)}</div></div>`;
+}
+
+function statBarHtml(keys, counts, colors) {
+  if (counts.total === 0) return `<div class="stat-section"><div class="stat-title">Assessments</div><div class="stat-n">No assessments yet</div></div>`;
+  let html = `<div class="stat-section"><div class="stat-title">Assessments <span class="stat-n">(n=${counts.total})</span></div>`;
+  for (const k of keys) {
+    const n = counts[k]||0;
+    const pct = counts.total > 0 ? Math.round(n/counts.total*100) : 0;
+    html += `<div class="stat-row">
+      <div class="stat-label">${k}</div>
+      <div class="stat-bar-wrap"><div class="stat-bar" style="width:${pct}%;background:${colors[k]||'#ccc'};"></div></div>
+      <div class="stat-pct">${pct}%</div>
+    </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function quotesHtml(items, label) {
+  if (!items || items.length === 0) return '';
+  let html = `<div class="evidence-section"><div class="evidence-label">${label}</div>`;
+  for (const item of items) {
+    const worlds = item.worlds && item.worlds.length ? item.worlds.join(', ') : null;
+    html += `<div class="evidence-item">
+      ${worlds ? `<div class="evidence-worlds">${worlds}</div>` : ''}
+      <div>${item.text.replace(/\n/g,'<br>')}</div>
+    </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+// ══ COMPARE MODE SYNTHESIS SELECTOR ══════════════════════════════════════════
+
+function showSynthSelector(type, id, subA, subB) {
+  // Get label for display
+  let label
+  if (type === 'edge') {
+    const [tail,head] = id.split('->').map(Number)
+    const fromLabel = (nodeLabels[`S-${tail}`]||`S-${tail}`).replace(/\n/g,' ')
+    const toLabel   = (nodeLabels[`S-${head}`]||`S-${head}`).replace(/\n/g,' ')
+    label = `${fromLabel} → ${toLabel}`
+  } else {
+    label = (nodeLabels[id]||id).replace(/\n/g,' ')
+  }
+
+  const body   = document.getElementById('detail-body')
+  const idEl   = document.getElementById('detail-id')
+  const nameEl = document.getElementById('detail-name')
+  idEl.textContent   = id
+  nameEl.textContent = label
+  document.getElementById('synth-btn').style.display = 'none'
+
+  const nameA = worldSetA.name || 'Set A'
+  const nameB = worldSetB.name || 'Set B'
+
+  body.innerHTML = `
+    <div style="margin:12px 0 8px;font-size:12px;color:#555;">Choose synthesis mode:</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="synth-btn" style="text-align:left;" id="ss-a">
+        ✦ ${nameA} only
+        <span style="font-size:10px;font-weight:400;display:block;margin-top:2px;opacity:0.8;">Synthesize evidence from ${nameA} respondents</span>
+      </button>
+      <button class="synth-btn" style="text-align:left;" id="ss-b">
+        ✦ ${nameB} only
+        <span style="font-size:10px;font-weight:400;display:block;margin-top:2px;opacity:0.8;">Synthesize evidence from ${nameB} respondents</span>
+      </button>
+      <button class="synth-btn" style="text-align:left;background:#2a5a7a;" id="ss-compare">
+        ✦ Compare ${nameA} vs ${nameB}
+        <span style="font-size:10px;font-weight:400;display:block;margin-top:2px;opacity:0.8;">Contrast what each group observes and suggests</span>
+      </button>
+    </div>`
+
+  document.getElementById('ss-a').addEventListener('click', () => showDetail(type, id, subA))
+  document.getElementById('ss-b').addEventListener('click', () => showDetail(type, id, subB))
+  document.getElementById('ss-compare').addEventListener('click', () => showDetailCompare(type, id, subA, subB))
+}
+
+function showDetailCompare(type, id, subA, subB) {
+  const isEdge = type === 'edge'
+  const body   = document.getElementById('detail-body')
+  const nameA  = worldSetA.name || 'Set A'
+  const nameB  = worldSetB.name || 'Set B'
+
+  let label, countsA, countsB, evidenceA, evidenceB, suggestionsA, suggestionsB, desc
+
+  if (isEdge) {
+    const [tail,head] = id.split('->').map(Number)
+    const fromLabel = (nodeLabels[`S-${tail}`]||`S-${tail}`).replace(/\n/g,' ')
+    const toLabel   = (nodeLabels[`S-${head}`]||`S-${head}`).replace(/\n/g,' ')
+    label = `${fromLabel} → ${toLabel}`
+    desc  = edgeDescriptions[id] || ''
+    const aggA = aggregateEdges(subA)[id] || { counts:{agree:0,disagree:0,unknown:0,total:0}, evidence:[], suggestions:[] }
+    const aggB = aggregateEdges(subB)[id] || { counts:{agree:0,disagree:0,unknown:0,total:0}, evidence:[], suggestions:[] }
+    countsA = aggA.counts; countsB = aggB.counts
+    evidenceA = aggA.evidence; evidenceB = aggB.evidence
+    suggestionsA = aggA.suggestions; suggestionsB = aggB.suggestions
+  } else {
+    label = (nodeLabels[id]||id).replace(/\n/g,' ')
+    desc  = nodeDescriptions[id] || ''
+    const aggA = aggregateNodes(subA)[id] || { counts:{go:0,caution:0,stop:0,unsure:0,total:0}, evidence:[], suggestions:[] }
+    const aggB = aggregateNodes(subB)[id] || { counts:{go:0,caution:0,stop:0,unsure:0,total:0}, evidence:[], suggestions:[] }
+    countsA = aggA.counts; countsB = aggB.counts
+    evidenceA = aggA.evidence; evidenceB = aggB.evidence
+    suggestionsA = aggA.suggestions; suggestionsB = aggB.suggestions
+  }
+
+  document.getElementById('detail-id').textContent   = id
+  document.getElementById('detail-name').textContent = label
+  document.getElementById('synth-btn').style.display = 'none'
+
+  const countStrA = isEdge
+    ? `agree:${countsA.agree||0} disagree:${countsA.disagree||0} unknown:${countsA.unknown||0}`
+    : `go:${countsA.go||0} caution:${countsA.caution||0} stop:${countsA.stop||0}`
+  const countStrB = isEdge
+    ? `agree:${countsB.agree||0} disagree:${countsB.disagree||0} unknown:${countsB.unknown||0}`
+    : `go:${countsB.go||0} caution:${countsB.caution||0} stop:${countsB.stop||0}`
+
+  currentSynthContext = {
+    type: 'compare', id, label, desc, isEdge,
+    nameA, nameB, countsA, countsB,
+    evidenceA, evidenceB, suggestionsA, suggestionsB
+  }
+
+  // Show stat bars side by side
+  const statKeys = isEdge ? ['agree','disagree','unknown'] : ['stop','caution','go','unsure']
+  const colors   = isEdge ? EDGE_COLORS : NODE_COLORS
+
+  body.innerHTML = `
+    ${desc ? descHtml(desc) : ''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;">
+      <div>
+        <div style="font-size:10px;font-weight:700;margin-bottom:4px;color:#555;">${nameA} (n=${countsA.total||0})</div>
+        ${statBarHtml(statKeys, countsA, colors)}
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;margin-bottom:4px;color:#555;">${nameB} (n=${countsB.total||0})</div>
+        ${statBarHtml(statKeys, countsB, colors)}
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;">
+      <div>${quotesHtml(evidenceA, `${nameA} Evidence`)}</div>
+      <div>${quotesHtml(evidenceB, `${nameB} Evidence`)}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;">
+      <div>${quotesHtml(suggestionsA, `${nameA} Suggestions`)}</div>
+      <div>${quotesHtml(suggestionsB, `${nameB} Suggestions`)}</div>
+    </div>
+    <button class="synth-btn" id="compare-synth-btn" style="margin-top:8px;">✦ Compare Synthesis</button>`
+
+  document.getElementById('compare-synth-btn').addEventListener('click', runSynthesis)
+}
+
+// ══ API KEY MANAGEMENT ════════════════════════════════════════════════════════
+
+function renderApiKeyArea(forceOpen = false) {
+  const area = document.getElementById('api-key-area');
+  if (!area) return;
+  const key = localStorage.getItem('evsm-api-key') || '';
+  if (key && !forceOpen) {
+    area.innerHTML = `<span class="api-key-set">API key set ✓</span>`
+      + `<span class="api-key-change" onclick="renderApiKeyArea(true)">change</span>`;
+  } else {
+    area.innerHTML = `Your Anthropic API key (stored in this browser only):`
+      + `<input id="api-key-input" type="password" placeholder="sk-ant-..." value="${key}" />`
+      + `<span class="api-key-change" onclick="saveApiKey()">save</span>`;
+    const inp = document.getElementById('api-key-input');
+    inp.focus();
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') saveApiKey(); });
+  }
+}
+
+function saveApiKey() {
+  const val = (document.getElementById('api-key-input')?.value || '').trim();
+  if (val) localStorage.setItem('evsm-api-key', val);
+  else localStorage.removeItem('evsm-api-key');
+  renderApiKeyArea(false);
+}
+
+// ══ CLAUDE SYNTHESIS ═════════════════════════════════════════════════════════
+
+async function runSynthesis() {
+  if (!currentSynthContext) return;
+  const ctx = currentSynthContext;
+  const btn = document.getElementById('synth-btn') || document.getElementById('compare-synth-btn');
+  const body = document.getElementById('detail-body');
+
+  let prompt;
+
+  if (ctx.type === 'compare') {
+    const { label, desc, isEdge, nameA, nameB, countsA, countsB,
+            evidenceA, evidenceB, suggestionsA, suggestionsB } = ctx;
+    const countStrA = isEdge
+      ? `agree:${countsA.agree||0}, disagree:${countsA.disagree||0}, unknown:${countsA.unknown||0} (n=${countsA.total||0})`
+      : `go:${countsA.go||0}, caution:${countsA.caution||0}, stop:${countsA.stop||0} (n=${countsA.total||0})`;
+    const countStrB = isEdge
+      ? `agree:${countsB.agree||0}, disagree:${countsB.disagree||0}, unknown:${countsB.unknown||0} (n=${countsB.total||0})`
+      : `go:${countsB.go||0}, caution:${countsB.caution||0}, stop:${countsB.stop||0} (n=${countsB.total||0})`;
+    const evA  = evidenceA.map(e => `[${e.worlds?.join(', ')||'—'}] ${e.text}`).join('\n') || 'None.';
+    const evB  = evidenceB.map(e => `[${e.worlds?.join(', ')||'—'}] ${e.text}`).join('\n') || 'None.';
+    const sugA = suggestionsA.map(s => `[${s.worlds?.join(', ')||'—'}] ${s.text}`).join('\n') || 'None.';
+    const sugB = suggestionsB.map(s => `[${s.worlds?.join(', ')||'—'}] ${s.text}`).join('\n') || 'None.';
+
+    prompt = `You are helping a neighborhood cooperative analyze survey results from their eVSM (Systems Oriented Fitness Inventory) assessment.
+
+ELEMENT: ${label}
+TYPE: ${isEdge ? 'Edge (relationship between two spheres)' : 'Sphere (organizational capacity)'}
+${desc ? `DESCRIPTION: ${desc}\n` : ''}
+GROUP "${nameA}" ASSESSMENTS: ${countStrA}
+GROUP "${nameA}" EVIDENCE:
+${evA}
+
+GROUP "${nameB}" ASSESSMENTS: ${countStrB}
+GROUP "${nameB}" EVIDENCE:
+${evB}
+
+GROUP "${nameA}" SUGGESTIONS:
+${sugA}
+
+GROUP "${nameB}" SUGGESTIONS:
+${sugB}
+
+Write a comparative synthesis (4-6 sentences) that:
+1. Describes how the two groups' overall assessments differ or align
+2. Contrasts the strongest themes in each group's evidence — what does each group observe that the other may not?
+3. Notes where the groups' suggestions converge or diverge
+4. Identifies what the difference in perspective might reveal about the neighborhood
+
+Write in plain language for neighborhood organizers. Do not use bullet points.`;
+
+  } else {
+    const { type, id, label, desc, counts, evidence, suggestions } = ctx;
+    const isEdge = type === 'edge';
+    const countSummary = isEdge
+      ? `agree: ${counts.agree||0}, disagree: ${counts.disagree||0}, unknown: ${counts.unknown||0} (of ${counts.total} assessed)`
+      : `green: ${counts.go||0}, yellow: ${counts.caution||0}, red: ${counts.stop||0}, blue: ${counts.unsure||0} (of ${counts.total} assessed)`;
+    const evLines  = evidence.map(e => `[${e.worlds?.join(', ')||'\u2014'}] ${e.text}`).join('\n') || 'None provided.';
+    const sugLines = suggestions.map(s => `[${s.worlds?.join(', ')||'\u2014'}] ${s.text}`).join('\n') || 'None provided.';
+
+    prompt = `You are helping a neighborhood cooperative analyze survey results from their eVSM (Systems Oriented Fitness Inventory) assessment.
+
+ELEMENT: ${label} (${id})
+TYPE: ${isEdge ? 'Edge (relationship between two spheres)' : 'Sphere (organizational capacity)'}
+${desc ? `DESCRIPTION: ${desc}
+` : ''}
+ASSESSMENT COUNTS: ${countSummary}
+
+RESPONDENT EVIDENCE:
+${evLines}
+
+RESPONDENT SUGGESTIONS:
+${sugLines}
+
+Write a concise synthesis (3-5 sentences) that:
+1. Names the overall pattern in how respondents assessed this ${isEdge?'relationship':'capacity'}
+2. Identifies the strongest theme in the evidence
+3. Highlights the most actionable suggestion or convergence in suggestions
+4. Notes any significant divergence between respondents if present
+
+Write in plain language suitable for neighborhood organizers. Do not use bullet points. Do not repeat the element name in your opening sentence.`;
+  }
+
+  // Show streaming placeholder
+  const synthDiv = document.createElement('div');
+  synthDiv.className = 'synth-section';
+  synthDiv.innerHTML = `<div class="synth-title">✦ Claude Synthesis</div><div class="synth-body" id="synth-output"><span class="synth-cursor"></span></div>`;
+  // Remove any previous synthesis
+  const prev = body.querySelector('.synth-section');
+  if (prev) prev.remove();
+  body.appendChild(synthDiv);
+  synthDiv.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  btn.disabled = true;
+  btn.textContent = '… synthesizing';
+
+  try {
+    const apiKey = localStorage.getItem('evsm-api-key') || '';
+    if (!apiKey) {
+      renderApiKeyArea(true); // show input
+      throw new Error('Enter your Anthropic API key below the Synthesize button.');
+    }
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        stream: true,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || response.statusText);
+    }
+
+    const out = document.getElementById('synth-output');
+    out.innerHTML = '';
+    const cursor = document.createElement('span');
+    cursor.className = 'synth-cursor';
+    out.appendChild(cursor);
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') continue;
+        try {
+          const evt = JSON.parse(data);
+          if (evt.type === 'content_block_delta' && evt.delta?.text) {
+            cursor.insertAdjacentText('beforebegin', evt.delta.text);
+          }
+        } catch {}
+      }
+    }
+    cursor.remove();
+    // Render any markdown in the final text
+    out.innerHTML = miniMd(out.textContent);
+
+  } catch (err) {
+    document.getElementById('synth-output').innerHTML =
+      `<span style="color:var(--accent2);">Error: ${err.message}</span>`;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✦ Re-synthesize';
+}
+
+// ══ FILE LOADING ═════════════════════════════════════════════════════════════
+
+function loadFiles(files) {
+  for (const file of files) {
+    const r = new FileReader();
+    r.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        // Accept both response format and config-only format
+        if (!data.assessments && !data.nodeLabels) {
+          alert(`${file.name}: not a recognised eVSM file`); return;
+        }
+        // Avoid duplicates by respondentId or filename
+        const rid = data.respondent?.respondentId || data.respondent?.name || file.name;
+        if (responses.find(r => (r.respondent?.respondentId||r.respondent?.name||r._filename) === rid)) return;
+        data._filename = file.name;
+        responses.push(data);
+        // Merge labels/descriptions from first file that has them
+        if (data.config?.nodeLabels && Object.keys(nodeLabels).length === 0)
+          nodeLabels = {...data.config.nodeLabels};
+        if (data.config?.edgeDescriptions && Object.keys(edgeDescriptions).length === 0)
+          edgeDescriptions = {...data.config.edgeDescriptions};
+        if (data.config?.nodeDescriptions && Object.keys(nodeDescriptions).length === 0)
+          nodeDescriptions = {...data.config.nodeDescriptions};
+        rebuildWorlds();
+        renderRespondentList();
+        renderDiagrams();
+      } catch(e) { alert(`${file.name}: parse error — ${e.message}`); }
+    };
+    r.readAsText(file);
+  }
+}
+
+function rebuildWorlds() {
+  // Full list from config, in config order; also collect any extra from respondents
+  const order = responses[0]?.config?.worldsCategories || [];
+  const extra = new Set(order);
+  for (const r of responses)
+    for (const w of (r.respondent?.worlds||[])) extra.has(w) || order.push(w) || extra.add(w);
+  allWorlds = order;
+  renderWorldsChecklist();
+}
+
+function renderRespondentList() {
+  const c = document.getElementById('resp-list');
+  c.innerHTML = '';
+  document.getElementById('resp-badge').textContent = `${responses.length} respondent${responses.length!==1?'s':''}`;
+  for (let i=0; i<responses.length; i++) {
+    const r = responses[i];
+    const label = respondentLabel(r);
+    const worlds = (r.respondent?.worlds||[]).join(', ') || '—';
+    const div = document.createElement('div'); div.className='resp-item';
+    div.innerHTML=`<span style="flex:1;">
+      <div>${label}</div>
+      <div class="resp-worlds">${worlds}</div>
+    </span>`;
+    const btn = document.createElement('button'); btn.className='resp-remove'; btn.textContent='×';
+    btn.title='Remove';
+    btn.addEventListener('click',()=>{ responses.splice(i,1); renderRespondentList(); rebuildWorlds(); renderDiagrams(); });
+    div.appendChild(btn);
+    c.appendChild(div);
+  }
+}
+
+function renderWorldsChecklist() {
+  const c = document.getElementById('worlds-checklist');
+  c.innerHTML = '';
+  if (allWorlds.length === 0) {
+    c.innerHTML = '<div class="info-box" style="padding:4px;">No world categories found in loaded files.</div>';
+    return;
+  }
+  for (const w of allWorlds) {
+    // Count how many loaded respondents selected this world
+    const n = responses.filter(r => (r.respondent?.worlds||[]).includes(w)).length;
+    const row = document.createElement('div'); row.className='world-check-row';
+    const id = `wc-${w.replace(/\s+/g,'_')}`;
+    const cbA = document.createElement('input'); cbA.type='checkbox'; cbA.id=id+'-a';
+    cbA.style.accentColor='var(--accent)';
+    cbA.checked = worldSetA.worlds.includes(w);
+    cbA.addEventListener('change',()=>{
+      if(cbA.checked) { if(!worldSetA.worlds.includes(w)) worldSetA.worlds.push(w); }
+      else worldSetA.worlds = worldSetA.worlds.filter(x=>x!==w);
+      updateWsCounts(); renderDiagrams();
+    });
+    const lbl = document.createElement('label'); lbl.htmlFor=id+'-a';
+    lbl.style.flex='1';
+    lbl.textContent=w;
+    const cnt = document.createElement('span');
+    cnt.style.cssText=`font-family:'IBM Plex Mono',monospace;font-size:9px;margin-left:4px;min-width:16px;text-align:right;color:${n>0?'var(--accent)':'var(--muted)'};font-weight:${n>0?'600':'400'};`;
+    cnt.textContent = n > 0 ? n : '—';
+
+    row.appendChild(cbA);
+    if (compareMode) {
+      const cbB = document.createElement('input'); cbB.type='checkbox'; cbB.id=id+'-b';
+      cbB.style.cssText='accent-color:var(--unsure);margin-left:6px;';
+      cbB.checked = worldSetB.worlds.includes(w);
+      cbB.addEventListener('change',()=>{
+        if(cbB.checked) { if(!worldSetB.worlds.includes(w)) worldSetB.worlds.push(w); }
+        else worldSetB.worlds = worldSetB.worlds.filter(x=>x!==w);
+        updateWsCounts(); renderDiagrams();
+      });
+      row.appendChild(lbl); row.appendChild(cnt); row.appendChild(cbB);
+    } else {
+      row.appendChild(lbl); row.appendChild(cnt);
+    }
+    c.appendChild(row);
+  }
+  updateWsCounts();
+}
+
+function setWorldMode(mode) {
+  worldSetA.mode = mode;
+  document.getElementById('ws-a-exclusive').style.background = mode === 'exclusive' ? '#4a9a5a' : '#f5f2eb';
+  document.getElementById('ws-a-exclusive').style.color      = mode === 'exclusive' ? '#fff' : '#555';
+  document.getElementById('ws-a-inclusive').style.background = mode === 'inclusive' ? '#4a9a5a' : '#f5f2eb';
+  document.getElementById('ws-a-inclusive').style.color      = mode === 'inclusive' ? '#fff' : '#555';
+  updateWsCounts(); renderDiagrams();
+}
+
+function updateWsCounts() {
+  const nA = filterByWorldSet(worldSetA).length;
+  document.getElementById('ws-a-count').textContent = responses.length > 0 ? `(${nA})` : '';
+  if (compareMode) {
+    const nB = filterByWorldSet(worldSetB).length;
+    document.getElementById('ws-b-count').textContent = responses.length > 0 ? `(${nB})` : '';
+  }
+}
+
+// ══ INIT ═════════════════════════════════════════════════════════════════════
+
+// Drop zone
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+dropZone.addEventListener('click', ()=>fileInput.click());
+fileInput.addEventListener('change', e=>loadFiles(e.target.files));
+dropZone.addEventListener('dragover', e=>{ e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', ()=>dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e=>{ e.preventDefault(); dropZone.classList.remove('drag-over'); loadFiles(e.dataTransfer.files); });
+
+// View mode buttons
+document.getElementById('btn-single').addEventListener('click', ()=>{
+  compareMode = false;
+  document.getElementById('compare-b-row').style.display = 'none';
+  document.getElementById('btn-single').style.background = 'var(--accent)';
+  document.getElementById('btn-single').style.color = '#fff';
+  document.getElementById('btn-compare').style.background = '';
+  document.getElementById('btn-compare').style.color = '';
+  renderWorldsChecklist(); renderDiagrams();
+});
+document.getElementById('btn-compare').addEventListener('click', ()=>{
+  compareMode = true;
+  document.getElementById('compare-b-row').style.display = '';
+  document.getElementById('btn-compare').style.background = 'var(--accent)';
+  document.getElementById('btn-compare').style.color = '#fff';
+  document.getElementById('btn-single').style.background = '';
+  document.getElementById('btn-single').style.color = '';
+  renderWorldsChecklist(); renderDiagrams();
+});
+
+// World set name inputs
+document.getElementById('ws-a-name').addEventListener('input', e=>{
+  worldSetA.name = e.target.value; renderDiagrams();
+});
+document.getElementById('ws-b-name').addEventListener('input', e=>{
+  worldSetB.name = e.target.value; renderDiagrams();
+});
+
+// Set initial button state
+document.getElementById('btn-single').style.background = 'var(--accent)';
+document.getElementById('btn-single').style.color = '#fff';
+
+// API key UI
+renderApiKeyArea();
+</script>
+</body>
+</html>

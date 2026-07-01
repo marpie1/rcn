@@ -1,0 +1,10 @@
+FROM node:lts-slim
+
+# Install FedWiki and the SODOTO badge plugin globally
+RUN npm install -g wiki wiki-plugin-sodoto-badge
+
+EXPOSE 3000
+
+# FedWiki defaults data dir to ~/.wiki (= /root/.wiki in this image).
+# Mount a named volume there to persist pages across container restarts.
+CMD ["wiki", "--port", "3000"]

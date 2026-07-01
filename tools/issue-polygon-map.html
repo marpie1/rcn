@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RCN Issue Polygon Map</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --border: #d0d5e0;
+    --text: #1a1e2e;
+    --text-dim: #6b7394;
+    --accent: #b8860b;
+    --pro: #1a7a4a;
+    --con: #c0392b;
+    --unknown: #6b7394;
+    --law-state: #1565a8;
+    --law-county: #6a1e9e;
+    --law-muni: #b85c10;
+    --ndc: #a0206a;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 320px 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .header-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    background: rgba(232,200,74,0.1);
+    border: 1px solid rgba(232,200,74,0.3);
+    padding: 3px 8px;
+    text-transform: uppercase;
+  }
+  header h1 {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .header-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    margin-left: auto;
+  }
+
+  /* Search */
+  .header-search { position: relative; display: flex; gap: 4px; }
+  .header-search-input {
+    padding: 5px 9px; border: 1px solid var(--border); font-size: 12px;
+    font-family: var(--sans); color: var(--text); background: var(--bg);
+    outline: none; width: 220px;
+  }
+  .header-search-input:focus { border-color: var(--accent); }
+  .header-search-btn {
+    padding: 5px 12px; background: var(--text); color: white;
+    border: none; font-family: var(--mono); font-size: 11px;
+    letter-spacing: 0.05em; cursor: pointer; white-space: nowrap;
+  }
+  .header-search-btn:hover { background: #333; }
+  .header-search-results {
+    display: none; position: absolute; top: calc(100% + 4px); right: 0;
+    min-width: 320px; z-index: 2000;
+    background: var(--surface); border: 1px solid var(--border);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15); max-height: 220px; overflow-y: auto;
+  }
+  .hsearch-item {
+    padding: 8px 12px; font-size: 11px; cursor: pointer;
+    border-bottom: 1px solid var(--border); line-height: 1.5; color: var(--text);
+  }
+  .hsearch-item:hover { background: #f5f9ff; color: var(--accent); }
+  .hsearch-item:last-child { border-bottom: none; }
+  .hsearch-none { padding: 10px 12px; font-size: 12px; color: var(--text-dim); }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 0;
+  }
+  .sidebar-section {
+    border-bottom: 1px solid var(--border);
+    padding: 16px;
+  }
+  .sidebar-section h2 {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  /* Issue card */
+  .issue-card {
+    background: #fef9e7;
+    border: 1px solid #d4a017;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .issue-card .issue-title { font-weight: 500; font-size: 13px; color: var(--accent); margin-bottom: 4px; }
+  .issue-card .issue-status { font-family: var(--mono); font-size: 10px; color: var(--text-dim); margin-bottom: 8px; }
+  .issue-card p { font-size: 12px; line-height: 1.6; color: var(--text); }
+
+  /* Layer toggles */
+  .layer-list { display: flex; flex-direction: column; gap: 6px; }
+  .layer-toggle {
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    padding: 6px 8px; border: 1px solid transparent;
+    transition: border-color 0.15s; user-select: none;
+  }
+  .layer-toggle:hover { border-color: var(--border); }
+  .layer-toggle input { display: none; }
+  .layer-dot { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+  .layer-label { font-size: 12px; flex: 1; }
+  .layer-active-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); opacity: 0; transition: opacity 0.15s;
+  }
+  .layer-toggle.active .layer-active-dot { opacity: 1; }
+
+  /* Preference tally */
+  .pref-tally { display: flex; gap: 12px; margin-top: 8px; }
+  .pref-count { text-align: center; }
+  .pref-count .num { font-family: var(--mono); font-size: 22px; font-weight: 600; line-height: 1; }
+  .pref-count .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* Actions */
+  .action-list { display: flex; flex-direction: column; gap: 6px; }
+  .action-item {
+    border-left: 2px solid var(--border); padding: 6px 10px;
+    font-size: 11px; line-height: 1.5; cursor: pointer; transition: border-color 0.15s;
+  }
+  .action-item:hover { border-color: var(--accent); }
+  .action-item .action-type { font-family: var(--mono); font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+  .action-item .action-desc { color: var(--text); margin-top: 2px; }
+  .action-item.pending { border-color: var(--accent); }
+  .action-item.contingent { border-color: var(--text-dim); opacity: 0.6; }
+  .action-item.not_started { opacity: 0.5; }
+
+  /* Laws */
+  .law-list { display: flex; flex-direction: column; gap: 6px; }
+  .law-item { padding: 8px 10px; font-size: 11px; border: 1px solid var(--border); }
+  .law-name { font-weight: 500; margin-bottom: 2px; }
+  .law-effect { color: var(--text-dim); line-height: 1.5; }
+
+  /* Tags */
+  .tag {
+    display: inline-block; font-family: var(--mono); font-size: 9px;
+    padding: 2px 6px; border-radius: 2px; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .tag-pro     { background: #d4f5e5; color: #1a7a4a; }
+  .tag-con     { background: #fde8e8; color: #c0392b; }
+  .tag-unknown { background: #ebebf0; color: #6b7394; }
+  .tag-active  { background: #fef3cd; color: #b8860b; }
+  .tag-pending { background: #dceeff; color: #1565a8; }
+  .tag-void    { background: #fde8e8; color: #c0392b; }
+  .tag-needs_verification { background: #fde8e8; color: #c0392b; }
+
+  /* Map */
+  #map { grid-row: 2; grid-column: 2; background: #e8eaf0; }
+
+  /* Leaflet popup */
+  .leaflet-popup-content-wrapper {
+    background: var(--surface); color: var(--text); border: 1px solid var(--border);
+    border-radius: 0; box-shadow: 0 4px 24px rgba(0,0,0,0.15); font-family: var(--sans);
+  }
+  .leaflet-popup-tip { background: var(--surface); }
+  .leaflet-popup-content { margin: 14px; font-size: 12px; line-height: 1.7; min-width: 220px; }
+  .popup-title { font-family: var(--mono); font-size: 11px; color: var(--accent); margin-bottom: 8px; letter-spacing: 0.05em; }
+  .popup-row { display: flex; gap: 8px; margin-bottom: 3px; }
+  .popup-key { color: var(--text-dim); font-family: var(--mono); font-size: 10px; width: 90px; flex-shrink: 0; }
+
+  /* Draw toolbar */
+  #draw-toolbar {
+    position: absolute; top: 16px; right: 16px; z-index: 1000;
+    display: flex; flex-direction: column; gap: 6px;
+    max-height: calc(100vh - 100px); overflow-y: auto;
+  }
+  .toolbar-divider {
+    border: none; border-top: 1px solid var(--border); margin: 2px 0;
+  }
+  .toolbar-label {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-dim); padding: 2px 4px;
+  }
+  .draw-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    font-family: var(--mono); font-size: 11px; padding: 8px 14px; cursor: pointer;
+    letter-spacing: 0.05em; transition: all 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    text-align: left; white-space: nowrap;
+  }
+  .draw-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .draw-btn.active { border-color: var(--accent); background: #fef9e7; color: var(--accent); }
+  .draw-btn.basemap-active { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+  /* GeoJSON paste panel */
+  #import-panel {
+    display: none; flex-direction: column; gap: 4px;
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  }
+  #import-panel textarea {
+    width: 100%; height: 90px; font-family: var(--mono); font-size: 10px;
+    border: 1px solid var(--border); padding: 6px; resize: vertical;
+    color: var(--text); background: #fafbfc; outline: none;
+    box-sizing: border-box;
+  }
+  #import-panel textarea:focus { border-color: var(--accent); }
+  .import-panel-row { display: flex; gap: 4px; }
+  .import-panel-row .draw-btn { flex: 1; text-align: center; font-size: 10px; padding: 5px 6px; }
+
+  /* No-issue screen */
+  #no-issue {
+    grid-column: 1 / -1; grid-row: 1 / -1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; color: var(--text-dim); font-family: var(--mono); font-size: 13px;
+    background: var(--bg);
+  }
+  #no-issue strong { color: var(--text); font-size: 16px; }
+  #no-issue code { background: #eef; padding: 4px 10px; border-radius: 4px; font-size: 12px; }
+  #no-issue .landing-or { font-size: 11px; color: var(--text-dim); }
+  #no-issue .landing-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    font-family: var(--mono); font-size: 12px; padding: 10px 20px; cursor: pointer;
+    letter-spacing: 0.05em; box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    transition: border-color 0.15s;
+  }
+  #no-issue .landing-btn:hover { border-color: var(--accent); color: var(--accent); }
+  #no-issue .landing-error { color: var(--con); font-size: 11px; }
+  #no-issue .landing-paste-wrap {
+    display: flex; flex-direction: column; align-items: stretch; gap: 6px;
+    width: 340px;
+  }
+  #no-issue .landing-paste-label {
+    font-size: 10px; color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  #landing-paste {
+    width: 100%; height: 100px; font-family: var(--mono); font-size: 10px;
+    border: 1px solid var(--border); padding: 8px; resize: vertical;
+    color: var(--text); background: var(--surface); outline: none; box-sizing: border-box;
+  }
+  #landing-paste:focus { border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div id="no-issue" style="display:none">
+  <strong>RCN Issue Polygon Map</strong>
+  <button class="landing-btn" onclick="landingLoadFile()">↑ Open file (.json or .geojson)</button>
+  <input type="file" id="landing-file-input" accept=".json,.geojson" style="display:none" onchange="landingFileChosen(this)">
+  <div class="landing-paste-wrap">
+    <div class="landing-paste-label">— or paste GeoJSON / issue JSON —</div>
+    <textarea id="landing-paste" placeholder="Paste JSON here…"></textarea>
+    <button class="landing-btn" onclick="landingLoadPaste()" style="padding:7px 20px">↑ Load pasted</button>
+  </div>
+  <span id="landing-error" class="landing-error" style="display:none"></span>
+  <div class="landing-or">— or load via URL —</div>
+  <span>Add a <code>?issue=</code> parameter to the URL</span>
+  <span>Example: <code>issue-polygon-map.html?issue=superior-az--chickens</code></span>
+</div>
+
+<header>
+  <div class="header-tag">Issue Polygon</div>
+  <h1>Polycentric Governance Map</h1>
+  <div class="header-sub" id="header-sub"></div>
+  <div class="header-search">
+    <input id="hsearch-input" class="header-search-input" type="text" placeholder="Search OpenStreetMap…"
+      onkeydown="if(event.key==='Enter')doHSearch()"
+      oninput="if(!this.value)document.getElementById('hsearch-results').style.display='none'">
+    <button class="header-search-btn" onclick="doHSearch()">Search</button>
+    <div id="hsearch-results" class="header-search-results"></div>
+  </div>
+</header>
+
+<div id="sidebar"></div>
+<div id="map"></div>
+
+<div id="draw-toolbar">
+  <div class="toolbar-label">Edit</div>
+  <button class="draw-btn" id="btn-add-parcel" onclick="startAddParcel()">+ Add Parcel</button>
+  <button class="draw-btn" id="btn-draw-polygon" onclick="startDrawPolygon()">✎ Draw Polygon</button>
+  <button class="draw-btn" id="btn-undo" onclick="undo()" disabled style="opacity:0.4">↩ Undo</button>
+  <hr class="toolbar-divider">
+  <div class="toolbar-label">Data</div>
+  <button class="draw-btn" id="btn-export" onclick="exportData()">↓ Export GeoJSON</button>
+  <button class="draw-btn" id="btn-import" onclick="toggleImportPanel()">↑ Load GeoJSON</button>
+  <hr class="toolbar-divider">
+  <div class="toolbar-label">Share</div>
+  <button class="draw-btn" id="btn-copy-view" onclick="copyViewLink()">↗ Copy view link</button>
+  <div id="import-panel" style="display:none">
+    <textarea id="import-paste" placeholder="Paste GeoJSON here…"></textarea>
+    <div class="import-panel-row">
+      <button class="draw-btn" onclick="importFromPaste()">↑ Load pasted</button>
+      <button class="draw-btn" onclick="importFromFile()">↑ From file</button>
+    </div>
+  </div>
+  <input type="file" id="import-file-input" accept=".geojson" style="display:none" onchange="importFileChosen(this)">
+  <div id="import-status" style="display:none;font-family:var(--mono);font-size:10px;color:var(--accent);padding:4px 6px;text-align:right"></div>
+  <hr class="toolbar-divider">
+  <div class="toolbar-label">Basemap</div>
+  <button class="draw-btn basemap-active" id="bm-light"   onclick="setBasemap('light')">Light</button>
+  <button class="draw-btn"               id="bm-osm"     onclick="setBasemap('osm')">OpenStreetMap</button>
+  <button class="draw-btn"               id="bm-topo"    onclick="setBasemap('topo')">Topo</button>
+  <button class="draw-btn"               id="bm-sat"     onclick="setBasemap('sat')">Satellite</button>
+  <button class="draw-btn"               id="bm-dark"    onclick="setBasemap('dark')">Dark</button>
+</div>
+
+<script>
+// ── LOAD DATA ────────────────────────────────────────────────
+
+const params   = new URLSearchParams(location.search);
+const issueKey = params.get('issue');
+
+function showLanding(errorMsg) {
+  document.getElementById('no-issue').style.display   = 'flex';
+  document.getElementById('sidebar').style.display    = 'none';
+  document.getElementById('map').style.display        = 'none';
+  document.getElementById('draw-toolbar').style.display = 'none';
+  document.querySelector('header').style.display      = 'none';
+  if (errorMsg) {
+    const el = document.getElementById('landing-error');
+    el.textContent = errorMsg;
+    el.style.display = 'block';
+  }
+}
+
+function showMap() {
+  document.getElementById('no-issue').style.display   = 'none';
+  document.getElementById('sidebar').style.display    = '';
+  document.getElementById('map').style.display        = '';
+  document.getElementById('draw-toolbar').style.display = '';
+  document.querySelector('header').style.display      = '';
+}
+
+function landingLoadFile() {
+  document.getElementById('landing-file-input').click();
+}
+
+function landingFileChosen(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    landingHandleText(e.target.result);
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function landingLoadPaste() {
+  const text = document.getElementById('landing-paste').value.trim();
+  if (!text) {
+    landingShowError('Nothing pasted yet.');
+    return;
+  }
+  landingHandleText(text);
+}
+
+function landingHandleText(text) {
+  try {
+    const data = JSON.parse(text);
+    // Issue JSON format: has meta + issue + parcels
+    if (data.meta && data.issue && data.parcels) {
+      showMap();
+      initMap(data);
+      return;
+    }
+    // GeoJSON FeatureCollection: exported parcels — load into a blank map
+    if (data.type === 'FeatureCollection' && Array.isArray(data.features)) {
+      const stub = {
+        meta:    { community: 'Imported', title: 'Imported GeoJSON', date: '', id: 'imported', apn_prefix: 'APN-', ndc: '', coordinator: '' },
+        issue:   { id: 'imported', polygon: [], centroid: [0, 0] },
+        parcels: []
+      };
+      showMap();
+      initMap(stub);
+      loadFromGeoJSON(data);
+      return;
+    }
+    landingShowError('Unrecognised format — expected issue JSON or GeoJSON FeatureCollection.');
+  } catch(err) {
+    landingShowError('Could not parse JSON: ' + err.message);
+  }
+}
+
+function landingShowError(msg) {
+  const el = document.getElementById('landing-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+if (!issueKey) {
+  showLanding();
+} else {
+  fetch(`http://127.0.0.1:8000/issue-data/${issueKey}`)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(data => { showMap(); initMap(data); })
+    .catch(err => {
+      showLanding(`Could not load "${issueKey}" from API: ${err}. You can open the JSON file directly below.`);
+    });
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+
+const lawJurisdictionColor = { state: 'var(--law-state)', county: 'var(--law-county)', municipality: 'var(--law-muni)' };
+const lawBorderColor       = { state: 'rgba(74,180,232,0.4)', county: 'rgba(160,74,232,0.4)', municipality: 'rgba(232,138,74,0.4)' };
+const stanceColor          = { pro: '#1a7a4a', con: '#c0392b', unknown: '#8090b0' };
+
+let ISSUE, PARCELS, META, apnPrefix;
+let map, layers = {}, parcelMarkers = [], baseTile;
+let parcelNewCount = 0; // always-increasing counter so IDs are unique even after deletes
+
+const BASEMAPS = {
+  light:  { url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',                              attr: '© CartoDB © OpenStreetMap contributors' },
+  osm:    { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',                    attr: '© CartoDB © OpenStreetMap contributors' },
+  topo:   { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',                                            attr: '© OpenTopoMap © OpenStreetMap contributors' },
+  sat:    { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr: '© Esri' },
+  dark:   { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',                               attr: '© CartoDB © OpenStreetMap contributors' }
+};
+
+function setBasemap(key) {
+  if (!map || !BASEMAPS[key]) return;
+  if (baseTile) map.removeLayer(baseTile);
+  baseTile = L.tileLayer(BASEMAPS[key].url, { maxZoom: 19, attribution: BASEMAPS[key].attr }).addTo(map);
+  baseTile.bringToBack();
+  document.querySelectorAll('[id^="bm-"]').forEach(b => b.classList.remove('basemap-active'));
+  document.getElementById('bm-' + key).classList.add('basemap-active');
+}
+
+// Shared click handler — called by map click AND by polygon click-through
+function handleMapClick(latlng) {
+  if (addingParcel) {
+    const newId = apnPrefix + 'NEW-' + (++parcelNewCount);
+    const p = {
+      id: newId, label: 'New Parcel',
+      latLng: [latlng.lat, latlng.lng],
+      stance: 'unknown', lot_size: null, zoning: 'R-1',
+      hoa: false, qualifies_hb2325: null, desired_flock: null,
+      notes: '',
+      ndc: false
+    };
+    PARCELS.push(p);
+    renderParcel(p, layers.parcels);
+    parcelMarkers[parcelMarkers.length - 1].marker.openPopup();
+    updateTally();
+    startAddParcel();
+  } else if (drawingPolygon) {
+    drawnPoints.push([latlng.lat, latlng.lng]);
+    if (drawnPolyline) drawnPolyline.setLatLngs(drawnPoints);
+    // Vertex dot so the user can see each click registered
+    const dot = L.circleMarker([latlng.lat, latlng.lng], {
+      radius: 4, color: '#e8c84a', weight: 2, fillColor: '#fff', fillOpacity: 1, interactive: false
+    }).addTo(map);
+    drawnVertexMarkers.push(dot);
+    const n = drawnPoints.length;
+    const btn = document.getElementById('btn-draw-polygon');
+    btn.textContent = n >= 3 ? `✓ Close polygon (${n} pts)` : `✕ Cancel (need ${3 - n} more)`;
+  }
+}
+
+// Make a polygon pass clicks through to handleMapClick when in add/draw mode
+function addClickThrough(layer) {
+  layer.on('click', function(e) {
+    if (addingParcel || drawingPolygon) {
+      map.closePopup();
+      handleMapClick(e.latlng);
+    }
+  });
+}
+
+function initMap(data) {
+  META      = data.meta;
+  ISSUE     = data.issue;
+  PARCELS   = data.parcels;
+  apnPrefix = META.apn_prefix || 'APN-';
+
+  // Header
+  document.title = `RCN Issue Polygon Map — ${META.community}`;
+  document.getElementById('header-sub').textContent =
+    `${META.community} · ${META.title} · ${META.date}`;
+
+  // Sidebar
+  buildSidebar(data);
+
+  // Map
+  map = L.map('map', { center: ISSUE.centroid, zoom: 15, zoomControl: true, attributionControl: false });
+  baseTile = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+
+  // County boundary
+  if (data.boundaries && data.boundaries.county) {
+    const b = data.boundaries.county;
+    const p = b.popup;
+    layers.county = L.polygon(b.coords, {
+      color: '#a04ae8', weight: 1.5, dashArray: '6 4', fillColor: '#a04ae8', fillOpacity: 0.04
+    }).addTo(map).bindPopup(`
+      <div class="popup-title">${b.label}</div>
+      <div class="popup-row"><span class="popup-key">Type</span><span>${p.type}</span></div>
+      ${p.fowl_standard ? `<div class="popup-row"><span class="popup-key">Fowl standard</span><span>${p.fowl_standard}</span></div>` : ''}
+      ${p.law ? `<div class="popup-row"><span class="popup-key">Law</span><span>${p.law}</span></div>` : ''}
+    `);
+  }
+
+  // Municipality boundary
+  if (data.boundaries && data.boundaries.municipality) {
+    const b = data.boundaries.municipality;
+    const p = b.popup;
+    layers.municipality = L.polygon(b.coords, {
+      color: '#e88a4a', weight: 2, dashArray: '4 3', fillColor: '#e88a4a', fillOpacity: 0.07
+    }).addTo(map).bindPopup(`
+      <div class="popup-title">${b.label}</div>
+      <div class="popup-row"><span class="popup-key">Type</span><span>${p.type}</span></div>
+      ${p.code_status ? `<div class="popup-row"><span class="popup-key">Code status</span><span style="color:#e88a4a">${p.code_status}</span></div>` : ''}
+      ${p.note ? `<div class="popup-row"><span class="popup-key">HB2325</span><span>${p.note}</span></div>` : ''}
+      ${p.action ? `<div class="popup-row"><span class="popup-key">Action</span><span>${p.action}</span></div>` : ''}
+    `);
+  }
+
+  // Issue polygon
+  layers.issuePolygon = L.polygon(ISSUE.polygon, {
+    color: '#e8c84a', weight: 2, dashArray: '8 4', fillColor: '#e8c84a', fillOpacity: 0.08
+  }).addTo(map).bindPopup(`
+    <div class="popup-title">Issue Polygon — ${META.title}</div>
+    <div class="popup-row"><span class="popup-key">ID</span><span style="font-family:monospace;font-size:10px">${META.id}</span></div>
+    <div class="popup-row"><span class="popup-key">Status</span><span class="tag tag-active">Active</span></div>
+    <div class="popup-row"><span class="popup-key">Parcels</span><span>${PARCELS.length} homesteads</span></div>
+    <div class="popup-row"><span class="popup-key">Scale</span><span>Neighborhood → Municipality → County → State</span></div>
+    <div style="margin-top:8px;display:flex;gap:4px">
+      <button onclick="copyLink(issuePolygonLink())" style="flex:1;padding:4px;background:rgba(184,134,11,0.08);border:1px solid var(--accent);color:var(--accent);font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">↗ Copy link</button>
+      <button onclick="deletePolygon('issuePolygon')" style="flex:1;padding:4px;background:rgba(180,40,40,0.08);border:1px solid #c0392b;color:#c0392b;font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">✕ Delete polygon</button>
+    </div>
+  `);
+
+  // Parcel markers
+  const parcelGroup = L.layerGroup().addTo(map);
+  layers.parcels = parcelGroup;
+
+  PARCELS.forEach(p => renderParcel(p, parcelGroup));
+
+  // NDC ring marker (first parcel with ndc:true)
+  const ndcParcel = PARCELS.find(p => p.ndc);
+  if (ndcParcel) {
+    layers.ndc = L.circleMarker(ndcParcel.latLng, {
+      radius: 18, color: '#e84aa0', weight: 2, fillColor: '#e84aa0', fillOpacity: 0.1, dashArray: '4 2'
+    }).addTo(map).bindPopup(`
+      <div class="popup-title">${META.ndc} — Anchor</div>
+      <div class="popup-row"><span class="popup-key">Coordinator</span><span>${META.coordinator}</span></div>
+      <div class="popup-row"><span class="popup-key">Role</span><span>Issue polygon anchor; Homestead Collective initiator</span></div>
+    `);
+  }
+
+  // Layer toggle wiring
+  document.querySelectorAll('.layer-toggle').forEach(toggle => {
+    toggle.addEventListener('click', function() {
+      const cb = this.querySelector('input');
+      cb.checked = !cb.checked;
+      this.classList.toggle('active', cb.checked);
+      const layer = layers[this.dataset.layer];
+      if (!layer) return;
+      if (cb.checked) map.addLayer(layer); else map.removeLayer(layer);
+      fitToVisiblePolygons();
+    });
+  });
+
+  // Map background clicks
+  map.on('click', function(e) { handleMapClick(e.latlng); });
+
+  // Polygons consume clicks by default — pass through to handleMapClick when in add/draw mode
+  addClickThrough(layers.issuePolygon);
+  if (layers.county)       addClickThrough(layers.county);
+  if (layers.municipality) addClickThrough(layers.municipality);
+
+  updateTally();
+  fitToVisiblePolygons();
+  handleDeepLink();
+}
+
+function fitToVisiblePolygons() {
+  if (!map) return;
+  const keys = ['county', 'municipality', 'issuePolygon'];
+  const bounds = L.latLngBounds([]);
+  let any = false;
+  keys.forEach(k => {
+    const layer = layers[k];
+    if (layer && map.hasLayer(layer)) {
+      bounds.extend(layer.getBounds());
+      any = true;
+    }
+  });
+  if (drawnPolygonLayer && map.hasLayer(drawnPolygonLayer)) {
+    bounds.extend(drawnPolygonLayer.getBounds());
+    any = true;
+  }
+  if (any) map.fitBounds(bounds, { padding: [32, 32] });
+}
+
+// ── SIDEBAR BUILDER ──────────────────────────────────────────
+
+function buildSidebar(data) {
+  const m = data.meta;
+
+  // Build layer toggles for available boundaries
+  const boundaryToggles = [];
+  if (data.boundaries && data.boundaries.municipality) {
+    boundaryToggles.push(`
+      <label class="layer-toggle active" data-layer="municipality">
+        <input type="checkbox" checked>
+        <div class="layer-dot" style="background:var(--law-muni);opacity:0.5"></div>
+        <span class="layer-label">${data.boundaries.municipality.label}</span>
+        <div class="layer-active-dot"></div>
+      </label>`);
+  }
+  if (data.boundaries && data.boundaries.county) {
+    boundaryToggles.push(`
+      <label class="layer-toggle active" data-layer="county">
+        <input type="checkbox" checked>
+        <div class="layer-dot" style="background:var(--law-county);opacity:0.4"></div>
+        <span class="layer-label">${data.boundaries.county.label}</span>
+        <div class="layer-active-dot"></div>
+      </label>`);
+  }
+
+  // Build actions HTML
+  const actionsHtml = (data.actions || []).map(a => {
+    const cls = a.status === 'pending' ? 'pending' : a.status === 'contingent' ? 'contingent' : 'not_started';
+    const statusLabel = a.status.replace('_', ' ');
+    return `<div class="action-item ${cls}">
+      <div class="action-type">${a.step} · ${a.type} · ${statusLabel.charAt(0).toUpperCase() + statusLabel.slice(1)}</div>
+      <div class="action-desc">${a.description}</div>
+    </div>`;
+  }).join('');
+
+  // Build laws HTML
+  const lawsHtml = (data.laws || []).map(l => {
+    const c  = lawJurisdictionColor[l.jurisdiction] || 'var(--text)';
+    const bc = lawBorderColor[l.jurisdiction] || 'var(--border)';
+    const tag = l.tag ? `<span class="tag tag-${l.tag}">${l.tag.replace('_', ' ')}</span>` : '';
+    return `<div class="law-item" style="border-color:${bc}">
+      <div class="law-name" style="color:${c}">${l.name} ${tag}</div>
+      <div class="law-effect">${l.effect}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('sidebar').innerHTML = `
+    <div class="sidebar-section">
+      <h2>Active Issue</h2>
+      <div class="issue-card">
+        <div class="issue-title">${m.title}</div>
+        <div class="issue-status">${m.id} · <span class="tag tag-active">Active</span></div>
+        <p>${m.description}</p>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <h2>Neighborhood Preference</h2>
+      <div class="pref-tally">
+        <div class="pref-count"><div class="num" style="color:var(--pro)"  id="count-pro">0</div><div class="lbl">Pro</div></div>
+        <div class="pref-count"><div class="num" style="color:var(--con)"  id="count-con">0</div><div class="lbl">Con</div></div>
+        <div class="pref-count"><div class="num" style="color:var(--unknown)" id="count-unknown">0</div><div class="lbl">Unknown</div></div>
+        <div class="pref-count"><div class="num" style="color:var(--text-dim)" id="count-total">0</div><div class="lbl">Parcels</div></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <h2>Map Layers</h2>
+      <div class="layer-list" id="layer-list">
+        <label class="layer-toggle active" data-layer="issuePolygon">
+          <input type="checkbox" checked>
+          <div class="layer-dot" style="background:rgba(232,200,74,0.4);border:2px solid var(--accent)"></div>
+          <span class="layer-label">Issue Polygon</span>
+          <div class="layer-active-dot"></div>
+        </label>
+        <label class="layer-toggle active" data-layer="parcels">
+          <input type="checkbox" checked>
+          <div class="layer-dot" style="background:var(--pro);opacity:0.6"></div>
+          <span class="layer-label">Parcels (preference)</span>
+          <div class="layer-active-dot"></div>
+        </label>
+        <label class="layer-toggle active" data-layer="ndc">
+          <input type="checkbox" checked>
+          <div class="layer-dot" style="background:var(--ndc)"></div>
+          <span class="layer-label">${m.ndc}</span>
+          <div class="layer-active-dot"></div>
+        </label>
+        ${boundaryToggles.join('')}
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <h2>Governance Actions</h2>
+      <div class="action-list">${actionsHtml}</div>
+    </div>
+
+    <div class="sidebar-section">
+      <h2>Applicable Law</h2>
+      <div class="law-list">${lawsHtml}</div>
+    </div>
+  `;
+}
+
+// ── PARCEL RENDERING ─────────────────────────────────────────
+
+function parcelIcon(p) {
+  const color = stanceColor[p.stance] || '#8090b0';
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:14px;height:14px;border-radius:3px;background:${color};border:2px solid ${p.ndc ? '#e84aa0' : color};box-shadow:0 0 8px ${color}88;${p.ndc ? 'outline:2px solid #e84aa0;outline-offset:2px;' : ''}"></div>`,
+    iconSize: [14,14], iconAnchor: [7,7]
+  });
+}
+
+function renderParcel(p, group) {
+  const marker = L.marker(p.latLng, { icon: parcelIcon(p) }).addTo(group);
+  // Bind an empty popup; content is refreshed fresh on every open so edits always show
+  marker.bindPopup('', { minWidth: 260 });
+  marker.on('popupopen', function() {
+    marker.setPopupContent(parcelPopupHtml(p));
+  });
+  parcelMarkers.push({ id: p.id, marker, data: p });
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function parcelPopupHtml(p) {
+  const qualifiesText = p.qualifies_hb2325 === true  ? '<span style="color:#4ae8a0">Yes</span>'
+                      : p.qualifies_hb2325 === false ? '<span style="color:#e84a4a">No</span>'
+                      : '<span style="color:#6b7394">Unverified</span>';
+  const stanceSel = (v) => p.stance === v ? 'font-weight:600;' : '';
+  return `
+    <div style="margin-bottom:6px">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px">Label</div>
+      <input value="${esc(p.label)}" oninput="updateParcel('${p.id}','label',this.value)"
+        style="width:100%;border:1px solid var(--border);padding:4px 6px;font-size:12px;font-family:var(--sans);color:var(--text);background:var(--bg)">
+    </div>
+    <div class="popup-row"><span class="popup-key">APN</span><span style="font-family:monospace;font-size:10px">${esc(p.id)}</span></div>
+    <div class="popup-row"><span class="popup-key">Lot size</span><span>${p.lot_size ?? '—'} ac</span></div>
+    <div class="popup-row"><span class="popup-key">Zoning</span><span>${esc(p.zoning)}</span></div>
+    <div class="popup-row"><span class="popup-key">HB2325 eligible</span><span>${qualifiesText}</span></div>
+    <div class="popup-row"><span class="popup-key">HOA</span><span>${p.hoa ? 'Yes' : 'No'}</span></div>
+    ${p.desired_flock ? `<div class="popup-row"><span class="popup-key">Desired flock</span><span>${p.desired_flock} hens</span></div>` : ''}
+    <div style="margin:8px 0 3px">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px">Notes</div>
+      <textarea oninput="updateParcel('${p.id}','notes',this.value)"
+        style="width:100%;border:1px solid var(--border);padding:4px 6px;font-size:11px;font-family:var(--sans);color:var(--text);background:var(--bg);resize:vertical;min-height:52px;line-height:1.5">${esc(p.notes)}</textarea>
+    </div>
+    <div style="margin-bottom:6px">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px">Stance</div>
+      <div style="display:flex;gap:6px">
+        <button onclick="setStance('${p.id}','pro')"     style="flex:1;padding:5px 4px;background:rgba(74,232,160,0.15);border:1px solid #4ae8a0;color:#4ae8a0;font-size:11px;cursor:pointer;${stanceSel('pro')}">Pro</button>
+        <button onclick="setStance('${p.id}','con')"     style="flex:1;padding:5px 4px;background:rgba(232,74,74,0.15);border:1px solid #e84a4a;color:#e84a4a;font-size:11px;cursor:pointer;${stanceSel('con')}">Con</button>
+        <button onclick="setStance('${p.id}','unknown')" style="flex:1;padding:5px 4px;background:rgba(107,115,148,0.15);border:1px solid #6b7394;color:#6b7394;font-size:11px;cursor:pointer;${stanceSel('unknown')}">Unknown</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:4px;margin-bottom:4px">
+      <button onclick="copyLink(parcelLink('${p.id}'))" style="flex:1;padding:4px;background:rgba(184,134,11,0.08);border:1px solid var(--accent);color:var(--accent);font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">↗ Copy link</button>
+      <button onclick="deleteParcel('${p.id}')" style="flex:1;padding:4px;background:rgba(180,40,40,0.08);border:1px solid #c0392b;color:#c0392b;font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">✕ Delete parcel</button>
+    </div>`;
+}
+
+// ── STANCE / TALLY ───────────────────────────────────────────
+
+function setStance(parcelId, stance) {
+  const entry = parcelMarkers.find(m => m.id === parcelId);
+  if (!entry) return;
+  entry.data.stance = stance;
+  entry.marker.setIcon(parcelIcon(entry.data));
+  // Refresh popup in-place so bold stance button updates immediately
+  entry.marker.setPopupContent(parcelPopupHtml(entry.data));
+  updateTally();
+}
+
+function updateParcel(parcelId, field, value) {
+  const entry = parcelMarkers.find(m => m.id === parcelId);
+  if (entry) entry.data[field] = value;
+}
+
+// ── UNDO STACK ───────────────────────────────────────────────
+
+const undoStack = [];
+
+function pushUndo(fn) {
+  undoStack.push(fn);
+  const btn = document.getElementById('btn-undo');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+}
+
+function undo() {
+  if (!undoStack.length) return;
+  undoStack.pop()();
+  const btn = document.getElementById('btn-undo');
+  btn.disabled = undoStack.length === 0;
+  btn.style.opacity = undoStack.length === 0 ? '0.4' : '1';
+}
+
+function deleteParcel(parcelId) {
+  const idx   = parcelMarkers.findIndex(m => m.id === parcelId);
+  if (idx === -1) return;
+  const entry = parcelMarkers[idx];
+  const pIdx  = PARCELS.findIndex(p => p.id === parcelId);
+  const pData = PARCELS[pIdx];
+  map.closePopup();
+  entry.marker.remove();
+  parcelMarkers.splice(idx, 1);
+  if (pIdx !== -1) PARCELS.splice(pIdx, 1);
+  updateTally();
+  pushUndo(() => {
+    entry.marker.addTo(layers.parcels);
+    parcelMarkers.splice(idx, 0, entry);
+    if (pIdx !== -1) PARCELS.splice(pIdx, 0, pData);
+    updateTally();
+  });
+}
+
+function updateTally() {
+  const counts = { pro: 0, con: 0, unknown: 0 };
+  parcelMarkers.forEach(m => counts[m.data.stance] = (counts[m.data.stance] || 0) + 1);
+  document.getElementById('count-pro').textContent     = counts.pro     || 0;
+  document.getElementById('count-con').textContent     = counts.con     || 0;
+  document.getElementById('count-unknown').textContent = counts.unknown || 0;
+  document.getElementById('count-total').textContent   = parcelMarkers.length;
+}
+
+// ── ADD PARCEL ───────────────────────────────────────────────
+
+let addingParcel = false;
+
+function startAddParcel() {
+  addingParcel = !addingParcel;
+  const btn = document.getElementById('btn-add-parcel');
+  btn.classList.toggle('active', addingParcel);
+  btn.textContent = addingParcel ? '✕ Cancel' : '+ Add Parcel';
+  map.getContainer().style.cursor = addingParcel ? 'crosshair' : '';
+}
+
+
+// ── DRAW POLYGON ─────────────────────────────────────────────
+
+let drawingPolygon = false, drawnPoints = [], drawnPolyline = null, drawnPolygonLayer = null;
+let drawnVertexMarkers = [];
+
+function clearVertexDots() {
+  drawnVertexMarkers.forEach(d => map.removeLayer(d));
+  drawnVertexMarkers = [];
+}
+
+function startDrawPolygon() {
+  drawingPolygon = !drawingPolygon;
+  const btn = document.getElementById('btn-draw-polygon');
+  if (drawingPolygon) {
+    btn.classList.add('active'); btn.textContent = '✕ Cancel (need 3 pts)';
+    map.getContainer().style.cursor = 'crosshair';
+    drawnPoints = [];
+    clearVertexDots();
+    if (drawnPolyline) map.removeLayer(drawnPolyline);
+    drawnPolyline = L.polyline([], { color: '#e8c84a', weight: 2, dashArray: '4 2' }).addTo(map);
+  } else {
+    btn.classList.remove('active'); btn.textContent = '✎ Draw Polygon';
+    map.getContainer().style.cursor = '';
+    clearVertexDots();
+    if (drawnPoints.length >= 3) {
+      if (drawnPolygonLayer) map.removeLayer(drawnPolygonLayer);
+      drawnPolygonLayer = L.polygon(drawnPoints, {
+        color: '#e8c84a', weight: 2, dashArray: '8 4', fillColor: '#e8c84a', fillOpacity: 0.1
+      }).addTo(map).bindPopup('<div class="popup-title">Custom Issue Polygon</div><div style="font-size:11px;color:#6b7394;margin-bottom:8px">Custom-drawn boundary. Export GeoJSON to save.</div><button onclick="deletePolygon(\'drawn\')" style="width:100%;padding:4px;background:rgba(180,40,40,0.08);border:1px solid #c0392b;color:#c0392b;font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">✕ Delete polygon</button>');
+      addClickThrough(drawnPolygonLayer);
+    }
+    if (drawnPolyline) { map.removeLayer(drawnPolyline); drawnPolyline = null; }
+    drawnPoints = [];
+  }
+}
+
+function deletePolygon(which) {
+  map.closePopup();
+  if (which === 'issuePolygon' && layers.issuePolygon) {
+    const saved = layers.issuePolygon;
+    map.removeLayer(saved);
+    layers.issuePolygon = null;
+    pushUndo(() => { saved.addTo(map); layers.issuePolygon = saved; });
+  } else if (which === 'drawn') {
+    const savedLayer    = drawnPolygonLayer;
+    const savedPolyline = drawnPolyline;
+    const savedPoints   = [...drawnPoints];
+    if (drawnPolygonLayer) { map.removeLayer(drawnPolygonLayer); drawnPolygonLayer = null; }
+    if (drawnPolyline)     { map.removeLayer(drawnPolyline);     drawnPolyline = null; }
+    drawnPoints = [];
+    pushUndo(() => {
+      if (savedLayer) { savedLayer.addTo(map); drawnPolygonLayer = savedLayer; }
+      drawnPoints = savedPoints;
+    });
+  }
+}
+
+// ── EXPORT ───────────────────────────────────────────────────
+
+function exportData() {
+  const features = [];
+  features.push({ type: 'Feature',
+    geometry: { type: 'Polygon', coordinates: [ISSUE.polygon.map(p => [p[1], p[0]])] },
+    properties: { type: 'IssuePolygon', id: META.id, issue: META.title }
+  });
+  parcelMarkers.forEach(m => {
+    const d = m.data;
+    features.push({ type: 'Feature',
+      geometry: { type: 'Point', coordinates: [d.latLng[1], d.latLng[0]] },
+      properties: {
+        type: 'Parcel',
+        id: m.id, label: d.label, stance: d.stance,
+        lot_size_acres: d.lot_size, zoning: d.zoning, hoa: d.hoa,
+        qualifies_hb2325: d.qualifies_hb2325, desired_flock: d.desired_flock,
+        notes: d.notes, ndc: d.ndc
+      }
+    });
+  });
+  if (drawnPolygonLayer) {
+    const lls = drawnPolygonLayer.getLatLngs()[0];
+    features.push({ type: 'Feature',
+      geometry: { type: 'Polygon', coordinates: [lls.map(ll => [ll.lng, ll.lat])] },
+      properties: { type: 'CustomIssuePolygon', drawn: new Date().toISOString() }
+    });
+  }
+  const blob = new Blob([JSON.stringify({ type: 'FeatureCollection', features }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `issue-polygon-${META.id}.geojson`;
+  a.click();
+}
+
+// ── IMPORT ───────────────────────────────────────────────────
+
+function toggleImportPanel() {
+  const panel = document.getElementById('import-panel');
+  const open  = panel.style.display === 'flex';
+  panel.style.display = open ? 'none' : 'flex';
+  if (!open) document.getElementById('import-paste').focus();
+}
+
+function importFromPaste() {
+  const text = document.getElementById('import-paste').value.trim();
+  if (!text) { showStatus('Nothing pasted yet', true); return; }
+  try {
+    loadFromGeoJSON(JSON.parse(text));
+    document.getElementById('import-paste').value = '';
+    document.getElementById('import-panel').style.display = 'none';
+  } catch(err) {
+    showStatus('Parse error: ' + err.message, true);
+  }
+}
+
+function importFromFile() {
+  document.getElementById('import-file-input').click();
+}
+
+function importFileChosen(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      loadFromGeoJSON(JSON.parse(ev.target.result));
+      document.getElementById('import-panel').style.display = 'none';
+    } catch(err) {
+      showStatus('Parse error: ' + err.message, true);
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function loadFromGeoJSON(geojson) {
+  if (!geojson || !Array.isArray(geojson.features)) {
+    showStatus('Not a valid GeoJSON FeatureCollection', true);
+    return;
+  }
+
+  // Remove all current parcel markers from map and clear arrays
+  parcelMarkers.forEach(m => m.marker.remove());
+  parcelMarkers.length = 0;
+  PARCELS.length = 0;
+
+  let parcelCount = 0, hadPolygon = false;
+
+  geojson.features.forEach(f => {
+    const props = f.properties || {};
+
+    if (props.type === 'Parcel' && f.geometry && f.geometry.type === 'Point') {
+      const [lng, lat] = f.geometry.coordinates;
+      const p = {
+        id:               props.id || (apnPrefix + 'IMP-' + (++parcelNewCount)),
+        label:            props.label            || 'Imported Parcel',
+        latLng:           [lat, lng],
+        stance:           props.stance           || 'unknown',
+        lot_size:         props.lot_size_acres   ?? null,
+        zoning:           props.zoning           || 'R-1',
+        hoa:              props.hoa              || false,
+        qualifies_hb2325: props.qualifies_hb2325 ?? null,
+        desired_flock:    props.desired_flock    || null,
+        notes:            props.notes            || '',
+        ndc:              props.ndc              || false
+      };
+      PARCELS.push(p);
+      renderParcel(p, layers.parcels);
+      parcelCount++;
+
+    } else if (props.type === 'CustomIssuePolygon' && f.geometry && f.geometry.type === 'Polygon') {
+      if (drawnPolygonLayer) { map.removeLayer(drawnPolygonLayer); drawnPolygonLayer = null; }
+      const coords = f.geometry.coordinates[0].map(c => [c[1], c[0]]); // GeoJSON [lng,lat] → Leaflet [lat,lng]
+      drawnPolygonLayer = L.polygon(coords, {
+        color: '#e8c84a', weight: 2, dashArray: '8 4', fillColor: '#e8c84a', fillOpacity: 0.1
+      }).addTo(map).bindPopup(
+        '<div class="popup-title">Custom Issue Polygon</div>' +
+        '<div style="font-size:11px;color:#6b7394;margin-bottom:8px">Restored from export. Export GeoJSON to save again.</div>' +
+        '<button onclick="deletePolygon(\'drawn\')" style="width:100%;padding:4px;background:rgba(180,40,40,0.08);border:1px solid #c0392b;color:#c0392b;font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">✕ Delete polygon</button>'
+      );
+      addClickThrough(drawnPolygonLayer);
+      hadPolygon = true;
+    }
+  });
+
+  updateTally();
+  const msg = `Loaded ${parcelCount} parcel${parcelCount !== 1 ? 's' : ''}${hadPolygon ? ' + custom polygon' : ''}`;
+  showStatus(msg);
+}
+
+function showStatus(msg, isError) {
+  const el = document.getElementById('import-status');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.color = isError ? '#c0392b' : 'var(--accent)';
+  clearTimeout(showStatus._t);
+  showStatus._t = setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+// ── OSM Search (Nominatim) ────────────────────────────────────────────
+let searchMarker = null;
+let hsearchCache = [];
+
+async function doHSearch() {
+  const query = document.getElementById('hsearch-input').value.trim();
+  if (!query) return;
+  const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&q=' +
+    encodeURIComponent(query);
+  try {
+    const data = await fetch(url, { headers: { 'Accept-Language': 'en' } }).then(r => r.json());
+    renderHSearchResults(data);
+  } catch(e) {
+    renderHSearchResults([]);
+  }
+}
+
+function renderHSearchResults(results) {
+  hsearchCache = results;
+  const el = document.getElementById('hsearch-results');
+  if (!results.length) {
+    el.innerHTML = '<div class="hsearch-none">No results found</div>';
+  } else {
+    el.innerHTML = results.map((r, i) =>
+      `<div class="hsearch-item" onclick="pickHSearchResult(${i})">${r.display_name}</div>`
+    ).join('');
+  }
+  el.style.display = 'block';
+}
+
+function pickHSearchResult(i) {
+  const r = hsearchCache[i];
+  if (!r) return;
+  document.getElementById('hsearch-results').style.display = 'none';
+  document.getElementById('hsearch-input').value = r.display_name;
+
+  if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; }
+  const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
+  searchMarker = L.marker([lat, lon]).addTo(map).bindPopup(r.display_name).openPopup();
+
+  if (r.boundingbox) {
+    const b = r.boundingbox;
+    map.fitBounds([[+b[0], +b[2]], [+b[1], +b[3]]], { padding: [40, 40], maxZoom: 16 });
+  } else {
+    map.setView([lat, lon], 14);
+  }
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.header-search')) {
+    document.getElementById('hsearch-results').style.display = 'none';
+  }
+});
+
+// ── DEEP LINKS ───────────────────────────────────────────────
+
+function handleDeepLink() {
+  const pId  = params.get('parcel');
+  const lat  = parseFloat(params.get('lat'));
+  const lng  = parseFloat(params.get('lng'));
+  const zoom = parseInt(params.get('zoom'), 10);
+
+  if (pId) {
+    const entry = parcelMarkers.find(m => m.id === pId);
+    if (entry) {
+      map.setView(entry.data.latLng, 18);
+      setTimeout(() => entry.marker.openPopup(), 350);
+      return;
+    }
+  }
+  if (!isNaN(lat) && !isNaN(lng)) {
+    map.setView([lat, lng], isNaN(zoom) ? 16 : zoom);
+  }
+}
+
+function parcelLink(parcelId) {
+  const base = location.href.split('?')[0];
+  const q = issueKey
+    ? `?issue=${encodeURIComponent(issueKey)}&parcel=${encodeURIComponent(parcelId)}`
+    : `?parcel=${encodeURIComponent(parcelId)}`;
+  return base + q;
+}
+
+function issuePolygonLink() {
+  const base = location.href.split('?')[0];
+  return issueKey ? `${base}?issue=${encodeURIComponent(issueKey)}` : base;
+}
+
+function copyViewLink() {
+  if (!map) return;
+  const c    = map.getCenter();
+  const base = location.href.split('?')[0];
+  const q    = issueKey
+    ? `?issue=${encodeURIComponent(issueKey)}&lat=${c.lat.toFixed(6)}&lng=${c.lng.toFixed(6)}&zoom=${map.getZoom()}`
+    : `?lat=${c.lat.toFixed(6)}&lng=${c.lng.toFixed(6)}&zoom=${map.getZoom()}`;
+  copyLink(base + q);
+}
+
+function copyLink(url) {
+  navigator.clipboard.writeText(url).then(() => {
+    showStatus('Link copied!');
+  }).catch(() => {
+    prompt('Copy this link:', url);
+  });
+}
+</script>
+</body>
+</html>

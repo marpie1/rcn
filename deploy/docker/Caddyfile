@@ -1,0 +1,12 @@
+# SODOTO reverse proxy — Caddy 2
+# Uses Docker service names instead of localhost.
+# Replace the two domain names with your actual domains.
+# Caddy handles TLS automatically via Let's Encrypt.
+
+sodoto.example.com {
+    reverse_proxy sofi-proxy:8765
+}
+
+wiki.example.com {
+    reverse_proxy fedwiki:3000
+}

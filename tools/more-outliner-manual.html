@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>More MORE — User Manual</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@700;900&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #f8f6f1; --bg-secondary: #ebe8df; --text-primary: #2c2416;
+            --text-secondary: #6b6355; --accent: #d4622f; --accent-light: #e89166;
+            --border: #d4cbb8; --shadow: rgba(44, 36, 22, 0.1); --node-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'IBM Plex Serif', serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+
+        /* ── Header ── */
+        .site-header {
+            background: var(--bg-secondary);
+            border-bottom: 3px solid var(--accent);
+            padding: 1.25rem 2.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: baseline;
+            gap: 1.25rem;
+        }
+        .site-header .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--accent);
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .site-header .subtitle {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* ── Layout ── */
+        .page {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ── Sidebar nav ── */
+        nav {
+            background: var(--bg-secondary);
+            border-right: 2px solid var(--border);
+            padding: 2rem 1.25rem;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+        nav h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.85rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.6rem;
+            margin-top: 1.4rem;
+        }
+        nav h3:first-child { margin-top: 0; }
+        nav a {
+            display: block;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.3rem 0.5rem;
+            border-left: 2px solid transparent;
+            transition: all 0.15s;
+        }
+        nav a:hover {
+            color: var(--accent);
+            border-left-color: var(--accent);
+            background: rgba(212, 98, 47, 0.06);
+        }
+
+        /* ── Main content ── */
+        main {
+            padding: 3rem 3.5rem;
+            max-width: 860px;
+        }
+
+        /* ── Typography ── */
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.6rem;
+            font-weight: 700;
+            color: var(--accent);
+            border-bottom: 3px solid var(--accent);
+            padding-bottom: 0.6rem;
+            margin-bottom: 0.5rem;
+        }
+        .doc-meta {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+        }
+        h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.7rem;
+            color: var(--accent);
+            margin-top: 3rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px solid var(--border);
+        }
+        h3 {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-top: 1.8rem;
+            margin-bottom: 0.6rem;
+        }
+        p { margin-bottom: 0.9rem; }
+        p:last-child { margin-bottom: 0; }
+        strong { font-weight: 600; color: var(--text-primary); }
+        em { font-style: italic; }
+
+        /* ── Key badges ── */
+        kbd {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            background: var(--node-bg);
+            border: 1.5px solid var(--border);
+            border-bottom-width: 3px;
+            border-radius: 3px;
+            padding: 0.1rem 0.45rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+
+        /* ── Button label pills ── */
+        .btn-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: var(--bg-secondary);
+            border: 1.5px solid var(--border);
+            border-radius: 2px;
+            padding: 0.1rem 0.45rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+
+        /* ── Tables ── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0 1.5rem;
+            font-size: 0.92rem;
+        }
+        thead th {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            text-align: left;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--border);
+        }
+        tbody td {
+            padding: 0.55rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover td { background: rgba(212, 98, 47, 0.03); }
+
+        /* ── Callout boxes ── */
+        .callout {
+            background: var(--node-bg);
+            border-left: 4px solid var(--accent);
+            padding: 0.85rem 1.1rem;
+            margin: 1.2rem 0;
+            font-size: 0.92rem;
+        }
+        .callout.tip { border-left-color: #10b981; }
+        .callout.note { border-left-color: #6b6355; }
+        .callout-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            margin-bottom: 0.3rem;
+        }
+        .callout.tip .callout-label { color: #10b981; }
+        .callout.note .callout-label { color: #6b6355; }
+
+        /* ── Section anchors ── */
+        .section { scroll-margin-top: 80px; }
+
+        /* ── Feature grid ── */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0 1.5rem;
+        }
+        .feature-card {
+            background: var(--node-bg);
+            border: 2px solid var(--border);
+            padding: 1rem 1.1rem;
+        }
+        .feature-card h4 {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 0.4rem;
+        }
+        .feature-card p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        @media print {
+            .site-header { position: static; }
+            nav { display: none; }
+            .page { display: block; }
+            main { padding: 1rem; max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="site-header">
+    <span class="logo">More MORE</span>
+    <span class="subtitle">User Manual</span>
+</header>
+
+<div class="page">
+    <nav>
+        <h3>Getting Started</h3>
+        <a href="#overview">What is More MORE?</a>
+        <a href="#interface">The Interface</a>
+        <a href="#autosave">Autosave</a>
+
+        <h3>Building Outlines</h3>
+        <a href="#nodes">Nodes</a>
+        <a href="#keyboard">Keyboard Shortcuts</a>
+        <a href="#indent">Indent &amp; Outdent</a>
+        <a href="#move">Moving Nodes</a>
+        <a href="#drag">Drag &amp; Drop</a>
+
+        <h3>Node Features</h3>
+        <a href="#comments">Comments</a>
+        <a href="#clones">Clones</a>
+        <a href="#expand">Expand &amp; Collapse</a>
+        <a href="#hoist">Hoist</a>
+        <a href="#images">Image Nodes</a>
+
+        <h3>Editing</h3>
+        <a href="#formatting">Rich Text Formatting</a>
+        <a href="#search">Search</a>
+
+        <h3>Display</h3>
+        <a href="#title">Document Title</a>
+        <a href="#numbering">Outline Style</a>
+        <a href="#font">Font</a>
+        <a href="#spacing">Spacing</a>
+
+        <h3>Files &amp; Export</h3>
+        <a href="#save-load">Save &amp; Load</a>
+        <a href="#export-md">Markdown Export</a>
+        <a href="#export-html">HTML Export</a>
+        <a href="#export-opml">OPML Export</a>
+        <a href="#export-fedwiki">FedWiki Export</a>
+        <a href="#print">Print</a>
+
+        <h3>Presentation</h3>
+        <a href="#present">Present Mode</a>
+
+        <h3>Reference</h3>
+        <a href="#shortcuts-ref">All Shortcuts</a>
+        <a href="#data-model">Data Model</a>
+    </nav>
+
+    <main>
+        <h1>More MORE</h1>
+        <p class="doc-meta">Browser-based outliner &mdash; inspired by Dave Winer's MORE 3.0</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="overview" class="section">What is More MORE?</h2>
+
+        <p>More MORE is a single-file, browser-based outliner. No server, no account, no installation. Open the HTML file, start typing. Everything runs locally in your browser.</p>
+
+        <p>An outliner organizes ideas as a hierarchy of nodes. Each node is a line of text. Nodes can have children (indented below them), and children can have their own children, to any depth. You expand and collapse branches to focus on what matters right now.</p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>Autosave</h4>
+                <p>Your work is saved automatically to browser storage every time you make a change.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Comments</h4>
+                <p>Attach a private note to any node. Toggle all comments on or off globally.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Clones</h4>
+                <p>Link copies of a node across the outline. Edit any instance and all update together.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Hoist</h4>
+                <p>Zoom into any subtree. Everything outside it disappears until you dehoist.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Four export formats</h4>
+                <p>Markdown, styled HTML, OPML, and FedWiki JSON. Plus print to PDF.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Rich text</h4>
+                <p>Bold, italic, underline, and font color — applied to any selection inside a node.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Images</h4>
+                <p>Embed images as nodes. Drag-and-drop or use the Image button. Resize inline.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Search</h4>
+                <p>Find text across all nodes and comments. Navigate matches with ↑ ↓ or Enter.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Present</h4>
+                <p>Turn any outline into a slide deck with one click. Print all slides to PDF.</p>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="interface" class="section">The Interface</h2>
+
+        <p>The screen has three zones:</p>
+
+        <h3>Header bar</h3>
+        <p>The <strong>More MORE</strong> logo at the left. To its right, the toolbar: a row of buttons for document-level actions. At small window sizes or high zoom the buttons wrap to a second line — the logo stays fixed and never overlaps them.</p>
+
+        <h3>Sidebar</h3>
+        <p>The left panel holds display controls: Numbering, Font, and Spacing. These affect appearance only and do not change the data.</p>
+
+        <h3>Editor area</h3>
+        <p>The main working area. The document title is at the top, followed by the outline. Each node is a text field; children are indented beneath their parent.</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="autosave" class="section">Autosave</h2>
+
+        <p>More MORE saves your entire document to <strong>browser local storage</strong> automatically on every change — outline edits, comments, title, font, spacing, expand/collapse state. When you reopen the file in the same browser, your last session is restored instantly.</p>
+
+        <div class="callout note">
+            <div class="callout-label">Note</div>
+            Local storage is tied to the browser and device. It does not sync across machines. Use <strong>Save</strong> (JSON download) to back up or transfer your work.
+        </div>
+
+        <p>Starting a new document with <span class="btn-label">📄 New</span> clears local storage for that slot.</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="nodes" class="section">Nodes</h2>
+
+        <p>Every line in the outline is a <strong>node</strong>. Click any node's text area to edit it. The textarea expands automatically as you type.</p>
+
+        <h3>Adding nodes</h3>
+        <table>
+            <thead><tr><th>Action</th><th>How</th></tr></thead>
+            <tbody>
+                <tr><td>Add a sibling below</td><td><kbd>Shift</kbd><kbd>Enter</kbd> — the cursor moves to the new node</td></tr>
+                <tr><td>Add a new top-level section</td><td><span class="btn-label">+ Section</span> button in toolbar</td></tr>
+                <tr><td>Add a child to any node</td><td>Hover the node → click <span class="btn-label">+ Child</span></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Deleting nodes</h3>
+        <p>Hover a node and click <span class="btn-label">Delete</span>. This removes the node <em>and all its children</em>. Use Undo immediately if you delete by mistake.</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="keyboard" class="section">Keyboard Shortcuts</h2>
+
+        <table>
+            <thead><tr><th>Keys</th><th>Action</th></tr></thead>
+            <tbody>
+                <tr><td><kbd>Tab</kbd></td><td>Indent — makes the node a child of the node above it</td></tr>
+                <tr><td><kbd>Shift</kbd><kbd>Enter</kbd></td><td>Add a new sibling node below; cursor moves to it</td></tr>
+                <tr><td><kbd>Shift</kbd><kbd>↑</kbd></td><td>Move focus to the previous visible node (cursor goes to end)</td></tr>
+                <tr><td><kbd>Shift</kbd><kbd>↓</kbd></td><td>Move focus to the next visible node (cursor goes to start)</td></tr>
+                <tr><td><kbd>⌘Z</kbd> / <kbd>Ctrl Z</kbd></td><td>Undo (10-step history)</td></tr>
+                <tr><td><kbd>⌘⇧Z</kbd> / <kbd>Ctrl Shift Z</kbd></td><td>Redo</td></tr>
+            </tbody>
+        </table>
+
+        <div class="callout tip">
+            <div class="callout-label">Tip</div>
+            <kbd>Shift</kbd><kbd>↑</kbd> and <kbd>Shift</kbd><kbd>↓</kbd> let you move through the entire visible outline without lifting your hands from the keyboard.
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="indent" class="section">Indent &amp; Outdent</h2>
+
+        <p><strong>Indent</strong> makes a node a child of the node immediately above it. Press <kbd>Tab</kbd> while editing, or use the hover action buttons.</p>
+
+        <p><strong>Outdent</strong> promotes a node one level up in the hierarchy. Hover a node at depth &gt; 0 and click <span class="btn-label">← Outdent</span>.</p>
+
+        <div class="callout note">
+            <div class="callout-label">Note</div>
+            You can only indent a node if there is a node directly above it at the same level to become its parent. Top-level nodes (depth 0) cannot be outdented further.
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="move" class="section">Moving Nodes</h2>
+
+        <p>Hover a node to reveal <span class="btn-label">↑</span> and <span class="btn-label">↓</span> action buttons. These swap the node with its sibling above or below within the same parent. Children move with the node.</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="drag" class="section">Drag &amp; Drop</h2>
+
+        <p>Every node has a drag handle (<strong>⋮⋮</strong>) on its left edge, visible on hover. Drag it to reposition the node anywhere in the outline.</p>
+
+        <p>Where you are within the target row's height determines what happens on drop:</p>
+
+        <table>
+            <thead><tr><th>Cursor position on target row</th><th>Visual cue</th><th>Result</th></tr></thead>
+            <tbody>
+                <tr><td>Top third of row</td><td>Orange line above row</td><td>Insert <em>before</em> the target (same level)</td></tr>
+                <tr><td>Middle third of row</td><td>Green highlight on row</td><td>Make the dragged node a <em>child</em> of the target</td></tr>
+                <tr><td>Bottom third of row</td><td>Purple line below row</td><td>Insert <em>after</em> the target's parent (one level up)</td></tr>
+            </tbody>
+        </table>
+
+        <p>A dashed <strong>drop zone</strong> at the bottom of the outline (purple when active) moves the node to the very end of the document.</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="comments" class="section">Comments</h2>
+
+        <p>A comment is a note attached to a specific node. It appears inline below the node text in italic gray with a left border.</p>
+
+        <h3>Adding a comment</h3>
+        <p>Hover a node and click <span class="btn-label">+ Comment</span>. A text area opens below the node text. Type your note there.</p>
+
+        <h3>Removing a comment</h3>
+        <p>Hover a node that has a comment and click <span class="btn-label">− Comment</span>. The comment is cleared.</p>
+
+        <h3>Hiding all comments</h3>
+        <p>Click <span class="btn-label">💬 Hide Comments</span> in the toolbar to hide all comments globally. Click <span class="btn-label">💬 Show Comments</span> to bring them back. The toggle affects display only — comments are preserved.</p>
+
+        <div class="callout tip">
+            <div class="callout-label">Tip</div>
+            Use comments for context, sources, or questions that belong to a node but shouldn't appear in an exported document. The Markdown and HTML exports include comments; you can strip them by hiding before export if desired.
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="clones" class="section">Clones</h2>
+
+        <p>A clone is a linked copy of a node. All instances of a clone share the same text — editing any one updates all of them simultaneously.</p>
+
+        <h3>Creating a clone</h3>
+        <p>Hover a node and click <span class="btn-label">⚡ Clone</span>. A copy appears immediately after the original. Both show a purple <strong>⚡</strong> badge with an instance count.</p>
+
+        <h3>Working with clones</h3>
+        <p>Edit the text in any instance. All instances update at once. Children of a clone are <em>not</em> shared — each instance has its own independent children.</p>
+
+        <div class="callout note">
+            <div class="callout-label">Note</div>
+            Clone linkage is preserved in JSON save files and OPML export (as a <code>_note="clone:ID"</code> attribute). It is not preserved in Markdown, HTML, or FedWiki exports, which render a snapshot of the text.
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="expand" class="section">Expand &amp; Collapse</h2>
+
+        <p>Any node that has children shows a small <strong>+</strong> / <strong>−</strong> toggle button. Click it to show or hide that node's children.</p>
+
+        <h3>Bulk expand / collapse</h3>
+        <ul style="margin: 0.5rem 0 0.9rem 1.5rem; line-height: 2;">
+            <li><span class="btn-label">Expand All</span> — expands every node in the outline</li>
+            <li><span class="btn-label">Collapse All</span> — collapses every node</li>
+            <li>The <strong>+/−</strong> button beside the document title toggles only the first level</li>
+        </ul>
+
+        <p>Expand/collapse state is saved with the document (both autosave and JSON save).</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="hoist" class="section">Hoist</h2>
+
+        <p>Hoist is a focus mode. It promotes any subtree to become the entire visible document — everything outside it disappears. This is essential when working deep in a large outline where the surrounding structure has become noise.</p>
+
+        <h3>Hoisting a node</h3>
+        <p>Hover any node that has children. A <span class="btn-label">⬆ Hoist</span> button appears in the action row. Click it. The outline now shows only that node's children. The document title area displays the hoisted node's text.</p>
+
+        <h3>Navigating while hoisted</h3>
+        <p>A <strong>breadcrumb strip</strong> appears above the title, showing the full path from the document root to the hoisted node:</p>
+        <p style="font-family:'IBM Plex Mono',monospace; font-size:0.85rem; background:var(--bg-secondary); padding:0.5rem 0.75rem; border-left:4px solid var(--accent); margin:0.5rem 0 0.9rem;">
+            Hoisted: &nbsp; Document &nbsp;›&nbsp; Section 2 &nbsp;›&nbsp; <strong>Subsection 3</strong>
+        </p>
+        <p>Click <strong>Document</strong> or any crumb segment to jump back to that level. Click <span class="btn-label">Dehoist</span> on the right to return to the full outline.</p>
+
+        <div class="callout tip">
+            <div class="callout-label">Tip</div>
+            Hoist does not change any data. It is purely a view filter. You can edit, add, delete, and rearrange nodes normally while hoisted.
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="images" class="section">Image Nodes</h2>
+
+        <p>Images are first-class nodes. They can be positioned anywhere in the outline, moved, indented, and deleted like text nodes.</p>
+
+        <h3>Inserting an image</h3>
+        <p>Click <span class="btn-label">🖼 Image</span> in the toolbar. A file picker opens — select any PNG, JPG, SVG, or other image file. The image is embedded directly in the document as a data URI (no external URL needed).</p>
+
+        <p>Alternatively, <strong>drag an image file</strong> from your desktop or file manager and drop it anywhere in the editor area. The image node is appended at the end of the outline.</p>
+
+        <h3>Image controls</h3>
+        <p>Each image node shows three controls below the image:</p>
+        <table>
+            <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+            <tbody>
+                <tr><td>Alt text / caption</td><td>Editable text field. Used as the <code>alt</code> attribute in HTML export and as the image caption.</td></tr>
+                <tr><td>Width slider</td><td>Drag to resize the image from 80 px to 900 px wide. The current value is shown to the right.</td></tr>
+                <tr><td>Delete / ↑ / ↓</td><td>Remove the image node or swap it with a sibling.</td></tr>
+            </tbody>
+        </table>
+
+        <div class="callout tip">
+            <div class="callout-label">Tip — SVG images</div>
+            Double-click an embedded SVG to open it in a new browser tab at full resolution.
+        </div>
+
+        <div class="callout note">
+            <div class="callout-label">Note</div>
+            Images are saved in the JSON file as embedded data URIs, so the file size grows with the image. Image nodes are skipped by Search. They are included in HTML export as inline <code>&lt;img&gt;</code> tags but are not included in Markdown, OPML, or FedWiki exports.
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="formatting" class="section">Rich Text Formatting</h2>
+
+        <p>The toolbar's leftmost group of buttons applies rich text formatting to selected text inside any node.</p>
+
+        <table>
+            <thead><tr><th>Button</th><th>Format applied</th></tr></thead>
+            <tbody>
+                <tr><td><span class="btn-label" style="font-weight:900;font-family:serif;">B</span></td><td>Bold</td></tr>
+                <tr><td><span class="btn-label" style="font-style:italic;font-weight:400;font-family:serif;">I</span></td><td>Italic</td></tr>
+                <tr><td><span class="btn-label" style="text-decoration:underline;font-weight:400;font-family:serif;">U</span></td><td>Underline</td></tr>
+                <tr><td><span class="btn-label">A</span> (color)</td><td>Font color — opens a color picker</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Applying formatting</h3>
+        <p>Select text inside a node (click and drag, or <kbd>Shift</kbd>-click), then click the format button. The formatting is applied immediately. Click the same button again on a formatted selection to toggle it off.</p>
+
+        <h3>Font color picker</h3>
+        <p>Clicking the <span class="btn-label">A</span> button opens a popover with 20 preset colors (aligned with the Microsoft Word standard palette). Click any swatch to apply it. A <strong>More</strong> input at the bottom opens your browser's native color picker for any custom hue. The underline of the <strong>A</strong> shows the last-used color.</p>
+
+        <div class="callout note">
+            <div class="callout-label">Note</div>
+            Rich text formatting is stored as HTML inside the node and is preserved in JSON saves and HTML export. Markdown export converts bold and italic to <code>**</code>/<code>*</code> syntax; underline and color are stripped. OPML and FedWiki exports use plain text.
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="search" class="section">Search</h2>
+
+        <p>Click <span class="btn-label">🔍</span> in the toolbar, or press <kbd>⌘F</kbd> / <kbd>Ctrl F</kbd>, to open the search bar.</p>
+
+        <h3>How search works</h3>
+        <p>Type in the search box. Matching nodes are highlighted immediately (case-insensitive). The bar shows a counter: <strong>n / total</strong>. The current match is scrolled into view and highlighted in a distinct color.</p>
+
+        <p>Search covers both node text and comments. Image nodes are skipped.</p>
+
+        <h3>Navigating matches</h3>
+        <table>
+            <thead><tr><th>Action</th><th>How</th></tr></thead>
+            <tbody>
+                <tr><td>Next match</td><td>Click <span class="btn-label">↓</span> or press <kbd>Enter</kbd></td></tr>
+                <tr><td>Previous match</td><td>Click <span class="btn-label">↑</span></td></tr>
+                <tr><td>Close search</td><td>Click <span class="btn-label">✕</span> or press <kbd>Escape</kbd></td></tr>
+            </tbody>
+        </table>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="title" class="section">Document Title</h2>
+
+        <p>The large text field at the top of the editor area is the document title. Click it to edit. It expands automatically with long titles.</p>
+
+        <p>The title is used as the filename root when exporting (Markdown, HTML, FedWiki) and appears as the heading in exported documents.</p>
+
+        <p>The <strong>+/−</strong> square button to the left of the title collapses or expands all first-level nodes at once.</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="numbering" class="section">Outline Style</h2>
+
+        <p>The <strong>Outline Style</strong> section in the sidebar controls how nodes are labeled. Choose one of six options:</p>
+
+        <table>
+            <thead><tr><th>Style</th><th>Pattern</th><th>Character</th></tr></thead>
+            <tbody>
+                <tr><td>None</td><td>—</td><td>No prefix (default)</td></tr>
+                <tr><td>Legal</td><td>1 &nbsp; 1.1 &nbsp; 1.1.1</td><td>Hierarchical decimal — classic legal / technical documents</td></tr>
+                <tr><td>Harvard</td><td>I &nbsp; A &nbsp; 1 &nbsp; a &nbsp; i</td><td>Roman / alpha / decimal outline — traditional academic format</td></tr>
+                <tr><td>Numeric</td><td>1. &nbsp; 2. &nbsp; 3.</td><td>Sequential numbers within each level</td></tr>
+                <tr><td>Bullets</td><td>• &nbsp; ◦ &nbsp; ▪ &nbsp; ▫ &nbsp; –</td><td>Nested bullet symbols</td></tr>
+                <tr><td>Leaders</td><td>→ &nbsp; ◆ &nbsp; ✦ &nbsp; ✧ &nbsp; ✔</td><td>Decorative leader symbols</td></tr>
+            </tbody>
+        </table>
+
+        <p>Style is display-only and does not affect any export format.</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="font" class="section">Font</h2>
+
+        <p>The sidebar offers four typefaces for the editor area. Choose whichever suits your working style.</p>
+
+        <table>
+            <thead><tr><th>Option</th><th>Typeface</th><th>Character</th></tr></thead>
+            <tbody>
+                <tr><td>Mono</td><td>IBM Plex Mono</td><td>Technical, high-density</td></tr>
+                <tr><td>Serif</td><td>IBM Plex Serif</td><td>Readable, book-like</td></tr>
+                <tr><td>Courier</td><td>Courier Prime</td><td>Classic typewriter</td></tr>
+                <tr><td>Display</td><td>Playfair Display</td><td>Elegant, editorial</td></tr>
+            </tbody>
+        </table>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="spacing" class="section">Spacing</h2>
+
+        <p>Three presets control the density of the outline:</p>
+
+        <table>
+            <thead><tr><th>Preset</th><th>Character</th></tr></thead>
+            <tbody>
+                <tr><td>Tight</td><td>Compact — fits the most nodes on screen; good for large outlines</td></tr>
+                <tr><td>Normal</td><td>Default — balanced readability and density</td></tr>
+                <tr><td>Relaxed</td><td>Generous breathing room; good for drafting prose</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Custom spacing</h3>
+        <p>Click <strong>Custom</strong> in the sidebar to reveal three sliders:</p>
+        <ul style="margin: 0.5rem 0 0.9rem 1.5rem; line-height: 2;">
+            <li><strong>Node Margin</strong> — space above and below each node (0–30 px)</li>
+            <li><strong>Text Padding</strong> — internal padding inside each node's text area (0–30 px)</li>
+            <li><strong>Line Height</strong> — line spacing within node text (0.9–2.5)</li>
+        </ul>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="save-load" class="section">Save &amp; Load</h2>
+
+        <h3>Save (JSON)</h3>
+        <p>Click <span class="btn-label">💾 Save</span>. A JSON file downloads to your machine. It captures the complete document state: all nodes, comments, clone linkage, expand/collapse state, display settings, and a timestamp.</p>
+
+        <p>Filename format: <code>more-outline-[timestamp].json</code></p>
+
+        <h3>Load</h3>
+        <p>Click <span class="btn-label">📂 Load</span> and pick a previously saved JSON file. All state is restored, including display settings.</p>
+
+        <div class="callout note">
+            <div class="callout-label">Note</div>
+            Loading a file replaces the current document. The old document is not automatically saved. If you have unsaved work you want to keep, save it first.
+        </div>
+
+        <h3>New document</h3>
+        <p>Click <span class="btn-label">📄 New</span>. If the current document has content, you are prompted to save it first. The outline resets to a blank document and autosave storage is cleared.</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="export-md" class="section">Markdown Export</h2>
+
+        <p>Click <span class="btn-label">Export MD</span>. A <code>.md</code> file downloads.</p>
+
+        <h3>Format rules</h3>
+        <table>
+            <thead><tr><th>Outline depth</th><th>Markdown output</th></tr></thead>
+            <tbody>
+                <tr><td>Document title</td><td><code># Title</code></td></tr>
+                <tr><td>Level 0 (top-level nodes)</td><td><code># Heading</code></td></tr>
+                <tr><td>Level 1</td><td><code>## Heading</code></td></tr>
+                <tr><td>Level 2</td><td><code>### Heading</code></td></tr>
+                <tr><td>Level 3 and deeper</td><td>Indented bullet <code>- item</code></td></tr>
+                <tr><td>Comment on any node</td><td><code>&gt; blockquote</code> on the line below</td></tr>
+            </tbody>
+        </table>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="export-html" class="section">HTML Export</h2>
+
+        <p>Click <span class="btn-label">Export HTML</span>. A self-contained <code>.html</code> file downloads with embedded CSS.</p>
+
+        <p>The file uses a proper heading hierarchy (<code>h1</code>–<code>h3</code>) matching outline depth, with deeper levels as indented paragraphs. Comments appear as italic gray left-bordered paragraphs. Inline markdown (<code>**bold**</code>, <code>*italic*</code>) is converted to HTML tags.</p>
+
+        <p>The exported file pastes cleanly into Word or Google Docs with formatting intact.</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="export-opml" class="section">OPML Export</h2>
+
+        <p>Click <span class="btn-label">Export OPML</span>. An OPML 2.0 <code>.opml</code> file downloads. OPML is the standard interchange format for outliners — it can be opened in OmniOutliner, Bike, WorkFlowy, and most other outliners.</p>
+
+        <p>Clone linkage is preserved as a <code>_note="clone:ID"</code> attribute on each cloned outline element. Comments are not currently included in OPML.</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="export-fedwiki" class="section">FedWiki Export</h2>
+
+        <p>Click <span class="btn-label">Export FedWiki</span>. A <code>.json</code> file downloads, named from the document title (slugified). Drop it into a Federated Wiki's <code>.wiki/pages/</code> directory to publish the outline as a page.</p>
+
+        <h3>Output structure</h3>
+        <table>
+            <thead><tr><th>Outline element</th><th>FedWiki item type</th></tr></thead>
+            <tbody>
+                <tr><td>Top-level node (depth 0)</td><td><code>paragraph</code> — text in bold</td></tr>
+                <tr><td>Nested node (depth 1+)</td><td><code>html</code> — indented paragraph</td></tr>
+                <tr><td>Comment on any node</td><td><code>html</code> — italic gray, left-bordered, indented one level deeper than its node</td></tr>
+            </tbody>
+        </table>
+
+        <p>The JSON also includes a minimal journal entry (<code>create</code> action) so FedWiki recognises it as a valid page.</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="print" class="section">Print</h2>
+
+        <p>Click <span class="btn-label">🖨 Print</span>. Your browser's print dialog opens. The toolbar, sidebar, action buttons, drag handles, and expand toggles are all hidden in the print view — only the document title and outline content print.</p>
+
+        <p>To save as PDF, choose "Save as PDF" in the print dialog.</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="present" class="section">Presentation Mode</h2>
+
+        <p>Click <span class="btn-label">Present</span>. You are prompted for a <strong>depth</strong> (1–10, default 2). Enter the number of outline levels you want on each slide.</p>
+
+        <h3>How slides are built</h3>
+        <p>Each top-level node becomes one slide. Its title is the node text. Its bullet points are collected from the children down to the chosen depth. If a slide would have more than six items, it splits automatically into continuation slides with a "(Continued)" label and "→ Continued…" footer.</p>
+
+        <h3>Navigating slides</h3>
+        <p>Use the <span class="btn-label">← Previous</span> and <span class="btn-label">Next →</span> buttons. The counter shows the current slide, total slides, and the depth in use.</p>
+
+        <h3>Printing the deck</h3>
+        <p>Click <span class="btn-label">🖨 Print PDF</span> inside presentation mode. All slides print one-per-page. Exit presentation mode with the <span class="btn-label">Exit</span> button.</p>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="shortcuts-ref" class="section">All Shortcuts — Quick Reference</h2>
+
+        <table>
+            <thead><tr><th>Keys</th><th>Action</th></tr></thead>
+            <tbody>
+                <tr><td><kbd>Tab</kbd></td><td>Indent selected node (make child of node above)</td></tr>
+                <tr><td><kbd>Shift</kbd><kbd>Enter</kbd></td><td>Add sibling node below; focus moves to it</td></tr>
+                <tr><td><kbd>Shift</kbd><kbd>↑</kbd></td><td>Move focus to previous visible node</td></tr>
+                <tr><td><kbd>Shift</kbd><kbd>↓</kbd></td><td>Move focus to next visible node</td></tr>
+                <tr><td><kbd>⌘Z</kbd> / <kbd>Ctrl Z</kbd></td><td>Undo</td></tr>
+                <tr><td><kbd>⌘⇧Z</kbd> / <kbd>Ctrl Shift Z</kbd></td><td>Redo</td></tr>
+                <tr><td><kbd>⌘F</kbd> / <kbd>Ctrl F</kbd></td><td>Open / toggle Search bar</td></tr>
+                <tr><td><kbd>Enter</kbd> <em>(in search bar)</em></td><td>Jump to next match</td></tr>
+                <tr><td><kbd>Escape</kbd> <em>(in search bar)</em></td><td>Close search and clear query</td></tr>
+            </tbody>
+        </table>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <h2 id="data-model" class="section">Data Model</h2>
+
+        <p>Every node in the outline is a JavaScript object. Text nodes and image nodes share a common base, with image-specific fields added for images.</p>
+
+        <h3>Text node fields</h3>
+        <table>
+            <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td><code>id</code></td><td>Number</td><td>Unique integer assigned at creation</td></tr>
+                <tr><td><code>text</code></td><td>String (HTML)</td><td>Node content; may contain rich text HTML (<code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>, <code>&lt;u&gt;</code>, <code>&lt;font&gt;</code>)</td></tr>
+                <tr><td><code>cloneId</code></td><td>Number | null</td><td>null = not a clone; integer = shared clone group ID</td></tr>
+                <tr><td><code>comment</code></td><td>String</td><td>Empty string = no comment; non-empty = attached note</td></tr>
+                <tr><td><code>children</code></td><td>Array</td><td>Ordered list of child nodes (recursive)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Image node fields</h3>
+        <table>
+            <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td><code>id</code></td><td>Number</td><td>Same as text nodes</td></tr>
+                <tr><td><code>type</code></td><td>String</td><td><code>"image"</code> — distinguishes image nodes from text nodes</td></tr>
+                <tr><td><code>src</code></td><td>String</td><td>Data URI of the embedded image (e.g. <code>data:image/png;base64,…</code>)</td></tr>
+                <tr><td><code>alt</code></td><td>String</td><td>Alt text / caption</td></tr>
+                <tr><td><code>width</code></td><td>Number</td><td>Display width in pixels (80–900)</td></tr>
+                <tr><td><code>cloneId</code></td><td>Number | null</td><td>Same as text nodes</td></tr>
+                <tr><td><code>comment</code></td><td>String</td><td>Same as text nodes</td></tr>
+                <tr><td><code>children</code></td><td>Array</td><td>Same as text nodes</td></tr>
+            </tbody>
+        </table>
+
+        <p>The JSON save file captures the full outline array plus display state: expanded map, style, font, spacing, custom spacing values, comments visibility, title, nextId, nextCloneId, clones map, and a savedAt timestamp.</p>
+
+        <div class="callout note">
+            <div class="callout-label">Note — What is not saved</div>
+            Undo history is not persisted. After reloading, undo starts fresh from the restored state.
+        </div>
+
+        <p style="margin-top: 3rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--text-secondary); border-top: 1px solid var(--border); padding-top: 1rem;">
+            More MORE &mdash; April 2026 &mdash; <em>rcn/tools/more-outliner.html</em>
+        </p>
+    </main>
+</div>
+
+</body>
+</html>

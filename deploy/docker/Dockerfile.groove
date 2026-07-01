@@ -1,0 +1,17 @@
+FROM node:lts-slim
+
+WORKDIR /app
+
+# Install dependencies first (cached layer)
+COPY groove-workspace/package*.json ./
+RUN npm install --production
+
+# Copy application source
+COPY groove-workspace/ .
+
+# Data directory — mount a volume here to persist across restarts
+RUN mkdir -p server/data
+
+EXPOSE 3001
+
+CMD ["node", "server/index.js"]

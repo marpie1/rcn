@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NRM — Neighborhood Risk Management (Tripod Beta)</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'IBM Plex Sans', sans-serif; overflow: hidden; }
+        button { transition: all 0.2s; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        .connection-port { cursor: crosshair; transition: all 0.2s; }
+        .connection-port:hover circle { r: 8; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .modal { animation: slideIn 0.2s ease-out; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 1s linear infinite; }
+        .barrier-hover { cursor: move; }
+        .barrier-hover:hover { filter: brightness(1.15); transform: scale(1.05); }
+        .barrier-attaching { opacity: 0.6; cursor: crosshair; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+        
+        const Icon = ({ name, size = 24, className }) => {
+            const paths = {
+                plus: "M12 5v14M5 12h14", save: "M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z M17 21v-8H7v8 M7 3v5h8",
+                folder: "M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z", layout: "M3 3h18v18H3z M3 9h18 M9 9v12",
+                wand: "M15 4V2M15 16v-2M23 9h-2M5 9H3M16.36 2.64l-1.42 1.42M8.05 16.95l-1.41 1.42M16.95 16.95l1.42 1.42M7.64 7.64L6.22 6.22 M12 12m-3 0a3 3 0 106 0 3 3 0 10-6 0",
+                download: "M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4 M7 10l5 5 5-5 M12 15V3", x: "M18 6L6 18M6 6l12 12",
+                trash: "M3 6h18 M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2 M10 11v6 M14 11v6",
+                file: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8",
+                loader: "M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83",
+                messageSquare: "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z",
+                shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+                shieldOff: "M19.69 14a6.9 6.9 0 00.31-2V5l-8-3-3.16 1.18 M4.73 4.73L4 5v7c0 6 8 10 8 10a20.3 20.3 0 005.62-4.38 M1 1l22 22",
+                shieldCheck: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4"
+            };
+            return <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={paths[name]}/></svg>;
+        };
+
+        const TEMPLATES = [{
+            id: 'equipment', name: 'Equipment Failure', desc: 'Winch mechanic with barriers', difficulty: 'Beginner',
+            nodes: [
+                { id: 1, type: 'agent', x: 100, y: 200, text: 'Rotating winch machinery', comments: '', width: 160, height: 80 },
+                { id: 2, type: 'object', x: 100, y: 350, text: "Mechanic's foot", comments: '', width: 160, height: 80 },
+                { id: 3, type: 'event', x: 1000, y: 275, text: 'Foot caught in rotating winch', comments: '', width: 160, height: 80 },
+                { id: 7, type: 'underlyingCause', x: 300, y: 200, text: 'Inadequate safety training', comments: '', width: 160, height: 80 },
+                { id: 6, type: 'precondition', x: 520, y: 200, text: 'Time pressure for repair', comments: '', width: 160, height: 80 },
+                { id: 5, type: 'immediateCause', x: 740, y: 275, text: 'Worked on energized equipment', comments: '', width: 160, height: 80 }
+            ],
+            connections: [
+                { id: 101, from: 1, to: 3 },  // Agent → Event (Safety Shoes missing barrier)
+                { id: 102, from: 2, to: 3 },  // Object → Event (Machine Guard and Lockout/Tagout barriers)
+                { id: 106, from: 7, to: 6 },  // Underlying Cause → Precondition
+                { id: 105, from: 6, to: 5 },  // Precondition → Immediate Cause
+                { id: 103, from: 5, toBarrier: 203 }  // Immediate Cause → Lockout/Tagout barrier (on line 102)
+            ],
+            barriers: [
+                { id: 201, connectionId: 101, type: 'missing', label: 'Safety Shoes', comments: 'PPE not worn', linePosition: 0.5 },
+                { id: 202, connectionId: 102, type: 'failed', label: 'Machine Guard', comments: 'Guard removed for maintenance', linePosition: 0.4 },
+                { id: 203, connectionId: 102, type: 'failed', label: 'Lockout/Tagout', comments: 'Procedure not followed', linePosition: 0.6 }
+            ]
+        }, { 
+            id: 'blank', name: 'Blank Canvas', desc: 'Start from scratch', difficulty: 'All', 
+            nodes: [], connections: [], barriers: []
+        }];
+
+        const nodeTypes = {
+            agent: { label: 'Agent', color: '#FFD966', shape: 'para', canConnectTo: ['event'] },
+            object: { label: 'Object', color: '#B4D7A8', shape: 'para', canConnectTo: ['event'] },
+            event: { label: 'Event', color: '#EA9999', shape: 'rect', canConnectTo: [] },
+            immediateCause: { label: 'Immediate Cause', color: '#E06666', shape: 'rect', canConnectTo: ['event'] },
+            precondition: { label: 'Precondition', color: '#F6B26B', shape: 'ellipse', canConnectTo: ['immediateCause'] },
+            underlyingCause: { label: 'Underlying Cause', color: '#CC4125', shape: 'round', canConnectTo: ['precondition'] }
+        };
+
+        const barrierTypes = {
+            failed: { label: 'Failed Barrier', color: '#9FC5E8', icon: 'shieldOff', description: 'Barrier defeated/breached' },
+            intact: { label: 'Intact Barrier', color: '#6FA8DC', icon: 'shieldCheck', description: 'Barrier that worked' },
+            missing: { label: 'Missing Barrier', color: '#B4A7D6', icon: 'shield', description: 'Barrier not established' }
+        };
+
+        const App = () => {
+            const [nodes, setNodes] = useState([]);
+            const [connections, setConnections] = useState([]);
+            const [barriers, setBarriers] = useState([]);
+            const [selected, setSelected] = useState(null);
+            const [selectedType, setSelectedType] = useState(null);
+            const [dragging, setDragging] = useState(null);
+            const [draggingBarrier, setDraggingBarrier] = useState(null);
+            const [draggingExistingBarrier, setDraggingExistingBarrier] = useState(null);
+            const [offset, setOffset] = useState({ x: 0, y: 0 });
+            const [connecting, setConnecting] = useState(null);
+            const [tempConn, setTempConn] = useState(null);
+            const [showModal, setShowModal] = useState(null);
+            const [saveName, setSaveName] = useState('');
+            const [saved, setSaved] = useState([]);
+            const [exporting, setExporting] = useState(false);
+            const [hoveredConnection, setHoveredConnection] = useState(null);
+            const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+            const [mouseDownPos, setMouseDownPos] = useState(null);
+            const [isDraggingNode, setIsDraggingNode] = useState(false);
+            const [selectingRegion, setSelectingRegion] = useState(false);
+            const [selectionRect, setSelectionRect] = useState(null);
+            const canvasRef = useRef(null);
+
+            useEffect(() => {
+                const s = localStorage.getItem('tripodAnalyses');
+                if (s) setSaved(JSON.parse(s));
+            }, []);
+
+            const addNode = (type, x = 400, y = 200) => {
+                setNodes([...nodes, { id: Date.now(), type, x, y, text: '', comments: '', width: 160, height: 80 }]);
+                setWelcomeDismissed(true);
+            };
+
+            const startAddingBarrier = (type) => {
+                setDraggingBarrier({ type, id: Date.now() });
+            };
+
+            const save = () => {
+                const analysis = { 
+                    id: Date.now(), 
+                    name: saveName || 'Analysis', 
+                    nodes, 
+                    connections, 
+                    barriers,
+                    date: new Date().toISOString() 
+                };
+                const all = [...saved, analysis];
+                localStorage.setItem('tripodAnalyses', JSON.stringify(all));
+                setSaved(all);
+                setShowModal(null);
+            };
+
+            const load = (id) => {
+                const a = saved.find(s => s.id === id);
+                if (a) { 
+                    setNodes(a.nodes); 
+                    setConnections(a.connections); 
+                    setBarriers(a.barriers || []);
+                    setSaveName(a.name); 
+                    setShowModal(null); 
+                }
+            };
+
+            const loadTemplate = (id) => {
+                const t = TEMPLATES.find(t => t.id === id);
+                if (t) { 
+                    setNodes(t.nodes); 
+                    setConnections(t.connections); 
+                    setBarriers(t.barriers || []);
+                    setSelected(null);
+                    setSelectedType(null);
+                    setShowModal(null);
+                    setWelcomeDismissed(true);
+                }
+            };
+
+            const autoLayout = () => {
+                const tiers = { underlyingCause: 0, precondition: 1, immediateCause: 2, agent: 3, object: 3, event: 4 };
+                const grouped = {};
+                nodes.forEach(n => {
+                    const t = tiers[n.type] || 0;
+                    if (!grouped[t]) grouped[t] = [];
+                    grouped[t].push(n);
+                });
+                const positioned = [];
+                Object.keys(grouped).forEach((tier, i) => {
+                    grouped[tier].forEach((n, j) => {
+                        positioned.push({ ...n, x: 100 + (tier * 240), y: 100 + (j * 120) });
+                    });
+                });
+                setNodes(positioned);
+            };
+
+            const deleteSelected = () => {
+                if (selectedType === 'node') {
+                    setNodes(nodes.filter(n => n.id !== selected.id));
+                    setConnections(connections.filter(c => c.from !== selected.id && c.to !== selected.id));
+                    const connIdsToRemove = connections.filter(c => c.from === selected.id || c.to === selected.id).map(c => c.id);
+                    setBarriers(barriers.filter(b => !connIdsToRemove.includes(b.connectionId)));
+                } else if (selectedType === 'connection') {
+                    setConnections(connections.filter(c => c.id !== selected.id));
+                    setBarriers(barriers.filter(b => b.connectionId !== selected.id));
+                } else if (selectedType === 'barrier') {
+                    setBarriers(barriers.filter(b => b.id !== selected.id));
+                }
+                setSelected(null);
+                setSelectedType(null);
+            };
+
+            const updateSelected = (field, value) => {
+                if (selectedType === 'node') {
+                    setNodes(nodes.map(n => n.id === selected.id ? { ...n, [field]: value } : n));
+                    setSelected({ ...selected, [field]: value });
+                } else if (selectedType === 'barrier') {
+                    setBarriers(barriers.map(b => b.id === selected.id ? { ...b, [field]: value } : b));
+                    setSelected({ ...selected, [field]: value });
+                }
+            };
+
+            const getConnectionPath = (conn) => {
+                const from = nodes.find(n => n.id === conn.from);
+                
+                // Check if target is a barrier or a node
+                let toX, toY;
+                if (conn.toBarrier) {
+                    // Find the barrier
+                    const barrier = barriers.find(b => b.id === conn.toBarrier);
+                    if (!barrier) return null;
+                    
+                    // Find the connection that barrier is on
+                    const barrierConn = connections.find(c => c.id === barrier.connectionId);
+                    if (!barrierConn) return null;
+                    
+                    // Get the barrier's parent connection endpoints
+                    const barrierFrom = nodes.find(n => n.id === barrierConn.from);
+                    const barrierTo = nodes.find(n => n.id === barrierConn.to);
+                    if (!barrierFrom || !barrierTo) return null;
+                    
+                    // Calculate barrier CENTER position on its line
+                    const bx1 = barrierFrom.x + barrierFrom.width;
+                    const by1 = barrierFrom.y + barrierFrom.height / 2;
+                    const bx2 = barrierTo.x;
+                    const by2 = barrierTo.y + barrierTo.height / 2;
+                    const bmx = (bx1 + bx2) / 2;
+                    const t = barrier.linePosition || 0.5;
+                    const barrierCenterX = (1-t)*(1-t)*(1-t)*bx1 + 3*(1-t)*(1-t)*t*bmx + 3*(1-t)*t*t*bmx + t*t*t*bx2;
+                    const barrierCenterY = (1-t)*(1-t)*(1-t)*by1 + 3*(1-t)*(1-t)*t*by1 + 3*(1-t)*t*t*by2 + t*t*t*by2;
+                    
+                    // Determine connection point on barrier edge
+                    const barrierHeight = 60;
+                    const fromY = from.y + from.height / 2;
+                    
+                    // Connect to top or bottom edge based on source position
+                    if (fromY < barrierCenterY) {
+                        toX = barrierCenterX;
+                        toY = barrierCenterY - barrierHeight/2; // Top edge
+                    } else {
+                        toX = barrierCenterX;
+                        toY = barrierCenterY + barrierHeight/2; // Bottom edge
+                    }
+                } else {
+                    // Normal node target
+                    const to = nodes.find(n => n.id === conn.to);
+                    if (!to) return null;
+                    toX = to.x;
+                    toY = to.y + to.height / 2;
+                }
+                
+                if (!from) return null;
+
+                const x1 = from.x + from.width;
+                const y1 = from.y + from.height / 2;
+                const x2 = toX;
+                const y2 = toY;
+                const mx = (x1 + x2) / 2;
+
+                return { x1, y1, x2, y2, mx };
+            };
+
+            const findClosestConnection = (x, y) => {
+                let closest = null;
+                let minDist = 50; // Max distance to snap
+
+                connections.forEach(conn => {
+                    const from = nodes.find(n => n.id === conn.from);
+                    const to = nodes.find(n => n.id === conn.to);
+                    if (!from || !to) return;
+
+                    // Check if this is Agent/Object -> Event connection
+                    const fromType = from.type;
+                    const toType = to.type;
+                    if (!((fromType === 'agent' || fromType === 'object') && toType === 'event')) {
+                        return;
+                    }
+
+                    const path = getConnectionPath(conn);
+                    if (!path) return;
+
+                    // Calculate point on bezier curve at t=0.5 (midpoint)
+                    const t = 0.5;
+                    const bx = (1-t)*(1-t)*(1-t)*path.x1 + 3*(1-t)*(1-t)*t*path.mx + 3*(1-t)*t*t*path.mx + t*t*t*path.x2;
+                    const by = (1-t)*(1-t)*(1-t)*path.y1 + 3*(1-t)*(1-t)*t*path.y1 + 3*(1-t)*t*t*path.y2 + t*t*t*path.y2;
+
+                    const dist = Math.sqrt((x - bx) ** 2 + (y - by) ** 2);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        closest = conn.id;
+                    }
+                });
+
+                return closest;
+            };
+
+            const exportPDF = async () => {
+                setExporting(true);
+                try {
+                    const svgElement = canvasRef.current;
+                    if (!svgElement || nodes.length === 0) {
+                        alert('No diagram to export');
+                        setExporting(false);
+                        return;
+                    }
+
+                    // Calculate diagram bounds
+                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    nodes.forEach(n => {
+                        minX = Math.min(minX, n.x);
+                        minY = Math.min(minY, n.y);
+                        maxX = Math.max(maxX, n.x + n.width);
+                        maxY = Math.max(maxY, n.y + n.height);
+                    });
+                    
+                    const padding = 50;
+                    minX -= padding;
+                    minY -= padding;
+                    maxX += padding;
+                    maxY += padding;
+                    const width = maxX - minX;
+                    const height = maxY - minY;
+
+                    // Create a temporary container with the SVG
+                    const tempDiv = document.createElement('div');
+                    tempDiv.style.position = 'absolute';
+                    tempDiv.style.left = '-9999px';
+                    tempDiv.style.top = '0';
+                    tempDiv.style.width = width + 'px';
+                    tempDiv.style.height = height + 'px';
+                    tempDiv.style.background = 'white';
+                    document.body.appendChild(tempDiv);
+
+                    // Clone SVG
+                    const svgClone = svgElement.cloneNode(true);
+                    svgClone.setAttribute('viewBox', `${minX} ${minY} ${width} ${height}`);
+                    svgClone.setAttribute('width', width);
+                    svgClone.setAttribute('height', height);
+                    svgClone.style.display = 'block';
+                    
+                    tempDiv.appendChild(svgClone);
+
+                    // Use html2canvas to capture
+                    if (!window.html2canvas) {
+                        // Load html2canvas dynamically
+                        const script = document.createElement('script');
+                        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                        script.onload = () => {
+                            captureAndCreatePDF();
+                        };
+                        script.onerror = () => {
+                            document.body.removeChild(tempDiv);
+                            alert('Failed to load html2canvas library');
+                            setExporting(false);
+                        };
+                        document.head.appendChild(script);
+                    } else {
+                        captureAndCreatePDF();
+                    }
+
+                    function captureAndCreatePDF() {
+                        window.html2canvas(tempDiv, {
+                            backgroundColor: '#ffffff',
+                            scale: 2,
+                            logging: false,
+                            allowTaint: true,
+                            useCORS: true
+                        }).then(canvas => {
+                            try {
+                                document.body.removeChild(tempDiv);
+                                
+                                const imgData = canvas.toDataURL('image/png');
+                                const { jsPDF } = window.jspdf;
+                                const doc = new jsPDF('landscape', 'mm', 'a4');
+                                
+                                // Header
+                                doc.setFillColor(8, 145, 178);
+                                doc.rect(0, 0, 297, 35, 'F');
+                                doc.setTextColor(255, 255, 255);
+                                doc.setFontSize(24);
+                                doc.setFont('helvetica', 'bold');
+                                doc.text('Tripod Beta Analysis', 148.5, 15, { align: 'center' });
+                                doc.setFontSize(14);
+                                doc.text(saveName || 'Incident Investigation', 148.5, 25, { align: 'center' });
+                                
+                                // Calculate size
+                                const aspectRatio = width / height;
+                                let imgWidth = 257;
+                                let imgHeight = imgWidth / aspectRatio;
+                                
+                                if (imgHeight > 130) {
+                                    imgHeight = 130;
+                                    imgWidth = imgHeight * aspectRatio;
+                                }
+                                
+                                const xPos = (297 - imgWidth) / 2;
+                                const yPos = 45;
+                                
+                                doc.addImage(imgData, 'PNG', xPos, yPos, imgWidth, imgHeight);
+                                
+                                // Footer
+                                doc.setFontSize(9);
+                                doc.setTextColor(100, 116, 139);
+                                doc.text(`Date: ${new Date().toLocaleDateString()} | Nodes: ${nodes.length} | Barriers: ${barriers.length}`, 148.5, 190, { align: 'center' });
+                                
+                                doc.save(`${saveName || 'tripod-analysis'}.pdf`);
+                                setExporting(false);
+                            } catch (err) {
+                                console.error('PDF creation failed:', err);
+                                alert('PDF export failed: ' + err.message);
+                                setExporting(false);
+                            }
+                        }).catch(err => {
+                            document.body.removeChild(tempDiv);
+                            console.error('Canvas capture failed:', err);
+                            alert('Failed to capture diagram: ' + err.message);
+                            setExporting(false);
+                        });
+                    }
+                } catch (err) {
+                    console.error('PDF export failed:', err);
+                    alert('PDF export failed: ' + err.message);
+                    setExporting(false);
+                }
+            };
+
+            const exportSVG = () => {
+                try {
+                    // Get the SVG element directly from the ref
+                    const svgElement = canvasRef.current;
+                    if (!svgElement || nodes.length === 0) {
+                        alert('No diagram to export');
+                        return;
+                    }
+
+                    // Clone the SVG to avoid modifying the original
+                    const svgClone = svgElement.cloneNode(true);
+                    
+                    // Calculate bounding box of all elements
+                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    
+                    nodes.forEach(n => {
+                        minX = Math.min(minX, n.x);
+                        minY = Math.min(minY, n.y);
+                        maxX = Math.max(maxX, n.x + n.width);
+                        maxY = Math.max(maxY, n.y + n.height);
+                    });
+                    
+                    // Add padding
+                    const padding = 50;
+                    minX -= padding;
+                    minY -= padding;
+                    maxX += padding;
+                    maxY += padding;
+                    
+                    const width = maxX - minX;
+                    const height = maxY - minY;
+                    
+                    // Set viewBox to show only the content area
+                    svgClone.setAttribute('viewBox', `${minX} ${minY} ${width} ${height}`);
+                    svgClone.setAttribute('width', width);
+                    svgClone.setAttribute('height', height);
+                    
+                    // Remove existing style attribute if any
+                    svgClone.removeAttribute('style');
+                    
+                    // Add white background
+                    const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    background.setAttribute('x', minX);
+                    background.setAttribute('y', minY);
+                    background.setAttribute('width', width);
+                    background.setAttribute('height', height);
+                    background.setAttribute('fill', 'white');
+                    svgClone.insertBefore(background, svgClone.firstChild);
+                    
+                    // Serialize the SVG
+                    const serializer = new XMLSerializer();
+                    let svgString = serializer.serializeToString(svgClone);
+                    
+                    // Add XML declaration
+                    svgString = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + svgString;
+                    
+                    // Create blob and download
+                    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${saveName || 'tripod-analysis'}.svg`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                } catch (err) {
+                    console.error('SVG export failed:', err);
+                    alert('SVG export failed: ' + err.message);
+                }
+            };
+
+            const printDiagram = (mode) => {
+                try {
+                    const svgElement = canvasRef.current;
+                    if (!svgElement || nodes.length === 0) {
+                        alert('No diagram to print');
+                        return;
+                    }
+
+                    // Create a new window for printing
+                    const printWindow = window.open('', '_blank');
+                    if (!printWindow) {
+                        alert('Please allow popups to enable printing');
+                        return;
+                    }
+
+                    // Calculate diagram bounds based on mode
+                    let minX, minY, maxX, maxY;
+                    
+                    if (mode === 'selected' && selectionRect) {
+                        // Use selection rectangle bounds
+                        minX = Math.min(selectionRect.x, selectionRect.x + selectionRect.width);
+                        minY = Math.min(selectionRect.y, selectionRect.y + selectionRect.height);
+                        maxX = Math.max(selectionRect.x, selectionRect.x + selectionRect.width);
+                        maxY = Math.max(selectionRect.y, selectionRect.y + selectionRect.height);
+                    } else {
+                        // Calculate from all nodes
+                        minX = Infinity;
+                        minY = Infinity;
+                        maxX = -Infinity;
+                        maxY = -Infinity;
+                        
+                        nodes.forEach(n => {
+                            minX = Math.min(minX, n.x);
+                            minY = Math.min(minY, n.y);
+                            maxX = Math.max(maxX, n.x + n.width);
+                            maxY = Math.max(maxY, n.y + n.height);
+                        });
+                    }
+                    
+                    const padding = 50;
+                    minX -= padding;
+                    minY -= padding;
+                    maxX += padding;
+                    maxY += padding;
+                    const width = maxX - minX;
+                    const height = maxY - minY;
+
+                    // Clone and prepare SVG
+                    const svgClone = svgElement.cloneNode(true);
+                    svgClone.setAttribute('viewBox', `${minX} ${minY} ${width} ${height}`);
+                    svgClone.style.width = '100%';
+                    svgClone.style.height = 'auto';
+
+                    // Add white background
+                    const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    background.setAttribute('x', minX);
+                    background.setAttribute('y', minY);
+                    background.setAttribute('width', width);
+                    background.setAttribute('height', height);
+                    background.setAttribute('fill', 'white');
+                    svgClone.insertBefore(background, svgClone.firstChild);
+
+                    const serializer = new XMLSerializer();
+                    const svgString = serializer.serializeToString(svgClone);
+
+                    // Write HTML to print window
+                    printWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>${saveName || 'Tripod Beta Analysis'}</title>
+                            <style>
+                                @page {
+                                    size: landscape;
+                                    margin: 0.5in;
+                                }
+                                body {
+                                    margin: 0;
+                                    padding: 20px;
+                                    font-family: Arial, sans-serif;
+                                }
+                                .header {
+                                    text-align: center;
+                                    margin-bottom: 30px;
+                                    padding-bottom: 20px;
+                                    border-bottom: 3px solid #0891b2;
+                                }
+                                .header h1 {
+                                    color: #0891b2;
+                                    margin: 0 0 10px 0;
+                                    font-size: 28px;
+                                }
+                                .header p {
+                                    color: #64748b;
+                                    margin: 5px 0;
+                                }
+                                .diagram-container {
+                                    display: flex;
+                                    justify-content: center;
+                                    margin: 20px 0;
+                                    page-break-inside: avoid;
+                                }
+                                @media print {
+                                    body {
+                                        print-color-adjust: exact;
+                                        -webkit-print-color-adjust: exact;
+                                    }
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="header">
+                                <h1>Tripod Beta Analysis</h1>
+                                <p><strong>${saveName || 'Incident Investigation'}</strong></p>
+                                <p>Date: ${new Date().toLocaleDateString()} | ${mode === 'selected' ? 'Selected Region' : 'Complete Diagram'}</p>
+                            </div>
+                            
+                            <div class="diagram-container">
+                                ${svgString}
+                            </div>
+                            
+                            <scr`+`ipt>
+                                window.onload = function() {
+                                    setTimeout(function() {
+                                        window.print();
+                                        setTimeout(function() {
+                                            window.close();
+                                        }, 100);
+                                    }, 500);
+                                };
+                            </scr`+`ipt>
+                        </body>
+                        </html>
+                    `);
+                    
+                    printWindow.document.close();
+                } catch (err) {
+                    console.error('Print failed:', err);
+                    alert('Print failed: ' + err.message);
+                }
+            };
+
+            const getClosestPointOnLine = (mouseX, mouseY, conn) => {
+                const path = getConnectionPath(conn);
+                if (!path) return null;
+
+                const { x1, y1, x2, y2, mx } = path;
+                
+                // Sample the bezier curve at multiple points to find closest
+                let closestDist = Infinity;
+                let closestT = 0.5;
+                
+                for (let t = 0; t <= 1; t += 0.02) {
+                    const bx = (1-t)*(1-t)*(1-t)*x1 + 3*(1-t)*(1-t)*t*mx + 3*(1-t)*t*t*mx + t*t*t*x2;
+                    const by = (1-t)*(1-t)*(1-t)*y1 + 3*(1-t)*(1-t)*t*y1 + 3*(1-t)*t*t*y2 + t*t*t*y2;
+                    
+                    const dist = Math.sqrt((mouseX - bx) ** 2 + (mouseY - by) ** 2);
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        closestT = t;
+                    }
+                }
+                
+                // Calculate position at closest t value
+                const t = closestT;
+                const bx = (1-t)*(1-t)*(1-t)*x1 + 3*(1-t)*(1-t)*t*mx + 3*(1-t)*t*t*mx + t*t*t*x2;
+                const by = (1-t)*(1-t)*(1-t)*y1 + 3*(1-t)*(1-t)*t*y1 + 3*(1-t)*t*t*y2 + t*t*t*y2;
+                
+                return { x: bx, y: by, t: closestT };
+            };
+
+            const checkBarrierOverlap = (barrier, newX, newY) => {
+                const minDistance = 40; // Adjusted for smaller vertical barriers (30px wide x 60px tall)
+
+                // Check against all other barriers
+                for (const otherBarrier of barriers) {
+                    if (otherBarrier.id === barrier.id) continue;
+
+                    const otherConn = connections.find(c => c.id === otherBarrier.connectionId);
+                    if (!otherConn) continue;
+
+                    const otherPath = getConnectionPath(otherConn);
+                    if (!otherPath) continue;
+
+                    const otherT = otherBarrier.linePosition || 0.5;
+                    const { x1: ox1, y1: oy1, x2: ox2, y2: oy2, mx: omx } = otherPath;
+                    const otherX = (1-otherT)*(1-otherT)*(1-otherT)*ox1 + 3*(1-otherT)*(1-otherT)*otherT*omx + 3*(1-otherT)*otherT*otherT*omx + otherT*otherT*otherT*ox2;
+                    const otherY = (1-otherT)*(1-otherT)*(1-otherT)*oy1 + 3*(1-otherT)*(1-otherT)*otherT*oy1 + 3*(1-otherT)*otherT*otherT*oy2 + otherT*otherT*otherT*oy2;
+
+                    const distance = Math.sqrt((newX - otherX) ** 2 + (newY - otherY) ** 2);
+                    if (distance < minDistance) {
+                        return true; // Overlap detected
+                    }
+                }
+
+                return false; // No overlap
+            };
+
+            const renderBarrierOnLine = (barrier) => {
+                const conn = connections.find(c => c.id === barrier.connectionId);
+                if (!conn) return null;
+
+                const path = getConnectionPath(conn);
+                if (!path) return null;
+
+                const { x1, y1, x2, y2, mx } = path;
+                
+                // Calculate position on line using stored t value
+                const t = barrier.linePosition || 0.5;
+                const bx = (1-t)*(1-t)*(1-t)*x1 + 3*(1-t)*(1-t)*t*mx + 3*(1-t)*t*t*mx + t*t*t*x2;
+                const by = (1-t)*(1-t)*(1-t)*y1 + 3*(1-t)*(1-t)*t*y1 + 3*(1-t)*t*t*y2 + t*t*t*y2;
+
+                const barrierType = barrierTypes[barrier.type];
+                const width = 30;   // Half of height
+                const height = 60;  // Vertical orientation
+                const isSelected = selectedType === 'barrier' && selected?.id === barrier.id;
+                const isDragging = draggingExistingBarrier?.id === barrier.id;
+
+                // Calculate label dimensions - smaller to stay within reasonable bounds
+                const labelText = barrier.label || barrierType.label;
+                const maxLabelWidth = 60; // Reduced width for compact labels
+                const labelBoxHeight = 16; // Slightly taller for 2-line wrapping
+
+                return (
+                    <g key={barrier.id} 
+                       className="barrier-hover"
+                       style={{cursor: isDragging ? 'grabbing' : 'grab'}}
+                       transform={`translate(${bx}, ${by})`}
+                       onMouseDown={(e) => {
+                           e.stopPropagation();
+                           setDraggingExistingBarrier(barrier);
+                           setSelected(barrier);
+                           setSelectedType('barrier');
+                       }}
+                       onClick={(e) => {
+                           e.stopPropagation();
+                           // If connecting mode, complete connection to this barrier
+                           if (connecting) {
+                               const newConn = { 
+                                   id: Date.now(), 
+                                   from: connecting, 
+                                   toBarrier: barrier.id 
+                               };
+                               setConnections([...connections, newConn]);
+                               setConnecting(null);
+                               setTempConn(null);
+                           }
+                       }}>
+                        {/* Selection highlight ring */}
+                        {isSelected && (
+                            <rect
+                                x={-width/2-3}
+                                y={-height/2-3}
+                                width={width+6}
+                                height={height+6}
+                                rx={3}
+                                fill="none"
+                                stroke="#0891b2"
+                                strokeWidth="3"
+                                opacity={0.5}
+                                style={{pointerEvents:'none'}}
+                            />
+                        )}
+                        
+                        {/* Connection target highlight when in connecting mode */}
+                        {connecting && (
+                            <rect
+                                x={-width/2-5}
+                                y={-height/2-5}
+                                width={width+10}
+                                height={height+10}
+                                rx={4}
+                                fill="none"
+                                stroke="#10b981"
+                                strokeWidth="3"
+                                opacity={0.6}
+                                style={{pointerEvents:'none'}}
+                            />
+                        )}
+                        
+                        {/* Main barrier shape - vertical rectangle */}
+                        <rect
+                            x={-width/2}
+                            y={-height/2}
+                            width={width}
+                            height={height}
+                            rx={2}
+                            fill={barrierType.color}
+                            stroke={isSelected ? '#000' : '#333'}
+                            strokeWidth={isSelected ? 3 : 2}
+                            opacity={isDragging ? 0.7 : 0.95}
+                        />
+                        
+                        {barrier.type === 'failed' && (
+                            <>
+                                <line x1={-width/3} y1={-height/3} x2={width/3} y2={height/3} 
+                                      stroke="#CC0000" strokeWidth="2" style={{pointerEvents:'none'}}/>
+                                <line x1={-width/3} y1={height/3} x2={width/3} y2={-height/3} 
+                                      stroke="#CC0000" strokeWidth="2" style={{pointerEvents:'none'}}/>
+                            </>
+                        )}
+                        {barrier.type === 'intact' && (
+                            <path d={`M${-width/4},0 L${-width/6},${height/5} L${width/3},${-height/3}`}
+                                  stroke="#006600" strokeWidth="2" fill="none" strokeLinecap="round" 
+                                  strokeLinejoin="round" style={{pointerEvents:'none'}}/>
+                        )}
+                        {barrier.type === 'missing' && (
+                            <circle cx={0} cy={0} r={width/3} stroke="#666" strokeWidth="2" 
+                                    fill="none" strokeDasharray="2,2" style={{pointerEvents:'none'}}/>
+                        )}
+                        
+                        {/* White background for label - sized to fit text within bounds */}
+                        <rect x={-maxLabelWidth/2} y={height/2+3} width={maxLabelWidth} height={labelBoxHeight} 
+                              fill="white" stroke="#ccc" strokeWidth="0.5" rx={2} style={{pointerEvents:'none'}}/>
+                        
+                        {/* Label text with foreignObject for proper wrapping */}
+                        <foreignObject x={-maxLabelWidth/2+2} y={height/2+4} width={maxLabelWidth-4} height={labelBoxHeight-2}>
+                            <div style={{
+                                fontSize:'7px',
+                                fontWeight:'600',
+                                color:'#1a1a1a',
+                                textAlign:'center',
+                                lineHeight:'1.1',
+                                overflow:'hidden',
+                                wordWrap:'break-word',
+                                display:'flex',
+                                alignItems:'center',
+                                justifyContent:'center',
+                                height:'100%',
+                                padding:'1px'
+                            }}>
+                                {labelText}
+                            </div>
+                        </foreignObject>
+                    </g>
+                );
+            };
+
+            const getConnectionEndPoint = (conn) => {
+                const from = nodes.find(n => n.id === conn.from);
+                if (!from) return null;
+
+                // Default start point
+                let x1 = from.x + from.width;
+                let y1 = from.y + from.height / 2;
+                let x2, y2;
+
+                // Determine endpoint - either barrier or node
+                if (conn.toBarrier) {
+                    // Find the barrier
+                    const barrier = barriers.find(b => b.id === conn.toBarrier);
+                    if (!barrier) return null;
+                    
+                    // Find the connection that barrier is on
+                    const barrierConn = connections.find(c => c.id === barrier.connectionId);
+                    if (!barrierConn) return null;
+                    
+                    // Get the barrier's parent connection endpoints
+                    const barrierFrom = nodes.find(n => n.id === barrierConn.from);
+                    const barrierTo = nodes.find(n => n.id === barrierConn.to);
+                    if (!barrierFrom || !barrierTo) return null;
+                    
+                    // Calculate barrier CENTER position on its line
+                    const bx1 = barrierFrom.x + barrierFrom.width;
+                    const by1 = barrierFrom.y + barrierFrom.height / 2;
+                    const bx2 = barrierTo.x;
+                    const by2 = barrierTo.y + barrierTo.height / 2;
+                    const bmx = (bx1 + bx2) / 2;
+                    const t = barrier.linePosition || 0.5;
+                    const barrierCenterX = (1-t)*(1-t)*(1-t)*bx1 + 3*(1-t)*(1-t)*t*bmx + 3*(1-t)*t*t*bmx + t*t*t*bx2;
+                    const barrierCenterY = (1-t)*(1-t)*(1-t)*by1 + 3*(1-t)*(1-t)*t*by1 + 3*(1-t)*t*t*by2 + t*t*t*by2;
+                    
+                    // Barrier dimensions
+                    const barrierHeight = 60;
+                    const barrierLabelHeight = 16;
+                    const barrierLabelGap = 3;
+                    
+                    // Determine if connection comes from above or below
+                    const fromY = from.y + from.height / 2;
+                    const distanceToTop = Math.abs(fromY - (barrierCenterY - barrierHeight/2));
+                    const distanceToBottom = Math.abs(fromY - (barrierCenterY + barrierHeight/2));
+                    
+                    // Connect to closer edge (top or bottom)
+                    x2 = barrierCenterX;
+                    if (distanceToTop < distanceToBottom) {
+                        // Coming from above - connect to top edge of icon
+                        y2 = barrierCenterY - barrierHeight/2;
+                    } else {
+                        // Coming from below - connect to bottom of label box (not icon)
+                        y2 = barrierCenterY + barrierHeight/2 + barrierLabelGap + barrierLabelHeight;
+                    }
+                } else {
+                    // Normal node target - barriers on this connection just ride on the curve
+                    const to = nodes.find(n => n.id === conn.to);
+                    if (!to) return null;
+                    x2 = to.x;
+                    y2 = to.y + to.height / 2;
+                }
+
+                return { x1, y1, x2, y2 };
+            };
+
+            const renderNode = (n) => {
+                const t = nodeTypes[n.type];
+                const sel = selectedType === 'node' && selected?.id === n.id;
+                const fillColor = n.type === 'agent' ? 'url(#agentStripes)' : t.color;
+                
+                // Calculate text box dimensions based on shape
+                let typeLabelX, typeLabelWidth;
+                let contentBoxX, contentBoxWidth;
+                
+                if (t.shape === 'para') {
+                    // Parallelogram - inset more from left due to slant
+                    typeLabelX = n.width/2 - 30;
+                    typeLabelWidth = 60;
+                    contentBoxX = 25;  // More inset from left
+                    contentBoxWidth = n.width - 45;  // Less width to stay inside
+                } else if (t.shape === 'ellipse') {
+                    // Ellipse - needs significant horizontal inset
+                    typeLabelX = n.width/2 - 30;
+                    typeLabelWidth = 60;
+                    contentBoxX = 25;  // More inset from sides
+                    contentBoxWidth = n.width - 50;  // Narrower to fit curve
+                } else {
+                    // Rectangle and rounded rectangle
+                    typeLabelX = n.width/2 - 35;
+                    typeLabelWidth = 70;
+                    contentBoxX = 10;
+                    contentBoxWidth = n.width - 20;
+                }
+                
+                return (
+                    <g key={n.id} transform={`translate(${n.x},${n.y})`} 
+                       onMouseDown={(e) => {
+                           e.stopPropagation();
+                           const r = canvasRef.current.getBoundingClientRect();
+                           const mouseX = e.clientX - r.left;
+                           const mouseY = e.clientY - r.top;
+                           
+                           // Store initial mouse position
+                           setMouseDownPos({ x: mouseX, y: mouseY });
+                           setDragging(n);
+                           setOffset({ x: mouseX - n.x, y: mouseY - n.y });
+                           setIsDraggingNode(false);
+                           
+                           // Select the node
+                           setSelected(n); 
+                           setSelectedType('node');
+                       }}>
+                        {t.shape === 'para' && <path d={`M20 0L${n.width} 0L${n.width-20} ${n.height}L0 ${n.height}Z`} fill={fillColor} stroke={sel?'#000':'#666'} strokeWidth={sel?3:2}/>}
+                        {t.shape === 'rect' && <rect width={n.width} height={n.height} fill={fillColor} stroke={sel?'#000':'#666'} strokeWidth={sel?3:2}/>}
+                        {t.shape === 'ellipse' && <ellipse cx={n.width/2} cy={n.height/2} rx={n.width/2} ry={n.height/2} fill={fillColor} stroke={sel?'#000':'#666'} strokeWidth={sel?3:2}/>}
+                        {t.shape === 'round' && <rect width={n.width} height={n.height} rx={15} fill={fillColor} stroke={sel?'#000':'#666'} strokeWidth={sel?3:2}/>}
+                        
+                        {/* White background box for node type label - sized to fit within shape */}
+                        <rect x={typeLabelX} y={10} width={typeLabelWidth} height={14} fill="white" stroke="#ccc" strokeWidth="0.5" rx={2}/>
+                        <text x={n.width/2} y={20} textAnchor="middle" fill="#1a1a1a" fontSize="10" fontWeight="600">{t.label}</text>
+                        
+                        {/* White background box for node text content - inset from edges based on shape */}
+                        <rect x={contentBoxX} y={28} width={contentBoxWidth} height={n.height-33} fill="white" stroke="#ccc" strokeWidth="0.5" rx={2}/>
+                        <foreignObject x={contentBoxX+2} y={30} width={contentBoxWidth-4} height={n.height-37}>
+                            <div style={{fontSize:'9px',wordWrap:'break-word',padding:'2px',overflow:'hidden'}}>
+                                <div style={{cursor:'text',minHeight:'18px',lineHeight:'1.2'}}>{n.text || 'Double-click to edit...'}</div>
+                            </div>
+                        </foreignObject>
+                        
+                        {!connecting && <circle className="connection-port" cx={n.width} cy={n.height/2} r={6} fill="#0891b2" stroke="#fff" strokeWidth={2}
+                                                   onMouseDown={(e)=>{e.stopPropagation();setConnecting(n.id);setTempConn({x1:n.x+n.width,y1:n.y+n.height/2,x2:n.x+n.width,y2:n.y+n.height/2});}}/>}
+                        {connecting && <rect width={n.width} height={n.height} fill="transparent" onClick={(e)=>{
+                            e.stopPropagation();
+                            if(connecting!==n.id){
+                                const newConn = {id:Date.now(),from:connecting,to:n.id};
+                                setConnections([...connections, newConn]);
+                                setConnecting(null);
+                                setTempConn(null);
+                            }
+                        }}/>}
+                        {n.comments && (
+                            <g transform={`translate(${n.width-15}, 5)`}>
+                                <circle r="8" fill="#06b6d4" stroke="#fff" strokeWidth="1"/>
+                                <text x="0" y="3" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="bold">💬</text>
+                            </g>
+                        )}
+                    </g>
+                );
+            };
+
+            const btnStyle = {background:'rgba(255,255,255,0.2)',border:'none',color:'#fff',padding:'10px 20px',borderRadius:'6px',cursor:'pointer',display:'flex',alignItems:'center',gap:'8px',fontWeight:'600',fontSize:'14px'};
+
+            return (
+                <div style={{width:'100vw',height:'100vh',background:'linear-gradient(135deg,#1a2332,#2d3e50)',fontFamily:'"IBM Plex Sans",sans-serif',display:'flex',flexDirection:'column'}}>
+                    <div style={{background:'linear-gradient(90deg,#0891b2,#06b6d4)',color:'#fff',padding:'16px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',boxShadow:'0 4px 20px rgba(0,0,0,0.3)'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:'16px'}}>
+                            <div style={{width:'40px',height:'40px',background:'rgba(255,255,255,0.2)',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'700',fontSize:'20px'}}>T3</div>
+                            <div><h1 style={{fontSize:'24px',fontWeight:'700'}}>Tripod Beta Analysis</h1><p style={{fontSize:'13px',opacity:0.9}}>{saveName||'Barriers from Palette'}</p></div>
+                        </div>
+                        <div style={{display:'flex',gap:'12px'}}>
+                            <button onClick={()=>loadTemplate('equipment')} style={btnStyle}><Icon name="layout" size={18}/>Load Example</button>
+                            <button onClick={()=>loadTemplate('blank')} style={btnStyle}><Icon name="file" size={18}/>Blank Canvas</button>
+                            <button onClick={autoLayout} style={btnStyle}><Icon name="wand" size={18}/>Auto-Layout</button>
+                            <button onClick={()=>setShowModal('save')} style={btnStyle}><Icon name="save" size={18}/>Save</button>
+                            <button onClick={()=>setShowModal('load')} style={btnStyle}><Icon name="folder" size={18}/>Open</button>
+                            <button onClick={()=>setShowModal('print')} style={btnStyle}><Icon name="printer" size={18}/>Print</button>
+                            <button onClick={exportSVG} style={btnStyle}><Icon name="image" size={18}/>SVG</button>
+                            <button onClick={exportPDF} disabled={exporting} style={{...btnStyle,opacity:exporting?0.5:1}}>
+                                {exporting ? <Icon name="loader" size={18} className="spinner"/> : <Icon name="file" size={18}/>}
+                                PDF
+                            </button>
+                        </div>
+                    </div>
+                    <div style={{display:'flex',flex:1,overflow:'hidden'}}>
+                        <div style={{width:'260px',background:'#f8fafc',borderRight:'1px solid #e2e8f0',overflowY:'auto',padding:'20px'}}>
+                            <h2 style={{fontSize:'14px',fontWeight:'700',color:'#64748b',textTransform:'uppercase',marginBottom:'12px'}}>Nodes</h2>
+                            {Object.entries(nodeTypes).map(([k,v])=>
+                                <button key={k} onClick={()=>addNode(k)} style={{width:'100%',padding:'10px',marginBottom:'8px',background:'#fff',border:`2px solid ${k === 'agent' ? '#000' : v.color}`,borderRadius:'6px',cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:'10px'}}>
+                                    <div style={{
+                                        width:'28px',
+                                        height:'28px',
+                                        background: k === 'agent' ? 'repeating-linear-gradient(30deg, #000, #000 5px, #FFD966 5px, #FFD966 10px)' : v.color,
+                                        borderRadius:'4px'
+                                    }}/>
+                                    <div style={{fontSize:'12px',fontWeight:'600',color:'#1e293b'}}>{v.label}</div>
+                                </button>
+                            )}
+                            
+                            <h2 style={{fontSize:'14px',fontWeight:'700',color:'#64748b',textTransform:'uppercase',marginBottom:'12px',marginTop:'24px'}}>Barriers</h2>
+                            <p style={{fontSize:'11px',color:'#64748b',marginBottom:'12px'}}>Drag onto Agent/Object → Event lines</p>
+                            {Object.entries(barrierTypes).map(([k,v])=>
+                                <div key={k} 
+                                     draggable
+                                     onDragStart={(e)=>{
+                                         e.dataTransfer.effectAllowed = 'copy';
+                                         startAddingBarrier(k);
+                                     }}
+                                     onDragEnd={()=>{
+                                         setDraggingBarrier(null);
+                                         setHoveredConnection(null);
+                                     }}
+                                     style={{width:'100%',padding:'12px',marginBottom:'8px',background:v.color,border:'2px solid #334155',borderRadius:'6px',cursor:'grab',textAlign:'left',display:'flex',alignItems:'center',gap:'10px',color:'#1e293b',userSelect:'none'}}>
+                                    <Icon name={v.icon} size={24}/>
+                                    <div>
+                                        <div style={{fontSize:'12px',fontWeight:'700'}}>{v.label}</div>
+                                        <div style={{fontSize:'10px',opacity:0.8}}>{v.description}</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div style={{flex:1,position:'relative',background:'#fff',backgroundImage:'linear-gradient(rgba(0,136,170,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,136,170,0.05) 1px,transparent 1px)',backgroundSize:'30px 30px'}}>
+                            <svg ref={canvasRef} 
+                                 style={{width:'100%',height:'100%',cursor:dragging?'grabbing':draggingBarrier?'crosshair':draggingExistingBarrier?'grabbing':'default'}}
+                                 className={draggingBarrier?'barrier-attaching':''}
+                                 onDragOver={(e)=>{
+                                     e.preventDefault();
+                                     if(draggingBarrier){
+                                         const r=canvasRef.current.getBoundingClientRect();
+                                         const x = e.clientX-r.left;
+                                         const y = e.clientY-r.top;
+                                         const closestConn = findClosestConnection(x, y);
+                                         setHoveredConnection(closestConn);
+                                     }
+                                 }}
+                                 onDrop={(e)=>{
+                                     e.preventDefault();
+                                     if(draggingBarrier){
+                                         const r=canvasRef.current.getBoundingClientRect();
+                                         const x = e.clientX-r.left;
+                                         const y = e.clientY-r.top;
+                                         const closestConn = findClosestConnection(x, y);
+                                         if(closestConn){
+                                             const conn = connections.find(c => c.id === closestConn);
+                                             const closestPoint = getClosestPointOnLine(x, y, conn);
+                                             
+                                             if(closestPoint){
+                                                 const newBarrier = {
+                                                     id: Date.now(),
+                                                     connectionId: closestConn,
+                                                     type: draggingBarrier.type,
+                                                     label: '',
+                                                     comments: '',
+                                                     linePosition: closestPoint.t
+                                                 };
+                                                 
+                                                 // Check if this would overlap before adding
+                                                 if(!checkBarrierOverlap(newBarrier, closestPoint.x, closestPoint.y)){
+                                                     setBarriers([...barriers, newBarrier]);
+                                                     setSelected(newBarrier);
+                                                     setSelectedType('barrier');
+                                                 }
+                                             }
+                                         }
+                                         setDraggingBarrier(null);
+                                         setHoveredConnection(null);
+                                     }
+                                 }}
+                                 onMouseMove={(e)=>{
+                                     const r=canvasRef.current.getBoundingClientRect();
+                                     const mouseX = e.clientX - r.left;
+                                     const mouseY = e.clientY - r.top;
+                                     
+                                     // Update selection rectangle
+                                     if(selectingRegion && selectionRect){
+                                         setSelectionRect({
+                                             ...selectionRect,
+                                             width: mouseX - selectionRect.x,
+                                             height: mouseY - selectionRect.y
+                                         });
+                                         return;
+                                     }
+                                     
+                                     if(dragging){
+                                         // Check if we've moved enough to be considered a drag (5px threshold)
+                                         if (!isDraggingNode && mouseDownPos) {
+                                             const dx = mouseX - mouseDownPos.x;
+                                             const dy = mouseY - mouseDownPos.y;
+                                             const distance = Math.sqrt(dx*dx + dy*dy);
+                                             if (distance > 5) {
+                                                 setIsDraggingNode(true);
+                                             }
+                                         }
+                                         
+                                         // Only move node if we're actually dragging
+                                         if (isDraggingNode) {
+                                             const newX = mouseX - offset.x;
+                                             const newY = mouseY - offset.y;
+                                             setNodes(nodes.map(n=>n.id===dragging.id?{...n,x:newX,y:newY}:n));
+                                         }
+                                     }
+                                     if(connecting&&tempConn){
+                                         setTempConn({...tempConn,x2:mouseX,y2:mouseY});
+                                     }
+                                     if(draggingExistingBarrier){
+                                         const conn = connections.find(c => c.id === draggingExistingBarrier.connectionId);
+                                         if(conn){
+                                             // Find closest point on the connection line
+                                             const closestPoint = getClosestPointOnLine(mouseX, mouseY, conn);
+                                             if(closestPoint){
+                                                 // Check if this position would overlap with other barriers
+                                                 const wouldOverlap = checkBarrierOverlap(draggingExistingBarrier, closestPoint.x, closestPoint.y);
+                                                 
+                                                 if (!wouldOverlap) {
+                                                     // Update barrier position along the line
+                                                     setBarriers(barriers.map(b => 
+                                                         b.id === draggingExistingBarrier.id 
+                                                             ? {...b, linePosition: closestPoint.t}
+                                                             : b
+                                                     ));
+                                                     setSelected({...draggingExistingBarrier, linePosition: closestPoint.t});
+                                                 }
+                                             }
+                                         }
+                                     }
+                                 }}
+                                 onMouseDown={(e)=>{
+                                     // Selection rectangle mode
+                                     if(selectingRegion){
+                                         const r = canvasRef.current.getBoundingClientRect();
+                                         const mouseX = e.clientX - r.left;
+                                         const mouseY = e.clientY - r.top;
+                                         setSelectionRect({x: mouseX, y: mouseY, width: 0, height: 0});
+                                         return;
+                                     }
+                                     
+                                     // Track if we mouseDown on canvas (not on a node/barrier)
+                                     if(e.target === canvasRef.current || e.target.tagName === 'rect' && e.target.getAttribute('fill') === 'white'){
+                                         // Clicked on actual canvas/background
+                                         window.canvasMouseDownTime = Date.now();
+                                     } else {
+                                         window.canvasMouseDownTime = null;
+                                     }
+                                 }}
+                                 onMouseUp={()=>{
+                                     // Finalize selection rectangle
+                                     if(selectingRegion && selectionRect && (Math.abs(selectionRect.width) > 10 || Math.abs(selectionRect.height) > 10)){
+                                         setSelectingRegion(false);
+                                         // Show print dialog after selection
+                                         setTimeout(() => {
+                                             printDiagram('selected');
+                                             setSelectionRect(null);
+                                         }, 100);
+                                         return;
+                                     }
+                                     
+                                     setDragging(null);
+                                     setDraggingExistingBarrier(null);
+                                     setDraggingBarrier(null);
+                                     setMouseDownPos(null);
+                                     setIsDraggingNode(false);
+                                     
+                                     if(selectingRegion){
+                                         setSelectingRegion(false);
+                                         setSelectionRect(null);
+                                     }
+                                 }} 
+                                 onClick={(e)=>{
+                                     // Only clear selection if we both mouseDown AND mouseUp on canvas within 300ms
+                                     const isQuickCanvasClick = window.canvasMouseDownTime && (Date.now() - window.canvasMouseDownTime) < 300;
+                                     
+                                     if(isQuickCanvasClick && !draggingExistingBarrier && !isDraggingNode){
+                                         setSelected(null);
+                                         setSelectedType(null);
+                                     }
+                                     if(connecting){
+                                         setConnecting(null);
+                                         setTempConn(null);
+                                     }
+                                     window.canvasMouseDownTime = null;
+                                 }}>
+                                <defs>
+                                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                                        <polygon points="0 0,10 3,0 6" fill="#666"/>
+                                    </marker>
+                                    
+                                    {/* Pattern for Agent nodes - black and yellow diagonal stripes */}
+                                    <pattern id="agentStripes" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+                                        <rect x="0" y="0" width="10" height="20" fill="#000000"/>
+                                        <rect x="10" y="0" width="10" height="20" fill="#FFD966"/>
+                                    </pattern>
+                                </defs>
+                                
+                                {/* Render order: connections first, then barriers (so barriers are on top), then nodes */}
+                                {connections.map(c=>{
+                                    const endpoints = getConnectionEndPoint(c);
+                                    if(!endpoints) return null;
+                                    const {x1,y1,x2,y2} = endpoints;
+                                    const isSelected = selectedType==='connection' && selected?.id===c.id;
+                                    const isHovered = hoveredConnection===c.id;
+                                    
+                                    const targetsBarrier = !!c.toBarrier;
+                                    
+                                    return (
+                                        <g key={c.id}>
+                                            {targetsBarrier ? (
+                                                // For barrier targets, use CURVED LINE with control points that approach vertically
+                                                <>
+                                                    {(() => {
+                                                        // Calculate control points for more vertical approach
+                                                        const cx1 = x1 + (x2 - x1) * 0.5;
+                                                        const cy1 = y1;
+                                                        const cx2 = x2;
+                                                        const cy2 = y1 + (y2 - y1) * 0.5;
+                                                        return (
+                                                            <>
+                                                                <path d={`M${x1},${y1} C${cx1},${cy1} ${cx2},${cy2} ${x2},${y2}`} 
+                                                                      stroke="transparent" strokeWidth="15" fill="none"
+                                                                      style={{cursor:'pointer'}}
+                                                                      onClick={(e)=>{e.stopPropagation();setSelected(c);setSelectedType('connection');}}/>
+                                                                <path d={`M${x1},${y1} C${cx1},${cy1} ${cx2},${cy2} ${x2},${y2}`} 
+                                                                      stroke={isHovered?'#10b981':isSelected?'#0891b2':'#666'} 
+                                                                      strokeWidth={isHovered?4:isSelected?3:2} 
+                                                                      fill="none" 
+                                                                      markerEnd="url(#arrow)" 
+                                                                      style={{pointerEvents:'none'}}/>
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </>
+                                            ) : (
+                                                // For node targets, use standard BEZIER CURVE (barriers just ride on top)
+                                                <>
+                                                    <path d={`M${x1},${y1} C${(x1+x2)/2},${y1} ${(x1+x2)/2},${y2} ${x2},${y2}`} 
+                                                          stroke="transparent" strokeWidth="15" fill="none"
+                                                          style={{cursor:'pointer'}}
+                                                          onClick={(e)=>{e.stopPropagation();setSelected(c);setSelectedType('connection');}}/>
+                                                    <path d={`M${x1},${y1} C${(x1+x2)/2},${y1} ${(x1+x2)/2},${y2} ${x2},${y2}`} 
+                                                          stroke={isHovered?'#10b981':isSelected?'#0891b2':'#666'} 
+                                                          strokeWidth={isHovered?4:isSelected?3:2} 
+                                                          fill="none" 
+                                                          markerEnd="url(#arrow)" 
+                                                          style={{pointerEvents:'none'}}/>
+                                                </>
+                                            )}
+                                        </g>
+                                    );
+                                })}
+                                {tempConn&&<path d={`M${tempConn.x1},${tempConn.y1} L${tempConn.x2},${tempConn.y2}`} stroke="#0891b2" strokeWidth="2" strokeDasharray="5,5" fill="none"/>}
+                                {barriers.map(renderBarrierOnLine)}
+                                {nodes.map(renderNode)}
+                                
+                                {/* Selection rectangle for print region selection */}
+                                {selectingRegion && selectionRect && (
+                                    <rect 
+                                        x={Math.min(selectionRect.x, selectionRect.x + selectionRect.width)}
+                                        y={Math.min(selectionRect.y, selectionRect.y + selectionRect.height)}
+                                        width={Math.abs(selectionRect.width)}
+                                        height={Math.abs(selectionRect.height)}
+                                        fill="rgba(8,145,178,0.1)"
+                                        stroke="#0891b2"
+                                        strokeWidth="2"
+                                        strokeDasharray="5,5"
+                                        pointerEvents="none"
+                                    />
+                                )}
+                            </svg>
+                            
+                            {/* Selection mode overlay */}
+                            {selectingRegion && (
+                                <div style={{position:'absolute',top:'20px',left:'50%',transform:'translateX(-50%)',background:'rgba(8,145,178,0.95)',color:'white',padding:'16px 24px',borderRadius:'8px',boxShadow:'0 4px 12px rgba(0,0,0,0.2)',display:'flex',alignItems:'center',gap:'16px',zIndex:100}}>
+                                    <div style={{fontSize:'14px',fontWeight:'600'}}>
+                                        📐 Drag to select the region you want to print
+                                    </div>
+                                    <button onClick={()=>{setSelectingRegion(false);setSelectionRect(null);}} style={{background:'white',color:'#0891b2',border:'none',padding:'8px 16px',borderRadius:'6px',fontSize:'13px',fontWeight:'600',cursor:'pointer'}}>
+                                        Cancel
+                                    </button>
+                                </div>
+                            )}
+                            
+                            {nodes.length===0 && !welcomeDismissed && <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',textAlign:'center',padding:'40px',background:'rgba(255,255,255,0.95)',borderRadius:'12px',boxShadow:'0 10px 40px rgba(0,0,0,0.1)',maxWidth:'500px'}}>
+                                <h3 style={{fontSize:'24px',fontWeight:'700',color:'#1e293b',marginBottom:'12px'}}>Tripod Beta Analysis Tool</h3>
+                                <p style={{fontSize:'15px',color:'#64748b',marginBottom:'8px'}}>• Add nodes from left palette</p>
+                                <p style={{fontSize:'15px',color:'#64748b',marginBottom:'8px'}}>• Connect nodes to show causation</p>
+                                <p style={{fontSize:'15px',color:'#64748b',marginBottom:'24px'}}>• Drag barriers onto connection lines</p>
+                                <div style={{display:'flex',gap:'12px',justifyContent:'center'}}>
+                                    <button onClick={()=>loadTemplate('equipment')} style={{padding:'12px 24px',background:'linear-gradient(90deg,#0891b2,#06b6d4)',border:'none',borderRadius:'8px',color:'#fff',fontSize:'16px',fontWeight:'600',cursor:'pointer',display:'flex',alignItems:'center',gap:'8px'}}>
+                                        <Icon name="layout" size={18}/>Load Example
+                                    </button>
+                                    <button onClick={()=>loadTemplate('blank')} style={{padding:'12px 24px',background:'#fff',border:'2px solid #0891b2',borderRadius:'8px',color:'#0891b2',fontSize:'16px',fontWeight:'600',cursor:'pointer',display:'flex',alignItems:'center',gap:'8px'}}>
+                                        <Icon name="file" size={18}/>Blank Canvas
+                                    </button>
+                                </div>
+                            </div>}
+                        </div>
+                        {selected&&<div onClick={(e)=>e.stopPropagation()} onMouseDown={(e)=>e.stopPropagation()} onMouseMove={(e)=>e.stopPropagation()} onMouseEnter={(e)=>{setDragging(null);setIsDraggingNode(false);setMouseDownPos(null);}} style={{width:'320px',background:'#f8fafc',borderLeft:'1px solid #e2e8f0',padding:'20px',overflowY:'auto',position:'relative',zIndex:10}}>
+                            <div style={{display:'flex',justifyContent:'space-between',marginBottom:'16px'}}>
+                                <h2 style={{fontSize:'16px',fontWeight:'700',color:'#1e293b'}}>
+                                    {selectedType==='node' && 'Node Properties'}
+                                    {selectedType==='connection' && 'Connection'}
+                                    {selectedType==='barrier' && 'Barrier Properties'}
+                                </h2>
+                                <button onClick={deleteSelected} style={{background:'#fee2e2',border:'none',padding:'8px',borderRadius:'6px',cursor:'pointer',color:'#dc2626'}}><Icon name="trash" size={16}/></button>
+                            </div>
+                            
+                            {selectedType==='node' && (
+                                <>
+                                    <div style={{background:'#fff',padding:'12px',borderRadius:'8px',marginBottom:'12px',border:'1px solid #e2e8f0'}}>
+                                        <div style={{fontSize:'12px',fontWeight:'600',color:'#64748b',marginBottom:'8px'}}>Type</div>
+                                        <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+                                            <div style={{width:'32px',height:'32px',background:nodeTypes[selected.type].color,borderRadius:'4px'}}/>
+                                            <div style={{fontSize:'14px',fontWeight:'600',color:'#1e293b'}}>{nodeTypes[selected.type].label}</div>
+                                        </div>
+                                    </div>
+                                    <div style={{background:'#fff',padding:'12px',borderRadius:'8px',marginBottom:'12px',border:'1px solid #e2e8f0'}}>
+                                        <div style={{fontSize:'12px',fontWeight:'600',color:'#64748b',marginBottom:'8px'}}>Text</div>
+                                        <textarea value={selected.text} onChange={(e)=>updateSelected('text',e.target.value)} 
+                                                  placeholder="Enter description..." 
+                                                  style={{width:'100%',minHeight:'80px',padding:'10px',border:'1px solid #e2e8f0',borderRadius:'6px',fontSize:'14px',fontFamily:'inherit',resize:'vertical'}}/>
+                                    </div>
+                                    <div style={{background:'#fff',padding:'12px',borderRadius:'8px',border:'1px solid #e2e8f0'}}>
+                                        <div style={{fontSize:'12px',fontWeight:'600',color:'#64748b',marginBottom:'8px',display:'flex',alignItems:'center',gap:'6px'}}>
+                                            <Icon name="messageSquare" size={14}/>Comments
+                                        </div>
+                                        <textarea value={selected.comments||''} onChange={(e)=>updateSelected('comments',e.target.value)} 
+                                                  placeholder="Additional notes..." 
+                                                  style={{width:'100%',minHeight:'60px',padding:'10px',border:'1px solid #e2e8f0',borderRadius:'6px',fontSize:'13px',fontFamily:'inherit',resize:'vertical'}}/>
+                                    </div>
+                                </>
+                            )}
+                            
+                            {selectedType==='connection' && (
+                                <div style={{background:'#fff',padding:'12px',borderRadius:'8px',border:'1px solid #e2e8f0'}}>
+                                    <div style={{fontSize:'12px',fontWeight:'600',color:'#64748b',marginBottom:'8px'}}>From → To</div>
+                                    <div style={{fontSize:'13px',color:'#475569',marginBottom:'16px'}}>
+                                        {nodeTypes[nodes.find(n=>n.id===selected.from)?.type]?.label} → {
+                                            selected.toBarrier 
+                                                ? (() => {
+                                                    const barrier = barriers.find(b => b.id === selected.toBarrier);
+                                                    return barrier ? `${barrier.label || barrierTypes[barrier.type].label} (Barrier)` : 'Unknown Barrier';
+                                                })()
+                                                : nodeTypes[nodes.find(n=>n.id===selected.to)?.type]?.label
+                                        }
+                                    </div>
+                                    <div style={{padding:'12px',background:'#fef3c7',borderRadius:'6px',border:'1px solid #fbbf24'}}>
+                                        <div style={{fontSize:'12px',fontWeight:'600',color:'#92400e',marginBottom:'4px'}}>💡 Tip</div>
+                                        <div style={{fontSize:'11px',color:'#92400e'}}>Drag barriers from the left palette onto this connection line</div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {selectedType==='barrier' && (
+                                <>
+                                    <div style={{background:'#fff',padding:'12px',borderRadius:'8px',marginBottom:'12px',border:'1px solid #e2e8f0'}}>
+                                        <div style={{fontSize:'12px',fontWeight:'600',color:'#64748b',marginBottom:'8px'}}>Barrier Type</div>
+                                        <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+                                            <div style={{width:'40px',height:'40px',background:barrierTypes[selected.type].color,borderRadius:'6px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                                                <Icon name={barrierTypes[selected.type].icon} size={24}/>
+                                            </div>
+                                            <div>
+                                                <div style={{fontSize:'14px',fontWeight:'700',color:'#1e293b'}}>{barrierTypes[selected.type].label}</div>
+                                                <div style={{fontSize:'11px',color:'#64748b'}}>{barrierTypes[selected.type].description}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{background:'#fff',padding:'12px',borderRadius:'8px',marginBottom:'12px',border:'1px solid #e2e8f0'}}>
+                                        <div style={{fontSize:'12px',fontWeight:'600',color:'#64748b',marginBottom:'8px'}}>Label</div>
+                                        <input type="text" value={selected.label||''} onChange={(e)=>updateSelected('label',e.target.value)} 
+                                               placeholder="e.g., Lockout/Tagout, PPE, Training" 
+                                               style={{width:'100%',padding:'10px',border:'1px solid #e2e8f0',borderRadius:'6px',fontSize:'14px',fontFamily:'inherit'}}/>
+                                    </div>
+                                    <div style={{background:'#fff',padding:'12px',borderRadius:'8px',border:'1px solid #e2e8f0'}}>
+                                        <div style={{fontSize:'12px',fontWeight:'600',color:'#64748b',marginBottom:'8px',display:'flex',alignItems:'center',gap:'6px'}}>
+                                            <Icon name="messageSquare" size={14}/>Comments
+                                        </div>
+                                        <textarea value={selected.comments||''} onChange={(e)=>updateSelected('comments',e.target.value)} 
+                                                  placeholder="Why it failed/was missing/was effective..." 
+                                                  style={{width:'100%',minHeight:'80px',padding:'10px',border:'1px solid #e2e8f0',borderRadius:'6px',fontSize:'13px',fontFamily:'inherit',resize:'vertical'}}/>
+                                    </div>
+                                </>
+                            )}
+                        </div>}
+                    </div>
+                    
+                    
+                    {showModal==='save'&&<div className="modal" style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}} onClick={()=>setShowModal(null)}>
+                        <div onClick={(e)=>e.stopPropagation()} style={{background:'#fff',borderRadius:'12px',padding:'32px',maxWidth:'500px',width:'90%'}}>
+                            <h2 style={{fontSize:'24px',fontWeight:'700',color:'#1e293b',marginBottom:'24px'}}>Save Analysis</h2>
+                            <input type="text" value={saveName} onChange={(e)=>setSaveName(e.target.value)} placeholder="Analysis name..." style={{width:'100%',padding:'12px',border:'2px solid #e2e8f0',borderRadius:'8px',fontSize:'16px',marginBottom:'24px'}}/>
+                            <div style={{display:'flex',gap:'12px',justifyContent:'flex-end'}}>
+                                <button onClick={()=>setShowModal(null)} style={{padding:'12px 24px',background:'#f1f5f9',border:'none',borderRadius:'8px',fontSize:'14px',fontWeight:'600',color:'#64748b',cursor:'pointer'}}>Cancel</button>
+                                <button onClick={save} style={{padding:'12px 24px',background:'linear-gradient(90deg,#0891b2,#06b6d4)',border:'none',borderRadius:'8px',fontSize:'14px',fontWeight:'600',color:'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:'8px'}}><Icon name="save" size={18}/>Save</button>
+                            </div>
+                        </div>
+                    </div>}
+                    
+                    {showModal==='load'&&<div className="modal" style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}} onClick={()=>setShowModal(null)}>
+                        <div onClick={(e)=>e.stopPropagation()} style={{background:'#fff',borderRadius:'12px',padding:'32px',maxWidth:'600px',width:'90%',maxHeight:'70vh',overflow:'auto'}}>
+                            <h2 style={{fontSize:'24px',fontWeight:'700',color:'#1e293b',marginBottom:'24px'}}>Open Analysis</h2>
+                            {saved.length===0?<div style={{textAlign:'center',padding:'40px',color:'#94a3b8'}}><p>No saved analyses yet</p></div>:
+                            <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
+                                {saved.map(s=><div key={s.id} onClick={()=>load(s.id)} style={{padding:'16px',border:'2px solid #e2e8f0',borderRadius:'8px',cursor:'pointer',transition:'all 0.2s'}} className="card">
+                                    <div style={{fontSize:'16px',fontWeight:'600',color:'#1e293b',marginBottom:'4px'}}>{s.name}</div>
+                                    <div style={{fontSize:'13px',color:'#64748b'}}>{new Date(s.date).toLocaleDateString()} • {s.barriers?.length || 0} barriers</div>
+                                </div>)}
+                            </div>}
+                        </div>
+                    </div>}
+                    
+                    {showModal==='print'&&<div className="modal" style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}} onClick={()=>setShowModal(null)}>
+                        <div onClick={(e)=>e.stopPropagation()} style={{background:'#fff',borderRadius:'12px',padding:'32px',maxWidth:'500px',width:'90%'}}>
+                            <h2 style={{fontSize:'24px',fontWeight:'700',color:'#1e293b',marginBottom:'24px'}}>Print Analysis</h2>
+                            <p style={{fontSize:'14px',color:'#64748b',marginBottom:'24px'}}>Choose what to print:</p>
+                            
+                            <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
+                                <div onClick={()=>{printDiagram('complete');setShowModal(null);}} 
+                                     style={{padding:'20px',border:'2px solid #e2e8f0',borderRadius:'12px',cursor:'pointer',transition:'all 0.2s'}} 
+                                     className="card">
+                                    <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'8px'}}>
+                                        <div style={{width:'40px',height:'40px',background:'linear-gradient(135deg,#0891b2,#06b6d4)',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                                            <Icon name="maximize" size={20} style={{color:'white'}}/>
+                                        </div>
+                                        <div>
+                                            <div style={{fontSize:'16px',fontWeight:'600',color:'#1e293b'}}>Complete Diagram</div>
+                                            <div style={{fontSize:'13px',color:'#64748b'}}>Print everything</div>
+                                        </div>
+                                    </div>
+                                    <p style={{fontSize:'13px',color:'#64748b',marginLeft:'52px'}}>Print the entire diagram with all nodes and connections</p>
+                                </div>
+                                
+                                <div onClick={()=>{setShowModal(null);setSelectingRegion(true);}} 
+                                     style={{padding:'20px',border:'2px solid #e2e8f0',borderRadius:'12px',cursor:'pointer',transition:'all 0.2s'}} 
+                                     className="card">
+                                    <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'8px'}}>
+                                        <div style={{width:'40px',height:'40px',background:'linear-gradient(135deg,#0891b2,#06b6d4)',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                                            <Icon name="crop" size={20} style={{color:'white'}}/>
+                                        </div>
+                                        <div>
+                                            <div style={{fontSize:'16px',fontWeight:'600',color:'#1e293b'}}>Selected Diagram</div>
+                                            <div style={{fontSize:'13px',color:'#64748b'}}>Drag to select region</div>
+                                        </div>
+                                    </div>
+                                    <p style={{fontSize:'13px',color:'#64748b',marginLeft:'52px'}}>Draw a rectangle to select which part of the diagram to print</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>}
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

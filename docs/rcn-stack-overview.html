@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RCN Tool Stack — Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; background: #fafaf8; }
+.page { max-width: 860px; margin: 0 auto; padding: 48px 32px 80px; }
+nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 48px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+nav a { color: #555; text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+nav .current { color: #1a1a1a; font-weight: 500; }
+.doc-header { margin-bottom: 48px; }
+.doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 640px; }
+h2 { font-size: 19px; font-weight: 600; margin: 44px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
+h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: #555; }
+p { margin-bottom: 14px; }
+.diagram-wrap { margin: 28px 0 36px; overflow-x: auto; background: white; border: 1px solid #e8e8e4; border-radius: 8px; padding: 24px; }
+.tool-table { width: 100%; border-collapse: collapse; margin: 20px 0 32px; font-size: 13px; }
+.tool-table th { text-align: left; padding: 9px 12px; background: #f0f0ec; font-weight: 600; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; border: 1px solid #ddd; color: #555; }
+.tool-table td { padding: 9px 12px; border: 1px solid #e0e0da; vertical-align: top; }
+.tool-table tr:nth-child(even) td { background: #fafaf7; }
+.tool-table td:first-child { font-weight: 600; white-space: nowrap; }
+code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f0ec; padding: 1px 5px; border-radius: 3px; }
+.pill { display: inline-block; font-size: 11px; font-family: 'IBM Plex Mono', monospace; padding: 2px 8px; border-radius: 20px; margin-right: 4px; }
+.pill.green  { background: #e8f5e9; color: #2d6a4f; }
+.pill.blue   { background: #e8f0fe; color: #1a56a4; }
+.pill.purple { background: #ede9fe; color: #6b21a8; }
+.pill.amber  { background: #fff8e1; color: #b45309; }
+.pill.grey   { background: #f0f0ec; color: #555; }
+.pill.red    { background: #fef2f2; color: #b91c1c; }
+.note { background: #f5f5f0; border-left: 3px solid #aaa; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0 24px; color: #444; }
+@media print { nav { display: none; } body { background: #fff; } .diagram-wrap { border: none; padding: 0; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav>
+  <span class="current">RCN Stack Overview</span>
+  <a href="sodoto-intro.html">SODOTO</a>
+  <a href="cfa-dsc-intro.html">CfA-dSC</a>
+</nav>
+
+<div class="doc-header">
+  <div class="suite">RCN Documentation · ReLocalize Creativity Network</div>
+  <h1>RCN Tool Stack</h1>
+  <p class="lead">A map of the tools, infrastructure, and data stores that make up the RCN digital commons — how they connect, what each does, and where to read more.</p>
+</div>
+
+<h2>The Full Picture</h2>
+
+<p>The RCN tools are not independent applications — they share identity infrastructure, a graph database, a wiki, and a common set of people with cryptographic identities. The diagram below shows all major components and the relationships between them.</p>
+
+<div class="diagram-wrap">
+<svg viewBox="0 0 800 520" xmlns="http://www.w3.org/2000/svg"
+     style="width:100%;max-width:800px;display:block;font-family:'IBM Plex Sans',system-ui,sans-serif">
+  <defs>
+    <marker id="a"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#888"/></marker>
+    <marker id="ag" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#2d6a4f"/></marker>
+    <marker id="ab" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#1a56a4"/></marker>
+    <marker id="ap" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b21a8"/></marker>
+    <marker id="aa" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#b45309"/></marker>
+  </defs>
+
+  <!-- ══ ROW 1: FEDWIKI (display layer, full width) y=16 ══ -->
+  <rect x="14" y="16" width="772" height="66" rx="6" fill="#fffbeb" stroke="#b45309" stroke-width="1.5"/>
+  <text x="400" y="38" text-anchor="middle" font-size="9" fill="#b45309"
+        font-family="'IBM Plex Mono',monospace" font-weight="500" letter-spacing="0.1em">FEDWIKI  (display layer)</text>
+  <text x="158" y="58" text-anchor="middle" font-size="11.5" fill="#1e293b">SODOTO portfolio pages · sodoto-badge plugin</text>
+  <text x="158" y="72" text-anchor="middle" font-size="10.5" fill="#666">Verify button · Web Crypto in-browser</text>
+  <text x="560" y="58" text-anchor="middle" font-size="11.5" fill="#1e293b">CfA-dSC party-view contract pages</text>
+  <text x="560" y="72" text-anchor="middle" font-size="10.5" fill="#666">one page per party · state history · settlement record</text>
+  <!-- Divider inside FedWiki box -->
+  <line x1="380" y1="26" x2="380" y2="76" stroke="#e8c97a" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- ══ ROW 2: SODOTO (left) + CfA-dSC (right)  y=128 ══ -->
+
+  <!-- SODOTO box -->
+  <rect x="14" y="130" width="348" height="120" rx="6" fill="#f0f9f4" stroke="#2d6a4f" stroke-width="1.5"/>
+  <text x="188" y="152" text-anchor="middle" font-size="9" fill="#2d6a4f"
+        font-family="'IBM Plex Mono',monospace" font-weight="500" letter-spacing="0.1em">SODOTO — CREDENTIALING</text>
+  <text x="188" y="171" text-anchor="middle" font-size="11.5" fill="#1e293b">Three-gate apprenticeship process</text>
+  <text x="188" y="187" text-anchor="middle" font-size="11" fill="#333">SeeOne → DoOne → TeachOne</text>
+  <text x="188" y="203" text-anchor="middle" font-size="10.5" fill="#555">W3C Verifiable Credentials · Ed25519 JWT</text>
+  <text x="188" y="218" text-anchor="middle" font-size="10.5" fill="#555">8 issued · 5 NDC issuers · veramo/credentials/</text>
+  <text x="188" y="233" text-anchor="middle" font-size="10" fill="#2d6a4f" font-style="italic">→ docs/sodoto-intro.html</text>
+
+  <!-- CfA-dSC box -->
+  <rect x="438" y="130" width="348" height="120" rx="6" fill="#eff6ff" stroke="#1a56a4" stroke-width="1.5"/>
+  <text x="612" y="152" text-anchor="middle" font-size="9" fill="#1a56a4"
+        font-family="'IBM Plex Mono',monospace" font-weight="500" letter-spacing="0.1em">CfA-dSC — CONTRACTING</text>
+  <text x="612" y="171" text-anchor="middle" font-size="11.5" fill="#1e293b">Conversations for Action state machine</text>
+  <text x="612" y="187" text-anchor="middle" font-size="11" fill="#333">initiated → negotiating → contracted → satisfied</text>
+  <text x="612" y="203" text-anchor="middle" font-size="10.5" fill="#555">Three-currency settlement: fiat · time · gift</text>
+  <text x="612" y="218" text-anchor="middle" font-size="10.5" fill="#555">cfa-dsc-creator.html · veramo-rcn/ · Neo4j</text>
+  <text x="612" y="233" text-anchor="middle" font-size="10" fill="#1a56a4" font-style="italic">→ docs/cfa-dsc-intro.html</text>
+
+  <!-- Connection arrow between SODOTO and CfA-dSC (dashed — integration planned) -->
+  <line x1="362" y1="190" x2="438" y2="190" stroke="#888" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#a)"/>
+  <text x="400" y="182" text-anchor="middle" font-size="9" fill="#888" font-style="italic">credential</text>
+  <text x="400" y="200" text-anchor="middle" font-size="9" fill="#888" font-style="italic">→ role auth</text>
+
+  <!-- ══ ROW 2 (continued): eVSM (bottom-left)  y=128 ══ -->
+
+  <!-- eVSM box -->
+  <rect x="14" y="300" width="348" height="90" rx="6" fill="#fafaf8" stroke="#64748b" stroke-width="1.5"/>
+  <text x="188" y="322" text-anchor="middle" font-size="9" fill="#475569"
+        font-family="'IBM Plex Mono',monospace" font-weight="500" letter-spacing="0.1em">eVSM — ORGANIZATIONAL ASSESSMENT</text>
+  <text x="188" y="341" text-anchor="middle" font-size="11.5" fill="#1e293b">Extended Viable Systems Model survey suite</text>
+  <text x="188" y="357" text-anchor="middle" font-size="10.5" fill="#555">Survey · Aggregator · Report · Excel tool</text>
+  <text x="188" y="372" text-anchor="middle" font-size="10" fill="#475569" font-style="italic">→ docs/evsm-intro.html</text>
+  <text x="188" y="383" text-anchor="middle" font-size="10" fill="#475569" font-style="italic">Separate from SODOTO/CfA-dSC · no shared infrastructure</text>
+
+  <!-- ══ ROW 3: SHARED INFRASTRUCTURE y=430 ══ -->
+
+  <!-- Veramo -->
+  <rect x="14" y="440" width="240" height="66" rx="6" fill="#f5f3ff" stroke="#6b21a8" stroke-width="1.5"/>
+  <text x="134" y="460" text-anchor="middle" font-size="9" fill="#6b21a8"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">VERAMO + ED25519 KEYS</text>
+  <text x="134" y="477" text-anchor="middle" font-size="11" fill="#1e293b">DID creation · signing · key management</text>
+  <text x="134" y="491" text-anchor="middle" font-size="10" fill="#555">dids.json · people.json · keys.json</text>
+
+  <!-- Neo4j -->
+  <rect x="280" y="440" width="240" height="66" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="400" y="460" text-anchor="middle" font-size="9" fill="#15803d"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">NEO4J GRAPH</text>
+  <text x="400" y="477" text-anchor="middle" font-size="11" fill="#1e293b">Teaching chains · contract relationships</text>
+  <text x="400" y="491" text-anchor="middle" font-size="10" fill="#555">Party · Contract · Credential nodes</text>
+
+  <!-- People / DIDs -->
+  <rect x="546" y="440" width="240" height="66" rx="6" fill="#fafaf8" stroke="#64748b" stroke-width="1.5"/>
+  <text x="666" y="460" text-anchor="middle" font-size="9" fill="#475569"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">PEOPLE + DIDs</text>
+  <text x="666" y="477" text-anchor="middle" font-size="11" fill="#1e293b">Each person has one DID used across all tools</text>
+  <text x="666" y="491" text-anchor="middle" font-size="10" fill="#555">Marc · Kerry · Noah + future practitioners</text>
+
+  <!-- ══ ARROWS ══ -->
+
+  <!-- FedWiki ↓ to SODOTO -->
+  <line x1="188" y1="82" x2="188" y2="130" stroke="#b45309" stroke-width="1.5" marker-end="url(#aa)"/>
+
+  <!-- FedWiki ↓ to CfA-dSC -->
+  <line x1="612" y1="82" x2="612" y2="130" stroke="#b45309" stroke-width="1.5" marker-end="url(#aa)"/>
+
+  <!-- SODOTO ↓ to Veramo -->
+  <line x1="130" y1="390" x2="100" y2="440" stroke="#6b21a8" stroke-width="1.5" marker-end="url(#ap)"/>
+
+  <!-- SODOTO ↓ to Neo4j -->
+  <line x1="250" y1="390" x2="360" y2="440" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ag)"/>
+
+  <!-- CfA-dSC ↓ to Veramo -->
+  <line x1="490" y1="250" x2="200" y2="440" stroke="#6b21a8" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#ap)"/>
+
+  <!-- CfA-dSC ↓ to Neo4j -->
+  <line x1="560" y1="250" x2="430" y2="440" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ag)"/>
+
+  <!-- Veramo ↔ People -->
+  <line x1="546" y1="470" x2="254" y2="470" stroke="#888" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#a)"/>
+
+  <!-- Arrow labels -->
+  <text x="96" y="416" font-size="9" fill="#6b21a8" font-style="italic" text-anchor="middle">signs credentials</text>
+  <text x="316" y="430" font-size="9" fill="#16a34a" font-style="italic" text-anchor="middle">teaching chains</text>
+
+  <!-- Legend -->
+  <text x="14" y="516" font-size="9.5" fill="#888" font-style="italic">Dashed arrows = integration planned or in progress · Solid = implemented</text>
+</svg>
+</div>
+
+<h2>Tools at a Glance</h2>
+
+<table class="tool-table">
+  <tr>
+    <th>Tool</th>
+    <th>What It Does</th>
+    <th>Who Uses It</th>
+    <th>Status</th>
+    <th>Read More</th>
+  </tr>
+  <tr>
+    <td>SODOTO</td>
+    <td>Issues W3C Verifiable Credentials for practitioner skills through a three-gate apprenticeship process (SeeOne, DoOne, TeachOne). Credentials are signed by NDC organizations, displayed as FedWiki badges, and verified in-browser.</td>
+    <td>Learners, mentors, NDC coordinators</td>
+    <td><span class="pill green">Active — 8 credentials issued</span></td>
+    <td><a href="sodoto-intro.html">sodoto-intro.html</a></td>
+  </tr>
+  <tr>
+    <td>CfA-dSC</td>
+    <td>Tracks service commitments between two parties using the Conversations for Action state machine and settles payment across three currencies: fiat, time-dollars, and gift. Contracts are signed and displayed as FedWiki party-view pages. Neo4j writes and FedWiki page generation go through <code>sofi-proxy.py</code> (running at localhost:8765 as <code>~/evsm-proxy.py</code>; canonical copy at <code>~/rcn/sofi-proxy.py</code>).</td>
+    <td>Customers, performers, NDC coordinators</td>
+    <td><span class="pill amber">Partial — UI + signing + proxy working; cfa-dsc-validator not on disk</span></td>
+    <td><a href="cfa-dsc-intro.html">cfa-dsc-intro.html</a></td>
+  </tr>
+  <tr>
+    <td>eVSM</td>
+    <td>Browser-based organizational health assessment suite using the extended Viable Systems Model framework. Four tools: Survey, Aggregator, Report, Excel. Separate from the SODOTO/CfA-dSC stack — no shared infrastructure.</td>
+    <td>Facilitators, site managers, respondents</td>
+    <td><span class="pill green">Active</span></td>
+    <td><a href="evsm-intro.html">evsm-intro.html</a></td>
+  </tr>
+  <tr>
+    <td>Veramo + Ed25519</td>
+    <td>Shared identity and signing infrastructure. Creates <code>did:key</code> identities for people and NDC organizations. Signs credentials (SODOTO) and contract moves (CfA-dSC) using Ed25519 keys.</td>
+    <td>NDC coordinators (technical)</td>
+    <td><span class="pill green">Working</span></td>
+    <td>See SODOTO and CfA-dSC docs</td>
+  </tr>
+  <tr>
+    <td>Neo4j</td>
+    <td>Graph database running in Docker via OrbStack (<code>bolt://localhost:7687</code>). Full SODOTO schema is designed: Person, Skill, Credential, Debt, Organization, GateAttempt nodes with TAUGHT chains and OWES-to-commons debt relationships. CfA-dSC adds Party, Contract, and planned Move nodes. Neo4j writes for CfA-dSC go through <code>sofi-proxy.py</code> (confirmed working; test contracts exist in graph). SODOTO Neo4j writes are next.</td>
+    <td>System (automated writes); coordinators (queries)</td>
+    <td><span class="pill amber">Partial — CfA-dSC Party/Contract nodes working; SODOTO writes next</span></td>
+    <td>See sodoto-intro.html §Neo4j</td>
+  </tr>
+  <tr>
+    <td>Marlowe</td>
+    <td>Formal contract language providing the execution layer for SODOTO gate completion. A symmetric three-handshake Marlowe contract governs SeeOne/DoOne/TeachOne — when a gate completes in Marlowe it triggers Veramo signing and Neo4j writes. Not yet implemented; currently coordinators run the process manually.</td>
+    <td>System (execution layer)</td>
+    <td><span class="pill red">Designed only — source file not on disk</span></td>
+    <td>—</td>
+  </tr>
+  <tr>
+    <td>FedWiki</td>
+    <td>The shared display and knowledge layer. SODOTO credentials appear as badge pages; CfA-dSC contracts appear as party-view pages; eVSM produces narrative pages. Ward Cunningham's federated wiki — each practitioner's wiki is their own.</td>
+    <td>All practitioners</td>
+    <td><span class="pill green">Working</span></td>
+    <td>—</td>
+  </tr>
+</table>
+
+<h2>What Is Not On Disk (Critical Gaps)</h2>
+
+<div class="note"><strong>sofi-proxy.py resolved (May 2026):</strong> The proxy was found running at <code>~/evsm-proxy.py</code> (PID active, port 8765). It contains <code>/api/anthropic</code>, <code>/api/wiki-write</code>, and <code>/api/finalize-contract</code> — all three endpoints confirmed. Canonical copy saved to <code>~/rcn/sofi-proxy.py</code> for version control. The table below is updated.</div>
+
+<table class="tool-table">
+  <tr><th>Item</th><th>Where it should be</th><th>Status</th></tr>
+  <tr>
+    <td><strong>sofi-proxy.py</strong></td>
+    <td><code>~/rcn/sofi-proxy.py</code></td>
+    <td><span class="pill green">Found — running as ~/evsm-proxy.py; copied to repo</span></td>
+  </tr>
+  <tr>
+    <td><strong>cfa-dsc-schema.json</strong></td>
+    <td><code>~/rcn/</code></td>
+    <td><span class="pill amber">Missing — schema documented in handoff; needs committing to repo</span></td>
+  </tr>
+  <tr>
+    <td><strong>cfa-dsc-validator/</strong></td>
+    <td><code>~/rcn/</code></td>
+    <td><span class="pill amber">Missing — TypeScript validator, 25 passing tests; needs reconstruction</span></td>
+  </tr>
+  <tr>
+    <td><strong>sodoto-mutual-certification.marlowe</strong></td>
+    <td><code>~/rcn/</code></td>
+    <td><span class="pill red">Designed only — source not on disk</span></td>
+  </tr>
+  <tr>
+    <td><strong>wiki-plugin-sodoto-badge/ source</strong></td>
+    <td><code>~/rcn/wiki-plugin-sodoto-badge/</code></td>
+    <td><span class="pill amber">Plugin installed and working; source not committed to repo</span></td>
+  </tr>
+</table>
+
+<div class="note"><strong>Note on rcn_api.py:</strong> The handoff document states that <code>rcn_api.py</code> writes to Neo4j. The file on disk (<code>~/rcn/data/rcn_api.py</code>) is a PostGIS/geo API connecting to the <code>rcn_geo</code> PostgreSQL database — a completely different tool serving place boundary data. The Neo4j proxy is <code>sofi-proxy.py</code> / <code>evsm-proxy.py</code> on port 8765.</div>
+
+<h2>Shared Infrastructure</h2>
+
+<h3>One DID per person, used everywhere</h3>
+<p>Each person in the RCN has a single <code>did:key</code> identity — a public-private Ed25519 key pair. The same DID appears in their SODOTO credentials (as learner or mentor), in CfA-dSC contracts (as customer or performer), and in any signed history entries they produce. Identity is not tool-specific.</p>
+
+<h3>The DID registry: dids.json and people.json</h3>
+<p>Both files live in <code>~/rcn/veramo/</code> and are git-committed (public keys only — private keys stay in <code>keys.json</code> which is gitignored). Both SODOTO and CfA-dSC read from these files. When a new practitioner joins, they are added here once and available to all tools.</p>
+
+<h3>Verification is always in-browser</h3>
+<p>Whether verifying a SODOTO credential badge or (eventually) a CfA-dSC signed history entry, the verification logic uses the same pattern: extract the public key from the <code>did:key</code> string, call <code>crypto.subtle.verify()</code>, report pass or fail. No server. The cryptographic guarantee is the same across both systems.</p>
+
+<h2>How the Tools Connect in Practice</h2>
+
+<p>A concrete example: a Community Health Worker (CHW) in the Superior AZ NDC.</p>
+
+<ol>
+  <li>The CHW earns an <strong>eVSM Site Manager</strong> credential through SODOTO — three gates, witnessed by a mentor, signed by the NDC. This credential lives in their FedWiki portfolio.</li>
+  <li>The NDC contracts with a neighborhood association for the CHW to run an eVSM assessment. The contract is a <strong>CfA-dSC</strong> — negotiated, signed by both parties, payment in fiat plus time-dollars. The CHW's eVSM Site Manager credential is referenced as their qualification.</li>
+  <li>The assessment runs. The CHW facilitates. The neighborhood association declares satisfaction. The <strong>settlement is recorded</strong> — a signed document showing the three-currency breakdown.</li>
+  <li>At TeachOne in the CHW's credentialing path, a student learns from them. When TeachOne passes, a <strong>gift relationship</strong> is recorded in Neo4j — the student's debt to the CHW for their learning, expressible later as time-dollars in a future CfA-dSC.</li>
+</ol>
+
+<p>Each step uses a different tool. Each tool reads the same identity infrastructure. The FedWiki connects the practitioner's story across all of them.</p>
+
+<div class="note">eVSM is architecturally separate from SODOTO and CfA-dSC — it does not use Veramo, Neo4j, or the DID registry. It produces FedWiki-compatible output but is not currently integrated with the shared identity layer. This may change if eVSM facilitator credentials become part of SODOTO.</div>
+
+</div>
+</body>
+</html>

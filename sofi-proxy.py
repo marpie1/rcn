@@ -82,6 +82,8 @@ class Handler(BaseHTTPRequestHandler):
                 data = f.read()
             self.send_response(200)
             self.send_header('Content-Type', ctype)
+            if ext == 'html':
+                self.send_header('Cache-Control', 'no-store')
             self._cors()
             self.end_headers()
             self.wfile.write(data)
@@ -91,6 +93,87 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(b'Not found')
 
     def do_POST(self):
+        if self.path == '/api/write-issue':
+            length = int(self.headers.get('Content-Length', 0))
+            body   = self.rfile.read(length)
+            try:
+                payload    = json.loads(body)
+                # Sanitise key — no path traversal
+                key        = payload['key'].replace('..', '').replace('/', '').replace('\\', '')
+                label      = payload['label']
+                ndc        = payload['ndc']
+                issue_data = payload['issueData']
+
+                issue_dir  = os.path.join(eVSM_DIR, 'tools', 'issue-data')
+                os.makedirs(issue_dir, exist_ok=True)
+
+                # Write issue JSON
+                issue_path = os.path.join(issue_dir, key + '.json')
+                with open(issue_path, 'w', encoding='utf-8') as f:
+                    json.dump(issue_data, f, ensure_ascii=False, indent=2)
+                print(f"  ISSUE WRITE {issue_path}")
+
+                # Upsert entry in issue-index.json
+                index_path = os.path.join(issue_dir, 'issue-index.json')
+                try:
+                    with open(index_path, 'r', encoding='utf-8') as f:
+                        index = json.load(f)
+                except (FileNotFoundError, json.JSONDecodeError):
+                    index = []
+
+                entry = {
+                    'key':   key,
+                    'label': label,
+                    'ndc':   ndc,
+                    'url':   f'http://localhost:8765/tools/issue-data/{key}.json',
+                    'map':   f'http://localhost:8765/tools/issue-polygon-map.html?issue={key}'
+                }
+                pos = next((i for i, e in enumerate(index) if e.get('key') == key), None)
+                if pos is not None:
+                    index[pos] = entry
+                else:
+                    index.append(entry)
+                with open(index_path, 'w', encoding='utf-8') as f:
+                    json.dump(index, f, ensure_ascii=False, indent=2)
+                print(f"  ISSUE INDEX {len(index)} entries")
+
+                self.send_response(200); self._cors()
+                self.send_header('Content-Type', 'application/json'); self.end_headers()
+                self.wfile.write(json.dumps({'ok': True, 'key': key}).encode())
+            except Exception as e:
+                self.send_response(500); self._cors(); self.end_headers()
+                self.wfile.write(json.dumps({'error': str(e)}).encode())
+            return
+
+        if self.path == '/api/wiki-save-item':
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length))
+            site = os.path.basename(body.get('site', ''))
+            slug = os.path.basename(body.get('slug', ''))
+            item_id = body.get('id', '')
+            updates = body.get('updates', {})
+            page_path = os.path.expanduser(f'~/.wiki/{site}/pages/{slug}')
+            try:
+                with open(page_path, 'r', encoding='utf-8') as f:
+                    page = json.load(f)
+                for item in page.get('story', []):
+                    if item.get('id') == item_id:
+                        item.update(updates)
+                        break
+                with open(page_path, 'w', encoding='utf-8') as f:
+                    json.dump(page, f)
+                self.send_response(200)
+                self._cors()
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(b'{"ok":true}')
+            except Exception as e:
+                self.send_response(500)
+                self._cors()
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': str(e)}).encode())
+            return
+
         if not self._auth_ok():
             self.send_response(401)
             self._cors()

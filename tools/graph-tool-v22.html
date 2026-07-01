@@ -476,6 +476,12 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
 .opm-swatch{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;border:1.5px solid transparent;margin-bottom:3px;transition:background .1s}
 .opm-swatch:hover{filter:brightness(.94)}
 .opm-swatch.active{border-color:#1e293b}
+#sfd-banner{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#b45309;color:#fff;font-size:11px;font-weight:500;padding:4px 14px;border-radius:20px;pointer-events:none;display:none;z-index:15;white-space:nowrap}
+.sfd-palette{padding:8px 12px;border-bottom:1px solid #f1f5f9}
+.sfd-palette-title{font-size:10px;color:#64748b;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+.sfd-swatch{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;border:1.5px solid transparent;margin-bottom:3px;transition:background .1s}
+.sfd-swatch:hover{filter:brightness(.94)}
+.sfd-swatch.active{border-color:#1e293b}
 #opm-picker{position:fixed;z-index:600;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;box-shadow:0 4px 24px rgba(0,0,0,.18);display:none;min-width:240px;max-width:320px}
 .opm-pick-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
 .opm-pick-opt{display:flex;flex-direction:column;gap:2px;padding:6px 8px;border-radius:6px;cursor:pointer;border:2px solid transparent;margin-bottom:4px;transition:background .1s}
@@ -604,6 +610,7 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
     <div id="eip-banner">EIP Mode — Ecology · Institutions · Politics</div>
     <div id="nrm-banner">NRM Mode — Neighborhood Risk Management</div>
     <div id="opm-banner">OPM Mode — use +Edge to draw typed relationships</div>
+    <div id="sfd-banner">SFD Mode — place Stocks, Flows &amp; Auxiliaries</div>
     <div id="trace-banner">Trace Mode — select edges, assign T1–T4, then ▶ to animate</div>
     <div id="wardley-banner">Wardley Mode — Genesis · Custom · Product · Commodity</div>
     <div id="legend-overlay">
@@ -667,6 +674,7 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
         <button class="tb-btn" id="btn-trace" onclick="setMode('trace')" style="border-color:#0891b2;color:#0891b2">Trace</button>
         <button class="tb-btn" id="btn-wardley" onclick="setMode('wardley')" style="border-color:#0369a1;color:#0369a1">Wardley</button>
         <button class="tb-btn" id="btn-opm" onclick="setMode('opm')" style="border-color:#0f766e;color:#0f766e">OPM</button>
+        <button class="tb-btn" id="btn-sfd" onclick="setMode('sfd')" style="border-color:#b45309;color:#b45309">SFD</button>
       </div>
       <div id="drive-tree-section" style="display:none;margin-top:5px;padding-top:4px;border-top:1px solid #f1f5f9">
         <div style="font-size:10px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Driver Trees</div>
@@ -774,6 +782,7 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
         <button class="tb-btn" id="btn-opm-cypher" title="Export OPM diagram as Neo4j Cypher with typed nodes and OPL-labeled relationships" style="background:transparent;border-color:transparent;color:#0f766e;display:none" onclick="exportOPMCypher()">OPM&#x2192;Cypher</button>
         <button class="tb-btn" id="btn-opm-csv" title="Export OPM triples as CSV (source, linkType, target, opl)" style="background:transparent;border-color:transparent;color:#0f766e;display:none" onclick="exportOPMCSV()">OPM&#x2192;CSV</button>
         <button class="tb-btn" id="btn-opm-opl" title="Export OPM diagram as OPL (Object-Process Language) plain text" style="background:transparent;border-color:transparent;color:#0f766e;display:none" onclick="exportOPMOPL()">OPM&#x2192;OPL</button>
+        <button class="tb-btn" id="btn-sfd-xmile" title="Export SFD as XMILE — opens in Vensim or Insightmaker for simulation" style="background:transparent;border-color:transparent;color:#b45309;display:none" onclick="exportSFDXMILE()">SFD&#x2192;XMILE</button>
       </div>
     </div>
     <div id="prop-tooltip"></div>
@@ -1844,6 +1853,14 @@ var OPM_DISPLAY_LABELS={
   Invocation:'invokes',
 };
 
+// ── SFD (Stock & Flow Diagram) ────────────────────────────
+var SFD_NODE_TYPES=[
+  {type:'stock', label:'Stock',     color:'#dbeafe',fontColor:'#1e3a8a',shape:'stock',  borderWidth:3, w:120,h:50, hint:'Accumulator — stores quantities over time'},
+  {type:'valve', label:'Flow',      color:'#ffffff', fontColor:'#000000',shape:'valve',  borderWidth:2, w:46, h:46, hint:'Flow rate — controls how fast stock changes'},
+  {type:'aux',   label:'Auxiliary', color:'#fef9c3',fontColor:'#713f12',shape:'ellipse',borderWidth:1.5,w:90, h:40, hint:'Helper variable, constant, or parameter'},
+  {type:'cloud', label:'Cloud',     color:'#e2e8f0',fontColor:'#475569',shape:'cloud',  borderWidth:1.5,w:70, h:50, hint:'Boundary — infinite source or sink'},
+];
+var sfdActiveType=null;
 var OPM_NODE_TYPES=[
   {type:'Object',  label:'Object',  color:'#bfdbfe',textColor:'#1e3a8a',shape:'rounded', hint:'Things that exist; can have states'},
   {type:'Process', label:'Process', color:'#d1fae5',textColor:'#064e3b',shape:'ellipse', hint:'Things that transform objects'},
@@ -1897,6 +1914,79 @@ function exitOPM(){
   buildPanel();
 }
 
+// ── SFD functions ────────────────────────────────────────────
+function enterSFD(){
+  updateSFDBanner();
+  var b=document.getElementById('btn-sfd-xmile');if(b)b.style.display='';
+  renderAll();buildPanel();
+}
+function exitSFD(){
+  document.getElementById('sfd-banner').style.display='none';
+  sfdActiveType=null;
+  svgEl.style.cursor='default';
+  var b=document.getElementById('btn-sfd-xmile');if(b)b.style.display='none';
+  renderAll();buildPanel();
+}
+function updateSFDBanner(){
+  var b=document.getElementById('sfd-banner');
+  b.textContent=sfdActiveType?
+    ('SFD \u2014 click canvas to place '+sfdActiveType):
+    'SFD Mode \u2014 place Stocks, Flows & Auxiliaries, use +Edge to connect';
+  b.style.display='block';
+}
+function applySFDToNewNode(n){
+  if(!sfdActiveType)return;
+  for(var i=0;i<SFD_NODE_TYPES.length;i++){
+    var t=SFD_NODE_TYPES[i];
+    if(t.type===sfdActiveType){
+      n.sfdType=t.type;n.color=t.color;n.fontColor=t.fontColor;
+      n.shape=t.shape;n.borderWidth=t.borderWidth;n.borderColor='#000000';
+      n.w=t.w;n.h=t.h;
+      if(t.type==='cloud')n.label='';
+      else if(t.type==='valve')n.label='Flow';
+      else n.label=t.label;
+      autoSize(n);break;
+    }
+  }
+}
+function setNodeSFDType(id,sfdType){
+  snap();var n=nodeById(id);if(!n)return;
+  for(var i=0;i<SFD_NODE_TYPES.length;i++){
+    var t=SFD_NODE_TYPES[i];
+    if(t.type===sfdType){
+      n.sfdType=t.type;n.color=t.color;n.fontColor=t.fontColor;
+      n.shape=t.shape;n.borderWidth=t.borderWidth;break;
+    }
+  }
+  autoSize(n);renderAll();buildPanel();
+}
+function buildSFDPalette(){
+  var div=document.createElement('div');
+  div.className='sfd-palette';
+  var title=document.createElement('div');title.className='sfd-palette-title';title.textContent='SFD Elements';div.appendChild(title);
+  SFD_NODE_TYPES.forEach(function(t){
+    var sw=document.createElement('div');
+    sw.className='sfd-swatch'+(sfdActiveType===t.type?' active':'');
+    sw.style.background=t.color;sw.style.color=t.fontColor;
+    sw.style.border='1.5px solid '+(sfdActiveType===t.type?'#1e293b':'#cbd5e1');
+    sw.title=t.hint;
+    sw.innerHTML='<span style="font-weight:700">'+t.label+'</span><span style="font-size:10px;opacity:.7;margin-left:6px">'+t.hint+'</span>';
+    sw.onclick=(function(tt){return function(){
+      sfdActiveType=(sfdActiveType===tt.type)?null:tt.type;
+      svgEl.style.cursor=sfdActiveType?'crosshair':'default';
+      updateSFDBanner();buildPanel();
+    };})(t);
+    div.appendChild(sw);
+  });
+  var hint=document.createElement('div');
+  hint.style.cssText='font-size:10px;color:#94a3b8;padding:4px 8px 2px;line-height:1.5';
+  hint.innerHTML='Click a type above, then click canvas to place.<br>Use <b>+Edge</b> to draw pipes (stock\u2194valve) or connectors (aux\u2192valve).';
+  div.appendChild(hint);
+  return div;
+}
+function sfdIsFlowEndpoint(n){
+  return n&&(n.sfdType==='stock'||n.sfdType==='cloud');
+}
 function applyOPMToNewNode(n){
   if(!opmActiveType)return;
   for(var i=0;i<OPM_NODE_TYPES.length;i++){
@@ -2871,8 +2961,9 @@ function setAllStraight(on){if(on){document.getElementById('chk-curved').checked
 function syncCC(){if(!edges.length)return;document.getElementById('chk-curved').checked=edges.every(function(e){return e.curved;});document.getElementById('chk-straight').checked=edges.every(function(e){return !e.curved;});}
 function svgPt(cx,cy){var r=svgEl.getBoundingClientRect();return{x:(cx-r.left-pan.x)/zoom,y:(cy-r.top-pan.y)/zoom};}
 function toScreen(sx,sy){return{x:sx*zoom+pan.x,y:sy*zoom+pan.y};}
-function applyT(){var t='translate('+pan.x+','+pan.y+') scale('+zoom+')';nodesLayer.setAttribute('transform',t);edgesLayer.setAttribute('transform',t);linesLayer.setAttribute('transform',t);wardleyLayer.setAttribute('transform',t);triplesLayer.setAttribute('transform',t);renderCLDOverlay();}function setMode(m){var prev=mode;mode=m;if(m!=='edge')stickyEdge=false;if(m!=='node')stickyNode=false;['select','node','edge','freeline','arrow','cld','eip','nrm','opm','trace','wardley'].forEach(function(k){var b=document.getElementById('btn-'+k);if(b)b.classList.toggle('active',k===m);});var bb=document.getElementById('btn-basic');if(bb)bb.classList.toggle('active',m==='select'||m==='node'||m==='edge');svgEl.style.cursor=(m==='node'||m==='freeline'||m==='arrow')?'crosshair':'default';document.getElementById('edge-hint').style.display=m==='edge'?'block':'none';if(m!=='edge')clearEdgeDrag();if(m!=='freeline'&&m!=='arrow'){freeDraw=null;while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);}if(m==='edge'&&prev==='opm')prevGraphMode='opm';else if(m!=='edge')prevGraphMode=null;if(m==='cld'){document.getElementById('cld-banner').style.display='block';document.getElementById('cld-mode-opts').style.display='block';enterCLD();}else{document.getElementById('cld-banner').style.display='none';document.getElementById('cld-mode-opts').style.display='none';if(prev==='cld')exitCLD();}if(m==='eip'){enterEIP();}else if(prev==='eip'){exitEIP();}if(m==='nrm'){enterNRM();}else if(prev==='nrm'){exitNRM();}
+function applyT(){var t='translate('+pan.x+','+pan.y+') scale('+zoom+')';nodesLayer.setAttribute('transform',t);edgesLayer.setAttribute('transform',t);linesLayer.setAttribute('transform',t);wardleyLayer.setAttribute('transform',t);triplesLayer.setAttribute('transform',t);renderCLDOverlay();}function setMode(m){var prev=mode;mode=m;if(m!=='edge')stickyEdge=false;if(m!=='node')stickyNode=false;['select','node','edge','freeline','arrow','cld','eip','nrm','opm','sfd','trace','wardley'].forEach(function(k){var b=document.getElementById('btn-'+k);if(b)b.classList.toggle('active',k===m);});var bb=document.getElementById('btn-basic');if(bb)bb.classList.toggle('active',m==='select'||m==='node'||m==='edge');svgEl.style.cursor=(m==='node'||m==='freeline'||m==='arrow')?'crosshair':'default';document.getElementById('edge-hint').style.display=m==='edge'?'block':'none';if(m!=='edge')clearEdgeDrag();if(m!=='freeline'&&m!=='arrow'){freeDraw=null;while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);}if(m==='edge'&&prev==='opm')prevGraphMode='opm';else if(m==='edge'&&prev==='sfd')prevGraphMode='sfd';else if(m!=='edge')prevGraphMode=null;if(m==='cld'){document.getElementById('cld-banner').style.display='block';document.getElementById('cld-mode-opts').style.display='block';enterCLD();}else{document.getElementById('cld-banner').style.display='none';document.getElementById('cld-mode-opts').style.display='none';if(prev==='cld')exitCLD();}if(m==='eip'){enterEIP();}else if(prev==='eip'){exitEIP();}if(m==='nrm'){enterNRM();}else if(prev==='nrm'){exitNRM();}
 if(m==='opm'){enterOPM();}else if(prev==='opm'){exitOPM();}
+if(m==='sfd'){document.getElementById('sfd-banner').style.display='block';enterSFD();}else{document.getElementById('sfd-banner').style.display='none';if(prev==='sfd')exitSFD();}
 if(m==='trace'){document.getElementById('trace-banner').style.display='block';document.getElementById('trace-mode-opts').style.display='block';enterTrace();}else{document.getElementById('trace-banner').style.display='none';document.getElementById('trace-mode-opts').style.display='none';if(prev==='trace')exitTrace();}
 if(m==='wardley'){document.getElementById('wardley-banner').style.display='block';enterWardley();}else{document.getElementById('wardley-banner').style.display='none';if(prev==='wardley')exitWardley();}}
 function clearEdgeDrag(){edgeDrag={active:false,srcId:null};while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);}
@@ -2889,7 +2980,11 @@ function tNearestPt(e,px,py){var best=0.5,bestD=Infinity,N=60;for(var i=0;i<=N;i
 function eLO(e){var ep=edgeEndpoints(e);if(!ep||ep.selfLoop)return{nx:0,ny:-1};var pt=ptAtT(e,.5);if(ep.straight)return{nx:-pt.ty,ny:pt.tx};var mx=(ep.srcPt.x+ep.tgtPt.x)/2,my=(ep.srcPt.y+ep.tgtPt.y)/2,cx=ep.cpx-mx,cy=ep.cpy-my,cl=Math.sqrt(cx*cx+cy*cy)||1;return{nx:cx/cl,ny:cy/cl};}
 function arcHit(e,px,py,tol){tol=tol||10;var src=nodeById(e.src),tgt=nodeById(e.tgt);if(!src||!tgt)return false;if(src.id===tgt.id){var m=midPt(e);return Math.sqrt(Math.pow(px-m.x,2)+Math.pow(py-m.y,2))<20;}var ep=edgeEndpoints(e);if(!ep)return false;for(var i=0;i<=40;i++){var tt=i/40,bx,by;if(ep.straight){bx=(1-tt)*ep.srcPt.x+tt*ep.tgtPt.x;by=(1-tt)*ep.srcPt.y+tt*ep.tgtPt.y;}else{bx=Math.pow(1-tt,2)*ep.srcPt.x+2*(1-tt)*tt*ep.cpx+tt*tt*ep.tgtPt.x;by=Math.pow(1-tt,2)*ep.srcPt.y+2*(1-tt)*tt*ep.cpy+tt*tt*ep.tgtPt.y;}if(Math.sqrt(Math.pow(px-bx,2)+Math.pow(py-by,2))<tol)return true;}return false;}
 function dashAttr(d){return d==='dashed'?'stroke-dasharray="8 5"':d==='dotted'?'stroke-dasharray="2 4"':'';}
-function shapeHTML(n,fill,stroke,sw,bDash){var hw=n.w/2,hh=n.h/2;sw=sw||1.5;var da=dashAttr(bDash||n.borderDash||'solid');var daAttr=da?' '+da:'';switch(n.shape){case'rect':return'<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+n.w+'" height="'+n.h+'" rx="2" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';case'rounded':return'<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+n.w+'" height="'+n.h+'" rx="10" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';case'diamond':return'<polygon points="0,'+(-hh*1.35)+' '+(hw*1.25)+',0 0,'+(hh*1.35)+' '+(-hw*1.25)+',0" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';case'hexagon':{var pts=[];for(var i=0;i<6;i++){var a=Math.PI/6+i*Math.PI/3;pts.push((hw*Math.cos(a)).toFixed(1)+','+(hh*Math.sin(a)).toFixed(1));}return'<polygon points="'+pts.join(' ')+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';}case'cylinder':return'<ellipse cx="0" cy="'+(-hh+9)+'" rx="'+hw+'" ry="9" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/><rect x="'+(-hw)+'" y="'+(-hh+9)+'" width="'+n.w+'" height="'+(n.h-9)+'" fill="'+fill+'" stroke="none"/><line x1="'+(-hw)+'" y1="'+(-hh+9)+'" x2="'+(-hw)+'" y2="'+hh+'" stroke="'+stroke+'" stroke-width="'+sw+'"/><line x1="'+hw+'" y1="'+(-hh+9)+'" x2="'+hw+'" y2="'+hh+'" stroke="'+stroke+'" stroke-width="'+sw+'"/><ellipse cx="0" cy="'+hh+'" rx="'+hw+'" ry="9" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';case'barrel':return'<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+n.w+'" height="'+n.h+'" rx="14" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/><line x1="'+(-hw+18)+'" y1="'+(-hh)+'" x2="'+(-hw+18)+'" y2="'+hh+'" stroke="'+stroke+'" stroke-width="1" opacity=".35"/><line x1="'+(hw-18)+'" y1="'+(-hh)+'" x2="'+(hw-18)+'" y2="'+hh+'" stroke="'+stroke+'" stroke-width="1" opacity=".35"/>';default:return'<ellipse cx="0" cy="0" rx="'+hw+'" ry="'+hh+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';}}
+function shapeHTML(n,fill,stroke,sw,bDash){var hw=n.w/2,hh=n.h/2;sw=sw||1.5;var da=dashAttr(bDash||n.borderDash||'solid');var daAttr=da?' '+da:'';switch(n.shape){case'rect':return'<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+n.w+'" height="'+n.h+'" rx="2" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';case'rounded':return'<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+n.w+'" height="'+n.h+'" rx="10" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';case'diamond':return'<polygon points="0,'+(-hh*1.35)+' '+(hw*1.25)+',0 0,'+(hh*1.35)+' '+(-hw*1.25)+',0" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';case'hexagon':{var pts=[];for(var i=0;i<6;i++){var a=Math.PI/6+i*Math.PI/3;pts.push((hw*Math.cos(a)).toFixed(1)+','+(hh*Math.sin(a)).toFixed(1));}return'<polygon points="'+pts.join(' ')+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';}case'cylinder':return'<ellipse cx="0" cy="'+(-hh+9)+'" rx="'+hw+'" ry="9" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/><rect x="'+(-hw)+'" y="'+(-hh+9)+'" width="'+n.w+'" height="'+(n.h-9)+'" fill="'+fill+'" stroke="none"/><line x1="'+(-hw)+'" y1="'+(-hh+9)+'" x2="'+(-hw)+'" y2="'+hh+'" stroke="'+stroke+'" stroke-width="'+sw+'"/><line x1="'+hw+'" y1="'+(-hh+9)+'" x2="'+hw+'" y2="'+hh+'" stroke="'+stroke+'" stroke-width="'+sw+'"/><ellipse cx="0" cy="'+hh+'" rx="'+hw+'" ry="9" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';case'barrel':return'<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+n.w+'" height="'+n.h+'" rx="14" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/><line x1="'+(-hw+18)+'" y1="'+(-hh)+'" x2="'+(-hw+18)+'" y2="'+hh+'" stroke="'+stroke+'" stroke-width="1" opacity=".35"/><line x1="'+(hw-18)+'" y1="'+(-hh)+'" x2="'+(hw-18)+'" y2="'+hh+'" stroke="'+stroke+'" stroke-width="1" opacity=".35"/>';
+case'stock':return'<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+n.w+'" height="'+n.h+'" rx="3" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';
+case'valve':{var r=Math.min(hw,hh);var x0=(-r*0.58).toFixed(1),y0=(-r*0.58).toFixed(1),x1=(r*0.58).toFixed(1),y1=(r*0.58).toFixed(1);return'<circle cx="0" cy="0" r="'+r.toFixed(1)+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/><line x1="'+x0+'" y1="'+y0+'" x2="'+x1+'" y2="'+y1+'" stroke="'+stroke+'" stroke-width="'+sw+'" pointer-events="none"/><line x1="'+x1+'" y1="'+y0+'" x2="'+x0+'" y2="'+y1+'" stroke="'+stroke+'" stroke-width="'+sw+'" pointer-events="none"/>';}
+case'cloud':{var cx1=0,cy1=(hh*0.18).toFixed(1),rx1=(hw*0.82).toFixed(1),ry1=(hh*0.56).toFixed(1);var cx2=(-hw*0.42).toFixed(1),cy2=(-hh*0.12).toFixed(1),rx2=(hw*0.4).toFixed(1),ry2=(hh*0.44).toFixed(1);var cx3=(hw*0.42).toFixed(1),cy3=(-hh*0.12).toFixed(1),rx3=(hw*0.4).toFixed(1),ry3=(hh*0.44).toFixed(1);var cx4=0,cy4=(-hh*0.48).toFixed(1),rx4=(hw*0.28).toFixed(1),ry4=(hh*0.36).toFixed(1);return'<ellipse cx="'+cx1+'" cy="'+cy1+'" rx="'+rx1+'" ry="'+ry1+'" fill="'+fill+'" stroke="none"/><ellipse cx="'+cx2+'" cy="'+cy2+'" rx="'+rx2+'" ry="'+ry2+'" fill="'+fill+'" stroke="none"/><ellipse cx="'+cx3+'" cy="'+cy3+'" rx="'+rx3+'" ry="'+ry3+'" fill="'+fill+'" stroke="none"/><ellipse cx="'+cx4+'" cy="'+cy4+'" rx="'+rx4+'" ry="'+ry4+'" fill="'+fill+'" stroke="none"/><ellipse cx="'+cx1+'" cy="'+cy1+'" rx="'+rx1+'" ry="'+ry1+'" fill="none" stroke="'+stroke+'" stroke-width="'+sw+'"/><ellipse cx="'+cx2+'" cy="'+cy2+'" rx="'+rx2+'" ry="'+ry2+'" fill="none" stroke="'+stroke+'" stroke-width="'+sw+'"/><ellipse cx="'+cx3+'" cy="'+cy3+'" rx="'+rx3+'" ry="'+ry3+'" fill="none" stroke="'+stroke+'" stroke-width="'+sw+'"/><ellipse cx="'+cx4+'" cy="'+cy4+'" rx="'+rx4+'" ry="'+ry4+'" fill="none" stroke="'+stroke+'" stroke-width="'+sw+'"/>';}
+default:return'<ellipse cx="0" cy="0" rx="'+hw+'" ry="'+hh+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';}}
 function darken(hex){var r=parseInt(hex.slice(1,3),16)||0,g=parseInt(hex.slice(3,5),16)||0,b=parseInt(hex.slice(5,7),16)||0;return'rgb('+Math.max(0,r-75)+','+Math.max(0,g-75)+','+Math.max(0,b-75)+')';}
 function onSearch(v){searchTerm=v.trim().toLowerCase();renderAll();var m=searchTerm?nodes.filter(nMatch).length:0;document.getElementById('search-count').textContent=searchTerm?(m+' match'+(m===1?'':'es')):'';;}
 function nMatch(n){if(!searchTerm)return false;if(n.label.toLowerCase().indexOf(searchTerm)>=0)return true;if(n.extraLabels&&n.extraLabels.some(function(el){return el.toLowerCase().indexOf(searchTerm)>=0;}))return true;return Object.keys(n.props||{}).some(function(k){return k.toLowerCase().indexOf(searchTerm)>=0||String(n.props[k]).toLowerCase().indexOf(searchTerm)>=0;});}
@@ -2947,6 +3042,8 @@ var col=isTraceAnim?TRACE_COLORS[traceAnimNum-1]:isLoopEdge?'#f59e0b':isPropEdge
 var isTripleRef=e.isTriple&&metaEdges.some(function(me){return me.tgt===e.tripleId;});var isTripleSel=e.isTriple&&selected.triples.indexOf(e.tripleId)>=0;var mId=e.opmMarker?getOPMMarkerId(e.opmMarker,col):getMarkerId(col),sw=isTraceAnim?((e.width||1.5)+2):isLoopEdge?((e.width||1.5)+2):isPropEdge?((e.width||1.5)+2):isLongPress?((e.width||1.5)+3):isTripleRef?((e.width||1.5)+2):isTripleSel?((e.width||1.5)+2):isSel?(e.width||1.5)+1:(e.width||1.5),fs=e.fontSize||10;var _lT=e.labelT!==undefined?e.labelT:0.5;var d=pathD(e),mp=ptAtT(e,_lT),ep=edgeEndpoints(e);var off=eLO(e),lo=ep&&ep.straight?14:18;var lx=mp.x+off.nx*lo,ly=mp.y+off.ny*lo;var hasUserCP=e.curved&&e.cpxUser!==undefined&&e.cpyUser!==undefined;var g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('id','edge-'+e.id);g.style.cursor=(mode==='select'&&e.curved&&src.id!==tgt.id)?'grab':'pointer';
 var effectiveDim=isDim;
 g.style.opacity=effectiveDim?'0.15':'1';var hit=document.createElementNS('http://www.w3.org/2000/svg','path');hit.setAttribute('d',d);hit.setAttribute('fill','none');hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width',String(Math.max(20,sw+16)));g.appendChild(hit);var path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',d);path.setAttribute('fill','none');path.setAttribute('stroke',col);path.setAttribute('stroke-width',String(sw));
+// SFD flow pipe override
+if(e.sfdFlow){path.setAttribute('stroke-width',String(isSel?7:5));path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');}
 // dash style (matchQuery overrides)
 var edgeDash=e.dash||'solid';if(e.matchQuery){path.setAttribute('stroke-dasharray','6 3');}else if(e.opmDash){path.setAttribute('stroke-dasharray',e.opmDash);}else if(edgeDash==='dashed'){path.setAttribute('stroke-dasharray','8 5');}else if(edgeDash==='dotted'){path.setAttribute('stroke-dasharray','2 4');}
 if((e.arrowDir||'end')!=='none')path.setAttribute('marker-end','url(#'+mId+')');path.setAttribute('pointer-events','none');g.appendChild(path);if(e.curved&&src.id!==tgt.id&&(isSel||isCurveDrag)&&ep&&!ep.selfLoop){var cpx=ep.cpx,cpy=ep.cpy;var handle=document.createElementNS('http://www.w3.org/2000/svg','circle');handle.setAttribute('cx',String(cpx));handle.setAttribute('cy',String(cpy));handle.setAttribute('r','5');handle.setAttribute('fill',hasUserCP?'#3b82f6':'rgba(59,130,246,0.3)');handle.setAttribute('stroke','#3b82f6');handle.setAttribute('stroke-width','1');handle.setAttribute('pointer-events','none');g.appendChild(handle);var dl1=document.createElementNS('http://www.w3.org/2000/svg','line');dl1.setAttribute('x1',String(ep.srcPt.x));dl1.setAttribute('y1',String(ep.srcPt.y));dl1.setAttribute('x2',String(cpx));dl1.setAttribute('y2',String(cpy));dl1.setAttribute('stroke','rgba(59,130,246,0.3)');dl1.setAttribute('stroke-width','1');dl1.setAttribute('stroke-dasharray','3 3');dl1.setAttribute('pointer-events','none');g.appendChild(dl1);var dl2=document.createElementNS('http://www.w3.org/2000/svg','line');dl2.setAttribute('x1',String(ep.tgtPt.x));dl2.setAttribute('y1',String(ep.tgtPt.y));dl2.setAttribute('x2',String(cpx));dl2.setAttribute('y2',String(cpy));dl2.setAttribute('stroke','rgba(59,130,246,0.3)');dl2.setAttribute('stroke-width','1');dl2.setAttribute('stroke-dasharray','3 3');dl2.setAttribute('pointer-events','none');g.appendChild(dl2);}
@@ -3298,6 +3395,17 @@ if(mode==='opm'&&opmActiveType){
     updateOPMBanner();buildPanel();return;
   }
 }
+// SFD mode: click canvas to place typed node if type is active
+if(mode==='sfd'&&sfdActiveType){
+  var hitExisting=false;
+  for(var i=nodes.length-1;i>=0;i--)if(nodeHit(nodes[i],pt.x,pt.y)){hitExisting=true;break;}
+  if(!hitExisting){
+    snap();var sn=makeNode(pt.x,pt.y);applySFDToNewNode(sn);
+    selectNodeId(sn.id,false);
+    sfdActiveType=null;svgEl.style.cursor='default';
+    updateSFDBanner();buildPanel();return;
+  }
+}
 if(mode==='node'){snap();var n=makeNode(pt.x,pt.y);selectNodeId(n.id,false);setMode(stickyNode?'node':'select');return;}if(mode==='freeline'||mode==='arrow'){freeDraw={active:true,x1:pt.x,y1:pt.y,arrowhead:mode==='arrow'?'end':'none'};return;}if(mode==='edge'){for(var i=nodes.length-1;i>=0;i--)if(nodeHit(nodes[i],pt.x,pt.y)){edgeDrag={active:true,srcId:nodes[i].id};return;}setMode('select');return;}for(var i=nodes.length-1;i>=0;i--){if(nodeHit(nodes[i],pt.x,pt.y)){if(ev.shiftKey){var idx=selected.nodes.indexOf(nodes[i].id);if(idx>=0){selected.nodes.splice(idx,1);renderAll();buildPanel();}else{selected.nodes.push(nodes[i].id);renderAll();buildPanel();}return;}if(selected.nodes.indexOf(nodes[i].id)<0)selectNodeId(nodes[i].id,false);var sn=nodes.filter(function(n){return selected.nodes.indexOf(n.id)>=0;}).map(function(n){return{id:n.id,ox:pt.x-n.x,oy:pt.y-n.y};});dragging={nodes:sn,moved:false};return;}}// check triple dots (before edges — dots render on top)
 for(var ti=edges.length-1;ti>=0;ti--){if(edges[ti].isTriple&&tripleHit(edges[ti],pt.x,pt.y)){selectTripleId(edges[ti].tripleId,ev.shiftKey);return;}}
 for(var i=edges.length-1;i>=0;i--){if(arcHit(edges[i],pt.x,pt.y)){var e2=edges[i];if(mode==='select'&&e2.curved&&!ev.shiftKey){var s2=nodeById(e2.src),t2=nodeById(e2.tgt);if(s2&&t2&&s2.id!==t2.id){selectEdgeId(e2.id,false);curveDrag={edgeId:e2.id,moved:false};document.getElementById('curve-hint').style.display='block';svgEl.style.cursor='grabbing';return;}}if(ev.shiftKey){var idx2=selected.edges.indexOf(e2.id);if(idx2>=0){selected.edges.splice(idx2,1);renderAll();buildPanel();}else{selected.edges.push(e2.id);renderAll();buildPanel();}return;}selectEdgeId(e2.id,false);return;}}// check free lines
@@ -3346,11 +3454,37 @@ function onCanvasUp(ev){
   if(lineBodyDrag){lineBodyDrag=null;renderAll();buildPanel();return;}
   if(curveDrag){curveDrag=null;document.getElementById('curve-hint').style.display='none';svgEl.style.cursor='default';renderAll();return;}if(dragging){dragging=null;renderAll();return;}if(panStart){panStart=null;return;}if(rubberBand){var rx=Math.min(rubberBand.sx,rubberBand.ex),ry=Math.min(rubberBand.sy,rubberBand.ey),rw=Math.abs(rubberBand.ex-rubberBand.sx),rh=Math.abs(rubberBand.ey-rubberBand.sy);while(rubberLayer.firstChild)rubberLayer.removeChild(rubberLayer.firstChild);if(rw>5||rh>5){var sel=nodes.filter(function(n){return n.x>=rx&&n.x<=rx+rw&&n.y>=ry&&n.y<=ry+rh;}).map(function(n){return n.id;});if(sel.length){selected.nodes=selected.nodes.concat(sel.filter(function(id){return selected.nodes.indexOf(id)<0;}));renderAll();buildPanel();}}rubberBand=null;return;}
   if((mode==='freeline'||mode==='arrow')&&freeDraw&&freeDraw.active){while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);var pt2=svgPt(ev.clientX,ev.clientY);if(ev.shiftKey){var _sa=snapAngle(freeDraw.x1,freeDraw.y1,pt2.x,pt2.y);pt2.x=_sa.x;pt2.y=_sa.y;}var dx2=pt2.x-freeDraw.x1,dy2=pt2.y-freeDraw.y1;if(Math.sqrt(dx2*dx2+dy2*dy2)>5){snap();var newL={id:'l'+nextId++,x1:freeDraw.x1,y1:freeDraw.y1,x2:pt2.x,y2:pt2.y,color:'#444444',width:1.5,dash:'solid',arrowhead:freeDraw.arrowhead,label:''};lines.push(newL);selectLineId(newL.id,false);}freeDraw=null;setMode('select');return;}
-  if(mode==='edge'&&edgeDrag.active){while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);var pt=svgPt(ev.clientX,ev.clientY),done=false;var wasOPM=prevGraphMode==='opm';var savedSrcId=edgeDrag.srcId;edgeDrag={active:false,srcId:null};prevGraphMode=null;
+  if(mode==='edge'&&edgeDrag.active){while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);var pt=svgPt(ev.clientX,ev.clientY),done=false;var wasOPM=prevGraphMode==='opm';var wasSFD=prevGraphMode==='sfd';var savedSrcId=edgeDrag.srcId;edgeDrag={active:false,srcId:null};prevGraphMode=null;
   // check triple dots as targets first
   for(var ti=edges.length-1;ti>=0;ti--){if(edges[ti].isTriple&&tripleHit(edges[ti],pt.x,pt.y)){snap();var me={id:'m'+nextId++,src:savedSrcId,tgt:edges[ti].tripleId,label:'',type:'meta'};metaEdges.push(me);selected={nodes:[],edges:[me.id],lines:[],triples:[]};done=true;toast('Meta-edge created → '+edges[ti].tripleId);break;}}
-  if(!done){for(var i=nodes.length-1;i>=0;i--){if(nodeHit(nodes[i],pt.x,pt.y)&&nodes[i].id!==savedSrcId){if(wasOPM){showOPMLinkPicker(savedSrcId,nodes[i].id);}else{snap();var isCurved=document.getElementById('chk-curved').checked||!document.getElementById('chk-straight').checked;var e=Object.assign({id:'e'+nextId++,src:savedSrcId,tgt:nodes[i].id,label:'',props:{}},DEF_EDGE,{curved:isCurved});edges.push(e);selectEdgeId(e.id,false);}done=true;break;}}if(!done)toast('Drop on a target node (or triple dot) to create edge');}
-  renderAll();buildPanel();setMode(wasOPM?'opm':(done&&stickyEdge?'edge':'select'));}}
+  if(!done){for(var i=nodes.length-1;i>=0;i--){if(nodeHit(nodes[i],pt.x,pt.y)&&nodes[i].id!==savedSrcId){
+    if(wasOPM){showOPMLinkPicker(savedSrcId,nodes[i].id);}
+    else if(wasSFD){
+      var srcN=nodeById(savedSrcId),tgtN=nodes[i];
+      var srcIsEp=sfdIsFlowEndpoint(srcN),tgtIsEp=sfdIsFlowEndpoint(tgtN);
+      var srcIsValve=srcN&&srcN.sfdType==='valve',tgtIsValve=tgtN&&tgtN.sfdType==='valve';
+      snap();
+      if(srcIsEp&&tgtIsEp){
+        // auto-insert valve at midpoint + two pipe edges
+        var vx=(srcN.x+tgtN.x)/2,vy=(srcN.y+tgtN.y)/2;
+        var vn=makeNode(vx,vy,'Flow','#ffffff','valve');
+        vn.sfdType='valve';vn.borderColor='#000000';vn.borderWidth=2;vn.w=46;vn.h=46;
+        var ep1=Object.assign({id:'e'+nextId++,src:savedSrcId,tgt:vn.id,label:'',props:{}},DEF_EDGE,{sfdFlow:true,curved:false,width:5,color:'#334155'});
+        var ep2=Object.assign({id:'e'+nextId++,src:vn.id,tgt:tgtN.id,label:'',props:{}},DEF_EDGE,{sfdFlow:true,curved:false,width:5,color:'#334155'});
+        edges.push(ep1);edges.push(ep2);selectNodeId(vn.id,false);
+      }else if((srcIsEp||srcIsValve)&&(tgtIsEp||tgtIsValve)){
+        // direct pipe edge
+        var ep=Object.assign({id:'e'+nextId++,src:savedSrcId,tgt:tgtN.id,label:'',props:{}},DEF_EDGE,{sfdFlow:true,curved:false,width:5,color:'#334155'});
+        edges.push(ep);selectEdgeId(ep.id,false);
+      }else{
+        // connector (aux → valve, aux → stock, etc.)
+        var ec=Object.assign({id:'e'+nextId++,src:savedSrcId,tgt:tgtN.id,label:'',props:{}},DEF_EDGE,{curved:true,width:1.5,color:'#334155'});
+        edges.push(ec);selectEdgeId(ec.id,false);
+      }
+    }
+    else{snap();var isCurved=document.getElementById('chk-curved').checked||!document.getElementById('chk-straight').checked;var e=Object.assign({id:'e'+nextId++,src:savedSrcId,tgt:nodes[i].id,label:'',props:{}},DEF_EDGE,{curved:isCurved});edges.push(e);selectEdgeId(e.id,false);}
+    done=true;break;}}if(!done)toast('Drop on a target node (or triple dot) to create edge');}
+  renderAll();buildPanel();setMode(wasOPM?'opm':wasSFD?'sfd':(done&&stickyEdge?'edge':'select'));}}
 function clearLongPress(){clearTimeout(longPressTimer);longPressTimer=null;if(longPressActive){longPressActive=false;longPressNodeId=null;renderAll();}}
 function onNodeDown(ev,id){
   if(checkDblTap(id,function(){var n=nodeById(id);if(n)openNodeEditor(n);}))return;
@@ -3627,6 +3761,53 @@ if(mode==='nrm'){
   var nrmPC=document.createElement('div');
   buildSelectionPanel(nrmPC,sN,sE);
   pc.appendChild(nrmPC);
+  return;
+}
+// SFD mode: show palette + SFD-specific properties
+if(mode==='sfd'){
+  pc.innerHTML='';
+  pc.appendChild(buildSFDPalette());
+  if(sN.length===1&&!sE.length){
+    var sfdN=sN[0];
+    var sfdNDiv=document.createElement('div');
+    var curType=sfdN.sfdType||'(none)';
+    var typeBtns=SFD_NODE_TYPES.map(function(t){
+      return '<button class="tb-btn'+(sfdN.sfdType===t.type?' active':'')+'" onclick="setNodeSFDType(\''+sfdN.id+'\',\''+t.type+'\')" style="font-size:10px">'+t.label+'</button>';
+    }).join('');
+    sfdNDiv.innerHTML='<div class="section-hd" style="background:#fef3c7;color:#b45309">SFD Element Type</div>'
+      +'<div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:4px;flex-wrap:wrap">'+typeBtns+'</div>'
+      +'<div class="prop-row"><div class="prop-label">Equation</div><input class="prop-input" placeholder="e.g. birth_rate * Population" value="'+escH(sfdN.equation||'')+'" onchange="(function(){var n=nodeById(\''+sfdN.id+'\');if(n){snap();n.equation=this.value;}}).call(this)"/></div>'
+      +(sfdN.sfdType==='stock'?'<div class="prop-row"><div class="prop-label">Initial value</div><input class="prop-input" type="number" placeholder="0" value="'+escH(String(sfdN.initialValue||''))+'" onchange="(function(){var n=nodeById(\''+sfdN.id+'\');if(n){snap();n.initialValue=+this.value;}}).call(this)"/></div>':'');
+    pc.appendChild(sfdNDiv);
+    var sfdNPc=document.createElement('div');
+    buildSelectionPanel(sfdNPc,sN,[]);
+    pc.appendChild(sfdNPc);
+    return;
+  }
+  if(sE.length===1&&!sN.length){
+    var sfdE=sE[0];
+    var sfdEDiv=document.createElement('div');
+    sfdEDiv.innerHTML='<div class="section-hd" style="background:#fef3c7;color:#b45309">'+(sfdE.sfdFlow?'Flow Pipe':'Connector')+'</div>'
+      +'<div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:4px">'
+      +'<button class="tb-btn'+(sfdE.sfdFlow?' active':'')+'" onclick="(function(){snap();var e=edgeById(\''+sfdE.id+'\');if(e){e.sfdFlow=true;e.width=5;e.color=\'#334155\';e.curved=false;}renderAll();buildPanel();})()" style="font-size:10px">Flow pipe</button>'
+      +'<button class="tb-btn'+(!sfdE.sfdFlow?' active':'')+'" onclick="(function(){snap();var e=edgeById(\''+sfdE.id+'\');if(e){delete e.sfdFlow;e.width=1.5;e.curved=true;}renderAll();buildPanel();})()" style="font-size:10px">Connector</button>'
+      +'</div>';
+    pc.appendChild(sfdEDiv);
+    var sfdEPc=document.createElement('div');
+    buildSelectionPanel(sfdEPc,[],sE);
+    pc.appendChild(sfdEPc);
+    return;
+  }
+  if(!sN.length&&!sE.length){
+    var sfdHint=document.createElement('div');
+    sfdHint.style.cssText='padding:12px;font-size:12px;color:#64748b';
+    sfdHint.innerHTML='Click a type above, then click canvas to place.<br><br>Use <b>+Edge</b> to connect: stock\u2194valve creates a pipe; aux\u2192valve creates a connector.';
+    pc.appendChild(sfdHint);
+    return;
+  }
+  var sfdPC=document.createElement('div');
+  buildSelectionPanel(sfdPC,sN,sE);
+  pc.appendChild(sfdPC);
   return;
 }
 // OPM mode: show palette + OPM-specific properties
@@ -3942,6 +4123,123 @@ nodes.forEach(function(n){depsOf[n.id]=[];polOf[n.id]={};});edges.forEach(functi
 srcIds.forEach(function(sid){var pol=polOf[n.id][sid]||'none';var dn=nodeMap[sid];if(dn&&pol!=='none')lines.push('\t\t\t<polarity_of dep="'+escAttr(toXmileName(dn.label))+'">'+pol+'</polarity_of>');});lines.push('\t\t</'+tag+'>');});lines.push('\t</variables></model>');// write views block with connectors for Vensim compatibility
 lines.push('\t<views><view>');edges.forEach(function(e){var sn=nodeMap[e.src],tn=nodeMap[e.tgt];if(!sn||!tn)return;var pol=e.polarity||'none';lines.push('\t\t<connector><from>'+escX(toXmileName(sn.label))+'</from><to>'+escX(toXmileName(tn.label))+'</to>'+(pol!=='none'?'<polarity>'+pol+'</polarity>':'')+'</connector>');});lines.push('\t</view></views>');lines.push('</xmile>');download(dlName('xmile'),'application/xml',lines.join('\n'));toast('Downloaded '+dlName('xmile'));}
 function escAttr(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function exportSFDXMILE(){
+  // Collect SFD-typed nodes only; ignore non-SFD nodes
+  var sfdNodes=nodes.filter(function(n){return n.sfdType;});
+  var flowEdges=edges.filter(function(e){return e.sfdFlow;});
+  var connEdges=edges.filter(function(e){return !e.sfdFlow&&(nodeById(e.src)||nodeById(e.tgt));});
+  if(!sfdNodes.length){toast('No SFD elements to export. Switch to SFD mode and build a diagram first.');return;}
+
+  // Helper: safe XMILE variable name (spaces→underscores, strip special chars)
+  function xName(label){return(label||'unnamed').trim().replace(/\s+/g,'_').replace(/[^A-Za-z0-9_]/g,'');}
+  // Build id→node map
+  var nById={};sfdNodes.forEach(function(n){nById[n.id]=n;});
+
+  // For each valve: find its source node and target node via flow pipe edges
+  // pipe from stock/cloud → valve (valve is tgt) = "upstream" of valve
+  // pipe from valve → stock/cloud (valve is src) = "downstream" of valve
+  var valveSrc={},valveTgt={};  // valveId → node
+  flowEdges.forEach(function(e){
+    var s=nById[e.src],t=nById[e.tgt];
+    if(!s||!t)return;
+    if(t.sfdType==='valve')valveSrc[t.id]=s;   // s feeds into valve t
+    if(s.sfdType==='valve')valveTgt[s.id]=t;   // valve s flows into t
+  });
+
+  // For each stock: collect inflow valve names and outflow valve names
+  var stockInflows={},stockOutflows={};  // stockId → [valveName,...]
+  sfdNodes.forEach(function(n){if(n.sfdType==='stock'){stockInflows[n.id]=[];stockOutflows[n.id]=[];}});
+  sfdNodes.filter(function(n){return n.sfdType==='valve';}).forEach(function(v){
+    var src=valveSrc[v.id],tgt=valveTgt[v.id];
+    if(tgt&&tgt.sfdType==='stock')stockInflows[tgt.id].push(xName(v.label));
+    if(src&&src.sfdType==='stock')stockOutflows[src.id].push(xName(v.label));
+  });
+
+  // Model name
+  var mName=document.getElementById('model-name').value.trim()||'SFD Model';
+
+  var L=[
+    '<?xml version="1.0" encoding="utf-8"?>',
+    '<xmile version="1.0" xmlns="http://docs.oasis-open.org/xmile/ns/XMILE/v1.0">',
+    '\t<header>',
+    '\t\t<product version="1.0" lang="en">RCN Graph Tool</product>',
+    '\t\t<vendor>RCN</vendor>',
+    '\t\t<name>'+escX(mName)+'</name>',
+    '\t</header>',
+    '\t<sim_specs method="Euler" time_units="Months">',
+    '\t\t<start>0</start>',
+    '\t\t<stop>100</stop>',
+    '\t\t<dt>0.25</dt>',
+    '\t</sim_specs>',
+    '\t<model>',
+    '\t\t<variables>'
+  ];
+
+  // Write stocks
+  sfdNodes.filter(function(n){return n.sfdType==='stock';}).forEach(function(n){
+    var nm=xName(n.label);
+    var initVal=n.initialValue!==undefined&&n.initialValue!==''?String(n.initialValue):'0';
+    L.push('\t\t\t<stock name="'+escAttr(nm)+'">');
+    L.push('\t\t\t\t<eqn>'+escX(initVal)+'</eqn>');
+    (stockInflows[n.id]||[]).forEach(function(fn){L.push('\t\t\t\t<inflow>'+escX(fn)+'</inflow>');});
+    (stockOutflows[n.id]||[]).forEach(function(fn){L.push('\t\t\t\t<outflow>'+escX(fn)+'</outflow>');});
+    if(n.note)L.push('\t\t\t\t<doc>'+escX(n.note)+'</doc>');
+    L.push('\t\t\t\t<display x="'+Math.round(n.x)+'" y="'+Math.round(n.y)+'" width="'+n.w+'" height="'+n.h+'"/>');
+    L.push('\t\t\t</stock>');
+  });
+
+  // Write flows (valves)
+  sfdNodes.filter(function(n){return n.sfdType==='valve';}).forEach(function(v){
+    var nm=xName(v.label);
+    var eqn=v.equation||'';
+    var src=valveSrc[v.id],tgt=valveTgt[v.id];
+    L.push('\t\t\t<flow name="'+escAttr(nm)+'">');
+    L.push('\t\t\t\t<eqn>'+escX(eqn)+'</eqn>');
+    if(v.note)L.push('\t\t\t\t<doc>'+escX(v.note)+'</doc>');
+    // Display pts: from source midpoint → valve center → target midpoint
+    L.push('\t\t\t\t<display x="'+Math.round(v.x)+'" y="'+Math.round(v.y)+'">');
+    L.push('\t\t\t\t\t<pts>');
+    if(src)L.push('\t\t\t\t\t\t<pt x="'+Math.round(src.x)+'" y="'+Math.round(src.y)+'"/>');
+    L.push('\t\t\t\t\t\t<pt x="'+Math.round(v.x)+'" y="'+Math.round(v.y)+'"/>');
+    if(tgt)L.push('\t\t\t\t\t\t<pt x="'+Math.round(tgt.x)+'" y="'+Math.round(tgt.y)+'"/>');
+    L.push('\t\t\t\t\t</pts>');
+    L.push('\t\t\t\t</display>');
+    L.push('\t\t\t</flow>');
+  });
+
+  // Write auxiliaries
+  sfdNodes.filter(function(n){return n.sfdType==='aux';}).forEach(function(n){
+    var nm=xName(n.label);
+    var eqn=n.equation||'';
+    L.push('\t\t\t<aux name="'+escAttr(nm)+'">');
+    L.push('\t\t\t\t<eqn>'+escX(eqn)+'</eqn>');
+    if(n.note)L.push('\t\t\t\t<doc>'+escX(n.note)+'</doc>');
+    L.push('\t\t\t\t<display x="'+Math.round(n.x)+'" y="'+Math.round(n.y)+'"/>');
+    L.push('\t\t\t</aux>');
+  });
+  // Clouds are implicit — no variable element needed; they appear only via missing pipe endpoints
+
+  L.push('\t\t</variables>');
+
+  // Views block: connector elements for non-flow edges
+  L.push('\t\t<views><view>');
+  connEdges.forEach(function(e){
+    var sn=nById[e.src],tn=nById[e.tgt];
+    if(!sn||!tn)return;
+    if(sn.sfdType==='cloud'||tn.sfdType==='cloud')return; // clouds have no name
+    L.push('\t\t\t<connector>');
+    L.push('\t\t\t\t<from>'+escX(xName(sn.label))+'</from>');
+    L.push('\t\t\t\t<to>'+escX(xName(tn.label))+'</to>');
+    L.push('\t\t\t</connector>');
+  });
+  L.push('\t\t</view></views>');
+  L.push('\t</model>');
+  L.push('</xmile>');
+
+  var xml=L.join('\n');
+  download(dlName('xmile'),'application/xml',xml);
+  toast('SFD exported as XMILE — open in Vensim or Insightmaker');
+}
 function unquote(s){if(!s)return'';s=s.trim();if(s.charAt(0)==='`'&&s.charAt(s.length-1)==='`')return s.slice(1,-1);return s;}
 function parsePropStr(s){var out={};if(!s||!s.trim())return out;var re=/[`"]?([\w ]+)[`"]?\s*:\s*(?:"([^"]*)"|'([^']*)'|([\w.]+))/g,m;while((m=re.exec(s))!==null){var k=m[1].trim(),v=m[2]!==undefined?m[2]:m[3]!==undefined?m[3]:m[4];if(k)out[k]=v||'';}return out;}
 function parseCypher(cy){snap();if(/^\s*MATCH\b/im.test(cy)){parseMatch(cy);return;}var vm={},np={};function ensureN(vn,ln,pr){if(!vm[vn]){var n=makeNode(100,100,ln||vn,'#93c5fd','ellipse');n.props=pr||{};// parse multi-label: Person:Employee → label=Person, extraLabels=[Employee]

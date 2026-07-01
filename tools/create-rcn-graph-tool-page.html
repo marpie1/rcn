@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Create RCN Graph Tool Page</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; background: #f8f7f4; color: #1a1208; }
+  h1 { font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 8px; margin: 0 0 6px; }
+  p.sub { font-size: 11px; color: #888; margin: 0 0 28px; }
+  label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; margin: 0 0 4px; color: #444; }
+  input { width: 100%; box-sizing: border-box; font-family: monospace; font-size: 13px; padding: 7px 8px; border: 1px solid #999; background: #fff; margin-bottom: 16px; }
+  button { font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; padding: 8px 20px; border: 1.5px solid #000; background: #000; color: #fff; cursor: pointer; }
+  button:hover { background: #333; }
+  button:disabled { background: #888; border-color: #888; cursor: default; }
+  .result { margin-top: 20px; padding: 10px 14px; font-size: 12px; font-family: monospace; border: 1px solid #ccc; background: #fff; white-space: pre-wrap; display: none; }
+  .result.ok  { border-color: #2a5c3f; color: #2a5c3f; }
+  .result.err { border-color: #8b1a1a; color: #8b1a1a; }
+  .json-preview { margin-top: 24px; border-top: 1px solid #ddd; padding-top: 16px; }
+  .json-preview summary { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; cursor: pointer; color: #444; }
+  pre { font-size: 11px; background: #fff; border: 1px solid #ddd; padding: 10px; overflow-x: auto; margin: 8px 0 0; max-height: 260px; overflow-y: auto; }
+  .view-link { display: none; margin-top: 14px; font-size: 12px; }
+  .view-link a { color: #2563eb; text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<h1>Create RCN Graph Tool Page</h1>
+<p class="sub">Writes the <code>rcn-graph-tool</code> page to a FedWiki server via its REST API.<br>
+Host this file as an asset on your wiki so the PUT request is same-origin.</p>
+
+<label>Wiki base URL (no trailing slash)</label>
+<input type="text" id="wiki-url" value="" placeholder="https://your.wiki.example.com">
+
+<button onclick="createPage()">Create Page on Wiki</button>
+
+<div class="result" id="result"></div>
+<div class="view-link" id="view-link"></div>
+
+<div class="json-preview">
+  <details>
+    <summary>Page JSON (rcn-graph-tool)</summary>
+    <pre id="json-display"></pre>
+  </details>
+</div>
+
+<script>
+const PAGE_SLUG = 'rcn-graph-tool'
+
+const PAGE_JSON = {
+  "title": "RCN Graph Tool",
+  "story": [
+    {
+      "type": "paragraph",
+      "id": "a1b2c3d4e5f60001",
+      "text": "Open the RCN graph diagramming tool in a full window, linked to this lineup."
+    },
+    {
+      "type": "rcn-graph",
+      "id": "a1b2c3d4e5f60002",
+      "text": ""
+    }
+  ],
+  "journal": [
+    {
+      "type": "create",
+      "item": {
+        "title": "RCN Graph Tool",
+        "story": []
+      },
+      "date": 1749344400000
+    }
+  ]
+}
+
+document.getElementById('json-display').textContent = JSON.stringify(PAGE_JSON, null, 2)
+
+// Auto-detect: if we're hosted on a wiki, pre-fill the URL
+if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+  document.getElementById('wiki-url').value = location.origin
+}
+
+async function createPage() {
+  const base = document.getElementById('wiki-url').value.replace(/\/$/, '')
+  const resultEl = document.getElementById('result')
+  const btn = document.querySelector('button')
+
+  if (!base) {
+    show(resultEl, 'err', 'Enter the wiki base URL first.')
+    return
+  }
+
+  btn.disabled = true
+  btn.textContent = 'Creating…'
+  resultEl.style.display = 'none'
+
+  const url = `${base}/${PAGE_SLUG}`
+
+  try {
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(PAGE_JSON)
+    })
+
+    if (res.ok) {
+      show(resultEl, 'ok', `✓ Page created: ${url}`)
+      const viewLink = document.getElementById('view-link')
+      viewLink.style.display = 'block'
+      viewLink.innerHTML = `<a href="${base}/view/${PAGE_SLUG}" target="_blank">Open in FedWiki: ${base}/view/${PAGE_SLUG}</a>`
+    } else {
+      const text = await res.text().catch(() => res.statusText)
+      show(resultEl, 'err', `✗ ${res.status} ${res.statusText}\n${text}`)
+    }
+  } catch (e) {
+    show(resultEl, 'err', `✗ Fetch failed: ${e.message}\n\nIf this file is not hosted on the same wiki, CORS will block the PUT.\nHost it as an asset on the target wiki, or use SSH instead.`)
+  }
+
+  btn.disabled = false
+  btn.textContent = 'Create Page on Wiki'
+}
+
+function show(el, cls, msg) {
+  el.className = 'result ' + cls
+  el.textContent = msg
+  el.style.display = 'block'
+}
+</script>
+
+</body>
+</html>

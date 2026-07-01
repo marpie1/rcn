@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CfA-dSC — Introduction and User Manual</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; background: #fafaf8; }
+.page { max-width: 860px; margin: 0 auto; padding: 48px 32px 80px; }
+nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 48px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+nav a { color: #1a56a4; text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+nav .current { color: #1a1a1a; font-weight: 500; }
+.doc-header { margin-bottom: 48px; }
+.doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 640px; }
+h2 { font-size: 19px; font-weight: 600; margin: 44px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
+h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: #1a56a4; }
+p { margin-bottom: 14px; }
+ul, ol { padding-left: 22px; margin-bottom: 14px; }
+li { margin-bottom: 5px; }
+code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f0ec; padding: 1px 5px; border-radius: 3px; }
+pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f0ec; padding: 14px 16px; border-radius: 6px; overflow-x: auto; margin: 12px 0 18px; line-height: 1.6; }
+.note { background: #eff6ff; border-left: 3px solid #1a56a4; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0 24px; }
+.warn { background: #fffbeb; border-left: 3px solid #d97706; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0 24px; }
+.gap-item { background: #fef2f2; border-left: 3px solid #dc2626; padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 8px 0; }
+.gap-item strong { color: #b91c1c; }
+.connect-item { background: #f0f9f4; border-left: 3px solid #2d6a4f; padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 8px 0; }
+.connect-item strong { color: #2d6a4f; }
+.pill { display: inline-block; font-size: 11px; font-family: 'IBM Plex Mono', monospace; padding: 2px 8px; border-radius: 20px; background: #e8f0fe; color: #1a56a4; margin-right: 4px; }
+.pill.green { background: #e8f5e9; color: #2d6a4f; }
+.pill.amber { background: #fff8e1; color: #b45309; }
+.pill.red { background: #fef2f2; color: #dc2626; }
+.pill.grey { background: #f0f0ec; color: #555; }
+.role-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+.role-table th { text-align: left; padding: 8px 12px; background: #e8f0fe; font-weight: 600; font-size: 12px; border: 1px solid #c7d9f5; }
+.role-table td { padding: 8px 12px; border: 1px solid #dde8f8; vertical-align: top; }
+.role-table tr:nth-child(even) td { background: #f5f8ff; }
+.currency-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0 28px; }
+.currency-card { border: 1.5px solid #1a56a4; border-radius: 8px; padding: 18px 20px; background: #f0f4ff; }
+.currency-card .c-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #1a56a4; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; font-weight: 500; }
+.currency-card h3 { font-size: 15px; color: #1a56a4; margin: 0 0 10px; }
+.currency-card p { font-size: 13px; color: #333; margin: 0; line-height: 1.55; }
+.step-list { list-style: none; padding: 0; counter-reset: steps; margin: 16px 0 24px; }
+.step-list li { counter-increment: steps; padding: 10px 0 10px 48px; position: relative; border-bottom: 1px solid #f0f0ec; font-size: 14px; }
+.step-list li:last-child { border-bottom: none; }
+.step-list li::before { content: counter(steps); position: absolute; left: 0; top: 11px; width: 28px; height: 28px; background: #1a56a4; color: white; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; line-height: 28px; text-align: center; }
+.diagram-wrap { margin: 28px 0 32px; overflow-x: auto; background: white; border: 1px solid #e8e8e4; border-radius: 8px; padding: 20px; }
+.status-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+.status-table th { text-align: left; padding: 8px 12px; background: #f0f0ec; font-weight: 600; font-size: 12px; border: 1px solid #ddd; }
+.status-table td { padding: 8px 12px; border: 1px solid #e0e0da; vertical-align: top; }
+@media (max-width: 620px) { .currency-grid { grid-template-columns: 1fr; } }
+@media print { nav { display: none; } body { background: #fff; } .diagram-wrap { border: none; padding: 0; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav>
+  <a href="rcn-stack-overview.html">RCN Stack Overview</a>
+  <a href="sodoto-intro.html">SODOTO</a>
+  <span class="current">CfA-dSC</span>
+</nav>
+
+<div class="doc-header">
+  <div class="suite">CfA-dSC Documentation · ReLocalize Creativity Network</div>
+  <h1>Conversations for Action — Dyadic Smart Contract</h1>
+  <p class="lead">A commitment-tracking and economic settlement system for service agreements between two parties. Based on Fernando Flores' Conversations for Action, extended with a three-currency settlement model.</p>
+</div>
+
+<h2>What CfA-dSC Is</h2>
+
+<p>A CfA-dSC is a digital contract that does two things simultaneously: it tracks the state of a commitment between two parties (using Flores' Conversations for Action state machine), and it specifies how that commitment will be settled economically across three currencies — fiat money, time-dollars, and gift.</p>
+
+<p>The canonical RCN example is a Community Health Worker (the performer) contracting with a patient (the customer) for a home visit. The contract begins when the customer makes a request. It passes through negotiation, agreement, and performance. When the customer is satisfied, the contract closes and settlement is recorded — a signed document showing exactly how much was paid in each currency.</p>
+
+<p>Like SODOTO credentials, CfA-dSC contracts are signed with Ed25519 keys via Veramo and verified entirely in the browser. No blockchain, no central server. Each signed history entry is append-only — the full conversation record is tamper-evident.</p>
+
+<p>The "dyadic" in dSC means the contract is between exactly two parties. Multiparty agreements are handled as networks of dyadic contracts, not as single multi-party documents.</p>
+
+<h2>Roles</h2>
+
+<table class="role-table">
+  <tr>
+    <th>Role</th>
+    <th>Who</th>
+    <th>What They Do</th>
+  </tr>
+  <tr>
+    <td><strong>Customer</strong></td>
+    <td>The party making the request (e.g., patient, community member, NDC)</td>
+    <td>Initiates the contract. Sets or confirms Conditions of Satisfaction. Declares satisfaction (or dissatisfaction) when the work is done. Signs each move they make.</td>
+  </tr>
+  <tr>
+    <td><strong>Performer</strong></td>
+    <td>The party committing to do the work (e.g., Community Health Worker, practitioner)</td>
+    <td>Reviews and accepts the request. May propose changes during negotiation. Declares when performance has begun and when it is complete. Signs each move they make.</td>
+  </tr>
+  <tr>
+    <td><strong>NDC Coordinator</strong></td>
+    <td>Technical facilitator at an NDC organization</td>
+    <td>Creates DIDs for parties who don't have them. Runs the Veramo signing script to embed Ed25519 proofs. Facilitates contract creation when parties are not yet technical.</td>
+  </tr>
+</table>
+
+<h2>The CfA State Machine</h2>
+
+<p>Every CfA-dSC contract moves through a defined sequence of states. Each state transition is a "move" — a speech act by one of the parties, signed with their DID. The history of all moves is append-only and embedded in the contract document.</p>
+
+<div class="diagram-wrap">
+<svg viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg"
+     style="width:100%;max-width:760px;display:block;font-family:'IBM Plex Sans',system-ui,sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#555"/>
+    </marker>
+    <marker id="arr-b" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#1a56a4"/>
+    </marker>
+    <marker id="arr-a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#92400e"/>
+    </marker>
+    <marker id="arr-r" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#991b1b"/>
+    </marker>
+  </defs>
+
+  <!-- ── MAIN FLOW (y=20, h=56) ── -->
+
+  <!-- initiated -->
+  <rect x="10" y="20" width="108" height="56" rx="6" fill="#eff6ff" stroke="#1a56a4" stroke-width="1.5"/>
+  <text x="64" y="42" text-anchor="middle" font-size="9" fill="#1a56a4"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">INITIATED</text>
+  <text x="64" y="60" text-anchor="middle" font-size="11" fill="#1e293b">customer</text>
+  <text x="64" y="72" text-anchor="middle" font-size="11" fill="#1e293b">makes request</text>
+
+  <line x1="118" y1="48" x2="138" y2="48" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- negotiating -->
+  <rect x="142" y="20" width="116" height="56" rx="6" fill="#eff6ff" stroke="#1a56a4" stroke-width="1.5"/>
+  <text x="200" y="42" text-anchor="middle" font-size="9" fill="#1a56a4"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">NEGOTIATING</text>
+  <text x="200" y="60" text-anchor="middle" font-size="11" fill="#1e293b">terms reviewed</text>
+  <text x="200" y="72" text-anchor="middle" font-size="11" fill="#1e293b">counter-offers</text>
+
+  <line x1="258" y1="48" x2="278" y2="48" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- contracted -->
+  <rect x="282" y="20" width="116" height="56" rx="6" fill="#eff6ff" stroke="#1a56a4" stroke-width="1.5"/>
+  <text x="340" y="42" text-anchor="middle" font-size="9" fill="#1a56a4"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">CONTRACTED</text>
+  <text x="340" y="60" text-anchor="middle" font-size="11" fill="#1e293b">both parties</text>
+  <text x="340" y="72" text-anchor="middle" font-size="11" fill="#1e293b">agree · signed</text>
+
+  <line x1="398" y1="48" x2="418" y2="48" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- performing -->
+  <rect x="422" y="20" width="116" height="56" rx="6" fill="#eff6ff" stroke="#1a56a4" stroke-width="1.5"/>
+  <text x="480" y="42" text-anchor="middle" font-size="9" fill="#1a56a4"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">PERFORMING</text>
+  <text x="480" y="60" text-anchor="middle" font-size="11" fill="#1e293b">work underway</text>
+  <text x="480" y="72" text-anchor="middle" font-size="11" fill="#1e293b">performer declared</text>
+
+  <line x1="538" y1="48" x2="558" y2="48" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- satisfied -->
+  <rect x="562" y="20" width="182" height="56" rx="6" fill="#dcfce7" stroke="#2d6a4f" stroke-width="2"/>
+  <text x="653" y="42" text-anchor="middle" font-size="9" fill="#15803d"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">SATISFIED ✓</text>
+  <text x="653" y="60" text-anchor="middle" font-size="11" fill="#1e293b">customer declares</text>
+  <text x="653" y="72" text-anchor="middle" font-size="11" fill="#1e293b">settlement recorded</text>
+
+  <!-- ── BRANCH STATES (y=140, h=50) ── -->
+
+  <!-- Down arrow from negotiating to cancelled -->
+  <line x1="200" y1="76" x2="200" y2="118" stroke="#92400e" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr-a)"/>
+
+  <!-- cancelled -->
+  <rect x="130" y="120" width="140" height="50" rx="6" fill="#fff7ed" stroke="#b45309" stroke-width="1.5"/>
+  <text x="200" y="140" text-anchor="middle" font-size="9" fill="#92400e"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">CANCELLED</text>
+  <text x="200" y="156" text-anchor="middle" font-size="11" fill="#4b2000">either party · any point</text>
+  <text x="200" y="167" text-anchor="middle" font-size="10" fill="#92400e" font-style="italic">before contracted</text>
+
+  <!-- Down arrow from contracted to renegotiating -->
+  <line x1="340" y1="76" x2="340" y2="118" stroke="#1a56a4" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr-b)"/>
+
+  <!-- renegotiating (loops back to contracted) -->
+  <rect x="270" y="120" width="156" height="50" rx="6" fill="#eff6ff" stroke="#1a56a4" stroke-width="1.5"/>
+  <text x="348" y="140" text-anchor="middle" font-size="9" fill="#1a56a4"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">RENEGOTIATING</text>
+  <text x="348" y="156" text-anchor="middle" font-size="11" fill="#1e293b">amend terms · re-sign</text>
+  <text x="348" y="167" text-anchor="middle" font-size="10" fill="#1a56a4" font-style="italic">↺ returns to contracted</text>
+
+  <!-- Down arrow from performing to breakdown -->
+  <line x1="480" y1="76" x2="480" y2="118" stroke="#991b1b" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr-r)"/>
+
+  <!-- breakdown / dissatisfied -->
+  <rect x="426" y="120" width="220" height="50" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="536" y="140" text-anchor="middle" font-size="9" fill="#991b1b"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">BREAKDOWN · DISSATISFIED</text>
+  <text x="536" y="156" text-anchor="middle" font-size="11" fill="#450a0a">either party · from performing</text>
+  <text x="536" y="167" text-anchor="middle" font-size="10" fill="#991b1b" font-style="italic">or dissatisfied after satisfied (rare)</text>
+
+  <!-- legend -->
+  <text x="10" y="200" font-size="9.5" fill="#888" font-style="italic">Solid arrows = happy path · Dashed = exit / branch</text>
+</svg>
+</div>
+
+<h3>Full state list</h3>
+<p>The diagram above shows the happy path and primary branches. The complete state machine includes additional terminal and remediation states:</p>
+<pre>initiated → negotiating → contracted → performing
+                                    → breakdown → renegotiating → performing (loop)
+                                    → declared_complete → satisfied → closed  ✓
+                                                        → dissatisfied → remediation
+                        → declined   (terminal — performer declines)
+                        → cancelled  (terminal — either party, before contracted)</pre>
+<p><code>declared_complete</code> is a distinct state between performing and satisfied — the performer declares the work done, and the customer then confirms or disputes. <code>remediation</code> is entered when the customer is dissatisfied after satisfaction was declared. <code>declined</code> is the terminal state when a performer refuses the request outright. A planned <code>(:Move)</code> node type in Neo4j will persist each transition as a graph node for full temporal querying.</p>
+
+<h3>Two hard design rules</h3>
+
+<p><strong>CCS+T is a gate.</strong> Conditions of Satisfaction plus Time (deadline) must be explicitly set before the contract can move from negotiating to contracted. This comes from a prior Conversation for Possibility. If CCS+T is missing or vague, the move to contracted is blocked.</p>
+
+<p><strong>SBU is tracked, not gated.</strong> Shared Background of Understanding can be <code>confirmed</code>, <code>developing</code>, or <code>absent</code>. <code>developing</code> is acceptable if both parties explicitly acknowledge the gap — but <code>absent</code> is a warning that the contract may fail. The system records SBU status; it does not block contracting if SBU is developing.</p>
+
+<h3>History entries</h3>
+<p>Every state transition produces a history entry recording: the prior state, the new state, the move name, the actor's DID, a timestamp, and an Ed25519 signature. History is append-only. No entry can be modified after it is signed.</p>
+
+<h2>The Three-Currency Settlement Model</h2>
+
+<p>Every CfA-dSC specifies how the contracted service will be paid. Payment is not limited to fiat money — the system models three currencies simultaneously. Parties agree to ranges, not fixed amounts, which accommodates the variability of real community economies.</p>
+
+<div class="currency-grid">
+  <div class="currency-card">
+    <div class="c-label">Currency 1</div>
+    <h3>Fiat (USD)</h3>
+    <p>A minimum floor — the fiat amount that must always be paid regardless of how the other currencies settle. The floor is non-negotiable once contracted. Example: $50 of a $100 service.</p>
+  </div>
+  <div class="currency-card">
+    <div class="c-label">Currency 2</div>
+    <h3>Time-Dollars</h3>
+    <p>A ceiling expressed as a percentage of the total contract value. Parties assess their own time-dollar liquidity risk — the platform shows current NDC membership count as information but does not enforce a threshold. Example: max 25% = 1 hour at $25/hr exchange rate.</p>
+  </div>
+  <div class="currency-card">
+    <div class="c-label">Currency 3</div>
+    <h3>Gift</h3>
+    <p>Can be unconditional (no strings) or conditional (tied to a specific outcome). Critically, gift has a direction — it can flow either from performer to customer (a fee reduction) or from customer to performer (a bonus or gratuity). Example: $25 gift, performer→customer, fee reduction.</p>
+  </div>
+</div>
+
+<h3>CHW example: community health worker home visit ($100 total)</h3>
+<table class="role-table">
+  <tr><th>Field</th><th>Value</th><th>Notes</th></tr>
+  <tr><td><code>total_value_usd</code></td><td>$100</td><td>Agreed total value of the service</td></tr>
+  <tr><td><code>fiat_min_usd</code></td><td>$50</td><td>Floor — always paid in dollars</td></tr>
+  <tr><td><code>time_max_pct</code></td><td>25%</td><td>Up to $25 may be settled in time-dollars (1 hr @ $25/hr rate)</td></tr>
+  <tr><td><code>gift.type</code></td><td>unconditional</td><td>No conditions attached</td></tr>
+  <tr><td><code>gift.amount_usd</code></td><td>$25</td><td>Gift reduces the CHW's effective fee</td></tr>
+  <tr><td><code>gift.direction</code></td><td>performer→customer</td><td>CHW gives the gift to the patient, reducing cost</td></tr>
+</table>
+
+<div class="note">The direction field is important. In this example the CHW (performer) gives a gift to the patient (customer) — a fee reduction. In a SODOTO teaching context the inverse can occur: the student (customer) gives a gift to the mentor (performer) as acknowledgment of the debt incurred by learning. The same schema handles both.</div>
+
+<h2>The Contract JSON Structure</h2>
+
+<p>A CfA-dSC is a single JSON document that serves as both the living contract and, once settled, the settlement credential. Key top-level fields:</p>
+
+<pre>{
+  "id": "urn:uuid:...",
+  "version": "0.1",
+  "type": ["VerifiableCredential", "DyadicSmartContract", "ConversationForAction"],
+
+  "parties": {
+    "customer":  { "did": "did:key:...", "name": "..." },
+    "performer": { "did": "did:key:...", "name": "..." }
+  },
+
+  "preconditions": {
+    "shared_background_of_understanding": {
+      "status": "developing | confirmed | absent",
+      "attestation": { ... }
+    },
+    "conditions_of_satisfaction": {
+      "met": true,
+      "description": "...",
+      "deadline": "ISO date",
+      "attestation": { ... }
+    }
+  },
+
+  "payment_spec": {
+    "total_value_usd": 100,
+    "fiat_min_usd": 50,
+    "time_max_pct": 25,
+    "fiat_per_hour": 25,
+    "gift": { "type": "unconditional", "amount_usd": 25,
+               "direction": "performer_to_customer" }
+  },
+
+  "cfa_state": {
+    "current": "negotiating",
+    "history": [
+      { "state": "...", "actor": "did:key:...",
+        "timestamp": "...", "move": "...", "signature": "..." }
+    ]
+  },
+
+  "settlement": null,        ← null until satisfied; then holds three-currency breakdown
+
+  "context_refs": [],        ← links to prior CfT/CfP artifacts (FedWiki page slugs)
+
+  "proof": {
+    "type": "Ed25519Signature2020",
+    "signatories": [ ... ]   ← both party signatures at contract formation
+  }
+}</pre>
+
+<p>When the contract reaches <code>satisfied</code>, the <code>settlement</code> field is populated with the actual amounts paid in each currency, both parties sign the settlement, and the document becomes a settlement credential — a permanent record of what was done and how it was paid.</p>
+
+<h2>Workflow: Creating and Executing a Contract</h2>
+
+<ol class="step-list">
+  <li>
+    <strong>Prior conversation establishes CCS+T.</strong> Before the CfA-dSC is created, a Conversation for Possibility or a preparatory meeting must establish the Conditions of Satisfaction and the deadline. This is not recorded in the contract itself — it is referenced via a <code>context_refs</code> link to a FedWiki page that captures the prior conversation.
+  </li>
+  <li>
+    <strong>Customer opens the contract creator.</strong> Open <code>~/rcn/tools/cfa-dsc-creator.html</code> in a browser. Enter both party names and DIDs, the payment specification, the CCS+T description, and the SBU status. The tool produces a contract JSON with a base64-encoded share link.
+  </li>
+  <li>
+    <strong>Share link sent to performer.</strong> The share link encodes the full draft contract. The performer opens it in their own browser — no server needed. They can review the terms, propose changes (which the tool encodes as a new share link), or accept.
+  </li>
+  <li>
+    <strong>Coordinator runs the signing script.</strong> Once both parties agree on terms, the coordinator runs <code>node ~/veramo-rcn/sign-contract.js</code> with each party's key to replace <code>[pending: sign with Veramo]</code> placeholders with real Ed25519 signature values.
+  </li>
+  <li>
+    <strong>Contract stored in Neo4j.</strong> The finalize endpoint creates a <code>Contract</code> node and two <code>Party</code> nodes in Neo4j, linked by <code>CUSTOMER_IN</code> and <code>PERFORMER_IN</code> relationships. The full contract JSON is stored as a node property.
+  </li>
+  <li>
+    <strong>FedWiki pages created.</strong> Two FedWiki pages are generated — one for each party's view of the contract. Each page shows the full state history, payment terms, and CCS+T. The pages cross-reference each other.
+  </li>
+  <li>
+    <strong>Work is performed.</strong> As moves occur (performer starts, customer raises a concern, parties renegotiate), each is recorded as a signed history entry and appended to the contract document.
+  </li>
+  <li>
+    <strong>Customer declares satisfaction.</strong> When the work is complete and the customer is satisfied, they make the <code>declare_satisfaction</code> move. The <code>settlement</code> field is populated with the agreed currency breakdown. Both parties sign the settlement.
+  </li>
+  <li>
+    <strong>FedWiki pages updated.</strong> Both party FedWiki pages are updated to show the completed status and settlement record. The contract is now a settlement credential — a verifiable record of commitment made, work done, and payment settled.
+  </li>
+</ol>
+
+<h2>Technical Architecture</h2>
+
+<div class="diagram-wrap">
+<svg viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg"
+     style="width:100%;max-width:760px;display:block;font-family:'IBM Plex Sans',system-ui,sans-serif">
+  <defs>
+    <marker id="arr2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#555"/>
+    </marker>
+    <marker id="arr2b" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#1a56a4"/>
+    </marker>
+    <marker id="arr2a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#92400e"/>
+    </marker>
+  </defs>
+
+  <!-- Contract Creator -->
+  <rect x="14" y="30" width="168" height="80" rx="6" fill="#eff6ff" stroke="#1a56a4" stroke-width="1.5"/>
+  <text x="98" y="52" text-anchor="middle" font-size="9" fill="#1a56a4"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">CONTRACT CREATOR</text>
+  <text x="98" y="70" text-anchor="middle" font-size="11" fill="#1e293b">cfa-dsc-creator.html</text>
+  <text x="98" y="85" text-anchor="middle" font-size="10" fill="#475569">base64 share links</text>
+  <text x="98" y="100" text-anchor="middle" font-size="10" fill="#475569">no server needed</text>
+
+  <line x1="182" y1="70" x2="208" y2="70" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+  <!-- Veramo Signing -->
+  <rect x="212" y="30" width="168" height="80" rx="6" fill="#ede9fe" stroke="#6b21a8" stroke-width="1.5"/>
+  <text x="296" y="52" text-anchor="middle" font-size="9" fill="#6b21a8"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">VERAMO SIGNING</text>
+  <text x="296" y="70" text-anchor="middle" font-size="11" fill="#1e293b">sign-contract.js</text>
+  <text x="296" y="85" text-anchor="middle" font-size="10" fill="#475569">Ed25519 · both party keys</text>
+  <text x="296" y="100" text-anchor="middle" font-size="10" fill="#475569">~/veramo-rcn/</text>
+
+  <line x1="380" y1="70" x2="406" y2="70" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+  <!-- Neo4j -->
+  <rect x="410" y="30" width="150" height="80" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="485" y="52" text-anchor="middle" font-size="9" fill="#15803d"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">NEO4J</text>
+  <text x="485" y="70" text-anchor="middle" font-size="11" fill="#1e293b">Contract node</text>
+  <text x="485" y="85" text-anchor="middle" font-size="10" fill="#475569">Party nodes</text>
+  <text x="485" y="100" text-anchor="middle" font-size="10" fill="#475569">CUSTOMER_IN · PERFORMER_IN</text>
+
+  <line x1="560" y1="70" x2="586" y2="70" stroke="#92400e" stroke-width="1.5" marker-end="url(#arr2a)"/>
+
+  <!-- FedWiki -->
+  <rect x="590" y="30" width="156" height="80" rx="6" fill="#fffbeb" stroke="#b45309" stroke-width="1.5"/>
+  <text x="668" y="52" text-anchor="middle" font-size="9" fill="#b45309"
+        font-family="'IBM Plex Mono',monospace" font-weight="500">FEDWIKI</text>
+  <text x="668" y="70" text-anchor="middle" font-size="11" fill="#1e293b">Party-view pages</text>
+  <text x="668" y="85" text-anchor="middle" font-size="10" fill="#475569">one page per party</text>
+  <text x="668" y="100" text-anchor="middle" font-size="10" fill="#475569">cross-reference each other</text>
+
+  <!-- Label below: TypeScript validator -->
+  <rect x="212" y="128" width="168" height="44" rx="6" fill="#fafaf8" stroke="#ccc" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="296" y="146" text-anchor="middle" font-size="9" fill="#999"
+        font-family="'IBM Plex Mono',monospace">VALIDATOR (not on disk)</text>
+  <text x="296" y="162" text-anchor="middle" font-size="10" fill="#aaa">TypeScript · 25 tests</text>
+  <line x1="296" y1="110" x2="296" y2="128" stroke="#ccc" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="10" y="190" font-size="9.5" fill="#888" font-style="italic">Dashed box = built in prior session, not currently on disk</text>
+</svg>
+</div>
+
+<h2>What Was Working as of March 2026</h2>
+
+<table class="status-table">
+  <tr><th>Component</th><th>Status</th><th>Location</th></tr>
+  <tr><td>CfA state machine spec</td><td><span class="pill green">Complete</span></td><td>Documented in cfa-dsc-handoff.md</td></tr>
+  <tr><td>JSON schema v0.1</td><td><span class="pill green">Complete</span></td><td>Schema defined; cfa-dsc-schema.json not on disk</td></tr>
+  <tr><td>Contract creator UI</td><td><span class="pill green">Working</span></td><td><code>~/rcn/tools/cfa-dsc-creator.html</code></td></tr>
+  <tr><td>Veramo agent + 4 DIDs</td><td><span class="pill green">Working</span></td><td><code>~/veramo-rcn/</code></td></tr>
+  <tr><td>Ed25519 signing script</td><td><span class="pill green">Working</span></td><td><code>~/veramo-rcn/sign-contract.js</code></td></tr>
+  <tr><td>TypeScript validator (25 tests)</td><td><span class="pill amber">Not on disk</span></td><td>Built in session; needs reconstruction</td></tr>
+  <tr><td>Neo4j finalize endpoint</td><td><span class="pill green">Working</span></td><td>In <code>sofi-proxy.py</code> (running as <code>~/evsm-proxy.py</code>, port 8765); canonical copy at <code>~/rcn/sofi-proxy.py</code>; test contracts exist in graph from prior session</td></tr>
+  <tr><td>FedWiki party-view pages</td><td><span class="pill green">Working</span></td><td><code>~/.wiki/localhost/pages/</code></td></tr>
+  <tr><td>cfa-dsc-schema.json</td><td><span class="pill amber">Not on disk</span></td><td>Needs reconstruction and committing to ~/rcn</td></tr>
+</table>
+
+<h2>What Is Not Yet Built</h2>
+
+<div class="gap-item"><strong>cfa-dsc-schema.json and cfa-dsc-validator/ not on disk.</strong> The formal JSON schema and the TypeScript validation library (with 25 passing tests) were built in a prior session but are not currently present in ~/rcn. They need to be reconstructed or relocated and committed. The schema is fully documented in cfa-dsc-handoff.md and can be written directly from it.</div>
+
+<div class="gap-item"><strong>Verification script (stated next step).</strong> A CLI tool that takes a signed contract JSON, extracts the signing payload for each history entry, and verifies each Ed25519 signature against its DID's public key. The signing infrastructure is complete; verification is the mirror. This was the stated next step in the April handoff.</div>
+
+<div class="gap-item"><strong>Move nodes in Neo4j.</strong> The full audit trail of CfA state transitions is currently stored only in the contract JSON's history array (and in FedWiki pages). A planned <code>(:Move)</code> node type would persist each speech act as a graph node, enabling temporal queries across contract lifecycles.</div>
+
+
+<div class="gap-item"><strong>Hosting cfa-dsc-creator.html publicly.</strong> The share link model requires both parties to be able to open the same URL. Currently both parties need the HTML file locally. Hosting it on relocalizecreativity.net would make share links work without coordination.</div>
+
+<div class="gap-item"><strong>DID registry for party lookup.</strong> The contract creator currently requires both parties to paste their DID strings manually. A DID registry in Neo4j or FedWiki would allow name lookup — type a name, get the DID.</div>
+
+<div class="gap-item"><strong>CHW alias reconciliation.</strong> The performer DID <code>z6MkjUQMCEXs71me...</code> was created with alias "CHW Bellingham" but the contract creator UI used "Community Health Worker A". The signature is cryptographically valid (tied to the key, not the alias) but the registry alias should be reconciled.</div>
+
+<div class="gap-item"><strong>Stale test contract in Neo4j.</strong> A second test contract (<code>urn:uuid:e7dc51db-...</code>) created during UI testing can be deleted: <code>MATCH (c:Contract {id: "urn:uuid:e7dc51db-a847-4246-9a65-247e619603ab"}) DETACH DELETE c</code></div>
+
+<h2>Connection to SODOTO</h2>
+
+<p>CfA-dSC and SODOTO are designed to interlock at several points. They share infrastructure; they also inform each other conceptually.</p>
+
+<div class="connect-item"><strong>Credentials authorize contract roles.</strong> A SODOTO credential for e-VSM Site Manager, for example, establishes that someone is qualified to perform e-VSM engagements as a professional service. A CfA-dSC contract for that engagement would reference the credential as part of the performer's qualification. Credential → role authorization → contract.</div>
+
+<div class="connect-item"><strong>TeachOne creates a gift relationship.</strong> When a SODOTO TeachOne completes, the student has received something of real value from the mentor/learner. The three-currency model can record this: a gift flowing from learner to student (knowledge) and a reciprocal debt flowing from student back (time, future teaching). The Neo4j graph can hold this relationship permanently.</div>
+
+<div class="connect-item"><strong>Shared DID infrastructure.</strong> Both systems use the same Veramo agent and the same Ed25519 key pairs. A person's DID in SODOTO is the same DID they use to sign CfA-dSC contract moves. The dids.json and people.json registries serve both systems.</div>
+
+<div class="connect-item"><strong>Both surface in FedWiki.</strong> SODOTO credentials appear as badge pages; CfA-dSC contracts appear as party-view contract pages. Both use the same FedWiki server. A practitioner's FedWiki presence can eventually show both their credential portfolio and their contract history in one place.</div>
+
+<p>For the full picture of how these systems relate to each other and to the rest of the RCN tool stack, see the <a href="rcn-stack-overview.html">RCN Stack Overview</a>.</p>
+
+</div>
+</body>
+</html>

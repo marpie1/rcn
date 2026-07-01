@@ -1,0 +1,55 @@
+services:
+
+  # FedWiki — hosts Shared Care Plan pages
+  fedwiki:
+    build:
+      context: ../..
+      dockerfile: deploy/scp/Dockerfile.fedwiki
+    volumes:
+      - wiki-data:/root/.wiki
+    restart: unless-stopped
+
+  # Groove — collaborative care plan workspace
+  groove:
+    build:
+      context: ../..
+      dockerfile: deploy/scp/Dockerfile.groove
+    volumes:
+      - groove-data:/app/server/data
+    restart: unless-stopped
+
+  # sofi-proxy — serves browser tools and proxies API calls
+  sofi-proxy:
+    build:
+      context: ../..
+      dockerfile: deploy/scp/Dockerfile.sofi-proxy
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SODOTO_PROXY_SECRET=${SODOTO_PROXY_SECRET}
+    volumes:
+      - wiki-data:/root/.wiki
+      - sodoto-data:/root/.sodoto
+    restart: unless-stopped
+
+  # Caddy — reverse proxy with automatic TLS via Let's Encrypt
+  caddy:
+    image: caddy:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - fedwiki
+      - groove
+      - sofi-proxy
+    restart: unless-stopped
+
+volumes:
+  wiki-data:    # FedWiki pages — patient Shared Care Plan data
+  groove-data:  # Groove workspace databases
+  sodoto-data:  # sofi-proxy shared registry
+  caddy-data:   # TLS certificates (do not delete — avoids Let's Encrypt rate limits)
+  caddy-config:

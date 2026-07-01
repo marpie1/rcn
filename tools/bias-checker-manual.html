@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<!-- Conversation Navigator — User Manual
+     HOW TO UPDATE THIS FILE:
+     - Each major section is marked with a Section comment: §N: SECTION NAME
+     - Add new <li> entries to the TOC sidebar when new sections are added
+     - UPDATE: comments mark specific spots that change with new features
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Conversation Navigator — User Manual</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+
+.layout{display:flex;min-height:100vh}
+.sidebar{width:240px;flex-shrink:0;background:#fff;border-right:1px solid #e2e8f0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:20px 0}
+.content{flex:1;min-width:0;padding:40px 40px 80px;max-width:800px}
+
+.sb-logo{font-size:12px;font-weight:700;color:#0f172a;padding:0 16px 14px;letter-spacing:.03em;border-bottom:1px solid #e2e8f0;margin-bottom:12px}
+.sb-logo span{display:block;font-size:10px;font-weight:400;color:#94a3b8;margin-top:2px}
+.sb-nav{list-style:none}
+.sb-nav li a{display:block;font-size:12px;padding:5px 16px;color:#475569;transition:background .12s;line-height:1.4}
+.sb-nav li a:hover{background:#f1f5f9;color:#1e293b;text-decoration:none}
+.sb-nav li a.active{color:#9a3412;background:#fff7ed}
+.sb-section-hd{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:10px 16px 4px}
+.sb-links{padding:14px 16px;border-top:1px solid #e2e8f0;margin-top:8px}
+.sb-links a{display:block;font-size:12px;color:#475569;padding:3px 0}
+
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:20px;margin-bottom:36px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:6px}
+.doc-title{font-size:28px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:8px}
+.doc-sub{font-size:14px;color:#475569}
+.doc-meta{margin-top:12px;font-size:12px;color:#94a3b8}
+.version-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;background:#fce7d6;color:#9a3412;border-radius:10px;letter-spacing:.04em;margin-right:6px}
+
+section{margin-bottom:48px;padding-top:8px;border-top:1px solid #e2e8f0}
+section:first-of-type{border-top:none}
+h2{font-size:19px;font-weight:700;color:#0f172a;margin-bottom:14px}
+h3{font-size:14px;font-weight:700;color:#1e293b;margin:22px 0 8px}
+h4{font-size:13px;font-weight:600;color:#334155;margin:16px 0 6px}
+p{font-size:13px;margin-bottom:12px;color:#334155;line-height:1.65}
+p:last-child{margin-bottom:0}
+
+ol,ul{padding-left:20px;font-size:13px;color:#334155;margin-bottom:12px}
+li{margin-bottom:5px;line-height:1.6}
+
+kbd{font-family:system-ui,monospace;font-size:11px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;padding:1px 6px;color:#1e293b;white-space:nowrap}
+code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;padding:1px 5px;border-radius:4px;color:#1e293b}
+
+.tip{background:#f0fdf4;border-left:3px solid #22c55e;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#166534;margin:12px 0;line-height:1.55}
+.note{background:#fff7ed;border-left:3px solid #c84b2f;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#9a3412;margin:12px 0;line-height:1.55}
+.warn{background:#fef9c3;border-left:3px solid #eab308;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#854d0e;margin:12px 0;line-height:1.55}
+
+.feat-table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0 20px}
+.feat-table th{text-align:left;padding:7px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+.feat-table td{padding:8px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+.feat-table td:first-child{font-weight:600;color:#1e293b;white-space:nowrap}
+
+.section-pill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#fce7d6;color:#9a3412;border-radius:8px;padding:1px 8px;margin-bottom:10px}
+
+.conflict-table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0 20px}
+.conflict-table th{text-align:left;padding:7px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+.conflict-table td{padding:8px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155;font-size:12px}
+.conflict-table td:first-child{font-weight:600;color:#1e293b;width:160px}
+
+.doc-footer{margin-top:48px;padding-top:20px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+
+@media(max-width:700px){
+  .sidebar{display:none}
+  .content{padding:24px 16px 60px}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- §TOC: SIDEBAR -->
+  <!-- UPDATE: add new <li> entries here when new sections are added -->
+  <nav class="sidebar">
+    <div class="sb-logo">Conversation Navigator<span>User Manual</span></div>
+    <ul class="sb-nav">
+      <li class="sb-section-hd">Getting Started</li>
+      <li><a href="#s1">1. Interface overview</a></li>
+      <li><a href="#s2">2. Sessions</a></li>
+      <li><a href="#s3">3. Joining a session</a></li>
+
+      <li class="sb-section-hd">Your Self-Report</li>
+      <li><a href="#s4">4. Intent</a></li>
+      <li><a href="#s5">5. Biases</a></li>
+      <li><a href="#s5b">5b. Identity &amp; consent</a></li>
+      <li><a href="#s6">6. Conflict detection</a></li>
+
+      <li class="sb-section-hd">Shared Views</li>
+      <li><a href="#s7">7. Participants — Cards view</a></li>
+      <li><a href="#s8">8. Participants — Stats view</a></li>
+
+      <li class="sb-section-hd">Models</li>
+      <li><a href="#s9">9. Models tab overview</a></li>
+      <li><a href="#s10">10. Six Questions</a></li>
+      <li><a href="#s11">11. Cynefin</a></li>
+      <li><a href="#s12">12. eVSM v2</a></li>
+      <li><a href="#s13">13. 15 Ps</a></li>
+      <li><a href="#s14">14. Six Thinking Hats</a></li>
+      <li><a href="#s15">15. Custom graph models</a></li>
+
+      <li class="sb-section-hd">Shared Tools</li>
+      <li><a href="#s18">18. Topics tab</a></li>
+      <li><a href="#s19">19. Export tab</a></li>
+
+      <li class="sb-section-hd">Reference</li>
+      <li><a href="#s16">16. Session management</a></li>
+      <li><a href="#s17">17. Tips &amp; patterns</a></li>
+    </ul>
+    <div class="sb-links">
+      <a href="bias-checker-intro.html">← Introduction</a>
+      <a href="conversation-navigator-flow.html" style="margin-top:4px">Process Flow ↗</a>
+      <a href="bias-checker.html" style="margin-top:4px">Open the Tool ↗</a>
+    </div>
+  </nav>
+
+  <main class="content">
+
+    <div class="doc-header">
+      <div class="doc-tag">ReLocalize Creativity Network</div>
+      <h1 class="doc-title">Conversation Navigator — User Manual</h1>
+      <p class="doc-sub">Complete reference for all features</p>
+      <!-- UPDATE: date when tool changes significantly -->
+      <div class="doc-meta">
+        <span class="version-badge">June 2026</span>
+        <a href="bias-checker-intro.html">Introduction &amp; positioning →</a>
+      </div>
+    </div>
+
+    <!-- §1: INTERFACE OVERVIEW -->
+    <section id="s1">
+      <div class="section-pill">Getting Started</div>
+      <h2>1. Interface overview</h2>
+      <p>
+        The tool is a single HTML file hosted at Wiki Café. Open it in any modern browser — no
+        install, no account. It requires an internet connection for real-time sync.
+      </p>
+      <p>The interface has two panels:</p>
+      <ul>
+        <li><strong>Left panel</strong> — your controls: join session, share link, session title, identity/consent, intent selection, bias checklist.</li>
+        <li><strong>Right panel</strong> — shared views: four tabs described below.</li>
+      </ul>
+      <p>
+        The header shows the tool name, the current session ID, and a live indicator dot — green
+        when connected to Firebase, grey when offline.
+      </p>
+      <p>
+        The right panel has four tabs at the top: <strong>Participants</strong>, <strong>Models</strong>,
+        <strong>Topics</strong>, and <strong>Export</strong>.
+        Stat pills in the tab bar always show the current participant count, total active biases,
+        and intent–bias conflict count across the session.
+      </p>
+    </section>
+
+    <!-- §2: SESSIONS -->
+    <section id="s2">
+      <h2>2. Sessions</h2>
+      <p>
+        Every instance of the tool runs in a <strong>session</strong> — a shared Firebase namespace
+        identified by a six-character ID. The session ID is embedded in the URL as a query parameter:
+        <code>?s=ABC123</code>.
+      </p>
+      <p>
+        When you open the tool with no session ID in the URL, a new one is generated automatically
+        and added to the URL. Share that URL with other participants and they will join the same
+        session. Anyone who opens the same URL is in the same session.
+      </p>
+      <p>
+        Sessions are ephemeral. Data is not saved when participants leave. If you need to resume
+        a session later, keep the URL — as long as at least one participant remains connected,
+        the Firebase data persists.
+      </p>
+      <div class="note">Session data is cleaned up from Firebase when a participant closes their browser tab. If all participants leave, the session data is gone. Download model SVGs before closing if you need them.</div>
+    </section>
+
+    <!-- §3: JOINING -->
+    <section id="s3">
+      <h2>3. Joining a session</h2>
+      <ol>
+        <li>Open the tool URL (or a session URL shared by another participant).</li>
+        <li>Enter your name in the <strong>Your name</strong> field in the left panel.</li>
+        <li>Click <strong>Join</strong>.</li>
+      </ol>
+      <p>
+        After joining, the name field locks and your participant key is registered in Firebase.
+        The <strong>Intent</strong> and <strong>Biases</strong> sections appear. The
+        <strong>Share This Session</strong> box shows the URL — click <strong>Copy Link</strong>
+        to copy it to the clipboard and share with others.
+      </p>
+      <p>
+        Your participant card appears in the Participants view immediately after joining.
+        Other participants see you appear on their screens within a second.
+      </p>
+      <div class="tip">Set your intent before others arrive — it gives the group useful information from the start of the conversation rather than mid-way through.</div>
+    </section>
+
+    <!-- §4: INTENT -->
+    <section id="s4">
+      <div class="section-pill">Your Self-Report</div>
+      <h2>4. Intent</h2>
+      <p>
+        Intent is what you are trying to accomplish in this conversation right now. Naming it
+        makes it visible to others and helps you notice when your behavior diverges from it.
+      </p>
+
+      <h3>Built-in intents</h3>
+      <!-- UPDATE: update if built-in intents change -->
+      <table class="feat-table">
+        <thead><tr><th>Intent</th><th>When to select it</th></tr></thead>
+        <tbody>
+          <tr><td>📖 Learning</td><td>You are here to understand something you do not already understand.</td></tr>
+          <tr><td>☕ Socializing</td><td>The relationship is the point — building trust, maintaining connection.</td></tr>
+          <tr><td>🏆 Convincing</td><td>You have a position and you want others to adopt it.</td></tr>
+          <tr><td>🔍 Exploring</td><td>The question is open — you do not know what you are going to find.</td></tr>
+          <tr><td>🎯 Producing something</td><td>The conversation has a concrete deliverable: a decision, a document, a plan.</td></tr>
+          <tr><td>💨 Venting</td><td>You need to discharge energy or frustration. The content is secondary.</td></tr>
+          <tr><td>❤️ Being heard and acknowledged</td><td>You need to feel understood before you can engage with anything else.</td></tr>
+          <tr><td>📢 Sharing / Teaching</td><td>You have something to transfer to others and that transfer is the goal.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Selecting intent</h3>
+      <p>
+        Click any intent button to select it. The button highlights in amber. Click again to
+        deselect. You can have multiple intents active simultaneously — for example, both
+        Exploring and Producing something if you are in a structured generative session.
+      </p>
+      <p>Your intent selection is visible immediately on your participant card in the shared view.</p>
+
+      <h3>Custom intents</h3>
+      <p>
+        Type a custom intent in the field below the intent grid and press <kbd>Enter</kbd> or
+        click <strong>Add</strong>. Custom intents appear with a ✦ icon. Click × to remove a
+        custom intent.
+      </p>
+      <div class="note">Custom intents are specific to your session — they are visible to all participants but are not conflict-detected against the built-in bias map.</div>
+
+      <h3>Reordering intents</h3>
+      <p>Drag any intent button to reorder the grid. The order is personal — it affects only your view.</p>
+
+      <h3>Clearing intent</h3>
+      <p>Click <strong>Clear mine</strong> at the bottom of the left panel to deselect all your intents and biases at once.</p>
+    </section>
+
+    <!-- §5: BIASES -->
+    <section id="s5">
+      <h2>5. Biases</h2>
+      <p>
+        The bias list asks you to notice and name cognitive patterns you are experiencing
+        <em>right now</em> — not patterns you think others have. This is a self-report, not
+        a judgment of others.
+      </p>
+
+      <h3>Built-in biases</h3>
+      <!-- UPDATE: update if built-in biases change -->
+      <table class="feat-table">
+        <thead><tr><th>Bias</th><th>What it means in practice</th></tr></thead>
+        <tbody>
+          <tr><td>Divided attention</td><td>Part of your attention is elsewhere — phone, email, a parallel thread of thought.</td></tr>
+          <tr><td>Assuming communication success without checking</td><td>You believe you have been understood without verifying. Or you believe you understand without checking.</td></tr>
+          <tr><td>Doubling down when challenged</td><td>When someone pushes back, your position hardens rather than opening. The challenge triggers defense rather than curiosity.</td></tr>
+          <tr><td>Statements : Questions &gt; 1</td><td>You are contributing more assertions than questions — a signal that you may be driving rather than exploring.</td></tr>
+          <tr><td>Tone → Limiting Participation</td><td>Something about your manner — volume, certainty, speed, dismissiveness — is making it harder for others to contribute.</td></tr>
+          <tr><td>We need a model</td><td>The conversation has drifted into abstraction and you are reaching for a framework when concrete specifics would be more useful, or vice versa.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Checking a bias</h3>
+      <p>
+        Click the checkbox next to any bias you are noticing in yourself. The row highlights in
+        orange and the bias name appears on your participant card immediately. Click again to uncheck.
+      </p>
+
+      <h3>Custom biases</h3>
+      <p>
+        Type a custom bias in the field at the bottom of the bias list and press <kbd>Enter</kbd>
+        or click <strong>Add</strong>. Custom biases work like built-in ones — checkable, visible
+        on your card — but are not included in conflict detection. Click × to remove.
+      </p>
+
+      <h3>Reordering biases</h3>
+      <p>Drag any bias row to reorder the list. The order is personal.</p>
+
+      <div class="tip">The bias list is most useful if you update it during the conversation, not just at the start. A bias you were not noticing five minutes ago may appear now. Checking it is the signal — not an admission of failure.</div>
+    </section>
+
+    <!-- §5b: IDENTITY & CONSENT -->
+    <section id="s5b">
+      <h2>5b. Identity &amp; consent</h2>
+      <p>
+        By default every session starts in <strong>Open</strong> mode — names are visible in
+        stats hover tooltips and model click annotations. The Identity section in the left panel
+        lets any participant switch the session to anonymous mode.
+      </p>
+      <p>
+        Check <em>Make this session anonymous</em> to remove your name from all shared views.
+        As soon as <em>one</em> participant checks the box, the whole session becomes anonymous
+        for everyone. The session stays anonymous as long as any participant has the box checked.
+        Uncheck it to restore Open mode (provided no one else is still checked).
+      </p>
+
+      <h3>Voting display</h3>
+      <p>
+        The tab bar shows a running count: <strong>Open: X/Y</strong> where X is the number of
+        participants who have <em>not</em> requested anonymity and Y is the total. The count is
+        always visible; which specific participants voted which way is not shown.
+      </p>
+      <p>
+        The status line below the checkbox shows the current state: either a tally such as
+        <em>2 open, 1 anonymous</em>, or <em>Open — names visible to everyone</em> when no one
+        has requested anonymity.
+      </p>
+
+      <h3>What changes in anonymous mode</h3>
+      <table class="feat-table">
+        <thead><tr><th>Feature</th><th>Open (default)</th><th>Anonymous (one+ checked)</th></tr></thead>
+        <tbody>
+          <tr><td>Stats bar charts</td><td>Hover tooltip shows names of participants with that intent or bias</td><td>Count only — no names</td></tr>
+          <tr><td>Model click counts</td><td>Hover tooltip on each node/edge shows who clicked it</td><td>Count only — no names</td></tr>
+          <tr><td>Stats section label</td><td>Intents — N participants — Open</td><td>Intents — N participants</td></tr>
+        </tbody>
+      </table>
+
+      <div class="note">Anonymous mode takes effect immediately — as soon as one participant checks the box, names disappear from all tooltips for everyone. Unchecking the box restores Open mode if no one else is checked.</div>
+    </section>
+
+    <!-- §6: CONFLICT DETECTION -->
+    <section id="s6">
+      <h2>6. Conflict detection</h2>
+      <p>
+        The tool maps which cognitive biases work against which conversational intents. When a
+        participant has an active intent and a checked bias that conflict, a yellow warning
+        appears on their participant card: <em>⚠ Intent–bias mismatch: N conflict(s)</em>.
+      </p>
+      <p>
+        This is visible to everyone in the session. It is not punitive — it is information.
+        The group can choose to acknowledge it, ignore it, or use it as the entry point for a
+        brief check-in.
+      </p>
+
+      <h3>Conflict map</h3>
+      <!-- UPDATE: update if CONFLICTS object changes in the code -->
+      <table class="conflict-table">
+        <thead><tr><th>Intent</th><th>Conflicts with these biases</th></tr></thead>
+        <tbody>
+          <tr><td>Learning</td><td>Assuming communication success without checking; Doubling down when challenged</td></tr>
+          <tr><td>Socializing</td><td>Doubling down when challenged; Tone → Limiting Participation</td></tr>
+          <tr><td>Convincing</td><td>Divided attention; Assuming communication success without checking</td></tr>
+          <tr><td>Exploring</td><td>Doubling down when challenged; We need a model</td></tr>
+          <tr><td>Producing something</td><td>Divided attention; Doubling down when challenged; We need a model</td></tr>
+          <tr><td>Venting</td><td>(none — venting has no conflict mappings)</td></tr>
+          <tr><td>Being heard and acknowledged</td><td>Doubling down when challenged; Tone → Limiting Participation</td></tr>
+          <tr><td>Sharing / Teaching</td><td>Statements : Questions &gt; 1; Tone → Limiting Participation</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        The count in the tab bar (Conflicts: <strong>N</strong>) shows how many participants
+        currently have at least one intent–bias conflict.
+      </p>
+      <div class="note">Custom intents and custom biases are not included in conflict detection — only the eight built-in intents and six built-in biases are mapped.</div>
+    </section>
+
+    <!-- §7: PARTICIPANTS CARDS -->
+    <section id="s7">
+      <div class="section-pill">Shared Views</div>
+      <h2>7. Participants — Cards view</h2>
+      <p>
+        The default view in the Participants tab. Shows one card per participant, updated in
+        real time as people join, leave, or change their selections.
+      </p>
+
+      <h3>What each card shows</h3>
+      <table class="feat-table">
+        <thead><tr><th>Element</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>Name</td><td>The participant's name as entered at join time. Your own card is outlined in red and has a "you" tag.</td></tr>
+          <tr><td>Intent badge(s)</td><td>Amber pill(s) showing each active intent. Multiple intents stack horizontally.</td></tr>
+          <tr><td>Bias tags</td><td>Small grey tags for each checked bias. Tags for biases that conflict with the participant's intent are shown in red.</td></tr>
+          <tr><td>Bias count badge</td><td>Red circle in the top-right corner of the card showing the number of active biases. Hidden if zero.</td></tr>
+          <tr><td>Conflict warning</td><td>Yellow banner at the bottom of the card: ⚠ Intent–bias mismatch: N conflict(s). Appears only when a conflict exists.</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        Cards appear in join order. Participants who close their browser tab are automatically
+        removed from the view within a few seconds.
+      </p>
+    </section>
+
+    <!-- §8: PARTICIPANTS STATS -->
+    <section id="s8">
+      <h2>8. Participants — Stats view</h2>
+      <p>
+        Click <strong>Stats</strong> above the card grid to switch to the aggregate statistics view.
+        This shows bar charts summarizing the group's intent and bias distribution, plus model
+        interaction data if any models have been used.
+      </p>
+
+      <h3>Intent chart</h3>
+      <p>
+        One bar per intent, sorted by count descending. Shows how many participants have each
+        intent active. Intents with zero participants are shown dimmed. Each intent has a distinct
+        color.
+      </p>
+
+      <h3>Biases chart</h3>
+      <p>
+        One bar per bias, sorted by count descending. Shows how many participants have each bias
+        checked. Useful for noticing when a pattern (e.g., divided attention) is widespread across
+        the group rather than individual.
+      </p>
+
+      <h3>Model interaction sections</h3>
+      <p>
+        If any model has been opened and clicked in the session, the Stats view shows a section
+        for each model with bars for clicked nodes and edges. These appear below the intent and
+        bias charts, in pairs, labeling the model and click type (nodes / connections / questions).
+      </p>
+
+      <div class="tip">Stats view is useful for a facilitator who wants a quick read of the room without reading each card individually. Switch back to Cards to see individual names.</div>
+    </section>
+
+    <!-- §9: MODELS OVERVIEW -->
+    <section id="s9">
+      <div class="section-pill">Models</div>
+      <h2>9. Models tab overview</h2>
+      <p>
+        Click <strong>Models</strong> in the tab bar to open the models tab. This tab contains
+        five built-in thinking framework diagrams and a custom graph upload area.
+      </p>
+      <p>
+        Each model is an accordion — click the header to open or close it. <strong>Only one model
+        can be open at a time.</strong> Opening a model subscribes to its click data in Firebase
+        and renders the interactive SVG.
+      </p>
+      <p>
+        <strong>Clicking a node or edge in a model increments its count by 1</strong> for the
+        whole session. Clicking it again decrements. Your clicks are tracked separately from
+        others' — you cannot drive a count below zero regardless of how others have voted.
+        Click counts persist as long as the Firebase session exists.
+      </p>
+      <p>
+        All model interaction counts appear in the <strong>Stats</strong> view on the Participants tab.
+      </p>
+      <div class="note">You must be joined (name entered, Join clicked) before model clicks are registered. Clicking before joining has no effect.</div>
+    </section>
+
+    <!-- §10: SIX QUESTIONS -->
+    <section id="s10">
+      <h2>10. Six Questions / Contexts</h2>
+      <p>
+        Six Questions is an interactive question-and-answer framework. Six rows, each with a
+        question on the left and an answer field on the right. The defaults are When, Where, Why,
+        Who, How, What — but both question labels and answers are fully editable by any participant.
+      </p>
+
+      <h3>Editing questions and answers</h3>
+      <ul>
+        <li>Click the <strong>colored question box</strong> on the left to edit the question label. Changes sync across all participants.</li>
+        <li>Click the <strong>answer box</strong> on the right to type an answer. Changes sync across all participants.</li>
+        <li>Click the <strong>answer box itself</strong> (not the text field) to increment the click count for that answer row. A red count appears when the count is greater than zero.</li>
+      </ul>
+
+      <h3>Timeline</h3>
+      <p>
+        Below the six rows, a timeline appears showing the order in which answers were filled
+        in during the session. Each row shows a bar sized relative to the time elapsed between
+        the first answer entered and that row's answer.
+      </p>
+
+      <h3>Download SVG</h3>
+      <p>
+        Click <strong>Download SVG</strong> to export the current state of the Six Questions
+        diagram as an SVG file — including question labels, answers, and click counts. Useful
+        for archiving the session output.
+      </p>
+    </section>
+
+    <!-- §11: CYNEFIN -->
+    <section id="s11">
+      <h2>11. Cynefin</h2>
+      <p>
+        The Cynefin framework rendered as a clickable SVG diagram. Five domains: Complex,
+        Complicated, Chaotic, Clear, and Disorder (center). Five boundary transitions between them.
+      </p>
+      <p>
+        Click any <strong>domain</strong> to mark it as relevant to the current conversation.
+        Click a <strong>boundary line</strong> to mark a transition as relevant. Each click adds
+        to the shared count; click again to remove your vote.
+      </p>
+      <p>
+        Domain and transition click counts appear in the Stats view under
+        "Cynefin — domains" and "Cynefin — transitions."
+      </p>
+      <div class="tip">Use Cynefin when the group is trying to agree on what kind of problem they are facing — complicated (knowable with expertise) vs. complex (emergent, requires probing) vs. chaotic (act first). Having the diagram visible as a shared object makes that conversation concrete.</div>
+    </section>
+
+    <!-- §12: EVSM -->
+    <section id="s12">
+      <h2>12. eVSM v2</h2>
+      <p>
+        The electronic Viable System Model (eVSM) v2 rendered as a clickable SVG. Nodes represent
+        VSM functions (System 1 through System 5, algedonic channel, environment) and edges
+        represent the command/autonomy and information flows between them.
+      </p>
+      <p>
+        Click any node or edge to mark it as the focus of current discussion. Clicks aggregate
+        across participants and appear in Stats as "eVSM v2 — nodes" and "eVSM v2 — connections."
+      </p>
+    </section>
+
+    <!-- §13: 15 PS -->
+    <section id="s13">
+      <h2>13. 15 Ps</h2>
+      <p>
+        A fifteen-node framework diagram rendered as a clickable SVG. Each node represents one
+        of the fifteen P categories relevant to community and neighborhood development analysis.
+        Edges show structural relationships between them.
+      </p>
+      <p>
+        Click nodes and edges to mark the ones relevant to the current conversation. Counts appear
+        in Stats as "15 Ps — nodes" and "15 Ps — connections."
+      </p>
+    </section>
+
+    <!-- §14: SIX THINKING HATS -->
+    <section id="s14">
+      <h2>14. Six Thinking Hats</h2>
+      <p>
+        De Bono's Six Thinking Hats rendered as a clickable SVG. Six colored hat nodes:
+        White (data/facts), Red (emotion/intuition), Black (caution/risk), Yellow (optimism/value),
+        Green (creativity/alternatives), Blue (process/control).
+      </p>
+      <p>
+        Click a hat to mark it as the dominant mode of the current conversation or the mode a
+        participant is operating in. Click counts aggregate per hat across all participants and
+        appear in Stats as "Six Thinking Hats."
+      </p>
+      <div class="tip">Six Thinking Hats works well alongside the intent/bias panel — checking "Tone limiting participation" while clicking Black Hat gives the group a precise vocabulary for what is happening.</div>
+    </section>
+
+    <!-- §15: CUSTOM GRAPH MODELS -->
+    <section id="s15">
+      <h2>15. Custom graph models</h2>
+      <p>
+        Any JSON file exported from the <strong>RCN Graph Tool</strong> can be uploaded as a
+        custom interactive model. This lets the group use any diagram they have built as a shared
+        clickable canvas during a conversation.
+      </p>
+
+      <h3>Uploading a graph</h3>
+      <ol>
+        <li>In the Models tab, click <strong>Upload graph JSON</strong>.</li>
+        <li>Select a <code>.json</code> file exported from the RCN Graph Tool.</li>
+        <li>The graph appears as a new accordion entry above the built-in models, labeled with the model name from the JSON.</li>
+        <li>Click the accordion header to open it and render the interactive diagram.</li>
+      </ol>
+
+      <h3>Interacting with a custom graph</h3>
+      <p>
+        Every node and edge in the uploaded graph becomes clickable. Click a node or edge to add
+        your attention mark; click again to remove it. Counts aggregate across all participants
+        in the session and appear in Stats under the model's name.
+      </p>
+      <p>
+        Custom graphs are stored in the session's Firebase namespace. All participants see the
+        uploaded graph automatically — you only need to upload once per session.
+      </p>
+
+      <h3>Download SVG</h3>
+      <p>Click <strong>Download SVG</strong> in the open accordion to export the current state of the custom diagram, including click count annotations, as an SVG file.</p>
+
+      <div class="note">Only one custom graph can be uploaded per session. To use a different graph, use New Session (which resets all data) or Reset interactions (which clears click counts but keeps the graph).</div>
+    </section>
+
+    <!-- §16: SESSION MANAGEMENT -->
+    <section id="s16">
+      <div class="section-pill">Reference</div>
+      <h2>16. Session management</h2>
+
+      <h3>Session Title</h3>
+      <p>
+        After joining, a <strong>Session Title</strong> field appears in the left panel below
+        the Share link. Enter a name for this session — it is used as the page title in the
+        FedWiki export (§19). The title is local to your browser; it does not sync to other
+        participants.
+      </p>
+
+      <p>Three session controls appear at the top of the Models tab:</p>
+      <table class="feat-table">
+        <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Reset interactions</strong></td>
+            <td>Clears all model node and edge click counts for the entire session. Asks for confirmation. Participant intent and bias data is not affected. Use this to start a fresh round of model interaction without starting a new session.</td>
+          </tr>
+          <tr>
+            <td><strong>New session</strong></td>
+            <td>Generates a new session ID and reloads the page. All session data — participants, intents, biases, model interactions — is abandoned. Use this to start a completely fresh session. Share the new URL with participants.</td>
+          </tr>
+          <tr>
+            <td><strong>Upload graph JSON</strong></td>
+            <td>Opens a file picker to upload a custom graph model. See §15.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="warn">Reset interactions and New session are irreversible. There is no undo. Download any SVGs you want to keep before clicking either.</div>
+
+      <h3>Leaving a session</h3>
+      <p>
+        Closing your browser tab automatically removes your participant entry from Firebase. Other
+        participants see your card disappear within a few seconds. Your name becomes available
+        again for someone else to use if the session continues.
+      </p>
+    </section>
+
+    <!-- §17: TIPS & PATTERNS -->
+    <section id="s17">
+      <h2>17. Tips &amp; patterns</h2>
+
+      <h3>Pre-conversation setup</h3>
+      <ol>
+        <li>One person opens the tool, gets a session URL, and shares it before the conversation begins.</li>
+        <li>Each participant opens the link and joins with their name.</li>
+        <li>Everyone sets their intent before the first agenda item. The Cards view is already useful — you can see whether the group expects to be Learning, Convincing, Producing, or a mix.</li>
+      </ol>
+
+      <h3>Running a model during conversation</h3>
+      <p>
+        Open a model on one screen visible to the group (projected, shared screen, or a dedicated
+        device). As topics shift, the facilitator or any participant clicks the relevant nodes.
+        The Stats view at the end shows where group attention concentrated.
+      </p>
+
+      <h3>Using conflict warnings</h3>
+      <p>
+        When a conflict badge appears on a card, the group has a choice: acknowledge it explicitly,
+        leave it as background information, or let the individual adjust their intent or bias.
+        The value is not in forcing a response — it is in making the dynamic nameable without
+        anyone having to deliver a critique.
+      </p>
+
+      <h3>Connecting to the RCN Graph Tool</h3>
+      <p>
+        Build a diagram in the RCN Graph Tool (causal loop, EIP analysis, OPM process model,
+        anything). Export JSON. Upload as a custom graph in a Conversation Navigator session.
+        The group can now click the diagram together during discussion — turning a static artifact
+        into a live attention map.
+      </p>
+
+      <h3>Closing a session</h3>
+      <p>
+        Before closing: use the Export tab to download a FedWiki JSON of the session summary,
+        and use the Download SVG button inside any open model accordion to export model diagrams
+        with click-count annotations. Once all participants leave, the session data is gone.
+      </p>
+
+      <h3>Large groups</h3>
+      <p>
+        The Cards view can get crowded above ten participants. Switch to Stats view for a cleaner
+        read of the room. The bias and intent charts scale naturally to any group size.
+      </p>
+    </section>
+
+    <!-- §18: TOPICS TAB -->
+    <section id="s18">
+      <div class="section-pill">Shared Tools</div>
+      <h2>18. Topics tab</h2>
+      <p>
+        The Topics tab provides a lightweight shared agenda that any participant can edit in
+        real time. Use it to surface what the group needs to discuss, track which items have
+        been addressed, and keep the conversation focused.
+      </p>
+
+      <h3>Adding a topic</h3>
+      <p>
+        Type in the <strong>Add a topic for the group…</strong> field at the top of the tab
+        and press <kbd>Enter</kbd> or click <strong>Add</strong>. The topic appears immediately
+        for all participants. Topics are ordered by the time they were added.
+      </p>
+
+      <h3>Marking done</h3>
+      <p>
+        Click the checkbox next to a topic to mark it done. The topic is struck through and
+        dimmed. Click again to unmark. Done state is shared — when one participant checks it,
+        everyone sees it as done.
+      </p>
+
+      <h3>Removing a topic</h3>
+      <p>
+        Click the × button on any topic to remove it from the session. Removal is immediate
+        and visible to all participants.
+      </p>
+
+      <p>
+        The Topics tab badge in the tab bar shows the number of open (undone) topics so the
+        group can track progress at a glance.
+      </p>
+
+      <div class="note">Topics are part of the session's Firebase data. They are ephemeral — not saved when the session ends. The Export tab's summary fields are the right place to capture key decisions or open items for the record.</div>
+    </section>
+
+    <!-- §19: EXPORT TAB -->
+    <section id="s19">
+      <h2>19. Export tab</h2>
+      <p>
+        The Export tab produces a <strong>FedWiki page JSON</strong> that captures the session's
+        intent and bias snapshot alongside a facilitator-written summary and carry-forward note.
+        The JSON can be dragged into any FedWiki server to create a durable session record.
+      </p>
+
+      <h3>Before exporting</h3>
+      <p>
+        Set a <strong>Session Title</strong> in the left panel (the field appears after you join,
+        below the Share link). The title becomes the page title in the FedWiki export. Without a
+        title the export will use a default placeholder.
+      </p>
+
+      <h3>Export fields</h3>
+      <table class="feat-table">
+        <thead><tr><th>Field</th><th>What to write here</th></tr></thead>
+        <tbody>
+          <tr><td>Summary</td><td>What happened in this session — key insights, decisions, or shifts. Written by the facilitator or anyone in the group.</td></tr>
+          <tr><td>Carry Forward</td><td>What this group needs to bring to the next session — open questions, commitments, unresolved tensions.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Downloading the export</h3>
+      <p>
+        Click <strong>Download FedWiki JSON</strong>. A <code>.json</code> file is downloaded
+        to your device. To import it: open the target FedWiki server, drag the file onto the
+        page, and it will create a new page with the session content.
+      </p>
+
+      <div class="tip">Export before closing the session — the JSON is generated from live Firebase data. Once all participants leave, the session data is gone and the export can no longer be produced.</div>
+      <div class="note">The Export tab does not automatically include model SVGs. Download any model diagrams you want to keep using the Download SVG button inside each model accordion before closing the session.</div>
+    </section>
+
+    <div class="doc-footer">
+      <span>Conversation Navigator · © Marc Pierson &amp; Kerry Turner, RCN Co-Founders · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></span>
+      <span>
+        <a href="bias-checker-intro.html">← Introduction</a>
+        &nbsp;·&nbsp;
+        <a href="conversation-navigator-flow.html">Process Flow →</a>
+        &nbsp;·&nbsp;
+        <a href="bias-checker.html">Open the Tool →</a>
+      </span>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

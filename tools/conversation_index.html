@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Session Index — Marc Pierson</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6; color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; padding: 20px;
+        }
+        .container {
+            max-width: 1000px; margin: 0 auto; background: white;
+            border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 40px; text-align: center; border-radius: 12px 12px 0 0;
+        }
+        header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        header p { font-size: 1.1em; opacity: 0.9; }
+        .stats {
+            background: #f8f9fa; padding: 20px 40px; border-bottom: 2px solid #e9ecef;
+            display: flex; justify-content: space-around; flex-wrap: wrap;
+        }
+        .stat { text-align: center; padding: 10px; }
+        .stat-number { font-size: 2em; font-weight: bold; color: #667eea; }
+        .stat-label { font-size: 0.9em; color: #6c757d; text-transform: uppercase; letter-spacing: 1px; }
+        .content { padding: 30px; }
+        .update-notice {
+            background: #d1ecf1; border-left: 4px solid #0c5460; padding: 15px 20px;
+            margin-bottom: 20px; border-radius: 4px; color: #0c5460;
+        }
+        .category { margin-bottom: 15px; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden; }
+        .category-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 20px 25px; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.3s ease; user-select: none;
+        }
+        .category-header:hover { background: linear-gradient(135deg, #7b8ff0 0%, #8a5bb0 100%); }
+        .category-title { font-size: 1.4em; font-weight: 600; }
+        .category-count { background: rgba(255,255,255,0.3); padding: 4px 12px; border-radius: 20px; font-size: 0.9em; }
+        .category-icon { transition: transform 0.3s ease; font-size: 1.2em; }
+        .category.expanded .category-icon { transform: rotate(180deg); }
+        .conversation-list {
+            max-height: 0; overflow: hidden; transition: max-height 0.5s ease;
+            background: #f8f9fa;
+        }
+        .category.expanded .conversation-list { max-height: 30000px; }
+        .conversation-item {
+            padding: 15px 25px; border-bottom: 1px solid #e9ecef;
+            cursor: pointer; transition: background 0.2s ease;
+        }
+        .conversation-item:last-child { border-bottom: none; }
+        .conversation-item:hover { background: white; }
+        .conversation-name {
+            color: #2c3e50; font-weight: 500; font-size: 1.05em; display: block;
+            text-decoration: none;
+        }
+        .conversation-name:hover { color: #667eea; }
+        .conversation-date { font-size: 0.85em; color: #6c757d; margin-top: 2px; }
+        .conversation-desc { font-size: 0.9em; color: #495057; margin-top: 4px; }
+        footer { background: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 0.9em; border-radius: 0 0 12px 12px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🗂️ LLM Session Index</h1>
+        <p>Marc Pierson's Work with Claude — Complete Rebuild April 8, 2026</p>
+    </header>
+
+    <div class="stats">
+        <div class="stat"><div class="stat-number">150+</div><div class="stat-label">Conversations</div></div>
+        <div class="stat"><div class="stat-number">17</div><div class="stat-label">Categories</div></div>
+        <div class="stat"><div class="stat-number">Nov 2025</div><div class="stat-label">Earliest</div></div>
+        <div class="stat"><div class="stat-number">Apr 2026</div><div class="stat-label">Most Recent</div></div>
+    </div>
+
+    <div class="content">
+        <div class="update-notice">
+            <strong>✨ Complete Rebuild — April 8, 2026.</strong> Built systematically from all available conversations using recent_chats. Deduplicated and comprehensively categorized. Chat and browser histories now synced.
+        </div>
+
+        <!-- 1. e-VSM / eVSM Survey & Aggregator -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">🔬 e-VSM / Survey & Aggregator</span>
+                <span class="category-count">12 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/30f5fcbf-10e4-481b-9c84-ca09ccc35f4c" target="_blank">eVSM Naming and Instrument Structure</a>
+                    <div class="conversation-date">April 7, 2026</div>
+                    <div class="conversation-desc">Naming decision: instrument renamed to e-VSM (Extended VSM). Instrument naming structure established: e-VSM/Survey, e-VSM/Diagram, e-VSM/Dialogue.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/a020b6ff-acfe-49f4-adff-8f490557d1ef" target="_blank">Generic eVSM Survey for Municipalities</a>
+                    <div class="conversation-date">March 5, 2026</div>
+                    <div class="conversation-desc">Municipal-scale survey design: all institutional actors as distinct worlds, enabling aggregator to surface missing conversations. Neighborhood surveys precede municipal survey.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/5b58acf9-eb60-4f2b-ab88-35f5c6f5e053" target="_blank">eVSM Tool Integration in FedWiki</a>
+                    <div class="conversation-date">March 8, 2026</div>
+                    <div class="conversation-desc">FedWiki aggregator plugin: Exclusive/Inclusive world filter, comparative synthesis mode, launchd proxy agent, page-writing endpoint. Briefing drafted for Ward, Eric, and Paul.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/a296af98-5c02-4ed8-9470-1c749d24d93b" target="_blank">Bayesian Markov Blankets &amp; Generic Neighborhood eVSM Survey</a>
+                    <div class="conversation-date">March 2, 2026</div>
+                    <div class="conversation-desc">11 spheres / 66 edges. BMB three-layer mapping. Question architecture: anatomical framing + vernacular assertions. Excel/JSON conversion tool built.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/c19e3c78-7f58-468e-a3de-da4a06ef1c06" target="_blank">Bayesian Markov Blankets and the Free Energy Principle</a>
+                    <div class="conversation-date">March 25, 2026</div>
+                    <div class="conversation-desc">e-VSM enacts real social BMBs. Ashby/Beer/Friston lineage established. Conant-Ashby theorem as the structural core of VSM regulation.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/e31e4841-45b3-46ef-b875-b0694a92d70d" target="_blank">Rendering the eVSM Aggregator Artifact</a>
+                    <div class="conversation-date">March 4, 2026</div>
+                    <div class="conversation-desc">Multi-respondent synthesis tool: 11 spheres, 40+ edges, world-set filter, compare mode, Claude API synthesis streaming.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/24ba021f-8373-46e6-bd19-f360981f9c99" target="_blank">Excel Download/Upload for eVSM Survey Tool</a>
+                    <div class="conversation-date">March 3, 2026</div>
+                    <div class="conversation-desc">Located prior JSON round-trip work; XLSX export/import not yet built at this point.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/41e4b7a2-31d3-48d6-a026-c094827755aa" target="_blank">Generic Neighborhood Development eVSM Edge Definitions</a>
+                    <div class="conversation-date">March 3, 2026</div>
+                    <div class="conversation-desc">Located edge definition work from Story Structure (Feb 21) and Neighborhood Schema (Feb 20) conversations.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/05773722-2a69-4c52-9a19-7e7e7a648eb8" target="_blank">Building eVSM with Environmental and Operating Unit Nodes</a>
+                    <div class="conversation-date">March 10, 2026</div>
+                    <div class="conversation-desc">Edge assessment added to VSM diagram. Correct states: Not Assessed/Agree/Disagree/Unknown. Directional edge keys. textPath label rendering on SVG.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/23fbfc03-ae39-4411-a4dc-836548e7b12a" target="_blank">Observable HQ eVSM SVG — Standalone HTML Version</a>
+                    <div class="conversation-date">December 25, 2025</div>
+                    <div class="conversation-desc">Analyzed Eric Dobbs' Observable notebook, created self-contained standalone HTML version with interactive controls.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/0595aa16-33e8-4de4-92d4-7e3b1aedd792" target="_blank">eVSM Introduction and Interactive Assessment Software</a>
+                    <div class="conversation-date">December 23, 2025</div>
+                    <div class="conversation-desc">SVG diagram: 11 spheres, 33 reciprocal pairs, environmental spheres. Arrow direction corrections throughout.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Graph Diagramming Tool -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">📊 Graph Diagramming Tool (CLD / e-VSM / OPM)</span>
+                <span class="category-count">9 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/d98d8a68-d141-4610-a296-38d06a49cb79" target="_blank">Converting XMILE to Vensim — Graph Tool v22</a>
+                    <div class="conversation-date">April 4, 2026</div>
+                    <div class="conversation-desc">JSON→MDL and XMILE→MDL converters. MDL format reverse-engineered from Superior_ex_v2.mdl. S/O/? polarity encoding. Driver tree export. CLD edges as collapsed process nodes. Sterman/Homer policy instrument framing. Meadows leverage hierarchy as RCN scaffold.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/67ce26fd-3ae2-4c36-b72c-72abaaa02dfa" target="_blank">Building Neo4j Diagramming Tool — v18–v20</a>
+                    <div class="conversation-date">April 1, 2026</div>
+                    <div class="conversation-desc">Node font slider, XMILE import/export, model name field, 80-color Tailwind palette, custom color pickers, curved arrow deformation fix (translateEdgeCPs). Handoff note to new chat.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/c6edf3c5-0da7-46a1-b55f-9894a27d2870" target="_blank">Graph Tool Development + RCN NDC Map Rebuild</a>
+                    <div class="conversation-date">April 7, 2026</div>
+                    <div class="conversation-desc">rcn_map.html rebuilt as self-contained HTML with embedded PostGIS geometry. Green Gate Farms added (Austin + Bastrop TX). EIP mode added to graph-tool-v22. Claude as civic infrastructure articulation.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/d828b0bb-ebeb-4ab3-a2d1-1e17cf04369a" target="_blank">Vensim to XMILE — Network Visualization Tool</a>
+                    <div class="conversation-date">February 2, 2026</div>
+                    <div class="conversation-desc">Interactive network visualization for XMILE (Meadows 139-variable model). Hub-and-spoke mode, hover tooltips, edit mode, SVG export. No sampling — full model.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/aff52d5c-3a7c-474e-95a0-b566b7c276a6" target="_blank">Neighborhood CLDs — CLD/Vester/OPM Integration</a>
+                    <div class="conversation-date">December 28, 2025</div>
+                    <div class="conversation-desc">CLD-to-OPM transformation templates. 60-day integrated methodology. GraphViz and Neo4j Arrows discussion.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/80073bae-5362-4911-9de9-c328e9357502" target="_blank">Story Structure Diagram Analysis</a>
+                    <div class="conversation-date">April 14, 2026</div>
+                    <div class="conversation-desc">Short sailing story mapped onto Story Structure graph. CLD produced (sailing_cld_v3.json). Black edges, +/− polarity, delay markers. Loop highlight buttons. JSON-first standing rule established.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/bb132eca-b501-4099-ba2e-cdc18c34e53c" target="_blank">PIOA / Story Structure Breakthrough</a>
+                    <div class="conversation-date">April 16, 2026</div>
+                    <div class="conversation-desc">PIOA, T+++, e-VSM, and EIP all mapped to Story Structure — all four fail because Story Structure is individual-scale. New collective-scale nodes: Actor (recursive), Commons, Den Arc, Campfire, Cave Drawing. 19-node / 31-edge RCN Graph Tool JSON produced.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/b4ceb813-0734-40c4-a3a4-a67dd957a7db" target="_blank">Mapping Six Thinking Hats to BGTE</a>
+                    <div class="conversation-date">April 20, 2026</div>
+                    <div class="conversation-desc">De Bono's Six Hats mapped to Beauty/Good/Truth/Economy tetrahedron. SVG diagram + RCN Graph Tool JSON. extraLabels and layer/traces field investigation for graph tool visibility toggles.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/c6c3cbfd-5e37-4e78-97c3-e7c484ce02b3" target="_blank">OPM Relationships and Edge Suggestion System</a>
+                    <div class="conversation-date">April 15, 2026</div>
+                    <div class="conversation-desc">Full OPM link taxonomy (structural + procedural). Validity matrix for edge suggestion (OPCloud-style). Claude Code handoff doc written (opm-relationships-handoff.md). Cypher export patterns.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. SensiMod / Vester -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">🧠 SensiMod / Vester Sensitivity Model</span>
+                <span class="category-count">10 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/79c3a383-b832-4acc-a890-1f8e781c7e6f" target="_blank">Building SensiMod Application (Steps 0–2)</a>
+                    <div class="conversation-date">March 25, 2026</div>
+                    <div class="conversation-desc">Vite/React app at ~/sensimod. Steps 0–2 built with localStorage, JSON save/load, Neo4j Cypher export. Impact Matrix (Step 3) multi-group design identified. Corporate Performance Criteria markdown produced.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/883d4fe8-edd3-49bb-836b-bf9766897249" target="_blank">Vester's Interconnected Thinking — Chapter-by-Chapter (Part 1)</a>
+                    <div class="conversation-date">March 29, 2026</div>
+                    <div class="conversation-desc">Chapters 1–5 + Part 1 summary. ch01–ch05.md and part1-summary.md. Fixed structure: Key Insights, Tools, Vocabulary, Synthesis. HTML tables in .md files.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/b725a348-944e-47a9-82c6-4a0a017fc919" target="_blank">Sharing Vester's Book — Strategy for Large Knowledge Projects</a>
+                    <div class="conversation-date">March 27, 2026</div>
+                    <div class="conversation-desc">Attempted full extraction, failed productively. Agreed: one chat per book section. SensiMod reverse-engineering planned. Chunking methodology established.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/169307ac-9653-48ca-95ed-15df8b403946" target="_blank">Self-Reinforcing Loops in Biology — Vester Challenge</a>
+                    <div class="conversation-date">March 18, 2026</div>
+                    <div class="conversation-desc">Positive feedback loops in biochemistry: coagulation cascade, action potential, LH surge. Key insight for SensiMod: brake co-designed with accelerator.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/4ffeb6d7-bbc9-4b85-8a49-f8b9d2983215" target="_blank">Haier Group / RenDanHeYi + Vester Corporate Performance Criteria</a>
+                    <div class="conversation-date">March 27, 2026</div>
+                    <div class="conversation-desc">RenDanHeYi deep dive. Vester's 6 CPCs as measurement framework. eVSM sphere mapping onto EMC roles. Prototype EMC contract for Fresh Routes Lansing. DOCX deliverables.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/42076bf0-fea4-4e28-9755-1b53a1a1d996" target="_blank">Exploring CLDs, GraphViz and AI</a>
+                    <div class="conversation-date">December 28, 2025</div>
+                    <div class="conversation-desc">CLD of Mao's sparrow campaign. Large logic models vs LLMs. Bayesian Belief Networks. Claude's epistemic self-awareness and hallucination discussion.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/5333550a-19d4-43b6-bc4c-5a57f0f86ae5" target="_blank">Vester Part 2 — Chapters 6–10 Analysis</a>
+                    <div class="conversation-date">April 19, 2026</div>
+                    <div class="conversation-desc">Full chapter-by-chapter analysis of Part 2: New View of Reality, Biocybernetics, Recognising Complexity, Systemically Appropriate Planning, Classification→Relational Universe. Six .md files + vester_part2_summary.md. 44 images extracted.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/0906a7a0-dbfd-4f21-b23e-f3e08a49b669" target="_blank">Vester Part 3 — Chapters 11–16 (Sensitivity Model Tools)</a>
+                    <div class="conversation-date">April 19, 2026</div>
+                    <div class="conversation-desc">Nine-step Sensitivity Model: system description, variable roles, biocybernetic appraisal, scenario simulation, Frankfurt/transport case study. ch11–ch16.md produced.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/a8905d63-eea8-4ad5-8065-ecd20375778d" target="_blank">Vester Part 4 — Chapters 17–20 (Sustainable Strategies)</a>
+                    <div class="conversation-date">April 19, 2026</div>
+                    <div class="conversation-desc">Dialogue methodology, strategies/tactics for system evaluation, universal planning approach, futures outlook. Terrorism model as sharpest systemic demonstration. part4-vester.md produced.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/9fd6c335-5c4c-416a-b9c3-569a301d47c3" target="_blank">Vester — Whole Book Synthesis</a>
+                    <div class="conversation-date">April 19, 2026</div>
+                    <div class="conversation-desc">Grand synthesis across all four parts. Closing one-paragraph argument: linear thinking fails in open complex systems; biocybernetic alternatives proven by biology. AoIC_synthesis.md produced.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. SODOTO Credentialing -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">🎓 SODOTO Credentialing System</span>
+                <span class="category-count">6 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/c27fb037-38ce-4f57-8cc3-d56e7ec1024c" target="_blank">Smart Contracts Discussion — Three Symmetric Handshakes</a>
+                    <div class="conversation-date">March 7, 2026</div>
+                    <div class="conversation-desc">Handshakes are fully symmetric. Kerry's witnessing of Noah's Do One closes two gates. UI: "Learning..." in italic, green ✓ only on completion. Next: issue 7 skill credentials.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/4ff9bd3b-b070-429b-941d-408cc39685ff" target="_blank">Conversations for Action + Dyadic Smart Contracts (CfA-dSC)</a>
+                    <div class="conversation-date">March 24, 2026</div>
+                    <div class="conversation-desc">Full CfA-dSC state machine spec. JSON schema. TypeScript validator (25 tests). HTML creator UI. Veramo DIDs for Marc, Kerry, Patient A, CHW-A. Neo4j + FedWiki integration.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/d49a655c-3197-4c2d-8f4d-6c370709dfc5" target="_blank">Multi-Currency Smart Contracts</a>
+                    <div class="conversation-date">March 9, 2026</div>
+                    <div class="conversation-desc">Three-currency contracts: fiat/time/gift. Fixed exchange rate at creation. time_max_pct protection. Signed JSON via Veramo Ed25519. Settlement tester and contract creator tools.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/ae82d822-0f17-4d34-8da3-ef7e3191e33e" target="_blank">Federated Lifelong Learning System Design</a>
+                    <div class="conversation-date">March 5, 2026</div>
+                    <div class="conversation-desc">Three customer scenario clusters (Seedbed, Branching, Elder Grove arcs). FedWiki-native .md format. Mark Twain discipline established as standing instruction.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/0f56c53a-9e96-44f4-9784-a60de6a5156b" target="_blank">Neighborhood Time Bank Currency</a>
+                    <div class="conversation-date">March 24, 2026</div>
+                    <div class="conversation-desc">Time bank design decisions: no negative balances, startup grant, fiat→time exchange, threshold signatures for ME signing, SODOTO credentials gate signing authority.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/7562600b-2a07-480d-aae1-b79e5851924a" target="_blank">Trust for Civic Life + RCN Research Comparison</a>
+                    <div class="conversation-date">March 19, 2026</div>
+                    <div class="conversation-desc">TCL 2025 report summary. Johns Hopkins SNF Agora, Nebraska Community Foundation, P3 Research Lab mapped against RCN tools.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Neo4j / Spatial Data Architecture -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">🗄️ Neo4j, GIS &amp; Data Architecture</span>
+                <span class="category-count">8 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/3aa6d6ab-ec3a-45d6-841a-028782f2fd4b" target="_blank">Encoding GIS Data Properties in Neo4j</a>
+                    <div class="conversation-date">April 4, 2026</div>
+                    <div class="conversation-desc">Hybrid Neo4j + PostGIS architecture. Shared place_id UUID. H3 hex grids for fast overlap. PostGIS for authoritative spatial ops. OPM diagrams of both sides.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/ead86e7b-b7d8-47a3-853a-116526e34865" target="_blank">Neighborhood Schema Framework</a>
+                    <div class="conversation-date">February 20, 2026</div>
+                    <div class="conversation-desc">Multi-scale democratic governance. Neo4j as integration hub for CLD/SDM/OPM/VSM/eVSM/EIP. Neo4j/Cypher approach to issue routing across recursion levels.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/40daae39-cb8b-4e88-8cc5-479c27c2cb10" target="_blank">Story Structure as Integrating Frame — Neo4j Schema Import</a>
+                    <div class="conversation-date">February 21, 2026</div>
+                    <div class="conversation-desc">Story Diagram + Six Nesting Contexts v5. 26 nodes, 68 relationships. Cypher import script. Arrow conventions. Testing discipline critique.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/d2863d0c-bbf0-4efc-92e3-ff000591227c" target="_blank">PIOA in Neo4j</a>
+                    <div class="conversation-date">January 25, 2026</div>
+                    <div class="conversation-desc">PIOA model in Neo4j. OPM nodes as first-class. Minimal node properties, rich relational context. Python export to Arrows JSON with OPM styling.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/7b7d5bff-6430-4df3-802d-34910704f399" target="_blank">Ethics Built In — ERT + Neo4j Governance Graph</a>
+                    <div class="conversation-date">March 4, 2026</div>
+                    <div class="conversation-desc">Neo4j graph of all pathways from citizen to decision-maker. ownership_structure property, ecological impact, influence industry. Commons and cooperative examples. Whatcom County focus.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/c9584297-ed18-46fd-a3c3-ea204016cb70" target="_blank">Integrating Models and Database</a>
+                    <div class="conversation-date">December 30, 2025</div>
+                    <div class="conversation-desc">Early session on Neo4j as integration hub for CLD/SDM/OPM/VSM/eVSM/EIP. Three-phase approach proposed.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/5f364d93-346a-4582-9ece-7da3f528b26f" target="_blank">Goods Classification and Institutional Types — EIP Tools</a>
+                    <div class="conversation-date">January 1, 2026</div>
+                    <div class="conversation-desc">Seven institutional types × Ostrom's four goods types. Excel, Word, PowerPoint deliverables. 320+ common-pool resource examples. PDF output.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/8ad7759c-a716-4605-9ff3-31e5903a3e28" target="_blank">Replicating OPM from OPL Output</a>
+                    <div class="conversation-date">January 13, 2026</div>
+                    <div class="conversation-desc">OPM mastery: structural links (Aggregation-Participation, Exhibition-Characterization, Generalization-Specialization). Cypher queries from OPL. Model Narrative Arc concept.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. VSM Governance & NDC Design -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">🏛️ VSM Governance &amp; NDC Design</span>
+                <span class="category-count">11 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/ed3d0c08-0c92-4c68-bb02-e8e5a579f5db" target="_blank">Multi-Scale Governing Decomposition — VSM Constitutional Design</a>
+                    <div class="conversation-date">March 27, 2026</div>
+                    <div class="conversation-desc">Robin Asby's VSM governance chapter. Five conversations available to any person in a VSM function. Peer thread as structural replacement for party governance. Ostrom polycentric insight. VSM laid on its side across recursion levels.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/c81cf500-d043-43cd-ad5e-30ff804d6785" target="_blank">Civic Action Frameworks at Neighborhood Scale</a>
+                    <div class="conversation-date">March 27, 2026</div>
+                    <div class="conversation-desc">Vital Conditions vs. 26 Essential Neighborhood Functions. Capacity-capability at the interface. Gaps surfaced in both frameworks.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/c470065b-12fc-46d6-b164-2ab10087392f" target="_blank">Measuring Neighborhood Viability and Adaptability</a>
+                    <div class="conversation-date">March 14, 2026</div>
+                    <div class="conversation-desc">Capacity-capability as core variable. Five-level aliveness scale: Distressed→Stressed→Viable→Adaptive→Generative. Alexander + Beer synthesis.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/3f8383d6-ab3d-4c9b-ba49-876f029b5cea" target="_blank">Power and Change Pathways — EIP Framework Strategy</a>
+                    <div class="conversation-date">March 28, 2026</div>
+                    <div class="conversation-desc">Preston Model + Frome + Fromm + open-source RenDanHeYi + CLT integrated stack. NDCs as substitute for Haier proprietary structure. Simultaneous political and economic tracks. Document for Jerry.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/66512de2-9833-41ea-a8e8-f6d2dca98f78" target="_blank">Sovereignty in Program Context</a>
+                    <div class="conversation-date">January 15, 2026</div>
+                    <div class="conversation-desc">Sovereignty as relationally constituted. Requisite autonomy, voluntary association, reciprocal accountability, subsidiarity. Design principles for enabling structures.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/07bd94f6-3d76-4501-b1c6-4edc123f7695" target="_blank">Seeing Neighborhood Systems — Federated Learning Network</a>
+                    <div class="conversation-date">December 21, 2025</div>
+                    <div class="conversation-desc">Cave Drawings and Campfire Conversations. GraphViz recreated. Vensim PLE + Arrows Tool + Neo4j + FedWiki infrastructure. Document: Building Collective Intelligence.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/994b3f6f-ea2e-40a1-85b8-9210b5d90029" target="_blank">EIP Framework — 12 Community Systems Analysis</a>
+                    <div class="conversation-date">December 20, 2025</div>
+                    <div class="conversation-desc">EIP artifacts for housing, jobs, food, energy, media, health, finance, care, education, land, water, governance. Governance as meta-system. Extractive stakeholders: replace, not serve.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/aea653ba-fa7d-45da-a97d-fb14ccda3b07" target="_blank">EIP &amp; Critical Functions Explorations</a>
+                    <div class="conversation-date">December 18, 2025</div>
+                    <div class="conversation-desc">Full interactive manual for EIP framework. Nine institutional variables analyzed with causal diagrams. Municipal/county as critical intervention points.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/637db848-7c69-4480-a4d5-8c3821ed95f9" target="_blank">Neighborhood Safety Barriers — Swiss Cheese Model</a>
+                    <div class="conversation-date">January 10, 2026</div>
+                    <div class="conversation-desc">OPM + Swiss Cheese Model. Interactive visualization: missing/active/breached protections. Community Safety Diagrams (not matrix). Three-state color system.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/5ac8fda1-c128-4e00-ac57-95273fd1c955" target="_blank">Polycentric Governance — Chicken Zoning, Superior AZ</a>
+                    <div class="conversation-date">April 19, 2026</div>
+                    <div class="conversation-desc">Issue-polygon concept tested with backyard chicken ordinance at Leo's NDC. Arizona HB2325 (2024) found to preempt municipal bans. Neo4j Cypher schema, Leaflet map, FedWiki page produced. Issue Polygon Pattern seeded.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/30b5b449-5102-4527-a6e8-a706e4e83527" target="_blank">Estimating Neighborhoods in Michigan</a>
+                    <div class="conversation-date">April 18, 2026</div>
+                    <div class="conversation-desc">Population by city tier divided by 7,000. Rural self-organization analysis. Michigan table + Austin MSA added (8 geographies). RCN_Neighborhood_Estimates_April2026.docx produced. Fast-growth rural-edge counties as organizing window.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Leverage Points / Meadows -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">🎯 Leverage Points &amp; Systems Theory</span>
+                <span class="category-count">6 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/805c9a16-389b-423f-b14e-7f7bfc8df02b" target="_blank">Operationalizing Meadows' Leverage Points for Neighborhoods</a>
+                    <div class="conversation-date">March 27, 2026</div>
+                    <div class="conversation-desc">Marc + Kerry extending Meadows to 14+. Two Descript transcripts mined. FedWiki pages produced. Variable name registry planned. Kerry's visual fluency / Marc's sequential style as design constraint.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/f6223cba-3135-4b29-b776-0de24c0fd75f" target="_blank">Applying Meadows' Leverage Points in Practice</a>
+                    <div class="conversation-date">November 25, 2025</div>
+                    <div class="conversation-desc">Literature survey: 100Kin10, RE-AMP, Abson's four categories (Parameters/Feedbacks/Design/Intent). Key critique: framework lacks empirical evidence, resists cheap application.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/d3b0e5c6-42dc-421d-a437-8c40ce525734" target="_blank">Ladder of Abstraction vs. Ladder of Inference</a>
+                    <div class="conversation-date">January 26, 2026</div>
+                    <div class="conversation-desc">Hayakawa vs Argyris-Schön. Ashby's Law connection. Vernacular tool-making as practice. CLD from group conversations as primary practice (not OPM as Claude initially assumed).</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/c129d6df-f8e4-42e5-a547-b2f2654ede5f" target="_blank">Converting Text Documents to Diagrams</a>
+                    <div class="conversation-date">March 5, 2026</div>
+                    <div class="conversation-desc">Capability assessment: variable extraction, causal identification, OPM mapping, format outputs. Pipeline architecture proposed.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/78b20379-0330-450b-bebb-8b2a7153c864" target="_blank">Systems as a Second Language Curriculum</a>
+                    <div class="conversation-date">December 30, 2025</div>
+                    <div class="conversation-desc">Cybernetics 1st/2nd/3rd order. ERT analysis of schools, social media, healthcare, Boeing. Ethical alternatives from first principles. Two comprehensive documents produced.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/a46f2eb4-f9bc-42ca-ad48-f3489fc4065b" target="_blank">Jean Mitry's Cinema Aesthetics and Story Structure</a>
+                    <div class="conversation-date">April 15, 2026</div>
+                    <div class="conversation-desc">Mitry's image-concept problem and rhythm theory mapped to Story Structure and Neo4j schema. Witness layer added with Mitry grounding. Image vs sign distinction. story-structure-witness.json produced.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. Cooperative Economics & Enterprise -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">🤝 Cooperative Economics &amp; Enterprise</span>
+                <span class="category-count">9 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/78b20379-0330-450b-bebb-8b2a7153c864" target="_blank">Community Commerce Through Microenterprises and Smart Contracts</a>
+                    <div class="conversation-date">February 28, 2026</div>
+                    <div class="conversation-desc">cME/sME/mME/EMC architecture. Payment cascades. Equity as structural mutual aid. Federation not scaling. FedWiki lineup format.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/667d631f-8440-4541-bbf7-7b7f2b24a269" target="_blank">Whatcom County Cooperative Infrastructure Design</a>
+                    <div class="conversation-date">December 29, 2025</div>
+                    <div class="conversation-desc">ERT integration into cooperative design. Five-layer architecture. Medical cooperative as proving ground. Evaluation worksheet (27 ERT questions). Super-ethical systems.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/a0619441-8ef6-4565-bb8f-0c918c04b7ee" target="_blank">Whatcom Coops — Healthcare Cooperative Design</a>
+                    <div class="conversation-date">January 31, 2026</div>
+                    <div class="conversation-desc">Healthcare co-op for Whatcom County. CHW micro-enterprises as coordinating network. Multi-stakeholder revenue models. Ostrom + cooperative principles integration.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/59645ab7-51f8-4444-b642-e536277dd475" target="_blank">Integrating Wardley Maps with RenDanHeYi Customer Scenarios</a>
+                    <div class="conversation-date">February 2, 2026</div>
+                    <div class="conversation-desc">Three E's framework → Wardley evolution axis. EMC as portfolio of maps. VAM stages ↔ evolution progression. 17-section markdown document.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/d68943f3-25ba-4d8e-ba5e-39e358315106" target="_blank">Entrepreneurial Path Choices</a>
+                    <div class="conversation-date">January 25, 2026</div>
+                    <div class="conversation-desc">Founder → organization design pathways. Size thresholds, coordination technologies, ownership structures. Mondragón vs Haier cellular comparison. Temporal flow in Neo4j.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/5ac87d36-26a1-4245-ba5a-b32dc5610dc4" target="_blank">Cooperation Outperforming Competition Across Sectors</a>
+                    <div class="conversation-date">January 3, 2026</div>
+                    <div class="conversation-desc">Technology standards, pharma research, banking fraud prevention, airline alliances, shipping logistics as cooperation examples.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/7a5a2a03-b782-47ce-819a-0f3fdc1adffa" target="_blank">Money as a Measure of Value</a>
+                    <div class="conversation-date">December 31, 2025</div>
+                    <div class="conversation-desc">Value represented by money, implemented through chosen currencies. Interest-bearing debt as structural advantage to asset owners. Three-currency model roots.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/ae39a1b5-11ce-4620-bba4-c93ba23aa2f6" target="_blank">Explaining RCN to Neighborhood Organizers and Resource Providers</a>
+                    <div class="conversation-date">April 18, 2026</div>
+                    <div class="conversation-desc">External-audience overview of RCN for neighborhood organizers and funders. rcn-overview-external.md produced. 10-slide PPTX presentation (forest-green palette) produced from uploaded graph JSON.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/fc3f4d99-b0aa-4b1d-8a88-cc2fb2cfc1fa" target="_blank">EIP Stage Sketch: Local Finance</a>
+                    <div class="conversation-date">April 20, 2026</div>
+                    <div class="conversation-desc">Located prior EIP Stage Sketch: Local Finance conversation (December 2025). CDFIs, local currencies, mutual credit mapped across three-column EIP stage.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. Ethical Regulator / Constitutional Design -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">⚖️ Ethical Regulator &amp; Constitutional Design</span>
+                <span class="category-count">6 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/f6471323-9580-4643-9673-5525aac56433" target="_blank">ERT and Constitution Building Integration</a>
+                    <div class="conversation-date">February 19, 2026</div>
+                    <div class="conversation-desc">ERT embedded structurally into constitutional design (Jan 25 session). Ethical metasystem as superordinate authority over effectiveness components.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/6def4cce-e62e-4b7f-bd0a-5de5f116b64e" target="_blank">Ethical Institutions and the ERT Standard</a>
+                    <div class="conversation-date">February 28, 2026</div>
+                    <div class="conversation-desc">ERT applied to eVSM diagram and survey. 11 nodes, 66 edges, 231 assessment items. Dual visualizations: effectiveness view vs. ethical view.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/1a009588-bd96-462a-bcb7-3b5a34c15c51" target="_blank">Story Structure and Institutional Design — IAD/ABDICO Mapping</a>
+                    <div class="conversation-date">February 28, 2026</div>
+                    <div class="conversation-desc">Story Diagram v4 + Ostrom IAD + Institutional Grammar (ABDICO). Ashby ERT: ethical systems contain the effective models they constrain. ABDICO gaps: Beliefs, Moods, Dialogue, Learnings.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/5a33517d-59b1-4861-a226-0e7212169fce" target="_blank">System of Ideals — BGTE / PIOA / ERT Integration</a>
+                    <div class="conversation-date">February 6, 2026</div>
+                    <div class="conversation-desc">SVG tetrahedra → PNG → DOCX. BGTE + PIOA + ERT integrated. 12 BGTE relationships correspond to 12 PIOA relationships.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/759e8a6a-65ac-4dc5-9742-d59f3430a433" target="_blank">Manifesto vs. Constitution</a>
+                    <div class="conversation-date">December 28, 2025</div>
+                    <div class="conversation-desc">Manifestos: aspirational, persuasive, not binding. Constitutions: foundational, legally binding, designed for stability.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/bf8bdeca-cfcc-4f57-bb0c-c9388fe9c5cb" target="_blank">Constitutions and Bylaws Compared</a>
+                    <div class="conversation-date">November 27, 2025</div>
+                    <div class="conversation-desc">Scope and precedence distinctions. Constitutions set core principles; bylaws set operational procedures. Constitutions take precedence.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 10. FedWiki & Knowledge Commons -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">🌐 FedWiki &amp; Knowledge Commons</span>
+                <span class="category-count">8 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/a48134fa-a774-4c6f-9482-73d8f68281d8" target="_blank">Setting Up a Local FedWiki Server</a>
+                    <div class="conversation-date">March 4, 2026</div>
+                    <div class="conversation-desc">Install guide, launchd plist, 8-page FedWiki cluster seeded to Wiki Cafe. Local farm at ~/.wiki. Persistent background service setup.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/de0e61b3-cab6-408c-9c44-bc186e4d851f" target="_blank">Eric Dobbs' Contributions to eVSM and FedWiki</a>
+                    <div class="conversation-date">March 1, 2026</div>
+                    <div class="conversation-desc">Graphviz Plugin, Frame Plugin. Claude as synthesizer between Eric's infrastructure knowledge and Marc's community context. Verbatim transcript delivered as .md.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/87b44eeb-b2ca-4b2a-ba20-309dc4db3706" target="_blank">Shared Care Plan 2.0 + Groove Platform Rebuild</a>
+                    <div class="conversation-date">March 10, 2026</div>
+                    <div class="conversation-desc">SCP on FedWiki + allyabase (Zach Babb). Groove: chat + file sharing + FedWiki import/export. Superior AZ as pilot. Desktop/browser sync problem discovered.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/e5a03ed5-519a-45ec-b176-8a8d45db3864" target="_blank">Recreating Groove Network Platform</a>
+                    <div class="conversation-date">January 22, 2026</div>
+                    <div class="conversation-desc">Node.js/Express + SQLite prototype. FedWiki pages in private Groove workspaces, fork to public commons. Threaded discussion with backlinks.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/b08a4285-0ee5-4491-bf0b-24aa486a6f8a" target="_blank">Improving Conversational Chat Documentation — Mornings Series</a>
+                    <div class="conversation-date">February 27, 2026</div>
+                    <div class="conversation-desc">Symmetric voice rebalancing. FedWiki lineup structure: entry page + 3–4 sections (400–600 words each). Kerry's audio recordings attached. Five HTML files produced.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/92c47381-4c0c-4a9f-99d7-586caa26eaab" target="_blank">AI Voice Cloning and Text-to-Speech — Descript/Overdub</a>
+                    <div class="conversation-date">March 7, 2026</div>
+                    <div class="conversation-desc">Kerry's FedWiki reading workflow. Descript Overdub for Marc's voice. ~10 min sample → personal voice model.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/7d9c4cda-f240-4943-a66c-8364ff82c7db" target="_blank">Understanding a package.json File</a>
+                    <div class="conversation-date">January 1, 2026</div>
+                    <div class="conversation-desc">create-wiki-plugin package explained for a nonprogrammer. Federated Wiki plugin development context.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/3df676bc-1c41-496a-ac10-291a02dcdeec" target="_blank">Accessing Shared Chat Links — Civic Collaboration Tool Design</a>
+                    <div class="conversation-date">February 20, 2026</div>
+                    <div class="conversation-desc">Seven collaboration primitives. Civic capacity problem. Casino rake model. Reputation-gated roles. State machine design for discourse structure.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11. Speech Acts / Conversations for Action -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">💬 Speech Acts &amp; Conversations for Action</span>
+                <span class="category-count">4 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/7f34a2ca-ba79-4d99-9866-a70c4807143b" target="_blank">Speech Acts Identification Tool Development</a>
+                    <div class="conversation-date">March 21, 2026</div>
+                    <div class="conversation-desc">CfA state machine: Initiation/Negotiation/Counter/Fulfillment/Completed/Satisfied states. Party A (blue) vs Party B (red). Quality assessment: BoU completeness + CCS+T. Companion to IBIS tool.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/ecc08105-273c-4656-b80a-44b82ebc8ca6" target="_blank">Conversation Taxonomy for Neighborhoods</a>
+                    <div class="conversation-date">February 6, 2026</div>
+                    <div class="conversation-desc">OPM + Neo4j for queryable conversational taxonomy. OPCloud CSV export → Neo4j import. ReLocalize Creativity Conversational Taxonomy framework.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/ac775624-2128-40fd-907a-9bc299b6765e" target="_blank">Mapping Interchanges with IBIS</a>
+                    <div class="conversation-date">March 17, 2026</div>
+                    <div class="conversation-desc">IBIS map editor in JSX, local evsm app. Rect-boundary edge intersection, cursor-centered zoom, trackpad pan. Unargued positions as high-value map outputs.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/004de30b-41ee-483f-98c6-c933d75bb93d" target="_blank">Conversational Biases and the 16Ps Framework</a>
+                    <div class="conversation-date">January 25, 2026</div>
+                    <div class="conversation-desc">Six conversational biases. Intent × bias conflict detection app. 16Ps framework (Perception→Posterity) as conversational arc.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 12. Claude Code & Workflow Integration -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">💻 Claude Code &amp; Workflow Integration</span>
+                <span class="category-count">8 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/128d6ed6-3209-43f2-9e36-947f2977ca19" target="_blank">Integrating Claude Chat and Claude Code Workflows</a>
+                    <div class="conversation-date">April 7, 2026</div>
+                    <div class="conversation-desc">Chat vs Code division of labor. graph-tool replaces Arrows for Neo4j import. Dagre layout. Round-trip capability established. README update guidance.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/546608b5-6e87-441a-b20b-2491b8f33e39" target="_blank">Claude Code Integration in Chat Index</a>
+                    <div class="conversation-date">April 8, 2026</div>
+                    <div class="conversation-desc">Located 116-conversation index. Desktop vs web browser distinction. Claude Code update pattern: run before session closes, context is fresh.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/bc0f2dbb-4f4c-47e3-bc96-c0fb38d3d80b" target="_blank">LLM Session Index (Master Chat)</a>
+                    <div class="conversation-date">April 8, 2026 (ongoing)</div>
+                    <div class="conversation-desc">The index maintenance conversation. 116 Chat + 1 Code session tracked. Desktop app and web Claude sync clarified. This is the canonical index chat.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/66c4d5f7-6d84-44ef-b43d-be02c49fc245" target="_blank">LLM-DDD, Program, Test</a>
+                    <div class="conversation-date">February 4, 2026</div>
+                    <div class="conversation-desc">Claude's programming methodology for RCN. Testing limitations acknowledged. Domain-Driven Design applied to cooperative governance. Ubiquitous language, bounded contexts.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/369a4040-7f68-4ba7-8b2f-2aa4b0ca5af1" target="_blank">Claude Desktop App Sleep/Wake Bug</a>
+                    <div class="conversation-date">March 19, 2026</div>
+                    <div class="conversation-desc">Desktop app zombie state after sleep. pkill -9 workaround. caffeinate for active sessions. Bug report filed suggestion.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/2b59e03b-c137-4e59-8b8e-f2d74878bfb4" target="_blank">Packaging MORE Outliner for Claude Code</a>
+                    <div class="conversation-date">April 18, 2026</div>
+                    <div class="conversation-desc">MORE 3.0-style outliner (Jan 2026) packaged for Claude Code continuation. Full feature inventory. First-session priorities: localStorage autosave, Markdown export, rich HTML export, FedWiki export, Hoist. outliner-handoff.md produced.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/ed11946e-f52c-425f-9332-0b02b029360c" target="_blank">Shared Care Plan + Groove Integration Handoff</a>
+                    <div class="conversation-date">April 13, 2026</div>
+                    <div class="conversation-desc">SCP + Groove synthesis for Claude Code. FedWiki-based person-controlled health record + Ray Ozzie-style P2P workspace. Crypto verified. Superior AZ pilot. scp-groove-handoff.md + groove-workspace.tar.gz produced.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/3b838413-8ad5-4a74-bd43-417bb9cfb1bd" target="_blank">Building Comprehensive Conversation Index (Complete Rebuild)</a>
+                    <div class="conversation-date">April 8, 2026</div>
+                    <div class="conversation-desc">Full rebuild from 5 paginated recent_chats calls. 130+ conversations, 17 categories. Canonical file: ~/rcn/tools/conversation_index.html. Rename from llm_session_index.html confirmed.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 13. Raspberry Pi / Mesh Networking -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">📡 Raspberry Pi &amp; Mesh Networking</span>
+                <span class="category-count">2 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/f1512a52-cc98-4622-b261-165b09e1dfbd" target="_blank">Raspberry Pi FedWiki Mesh Server — Superior AZ</a>
+                    <div class="conversation-date">March 31, 2026</div>
+                    <div class="conversation-desc">Pi 5 8GB + NVMe via M.2 HAT+. Batman-adv mesh. Tailscale overlay. FedWiki via npm. Three node types: server/desktop/relay. USB WiFi for dual-mode nodes.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/d15e4b12-a31e-4e44-9e18-1b29eb37d4a2" target="_blank">Learning JavaScript with Claude Code</a>
+                    <div class="conversation-date">January 15, 2026</div>
+                    <div class="conversation-desc">HTML/CSS/JS/SVG integrated learning. To-do list app. Flexbox, event handling, array manipulation, CSS transitions.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 14. Wardley Maps & Tools -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">🗺️ Wardley Maps &amp; Tools</span>
+                <span class="category-count">6 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/42586172-22b3-425f-bbc1-fd770ff9ad4c" target="_blank">Interactive Wardley Map Editor with AI Layout</a>
+                    <div class="conversation-date">February 6, 2026</div>
+                    <div class="conversation-desc">AI-powered map generation using Claude Sonnet 4. Manual editing, three color schemes, PNG/SVG export. Distribution package: HTML + Quick Start Guide.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/f65f69c0-4155-42a0-8cc5-d920edc6934b" target="_blank">Running a Custom App in Claude.ai</a>
+                    <div class="conversation-date">February 3, 2026</div>
+                    <div class="conversation-desc">Wardley map app in artifact. Slider-based component editing. Unlimited undo (Ctrl+Z). Dependency creation two-step process clarification.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/006c10e3-79c2-45d3-8b60-2aa809db6dd4" target="_blank">Please Open This as an Artifact — Wardley Map Generator</a>
+                    <div class="conversation-date">February 3, 2026</div>
+                    <div class="conversation-desc">Wardley map generator presented as artifact from uploaded HTML.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/f4f18447-c119-4c00-a5de-a9a5c2ec6d01" target="_blank">Tom Sawyer Perspectives — Evaluation</a>
+                    <div class="conversation-date">December 20, 2025</div>
+                    <div class="conversation-desc">TSP + Neo4j for neighborhood visualization apps. Evaluation criteria: integration, learning curve, licensing, scalability.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/44cc2270-a3e6-4aac-86eb-dfbcf385a770" target="_blank">Christopher Alexander's Network Paper</a>
+                    <div class="conversation-date">January 2, 2026</div>
+                    <div class="conversation-desc">Search for Alexander's pre-1965 network paper. HIDECS (1962), "Determination of Components for Indian Village" (1962). Earliest known: "Perception and modular coordination" (1959).</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/028d7094-e08c-432d-82ac-9ce00489220d" target="_blank">Wardley Map Generator — Claude Code Files</a>
+                    <div class="conversation-date">April 13, 2026</div>
+                    <div class="conversation-desc">Wardley Map Generator from Claude Code opened as artifact. AI calls Anthropic API directly from browser without injected auth key. RCN-specific version built with NDC/VSM/EIP vocabulary in prompt. Foothills Outlook as test case.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 15. Health, Cycling & Personal -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">🚴 Health, Cycling &amp; Personal</span>
+                <span class="category-count">7 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/b0e52adf-6184-4eac-904c-c92120c7555c" target="_blank">Cervical Radiculopathy and Cycling Muscle Compression</a>
+                    <div class="conversation-date">January 1, 2026</div>
+                    <div class="conversation-desc">C5-C6 posterior compression. Upper trapezius, levator scapulae, suboccipitals. Handlebar and posture modifications.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/8a4bf786-2ace-4065-9892-3358d58e1b5a" target="_blank">Leather Chamois Bike Shorts</a>
+                    <div class="conversation-date">December 1, 2025</div>
+                    <div class="conversation-desc">Boure (Ned's Threads) as primary maker. Rarity in modern cycling gear. Synthetic vs leather chamois context.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/f7900170-aa2f-4a84-b420-5b055dc02433" target="_blank">Exercise as Osteoporosis Protection without HRT</a>
+                    <div class="conversation-date">December 13, 2025</div>
+                    <div class="conversation-desc">HRT options, dental implants, professional cyclist aerobic capacity, OPM adoption barriers in INCOSE.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/18104bff-62b2-4362-bef5-204a043f40e2" target="_blank">Healthcare Cost Comparison — England, France, Sweden, Netherlands</a>
+                    <div class="conversation-date">December 31, 2025</div>
+                    <div class="conversation-desc">OECD 2022-23 per capita: Netherlands $6,729 / Sweden $6,438 / France $6,115 / UK $5,387.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/0c3f5dbe-752e-4ed8-8d73-cd755d2475c8" target="_blank">Health-Medical Intersection — Community Health Workers</a>
+                    <div class="conversation-date">January 26, 2026</div>
+                    <div class="conversation-desc">CHW as coordinating network between fragmented institutions. Triple Play: CHW + patient activation + shared care plan. Document for Chris and Jerry.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/01daa5e0-2c7c-4423-a9e4-f080b0df61e9" target="_blank">Domain-Driven Design and Security in Health Records</a>
+                    <div class="conversation-date">January 26, 2026</div>
+                    <div class="conversation-desc">DDD bounded contexts as security boundaries. Neo4j graph database for federated health records. Consent as first-class aggregate. CHW authorization patterns.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/b850bdcc-bbbf-4e33-bee7-b9df66d16680" target="_blank">Neighborhood Repair and Reuse Resources</a>
+                    <div class="conversation-date">March 12, 2026</div>
+                    <div class="conversation-desc">13 categories, 320+ repair/reuse items. Clothing, bicycles, small electronics as highest-impact starting points. .md file format instruction established.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 16. Background Knowledge & Intellectual Exploration -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">📚 Background Knowledge &amp; Intellectual Exploration</span>
+                <span class="category-count">20 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/1e5c7210-2e2a-4694-92a9-650a0fe38569" target="_blank">Feedback on "Inventing Governing" FedWiki Presentation</a>
+                    <div class="conversation-date">April 8, 2026</div>
+                    <div class="conversation-desc">Three-node to ten-node graph sequence. "Particular People → People" as sharpest move. Business → government capture as feedback loop. ERT as "becoming ethical" node operationalized.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/6b974b24-f900-4254-97be-ef7ff0344a0f" target="_blank">Claude's Contextual Learning — "Pierson-Claude.ai SLM"</a>
+                    <div class="conversation-date">February 27, 2026</div>
+                    <div class="conversation-desc">SLM: personalized context-rich collaborator before general-purpose model. Memory as distillation. Interaction patterns shape responses.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/0bc46fc3-7149-45a2-b5ff-e427f25fb9d3" target="_blank">Learning Through Rapid Feedback Loops — Tennis Wall Metaphor</a>
+                    <div class="conversation-date">March 4, 2026</div>
+                    <div class="conversation-desc">Claude as active wall: observes patterns, names them, generates new directions. Echo chamber risk mitigated by bringing genuinely unresolved problems.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/aa721fe1-729e-4eae-acc5-bb388e6f966e" target="_blank">Neighborhood Conceptual Schema — OPM Assessment</a>
+                    <div class="conversation-date">March 24, 2026</div>
+                    <div class="conversation-desc">SVG schema: two circuits (organizational action + conversational practice). Normative spine: Culture→Ideal→Purpose→Power. Power as derived from normative coherence.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/8b8fcd7a-ce25-4543-a7ae-459f2a5fc41e" target="_blank">EIP Diagram with 26 Essential Functions — CVC Assessment</a>
+                    <div class="conversation-date">March 25, 2026</div>
+                    <div class="conversation-desc">EIP sketch method: Ecology/Institutions/Politics as co-constitutive. 26 Functions as viability checklist. Markov blanket framing. Columbia Valley Community instance.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/72fbd967-4bac-4426-8dc4-66d0a14e0cc3" target="_blank">Model Integration Through Narrative Frame and eVSM</a>
+                    <div class="conversation-date">January 14, 2026</div>
+                    <div class="conversation-desc">Story Structure as hub: Beliefs, Events, Learnings, Mechanisms, Roles. 11 assessments, 77 orgs, 120 open-ended questions. Color-coded assessment scale.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/89a20b8b-001b-492a-b837-38b6fa5ab4a6" target="_blank">A System of Models — "Models for Seeing Systems"</a>
+                    <div class="conversation-date">January 15, 2026</div>
+                    <div class="conversation-desc">marc.relocalizecreativity.net diagram: five layers from fundamental questions through Cynefin, CLD, Vester, and integration tools. Comprehensive user guide produced.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/f5086d2d-11b1-4453-b953-7af09535f1ec" target="_blank">Types and Styles of Thinking</a>
+                    <div class="conversation-date">January 9, 2026</div>
+                    <div class="conversation-desc">Comprehensive thinking taxonomy. Peirce's abductive reasoning. Bessis's "System 3" (training intuition). Integrated document produced.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/39d1587d-1a70-41f4-9eb0-36c017ff0773" target="_blank">Ethics and Homelessness — Seven Approaches vs. Twelve Ideals</a>
+                    <div class="conversation-date">January 25, 2026</div>
+                    <div class="conversation-desc">BGTE-derived ideals vs Housing First, Finland model, Continuum of Care, criminalization, mutual aid, Vienna social housing, tiny homes. Whatcom County / Lansing focus.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/d3b0e5c6-42dc-421d-a437-8c40ce525734" target="_blank">Ladder of Abstraction vs. Ladder of Inference</a>
+                    <div class="conversation-date">January 26, 2026</div>
+                    <div class="conversation-desc">Both as variety-reduction mechanisms. Hamilton's Law applied: lowest energy path = ease of use. CLD from group conversations as primary practice, not OPM.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/1467abe9-d9ff-4bc3-99c3-b22b995419a4" target="_blank">Neighborhood Health Maps Paper</a>
+                    <div class="conversation-date">February 19, 2026</div>
+                    <div class="conversation-desc">Search for 2008 RWJF-funded paper with Kristen Anderson and Richard Scholtz, WWU, Bellingham. Not found in standard indexes; targeted search strategies provided.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/5a46e45b-8302-4cc7-a3f4-23f879d613e3" target="_blank">Semantic Triple Components and Relationships</a>
+                    <div class="conversation-date">December 2, 2025</div>
+                    <div class="conversation-desc">Subject/object/relationship taxonomy for knowledge graphs. Nine semantic categories of relationship types.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/9dbf3012-274e-4ed1-a331-0be71df6ffb8" target="_blank">Hysteresis — Definition</a>
+                    <div class="conversation-date">November 28, 2025</div>
+                    <div class="conversation-desc">Path-dependent systems where forward and return paths don't coincide. Magnets, elastic materials, thermostats.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/7f2ac01e-34c8-4ca9-9309-863679c8a181" target="_blank">Why Viruses Break Down Outside Hosts</a>
+                    <div class="conversation-date">December 1, 2025</div>
+                    <div class="conversation-desc">UV radiation, desiccation, temperature, oxidation. No self-repair capacity. Survival time varies minutes to weeks.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/a4538044-c5b6-4da9-9d0a-ccf91139c345" target="_blank">Atmospheric Mixing Between Hemispheres</a>
+                    <div class="conversation-date">November 29, 2025</div>
+                    <div class="conversation-desc">12+ months for interhemispheric exchange. ITCZ as barrier. Nuclear winter differential: Northern severe, Southern substantial but less so.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/b59c8b34-9587-47b0-9a2e-41666ce01a88" target="_blank">Motive's Role in Narrative</a>
+                    <div class="conversation-date">November 26, 2025</div>
+                    <div class="conversation-desc">Motive transforms event sequence into story. Eight salient motives: survival, love, power, revenge, identity, freedom, duty, greed.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/1268f610-2fd6-4e34-af39-901c70a681fd" target="_blank">News Reporting vs. Journalism</a>
+                    <div class="conversation-date">November 26, 2025</div>
+                    <div class="conversation-desc">Reporting: gathering and presenting facts. Journalism: broader field including investigation, analysis, accountability. All reporters are journalists; not all journalism is reporting.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/4333aca1-77cc-4f30-9715-42826f6d763c" target="_blank">Data Center Water Consumption and Recycling</a>
+                    <div class="conversation-date">April 17, 2026</div>
+                    <div class="conversation-desc">Evaporative cooling towers: water truly lost as vapor. WUE metric. Closed-loop liquid cooling, condensate recovery, heat reuse (Stockholm district heating). AI workloads accelerating pressure on water-scarce regions.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/e84b6a88-5e5d-4ac8-9001-13a890e562b6" target="_blank">Corn to Whiskey Conversion Ratio</a>
+                    <div class="conversation-date">April 16, 2026</div>
+                    <div class="conversation-desc">~1.2 kg corn → 1 liter of 100-proof whiskey. One bushel yields 40–50 liters. CO₂ loss during fermentation; spent mash sold as cattle feed.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/15e73f45-baee-45f1-aba8-cd08895d1404" target="_blank">Claude Design and Canva — New Products</a>
+                    <div class="conversation-date">April 18, 2026</div>
+                    <div class="conversation-desc">Claude Design (Apr 18 launch): AI-powered design/prototype/slides tool, Claude Opus 4.7. Canva Create 2026 (SoFi Stadium): AI 2.0, conversational agentic redesign, Gmail/Slack/Zoom integrations, Claude integration announced.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tools & Misc -->
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-title">🔧 Tools, Shell &amp; Misc</span>
+                <span class="category-count">6 conversations</span>
+                <span class="category-icon">▼</span>
+            </div>
+            <div class="conversation-list">
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/a6883f59-3224-4505-afbc-9856b1113dd7" target="_blank">MORE 3.0 Outliner — Web Recreation</a>
+                    <div class="conversation-date">January 9, 2026</div>
+                    <div class="conversation-desc">Full-featured outliner: hierarchical structure, clone nodes, inline comments, presentation mode, undo/redo, OPML export.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/4279ae94-061c-47b7-88bc-bb72a26d82d5" target="_blank">Tripod Beta Error Analysis Application</a>
+                    <div class="conversation-date">January 8, 2026</div>
+                    <div class="conversation-desc">Incident investigation tool. Swiss Cheese model. Region selection print. html2canvas PDF export. Click-vs-drag detection fix.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/221e5914-c500-4d5b-8e63-a93a038ecbc6" target="_blank">Common Shell Script Commands Explained</a>
+                    <div class="conversation-date">March 18, 2026</div>
+                    <div class="conversation-desc">Commands by category with plain-English explanations and etymologies. Interpolated into single unified reference. .md and .docx outputs.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/98373bc9-2c5f-45aa-ac52-de6c7114f6a5" target="_blank">Can You Display SVG Images in Chat?</a>
+                    <div class="conversation-date">February 4, 2026</div>
+                    <div class="conversation-desc">Discovery: SVGs render as text, not images. Action Tetrahedron (PIOA) diagram context. Claude capabilities limitation test.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/0fe39ae8-73bb-4533-80f2-e48667df48d8" target="_blank">BLUES — Music, Worldview, Analysis</a>
+                    <div class="conversation-date">January 27, 2026</div>
+                    <div class="conversation-desc">Robert Johnson, B.B. King, Muddy Waters. 12-bar structure as endurance metaphor. Blue notes as unresolvable tension. Isolated-tracks.com resource. Comprehensive .md document.</div>
+                </div>
+                <div class="conversation-item">
+                    <a class="conversation-name" href="https://claude.ai/chat/db4fe3b7-0f61-41f8-946b-6582478822ba" target="_blank">Microplastics and Organism Health Effects</a>
+                    <div class="conversation-date">November 24, 2025</div>
+                    <div class="conversation-desc">Physical damage, oxidative stress, DNA damage, organ impacts, chemical toxicity. Blood-brain barrier crossing. Human health concerns.</div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- end .content -->
+
+    <footer>
+        <p>LLM Session Index — Updated April 20, 2026 (+19 conversations, April 13–20 batch)</p>
+        <p style="margin-top: 8px; font-size: 0.85em;">Browser and desktop Claude histories now synced. Claude Code sessions tracked separately in ~/rcn/tools/. Run updates from web Claude using recent_chats.</p>
+    </footer>
+</div>
+
+<script>
+    function toggleCategory(header) {
+        const category = header.parentElement;
+        category.classList.toggle('expanded');
+    }
+    // Start with first category open
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.category')[0].classList.add('expanded');
+    });
+</script>
+</body>
+</html>

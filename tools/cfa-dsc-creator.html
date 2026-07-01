@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CfA-dSC Contract Creator · RCN</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Atkinson+Hyperlegible:wght@400;700&display=swap');
+:root {
+  --ink:#1a1a18;--ink-mid:#4a4a44;--ink-faint:#8a8a80;
+  --paper:#f7f5f0;--paper-alt:#efede6;--rule:#d8d4c8;
+  --teal:#1a6b5a;--teal-lt:#d4ede7;
+  --amber:#b85c00;--amber-lt:#faebd4;
+  --red:#9b2020;--red-lt:#fde8e8;
+  --serif:'DM Serif Display',Georgia,serif;
+  --mono:'DM Mono','Courier New',monospace;
+  --sans:'Atkinson Hyperlegible',sans-serif;
+  --radius:6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.6;}
+header{background:var(--ink);color:var(--paper);padding:28px 40px 24px;display:flex;align-items:flex-end;gap:24px;}
+header h1{font-family:var(--serif);font-size:28px;font-weight:400;letter-spacing:0.01em;line-height:1.1;}
+header .sub{font-family:var(--mono);font-size:11px;color:#8a8a70;letter-spacing:0.08em;text-transform:uppercase;padding-bottom:3px;}
+#progress-track{background:#2a2a28;padding:0 40px;display:flex;}
+.prog-step{flex:1;padding:10px 12px 8px;font-family:var(--mono);font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:#666660;border-bottom:2px solid transparent;cursor:pointer;transition:color 0.2s,border-color 0.2s;}
+.prog-step.active{color:#e8e0d0;border-color:var(--teal);}
+.prog-step.done{color:#888870;border-color:#3a5a50;}
+.prog-step:hover{color:#c0b8a8;}
+main{max-width:780px;margin:0 auto;padding:40px 24px 80px;}
+.section{display:none;animation:fadeIn 0.25s ease;}
+.section.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.section-header{margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--rule);}
+.section-header h2{font-family:var(--serif);font-size:22px;font-weight:400;margin-bottom:4px;}
+.section-header p{color:var(--ink-mid);font-size:14px;}
+.field{margin-bottom:20px;}
+.field label{display:block;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-mid);margin-bottom:6px;}
+.field .hint{font-size:12px;color:var(--ink-faint);margin-bottom:6px;font-style:italic;}
+input[type=text],input[type=date],input[type=number],textarea,select{width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:var(--radius);background:#fff;font-family:var(--sans);font-size:14px;color:var(--ink);outline:none;transition:border-color 0.15s;}
+input:focus,textarea:focus,select:focus{border-color:var(--teal);}
+textarea{resize:vertical;min-height:80px;}
+input[type=number]{width:140px;}
+.field-row{display:flex;gap:16px;flex-wrap:wrap;}
+.field-row .field{flex:1;min-width:160px;}
+.gate{border-left:3px solid var(--rule);padding:14px 16px;margin-bottom:20px;background:var(--paper-alt);border-radius:0 var(--radius) var(--radius) 0;}
+.gate.hard{border-color:var(--amber);background:var(--amber-lt);}
+.gate.soft{border-color:var(--teal);background:var(--teal-lt);}
+.gate .gate-label{font-family:var(--mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;font-weight:500;margin-bottom:4px;}
+.gate.hard .gate-label{color:var(--amber);}
+.gate.soft .gate-label{color:var(--teal);}
+.gate p{font-size:13px;color:var(--ink-mid);}
+.sbu-options{display:flex;gap:10px;}
+.sbu-opt{flex:1;border:1px solid var(--rule);border-radius:var(--radius);padding:10px 12px;cursor:pointer;background:#fff;transition:all 0.15s;text-align:center;}
+.sbu-opt input{display:none;}
+.sbu-opt .opt-label{font-size:12px;font-weight:700;letter-spacing:0.04em;display:block;}
+.sbu-opt .opt-desc{font-size:11px;color:var(--ink-faint);margin-top:2px;}
+.sbu-opt.selected.confirmed{border-color:var(--teal);background:var(--teal-lt);}
+.sbu-opt.selected.developing{border-color:var(--amber);background:var(--amber-lt);}
+.sbu-opt.selected.absent{border-color:var(--red);background:var(--red-lt);}
+.attest-row{display:flex;gap:16px;margin-top:12px;}
+.attest-box{flex:1;border:1px solid var(--rule);border-radius:var(--radius);padding:12px 14px;background:#fff;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color 0.15s,background 0.15s;}
+.attest-box input[type=checkbox]{width:16px;height:16px;accent-color:var(--teal);cursor:pointer;}
+.attest-box:has(input:checked){border-color:var(--teal);background:var(--teal-lt);}
+.attest-box .attest-role{font-size:12px;font-weight:700;letter-spacing:0.04em;}
+.attest-box .attest-name{font-size:12px;color:var(--ink-faint);}
+.ref-list{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;}
+.ref-item{display:grid;grid-template-columns:120px 1fr auto;gap:8px;align-items:center;background:#fff;border:1px solid var(--rule);border-radius:var(--radius);padding:10px 12px;}
+.ref-remove{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:18px;line-height:1;padding:0 4px;transition:color 0.15s;}
+.ref-remove:hover{color:var(--red);}
+.payment-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.payment-grid .field{margin-bottom:0;}
+.currency-row{display:flex;align-items:center;gap:8px;}
+.currency-badge{font-family:var(--mono);font-size:11px;background:var(--paper-alt);border:1px solid var(--rule);border-radius:3px;padding:2px 6px;color:var(--ink-mid);}
+.gift-type-row{display:flex;gap:10px;margin-bottom:12px;}
+.gift-type-btn{flex:1;padding:8px;border:1px solid var(--rule);border-radius:var(--radius);background:#fff;cursor:pointer;font-family:var(--sans);font-size:13px;color:var(--ink-mid);transition:all 0.15s;}
+.gift-type-btn.active{border-color:var(--teal);background:var(--teal-lt);color:var(--teal);font-weight:700;}
+.btn-row{display:flex;gap:12px;margin-top:32px;}
+.btn{padding:11px 24px;border-radius:var(--radius);border:none;font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;transition:opacity 0.15s,transform 0.1s;}
+.btn:active{transform:scale(0.98);}
+.btn-primary{background:var(--teal);color:#fff;}
+.btn-primary:hover{opacity:0.88;}
+.btn-secondary{background:var(--paper-alt);color:var(--ink-mid);border:1px solid var(--rule);}
+.btn-secondary:hover{background:var(--rule);}
+.btn-add{background:none;border:1px dashed var(--rule);color:var(--ink-faint);border-radius:var(--radius);padding:8px 16px;font-family:var(--sans);font-size:13px;cursor:pointer;transition:all 0.15s;width:100%;}
+.btn-add:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-lt);}
+.error-box{background:var(--red-lt);border:1px solid #f0b0b0;border-radius:var(--radius);padding:12px 16px;margin-bottom:20px;display:none;}
+.error-box.visible{display:block;}
+.error-box ul{margin:6px 0 0 18px;}
+.error-box li{font-size:13px;color:var(--red);margin-bottom:3px;}
+.error-box strong{color:var(--red);font-size:13px;}
+#preview-json{background:#1a1a18;color:#c8f0c0;font-family:var(--mono);font-size:12px;line-height:1.7;padding:20px;border-radius:var(--radius);overflow-x:auto;white-space:pre;max-height:420px;overflow-y:auto;}
+.output-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+.output-actions .btn{flex:1;min-width:140px;text-align:center;}
+#share-link-box{margin-top:16px;display:none;}
+#share-link-box.visible{display:block;}
+#share-link{width:100%;font-family:var(--mono);font-size:11px;padding:10px 12px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--paper-alt);color:var(--ink-mid);word-break:break-all;}
+.copy-confirm{font-size:12px;color:var(--teal);margin-top:6px;display:none;}
+.copy-confirm.visible{display:block;}
+.status-badge{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:0.06em;text-transform:uppercase;padding:3px 8px;border-radius:3px;background:var(--teal-lt);color:var(--teal);margin-left:10px;vertical-align:middle;}
+.divider{border:none;border-top:1px solid var(--rule);margin:28px 0;}
+#payment-preview{background:var(--paper-alt);border:1px solid var(--rule);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;font-size:13px;color:var(--ink-mid);}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Conversation for Action<br><em>Contract Creator</em></h1></div>
+  <div class="sub">ReLocalize Creativity Network · dSC v0.1</div>
+</header>
+<div id="progress-track">
+  <div class="prog-step active" data-step="0">1 · Parties</div>
+  <div class="prog-step" data-step="1">2 · Preconditions</div>
+  <div class="prog-step" data-step="2">3 · Payment</div>
+  <div class="prog-step" data-step="3">4 · Context</div>
+  <div class="prog-step" data-step="4">5 · Review</div>
+</div>
+<main>
+  <div id="error-display" class="error-box">
+    <strong>Please fix the following before continuing:</strong>
+    <ul id="error-list"></ul>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="section active" id="sec-0">
+    <div class="section-header">
+      <h2>The two parties</h2>
+      <p>Every CfA is between a customer (who makes the request) and a performer (who commits to act).</p>
+    </div>
+    <div class="field">
+      <label>Customer name</label>
+      <input type="text" id="cust-name" placeholder="e.g. Patient A">
+    </div>
+    <div class="field">
+      <label>Customer DID</label>
+      <div class="hint">Decentralized Identifier from Veramo key management</div>
+      <input type="text" id="cust-did" placeholder="did:key:z6Mk...">
+    </div>
+    <div class="field">
+      <label>Customer role (optional)</label>
+      <input type="text" id="cust-role" placeholder="e.g. Patient, Learner">
+    </div>
+    <hr class="divider">
+    <div class="field">
+      <label>Performer name</label>
+      <input type="text" id="perf-name" placeholder="e.g. Community Health Worker B">
+    </div>
+    <div class="field">
+      <label>Performer DID</label>
+      <input type="text" id="perf-did" placeholder="did:key:z6Mk...">
+    </div>
+    <div class="field">
+      <label>Performer role (optional)</label>
+      <input type="text" id="perf-role" placeholder="e.g. Community Health Worker, Mentor">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="goTo(1)">Continue</button>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="section" id="sec-1">
+    <div class="section-header">
+      <h2>Preconditions</h2>
+      <p>A CfA requires two preconditions. One is a hard gate; the other can be developed during the conversation.</p>
+    </div>
+    <div class="gate hard">
+      <div class="gate-label">Hard gate · CCS+T</div>
+      <p>Clear Conditions of Satisfaction with Time Specified — the output of a prior Conversation for Possibility. No CfA without it.</p>
+    </div>
+    <div class="field">
+      <label>Conditions of satisfaction</label>
+      <div class="hint">State clearly what constitutes satisfactory completion.</div>
+      <textarea id="cos-description" placeholder="e.g. Patient receives initial intake assessment and referral plan within 5 business days."></textarea>
+    </div>
+    <div class="field">
+      <label>Deadline</label>
+      <input type="date" id="cos-deadline">
+    </div>
+    <div class="field">
+      <label>Both parties attest to these conditions</label>
+      <div class="attest-row">
+        <label class="attest-box">
+          <input type="checkbox" id="cos-attest-cust">
+          <div><div class="attest-role">Customer</div><div class="attest-name" id="cos-cust-label">--</div></div>
+        </label>
+        <label class="attest-box">
+          <input type="checkbox" id="cos-attest-perf">
+          <div><div class="attest-role">Performer</div><div class="attest-name" id="cos-perf-label">--</div></div>
+        </label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Prior Conversation for Possibility (optional)</label>
+      <input type="text" id="cos-ref" placeholder="https://wiki.relocalizecreativity.net/view/...">
+    </div>
+    <hr class="divider">
+    <div class="gate soft">
+      <div class="gate-label">Soft gate · SBU</div>
+      <p>Shared Background of Understanding. Can be declared <em>developing</em> if both parties acknowledge the gap.</p>
+    </div>
+    <div class="field">
+      <label>SBU status</label>
+      <div class="sbu-options">
+        <label class="sbu-opt confirmed selected" onclick="setSBU('confirmed')">
+          <input type="radio" name="sbu" value="confirmed" checked>
+          <span class="opt-label">Confirmed</span>
+          <span class="opt-desc">Shared understanding exists</span>
+        </label>
+        <label class="sbu-opt developing" onclick="setSBU('developing')">
+          <input type="radio" name="sbu" value="developing">
+          <span class="opt-label">Developing</span>
+          <span class="opt-desc">Gap acknowledged</span>
+        </label>
+        <label class="sbu-opt absent" onclick="setSBU('absent')">
+          <input type="radio" name="sbu" value="absent">
+          <span class="opt-label">Absent</span>
+          <span class="opt-desc">Blocks initiation</span>
+        </label>
+      </div>
+    </div>
+    <div class="field" id="sbu-note-field" style="display:none">
+      <label>Describe the acknowledged gap</label>
+      <textarea id="sbu-note" placeholder="e.g. Performer unfamiliar with local care resources -- will clarify during intake."></textarea>
+    </div>
+    <div class="field">
+      <label>Both parties attest to SBU status</label>
+      <div class="attest-row">
+        <label class="attest-box">
+          <input type="checkbox" id="sbu-attest-cust">
+          <div><div class="attest-role">Customer</div><div class="attest-name" id="sbu-cust-label">--</div></div>
+        </label>
+        <label class="attest-box">
+          <input type="checkbox" id="sbu-attest-perf">
+          <div><div class="attest-role">Performer</div><div class="attest-name" id="sbu-perf-label">--</div></div>
+        </label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Prior Conversation for Trust (optional)</label>
+      <input type="text" id="sbu-ref" placeholder="https://wiki.relocalizecreativity.net/view/...">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo(0)">Back</button>
+      <button class="btn btn-primary" onclick="goTo(2)">Continue</button>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="section" id="sec-2">
+    <div class="section-header">
+      <h2>Payment specification</h2>
+      <p>Three currencies: fiat, time tokens, and gift. The fiat-to-time rate is fixed in this contract.</p>
+    </div>
+    <div class="payment-grid">
+      <div class="field">
+        <label>Total contract value</label>
+        <div class="currency-row">
+          <input type="number" id="pay-total" value="100" min="0" step="1" oninput="updatePaymentPreview()">
+          <span class="currency-badge">USD</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Minimum fiat payment</label>
+        <div class="currency-row">
+          <input type="number" id="pay-fiat-min" value="50" min="0" step="1" oninput="updatePaymentPreview()">
+          <span class="currency-badge">USD</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Max time payment</label>
+        <div class="currency-row">
+          <input type="number" id="pay-time-max-pct" value="25" min="0" max="100" step="5" oninput="updatePaymentPreview()">
+          <span class="currency-badge">%</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Fiat per hour (exchange rate)</label>
+        <div class="currency-row">
+          <input type="number" id="pay-rate" value="25" min="1" step="1" oninput="updatePaymentPreview()">
+          <span class="currency-badge">USD/hr</span>
+        </div>
+      </div>
+    </div>
+    <div id="payment-preview"></div>
+    <hr class="divider">
+    <div class="field">
+      <label>Gift</label>
+      <div class="gift-type-row">
+        <button class="gift-type-btn" id="gift-btn-none" onclick="setGift('none')">No gift</button>
+        <button class="gift-type-btn active" id="gift-btn-unconditional" onclick="setGift('unconditional')">Unconditional</button>
+        <button class="gift-type-btn" id="gift-btn-conditional" onclick="setGift('conditional')">Conditional</button>
+      </div>
+    </div>
+    <div id="gift-fields" style="display:block">
+      <div class="field-row">
+        <div class="field">
+          <label>Gift amount</label>
+          <div class="currency-row">
+            <input type="number" id="gift-amount" value="25" min="0" step="1" oninput="updatePaymentPreview()">
+            <span class="currency-badge">USD</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Direction</label>
+          <select id="gift-direction">
+            <option value="performer_to_customer">Performer to Customer (fee reduction)</option>
+            <option value="customer_to_performer">Customer to Performer (e.g. SODOTO)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" id="gift-condition-field" style="display:none">
+        <label>Condition</label>
+        <input type="text" id="gift-condition" placeholder="e.g. Financial hardship declared by customer at settlement">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo(1)">Back</button>
+      <button class="btn btn-primary" onclick="goTo(3)">Continue</button>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="section" id="sec-3">
+    <div class="section-header">
+      <h2>Context references</h2>
+      <p>Optional links to prior conversation artifacts that ground this contract.</p>
+    </div>
+    <div class="field">
+      <div class="hint">Contract-level references to CfT records, CfP documents, campfire notes.</div>
+      <div class="ref-list" id="ref-list"></div>
+      <button class="btn-add" onclick="addRef()">+ Add reference</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo(2)">Back</button>
+      <button class="btn btn-primary" onclick="goTo(4)">Review contract</button>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="section" id="sec-4">
+    <div class="section-header">
+      <h2>Review and export <span class="status-badge">ready to sign</span></h2>
+      <p>Review the contract JSON. Download it and sign with Veramo when both parties are satisfied.</p>
+    </div>
+    <pre id="preview-json"></pre>
+    <div class="output-actions">
+      <button class="btn btn-primary" onclick="downloadJSON()">Download JSON</button>
+      <button class="btn btn-secondary" onclick="generateShareLink()">Generate share link</button>
+    </div>
+    <div id="share-link-box">
+      <textarea id="share-link" rows="3" readonly onclick="this.select()"></textarea>
+      <div class="copy-confirm" id="copy-confirm">Link copied to clipboard.</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo(3)">Back</button>
+    </div>
+  </div>
+</main>
+
+<script>
+var currentStep = 0;
+var giftType = 'unconditional';
+var sbuStatus = 'confirmed';
+
+function goTo(step) {
+  if (step > currentStep) {
+    var errors = validateStep(currentStep);
+    if (errors.length) { showErrors(errors); return; }
+  }
+  hideErrors();
+  document.querySelectorAll('.section').forEach(function(s, i) { s.classList.toggle('active', i === step); });
+  document.querySelectorAll('.prog-step').forEach(function(s, i) {
+    s.classList.toggle('active', i === step);
+    s.classList.toggle('done', i < step);
+  });
+  currentStep = step;
+  if (step === 1) updateAttestLabels();
+  if (step === 2) { updatePaymentPreview(); }
+  if (step === 4) renderPreview();
+  window.scrollTo(0, 0);
+}
+
+document.querySelectorAll('.prog-step').forEach(function(el, i) {
+  el.addEventListener('click', function() { goTo(i); });
+});
+
+function validateStep(step) {
+  var errors = [];
+  if (step === 0) {
+    if (!v('cust-name')) errors.push('Customer name is required.');
+    if (!v('cust-did'))  errors.push('Customer DID is required.');
+    if (!v('perf-name')) errors.push('Performer name is required.');
+    if (!v('perf-did'))  errors.push('Performer DID is required.');
+  }
+  if (step === 1) {
+    if (!v('cos-description')) errors.push('Conditions of satisfaction must be described.');
+    if (!v('cos-deadline'))    errors.push('A deadline is required.');
+    if (!chk('cos-attest-cust') || !chk('cos-attest-perf')) errors.push('Both parties must attest to the conditions of satisfaction.');
+    if (sbuStatus === 'absent') errors.push('SBU status "absent" blocks initiation. Change to "developing" and describe the gap.');
+    if (sbuStatus === 'developing' && !v('sbu-note')) errors.push('When SBU is "developing", describe the acknowledged gap.');
+    if (!chk('sbu-attest-cust') || !chk('sbu-attest-perf')) errors.push('Both parties must attest to the SBU status.');
+  }
+  if (step === 2) {
+    var total = num('pay-total'), fiatMin = num('pay-fiat-min'), timePct = num('pay-time-max-pct');
+    if (total <= 0) errors.push('Total contract value must be greater than zero.');
+    if (fiatMin < 0) errors.push('Minimum fiat payment cannot be negative.');
+    if (fiatMin > total) errors.push('Minimum fiat cannot exceed total contract value.');
+    if (timePct < 0 || timePct > 100) errors.push('Time max % must be between 0 and 100.');
+    if (giftType !== 'none') {
+      if (num('gift-amount') <= 0) errors.push('Gift amount must be greater than zero.');
+      if (giftType === 'conditional' && !v('gift-condition')) errors.push('Conditional gift requires a condition description.');
+    }
+  }
+  return errors;
+}
+
+function showErrors(errors) {
+  var box = document.getElementById('error-display');
+  document.getElementById('error-list').innerHTML = errors.map(function(e) { return '<li>' + e + '</li>'; }).join('');
+  box.classList.add('visible');
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function hideErrors() { document.getElementById('error-display').classList.remove('visible'); }
+function v(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+function chk(id) { var el = document.getElementById(id); return el ? el.checked : false; }
+function num(id) { var el = document.getElementById(id); return el ? (parseFloat(el.value) || 0) : 0; }
+
+function updateAttestLabels() {
+  var cn = v('cust-name') || '--', pn = v('perf-name') || '--';
+  ['cos-cust-label','sbu-cust-label'].forEach(function(id) { var el = document.getElementById(id); if (el) el.textContent = cn; });
+  ['cos-perf-label','sbu-perf-label'].forEach(function(id) { var el = document.getElementById(id); if (el) el.textContent = pn; });
+}
+
+function setSBU(status) {
+  sbuStatus = status;
+  document.querySelectorAll('.sbu-opt').forEach(function(el) {
+    el.classList.remove('selected');
+    if (el.classList.contains(status)) el.classList.add('selected');
+  });
+  document.querySelectorAll('input[name=sbu]').forEach(function(el) { el.checked = el.value === status; });
+  document.getElementById('sbu-note-field').style.display = status === 'developing' ? 'block' : 'none';
+}
+
+function setGift(type) {
+  giftType = type;
+  ['none','unconditional','conditional'].forEach(function(t) {
+    var btn = document.getElementById('gift-btn-' + t);
+    if (btn) btn.classList.toggle('active', t === type);
+  });
+  document.getElementById('gift-fields').style.display = type === 'none' ? 'none' : 'block';
+  document.getElementById('gift-condition-field').style.display = type === 'conditional' ? 'block' : 'none';
+  updatePaymentPreview();
+}
+
+function updatePaymentPreview() {
+  var total = num('pay-total'), fiatMin = num('pay-fiat-min');
+  var timePct = num('pay-time-max-pct'), rate = num('pay-rate');
+  var timeCeil = total * (timePct / 100);
+  var timeHrMax = rate > 0 ? (timeCeil / rate).toFixed(1) : '--';
+  var giftLine = '';
+  if (giftType !== 'none') {
+    var ga = num('gift-amount');
+    var dirEl = document.getElementById('gift-direction');
+    var dir = dirEl && dirEl.value === 'performer_to_customer' ? 'performer to customer' : 'customer to performer';
+    giftLine = ' &nbsp;&middot;&nbsp; Gift: <strong>$' + ga + '</strong> ' + giftType + ' (' + dir + ')';
+  }
+  document.getElementById('payment-preview').innerHTML =
+    'Total: <strong>$' + total + '</strong> &nbsp;&middot;&nbsp; Fiat floor: <strong>$' + fiatMin + '</strong> &nbsp;&middot;&nbsp; Time ceiling: <strong>$' + timeCeil.toFixed(0) + ' (' + timeHrMax + ' hrs @ $' + rate + '/hr)</strong>' + giftLine;
+}
+updatePaymentPreview();
+
+var refCount = 0;
+function addRef() {
+  refCount++;
+  var id = 'ref-' + refCount;
+  var div = document.createElement('div');
+  div.className = 'ref-item';
+  div.id = id;
+  div.innerHTML = '<select class="ref-type"><option value="CfT">CfT</option><option value="CfP">CfP</option><option value="campfire">Campfire</option><option value="other">Other</option></select><input type="text" class="ref-uri" placeholder="https://..."><button class="ref-remove" onclick="document.getElementById(\'' + id + '\').remove()">x</button>';
+  document.getElementById('ref-list').appendChild(div);
+}
+
+function getRefs() {
+  return Array.from(document.querySelectorAll('.ref-item')).map(function(el) {
+    return { type: el.querySelector('.ref-type').value, uri: el.querySelector('.ref-uri').value.trim() };
+  }).filter(function(r) { return r.uri; });
+}
+
+function buildContract() {
+  var id = 'urn:uuid:' + ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, function(c) {
+    return (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16);
+  });
+  var sbuObj = { status: sbuStatus, attestation: { customer: chk('sbu-attest-cust'), performer: chk('sbu-attest-perf') } };
+  if (v('sbu-note')) sbuObj.note = v('sbu-note');
+  if (v('sbu-ref')) sbuObj.conversation_ref = v('sbu-ref');
+  var cosObj = { met: chk('cos-attest-cust') && chk('cos-attest-perf'), description: v('cos-description'), deadline: v('cos-deadline'), attestation: { customer: chk('cos-attest-cust'), performer: chk('cos-attest-perf') } };
+  if (v('cos-ref')) cosObj.conversation_ref = v('cos-ref');
+  var paySpec = { total_value_usd: num('pay-total'), fiat_min_usd: num('pay-fiat-min'), time_max_pct: num('pay-time-max-pct'), fiat_per_hour: num('pay-rate') };
+  if (giftType !== 'none') {
+    paySpec.gift = { type: giftType, amount_usd: num('gift-amount'), direction: document.getElementById('gift-direction').value };
+    if (giftType === 'conditional' && v('gift-condition')) paySpec.gift.condition = v('gift-condition');
+  }
+  var refs = getRefs();
+  var now = new Date().toISOString();
+  var contract = {
+    id: id, version: '0.1',
+    type: ['VerifiableCredential', 'DyadicSmartContract', 'ConversationForAction'],
+    created_at: now,
+    parties: {
+      customer: { did: v('cust-did'), name: v('cust-name') },
+      performer: { did: v('perf-did'), name: v('perf-name') }
+    },
+    preconditions: { shared_background_of_understanding: sbuObj, conditions_of_satisfaction: cosObj },
+    payment_spec: paySpec,
+    cfa_state: { current: 'initiated', history: [] },
+    settlement: null,
+    proof: { type: 'Ed25519Signature2020', created: now, signatories: [
+      { did: v('cust-did'), role: 'customer', proofValue: '[pending: sign with Veramo]' },
+      { did: v('perf-did'), role: 'performer', proofValue: '[pending: sign with Veramo]' }
+    ]}
+  };
+  if (v('cust-role')) contract.parties.customer.role_description = v('cust-role');
+  if (v('perf-role')) contract.parties.performer.role_description = v('perf-role');
+  if (refs.length) contract.context_refs = refs;
+  return contract;
+}
+
+function renderPreview() {
+  document.getElementById('preview-json').textContent = JSON.stringify(buildContract(), null, 2);
+}
+
+function downloadJSON() {
+  var contract = buildContract();
+  var blob = new Blob([JSON.stringify(contract, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var name = (v('cust-name') || 'customer').replace(/\s+/g,'-').toLowerCase();
+  var perf = (v('perf-name') || 'performer').replace(/\s+/g,'-').toLowerCase();
+  a.href = url; a.download = 'cfa-dsc-' + name + '-' + perf + '-' + Date.now() + '.json';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function generateShareLink() {
+  var contract = buildContract();
+  var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(contract))));
+  var url = location.href.split('?')[0] + '?contract=' + encoded;
+  var box = document.getElementById('share-link-box');
+  document.getElementById('share-link').value = url;
+  box.style.display = 'block';
+  document.getElementById('share-link').select();
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() {
+      var conf = document.getElementById('copy-confirm');
+      conf.classList.add('visible');
+      setTimeout(function() { conf.classList.remove('visible'); }, 3000);
+    });
+  }
+}
+
+(function loadFromURL() {
+  var params = new URLSearchParams(location.search);
+  var encoded = params.get('contract');
+  if (!encoded) return;
+  try {
+    var c = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+    if (c.parties) {
+      if (c.parties.customer) { document.getElementById('cust-did').value = c.parties.customer.did || ''; document.getElementById('cust-name').value = c.parties.customer.name || ''; document.getElementById('cust-role').value = c.parties.customer.role_description || ''; }
+      if (c.parties.performer) { document.getElementById('perf-did').value = c.parties.performer.did || ''; document.getElementById('perf-name').value = c.parties.performer.name || ''; document.getElementById('perf-role').value = c.parties.performer.role_description || ''; }
+    }
+    if (c.preconditions) {
+      var cos = c.preconditions.conditions_of_satisfaction;
+      if (cos) { document.getElementById('cos-description').value = cos.description || ''; document.getElementById('cos-deadline').value = cos.deadline || ''; document.getElementById('cos-attest-cust').checked = !!(cos.attestation && cos.attestation.customer); document.getElementById('cos-attest-perf').checked = !!(cos.attestation && cos.attestation.performer); document.getElementById('cos-ref').value = cos.conversation_ref || ''; }
+      var sbu = c.preconditions.shared_background_of_understanding;
+      if (sbu) { setSBU(sbu.status || 'confirmed'); document.getElementById('sbu-note').value = sbu.note || ''; document.getElementById('sbu-attest-cust').checked = !!(sbu.attestation && sbu.attestation.customer); document.getElementById('sbu-attest-perf').checked = !!(sbu.attestation && sbu.attestation.performer); document.getElementById('sbu-ref').value = sbu.conversation_ref || ''; }
+    }
+    if (c.payment_spec) {
+      var p = c.payment_spec;
+      document.getElementById('pay-total').value = p.total_value_usd || 100;
+      document.getElementById('pay-fiat-min').value = p.fiat_min_usd || 50;
+      document.getElementById('pay-time-max-pct').value = p.time_max_pct || 25;
+      document.getElementById('pay-rate').value = p.fiat_per_hour || 25;
+      if (p.gift) { setGift(p.gift.type || 'none'); document.getElementById('gift-amount').value = p.gift.amount_usd || 0; document.getElementById('gift-direction').value = p.gift.direction || 'performer_to_customer'; document.getElementById('gift-condition').value = p.gift.condition || ''; }
+      else { setGift('none'); }
+    }
+    if (c.context_refs && c.context_refs.length) {
+      c.context_refs.forEach(function(ref) {
+        addRef();
+        var items = document.querySelectorAll('.ref-item');
+        var last = items[items.length - 1];
+        if (last) { last.querySelector('.ref-type').value = ref.type || 'other'; last.querySelector('.ref-uri').value = ref.uri || ''; }
+      });
+    }
+  } catch(e) { console.warn('Could not load contract from URL:', e); }
+})();
+</script>
+</body>
+</html>

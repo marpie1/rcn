@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SODOTO Issuer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; max-width: 860px; margin: 0 auto; padding: 20px 20px 60px; background: #f8f7f4; color: #1a1208; }
+    h1 { font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 8px; margin: 0 0 4px; }
+    h2 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 16px; color: #6b6055; }
+    h3 { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; margin: 24px 0 10px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+    label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin: 12px 0 3px; color: #444; }
+    label.inline { display: inline; margin: 0 6px 0 0; font-size: 11px; }
+    input[type=text], input[type=date], input[type=password], select, textarea {
+      width: 100%; font-family: 'SF Mono', 'Fira Mono', monospace; font-size: 12px;
+      padding: 7px 8px; border: 1px solid #999; background: #fff; color: #1a1208; }
+    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
+    button { font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; padding: 7px 18px; border: 1.5px solid #000; background: #000; color: #fff; cursor: pointer; }
+    button:hover { background: #333; }
+    button.secondary { background: #fff; color: #000; }
+    button.secondary:hover { background: #f0ede8; }
+    button.small { font-size: 11px; padding: 4px 10px; }
+    button.danger { border-color: #8b1a1a; background: #8b1a1a; }
+    .nav { display: flex; gap: 0; border-bottom: 2px solid #000; margin-bottom: 24px; }
+    .nav button { border: 1.5px solid #000; border-bottom: none; background: #f0ede8; color: #000; margin-right: 3px; border-radius: 3px 3px 0 0; font-size: 11px; padding: 6px 14px; }
+    .nav button.active { background: #000; color: #fff; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; padding: 5px 8px; background: #e8e4de; border: 1px solid #ccc; }
+    td { padding: 5px 8px; border: 1px solid #ddd; font-family: 'SF Mono', 'Fira Mono', monospace; vertical-align: top; }
+    td.name { font-family: system-ui, sans-serif; }
+    .gate-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+    .gate-tab { padding: 6px 16px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; border: 1.5px solid #000; cursor: pointer; background: #f0ede8; }
+    .gate-tab.active { background: #000; color: #fff; }
+    .gate-tab.done { border-color: #2a5c3f; background: #e8f4ed; color: #2a5c3f; }
+    .gate-tab.done.active { background: #2a5c3f; color: #fff; }
+    .row2 { display: flex; gap: 12px; }
+    .row2 > * { flex: 1; }
+    .status-row { display: flex; gap: 8px; align-items: center; }
+    .status-chip { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; padding: 3px 10px; border: 1.5px solid; }
+    .chip-open { border-color: #999; color: #666; }
+    .chip-done { border-color: #2a5c3f; color: #2a5c3f; background: #e8f4ed; }
+    .log { background: #fff; border: 1px solid #ccc; padding: 12px; font-family: 'SF Mono', 'Fira Mono', monospace; font-size: 11px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin-top: 12px; }
+    .log .ok  { color: #2a5c3f; font-weight: 700; }
+    .log .err { color: #8b1a1a; font-weight: 700; }
+    .log .dim { color: #888; }
+    .hint { font-size: 11px; color: #888; margin: 2px 0 0; font-family: 'SF Mono', 'Fira Mono', monospace; }
+    .contract-id { font-family: 'SF Mono', monospace; font-size: 12px; color: #444; background: #fff; border: 1px solid #ddd; padding: 4px 8px; display: inline-block; }
+    .sep { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
+    #sign-preview { background: #fff; border: 1px solid #ccc; padding: 12px; font-family: 'SF Mono', monospace; font-size: 11px; max-height: 300px; overflow-y: auto; white-space: pre; word-break: break-all; margin-bottom: 12px; }
+    .warn { background: #fdf3dc; border: 1px solid #d4a017; padding: 8px 12px; font-size: 12px; margin: 8px 0; }
+    .info { background: #e8f4ed; border: 1px solid #2a5c3f; padding: 8px 12px; font-size: 12px; margin: 8px 0; }
+    .attempt-history { font-size: 11px; color: #555; margin: 4px 0 12px; min-height: 18px; }
+    .attempt-history strong { color: #1a1208; }
+    input[type=radio] { margin-right: 4px; }
+    .radio-group { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
+    .radio-group label.inline { font-size: 12px; font-weight: 400; text-transform: none; letter-spacing: 0; color: #1a1208; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<h1>SODOTO Credential Issuer</h1>
+<p style="font-size:12px;color:#6b6055;margin:4px 0 20px;">Gate-by-gate workflow &nbsp;·&nbsp; People registry &nbsp;·&nbsp; FedWiki writes &nbsp;·&nbsp; Ed25519 signing</p>
+
+<div class="nav">
+  <button id="nav-registry" onclick="showPanel('registry')">Registry</button>
+  <button id="nav-contract" onclick="showPanel('contract')">Contract</button>
+  <button id="nav-sign"     onclick="showPanel('sign')">Sign &amp; Issue</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════ REGISTRY PANEL -->
+<div id="panel-registry" class="panel">
+  <h2>People Registry</h2>
+  <table id="people-table">
+    <thead><tr>
+      <th>Name</th><th>Slug</th><th>Site</th><th>DID (last 12)</th><th>Portfolio Slug</th><th></th>
+    </tr></thead>
+    <tbody id="people-tbody"></tbody>
+  </table>
+
+  <h3>Add Person</h3>
+  <div class="row2">
+    <div>
+      <label>Full Name</label>
+      <input type="text" id="add-name" placeholder="Kerry Turner" autocomplete="off">
+    </div>
+    <div>
+      <label>Slug</label>
+      <input type="text" id="add-slug" placeholder="kerry-turner" autocomplete="off">
+      <div class="hint">auto-derived from name</div>
+    </div>
+  </div>
+  <div class="row2">
+    <div>
+      <label>DID</label>
+      <input type="text" id="add-did" placeholder="did:key:z6Mk…" autocomplete="off" spellcheck="false">
+    </div>
+    <div>
+      <label>Site (FedWiki host)</label>
+      <input type="text" id="add-site" value="localhost" autocomplete="off">
+    </div>
+  </div>
+  <div class="row2">
+    <div>
+      <label>Portfolio Slug</label>
+      <input type="text" id="add-portfolio" placeholder="kerry-turner-sodoto-portfolio" autocomplete="off">
+      <div class="hint">auto-derived from slug</div>
+    </div>
+    <div style="display:flex;align-items:flex-end;">
+      <button onclick="addPerson()" style="width:100%">Add to Registry</button>
+    </div>
+  </div>
+  <div id="registry-log" class="log" style="display:none"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ CONTRACT PANEL -->
+<div id="panel-contract" class="panel">
+  <h2>Active Contract</h2>
+
+  <div class="row2">
+    <div>
+      <label>Issuer</label>
+      <select id="sel-issuer" onchange="onContractChange()">
+        <option value="">— select issuer —</option>
+      </select>
+    </div>
+    <div>
+      <label>Skill</label>
+      <select id="sel-skill" onchange="onContractChange()">
+        <option value="">— select skill —</option>
+      </select>
+    </div>
+  </div>
+  <div class="row2">
+    <div>
+      <label>Learner</label>
+      <select id="sel-learner" onchange="onContractChange()">
+        <option value="">— select learner —</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:flex-end;">
+      <button onclick="openContract()" class="secondary" style="width:100%">Open / Resume Contract</button>
+    </div>
+  </div>
+
+  <div id="contract-detail" style="display:none">
+    <hr class="sep">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <div>
+        <span style="font-size:10px;color:#888;letter-spacing:0.05em;text-transform:uppercase;">Contract ID</span><br>
+        <span id="contract-id-display" class="contract-id"></span>
+      </div>
+      <div id="gate-status-chips" class="status-row"></div>
+    </div>
+
+    <h3>Record Gate Attempt</h3>
+
+    <div class="gate-tabs">
+      <div class="gate-tab" id="tab-SeeOne"   onclick="selectGate('SeeOne')">See One</div>
+      <div class="gate-tab" id="tab-DoOne"    onclick="selectGate('DoOne')">Do One</div>
+      <div class="gate-tab" id="tab-TeachOne" onclick="selectGate('TeachOne')">Teach One</div>
+    </div>
+
+    <div id="attempt-history-display" class="attempt-history"></div>
+
+    <div class="row2">
+      <div>
+        <label>Date</label>
+        <input type="date" id="gate-date">
+      </div>
+      <div>
+        <label>Mentor</label>
+        <select id="sel-mentor">
+          <option value="">— select mentor —</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div>
+        <label>Mentor Assertion</label>
+        <select id="sel-mentor-assertion"></select>
+      </div>
+      <div>
+        <label>Learner Assertion</label>
+        <select id="sel-learner-assertion"></select>
+      </div>
+    </div>
+
+    <label>Outcome</label>
+    <div class="radio-group">
+      <label class="inline"><input type="radio" name="outcome" value="complete"> Complete</label>
+      <label class="inline"><input type="radio" name="outcome" value="needs-work" checked> Needs Work</label>
+    </div>
+
+    <label>Narrative Slug
+      <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;"> — latent FedWiki page; the page owner writes their own account</span>
+    </label>
+    <input type="text" id="gate-narrative" autocomplete="off" spellcheck="false">
+    <div class="hint" id="narrative-hint"></div>
+
+    <div id="teach-extras" style="display:none">
+      <hr class="sep" style="margin:14px 0;">
+      <div class="row2">
+        <div>
+          <label>Student (person you taught)</label>
+          <select id="sel-student">
+            <option value="">— select student —</option>
+          </select>
+        </div>
+        <div>
+          <label>Evidence Slug
+            <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;"> — student's DoOne narrative slug</span>
+          </label>
+          <input type="text" id="gate-evidenced-by" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;display:flex;gap:12px;align-items:center;">
+      <button onclick="submitGateAttempt()">Record Attempt &amp; Write to FedWiki</button>
+      <button onclick="clearAttemptForm()" class="secondary small">Clear Form</button>
+    </div>
+    <div id="gate-log" class="log" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SIGN PANEL -->
+<div id="panel-sign" class="panel">
+  <h2>Sign &amp; Issue Credential</h2>
+
+  <div id="sign-no-contract" class="warn">No active contract. Open a contract in the Contract panel first.</div>
+
+  <div id="sign-content" style="display:none">
+    <div id="sign-contract-summary" style="margin-bottom:12px;font-size:12px;"></div>
+    <div id="sign-gate-status" style="margin-bottom:16px;"></div>
+
+    <h3>Credential Preview</h3>
+    <pre id="sign-preview">—</pre>
+
+    <hr class="sep">
+
+    <div class="warn">Private key is used once in this tab only — never stored or transmitted to any server.</div>
+
+    <label>Issuer Private Key Hex (32-byte seed · 64 hex chars)</label>
+    <input type="password" id="sign-privkey" placeholder="64 hex characters…" autocomplete="off" spellcheck="false">
+
+    <label>Credential Scope</label>
+    <div class="radio-group">
+      <label class="inline"><input type="radio" name="signscope" value="partial" checked> Partial (gates completed so far)</label>
+      <label class="inline"><input type="radio" name="signscope" value="full"> Full (requires all 3 gates complete)</label>
+    </div>
+
+    <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <button onclick="signAndIssue()">Sign &amp; Write Badge to Portfolio</button>
+      <button onclick="downloadCredential()" class="secondary">Download Credential JSON</button>
+    </div>
+    <div id="sign-log" class="log" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ SCRIPT -->
+<script>
+// ─── Deployment config — edit these three lines for Mac Mini ─────────────────
+const PROXY        = 'http://localhost:8765'   // ← public URL of sofi-proxy (e.g. https://sodoto.example.com)
+const WIKI_SITE    = 'localhost'               // ← FedWiki hostname for ledger + narrative pages
+const PROXY_SECRET = ''                        // ← value of SODOTO_PROXY_SECRET env var on the server
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const ISSUERS = {
+  rcn:            { label: 'ReLocalize Creativity Network · Bellingham WA',  did: 'did:key:z6MkrpszcAgGXVm3svfuVL35xfPgncW77Ev15JGnE7YR7V64', url: 'https://relocalizecreativity.net' },
+  columbiaValley: { label: 'Columbia Valley NDC · Whatcom County WA',        did: 'did:key:z6MkqfgCZjLZTtnJue7sc1WMEivM3zhS6SPPmZT7v3E2eK11', url: 'https://columbiavalleyndc.net' },
+  fledge:         { label: 'The Fledge · Lansing MI',                        did: 'did:key:z6MkkPjFHVtxRRYNo2r5upSpNMsLekjv6JGPcFGGTr8pokv1', url: 'https://thefledge.com' },
+  leos:           { label: "Leo's",                                           did: 'did:key:z6MksuEnHPDjSXK5mwDXdmwoEttkDuJ8VW2kYpnuu5vTXTiP', url: '' },
+  kula:           { label: 'Kula',                                            did: 'did:key:z6MknaMKoMZwrjYTE8PfwR5wtMG3rwWY1neofsgMB89UoHam', url: '' },
+}
+
+const SKILLS = [
+  { slug: 'cld',               name: 'Causal Loop Diagramming'      },
+  { slug: 'sfd',               name: 'Stock and Flow Diagramming'   },
+  { slug: 'evsm-basic',        name: 'e-VSM Basic'                  },
+  { slug: 'evsm-intermediate', name: 'e-VSM Intermediate'           },
+  { slug: 'evsm-site-manager', name: 'e-VSM Site Manager'           },
+  { slug: 'eip-basic',         name: 'EIP Basic'                    },
+  { slug: 'eip-intermediate',  name: 'EIP Intermediate'             },
+  { slug: 'eip-expert',        name: 'EIP Expert'                   },
+  { slug: 'nrm',               name: 'Neighborhood Risk Management' },
+]
+
+const GATES = ['SeeOne', 'DoOne', 'TeachOne']
+
+const GATE_LABELS = { SeeOne: 'See One', DoOne: 'Do One', TeachOne: 'Teach One' }
+
+const ASSERTIONS = {
+  SeeOne:   { mentor: ['showed','explained','demonstrated'],          learner: ['understood','needs-more-practice','not-ready']  },
+  DoOne:    { mentor: ['satisfied','needs-more-work','not-satisfied'], learner: ['has-done','attempted','not-ready']              },
+  TeachOne: { mentor: ['satisfied','needs-more-work','not-satisfied'], learner: ['has-taught','attempted','not-ready']            },
+}
+
+const SEED_PEOPLE = [
+  { slug: 'marc-pierson',  name: 'Marc Pierson',  did: 'did:key:z6MkozBoq41VqSMQVvzunaCcqFbUmG531deb2SjTDNb2Qswb', site: WIKI_SITE, portfolioSlug: 'marc-pierson-sodoto-portfolio'  },
+  { slug: 'kerry-turner',  name: 'Kerry Turner',  did: 'did:key:z6Mkr8Xwq2GdTKMUzrkHyizSsCVUcCvG3WqjF6sJ2nweMPZ2', site: WIKI_SITE, portfolioSlug: 'kerry-turner-sodoto-portfolio'  },
+  { slug: 'noah-williams', name: 'Noah Williams', did: 'did:key:z6MkmsryVRZGZuiCp4wwo5UgszvaunmH9ukLvUkgzyy1MrJe', site: WIKI_SITE, portfolioSlug: 'noah-williams-sodoto-portfolio' },
+]
+
+const LS_PEOPLE    = 'sodoto-people'
+const LS_CONTRACTS = 'sodoto-contracts'
+const LS_ACTIVE    = 'sodoto-active'
+
+// ─── State ────────────────────────────────────────────────────────────────────
+
+let people    = []
+let contracts = {}
+let active    = null   // { issuerId, skillSlug, learnerSlug, contractId }
+let activeGate = 'SeeOne'
+let lastSignedCredential = null
+
+// ─── Persistence ──────────────────────────────────────────────────────────────
+
+async function loadState() {
+  // Try server registry first — shared across all issuers' browsers
+  let serverPeople = null
+  try {
+    const headers = PROXY_SECRET ? { Authorization: `Bearer ${PROXY_SECRET}` } : {}
+    const r = await fetch(PROXY + '/api/people-registry', { headers })
+    if (r.ok) {
+      const data = await r.json()
+      if (Array.isArray(data.people) && data.people.length > 0) serverPeople = data.people
+    }
+  } catch (_) { /* offline — fall back to localStorage */ }
+
+  if (serverPeople) {
+    for (const sp of SEED_PEOPLE) {
+      if (!serverPeople.find(x => x.slug === sp.slug)) serverPeople.push(sp)
+    }
+    people = serverPeople
+  } else {
+    const raw = localStorage.getItem(LS_PEOPLE)
+    if (raw) {
+      people = JSON.parse(raw)
+      for (const sp of SEED_PEOPLE) {
+        if (!people.find(x => x.slug === sp.slug)) people.push(sp)
+      }
+    } else {
+      people = SEED_PEOPLE.map(x => ({...x}))
+    }
+  }
+
+  const rc = localStorage.getItem(LS_CONTRACTS)
+  if (rc) contracts = JSON.parse(rc)
+  const ra = localStorage.getItem(LS_ACTIVE)
+  if (ra) active = JSON.parse(ra)
+  saveState()
+}
+
+function saveState() {
+  localStorage.setItem(LS_PEOPLE,    JSON.stringify(people))
+  localStorage.setItem(LS_CONTRACTS, JSON.stringify(contracts))
+  if (active) localStorage.setItem(LS_ACTIVE, JSON.stringify(active))
+  else        localStorage.removeItem(LS_ACTIVE)
+  // Sync people registry to server (fire-and-forget)
+  fetch(PROXY + '/api/people-registry', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ people })
+  }).catch(() => {})
+}
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+function el(id)       { return document.getElementById(id) }
+function uid()        { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6) }
+function today()      { return new Date().toISOString().slice(0, 10) }
+function slugify(s)   { return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') }
+function personBySlug(s)  { return people.find(p => p.slug === s) }
+function skillBySlug(s)   { return SKILLS.find(k => k.slug === s) }
+function contractKey(issuerId, skillSlug, learnerSlug) { return `${issuerId}--${skillSlug}--${learnerSlug}` }
+
+function getContract() {
+  if (!active) return null
+  return contracts[contractKey(active.issuerId, active.skillSlug, active.learnerSlug)] || null
+}
+
+function gateComplete(gate) {
+  const c = getContract()
+  if (!c) return false
+  return c.gates[gate]?.attempts?.some(a => a.outcome === 'complete') || false
+}
+
+function gatesCompleted() {
+  return GATES.filter(gateComplete)
+}
+
+function generateContractId(issuerId, skillSlug) {
+  const year   = new Date().getFullYear()
+  const prefix = `sodoto-${skillSlug}-${issuerId}-${year}-`
+  const n      = Object.values(contracts).filter(c => c.contractId.startsWith(prefix)).length
+  return prefix + String(n + 1).padStart(4, '0')
+}
+
+function logTo(logId, cls, msg) {
+  const div = el(logId)
+  div.style.display = 'block'
+  const span = document.createElement('span')
+  if (cls) span.className = cls
+  span.textContent = msg + '\n'
+  div.appendChild(span)
+  div.scrollTop = div.scrollHeight
+}
+
+// ─── People ───────────────────────────────────────────────────────────────────
+
+function addPerson() {
+  const name  = el('add-name').value.trim()
+  const slug  = el('add-slug').value.trim() || slugify(name)
+  const did   = el('add-did').value.trim()
+  const site  = el('add-site').value.trim() || 'localhost'
+  const pSlug = el('add-portfolio').value.trim() || `${slug}-sodoto-portfolio`
+
+  if (!name || !slug || !did) { logTo('registry-log','err','Name, slug, and DID are required.'); return }
+  if (!did.startsWith('did:key:z')) { logTo('registry-log','err','DID must start with did:key:z'); return }
+  if (people.find(p => p.slug === slug)) { logTo('registry-log','err',`Slug "${slug}" already in registry.`); return }
+
+  people.push({ slug, name, did, site, portfolioSlug: pSlug })
+  saveState()
+  renderPeople()
+  rebuildPeopleSelects()
+  el('add-name').value = ''; el('add-slug').value = ''; el('add-did').value = ''; el('add-portfolio').value = ''
+  logTo('registry-log','ok',`Added: ${name} (${slug})`)
+}
+
+function removePerson(slug) {
+  if (SEED_PEOPLE.find(s => s.slug === slug)) { logTo('registry-log','err','Cannot remove seeded people.'); return }
+  people = people.filter(p => p.slug !== slug)
+  saveState(); renderPeople(); rebuildPeopleSelects()
+}
+
+// ─── Contract ─────────────────────────────────────────────────────────────────
+
+function openContract() {
+  const issuerId    = el('sel-issuer').value
+  const skillSlug   = el('sel-skill').value
+  const learnerSlug = el('sel-learner').value
+  if (!issuerId || !skillSlug || !learnerSlug) { alert('Select issuer, skill, and learner.'); return }
+
+  const key = contractKey(issuerId, skillSlug, learnerSlug)
+  if (!contracts[key]) {
+    contracts[key] = {
+      contractId: generateContractId(issuerId, skillSlug),
+      issuerId, skillSlug, learnerSlug,
+      createdAt: today(),
+      gates: { SeeOne: { attempts: [] }, DoOne: { attempts: [] }, TeachOne: { attempts: [] } }
+    }
+  }
+  active = { issuerId, skillSlug, learnerSlug, contractId: contracts[key].contractId }
+  saveState()
+  activeGate = 'SeeOne'
+  renderContractDetail()
+  renderSignPanel()
+}
+
+function onContractChange() {
+  el('contract-detail').style.display = 'none'
+}
+
+// ─── Gate form ────────────────────────────────────────────────────────────────
+
+function selectGate(gate) {
+  activeGate = gate
+  renderGateTabs()
+  renderAssertionOptions()
+  renderAttemptHistory()
+  updateNarrativeSuggestion()
+  el('teach-extras').style.display = gate === 'TeachOne' ? 'block' : 'none'
+}
+
+function renderAssertionOptions() {
+  const opts = ASSERTIONS[activeGate]
+  ;['sel-mentor-assertion','sel-learner-assertion'].forEach((id, i) => {
+    const list = i === 0 ? opts.mentor : opts.learner
+    const sel  = el(id)
+    sel.innerHTML = list.map(o => `<option value="${o}">${o}</option>`).join('')
+  })
+}
+
+function updateNarrativeSuggestion() {
+  if (!active) return
+  const c     = getContract()
+  const n     = c ? (c.gates[activeGate].attempts.length + 1) : 1
+  const gSlug = activeGate.replace(/([A-Z])/g, m => '-' + m.toLowerCase()).replace(/^-/, '')
+  const sug   = `${active.learnerSlug}-${active.skillSlug}-${gSlug}-attempt-${n}`
+  el('gate-narrative').value = sug
+  el('narrative-hint').textContent = 'suggested: ' + sug
+}
+
+function renderAttemptHistory() {
+  const c = getContract()
+  if (!c) { el('attempt-history-display').innerHTML = ''; return }
+  const attempts = c.gates[activeGate].attempts
+  if (!attempts.length) {
+    el('attempt-history-display').innerHTML = '<span style="color:#888;">No attempts recorded yet.</span>'
+    return
+  }
+  el('attempt-history-display').innerHTML = attempts.map((a, i) => {
+    const mark = a.outcome === 'complete' ? '✓' : '○'
+    return `<strong>Attempt ${i+1}</strong> · ${a.date} · Mentor: ${a.mentor?.name || '?'} · Outcome: ${mark} ${a.outcome}`
+  }).join('<br>')
+}
+
+function clearAttemptForm() {
+  el('gate-date').value = today()
+  el('sel-mentor').value = ''
+  el('sel-mentor-assertion').selectedIndex = 0
+  el('sel-learner-assertion').selectedIndex = 0
+  document.querySelectorAll('input[name=outcome]').forEach((r, i) => r.checked = i === 1)
+  updateNarrativeSuggestion()
+}
+
+// ─── FedWiki API ──────────────────────────────────────────────────────────────
+
+function authHeaders(extra = {}) {
+  return PROXY_SECRET
+    ? { 'Content-Type': 'application/json', Authorization: `Bearer ${PROXY_SECRET}`, ...extra }
+    : { 'Content-Type': 'application/json', ...extra }
+}
+
+async function wikiPost(path, body) {
+  const r = await fetch(PROXY + path, {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify(body)
+  })
+  if (!r.ok) throw new Error(`${path} → HTTP ${r.status}: ${await r.text()}`)
+  return r.json()
+}
+
+async function wikiRead(site, slug) {
+  const headers = PROXY_SECRET ? { Authorization: `Bearer ${PROXY_SECRET}` } : {}
+  const r = await fetch(`${PROXY}/api/wiki-read-page?site=${encodeURIComponent(site)}&slug=${encodeURIComponent(slug)}`, { headers })
+  if (r.status === 404) return null
+  if (!r.ok) throw new Error(`wiki-read-page → HTTP ${r.status}: ${await r.text()}`)
+  return r.json()
+}
+
+// ─── Gate Submission ──────────────────────────────────────────────────────────
+
+async function submitGateAttempt() {
+  const logEl = el('gate-log')
+  logEl.style.display = 'block'
+  logEl.innerHTML = ''
+
+  const c = getContract()
+  if (!c) { logTo('gate-log','err','No active contract.'); return }
+
+  const gate             = activeGate
+  const date             = el('gate-date').value || today()
+  const mentorSlug       = el('sel-mentor').value
+  const mentorAssertion  = el('sel-mentor-assertion').value
+  const learnerAssertion = el('sel-learner-assertion').value
+  const outcomeVal       = document.querySelector('input[name=outcome]:checked')?.value || 'needs-work'
+  const narrativeSlug    = el('gate-narrative').value.trim()
+
+  if (!mentorSlug)    { logTo('gate-log','err','Select a mentor.'); return }
+  if (!narrativeSlug) { logTo('gate-log','err','Narrative slug is required.'); return }
+
+  const mentor  = personBySlug(mentorSlug)
+  const learner = personBySlug(active.learnerSlug)
+  const skill   = skillBySlug(active.skillSlug)
+
+  // TeachOne extras
+  let studentData = null
+  let evidencedBy = ''
+  if (gate === 'TeachOne') {
+    const studentSlug = el('sel-student').value
+    evidencedBy       = el('gate-evidenced-by').value.trim()
+    if (studentSlug) studentData = personBySlug(studentSlug)
+  }
+
+  const attemptN = c.gates[gate].attempts.length + 1
+
+  // Build attempt record
+  const attempt = { date, mentor: { name: mentor.name, did: mentor.did, portfolio: mentor.portfolioSlug },
+                    mentorAssertion, learnerAssertion, outcome: outcomeVal, narrative: narrativeSlug }
+  if (gate === 'TeachOne') {
+    if (studentData) attempt.student = { name: studentData.name, did: studentData.did, portfolio: studentData.portfolioSlug }
+    if (evidencedBy) attempt.evidencedBy = evidencedBy
+  }
+
+  // Persist to contract state
+  c.gates[gate].attempts.push(attempt)
+  if (outcomeVal === 'complete') {
+    c.gates[gate].completedAt = date
+    c.gates[gate].mentor = { name: mentor.name, did: mentor.did, portfolio: mentor.portfolioSlug }
+    if (gate === 'TeachOne' && studentData) c.gates[gate].student = attempt.student
+  }
+  saveState()
+
+  // ── Write to FedWiki ────────────────────────────────────────────────────
+  // 1. Learner portfolio
+  logTo('gate-log','dim',`Writing to ${learner.name}'s portfolio (${learner.portfolioSlug})…`)
+  const learnerItemId = 'gate-' + uid()
+  try {
+    await wikiPost('/api/wiki-add-items', {
+      site: learner.site, slug: learner.portfolioSlug,
+      items: [{ type: 'html', id: learnerItemId, text: buildGateHTML({ gate, attemptN, date, mentor, mentorAssertion, learnerAssertion, outcome: outcomeVal, skillName: skill.name, narrativeSlug }) }]
+    })
+    logTo('gate-log','ok',`  Learner portfolio: ${learnerItemId}`)
+  } catch (e) { logTo('gate-log','err',`  Learner portfolio error: ${e.message}`) }
+
+  // 2. Mentor portfolio
+  logTo('gate-log','dim',`Writing to ${mentor.name}'s portfolio (${mentor.portfolioSlug})…`)
+  const mentorItemId = 'taught-' + uid()
+  try {
+    await wikiPost('/api/wiki-add-items', {
+      site: mentor.site, slug: mentor.portfolioSlug,
+      items: [{ type: 'html', id: mentorItemId, text: buildMentorHTML({ gate, attemptN, date, learner, mentorAssertion, learnerAssertion, outcome: outcomeVal, skillName: skill.name, narrativeSlug }) }]
+    })
+    logTo('gate-log','ok',`  Mentor portfolio: ${mentorItemId}`)
+  } catch (e) { logTo('gate-log','err',`  Mentor portfolio error: ${e.message}`) }
+
+  // 3. Narrative stub (only if page doesn't exist)
+  logTo('gate-log','dim',`Checking narrative stub: ${narrativeSlug}…`)
+  try {
+    const existing = await wikiRead(WIKI_SITE, narrativeSlug)
+    if (!existing) {
+      const title = narrativeSlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+      await wikiPost('/api/wiki-write-page', {
+        site: WIKI_SITE, slug: narrativeSlug,
+        page: {
+          title,
+          story: [
+            { type: 'paragraph', id: 'stub-1', text: `Narrative stub — ${learner.name} · ${skill.name} · ${GATE_LABELS[gate]} · Attempt ${attemptN} · ${date}.` },
+            { type: 'paragraph', id: 'stub-2', text: 'The page owner is invited to write their own account of this experience.' },
+          ],
+          journal: [{ type: 'create', id: 'j1', date: Date.now(), item: { title } }]
+        }
+      })
+      logTo('gate-log','ok',`  Narrative stub created: ${narrativeSlug}`)
+    } else {
+      logTo('gate-log','dim',`  Narrative page exists — skipped`)
+    }
+  } catch (e) { logTo('gate-log','err',`  Narrative stub error: ${e.message}`) }
+
+  // 4. If TeachOne with student, write to student portfolio
+  if (gate === 'TeachOne' && studentData) {
+    logTo('gate-log','dim',`Writing to ${studentData.name}'s portfolio…`)
+    const studentItemId = 'seentaught-' + uid()
+    try {
+      await wikiPost('/api/wiki-add-items', {
+        site: studentData.site, slug: studentData.portfolioSlug,
+        items: [{ type: 'html', id: studentItemId, text: buildStudentHTML({ date, teacherName: learner.name, teacherPortfolioSlug: learner.portfolioSlug, skillName: skill.name, attemptN, narrativeSlug }) }]
+      })
+      logTo('gate-log','ok',`  Student portfolio: ${studentItemId}`)
+    } catch (e) { logTo('gate-log','err',`  Student portfolio error: ${e.message}`) }
+  }
+
+  logTo('gate-log','ok',`\nGate attempt ${attemptN} recorded.`)
+  renderGateTabs(); renderAttemptHistory(); renderGateStatusChips(); renderSignPanel()
+}
+
+// ─── Portfolio HTML builders ──────────────────────────────────────────────────
+
+function buildGateHTML({ gate, attemptN, date, mentor, mentorAssertion, learnerAssertion, outcome, skillName, narrativeSlug }) {
+  const done  = outcome === 'complete'
+  const color = done ? '#2a5c3f' : '#8b5e00'
+  const mark  = done ? '✓' : '○'
+  return `<p style='font-family:sans-serif;font-size:12px;margin:2px 0;'>`
+    + `<span style='color:${color};font-weight:700;'>${mark} ${skillName} — ${GATE_LABELS[gate]} (attempt ${attemptN})</span>`
+    + ` · <strong>Date:</strong> ${date}`
+    + ` · <strong>Mentor:</strong> <a href='/view/${mentor.portfolioSlug}' style='color:#2a6b5a;'>${mentor.name}</a>`
+    + ` · <strong>Mentor says:</strong> ${mentorAssertion}`
+    + ` · <strong>Learner says:</strong> ${learnerAssertion}`
+    + ` · <strong>Outcome:</strong> ${outcome}`
+    + ` · <a href='/view/${narrativeSlug}' style='color:#555;font-size:11px;'>${narrativeSlug}</a></p>`
+}
+
+function buildMentorHTML({ gate, attemptN, date, learner, mentorAssertion, learnerAssertion, outcome, skillName, narrativeSlug }) {
+  const done  = outcome === 'complete'
+  const color = done ? '#2a5c3f' : '#8b5e00'
+  const mark  = done ? '✓' : '○'
+  return `<p style='font-family:sans-serif;font-size:12px;margin:2px 0;'>`
+    + `<span style='color:${color};font-weight:700;'>${mark} Mentored <a href='/view/${learner.portfolioSlug}' style='color:#2a6b5a;'>${learner.name}</a> — ${skillName} ${GATE_LABELS[gate]} (attempt ${attemptN})</span>`
+    + ` · <strong>Date:</strong> ${date}`
+    + ` · <strong>Mentor says:</strong> ${mentorAssertion}`
+    + ` · <strong>Learner says:</strong> ${learnerAssertion}`
+    + ` · <strong>Outcome:</strong> ${outcome}`
+    + ` · <a href='/view/${narrativeSlug}' style='color:#555;font-size:11px;'>${narrativeSlug}</a></p>`
+}
+
+function buildStudentHTML({ date, teacherName, teacherPortfolioSlug, skillName, attemptN, narrativeSlug }) {
+  return `<p style='font-family:sans-serif;font-size:12px;margin:2px 0;'>`
+    + `<strong>See One (observed teaching) — ${skillName}</strong>`
+    + ` · <strong>Teacher:</strong> <a href='/view/${teacherPortfolioSlug}' style='color:#2a6b5a;'>${teacherName}</a>`
+    + ` · <strong>Date:</strong> ${date}`
+    + ` · <a href='/view/${narrativeSlug}' style='color:#555;font-size:11px;'>${narrativeSlug}</a></p>`
+}
+
+// ─── Crypto ───────────────────────────────────────────────────────────────────
+
+function hex2bytes(hex) {
+  hex = hex.trim()
+  if (hex.length % 2) throw new Error('Odd-length hex')
+  const out = new Uint8Array(hex.length / 2)
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.slice(i*2, i*2+2), 16)
+  return out
+}
+
+function b64url(data) {
+  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data
+  let s = ''
+  for (const b of bytes) s += String.fromCharCode(b)
+  return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')
+}
+
+function seedToPkcs8(seed) {
+  const pre = new Uint8Array([0x30,0x2e,0x02,0x01,0x00,0x30,0x05,0x06,0x03,0x2b,0x65,0x70,0x04,0x22,0x04,0x20])
+  const der = new Uint8Array(pre.length + seed.length)
+  der.set(pre); der.set(seed, pre.length)
+  return der
+}
+
+async function signJWT(payload, privateKeyHex) {
+  const seed = hex2bytes(privateKeyHex)
+  if (seed.length !== 32) throw new Error(`Expected 32-byte seed, got ${seed.length}`)
+  const pkcs8 = seedToPkcs8(seed)
+  let privKey, algName
+  try {
+    privKey = await crypto.subtle.importKey('pkcs8', pkcs8, { name: 'Ed25519' }, false, ['sign'])
+    algName = 'Ed25519'
+  } catch (_) {
+    privKey = await crypto.subtle.importKey('pkcs8', pkcs8, { name: 'NODE-ED25519', namedCurve: 'NODE-ED25519' }, false, ['sign'])
+    algName = 'NODE-ED25519'
+  }
+  const header       = { alg: 'EdDSA', typ: 'JWT' }
+  const signingInput = b64url(JSON.stringify(header)) + '.' + b64url(JSON.stringify(payload))
+  const sigBuf       = await crypto.subtle.sign({ name: algName }, privKey, new TextEncoder().encode(signingInput))
+  return signingInput + '.' + b64url(new Uint8Array(sigBuf))
+}
+
+async function sha256hex(obj) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(obj)))
+  return 'sha256:' + Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('')
+}
+
+// ─── Credential building ─────────────────────────────────────────────────────
+
+function buildCredentialObject(c, scope) {
+  const issuer  = ISSUERS[c.issuerId]
+  const learner = personBySlug(c.learnerSlug)
+  const skill   = skillBySlug(c.skillSlug)
+  const done    = gatesCompleted()
+  const partial = scope === 'partial' || done.length < 3
+
+  const gates = {}
+  for (const gate of GATES) {
+    const g = c.gates[gate]
+    if (g && g.attempts.length > 0) {
+      gates[gate] = { attempts: g.attempts }
+      if (g.completedAt) gates[gate].completedAt = g.completedAt
+      if (g.mentor)      gates[gate].mentor  = g.mentor
+      if (g.student)     gates[gate].student = g.student
+    }
+  }
+
+  const cred = {
+    id:          `urn:uuid:${c.contractId}`,
+    skill:       skill.name,
+    issuer:      issuer.label,
+    issuerUrl:   issuer.url,
+    issuerDid:   issuer.did,
+    holderDid:   learner.did,
+    holderName:  learner.name,
+    contractId:  c.contractId,
+    issuedAt:    today(),
+    gates,
+  }
+  if (partial) {
+    cred.partial       = true
+    cred.gatesComplete = done
+    cred.gatesOpen     = GATES.filter(g => !done.includes(g))
+  }
+  return cred
+}
+
+async function signAndIssue() {
+  const logEl = el('sign-log')
+  logEl.style.display = 'block'; logEl.innerHTML = ''
+
+  const c = getContract()
+  if (!c) { logTo('sign-log','err','No active contract.'); return }
+
+  const privKeyHex = el('sign-privkey').value.trim()
+  if (!/^[0-9a-fA-F]{64}$/.test(privKeyHex)) {
+    logTo('sign-log','err','Private key must be 64 hex chars (32-byte seed).'); return
+  }
+  const scope = document.querySelector('input[name=signscope]:checked').value
+  if (scope === 'full' && gatesCompleted().length < 3) {
+    logTo('sign-log','err','Cannot issue full credential — not all 3 gates are complete.'); return
+  }
+  if (gatesCompleted().length === 0) {
+    logTo('sign-log','err','No gates complete yet — record at least one complete gate first.'); return
+  }
+
+  logTo('sign-log','dim','Building credential…')
+  const cred = buildCredentialObject(c, scope)
+
+  logTo('sign-log','dim','Computing contract hash…')
+  const contractHash = await sha256hex({ contractId: c.contractId, learnerDid: cred.holderDid, issuerDid: cred.issuerDid, skill: cred.skill, gates: c.gates })
+  cred.contractHash  = contractHash
+
+  const issuer  = ISSUERS[c.issuerId]
+  const learner = personBySlug(c.learnerSlug)
+  const skill   = skillBySlug(c.skillSlug)
+
+  const jwtPayload = {
+    vc: {
+      '@context': ['https://www.w3.org/2018/credentials/v1','https://rcn.wiki/credentials/sodoto/v1'],
+      type: ['VerifiableCredential','SODOTOCredential'],
+      credentialSubject: {
+        name: learner.name,
+        sodoto: {
+          skill:       skill.name,
+          skillSlug:   c.skillSlug,
+          gates:       cred.gates,
+          contractId:  c.contractId,
+          contractHash,
+          ...(cred.partial && { partial: true, gatesComplete: cred.gatesComplete, gatesOpen: cred.gatesOpen })
+        }
+      }
+    },
+    issuer: { name: issuer.label, url: issuer.url },
+    sub:    learner.did,
+    nbf:    Math.floor(Date.now() / 1000),
+    iss:    issuer.did,
+  }
+
+  logTo('sign-log','dim','Signing JWT…')
+  let jwt
+  try {
+    jwt = await signJWT(jwtPayload, privKeyHex)
+    el('sign-privkey').value = ''   // clear immediately after use
+  } catch (e) {
+    logTo('sign-log','err',`Signing failed: ${e.message}`); return
+  }
+  logTo('sign-log','ok','JWT signed.')
+  cred.jwt = jwt
+
+  // Write badge
+  const badgeId   = 'badge-' + uid()
+  const badgeItem = { type: 'sodoto-badge', id: badgeId, text: skill.name, credential: cred }
+
+  logTo('sign-log','dim',`Writing badge to ${learner.name}'s portfolio…`)
+  try {
+    await wikiPost('/api/wiki-write-badge', { site: learner.site, slug: learner.portfolioSlug, badgeItem })
+    logTo('sign-log','ok',`Badge written: ${badgeId}`)
+  } catch (e) {
+    logTo('sign-log','err',`Badge write failed: ${e.message}`); return
+  }
+
+  lastSignedCredential = cred
+
+  // Update "Students Taught" in learner's portfolio (when TeachOne is in this credential)
+  if (cred.gates.TeachOne?.completedAt && cred.gates.TeachOne?.student) {
+    logTo('sign-log','dim',`Updating Students Taught in ${learner.name}'s portfolio…`)
+    try {
+      await updateStudentsTaughtSection(
+        learner.site, learner.portfolioSlug, skill.name,
+        cred.gates.TeachOne.student, cred.gates.TeachOne.completedAt
+      )
+    } catch (e) { logTo('sign-log','err',`Students Taught update failed: ${e.message}`) }
+  }
+
+  // Update RCN SODOTO Ledger table
+  logTo('sign-log','dim','Updating ledger table in rcn-sodoto-ledger…')
+  try {
+    await updateLedgerTable(skill.name, learner, issuer, cred, cred.issuedAt)
+    logTo('sign-log','ok','Ledger table updated.')
+  } catch (e) { logTo('sign-log','err',`Ledger update failed: ${e.message}`) }
+
+  logTo('sign-log','ok',`\nDone. Badge ${badgeId} added to ${learner.portfolioSlug}.`)
+  logTo('sign-log','dim','Use "Download Credential JSON" to save a local copy.')
+}
+
+async function updateStudentsTaughtSection(site, portfolioSlug, skillName, studentData, date) {
+  const page = await wikiRead(site, portfolioSlug)
+  if (!page) { logTo('sign-log','err',`Could not read ${portfolioSlug} for Students Taught`); return }
+  const story = page.story || []
+  const headerText = `Students Taught — ${skillName}`
+
+  let headerIdx = -1
+  for (let i = 0; i < story.length; i++) {
+    if (story[i].text && story[i].text.includes(headerText)) { headerIdx = i; break }
+  }
+
+  const studentLink = studentData.portfolio
+    ? `<a href='/view/${studentData.portfolio}' style='color:#2a6b5a;text-decoration:underline;'>${studentData.name}</a>`
+    : studentData.name
+  const newRow = `<tr style='border-bottom:1px solid #ede8e0;'>`
+    + `<td style='padding:4px 8px 4px 0;'>${studentLink}</td>`
+    + `<td style='padding:4px 8px;font-size:11px;color:#555;'>${date}</td>`
+    + `<td style='padding:4px 0;font-size:11px;color:#8b1a1a;'>Open (Teach One pending)</td>`
+    + `</tr>`
+
+  if (headerIdx >= 0) {
+    for (let j = headerIdx + 1; j < story.length && j < headerIdx + 5; j++) {
+      if (story[j].text && story[j].text.includes('<table')) {
+        const newText = story[j].text.replace('</tbody></table>', newRow + '</tbody></table>')
+        await wikiPost('/api/wiki-update-item', { site, slug: portfolioSlug, itemId: story[j].id, text: newText })
+        logTo('sign-log','ok',`Students Taught — ${skillName} row added.`)
+        return
+      }
+    }
+  }
+
+  // Section not found or no table — create header + table
+  const h3HTML = `<h3 style='font-family:sans-serif;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:#4a3f35;margin:16px 0 8px;'>Students Taught — ${skillName}</h3>`
+  const tableHTML = `<table style='width:100%;border-collapse:collapse;font-family:sans-serif;font-size:13px;margin:8px 0;'>`
+    + `<thead><tr style='border-bottom:2px solid #d4c5b0;'>`
+    + `<th style='text-align:left;padding:4px 8px 6px 0;font-size:11px;color:#888;'>STUDENT</th>`
+    + `<th style='text-align:left;padding:4px 8px;font-size:11px;color:#888;'>DATE</th>`
+    + `<th style='text-align:left;padding:4px 0;font-size:11px;color:#888;'>DEBT STATUS</th>`
+    + `</tr></thead><tbody>${newRow}</tbody></table>`
+  await wikiPost('/api/wiki-add-items', {
+    site, slug: portfolioSlug,
+    items: [
+      { type: 'html', id: 'stau-' + uid(), text: h3HTML },
+      { type: 'html', id: 'stbt-' + uid(), text: tableHTML }
+    ]
+  })
+  logTo('sign-log','ok',`Students Taught — ${skillName} section created.`)
+}
+
+async function updateLedgerTable(skillName, learner, issuer, cred, date) {
+  const page = await wikiRead(WIKI_SITE, 'rcn-sodoto-ledger')
+  if (!page) { logTo('sign-log','err','Could not read rcn-sodoto-ledger'); return }
+  const story = page.story || []
+
+  // Find skill <h3> header
+  let headerIdx = -1
+  for (let i = 0; i < story.length; i++) {
+    if (story[i].text && story[i].text.includes('<h3') &&
+        story[i].text.toLowerCase().includes(skillName.toLowerCase())) {
+      headerIdx = i; break
+    }
+  }
+
+  // Build row
+  const seeOneMentor = cred.gates.SeeOne?.mentor
+  const mentorName = seeOneMentor
+    ? (typeof seeOneMentor === 'object' ? seeOneMentor.name : seeOneMentor)
+    : issuer.label.split(' ·')[0]
+  const mentorPortfolio = seeOneMentor?.portfolio || ''
+  const mentorCell = mentorPortfolio
+    ? `<a href='/view/${mentorPortfolio}' style='color:#2a6b5a;text-decoration:underline;'>${mentorName}</a>`
+    : mentorName
+  const holderCell = learner.portfolioSlug
+    ? `<a href='/view/${learner.portfolioSlug}' style='color:#2a6b5a;text-decoration:underline;'>${learner.name}</a>`
+    : learner.name
+  const doSym = cred.gates.DoOne?.completedAt    ? '✓' : '—'
+  const teSym = cred.gates.TeachOne?.completedAt ? '✓' : '—'
+  const newRow = `<tr style='border-bottom:1px solid #ede8e0;'>`
+    + `<td style='padding:4px 8px 4px 0;font-size:13px;color:#1a1208;'>${holderCell}</td>`
+    + `<td style='padding:4px 8px;font-size:11px;color:#555;'>${mentorCell}</td>`
+    + `<td style='padding:4px 8px;font-size:11px;color:#555;'>${date}</td>`
+    + `<td style='padding:4px 8px;font-size:11px;color:#555;'>${doSym}</td>`
+    + `<td style='padding:4px 8px;font-size:11px;color:#555;'>${teSym}</td>`
+    + `<td style='padding:4px 8px;font-size:11px;color:#555;'><span style='color:#8b1a1a;'>Open</span></td>`
+    + `</tr>`
+
+  if (headerIdx >= 0) {
+    for (let j = headerIdx + 1; j < story.length && j < headerIdx + 5; j++) {
+      if (story[j].text && story[j].text.includes('<table')) {
+        const newText = story[j].text.replace('</tbody></table>', newRow + '</tbody></table>')
+        await wikiPost('/api/wiki-update-item', { site: WIKI_SITE, slug: 'rcn-sodoto-ledger', itemId: story[j].id, text: newText })
+        logTo('sign-log','ok',`Ledger table row added for ${skillName}.`)
+        return
+      }
+    }
+    // Section exists but no table yet — add table after section's items
+    const tableHTML = buildLedgerTableHTML(newRow)
+    await wikiPost('/api/wiki-add-items', {
+      site: WIKI_SITE, slug: 'rcn-sodoto-ledger',
+      items: [{ type: 'html', id: 'ldgt-' + uid(), text: tableHTML }]
+    })
+    logTo('sign-log','ok',`Ledger table created for ${skillName}.`)
+    return
+  }
+
+  // No section — create h3 + summary div + table
+  const h3HTML = `<h3 style='font-family:sans-serif;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:#4a3f35;margin:16px 0 8px;'>${skillName}</h3>`
+  const summaryHTML = `<div style='font-family:sans-serif;font-size:13px;background:#f5f0eb;border-radius:6px;padding:12px 16px;margin:8px 0;'><div style='display:flex;justify-content:space-between;margin-bottom:6px;'><span style='color:#4a3f35;'>Credentials issued</span><span style='font-weight:700;color:#2a5c3f;'>1</span></div></div>`
+  const tableHTML = buildLedgerTableHTML(newRow)
+  await wikiPost('/api/wiki-add-items', {
+    site: WIKI_SITE, slug: 'rcn-sodoto-ledger',
+    items: [
+      { type: 'html', id: 'ldgh-' + uid(), text: h3HTML },
+      { type: 'html', id: 'ldgs-' + uid(), text: summaryHTML },
+      { type: 'html', id: 'ldgt-' + uid(), text: tableHTML }
+    ]
+  })
+  logTo('sign-log','ok',`Ledger section created for ${skillName}.`)
+}
+
+function buildLedgerTableHTML(rowsHTML) {
+  return `<table style='width:100%;border-collapse:collapse;font-family:sans-serif;font-size:13px;margin:8px 0;'>`
+    + `<thead><tr style='border-bottom:2px solid #d4c5b0;'>`
+    + `<th style='text-align:left;padding:4px 8px 6px 0;font-size:11px;color:#888;font-weight:600;letter-spacing:0.05em;'>Holder</th>`
+    + `<th style='text-align:left;padding:4px 8px 6px 8px;font-size:11px;color:#888;font-weight:600;letter-spacing:0.05em;'>Taught By</th>`
+    + `<th style='text-align:left;padding:4px 8px 6px 8px;font-size:11px;color:#888;font-weight:600;letter-spacing:0.05em;'>Date</th>`
+    + `<th style='text-align:left;padding:4px 8px 6px 8px;font-size:11px;color:#888;font-weight:600;letter-spacing:0.05em;'>Do One</th>`
+    + `<th style='text-align:left;padding:4px 8px 6px 8px;font-size:11px;color:#888;font-weight:600;letter-spacing:0.05em;'>Teach One</th>`
+    + `<th style='text-align:left;padding:4px 8px 6px 8px;font-size:11px;color:#888;font-weight:600;letter-spacing:0.05em;'>Debt</th>`
+    + `</tr></thead><tbody>${rowsHTML}</tbody></table>`
+}
+
+function downloadCredential() {
+  const cred = lastSignedCredential || (getContract() && buildCredentialObject(getContract(), document.querySelector('input[name=signscope]:checked').value))
+  if (!cred) { alert('No credential to download — open a contract first.'); return }
+  const blob = new Blob([JSON.stringify(cred, null, 2)], { type: 'application/json' })
+  const a    = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `${cred.contractId}.json` })
+  a.click()
+}
+
+// ─── Rendering ────────────────────────────────────────────────────────────────
+
+function renderPeople() {
+  const tbody = el('people-tbody')
+  tbody.innerHTML = ''
+  for (const p of people) {
+    const canRemove = !SEED_PEOPLE.find(s => s.slug === p.slug)
+    const tr = document.createElement('tr')
+    tr.innerHTML = `<td class="name">${p.name}</td><td>${p.slug}</td><td>${p.site}</td>`
+      + `<td title="${p.did}">…${p.did.slice(-12)}</td><td>${p.portfolioSlug}</td>`
+      + `<td>${canRemove ? `<button class="small danger" onclick="removePerson('${p.slug}')">×</button>` : ''}</td>`
+    tbody.appendChild(tr)
+  }
+}
+
+function rebuildPeopleSelects() {
+  const prevLearner = el('sel-learner').value
+  const prevMentor  = el('sel-mentor').value
+  const prevStudent = el('sel-student').value
+  for (const [id, ph, prev] of [
+    ['sel-learner','— select learner —', prevLearner],
+    ['sel-mentor', '— select mentor —',  prevMentor ],
+    ['sel-student','— select student —', prevStudent],
+  ]) {
+    const sel = el(id)
+    sel.innerHTML = `<option value="">${ph}</option>`
+    for (const p of people) {
+      const o = document.createElement('option')
+      o.value = p.slug; o.textContent = p.name
+      if (p.slug === prev) o.selected = true
+      sel.appendChild(o)
+    }
+  }
+}
+
+function renderIssuersAndSkills() {
+  const iSel = el('sel-issuer')
+  iSel.innerHTML = '<option value="">— select issuer —</option>'
+  for (const [id, iss] of Object.entries(ISSUERS)) {
+    const o = document.createElement('option')
+    o.value = id; o.textContent = iss.label
+    if (active && id === active.issuerId) o.selected = true
+    iSel.appendChild(o)
+  }
+  const sSel = el('sel-skill')
+  sSel.innerHTML = '<option value="">— select skill —</option>'
+  for (const s of SKILLS) {
+    const o = document.createElement('option')
+    o.value = s.slug; o.textContent = s.name
+    if (active && s.slug === active.skillSlug) o.selected = true
+    sSel.appendChild(o)
+  }
+}
+
+function renderGateTabs() {
+  for (const gate of GATES) {
+    const tab = el(`tab-${gate}`)
+    tab.classList.toggle('active', gate === activeGate)
+    tab.classList.toggle('done',   gateComplete(gate))
+  }
+}
+
+function renderGateStatusChips() {
+  const div = el('gate-status-chips')
+  div.innerHTML = ''
+  for (const gate of GATES) {
+    const chip = document.createElement('span')
+    chip.className = 'status-chip ' + (gateComplete(gate) ? 'chip-done' : 'chip-open')
+    chip.textContent = GATE_LABELS[gate] + (gateComplete(gate) ? ' ✓' : '')
+    div.appendChild(chip)
+  }
+}
+
+function renderContractDetail() {
+  const c = getContract()
+  if (!c) { el('contract-detail').style.display = 'none'; return }
+  el('contract-detail').style.display = 'block'
+  el('contract-id-display').textContent = c.contractId
+  renderGateTabs()
+  renderGateStatusChips()
+  renderAssertionOptions()
+  renderAttemptHistory()
+  el('gate-date').value = today()
+  el('teach-extras').style.display = activeGate === 'TeachOne' ? 'block' : 'none'
+  updateNarrativeSuggestion()
+  el('gate-log').style.display = 'none'; el('gate-log').innerHTML = ''
+}
+
+function renderSignPanel() {
+  const c = getContract()
+  if (!c) {
+    el('sign-no-contract').style.display = 'block'
+    el('sign-content').style.display = 'none'
+    return
+  }
+  el('sign-no-contract').style.display = 'none'
+  el('sign-content').style.display = 'block'
+
+  const issuer  = ISSUERS[c.issuerId]
+  const learner = personBySlug(c.learnerSlug)
+  const skill   = skillBySlug(c.skillSlug)
+  const done    = gatesCompleted()
+
+  el('sign-contract-summary').innerHTML =
+    `<strong>Contract:</strong> ${c.contractId} &nbsp;·&nbsp; `
+    + `<strong>Skill:</strong> ${skill.name} &nbsp;·&nbsp; `
+    + `<strong>Learner:</strong> ${learner.name} &nbsp;·&nbsp; `
+    + `<strong>Issuer:</strong> ${issuer.label}`
+
+  const statusDiv = el('sign-gate-status')
+  statusDiv.innerHTML = '<div class="status-row">'
+    + GATES.map(gate => {
+      const cls  = done.includes(gate) ? 'chip-done' : 'chip-open'
+      const mark = done.includes(gate) ? ' ✓' : ' ○'
+      return `<span class="status-chip ${cls}">${GATE_LABELS[gate]}${mark}</span>`
+    }).join('')
+    + '</div>'
+
+  if (done.length === 0) {
+    statusDiv.insertAdjacentHTML('beforeend','<div class="warn" style="margin-top:8px;">No gates completed yet.</div>')
+  }
+
+  const scope = document.querySelector('input[name=signscope]:checked')?.value || 'partial'
+  el('sign-preview').textContent = JSON.stringify(buildCredentialObject(c, scope), null, 2)
+  el('sign-log').style.display = 'none'; el('sign-log').innerHTML = ''
+}
+
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'))
+  el(`panel-${name}`).classList.add('active')
+  el(`nav-${name}`).classList.add('active')
+  if (name === 'sign') renderSignPanel()
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+async function init() {
+  await loadState()
+  el('add-site').value = WIKI_SITE
+  renderPeople()
+  renderIssuersAndSkills()
+  rebuildPeopleSelects()
+
+  if (active) {
+    el('sel-issuer').value  = active.issuerId
+    el('sel-skill').value   = active.skillSlug
+    el('sel-learner').value = active.learnerSlug
+    renderContractDetail()
+  }
+
+  el('add-name').addEventListener('input', () => {
+    const slug = slugify(el('add-name').value)
+    el('add-slug').value      = slug
+    el('add-portfolio').value = slug ? `${slug}-sodoto-portfolio` : ''
+  })
+
+  document.querySelectorAll('input[name=signscope]').forEach(r => {
+    r.addEventListener('change', renderSignPanel)
+  })
+
+  showPanel(active ? 'contract' : 'registry')
+}
+
+document.addEventListener('DOMContentLoaded', init)
+</script>
+</body>
+</html>

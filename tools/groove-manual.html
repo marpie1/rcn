@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<!-- Groove Workspace — User Manual
+     HOW TO UPDATE THIS FILE:
+     - Each major section is marked with a <!-- §N: comment
+     - Add new sections: copy an existing <section> block, increment the id, add a <li> to the TOC
+     - UPDATE: comments mark spots that change when features land
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Groove Workspace — User Manual</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Layout */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:240px;flex-shrink:0;background:#fff;border-right:1px solid #e2e8f0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:20px 0}
+.content{flex:1;min-width:0;padding:40px 40px 80px;max-width:800px}
+
+/* Sidebar */
+.sb-logo{font-size:12px;font-weight:700;color:#0f172a;padding:0 16px 14px;letter-spacing:.03em;border-bottom:1px solid #e2e8f0;margin-bottom:12px}
+.sb-logo span{display:block;font-size:10px;font-weight:400;color:#94a3b8;margin-top:2px}
+.sb-nav{list-style:none}
+.sb-nav li a{display:block;font-size:12px;padding:5px 16px;color:#475569;transition:background .12s;line-height:1.4}
+.sb-nav li a:hover{background:#f1f5f9;color:#1e293b;text-decoration:none}
+.sb-nav li a.active{color:#1d4ed8;background:#eff6ff}
+.sb-section-hd{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:10px 16px 4px}
+.sb-links{padding:14px 16px;border-top:1px solid #e2e8f0;margin-top:8px}
+.sb-links a{display:block;font-size:12px;color:#475569;padding:3px 0}
+
+/* Header */
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:20px;margin-bottom:36px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:6px}
+.doc-title{font-size:28px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:8px}
+.doc-sub{font-size:14px;color:#475569}
+.doc-meta{margin-top:12px;font-size:12px;color:#94a3b8}
+.version-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;background:#dbeafe;color:#1d4ed8;border-radius:10px;letter-spacing:.04em;margin-right:6px}
+
+/* Sections */
+section{margin-bottom:48px;padding-top:8px;border-top:1px solid #e2e8f0}
+section:first-of-type{border-top:none}
+h2{font-size:19px;font-weight:700;color:#0f172a;margin-bottom:14px}
+h3{font-size:14px;font-weight:700;color:#1e293b;margin:22px 0 8px}
+h4{font-size:13px;font-weight:600;color:#334155;margin:16px 0 6px}
+p{font-size:13px;margin-bottom:12px;color:#334155;line-height:1.65}
+p:last-child{margin-bottom:0}
+
+/* Steps / lists */
+ol,ul{padding-left:20px;font-size:13px;color:#334155;margin-bottom:12px}
+li{margin-bottom:5px;line-height:1.6}
+ul ul,ol ol{margin-top:4px;margin-bottom:4px}
+
+/* Key callout */
+kbd{font-family:system-ui,monospace;font-size:11px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;padding:1px 6px;color:#1e293b;white-space:nowrap}
+
+/* Code */
+code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;padding:1px 5px;border-radius:4px;color:#1e293b}
+
+/* Callouts */
+.tip{background:#f0fdf4;border-left:3px solid #22c55e;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#166534;margin:12px 0;line-height:1.55}
+.note{background:#eff6ff;border-left:3px solid #3b82f6;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#1d4ed8;margin:12px 0;line-height:1.55}
+.warn{background:#fff7ed;border-left:3px solid #f97316;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#c2410c;margin:12px 0;line-height:1.55}
+.rule{background:#fef2f2;border-left:3px solid #ef4444;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#991b1b;margin:12px 0;line-height:1.55;font-weight:600}
+
+/* Feature table */
+.feat-table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0 20px}
+.feat-table th{text-align:left;padding:7px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+.feat-table td{padding:8px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+.feat-table td:first-child{font-weight:600;color:#1e293b;white-space:nowrap}
+
+/* Section pill */
+.section-pill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#f1f5f9;color:#64748b;border-radius:8px;padding:1px 8px;margin-bottom:10px}
+
+/* UI label */
+.ui{font-size:11px;font-weight:700;background:#e0e7ff;color:#3730a3;border-radius:4px;padding:1px 6px;white-space:nowrap}
+
+/* Footer */
+.doc-footer{margin-top:48px;padding-top:20px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+
+@media(max-width:700px){
+  .sidebar{display:none}
+  .content{padding:24px 16px 60px}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR / TOC -->
+  <!-- UPDATE: add <li> entries when new sections are added -->
+  <nav class="sidebar">
+    <div class="sb-logo">Groove Workspace<span>User Manual · v0.2</span></div>
+    <ul class="sb-nav">
+      <li class="sb-section-hd">Getting Started</li>
+      <li><a href="#s1">1. Interface overview</a></li>
+      <li><a href="#s2">2. Create your identity</a></li>
+
+      <li class="sb-section-hd">Shared Care Plan</li>
+      <li><a href="#s3">3. Opening SCP sections</a></li>
+      <li><a href="#s4">4. Reading a page</a></li>
+      <li><a href="#s5">5. Editing a page</a></li>
+
+      <li class="sb-section-hd">FedWiki Pages</li>
+      <li><a href="#s6">6. Importing any FedWiki page</a></li>
+      <li><a href="#s7">7. Multiple page tabs</a></li>
+      <li><a href="#s8">8. Exporting a page</a></li>
+
+      <li class="sb-section-hd">Discussions</li>
+      <li><a href="#s9">9. Creating a discussion</a></li>
+      <li><a href="#s10">10. Posting messages</a></li>
+      <li><a href="#s11">11. Replying to a message</a></li>
+      <li><a href="#s12">12. Pinning a paragraph</a></li>
+      <li><a href="#s13">13. Lifting to page</a></li>
+      <li><a href="#s14">14. Entry-by-other rule</a></li>
+
+      <li class="sb-section-hd">Privacy</li>
+      <li><a href="#s15">15. Privacy summary</a></li>
+
+      <li class="sb-section-hd">Workflows</li>
+      <li><a href="#s16">16. Home visit workflow</a></li>
+      <li><a href="#s17">17. Care team coordination</a></li>
+    </ul>
+    <div class="sb-links">
+      <a href="groove-intro.html">← Introduction</a>
+      <a href="http://localhost:3001" target="_blank" style="margin-top:4px">Open Groove ↗</a>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+
+    <div class="doc-header">
+      <div class="doc-tag">ReLocalize Creativity Network · Shared Care Plan Project</div>
+      <h1 class="doc-title">Groove Workspace — User Manual</h1>
+      <p class="doc-sub">Step-by-step guide to all features</p>
+      <!-- UPDATE: version badge and date when tool version changes -->
+      <div class="doc-meta">
+        <span class="version-badge">v0.2</span>
+        July 2026 &nbsp;·&nbsp;
+        <a href="groove-intro.html">Introduction →</a>
+      </div>
+    </div>
+
+    <!-- §1: INTERFACE OVERVIEW -->
+    <section id="s1">
+      <div class="section-pill">Getting Started</div>
+      <h2>1. Interface overview</h2>
+      <p>
+        Open Groove at <code>http://localhost:3001</code> (or the deployed URL your team uses).
+        No installation, no account needed. The interface has two areas:
+      </p>
+      <ul>
+        <li><strong>Left sidebar</strong> — identity, SCP page templates, imported pages, discussions, and privacy. Everything you open or create starts here.</li>
+        <li><strong>Main panel</strong> — displays the currently selected page or discussion. Pages appear on the left half; discussions appear on the right half when both are open simultaneously.</li>
+      </ul>
+      <p>
+        The sidebar is divided into five sections: <span class="ui">Identity</span>,
+        <span class="ui">SCP Pages</span>, <span class="ui">FedWiki Pages</span>,
+        <span class="ui">Discussions</span>, and <span class="ui">Privacy</span>.
+      </p>
+      <div class="note">On a phone, the sidebar scrolls vertically. On a desktop, the page and discussion panels display side by side.</div>
+    </section>
+
+    <!-- §2: CREATE IDENTITY -->
+    <section id="s2">
+      <h2>2. Create your identity</h2>
+      <p>
+        Your identity is how Groove knows who you are. It is stored in your browser —
+        no account required, no password.
+      </p>
+      <ol>
+        <li>Find the <span class="ui">Identity</span> section at the top of the sidebar.</li>
+        <li>Type your name in the <strong>Your name</strong> field.</li>
+        <li>Click <strong>Create</strong> (or press <kbd>Enter</kbd>).</li>
+        <li>Your name and a short identity ID appear below the field. Your identity is now active.</li>
+      </ol>
+      <div class="tip">Your identity persists in the browser across sessions. If you clear your browser storage, you will need to create a new identity.</div>
+      <div class="note">
+        <strong>About the cryptography:</strong> Behind the scenes, Groove generates two keypairs —
+        one for signing messages (Ed25519) and one for encrypting workspace access grants (X25519).
+        You do not need to manage these. They are what make it possible for you to grant others
+        access to your workspace without giving them your keys.
+      </div>
+      <div class="warn">
+        In this version (v0.2), keypairs are generated on the server for prototype simplicity.
+        Before real deployment with patient data, key generation will move to the browser.
+        Do not store sensitive real patient data in this version.
+      </div>
+    </section>
+
+    <!-- §3: OPENING SCP SECTIONS -->
+    <section id="s3">
+      <div class="section-pill">Shared Care Plan</div>
+      <h2>3. Opening SCP sections</h2>
+      <p>
+        The <span class="ui">SCP Pages</span> section of the sidebar lists all ten sections of
+        the Shared Care Plan. Each is available as a template. Click any section name to open it:
+      </p>
+      <ul>
+        <li>If you already have a personal copy of that section, it opens immediately.</li>
+        <li>If you do not have one yet, a new page is created from the template and then opened.</li>
+      </ul>
+      <!-- UPDATE: update this list if SCP section set changes -->
+      <table class="feat-table">
+        <thead><tr><th>Section</th><th>What it contains</th></tr></thead>
+        <tbody>
+          <tr><td>About Me</td><td>Background, living situation, preferences, goals</td></tr>
+          <tr><td>Care Team</td><td>Everyone involved in your care</td></tr>
+          <tr><td>Diagnoses</td><td>Active conditions with dates and managing providers</td></tr>
+          <tr><td>Medications</td><td>Current medications, doses, prescribers, start dates</td></tr>
+          <tr><td>Reactions</td><td>Allergies and adverse reactions</td></tr>
+          <tr><td>Health Log</td><td>Timestamped vitals, symptoms, and visit notes</td></tr>
+          <tr><td>Medical History</td><td>Past events, hospitalizations, surgeries</td></tr>
+          <tr><td>Next Steps</td><td>Agreed actions and who is responsible for them</td></tr>
+          <tr><td>Advanced Directives</td><td>Wishes for care decisions you cannot make in the moment</td></tr>
+          <tr><td>Who's Accessed My Plan</td><td>Access log — who viewed what and when</td></tr>
+        </tbody>
+      </table>
+      <div class="tip">Start a new Shared Care Plan by opening <strong>About Me</strong> first. Fill it in, then work through the other sections as you go.</div>
+    </section>
+
+    <!-- §4: READING A PAGE -->
+    <section id="s4">
+      <h2>4. Reading a page</h2>
+      <p>
+        Pages are displayed in the main panel. Each page is made up of <strong>items</strong> —
+        paragraphs, structured SCP fields, images, or links to other pages.
+      </p>
+      <p>
+        Each item has a small toolbar that appears when you hover over it:
+      </p>
+      <table class="feat-table">
+        <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>📌 pin</td><td>Pins this paragraph to your next discussion message as a reference. See <a href="#s12">Section 12</a>.</td></tr>
+          <tr><td>✏️ edit</td><td>Opens the inline editor for this item. See <a href="#s5">Section 5</a>.</td></tr>
+          <tr><td>+ add paragraph</td><td>Inserts a new text paragraph after this item.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        At the top right of each page is an <strong>Export JSON</strong> link — click it to
+        download the page as FedWiki JSON with its full journal. See <a href="#s8">Section 8</a>.
+      </p>
+    </section>
+
+    <!-- §5: EDITING A PAGE -->
+    <section id="s5">
+      <h2>5. Editing a page</h2>
+      <p>
+        Any paragraph in a page can be edited directly in Groove. Click <strong>✏️ edit</strong>
+        on any item to open the inline editor.
+      </p>
+      <ol>
+        <li>Click <strong>✏️ edit</strong> on the item you want to change.</li>
+        <li>A split pane opens: the left side is a Markdown text editor, the right side shows a live preview.</li>
+        <li>Make your changes in the left pane. The preview updates as you type.</li>
+        <li>Click <strong>Save</strong> to commit the change. Click <strong>Cancel</strong> to discard.</li>
+      </ol>
+
+      <h3>Adding a new paragraph</h3>
+      <ol>
+        <li>Hover over any item to reveal its toolbar.</li>
+        <li>Click <strong>+ add paragraph</strong> to insert a new empty paragraph after it.</li>
+        <li>Type your text. Click <strong>Add</strong> to save, or <strong>Cancel</strong> to discard.</li>
+        <li>To add a paragraph at the very end of the page, use the <strong>+ add paragraph at end</strong> button at the bottom.</li>
+      </ol>
+
+      <div class="note">All edits create a new journal entry on the page. The page retains a complete history of who wrote what and when — this is how FedWiki tracks authorship.</div>
+      <div class="rule">
+        All entries written by someone other than the person of record must be marked
+        "Entry by someone else" in the discussion. Direct edits to SCP pages should only
+        be made by the person of record or their CHW with explicit permission.
+      </div>
+    </section>
+
+    <!-- §6: IMPORTING A FEDWIKI PAGE -->
+    <section id="s6">
+      <div class="section-pill">FedWiki Pages</div>
+      <h2>6. Importing any FedWiki page</h2>
+      <p>
+        Groove can import any public FedWiki page, not just SCP pages. This is useful for
+        bringing in reference materials, care resources, or pages from the community wiki.
+      </p>
+      <ol>
+        <li>In the sidebar, find the <span class="ui">FedWiki Pages</span> section.</li>
+        <li>Paste a FedWiki page URL into the <strong>FedWiki page URL</strong> field.<br>
+            Example: <code>http://ward.dojo.fed.wiki/welcome-visitors</code></li>
+        <li>Click <strong>Import</strong> (or press <kbd>Enter</kbd>).</li>
+        <li>The page appears in the <strong>FedWiki Pages</strong> list and opens in the main panel.</li>
+      </ol>
+      <div class="tip">FedWiki URLs follow the pattern <code>http://[site]/[page-slug]</code>. The slug is the page title with spaces replaced by hyphens and all lowercase.</div>
+      <div class="note">Imported pages are stored in the Groove workspace database. They do not change when the original wiki page changes — re-import to get a fresh copy.</div>
+    </section>
+
+    <!-- §7: MULTIPLE PAGE TABS -->
+    <section id="s7">
+      <h2>7. Multiple page tabs</h2>
+      <p>
+        You can have more than one page open at a time. Each page gets a tab at the top of
+        the page panel.
+      </p>
+      <ul>
+        <li>Click a page in the sidebar to open it (or switch to it if already open).</li>
+        <li>Click a tab to switch between open pages.</li>
+        <li>Click the <strong>×</strong> on a tab to close that page. The next open page becomes active.</li>
+      </ul>
+      <div class="tip">Open the Medications page and a Health Log discussion at the same time to review current medications while documenting today's visit.</div>
+    </section>
+
+    <!-- §8: EXPORTING A PAGE -->
+    <section id="s8">
+      <h2>8. Exporting a page</h2>
+      <p>
+        Any page in Groove can be exported back to FedWiki JSON format — with its full journal intact.
+      </p>
+      <ol>
+        <li>Open the page you want to export.</li>
+        <li>Click <strong>Export JSON</strong> at the top right of the page panel.</li>
+        <li>Your browser downloads a <code>.json</code> file.</li>
+        <li>To import into a FedWiki site, use the FedWiki factory or drop the JSON into the FedWiki import tool.</li>
+      </ol>
+      <div class="note">The exported file is standard FedWiki JSON. It round-trips without data loss — all items, item IDs, and journal entries are preserved.</div>
+    </section>
+
+    <!-- §9: CREATING A DISCUSSION -->
+    <section id="s9">
+      <div class="section-pill">Discussions</div>
+      <h2>9. Creating a discussion</h2>
+      <p>
+        Discussions are named conversation threads that belong to the workspace. You can create
+        as many as you need — one per care topic, per visit, or per question.
+      </p>
+      <ol>
+        <li>In the sidebar, find the <span class="ui">Discussions</span> section.</li>
+        <li>Type a name for the discussion in the <strong>Discussion name</strong> field.<br>
+            Examples: "2026-07-01 Home visit", "Medication question — Metformin", "Family check-in"</li>
+        <li>Click <strong>Create</strong> (or press <kbd>Enter</kbd>).</li>
+        <li>The discussion opens in the main panel with an empty message area and a compose box.</li>
+      </ol>
+      <div class="tip">Name discussions with a date and topic. This makes it easy to find past conversations — especially for visit notes.</div>
+    </section>
+
+    <!-- §10: POSTING MESSAGES -->
+    <section id="s10">
+      <h2>10. Posting messages</h2>
+      <ol>
+        <li>Open a discussion from the sidebar.</li>
+        <li>Click in the <strong>Write a message…</strong> text area at the bottom of the panel.</li>
+        <li>Type your message.</li>
+        <li>Click <strong>Send</strong> (or press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Enter</kbd>).</li>
+      </ol>
+      <p>
+        Your message appears in the thread with your name and a timestamp. The discussion
+        updates automatically every 5 seconds for other team members who have it open.
+      </p>
+      <div class="tip">Messages support plain text. Keep them concise — use the page editing tools when you want to add something permanent to the health record itself.</div>
+    </section>
+
+    <!-- §11: REPLYING TO A MESSAGE -->
+    <section id="s11">
+      <h2>11. Replying to a message</h2>
+      <p>
+        Groove supports threaded replies — you can reply directly to any message to keep
+        related conversations together.
+      </p>
+      <ol>
+        <li>Find the message you want to reply to.</li>
+        <li>Click the <strong>Reply</strong> button below it.</li>
+        <li>A banner appears above the compose area confirming who you are replying to.</li>
+        <li>Type your reply and click <strong>Send</strong>.</li>
+        <li>Your reply appears indented beneath the original message.</li>
+      </ol>
+      <p>To cancel a reply before sending, click the <strong>✕</strong> on the reply banner.</p>
+    </section>
+
+    <!-- §12: PINNING A PARAGRAPH -->
+    <section id="s12">
+      <h2>12. Pinning a paragraph to a message</h2>
+      <p>
+        When you want to discuss a specific part of a page, you can <strong>pin</strong> that
+        paragraph. A reference to it is automatically attached to your next message — so
+        other team members can click the reference and jump directly to that paragraph.
+      </p>
+      <ol>
+        <li>Open both a page and a discussion at the same time.</li>
+        <li>In the page, hover over the paragraph you want to reference.</li>
+        <li>Click the <strong>📌 pin</strong> button on that item.</li>
+        <li>The paragraph text appears in a yellow banner above the message compose area.</li>
+        <li>Type your message and click <strong>Send</strong>.</li>
+        <li>The sent message includes a linked reference to the pinned paragraph.</li>
+      </ol>
+      <p>
+        In the thread, other team members can click the reference to jump to that exact
+        paragraph in the page — even if they have a different page open.
+      </p>
+      <p>To unpin before sending, click the <strong>✕</strong> on the pin banner.</p>
+      <div class="tip">Use pin when you want to say "about this specific item" — for example, pinning a medication entry before asking a question about dosage changes.</div>
+    </section>
+
+    <!-- §13: LIFTING TO PAGE -->
+    <section id="s13">
+      <h2>13. Lifting a message into a page</h2>
+      <p>
+        Sometimes a message in a discussion belongs in the health record itself. The
+        <strong>↑ to page</strong> button copies a message's text into the currently open
+        page as a new paragraph at the end.
+      </p>
+      <ol>
+        <li>Make sure a page is open (it will receive the content).</li>
+        <li>Find the message you want to lift.</li>
+        <li>Click <strong>↑ to page</strong> below it.</li>
+        <li>The message text is added as a new paragraph at the end of the open page.</li>
+        <li>The author name from the message is recorded as the paragraph author in the page journal.</li>
+      </ol>
+      <div class="note">After lifting, you may want to edit the new paragraph to clean up any conversational phrasing before it becomes part of the formal health record.</div>
+      <div class="rule">
+        If the content was entered by a CHW or family member (not the person of record),
+        mark it "Entry by someone else" in the original message first. The authorship travels
+        with the content.
+      </div>
+    </section>
+
+    <!-- §14: ENTRY-BY-OTHER RULE -->
+    <section id="s14">
+      <h2>14. The "Entry by someone else" rule</h2>
+      <p>
+        This is one of the SCP's non-negotiable governance rules: every entry written by someone
+        other than the person of record must be clearly marked.
+      </p>
+      <p>
+        In Groove, every message has an <strong>"Entry by someone else"</strong> checkbox
+        in the compose area. When a CHW, family member, or anyone other than the person
+        enters something on the person's behalf, they check this box before sending.
+      </p>
+      <p>Messages marked this way are visually distinguished in the thread — a colored border
+        and an "Entered by other" label appear on the message card.</p>
+      <div class="rule">
+        Always check "Entry by someone else" when you are entering information on behalf
+        of the person of record — even if they are present and verbally agreeing. The mark
+        is about accurate authorship, not about consent.
+      </div>
+      <h3>When to use it</h3>
+      <ul>
+        <li>A CHW records vitals during a home visit</li>
+        <li>A family member describes a symptom they observed</li>
+        <li>A CHW transcribes what a person told them in conversation</li>
+        <li>Anyone enters information while the person is not using Groove themselves</li>
+      </ul>
+      <h3>When not to use it</h3>
+      <ul>
+        <li>You are the person of record entering your own information</li>
+        <li>You are the person of record describing your own experience</li>
+      </ul>
+    </section>
+
+    <!-- §15: PRIVACY -->
+    <section id="s15">
+      <div class="section-pill">Privacy</div>
+      <h2>15. Privacy summary</h2>
+      <p>
+        The <span class="ui">Privacy</span> section at the bottom of the sidebar gives the
+        person of record a view of their identity and access log.
+      </p>
+      <ol>
+        <li>Click <strong>View Privacy Summary</strong> in the sidebar.</li>
+        <li>Your identity details (display name, identity ID) appear in the main panel.</li>
+        <li>The access log shows who accessed your workspace and when.</li>
+      </ol>
+      <div class="warn">
+        The automatic access log (backend-driven, recording every page view) is not yet built.
+        In this version, access log entries in the "Who's Accessed My Plan" SCP section are
+        entered manually. Automatic logging will be completed before the Superior AZ pilot
+        goes live with real patient data.
+      </div>
+      <div class="note">
+        <strong>You must create an identity first</strong> to view the privacy summary. If you
+        click the button without an identity, Groove will prompt you to create one.
+      </div>
+    </section>
+
+    <!-- §16: HOME VISIT WORKFLOW -->
+    <section id="s16">
+      <div class="section-pill">Workflows</div>
+      <h2>16. Home visit workflow</h2>
+      <p>
+        This is the primary CHW workflow — what to do during a home visit with the person
+        on their care plan.
+      </p>
+      <ol>
+        <li><strong>Before the visit:</strong> Open Groove. Confirm your identity is set. Open the person's Medications and Health Log pages to review what's current.</li>
+        <li><strong>During the visit:</strong> Create a new discussion named with today's date and "Home visit" (e.g. <em>2026-07-01 Home visit</em>).</li>
+        <li><strong>Taking vitals:</strong> Open the Health Log page. If the CHW is entering vitals on behalf of the person, check "Entry by someone else" on every message. Pin the relevant Health Log entry to each message if referencing a specific past reading.</li>
+        <li><strong>Medication check:</strong> Open the Medications page. Pin any medication entry that needs discussion and post a message about it in the visit discussion. If a medication has changed, use ✏️ edit to update the entry — check "Entry by someone else" if the person is not entering it themselves.</li>
+        <li><strong>Agreed actions:</strong> At the end of the visit, open the Next Steps page. Add new action items. If lifted from the discussion, use ↑ to page on the relevant message, then clean up the text.</li>
+        <li><strong>After the visit:</strong> The visit discussion serves as the visit record. The updated pages serve as the current health record. Nothing gets lost.</li>
+      </ol>
+      <div class="tip">Keep the discussion open in one tab and the relevant SCP page open in another. The split-panel view lets you see both at once on a larger screen.</div>
+    </section>
+
+    <!-- §17: CARE TEAM COORDINATION -->
+    <section id="s17">
+      <h2>17. Care team coordination</h2>
+      <p>
+        When a family member or second team member needs to be involved, the discussion
+        thread is the coordination point.
+      </p>
+
+      <h3>Asking the care team a question</h3>
+      <ol>
+        <li>Create a discussion with a clear topic name (e.g. <em>Question — transportation to appointment</em>).</li>
+        <li>Pin the relevant page entry if your question is about something specific.</li>
+        <li>Post the question. Other team members see it the next time they open the discussion.</li>
+        <li>They reply in the thread. The 5-second poll picks up new replies automatically.</li>
+      </ol>
+
+      <h3>Referencing the care plan in discussion</h3>
+      <p>
+        When a discussion message refers to something in the health record:
+      </p>
+      <ol>
+        <li>Open the relevant SCP page.</li>
+        <li>Pin the specific paragraph you are referring to (📌 pin).</li>
+        <li>Type your message with the paragraph reference attached.</li>
+        <li>Other team members can click the reference in the sent message to jump directly to that paragraph.</li>
+      </ol>
+
+      <h3>Keeping the record current</h3>
+      <p>
+        Discussion is where things are figured out. Pages are where the results go. After
+        any significant discussion, review the relevant SCP pages and update them to reflect
+        what was decided — using ↑ to page or editing directly. The discussion stays as the
+        record of how you got there; the page stays as the current truth.
+      </p>
+
+      <div class="note">
+        <strong>Access grants</strong> (formally adding team members to a workspace) are managed
+        via the backend API in this version. The frontend for granting and revoking access is
+        coming in a future release.
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <div class="doc-footer">
+      <span>Groove Workspace · RCN Shared Care Plan Project</span>
+      <span>
+        <a href="groove-intro.html">← Introduction</a>
+        &nbsp;·&nbsp;
+        <a href="http://localhost:3001" target="_blank">Open Groove →</a>
+      </span>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

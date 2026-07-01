@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Graph Tool JSON to Vensim CLD</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:ui-monospace,monospace;background:#f5f4f0;color:#1a1a18;padding:2rem;min-height:100vh}
+h1{font-size:.95rem;font-weight:500;color:#555;margin-bottom:1.5rem;letter-spacing:.04em}
+.card{background:#fff;border:.5px solid #d0cfc8;border-radius:10px;padding:1.5rem;margin-bottom:1.25rem}
+label{font-size:11px;color:#777;display:block;margin-bottom:5px}
+.zone{border:1.5px dashed #bbb;border-radius:8px;padding:1.5rem;text-align:center;cursor:pointer;transition:background .15s}
+.zone:hover,.zone.drag{background:#f0efe9}
+textarea{width:100%;min-height:140px;font-family:inherit;font-size:11.5px;border:.5px solid #d0cfc8;border-radius:6px;padding:.6rem;resize:vertical;background:#faf9f6;color:#1a1a18}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:.75rem}
+button{padding:6px 14px;font-size:12px;font-family:inherit;border:.5px solid #bbb;border-radius:6px;cursor:pointer;background:transparent;color:#1a1a18;transition:background .12s}
+button:hover{background:#f0efe9}
+button.primary{background:#1a1a18;color:#f5f4f0;border-color:#1a1a18}
+button.primary:hover{background:#333}
+pre{background:#faf9f6;border:.5px solid #d0cfc8;border-radius:6px;padding:.6rem;font-size:11px;white-space:pre-wrap;word-break:break-all;max-height:320px;overflow-y:auto;color:#1a1a18}
+.badge{font-size:11px;padding:2px 8px;border-radius:20px}
+.ok{background:#e2f5e2;color:#2a7a2a}
+.err{background:#fde8e8;color:#a33}
+.stats{font-size:11px;color:#777;display:flex;gap:12px}
+.stats b{color:#1a1a18;font-weight:500}
+.sample{font-size:11px;color:#4a7fd4;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline}
+</style>
+</head>
+<body>
+<h1>Graph Tool JSON &rarr; Vensim CLD &nbsp;&middot;&nbsp; <button class="sample" id="loadSample">load sample</button></h1>
+
+<div class="card">
+  <div class="zone" id="dropzone">
+    Drop .json export from graph tool here, or click to browse
+    <input type="file" id="filein" accept=".json" style="display:none">
+  </div>
+  <div style="margin-top:8px"><label>or paste JSON</label>
+  <textarea id="jsonin" placeholder='{"version":"1.0","modelName":"My CLD","nodes":[...],"edges":[]}'></textarea></div>
+  <div class="row">
+    <button class="primary" id="convertBtn">Convert &rarr; .mdl</button>
+    <button id="clearBtn">Clear</button>
+    <span id="status"></span>
+  </div>
+</div>
+
+<div class="card" id="outCard" style="display:none">
+  <div class="stats" id="stats"></div>
+  <pre id="mdlout" style="margin-top:8px"></pre>
+  <div class="row">
+    <button class="primary" id="dlBtn">Download .mdl</button>
+    <button id="copyBtn">Copy</button>
+  </div>
+</div>
+
+<script>
+var SAMPLE = JSON.stringify({
+  version:"1.0", modelName:"Predator Prey",
+  nodes:[
+    {id:"1",label:"Prey",x:200,y:200,w:80,h:36},
+    {id:"2",label:"Predators",x:450,y:200,w:90,h:36},
+    {id:"3",label:"Prey birth rate",x:130,y:340,w:100,h:36},
+    {id:"4",label:"Predation rate",x:380,y:340,w:100,h:36}
+  ],
+  edges:[
+    {id:"e1",src:"1",tgt:"2",polarity:"+"},
+    {id:"e2",src:"2",tgt:"1",polarity:"-"},
+    {id:"e3",src:"3",tgt:"1",polarity:"+"},
+    {id:"e4",src:"4",tgt:"2",polarity:"+"},
+    {id:"e5",src:"1",tgt:"4",polarity:"+"}
+  ]
+},null,2);
+
+function convert(jsonText) {
+  var data = JSON.parse(jsonText);
+  if (!data.nodes || !data.edges) throw new Error("Missing nodes or edges");
+
+  var modelName = (data.modelName || "CLD Model").trim();
+  var nodes = data.nodes;
+  var edges = data.edges;
+
+  // Map node id -> sequential integer (1-based) for sketch
+  var nodeSeq = {};
+  nodes.forEach(function(n,i){ nodeSeq[n.id] = i+1; });
+
+  // Build inbound edges per node for A FUNCTION OF
+  var inbound = {};
+  nodes.forEach(function(n){ inbound[n.id] = []; });
+  edges.forEach(function(e){
+    if (inbound[e.tgt] !== undefined) inbound[e.tgt].push(e.src);
+  });
+
+  // CRLF line ending — matches what Vensim produces
+  var CRLF = "\r\n";
+
+  var lines = [];
+  lines.push("{UTF-8}");
+
+  // Equations — A FUNCTION OF with inputs, wrapped at ~60 chars like Vensim does
+  nodes.forEach(function(n){
+    var name = n.label || ("Node"+n.id);
+    var inputs = inbound[n.id].map(function(sid){
+      var sn = nodes[nodeSeq[sid]-1];
+      return sn ? sn.label : sid;
+    });
+    var eqn;
+    if (inputs.length === 0) {
+      eqn = name + "  = A FUNCTION OF( )";
+    } else {
+      // Wrap long input lists with Vensim's backslash continuation
+      var base = name + "  = A FUNCTION OF( ";
+      var joined = inputs.join(",");
+      if ((base+joined+")").length <= 80) {
+        eqn = base + joined + ")";
+      } else {
+        // wrap: first line gets as many as fit, rest get tab-continuation
+        var parts = [name + "  = A FUNCTION OF( " + inputs[0]];
+        for (var i=1;i<inputs.length;i++){
+          parts[parts.length-1] += ","+inputs[i];
+          if (i < inputs.length-1 && parts[parts.length-1].length > 60) {
+            parts[parts.length-1] += "\\";
+            parts.push("\t\t");
+          }
+        }
+        eqn = parts.join(CRLF) + ")";
+      }
+    }
+    lines.push(eqn);
+    lines.push("\t~\t");
+    lines.push("\t~\t\t|");
+    lines.push("");
+  });
+
+  // Control section
+  lines.push("********************************************************");
+  lines.push("\t.Control");
+  lines.push("********************************************************~");
+  lines.push("\t\tSimulation Control Parameters");
+  lines.push("\t|");
+  lines.push("");
+  lines.push("FINAL TIME  = 100");
+  lines.push("\t~\tMonth");
+  lines.push("\t~\tThe final time for the simulation.");
+  lines.push("\t|");
+  lines.push("");
+  lines.push("INITIAL TIME  = 0");
+  lines.push("\t~\tMonth");
+  lines.push("\t~\tThe initial time for the simulation.");
+  lines.push("\t|");
+  lines.push("");
+  lines.push("SAVEPER  = ");
+  lines.push("        TIME STEP");
+  lines.push("\t~\tMonth [0,?]");
+  lines.push("\t~\tThe frequency with which output is stored.");
+  lines.push("\t|");
+  lines.push("");
+  lines.push("TIME STEP  = 1");
+  lines.push("\t~\tMonth [0,?]");
+  lines.push("\t~\tThe time step for the simulation.");
+  lines.push("\t|");
+  lines.push("");
+
+  // Sketch — three backslashes, matching exact Vensim output
+  var BS3 = "\\\\\\";
+  lines.push(BS3+"---/// Sketch information - do not modify anything except names");
+  lines.push("V300  Do not put anything below this section - it will be ignored");
+  lines.push("*View 1");
+  lines.push("$192-192-192,0,Times New Roman|12||0-0-0|0-0-0|0-0-255|-1--1--1|-1--1--1|96,96,5,0");
+
+  // Nodes: type 10
+  // 10,id,name,x,y,w,h,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+  nodes.forEach(function(n,i){
+    var id = i+1;
+    var name = n.label || ("Node"+n.id);
+    var x = Math.round(n.x||0);
+    var y = Math.round(n.y||0);
+    var w = Math.round((n.w||80)/2);
+    var h = Math.round((n.h||36)/2);
+    lines.push("10,"+id+","+name+","+x+","+y+","+w+","+h+",8,3,0,0,0,0,0,0,0,0,0,0,0,0");
+  });
+
+  // Edges: type 1
+  // 1,id,srcSeq,tgtSeq,1,0,0,0,0,64,0,-1--1--1,,1|(cpx,cpy)|
+  // midpoint between src and tgt as control point
+  var edgeBase = nodes.length + 1;
+  edges.forEach(function(e,i){
+    var id = edgeBase+i;
+    var si = nodeSeq[e.src];
+    var ti = nodeSeq[e.tgt];
+    if (!si || !ti) return;
+    var sn = nodes[si-1];
+    var tn = nodes[ti-1];
+    var cpx = Math.round(((sn.x||0)+(tn.x||0))/2);
+    var cpy = Math.round(((sn.y||0)+(tn.y||0))/2);
+    // polarity encoded in position 11: 0=none, written as text flag in later field
+    // Vensim uses field index 10 for the curve flag, 11 for hidden
+    // Polarity shown as +/- label on edge via field — simplest: use 0 here,
+    // Vensim CLD polarity is shown by the arrow style set in field 8:
+    // 0=no mark, 2=negative (slash), blank=positive implied
+    // From the real file: field after 64 is always 0, polarity not in sketch line
+    lines.push("1,"+id+","+si+","+ti+",1,0,0,0,0,64,0,-1--1--1,,1|("+cpx+","+cpy+")|");
+  });
+
+  lines.push("///---"+BS3);
+  lines.push(":L<%^E!@");
+  lines.push("9:Current");
+  lines.push("23:0");
+  lines.push("15:0,0,0,0,0,0");
+  lines.push("19:5,0");
+  lines.push("27:0,");
+  lines.push("34:0,");
+  lines.push("42:1");
+  lines.push("72:0");
+  lines.push("73:0");
+  lines.push("5:"+nodes[0].label);
+  lines.push("35:Date");
+  lines.push("36:YYYY-MM-DD");
+  lines.push("37:2000");
+  lines.push("38:1");
+  lines.push("39:1");
+  lines.push("40:2");
+  lines.push("41:0");
+  lines.push("76:0");
+  lines.push("77:0");
+  lines.push("78:0");
+  lines.push("79:0");
+  lines.push("80:0");
+  lines.push("81:0");
+  lines.push("24:0");
+  lines.push("25:0");
+  lines.push("26:0");
+  lines.push("75:");
+  lines.push("43:");
+
+  return {
+    mdl: lines.join(CRLF),
+    modelName: modelName,
+    nc: nodes.length,
+    ec: edges.length
+  };
+}
+
+// UI
+var jsonin  = document.getElementById("jsonin");
+var mdlout  = document.getElementById("mdlout");
+var outCard = document.getElementById("outCard");
+var status  = document.getElementById("status");
+var stats   = document.getElementById("stats");
+var blobUrl = null;
+
+document.getElementById("loadSample").addEventListener("click",function(){jsonin.value=SAMPLE;});
+var dz=document.getElementById("dropzone");
+dz.addEventListener("click",function(){document.getElementById("filein").click();});
+dz.addEventListener("dragover",function(e){e.preventDefault();dz.classList.add("drag");});
+dz.addEventListener("dragleave",function(){dz.classList.remove("drag");});
+dz.addEventListener("drop",function(e){
+  e.preventDefault();dz.classList.remove("drag");
+  var f=e.dataTransfer.files[0];if(!f)return;
+  var r=new FileReader();r.onload=function(ev){jsonin.value=ev.target.result;};r.readAsText(f);
+});
+document.getElementById("filein").addEventListener("change",function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();r.onload=function(ev){jsonin.value=ev.target.result;};r.readAsText(f);
+});
+document.getElementById("clearBtn").addEventListener("click",function(){
+  jsonin.value="";mdlout.textContent="";outCard.style.display="none";
+  status.innerHTML="";stats.innerHTML="";
+});
+document.getElementById("convertBtn").addEventListener("click",function(){
+  var txt=jsonin.value.trim();
+  if(!txt){status.innerHTML='<span class="badge err">No input</span>';return;}
+  try{
+    var res=convert(txt);
+    mdlout.textContent=res.mdl;
+    outCard.style.display="block";
+    status.innerHTML='<span class="badge ok">Converted</span>';
+    stats.innerHTML="model: <b>"+res.modelName+"</b> &nbsp; nodes: <b>"+res.nc+"</b> &nbsp; edges: <b>"+res.ec+"</b>";
+    if(blobUrl)URL.revokeObjectURL(blobUrl);
+    var blob=new Blob([res.mdl],{type:"text/plain"});
+    blobUrl=URL.createObjectURL(blob);
+    document.getElementById("dlBtn").dataset.url=blobUrl;
+    document.getElementById("dlBtn").dataset.name=res.modelName.replace(/\s+/g,"_")+".mdl";
+  }catch(err){
+    status.innerHTML='<span class="badge err">'+err.message.slice(0,100)+'</span>';
+    outCard.style.display="none";
+  }
+});
+document.getElementById("dlBtn").addEventListener("click",function(){
+  var url=this.dataset.url,name=this.dataset.name;
+  if(!url)return;
+  var a=document.createElement("a");a.href=url;a.download=name;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+});
+document.getElementById("copyBtn").addEventListener("click",function(){
+  var b=this;
+  navigator.clipboard.writeText(mdlout.textContent).then(function(){
+    b.textContent="Copied";setTimeout(function(){b.textContent="Copy";},1500);
+  });
+});
+</script>
+</body>
+</html>

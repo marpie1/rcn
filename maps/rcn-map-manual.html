@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<!-- RCN NDC Map — User Manual
+     HOW TO UPDATE THIS FILE:
+     - Each major section is marked with a Section comment: <!-- §N: SECTION NAME -->
+     - To add a new section: copy an existing <section> block, increment the id, add a <li> to the TOC
+     - To update a section: find it by its § comment and edit the content inside
+     - UPDATE: comments mark specific spots that change with new NDCs, issues, or features
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN NDC Map — User Manual</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Layout */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:240px;flex-shrink:0;background:#fff;border-right:1px solid #e2e8f0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:20px 0}
+.content{flex:1;min-width:0;padding:40px 40px 80px;max-width:800px}
+
+/* Sidebar */
+.sb-logo{font-size:12px;font-weight:700;color:#0f172a;padding:0 16px 14px;letter-spacing:.03em;border-bottom:1px solid #e2e8f0;margin-bottom:12px}
+.sb-logo span{display:block;font-size:10px;font-weight:400;color:#94a3b8;margin-top:2px}
+.sb-nav{list-style:none}
+.sb-nav li a{display:block;font-size:12px;padding:5px 16px;color:#475569;transition:background .12s;line-height:1.4}
+.sb-nav li a:hover{background:#f1f5f9;color:#1e293b;text-decoration:none}
+.sb-nav li a.active{color:#1d4ed8;background:#eff6ff}
+.sb-section-hd{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:10px 16px 4px}
+.sb-links{padding:14px 16px;border-top:1px solid #e2e8f0;margin-top:8px}
+.sb-links a{display:block;font-size:12px;color:#475569;padding:3px 0}
+
+/* Header */
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:20px;margin-bottom:36px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:6px}
+.doc-title{font-size:28px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:8px}
+.doc-sub{font-size:14px;color:#475569}
+.doc-meta{margin-top:12px;font-size:12px;color:#94a3b8}
+
+/* Sections */
+section{margin-bottom:48px;padding-top:8px;border-top:1px solid #e2e8f0}
+section:first-of-type{border-top:none}
+h2{font-size:19px;font-weight:700;color:#0f172a;margin-bottom:14px}
+h3{font-size:14px;font-weight:700;color:#1e293b;margin:22px 0 8px}
+h4{font-size:13px;font-weight:600;color:#334155;margin:16px 0 6px}
+p{font-size:13px;margin-bottom:12px;color:#334155;line-height:1.65}
+p:last-child{margin-bottom:0}
+
+/* Steps / lists */
+ol,ul{padding-left:20px;font-size:13px;color:#334155;margin-bottom:12px}
+li{margin-bottom:5px;line-height:1.6}
+ul ul,ol ol{margin-top:4px;margin-bottom:4px}
+
+/* Key callout */
+kbd{font-family:system-ui,monospace;font-size:11px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;padding:1px 6px;color:#1e293b;white-space:nowrap}
+
+/* Code */
+code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;padding:1px 5px;border-radius:4px;color:#1e293b}
+
+/* Tip/note/warn callouts */
+.tip{background:#f0fdf4;border-left:3px solid #22c55e;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#166534;margin:12px 0;line-height:1.55}
+.note{background:#eff6ff;border-left:3px solid #3b82f6;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#1d4ed8;margin:12px 0;line-height:1.55}
+.warn{background:#fff7ed;border-left:3px solid #f97316;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#c2410c;margin:12px 0;line-height:1.55}
+
+/* Feature table */
+.feat-table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0 20px}
+.feat-table th{text-align:left;padding:7px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+.feat-table td{padding:8px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+.feat-table td:first-child{font-weight:600;color:#1e293b;white-space:nowrap}
+.feat-table td code{font-size:11px}
+
+/* Color swatch inline */
+.swatch{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:middle;margin-right:4px;flex-shrink:0}
+
+/* Section label pill */
+.section-pill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#f1f5f9;color:#64748b;border-radius:8px;padding:1px 8px;margin-bottom:10px}
+
+/* Code block */
+pre{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:14px 16px;font-size:12px;font-family:ui-monospace,monospace;color:#1e293b;overflow-x:auto;margin:12px 0 20px;line-height:1.6}
+
+/* Footer */
+.doc-footer{margin-top:48px;padding-top:20px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+
+/* Responsive */
+@media(max-width:700px){
+  .sidebar{display:none}
+  .content{padding:24px 16px 60px}
+}
+
+/* Figures */
+figure.ui-fig{margin:18px 0 24px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#f0f2f5}
+figure.ui-fig svg{display:block;width:100%;height:auto}
+figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e2e8f0;background:white;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── SIDEBAR / TOC ────────────────────────────────────────── -->
+  <!-- UPDATE: add new <li> entries here when new sections are added -->
+  <nav class="sidebar">
+    <div class="sb-logo">RCN NDC Map<span>User Manual</span></div>
+    <ul class="sb-nav">
+      <li class="sb-section-hd">Getting Started</li>
+      <li><a href="#s1">1. Interface overview</a></li>
+      <li><a href="#s2">2. Map navigation</a></li>
+      <li><a href="#s3">3. Basemap switcher</a></li>
+
+      <li class="sb-section-hd">Viewing NDCs</li>
+      <li><a href="#s4">4. Network overview</a></li>
+      <li><a href="#s5">5. NDC accordion</a></li>
+      <li><a href="#s6">6. Geographic layers</a></li>
+      <li><a href="#s7">7. Legend &amp; highlighting</a></li>
+
+      <li class="sb-section-hd">Issues</li>
+      <li><a href="#s8">8. Issue overlay</a></li>
+      <li><a href="#s9">9. Issue full map link</a></li>
+
+      <li class="sb-section-hd">Search</li>
+      <li><a href="#s10">10. OSM geocoder search</a></li>
+
+      <li class="sb-section-hd">Editing</li>
+      <li><a href="#s11">11. Adding custom location pins</a></li>
+      <li><a href="#s12">12. Correcting NDC &amp; custom pins</a></li>
+      <li><a href="#s13">13. Adding boundary layers</a></li>
+
+      <li class="sb-section-hd">Maintenance</li>
+      <li><a href="#s14">14. Adding an NDC</a></li>
+      <li><a href="#s15">15. Adding an issue</a></li>
+      <li><a href="#s16">16. Updating geographic data</a></li>
+    </ul>
+    <div class="sb-links">
+      <a href="rcn-map-intro.html">← Introduction</a>
+      <a href="rcn_map.html" style="margin-top:4px">Open the Map ↗</a>
+    </div>
+  </nav>
+
+  <!-- ── MAIN CONTENT ─────────────────────────────────────────── -->
+  <main class="content">
+
+    <!-- Header -->
+    <div class="doc-header">
+      <div class="doc-tag">ReLocalize Creativity Network</div>
+      <h1 class="doc-title">RCN NDC Map — User Manual</h1>
+      <p class="doc-sub">Complete reference for all features</p>
+      <!-- UPDATE: date when tool changes significantly -->
+      <div class="doc-meta">
+        Updated June 2026 &nbsp;·&nbsp;
+        <a href="rcn-map-intro.html">Introduction →</a>
+      </div>
+    </div>
+
+    <!-- §1: INTERFACE OVERVIEW -->
+    <section id="s1">
+      <div class="section-pill">Getting Started</div>
+      <h2>1. Interface overview</h2>
+      <p>
+        The tool is a single HTML file paired with a data file (<code>rcn_static_data.js</code>).
+        Open <code>rcn_map.html</code> in any modern browser. Both files must be in the same folder,
+        or the map will load without any NDC or geographic data.
+      </p>
+      <p>The interface has two areas:</p>
+      <ul>
+        <li><strong>Map canvas</strong> — fills the full browser window. Powered by Leaflet.</li>
+        <li><strong>Sidebar</strong> — a panel overlaid in the top-right corner. Contains the NDC list, legend, and OSM search. Scrollable when content is long.</li>
+      </ul>
+      <p>
+        Two controls appear on the map itself, top-left: a <strong>zoom control</strong> (+/−) and a
+        <strong>layer control</strong> (the stacked-layers icon) for switching basemaps.
+      </p>
+      <div class="note">The tool loads in Overview mode — all 7 NDC markers visible, map fitted to show them all. This is always the starting state.</div>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 620 290" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh1"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <!-- Map canvas -->
+          <rect x="0" y="0" width="360" height="290" fill="#ede8dc"/>
+          <!-- Contour lines -->
+          <path d="M0,80 Q80,60 180,75 Q260,88 360,70" stroke="#d4cfc0" stroke-width="0.5" fill="none"/>
+          <path d="M0,140 Q90,120 200,135 Q280,148 360,130" stroke="#d4cfc0" stroke-width="0.5" fill="none"/>
+          <path d="M0,210 Q100,190 220,205 Q300,215 360,200" stroke="#d4cfc0" stroke-width="0.5" fill="none"/>
+          <!-- Admin boundary polygon (blue) -->
+          <polygon points="40,30 290,30 310,180 160,220 30,180" fill="#378ADD" fill-opacity="0.12" stroke="#378ADD" stroke-width="1.5"/>
+          <!-- Ecological zone polygon (purple) -->
+          <polygon points="80,100 240,90 250,200 90,210" fill="#9333EA" fill-opacity="0.12" stroke="#9333EA" stroke-width="1.5"/>
+          <!-- NDC markers -->
+          <circle cx="130" cy="150" r="7" fill="#E8593C" stroke="white" stroke-width="2"/>
+          <circle cx="200" cy="120" r="7" fill="#E8593C" stroke="white" stroke-width="2"/>
+          <circle cx="260" cy="170" r="7" fill="#E8593C" stroke="white" stroke-width="2"/>
+          <circle cx="160" cy="200" r="7" fill="#E8593C" stroke="white" stroke-width="2"/>
+          <!-- Zoom control -->
+          <rect x="10" y="10" width="26" height="52" rx="3" fill="white" stroke="#ccc" stroke-width="1"/>
+          <text x="23" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#444">+</text>
+          <line x1="14" y1="36" x2="32" y2="36" stroke="#ccc" stroke-width="1"/>
+          <text x="23" y="54" text-anchor="middle" font-size="14" font-weight="700" fill="#444">−</text>
+          <!-- Layer icon -->
+          <rect x="10" y="68" width="26" height="26" rx="3" fill="white" stroke="#ccc" stroke-width="1"/>
+          <line x1="15" y1="77" x2="31" y2="77" stroke="#555" stroke-width="1.5"/>
+          <line x1="15" y1="81" x2="31" y2="81" stroke="#555" stroke-width="1.5"/>
+          <line x1="15" y1="85" x2="31" y2="85" stroke="#555" stroke-width="1.5"/>
+          <!-- Sidebar panel -->
+          <rect x="368" y="8" width="244" height="274" rx="8" fill="white" filter="url(#sh1)"/>
+          <!-- Sidebar content -->
+          <text x="384" y="32" font-size="13" font-weight="700" fill="#0f172a">RCN NDC Map</text>
+          <text x="384" y="48" font-size="10" fill="#64748b">All NDCs — click legend items...</text>
+          <!-- Search row -->
+          <rect x="384" y="56" width="168" height="22" rx="4" fill="white" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="392" y="71" font-size="10" fill="#94a3b8">Search places...</text>
+          <rect x="556" y="56" width="38" height="22" rx="4" fill="#378ADD"/>
+          <text x="575" y="71" text-anchor="middle" font-size="10" font-weight="600" fill="white">Go</text>
+          <!-- Overview button -->
+          <rect x="384" y="84" width="210" height="22" rx="4" fill="#378ADD"/>
+          <text x="489" y="99" text-anchor="middle" font-size="10" font-weight="600" fill="white">Overview — all NDCs</text>
+          <!-- Accordion items -->
+          <line x1="384" y1="112" x2="594" y2="112" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="390" y="126" font-size="9" fill="#888">▶</text>
+          <text x="402" y="126" font-size="10" fill="#475569">Leo's NDC — Superior, AZ</text>
+          <line x1="384" y1="133" x2="594" y2="133" stroke="#f1f5f9" stroke-width="1"/>
+          <text x="390" y="147" font-size="9" fill="#888">▶</text>
+          <text x="402" y="147" font-size="10" fill="#475569">The Fledge — Lansing, MI</text>
+          <line x1="384" y1="154" x2="594" y2="154" stroke="#f1f5f9" stroke-width="1"/>
+          <text x="390" y="168" font-size="9" fill="#888">▶</text>
+          <text x="402" y="168" font-size="10" fill="#475569">East Whatcom RRC — Maple Falls, WA</text>
+          <!-- Legend -->
+          <line x1="384" y1="176" x2="594" y2="176" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="384" y="190" font-size="9" font-weight="700" letter-spacing="0.06em" fill="#94a3b8">AZ</text>
+          <rect x="384" y="196" width="10" height="10" rx="1" fill="#378ADD" fill-opacity="0.7"/>
+          <text x="398" y="205" font-size="10" fill="#334155">Pinal County</text>
+          <rect x="384" y="210" width="10" height="10" rx="1" fill="#9333EA" fill-opacity="0.7"/>
+          <text x="398" y="219" font-size="10" fill="#334155">Sonoran Desert NCA</text>
+          <!-- Annotation labels -->
+          <rect x="30" y="240" width="195" height="22" rx="4" fill="#1e293b" fill-opacity="0.85"/>
+          <text x="127" y="255" text-anchor="middle" font-size="10" font-weight="600" fill="white">Map canvas — full window</text>
+          <rect x="372" y="240" width="218" height="22" rx="4" fill="#1e293b" fill-opacity="0.85"/>
+          <text x="481" y="255" text-anchor="middle" font-size="10" font-weight="600" fill="white">Sidebar — overlaid top-right</text>
+        </svg>
+        <figcaption>The tool has two areas: the map canvas fills the browser window; the sidebar floats over the top-right corner.</figcaption>
+      </figure>
+    </section>
+
+    <!-- §2: MAP NAVIGATION -->
+    <section id="s2">
+      <h2>2. Map navigation</h2>
+      <table class="feat-table">
+        <thead><tr><th>Action</th><th>How</th></tr></thead>
+        <tbody>
+          <tr><td>Pan</td><td>Click and drag anywhere on the map</td></tr>
+          <tr><td>Zoom in / out</td><td>Scroll wheel, or the + / − buttons top-left</td></tr>
+          <tr><td>Fit to all NDCs</td><td>Click <strong>Overview — all NDCs</strong> button in the sidebar</td></tr>
+          <tr><td>Fit to one NDC</td><td>Click the NDC name in the sidebar accordion — map zooms to that NDC's region</td></tr>
+          <tr><td>Open a popup</td><td>Click any marker or polygon on the map — shows name, type, and boundary source</td></tr>
+        </tbody>
+      </table>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 620 220" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh2"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <!-- Map canvas -->
+          <rect x="0" y="0" width="620" height="220" fill="#ede8dc"/>
+          <path d="M0,60 Q120,45 300,58 Q450,70 620,52" stroke="#d4cfc0" stroke-width="0.5" fill="none"/>
+          <path d="M0,120 Q140,105 320,118 Q480,130 620,112" stroke="#d4cfc0" stroke-width="0.5" fill="none"/>
+          <path d="M0,175 Q150,160 330,173 Q500,185 620,168" stroke="#d4cfc0" stroke-width="0.5" fill="none"/>
+          <!-- Zoom control -->
+          <rect x="10" y="10" width="26" height="52" rx="3" fill="white" stroke="#ccc" stroke-width="1" filter="url(#sh2)"/>
+          <text x="23" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#444">+</text>
+          <line x1="14" y1="36" x2="32" y2="36" stroke="#ccc" stroke-width="1"/>
+          <text x="23" y="54" text-anchor="middle" font-size="14" font-weight="700" fill="#444">−</text>
+          <!-- Layer icon -->
+          <rect x="10" y="68" width="26" height="26" rx="3" fill="white" stroke="#ccc" stroke-width="1" filter="url(#sh2)"/>
+          <line x1="15" y1="77" x2="31" y2="77" stroke="#555" stroke-width="1.5"/>
+          <line x1="15" y1="81" x2="31" y2="81" stroke="#555" stroke-width="1.5"/>
+          <line x1="15" y1="85" x2="31" y2="85" stroke="#555" stroke-width="1.5"/>
+          <!-- NDC marker -->
+          <circle cx="200" cy="120" r="8" fill="#E8593C" stroke="white" stroke-width="2"/>
+          <!-- Popup -->
+          <rect x="150" y="44" width="130" height="64" rx="4" fill="white" stroke="#e2e8f0" stroke-width="1" filter="url(#sh2)"/>
+          <polygon points="205,108 215,108 210,116" fill="white"/>
+          <text x="165" y="62" font-size="11" font-weight="700" fill="#0f172a">Leo's NDC</text>
+          <text x="165" y="76" font-size="9" fill="#64748b">123 Main St, Superior AZ</text>
+          <rect x="163" y="82" width="106" height="18" rx="3" fill="white" stroke="#378ADD" stroke-width="1"/>
+          <text x="216" y="94" text-anchor="middle" font-size="9" fill="#378ADD">📍 Correct location</text>
+          <!-- Labels -->
+          <rect x="44" y="8" width="38" height="16" rx="2" fill="#1e293b" fill-opacity="0.8"/>
+          <text x="63" y="19" text-anchor="middle" font-size="9" fill="white">Zoom +</text>
+          <line x1="36" y1="22" x2="44" y2="19" stroke="#1e293b" stroke-width="0.8" stroke-opacity="0.6"/>
+          <rect x="44" y="46" width="38" height="16" rx="2" fill="#1e293b" fill-opacity="0.8"/>
+          <text x="63" y="57" text-anchor="middle" font-size="9" fill="white">Zoom −</text>
+          <line x1="36" y1="50" x2="44" y2="54" stroke="#1e293b" stroke-width="0.8" stroke-opacity="0.6"/>
+          <rect x="44" y="68" width="44" height="16" rx="2" fill="#1e293b" fill-opacity="0.8"/>
+          <text x="66" y="79" text-anchor="middle" font-size="9" fill="white">Basemaps</text>
+          <line x1="36" y1="81" x2="44" y2="76" stroke="#1e293b" stroke-width="0.8" stroke-opacity="0.6"/>
+          <rect x="295" y="46" width="130" height="16" rx="2" fill="#1e293b" fill-opacity="0.8"/>
+          <text x="360" y="57" text-anchor="middle" font-size="9" fill="white">Click marker for popup</text>
+          <line x1="295" y1="54" x2="284" y2="82" stroke="#1e293b" stroke-width="0.8" stroke-opacity="0.6"/>
+        </svg>
+        <figcaption>Zoom with scroll wheel or the +/− buttons. The stacked-layers icon opens the basemap switcher. Click any NDC marker to open its popup.</figcaption>
+      </figure>
+    </section>
+
+    <!-- §3: BASEMAP SWITCHER -->
+    <section id="s3">
+      <h2>3. Basemap switcher</h2>
+      <p>
+        Click the stacked-layers icon in the top-left corner of the map to open the layer control.
+        Seven basemap options are available:
+      </p>
+      <table class="feat-table">
+        <thead><tr><th>Basemap</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Topo</strong> (default)</td><td>Terrain and elevation context — good for ecological and rural NDC sites</td></tr>
+          <tr><td><strong>Light</strong></td><td>Clean, minimal — good for presentations and screenshots</td></tr>
+          <tr><td><strong>OpenStreetMap (Voyager)</strong></td><td>Full street detail with color — good for urban NDC sites</td></tr>
+          <tr><td><strong>Satellite</strong></td><td>Aerial imagery — good for parcel-level and land-use work</td></tr>
+          <tr><td><strong>CyclOSM</strong></td><td>Cycling and paths emphasis — useful for East Whatcom and rural sites</td></tr>
+          <tr><td><strong>Transport</strong></td><td>Transit routes and stops highlighted</td></tr>
+          <tr><td><strong>Dark</strong></td><td>Low-light viewing; colored overlays stand out clearly</td></tr>
+        </tbody>
+      </table>
+      <div class="tip">Satellite basemap combined with the geographic polygon layers makes it easy to see where admin and ecological boundaries fall relative to actual land cover.</div>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 320 240" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh3"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <rect x="0" y="0" width="320" height="240" fill="#e8e4dc"/>
+          <!-- Layer panel -->
+          <rect x="20" y="20" width="240" height="200" rx="4" fill="white" stroke="#ccc" stroke-width="1" filter="url(#sh3)"/>
+          <text x="36" y="42" font-size="11" font-weight="700" fill="#555">Basemaps</text>
+          <line x1="20" y1="50" x2="260" y2="50" stroke="#e2e8f0" stroke-width="1"/>
+          <!-- Topo row — selected -->
+          <rect x="20" y="51" width="240" height="22" fill="#eff6ff"/>
+          <circle cx="38" cy="62" r="5" fill="#378ADD" stroke="#378ADD" stroke-width="1"/>
+          <text x="50" y="66" font-size="11" fill="#1e293b">Topo</text>
+          <!-- Light row -->
+          <circle cx="38" cy="84" r="5" fill="none" stroke="#ccc" stroke-width="1.5"/>
+          <text x="50" y="88" font-size="11" fill="#475569">Light</text>
+          <!-- OSM Voyager row -->
+          <circle cx="38" cy="106" r="5" fill="none" stroke="#ccc" stroke-width="1.5"/>
+          <text x="50" y="110" font-size="11" fill="#475569">OpenStreetMap (Voyager)</text>
+          <!-- Satellite row -->
+          <circle cx="38" cy="128" r="5" fill="none" stroke="#ccc" stroke-width="1.5"/>
+          <text x="50" y="132" font-size="11" fill="#475569">Satellite</text>
+          <!-- CyclOSM row -->
+          <circle cx="38" cy="150" r="5" fill="none" stroke="#ccc" stroke-width="1.5"/>
+          <text x="50" y="154" font-size="11" fill="#475569">CyclOSM</text>
+          <!-- Transport row -->
+          <circle cx="38" cy="172" r="5" fill="none" stroke="#ccc" stroke-width="1.5"/>
+          <text x="50" y="176" font-size="11" fill="#475569">Transport</text>
+          <!-- Dark row -->
+          <circle cx="38" cy="194" r="5" fill="none" stroke="#ccc" stroke-width="1.5"/>
+          <text x="50" y="198" font-size="11" fill="#475569">Dark</text>
+        </svg>
+        <figcaption>Click the stacked-layers icon top-left to open the basemap panel. Topo is the default. Satellite works well for parcel-level and land-use viewing.</figcaption>
+      </figure>
+    </section>
+
+    <!-- §4: NETWORK OVERVIEW -->
+    <section id="s4">
+      <div class="section-pill">Viewing NDCs</div>
+      <h2>4. Network overview</h2>
+      <p>
+        The <strong>Overview — all NDCs</strong> button at the top of the sidebar resets the map to
+        show all seven NDCs simultaneously. The map fits its bounds to include all NDC markers with
+        padding. This is also the initial state when the page loads.
+      </p>
+      <p>
+        In overview mode, all geographic context layers (admin boundaries, ecological zones, NDC zone
+        polygons, mineral deposits, churches) are drawn for all NDC states at once. The legend in the
+        sidebar lists all features grouped by state.
+      </p>
+      <p>
+        Click any red NDC circle marker on the map to open a popup with the NDC's name and address.
+        To zoom into an NDC's region, use the NDC accordion in the sidebar rather than clicking the marker.
+      </p>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 320 400" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh4"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <!-- Sidebar panel -->
+          <rect x="20" y="10" width="280" height="380" rx="8" fill="white" filter="url(#sh4)"/>
+          <!-- Header -->
+          <text x="36" y="36" font-size="13" font-weight="700" fill="#0f172a">RCN NDC Map</text>
+          <text x="36" y="52" font-size="10" fill="#64748b">All NDCs — click legend items to highlight</text>
+          <!-- Search row -->
+          <rect x="36" y="60" width="176" height="22" rx="4" fill="white" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="44" y="75" font-size="10" fill="#94a3b8">Search places...</text>
+          <rect x="216" y="60" width="68" height="22" rx="4" fill="#378ADD"/>
+          <text x="250" y="75" text-anchor="middle" font-size="10" font-weight="600" fill="white">Go</text>
+          <!-- Overview button -->
+          <rect x="36" y="88" width="248" height="22" rx="4" fill="#378ADD"/>
+          <text x="160" y="103" text-anchor="middle" font-size="10" font-weight="600" fill="white">Overview — all NDCs</text>
+          <!-- Divider -->
+          <line x1="36" y1="117" x2="284" y2="117" stroke="#e2e8f0" stroke-width="1"/>
+          <!-- Accordion items -->
+          <text x="44" y="131" font-size="9" fill="#888">▶</text>
+          <text x="56" y="131" font-size="10" fill="#475569">Leo's NDC — Superior, AZ</text>
+          <line x1="36" y1="138" x2="284" y2="138" stroke="#f1f5f9" stroke-width="1"/>
+          <text x="44" y="152" font-size="9" fill="#888">▶</text>
+          <text x="56" y="152" font-size="10" fill="#475569">The Fledge — Lansing, MI</text>
+          <line x1="36" y1="159" x2="284" y2="159" stroke="#f1f5f9" stroke-width="1"/>
+          <text x="44" y="173" font-size="9" fill="#888">▶</text>
+          <text x="56" y="173" font-size="10" fill="#475569">East Whatcom RRC — Maple Falls, WA</text>
+          <line x1="36" y1="180" x2="284" y2="180" stroke="#f1f5f9" stroke-width="1"/>
+          <text x="44" y="194" font-size="9" fill="#888">▶</text>
+          <text x="56" y="194" font-size="10" fill="#475569">Green Gate Farms — Austin, TX</text>
+          <line x1="36" y1="201" x2="284" y2="201" stroke="#f1f5f9" stroke-width="1"/>
+          <text x="44" y="215" font-size="9" fill="#888">▶</text>
+          <text x="56" y="215" font-size="10" fill="#475569">Green Gate Farms Bastrop — Bastrop, TX</text>
+          <line x1="36" y1="222" x2="284" y2="222" stroke="#f1f5f9" stroke-width="1"/>
+          <text x="44" y="236" font-size="9" fill="#888">▶</text>
+          <text x="56" y="236" font-size="10" fill="#475569">Carter Center Library — Atlanta, GA</text>
+          <line x1="36" y1="243" x2="284" y2="243" stroke="#f1f5f9" stroke-width="1"/>
+          <text x="44" y="257" font-size="9" fill="#888">▶</text>
+          <text x="56" y="257" font-size="10" fill="#475569">Porthmadog — Gwynedd, Wales</text>
+          <!-- Legend divider -->
+          <line x1="36" y1="265" x2="284" y2="265" stroke="#e2e8f0" stroke-width="1"/>
+          <!-- Legend -->
+          <text x="36" y="278" font-size="8" font-weight="700" letter-spacing="0.08em" fill="#94a3b8">AZ (LEO'S NDC)</text>
+          <rect x="36" y="283" width="10" height="10" rx="1" fill="#378ADD" fill-opacity="0.7"/>
+          <text x="50" y="292" font-size="10" fill="#334155">Pinal County</text>
+          <rect x="36" y="297" width="10" height="10" rx="1" fill="#9333EA" fill-opacity="0.7"/>
+          <text x="50" y="306" font-size="10" fill="#334155">Sonoran Desert NCA</text>
+          <circle cx="41" cy="316" r="4" fill="#CD7F32"/>
+          <text x="50" y="320" font-size="10" fill="#334155">3 copper deposits</text>
+          <circle cx="41" cy="330" r="5" fill="#E8593C" stroke="white" stroke-width="1"/>
+          <text x="50" y="334" font-size="10" fill="#334155">Leo's NDC</text>
+          <text x="36" y="348" font-size="8" font-weight="700" letter-spacing="0.08em" fill="#94a3b8">MI (THE FLEDGE)</text>
+          <rect x="36" y="353" width="10" height="10" rx="1" fill="#378ADD" fill-opacity="0.7"/>
+          <text x="50" y="362" font-size="10" fill="#334155">Ingham County</text>
+          <!-- Hint -->
+          <text x="160" y="380" text-anchor="middle" font-size="9" fill="#94a3b8">Click to highlight · Shift+click to multi-select</text>
+        </svg>
+        <figcaption>Overview mode shows all 7 NDCs. The legend groups features by state. Click any legend item to zoom to that feature and highlight it.</figcaption>
+      </figure>
+    </section>
+
+    <!-- §5: NDC ACCORDION -->
+    <section id="s5">
+      <h2>5. NDC accordion</h2>
+      <p>
+        Below the Overview button, the sidebar lists all NDCs as an accordion. Each row shows the
+        NDC name and location.
+      </p>
+      <ol>
+        <li>Click an NDC row to expand it. The row highlights in green and an arrow changes from ▶ to ▼.</li>
+        <li>The map zooms to fit the polygons for that NDC's state.</li>
+        <li>Geographic context layers for that state load into the map.</li>
+        <li>A legend specific to that NDC's state appears inside the accordion body.</li>
+        <li>If the NDC has any issues, an <strong>Issues</strong> sub-section appears inside the accordion.</li>
+      </ol>
+      <p>
+        Only one NDC can be expanded at a time. Clicking a second NDC collapses the first.
+        Clicking the expanded NDC again collapses it and returns to overview.
+      </p>
+      <div class="note">The per-NDC legend appears inside the accordion, not in the bottom legend area. The bottom legend area is hidden while an NDC is expanded.</div>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 320 320" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh5"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <!-- Sidebar panel -->
+          <rect x="20" y="10" width="280" height="300" rx="8" fill="white" filter="url(#sh5)"/>
+          <!-- Header abbreviated -->
+          <text x="36" y="34" font-size="13" font-weight="700" fill="#0f172a">RCN NDC Map</text>
+          <rect x="36" y="42" width="176" height="18" rx="3" fill="white" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="44" y="54" font-size="9" fill="#94a3b8">Search places...</text>
+          <rect x="216" y="42" width="68" height="18" rx="3" fill="#378ADD"/>
+          <text x="250" y="54" text-anchor="middle" font-size="9" font-weight="600" fill="white">Go</text>
+          <rect x="36" y="66" width="248" height="18" rx="3" fill="#378ADD"/>
+          <text x="160" y="78" text-anchor="middle" font-size="9" font-weight="600" fill="white">Overview — all NDCs</text>
+          <line x1="36" y1="90" x2="284" y2="90" stroke="#e2e8f0" stroke-width="1"/>
+          <!-- Leo's NDC EXPANDED -->
+          <rect x="36" y="91" width="248" height="22" rx="0" fill="#f0fdf4"/>
+          <text x="46" y="105" font-size="10" font-weight="700" fill="#166534">▼</text>
+          <text x="60" y="105" font-size="10" font-weight="700" fill="#1D9E75">Leo's NDC — Superior, AZ</text>
+          <line x1="36" y1="113" x2="284" y2="113" stroke="#e2e8f0" stroke-width="1"/>
+          <!-- Expanded body -->
+          <rect x="36" y="113" width="248" height="110" fill="#fafffe"/>
+          <!-- Issues sub-section -->
+          <text x="60" y="129" font-size="9" fill="#64748b">▶</text>
+          <text x="72" y="129" font-size="9" font-weight="700" letter-spacing="0.06em" fill="#64748b">ISSUES</text>
+          <rect x="122" y="120" width="16" height="12" rx="6" fill="#e2e8f0"/>
+          <text x="130" y="129" text-anchor="middle" font-size="8" fill="#64748b">1</text>
+          <!-- Legend inside accordion -->
+          <line x1="54" y1="138" x2="276" y2="138" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="54" y="151" font-size="8" font-weight="700" letter-spacing="0.08em" fill="#94a3b8">AZ</text>
+          <rect x="54" y="156" width="9" height="9" rx="1" fill="#378ADD" fill-opacity="0.7"/>
+          <text x="67" y="164" font-size="9" fill="#334155">Pinal County</text>
+          <rect x="54" y="169" width="9" height="9" rx="1" fill="#9333EA" fill-opacity="0.7"/>
+          <text x="67" y="177" font-size="9" fill="#334155">Sonoran Desert NCA</text>
+          <circle cx="58" cy="186" r="4" fill="#E8593C" stroke="white" stroke-width="1"/>
+          <text x="67" y="189" font-size="9" fill="#334155">Leo's NDC</text>
+          <line x1="36" y1="198" x2="284" y2="198" stroke="#e2e8f0" stroke-width="1"/>
+          <!-- The Fledge collapsed -->
+          <text x="46" y="213" font-size="9" fill="#888">▶</text>
+          <text x="60" y="213" font-size="10" fill="#475569">The Fledge — Lansing, MI</text>
+          <line x1="36" y1="220" x2="284" y2="220" stroke="#f1f5f9" stroke-width="1"/>
+          <text x="46" y="234" font-size="9" fill="#888">▶</text>
+          <text x="60" y="234" font-size="10" fill="#475569">East Whatcom RRC — Maple Falls, WA</text>
+        </svg>
+        <figcaption>Click an NDC row to expand it. The map zooms to that state's region and a local legend appears inside the accordion body.</figcaption>
+      </figure>
+    </section>
+
+    <!-- §6: GEOGRAPHIC LAYERS -->
+    <section id="s6">
+      <h2>6. Geographic layers</h2>
+      <p>
+        Each NDC has geographic context features drawn on the map. These come from
+        <code>rcn_static_data.js</code> — pre-generated from the RCN geo database.
+        Features are categorized by <code>place_type</code> and rendered in consistent colors:
+      </p>
+      <table class="feat-table">
+        <thead><tr><th>Layer type</th><th>Color</th><th>Style</th><th>What it shows</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Admin boundary</td>
+            <td><span class="swatch" style="background:#378ADD"></span>Blue</td>
+            <td>Polygon outline, 12% fill</td>
+            <td>Municipal, county, or regional administrative boundaries</td>
+          </tr>
+          <tr>
+            <td>Ecological zone</td>
+            <td><span class="swatch" style="background:#9333EA"></span>Purple</td>
+            <td>Polygon outline, 12% fill</td>
+            <td>Watershed, forest, conservation, or ecological district boundaries</td>
+          </tr>
+          <tr>
+            <td>NDC zone</td>
+            <td><span class="swatch" style="background:#E8593C"></span>Red-orange</td>
+            <td>Thicker polygon outline, 18% fill</td>
+            <td>The NDC's own operational or site boundary</td>
+          </tr>
+          <tr>
+            <td>Mineral deposit</td>
+            <td><span class="swatch" style="background:#CD7F32"></span>Bronze</td>
+            <td>Circle marker (small dot)</td>
+            <td>Copper deposit points — relevant for mining-adjacent communities (Superior AZ)</td>
+          </tr>
+          <tr>
+            <td>Church</td>
+            <td><span class="swatch" style="background:#7B5EA7"></span>Violet</td>
+            <td>Circle marker (larger, white border)</td>
+            <td>Churches — part of the community asset inventory</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Polygons are sorted largest-to-smallest before drawing so that smaller features are not
+        obscured by larger ones. Click any polygon or marker to open a popup with its name, type,
+        area (for polygons), and boundary source.
+      </p>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 620 260" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh6"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <!-- Map left half -->
+          <rect x="0" y="0" width="320" height="260" fill="#ede8dc"/>
+          <!-- Large blue admin boundary polygon -->
+          <polygon points="20,20 280,15 295,200 150,240 15,195" fill="#378ADD" fill-opacity="0.12" stroke="#378ADD" stroke-width="2"/>
+          <text x="60" y="45" font-size="10" font-weight="600" fill="#378ADD">Admin boundary</text>
+          <!-- Purple eco zone polygon -->
+          <polygon points="70,80 240,70 250,180 80,190" fill="#9333EA" fill-opacity="0.12" stroke="#9333EA" stroke-width="1.5"/>
+          <text x="100" y="100" font-size="10" font-weight="600" fill="#9333EA">Ecological zone</text>
+          <!-- NDC zone red polygon -->
+          <polygon points="110,130 180,125 185,175 105,178" fill="#E8593C" fill-opacity="0.18" stroke="#E8593C" stroke-width="2"/>
+          <text x="108" y="120" font-size="9" font-weight="600" fill="#E8593C">NDC zone</text>
+          <!-- Mineral deposits (bronze dots) -->
+          <circle cx="220" cy="140" r="5" fill="#CD7F32"/>
+          <circle cx="245" cy="155" r="5" fill="#CD7F32"/>
+          <text x="258" y="145" font-size="9" font-weight="600" fill="#CD7F32">Copper deposit</text>
+          <!-- Church marker (violet) -->
+          <circle cx="200" cy="200" r="7" fill="#7B5EA7" stroke="white" stroke-width="2"/>
+          <text x="212" y="204" font-size="9" font-weight="600" fill="#7B5EA7">Church</text>
+          <!-- NDC marker (red) -->
+          <circle cx="145" cy="150" r="7" fill="#E8593C" stroke="white" stroke-width="2"/>
+          <text x="156" y="154" font-size="9" font-weight="600" fill="#E8593C">NDC marker</text>
+          <!-- Divider -->
+          <line x1="320" y1="0" x2="320" y2="260" stroke="#e2e8f0" stroke-width="1"/>
+          <!-- Right panel — legend key -->
+          <rect x="330" y="10" width="282" height="240" rx="8" fill="white" filter="url(#sh6)"/>
+          <text x="346" y="34" font-size="12" font-weight="700" fill="#0f172a">Layer color key</text>
+          <!-- Entries -->
+          <rect x="346" y="44" width="12" height="12" rx="2" fill="#378ADD" fill-opacity="0.7"/>
+          <text x="364" y="54" font-size="11" fill="#334155">Admin boundary</text>
+          <text x="480" y="54" font-size="9" fill="#94a3b8">#378ADD</text>
+          <rect x="346" y="62" width="12" height="12" rx="2" fill="#9333EA" fill-opacity="0.7"/>
+          <text x="364" y="72" font-size="11" fill="#334155">Ecological zone</text>
+          <text x="480" y="72" font-size="9" fill="#94a3b8">#9333EA</text>
+          <rect x="346" y="80" width="12" height="12" rx="2" fill="#E8593C" fill-opacity="0.7"/>
+          <text x="364" y="90" font-size="11" fill="#334155">NDC zone</text>
+          <text x="480" y="90" font-size="9" fill="#94a3b8">#E8593C</text>
+          <circle cx="352" cy="106" r="5" fill="#CD7F32"/>
+          <text x="364" y="110" font-size="11" fill="#334155">Mineral deposit</text>
+          <text x="480" y="110" font-size="9" fill="#94a3b8">#CD7F32</text>
+          <circle cx="352" cy="124" r="6" fill="#7B5EA7" stroke="white" stroke-width="1.5"/>
+          <text x="364" y="128" font-size="11" fill="#334155">Church</text>
+          <text x="480" y="128" font-size="9" fill="#94a3b8">#7B5EA7</text>
+          <circle cx="352" cy="144" r="6" fill="#E8593C" stroke="white" stroke-width="1.5"/>
+          <text x="364" y="148" font-size="11" fill="#334155">NDC location</text>
+          <text x="480" y="148" font-size="9" fill="#94a3b8">#E8593C</text>
+        </svg>
+        <figcaption>Six layer types appear on the map. Polygons are drawn largest-first so smaller features stay visible. Click any polygon or marker to open a popup with its name and source.</figcaption>
+      </figure>
+    </section>
+
+    <!-- §7: LEGEND & HIGHLIGHTING -->
+    <section id="s7">
+      <h2>7. Legend &amp; highlighting</h2>
+      <p>
+        The legend lists all geographic features currently shown on the map, grouped by NDC state.
+        In overview mode it appears below the NDC list. In per-NDC mode it appears inside the
+        expanded accordion.
+      </p>
+
+      <h3>Single highlight</h3>
+      <ol>
+        <li>Click any legend item. That feature becomes fully opaque and highlighted; all others dim to near-invisible.</li>
+        <li>The map zooms to fit the highlighted feature.</li>
+        <li>Click the same item again to clear the highlight and restore all features.</li>
+      </ol>
+
+      <h3>Multi-select highlight</h3>
+      <ol>
+        <li>Click a legend item to highlight it.</li>
+        <li><kbd>Shift</kbd>+click additional items to add them to the selection.</li>
+        <li>The map zooms to fit all highlighted features simultaneously.</li>
+        <li><kbd>Shift</kbd>+click a highlighted item to deselect just that one.</li>
+      </ol>
+
+      <p>
+        The hint text at the bottom of the sidebar (<em>Click to highlight · Shift+click to multi-select</em>)
+        is a persistent reminder of this behavior.
+      </p>
+
+      <div class="tip">Use multi-select to compare two features — for example, select both an admin boundary and an ecological zone to see where they overlap.</div>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 320 280" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh7"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <!-- Sidebar panel -->
+          <rect x="20" y="10" width="280" height="260" rx="8" fill="white" filter="url(#sh7)"/>
+          <!-- Legend header -->
+          <text x="36" y="34" font-size="10" font-weight="700" letter-spacing="0.08em" fill="#94a3b8">AZ</text>
+          <!-- Item 1 — ACTIVE: Pinal County -->
+          <rect x="36" y="40" width="248" height="24" rx="3" fill="#dbeafe"/>
+          <rect x="42" y="46" width="11" height="11" rx="1" fill="#378ADD"/>
+          <text x="58" y="56" font-size="11" font-weight="700" fill="#1d4ed8">Pinal County</text>
+          <!-- Items 2–5 DIMMED -->
+          <g opacity="0.28">
+            <rect x="42" y="72" width="11" height="11" rx="1" fill="#9333EA" fill-opacity="0.7"/>
+            <text x="58" y="82" font-size="11" fill="#334155">Sonoran Desert NCA</text>
+            <circle cx="47" cy="100" r="5" fill="#CD7F32"/>
+            <text x="58" y="104" font-size="11" fill="#334155">3 copper deposits</text>
+            <circle cx="47" cy="120" r="5" fill="#7B5EA7" stroke="white" stroke-width="1"/>
+            <text x="58" y="124" font-size="11" fill="#334155">2 churches</text>
+            <circle cx="47" cy="140" r="6" fill="#E8593C" stroke="white" stroke-width="1.5"/>
+            <text x="58" y="144" font-size="11" fill="#334155">Leo's NDC</text>
+          </g>
+          <!-- Hint text -->
+          <text x="160" y="170" text-anchor="middle" font-size="9" fill="#94a3b8">Click to highlight · Shift+click to multi-select</text>
+          <!-- Annotation callout -->
+          <rect x="36" y="185" width="248" height="56" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1"/>
+          <text x="160" y="204" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">Active item — map zooms to fit,</text>
+          <text x="160" y="218" text-anchor="middle" font-size="10" fill="#1d4ed8">others dim</text>
+          <!-- Arrow pointing up to active item -->
+          <line x1="160" y1="185" x2="160" y2="172" stroke="#93c5fd" stroke-width="1.5" marker-end="url(#arrowblue7)"/>
+        </svg>
+        <figcaption>Clicking 'Pinal County' highlights it and dims everything else. The map zooms to fit the selected feature. Shift-click additional items to compare multiple features simultaneously.</figcaption>
+      </figure>
+    </section>
+
+    <!-- §8: ISSUE OVERLAY -->
+    <section id="s8">
+      <div class="section-pill">Issues</div>
+      <h2>8. Issue overlay</h2>
+      <p>
+        Issues are community questions, campaigns, or decisions that an NDC is engaged with — zoning
+        changes, land-use proposals, neighborhood initiatives. Each issue has parcel-level data: which
+        properties are affected and what stance each parcel holder takes.
+      </p>
+
+      <h3>Viewing an issue</h3>
+      <ol>
+        <li>Click the NDC that has the issue to expand its accordion.</li>
+        <li>If the NDC has issues, an <strong>Issues</strong> sub-section appears with a count badge.</li>
+        <li>Click <strong>Issues ▶</strong> to expand the sub-section and see the issue list.</li>
+        <li>Click an issue button (e.g., <strong>📍 Backyard Chickens</strong>) to load the issue overlay.</li>
+      </ol>
+
+      <p>The overlay draws three layers on the map:</p>
+      <table class="feat-table">
+        <thead><tr><th>Layer</th><th>Style</th><th>What it shows</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>County boundary</td>
+            <td>Purple dashed outline, 3% fill</td>
+            <td>The county containing the issue area</td>
+          </tr>
+          <tr>
+            <td>Municipality boundary</td>
+            <td>Orange dashed outline, 5% fill</td>
+            <td>The city or town boundary</td>
+          </tr>
+          <tr>
+            <td>Issue area polygon</td>
+            <td>Yellow dashed outline, 10% fill</td>
+            <td>The specific geographic area the issue concerns (neighborhood, zone, district)</td>
+          </tr>
+          <tr>
+            <td>Parcel markers</td>
+            <td>Circle markers color-coded by stance</td>
+            <td>Individual properties: <span style="color:#1a7a4a;font-weight:600">green = pro</span>, <span style="color:#c0392b;font-weight:600">red = con</span>, <span style="color:#8090b0;font-weight:600">grey = unknown</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Click any parcel marker to see its label, stance, and any notes. The map zooms to fit the
+        issue area polygon when an issue is first loaded.
+      </p>
+
+      <h3>Clearing an issue</h3>
+      <p>
+        Click the active issue button again to remove the overlay. The button highlights while the
+        issue is active.
+      </p>
+
+      <div class="note">
+        Issue data is fetched at runtime from a URL configured in the <code>ISSUE_INDEX</code>
+        array in the HTML file. If the URL is empty or unreachable, the overlay will not appear
+        and an error is logged to the browser console.
+      </div>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 320 260" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh8"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <!-- Sidebar panel -->
+          <rect x="20" y="10" width="280" height="240" rx="8" fill="white" filter="url(#sh8)"/>
+          <!-- Leo's NDC expanded header -->
+          <rect x="36" y="20" width="248" height="22" fill="#f0fdf4" rx="3"/>
+          <text x="46" y="34" font-size="10" font-weight="700" fill="#166534">▼</text>
+          <text x="60" y="34" font-size="10" font-weight="700" fill="#1D9E75">Leo's NDC — Superior, AZ</text>
+          <line x1="36" y1="42" x2="284" y2="42" stroke="#e2e8f0" stroke-width="1"/>
+          <!-- Issues sub-section expanded -->
+          <rect x="36" y="42" width="248" height="130" fill="#fafffe"/>
+          <!-- Issues header row -->
+          <text x="54" y="58" font-size="9" fill="#1D9E75">▼</text>
+          <text x="66" y="58" font-size="9" font-weight="700" letter-spacing="0.06em" fill="#64748b">ISSUES</text>
+          <rect x="108" y="48" width="18" height="13" rx="6" fill="#e2e8f0"/>
+          <text x="117" y="58" text-anchor="middle" font-size="8" fill="#64748b">1</text>
+          <!-- Issue button ACTIVE state -->
+          <rect x="54" y="66" width="214" height="28" rx="5" fill="#fef9e7" stroke="#e8c84a" stroke-width="1.5"/>
+          <text x="161" y="83" text-anchor="middle" font-size="11" font-weight="700" fill="#b8860b">📍 Backyard Chickens</text>
+          <!-- Full Issue Map link -->
+          <text x="54" y="106" font-size="10" fill="#2563eb" text-decoration="underline">→ Open full Issue Map</text>
+          <!-- NDC legend below -->
+          <line x1="36" y1="118" x2="284" y2="118" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="36" y="132" font-size="8" font-weight="700" letter-spacing="0.08em" fill="#94a3b8">AZ</text>
+          <rect x="36" y="137" width="9" height="9" rx="1" fill="#378ADD" fill-opacity="0.7"/>
+          <text x="50" y="145" font-size="9" fill="#334155">Pinal County</text>
+          <circle cx="41" cy="155" r="5" fill="#E8593C" stroke="white" stroke-width="1"/>
+          <text x="50" y="159" font-size="9" fill="#334155">Leo's NDC</text>
+          <!-- Annotation -->
+          <rect x="192" y="63" width="100" height="26" rx="4" fill="#fef3c7" stroke="#f59e0b" stroke-width="1"/>
+          <text x="242" y="74" text-anchor="middle" font-size="9" fill="#92400e">Active issue —</text>
+          <text x="242" y="85" text-anchor="middle" font-size="9" fill="#92400e">button turns gold</text>
+          <line x1="192" y1="76" x2="168" y2="76" stroke="#f59e0b" stroke-width="1"/>
+        </svg>
+        <figcaption>Click an issue button to load parcel-level data on the map. The button turns gold while active. Click again to clear the overlay.</figcaption>
+      </figure>
+    </section>
+
+    <!-- §9: ISSUE FULL MAP LINK -->
+    <section id="s9">
+      <h2>9. Issue full map link</h2>
+      <p>
+        When an issue is active (its overlay is showing), a link appears below the issue button:
+        <strong>→ Open full Issue Map</strong>. This opens <code>issue-polygon-map.html</code>
+        for that specific issue in a new tab.
+      </p>
+      <p>
+        The issue-polygon-map.html tool is the editing environment for issues: it lets you draw
+        and edit parcel polygons, record stances and notes, import and export GeoJSON, and switch
+        basemaps. The NDC map is read-only — all editing happens in the issue-polygon-map.
+      </p>
+      <p>
+        The link is only active if a <code>map</code> URL is configured in the issue's
+        <code>ISSUE_INDEX</code> entry. If no map URL is set, the link appears greyed out.
+      </p>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 320 120" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh9"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <rect x="0" y="0" width="320" height="120" fill="white"/>
+          <!-- Issue button active -->
+          <rect x="20" y="14" width="240" height="32" rx="5" fill="#fef9e7" stroke="#e8c84a" stroke-width="1.5"/>
+          <text x="140" y="34" text-anchor="middle" font-size="12" font-weight="700" fill="#b8860b">📍 Backyard Chickens</text>
+          <!-- Link row -->
+          <text x="20" y="68" font-size="11" fill="#2563eb" text-decoration="underline">→ Open full Issue Map</text>
+          <!-- Annotation box -->
+          <rect x="196" y="58" width="108" height="26" rx="4" fill="#eff6ff" stroke="#93c5fd" stroke-width="1"/>
+          <text x="250" y="69" text-anchor="middle" font-size="9" fill="#1d4ed8">Opens issue-polygon-</text>
+          <text x="250" y="80" text-anchor="middle" font-size="9" fill="#1d4ed8">map.html for editing</text>
+          <line x1="196" y1="71" x2="188" y2="67" stroke="#93c5fd" stroke-width="1"/>
+        </svg>
+        <figcaption>The link to the full Issue Map appears only while an issue is active. It opens the editing tool for that issue in a new tab.</figcaption>
+      </figure>
+    </section>
+
+    <!-- §10: OSM GEOCODER SEARCH -->
+    <section id="s10">
+      <div class="section-pill">Search</div>
+      <h2>10. OSM geocoder search</h2>
+      <p>
+        A search bar at the top of the sidebar lets you find any location worldwide using the
+        OpenStreetMap Nominatim geocoder.
+      </p>
+      <ol>
+        <li>Type any address, place name, or landmark in the search field.</li>
+        <li>Press <kbd>Enter</kbd> or click <strong>Go</strong>.</li>
+        <li>Up to 5 results appear in a dropdown below the field.</li>
+        <li>Click any result — the map flies to that location and drops a blue marker.</li>
+      </ol>
+      <p>
+        The search marker stays on the map until you search for something else or reload the page.
+        Only one search marker exists at a time — a new search replaces the previous marker.
+      </p>
+      <p>
+        Clearing the search field hides the results dropdown immediately.
+        Clicking anywhere outside the search box also closes the dropdown.
+      </p>
+      <div class="note">Nominatim search requires an internet connection — it is the one feature that does not work offline. NDC data, geographic layers, and issue data (if bundled) work offline.</div>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 320 240" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh10"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <!-- Sidebar panel -->
+          <rect x="20" y="10" width="280" height="220" rx="8" fill="white" filter="url(#sh10)"/>
+          <text x="36" y="34" font-size="13" font-weight="700" fill="#0f172a">RCN NDC Map</text>
+          <!-- Search box with text -->
+          <rect x="36" y="42" width="176" height="24" rx="4" fill="white" stroke="#378ADD" stroke-width="1.5"/>
+          <text x="44" y="57" font-size="11" fill="#1e293b">Superior AZ</text>
+          <rect x="216" y="42" width="68" height="24" rx="4" fill="#378ADD"/>
+          <text x="250" y="57" text-anchor="middle" font-size="10" font-weight="600" fill="white">Go</text>
+          <!-- Results dropdown -->
+          <rect x="36" y="68" width="248" height="128" rx="4" fill="white" stroke="#e2e8f0" stroke-width="1" filter="url(#sh10)"/>
+          <!-- Result 1 highlighted -->
+          <rect x="36" y="68" width="248" height="30" rx="4" fill="#dbeafe"/>
+          <text x="44" y="82" font-size="10" font-weight="600" fill="#1d4ed8">Superior, Pinal County, Arizona, United States</text>
+          <line x1="36" y1="98" x2="284" y2="98" stroke="#f1f5f9" stroke-width="1"/>
+          <!-- Result 2 -->
+          <text x="44" y="112" font-size="10" fill="#475569">Superior, Wisconsin, United States</text>
+          <line x1="36" y1="120" x2="284" y2="120" stroke="#f1f5f9" stroke-width="1"/>
+          <!-- Result 3 -->
+          <text x="44" y="134" font-size="10" fill="#475569">Superior Court, Phoenix, Arizona...</text>
+          <line x1="36" y1="142" x2="284" y2="142" stroke="#f1f5f9" stroke-width="1"/>
+          <!-- Result 4 -->
+          <text x="44" y="156" font-size="10" fill="#475569">Superior Way, Tucson...</text>
+          <!-- Hint -->
+          <text x="160" y="210" text-anchor="middle" font-size="9" fill="#94a3b8">Click a result to fly the map to that location</text>
+        </svg>
+        <figcaption>Type any place name and press Enter or click Go. Up to 5 results appear. Click a result to fly to that location and drop a blue marker.</figcaption>
+      </figure>
+    </section>
+
+    <!-- §11: ADDING CUSTOM LOCATION PINS -->
+    <section id="s11">
+      <div class="section-pill">Editing</div>
+      <h2>11. Adding custom location pins</h2>
+      <p>The <strong>+ Add location</strong> button lets you drop a named pin anywhere on the map. Pins are saved in your browser and appear alongside NDC markers in the legend.</p>
+
+      <h3>How to add a location</h3>
+      <ol>
+        <li>Click <strong>+ Add location</strong> in the sidebar. A green banner appears; cursor becomes a crosshair.</li>
+        <li>Click anywhere on the map — including over polygon overlays. A small form appears near the click point.</li>
+        <li>Type a name for the location and click <strong>Add</strong> (or press <kbd>Enter</kbd>).</li>
+        <li>A sky-blue circle marker appears at the clicked position. It is added to the legend under "Custom locations" with a + badge.</li>
+      </ol>
+
+      <h3>Correcting or removing a custom pin</h3>
+      <p>Click the sky-blue marker to open its popup. <strong>📍 Correct location</strong> lets you reposition it (same crosshair flow as NDC corrections). <strong>Remove</strong> deletes it.</p>
+
+      <h3>Persisting your pins</h3>
+      <p>Custom pins are saved to localStorage. To export them as JSON (for permanent backup or sharing), open <strong>Add boundary layer → Saved</strong> and click <strong>Export locations</strong>.</p>
+
+      <div class="note">Custom pins are per-browser. Opening the map in a different browser will not show your pins unless you re-import from an exported JSON.</div>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 500 180" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh11a"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+
+          <!-- Panel 1: sidebar button -->
+          <rect x="10" y="20" width="145" height="140" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="82" y="40" text-anchor="middle" font-size="9" font-weight="700" fill="#64748b">Step 1: click button</text>
+          <rect x="22" y="52" width="121" height="26" rx="4" fill="#2563eb"/>
+          <text x="82" y="68" text-anchor="middle" font-size="10" font-weight="600" fill="white">+ Add location</text>
+          <!-- Green banner -->
+          <rect x="22" y="86" width="121" height="32" rx="4" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
+          <text x="82" y="100" text-anchor="middle" font-size="8" font-weight="600" fill="#166534">Click on the map to</text>
+          <text x="82" y="112" text-anchor="middle" font-size="8" fill="#166534">place your pin.</text>
+          <text x="82" y="148" text-anchor="middle" font-size="8" fill="#94a3b8">cursor → crosshair</text>
+
+          <!-- Arrow 1 -->
+          <text x="162" y="95" font-size="18" fill="#94a3b8">→</text>
+
+          <!-- Panel 2: form popup -->
+          <rect x="175" y="20" width="145" height="140" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="247" y="40" text-anchor="middle" font-size="9" font-weight="700" fill="#64748b">Step 2: name the pin</text>
+          <!-- Map area -->
+          <rect x="187" y="52" width="121" height="68" rx="3" fill="#ede8dc"/>
+          <!-- Small form popup -->
+          <rect x="205" y="56" width="103" height="60" rx="4" fill="white" stroke="#e2e8f0" stroke-width="1" filter="url(#sh11a)"/>
+          <rect x="211" y="64" width="85" height="18" rx="3" fill="white" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="219" y="76" font-size="9" fill="#94a3b8">Name this place…</text>
+          <rect x="211" y="86" width="38" height="16" rx="3" fill="#2563eb"/>
+          <text x="230" y="97" text-anchor="middle" font-size="8" font-weight="600" fill="white">Add</text>
+          <rect x="253" y="86" width="40" height="16" rx="3" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="273" y="97" text-anchor="middle" font-size="8" fill="#475569">Cancel</text>
+
+          <!-- Arrow 2 -->
+          <text x="327" y="95" font-size="18" fill="#94a3b8">→</text>
+
+          <!-- Panel 3: legend entry -->
+          <rect x="345" y="20" width="145" height="140" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="417" y="40" text-anchor="middle" font-size="9" font-weight="700" fill="#64748b">Step 3: pin in legend</text>
+          <!-- Map with sky-blue marker -->
+          <rect x="357" y="52" width="121" height="40" rx="3" fill="#ede8dc"/>
+          <circle cx="415" cy="72" r="8" fill="#38bdf8" stroke="white" stroke-width="2"/>
+          <!-- Legend entry -->
+          <rect x="357" y="98" width="121" height="52" rx="3" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="365" y="112" font-size="8" font-weight="700" letter-spacing="0.07em" fill="#94a3b8">CUSTOM LOCATIONS</text>
+          <circle cx="368" cy="124" r="5" fill="#38bdf8" stroke="white" stroke-width="1.5"/>
+          <text x="378" y="128" font-size="9" fill="#334155">My pin name</text>
+          <rect x="436" y="118" width="12" height="12" rx="6" fill="#dbeafe"/>
+          <text x="442" y="128" text-anchor="middle" font-size="8" font-weight="700" fill="#1d4ed8">+</text>
+        </svg>
+        <figcaption>Click '+ Add location', click anywhere on the map, type a name and click Add. The sky-blue marker appears on the map and in the legend under Custom locations.</figcaption>
+      </figure>
+    </section>
+
+    <!-- §12: CORRECTING NDC LOCATIONS AND CUSTOM PINS -->
+    <section id="s12">
+      <div class="section-pill">Editing</div>
+      <h2>12. Correcting NDC locations and custom pins</h2>
+      <p>NDC marker positions come from the static data file, and custom pin positions are set when you first place them. If either appears in the wrong spot you can correct it directly in the map without editing any files. Corrections are saved in your browser and applied automatically every time you open the map.</p>
+      <h3>How to correct a location</h3>
+      <ol>
+        <li>Click a red NDC marker or a sky-blue custom location marker on the map to open its popup.</li>
+        <li>Click <strong>📍 Correct location</strong> in the popup.</li>
+        <li>A yellow banner appears at the top of the sidebar. The map cursor changes to a crosshair.</li>
+        <li>Click the correct position on the map. The marker moves immediately.</li>
+      </ol>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 620 200" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh12"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <!-- Panel 1 -->
+          <rect x="10" y="20" width="175" height="160" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="97" y="40" text-anchor="middle" font-size="9" font-weight="700" fill="#64748b">Step 1: click button in popup</text>
+          <!-- Popup mockup -->
+          <rect x="30" y="52" width="135" height="80" rx="4" fill="white" stroke="#e2e8f0" stroke-width="1" filter="url(#sh12)"/>
+          <polygon points="85,132 97,132 91,140" fill="white"/>
+          <text x="44" y="70" font-size="11" font-weight="700" fill="#0f172a">Leo's NDC</text>
+          <text x="44" y="84" font-size="9" fill="#64748b">123 Main St, Superior AZ</text>
+          <rect x="40" y="92" width="118" height="18" rx="3" fill="white" stroke="#378ADD" stroke-width="1"/>
+          <text x="99" y="104" text-anchor="middle" font-size="9" fill="#378ADD">📍 Correct location</text>
+          <!-- NDC marker below popup -->
+          <circle cx="91" cy="148" r="7" fill="#E8593C" stroke="white" stroke-width="2"/>
+          <!-- Arrow 1 -->
+          <text x="200" y="105" font-size="18" fill="#94a3b8">→</text>
+          <!-- Panel 2 -->
+          <rect x="222" y="20" width="175" height="160" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="309" y="40" text-anchor="middle" font-size="9" font-weight="700" fill="#64748b">Step 2: click map to place</text>
+          <!-- Yellow banner -->
+          <rect x="234" y="52" width="151" height="44" rx="4" fill="#fef3c7" stroke="#f59e0b" stroke-width="1"/>
+          <text x="309" y="67" text-anchor="middle" font-size="8" font-weight="600" fill="#92400e">Click on the map to set the</text>
+          <text x="309" y="78" text-anchor="middle" font-size="8" fill="#92400e">correct location for Leo's NDC.</text>
+          <rect x="334" y="82" width="40" height="10" rx="2" fill="white" stroke="#d97706" stroke-width="1"/>
+          <text x="354" y="90" text-anchor="middle" font-size="7" fill="#d97706">Cancel</text>
+          <!-- Map area with crosshair -->
+          <rect x="234" y="102" width="151" height="64" rx="3" fill="#ede8dc"/>
+          <text x="309" y="134" text-anchor="middle" font-size="20" fill="#475569" font-weight="300">+</text>
+          <text x="309" y="152" text-anchor="middle" font-size="8" fill="#94a3b8">crosshair cursor</text>
+          <!-- Arrow 2 -->
+          <text x="412" y="105" font-size="18" fill="#94a3b8">→</text>
+          <!-- Panel 3 -->
+          <rect x="434" y="20" width="175" height="160" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="521" y="40" text-anchor="middle" font-size="9" font-weight="700" fill="#64748b">Step 3: correction saved</text>
+          <!-- Popup with confirmation -->
+          <rect x="454" y="52" width="135" height="80" rx="4" fill="white" stroke="#e2e8f0" stroke-width="1" filter="url(#sh12)"/>
+          <polygon points="515,132 527,132 521,140" fill="white"/>
+          <text x="467" y="70" font-size="11" font-weight="700" fill="#0f172a">Leo's NDC</text>
+          <text x="467" y="84" font-size="9" fill="#166534" font-weight="600">✓ Location corrected —</text>
+          <text x="467" y="96" font-size="9" fill="#166534"><tspan font-style="italic" text-decoration="underline">reset</tspan></text>
+          <!-- NDC marker at new position -->
+          <circle cx="521" cy="148" r="7" fill="#E8593C" stroke="white" stroke-width="2"/>
+        </svg>
+        <figcaption>Click '📍 Correct location' in any NDC or custom location marker popup. A yellow banner appears and the cursor becomes a crosshair. Click the correct position on the map. The marker moves and the correction is saved to browser storage.</figcaption>
+      </figure>
+
+      <h3>Resetting a correction</h3>
+      <p>Open the corrected marker's popup — it shows "✓ Location corrected — <u>reset</u>". Click <strong>reset</strong> to remove the correction and restore the original position. You can also find all corrections in the <strong>Add boundary layer → Saved</strong> tab and remove them there.</p>
+      <h3>Saving corrections permanently</h3>
+      <p>Corrections live in your browser's localStorage. To commit them permanently to the repository, open <strong>Add boundary layer → Saved</strong> and click <strong>Export corrections</strong>. This downloads a JSON file you can give to whoever maintains <code>rcn_static_data.js</code> so the fix goes into the source data.</p>
+      <div class="note">Corrections are per-browser. If you open the map in a different browser or on a different machine, the correction won't be there until the source data is updated or the correction is applied again.</div>
+    </section>
+
+    <!-- §13: ADDING BOUNDARY LAYERS -->
+    <section id="s13">
+      <div class="section-pill">Editing</div>
+      <h2>13. Adding boundary layers</h2>
+      <p>The <strong>Add boundary layer</strong> panel at the bottom of the sidebar lets you add any polygon boundary to the map — a county, city limit, watershed, national forest, or any custom area. Added layers appear in the legend with a green <strong>U</strong> badge, support highlighting, and persist across page reloads.</p>
+      <p>Click <strong>Add boundary layer ▶</strong> at the bottom of the sidebar to expand the panel. Three tabs are available.</p>
+
+      <h3>Search OSM tab</h3>
+      <p>Finds real boundary polygons directly from OpenStreetMap for any named jurisdiction.</p>
+      <ol>
+        <li>Type a place name in the search field (e.g. <em>Pinal County AZ</em>, <em>Ingham County Michigan</em>, <em>Cascade River State Forest</em>).</li>
+        <li>Click <strong>Search</strong>. Results that have actual polygon boundaries appear in the list — point-only results are filtered out.</li>
+        <li>Click a result to preview the polygon on the map (shown in green dashes).</li>
+        <li>A form appears pre-filled with the name. Adjust the name, type, and state group if needed, then click <strong>Add to map</strong>.</li>
+      </ol>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 320 380" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh12a"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <!-- Sidebar panel -->
+          <rect x="20" y="10" width="280" height="360" rx="8" fill="white" filter="url(#sh12a)"/>
+          <!-- Section header -->
+          <text x="36" y="34" font-size="10" font-weight="700" letter-spacing="0.06em" fill="#64748b">▼  ADD BOUNDARY LAYER</text>
+          <line x1="36" y1="42" x2="284" y2="42" stroke="#e2e8f0" stroke-width="1"/>
+          <!-- Tab row -->
+          <rect x="36" y="50" width="82" height="22" rx="3" fill="#378ADD"/>
+          <text x="77" y="64" text-anchor="middle" font-size="10" font-weight="600" fill="white">Search OSM</text>
+          <rect x="122" y="50" width="72" height="22" rx="3" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="158" y="64" text-anchor="middle" font-size="10" fill="#475569">Ask Claude</text>
+          <rect x="198" y="50" width="48" height="22" rx="3" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="222" y="64" text-anchor="middle" font-size="10" fill="#475569">Saved</text>
+          <!-- OSM tab content -->
+          <!-- Search row -->
+          <rect x="36" y="80" width="176" height="22" rx="4" fill="white" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="44" y="94" font-size="10" fill="#1e293b">Pinal County AZ</text>
+          <rect x="216" y="80" width="68" height="22" rx="4" fill="#378ADD"/>
+          <text x="250" y="94" text-anchor="middle" font-size="10" font-weight="600" fill="white">Search</text>
+          <!-- Results list -->
+          <rect x="36" y="108" width="248" height="80" rx="4" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+          <!-- Result 1 selected -->
+          <rect x="36" y="108" width="248" height="24" rx="4" fill="#dbeafe"/>
+          <text x="44" y="122" font-size="10" font-weight="600" fill="#1d4ed8">Pinal County, Arizona, United States</text>
+          <line x1="36" y1="132" x2="284" y2="132" stroke="#f1f5f9" stroke-width="1"/>
+          <text x="44" y="148" font-size="10" fill="#475569">Pinal County Jail, Florence...</text>
+          <line x1="36" y1="156" x2="284" y2="156" stroke="#f1f5f9" stroke-width="1"/>
+          <text x="44" y="172" font-size="10" fill="#475569">Pinal Ave, Casa Grande...</text>
+          <!-- Add form box -->
+          <rect x="36" y="194" width="248" height="134" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+          <!-- Name field -->
+          <text x="44" y="212" font-size="9" font-weight="700" fill="#64748b">NAME</text>
+          <rect x="44" y="218" width="228" height="20" rx="3" fill="white" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="52" y="231" font-size="10" fill="#1e293b">Pinal County</text>
+          <!-- Type field -->
+          <text x="44" y="250" font-size="9" font-weight="700" fill="#64748b">TYPE</text>
+          <rect x="44" y="256" width="228" height="20" rx="3" fill="white" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="52" y="269" font-size="10" fill="#1e293b">Admin boundary</text>
+          <text x="264" y="269" font-size="9" fill="#94a3b8">▼</text>
+          <!-- State group field -->
+          <text x="44" y="288" font-size="9" font-weight="700" fill="#64748b">STATE / GROUP</text>
+          <rect x="44" y="294" width="228" height="20" rx="3" fill="white" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="52" y="307" font-size="10" fill="#1e293b">AZ — Superior</text>
+          <text x="264" y="307" font-size="9" fill="#94a3b8">▼</text>
+          <!-- Buttons -->
+          <rect x="44" y="320" width="108" height="20" rx="4" fill="#378ADD"/>
+          <text x="98" y="333" text-anchor="middle" font-size="10" font-weight="600" fill="white">Add to map</text>
+          <rect x="158" y="320" width="60" height="20" rx="4" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="188" y="333" text-anchor="middle" font-size="10" fill="#475569">Cancel</text>
+        </svg>
+        <figcaption>Search for any named place. Results that have polygon boundaries appear in the list. Click a result to preview it on the map and fill in the form. Click 'Add to map' to save it permanently.</figcaption>
+      </figure>
+
+      <div class="tip">OSM has polygon boundaries for most US counties, cities, national forests, parks, watersheds, and many other named areas. If a search returns no polygon results, try a more specific name or check the Ask Claude tab.</div>
+
+      <h3>Ask Claude tab</h3>
+      <p>For boundaries that aren't in OpenStreetMap — custom districts, informal areas, boundaries from other sources — use the Claude prompt helper.</p>
+      <ol>
+        <li>Describe the boundary you need (e.g. <em>Superior AZ city limits</em>, <em>the Tonto National Forest boundary near Superior AZ</em>).</li>
+        <li>Click <strong>Build prompt</strong>. A formatted prompt appears.</li>
+        <li>Click <strong>Copy prompt</strong>, go to claude.ai, start a new conversation, and paste.</li>
+        <li>Copy Claude's JSON response and paste it into the response field.</li>
+        <li>Click <strong>Import polygon</strong>.</li>
+      </ol>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 320 300" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh12b"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <!-- Sidebar panel -->
+          <rect x="20" y="10" width="280" height="280" rx="8" fill="white" filter="url(#sh12b)"/>
+          <!-- Section header -->
+          <text x="36" y="34" font-size="10" font-weight="700" letter-spacing="0.06em" fill="#64748b">▼  ADD BOUNDARY LAYER</text>
+          <line x1="36" y1="42" x2="284" y2="42" stroke="#e2e8f0" stroke-width="1"/>
+          <!-- Tab row -->
+          <rect x="36" y="50" width="82" height="22" rx="3" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="77" y="64" text-anchor="middle" font-size="10" fill="#475569">Search OSM</text>
+          <rect x="122" y="50" width="72" height="22" rx="3" fill="#378ADD"/>
+          <text x="158" y="64" text-anchor="middle" font-size="10" font-weight="600" fill="white">Ask Claude</text>
+          <rect x="198" y="50" width="48" height="22" rx="3" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="222" y="64" text-anchor="middle" font-size="10" fill="#475569">Saved</text>
+          <!-- Hint text -->
+          <text x="36" y="84" font-size="9" fill="#94a3b8">Describe the boundary you need. Claude will return GeoJSON...</text>
+          <!-- Input + button row -->
+          <rect x="36" y="92" width="156" height="22" rx="4" fill="white" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="44" y="106" font-size="10" fill="#1e293b">Superior AZ city limits</text>
+          <rect x="196" y="92" width="78" height="22" rx="4" fill="#378ADD"/>
+          <text x="235" y="106" text-anchor="middle" font-size="10" font-weight="600" fill="white">Build prompt</text>
+          <!-- Generated prompt textarea -->
+          <rect x="36" y="120" width="248" height="60" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="44" y="134" font-size="8" font-family="ui-monospace,monospace" fill="#475569">I need a boundary polygon for a Leaflet web map.</text>
+          <text x="44" y="146" font-size="8" font-family="ui-monospace,monospace" fill="#475569">Location: Superior AZ city limits</text>
+          <text x="44" y="158" font-size="8" font-family="ui-monospace,monospace" fill="#94a3b8">Return as GeoJSON Polygon or MultiPolygon...</text>
+          <!-- Copy button + copied -->
+          <rect x="36" y="186" width="80" height="18" rx="3" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="76" y="198" text-anchor="middle" font-size="9" fill="#475569">Copy prompt</text>
+          <text x="126" y="198" font-size="9" font-weight="700" fill="#166534">Copied ✓</text>
+          <!-- Paste hint -->
+          <text x="36" y="218" font-size="9" fill="#64748b">Paste Claude's response below:</text>
+          <!-- Response textarea -->
+          <rect x="36" y="224" width="248" height="30" rx="4" fill="white" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="44" y="238" font-size="9" fill="#94a3b8">{"type":"Feature","geometry":{"type":"Polygon"...</text>
+          <!-- Import button -->
+          <rect x="36" y="260" width="108" height="20" rx="4" fill="#378ADD"/>
+          <text x="90" y="273" text-anchor="middle" font-size="10" font-weight="600" fill="white">Import polygon</text>
+        </svg>
+        <figcaption>Describe the boundary in plain language, click 'Build prompt', copy the formatted prompt to Claude.ai, then paste Claude's JSON response back and click 'Import polygon'.</figcaption>
+      </figure>
+
+      <div class="note">Claude generates approximate polygon coordinates — good for visual reference and orientation on the map. For precise legal or regulatory boundaries, use the OSM search or import an authoritative GeoJSON file.</div>
+
+      <h3>Saved tab</h3>
+      <p>Lists all user-added polygons and location corrections. Click <strong>×</strong> next to any entry to remove it. Use <strong>Export JSON</strong> to download your polygons as a file, and <strong>Export corrections</strong> to download location corrections — both can be committed to the repository.</p>
+    </section>
+
+    <!-- §14: ADDING AN NDC -->
+    <section id="s14">
+      <div class="section-pill">Maintenance</div>
+      <h2>14. Adding an NDC</h2>
+      <p>
+        New NDC locations are added by editing the <code>NDC_LIST</code> array near the bottom of
+        <code>rcn_map.html</code>. Each entry takes three fields:
+      </p>
+      <pre>{ name: "NDC Name",   state: 'XX',  label: "NDC Name — City, State" }</pre>
+      <table class="feat-table">
+        <thead><tr><th>Field</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>name</code></td><td>Exact name as it appears in the geographic data. Must match the <code>name</code> property of the NDC's entry in <code>RCN_NDCS</code> (the static data file).</td></tr>
+          <tr><td><code>state</code></td><td>Two-letter state/country code used to group features. Must match the <code>state</code> field in the geographic data.</td></tr>
+          <tr><td><code>label</code></td><td>Display text in the sidebar accordion — typically "NDC Name — City, State".</td></tr>
+        </tbody>
+      </table>
+      <div class="warn">
+        Adding an NDC to <code>NDC_LIST</code> only affects the sidebar. For the NDC to appear on the
+        map, its point location and geographic context layers must also be added to the geo database
+        and <code>rcn_static_data.js</code> must be regenerated. See section 16.
+      </div>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 540 180" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh13"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <!-- Dark code panel -->
+          <rect x="0" y="0" width="540" height="180" rx="8" fill="#1e293b"/>
+          <!-- Label -->
+          <text x="14" y="18" font-size="9" fill="#94a3b8">rcn_map.html — NDC_LIST array</text>
+          <!-- Code lines -->
+          <text x="14" y="40" font-size="11" font-family="ui-monospace,monospace" fill="#94a3b8">const NDC_LIST = [</text>
+          <text x="14" y="58" font-size="11" font-family="ui-monospace,monospace" fill="#94a3b8">  { name: "Leo's NDC",  state: 'AZ',  label: "Leo's NDC — Superior, AZ" },</text>
+          <text x="14" y="76" font-size="11" font-family="ui-monospace,monospace" fill="#94a3b8">  { name: "The Fledge", state: 'MI',  label: "The Fledge — Lansing, MI" },</text>
+          <text x="14" y="94" font-size="11" font-family="ui-monospace,monospace" fill="#94a3b8">  ...</text>
+          <!-- Highlighted line -->
+          <rect x="0" y="102" width="540" height="22" rx="0" fill="#2d3748"/>
+          <text x="14" y="117" font-size="11" font-family="ui-monospace,monospace" fill="#e2e8f0">  { name: "New NDC",    state: 'XX',  label: "New NDC — City, State" }</text>
+          <text x="420" y="117" font-size="10" fill="#fbbf24">← add new entry here</text>
+          <text x="14" y="138" font-size="11" font-family="ui-monospace,monospace" fill="#94a3b8">];</text>
+        </svg>
+        <figcaption>Add a new row to NDC_LIST in rcn_map.html. The name must exactly match the NDC's name in rcn_static_data.js. The state code groups the NDC with its geographic layers.</figcaption>
+      </figure>
+    </section>
+
+    <!-- §15: ADDING AN ISSUE -->
+    <section id="s15">
+      <div class="section-pill">Maintenance</div>
+      <h2>15. Adding an issue</h2>
+      <p>
+        Issues are community questions mapped to specific parcels — zoning decisions, land-use
+        campaigns, access gaps. The <strong>New issue</strong> panel lets you create one using
+        Claude as a research assistant, with no file editing required as long as sofi-proxy is running.
+      </p>
+
+      <h3>Prerequisites</h3>
+      <p>
+        sofi-proxy must be running (<code>python3 sofi-proxy.py</code> from <code>~/rcn/</code>).
+        The map must be opened via <code>http://localhost:8765/maps/rcn_map.html</code>, not
+        <code>file://</code>.
+      </p>
+
+      <h3>How to add an issue (UI workflow)</h3>
+      <ol>
+        <li>Scroll to the bottom of the sidebar and expand <strong>New issue</strong>.</li>
+        <li>Fill in the issue title, select the NDC from the dropdown, and describe the issue — what ordinance, land-use question, or access gap is involved. Optionally list known addresses and their stances.</li>
+        <li>Click <strong>Build Claude prompt</strong>. A formatted prompt appears in the text area.</li>
+        <li>Click <strong>Copy prompt</strong>. Open <a href="https://claude.ai" target="_blank">claude.ai</a> in another tab, paste the prompt, and send it.</li>
+        <li>Claude returns a JSON object. Copy the entire JSON response.</li>
+        <li>Back in the map, paste the JSON into the response box and click <strong>Import issue</strong>.</li>
+        <li>The issue is written to disk and the issue index is updated. The NDC accordion updates immediately — expand the selected NDC to see the new issue listed.</li>
+        <li>Click the issue name to load its polygon and parcel markers on the map.</li>
+        <li>Click <strong>→ Open full Issue Map</strong> to open issue-polygon-map.html for refining parcel boundaries and stances.</li>
+      </ol>
+
+      <div class="note">sofi-proxy must be running for the Import button to work. If you get an error, paste the JSON response into a Claude Code session and ask Claude to write the file — it will write directly to <code>tools/issue-data/</code> and update <code>issue-index.json</code> without needing the proxy.</div>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 560 200" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh15a"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.12)"/></filter>
+          </defs>
+          <rect x="0" y="0" width="560" height="200" fill="#f8fafc"/>
+          <!-- Box 1 -->
+          <rect x="10" y="60" width="120" height="68" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#sh15a)"/>
+          <text x="70" y="88" text-anchor="middle" font-size="10" font-weight="700" fill="#0f172a">New issue panel</text>
+          <text x="70" y="103" text-anchor="middle" font-size="9" fill="#64748b">fill in title,</text>
+          <text x="70" y="116" text-anchor="middle" font-size="9" fill="#64748b">NDC, description</text>
+          <!-- Arrow 1 -->
+          <line x1="130" y1="94" x2="148" y2="94" stroke="#94a3b8" stroke-width="2"/>
+          <polygon points="144,89 154,94 144,99" fill="#94a3b8"/>
+          <!-- Box 2 -->
+          <rect x="154" y="60" width="120" height="68" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#sh15a)"/>
+          <text x="214" y="88" text-anchor="middle" font-size="10" font-weight="700" fill="#0f172a">Build prompt</text>
+          <text x="214" y="103" text-anchor="middle" font-size="9" fill="#64748b">copy → paste into</text>
+          <text x="214" y="116" text-anchor="middle" font-size="9" fill="#64748b">claude.ai</text>
+          <!-- Arrow 2 -->
+          <line x1="274" y1="94" x2="292" y2="94" stroke="#94a3b8" stroke-width="2"/>
+          <polygon points="288,89 298,94 288,99" fill="#94a3b8"/>
+          <!-- Box 3 -->
+          <rect x="298" y="60" width="120" height="68" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#sh15a)"/>
+          <text x="358" y="88" text-anchor="middle" font-size="10" font-weight="700" fill="#0f172a">Copy JSON</text>
+          <text x="358" y="103" text-anchor="middle" font-size="9" fill="#64748b">paste response →</text>
+          <text x="358" y="116" text-anchor="middle" font-size="9" fill="#64748b">Import issue</text>
+          <!-- Arrow 3 -->
+          <line x1="418" y1="94" x2="436" y2="94" stroke="#94a3b8" stroke-width="2"/>
+          <polygon points="432,89 442,94 432,99" fill="#94a3b8"/>
+          <!-- Box 4 -->
+          <rect x="442" y="60" width="108" height="68" rx="8" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5" filter="url(#sh15a)"/>
+          <text x="496" y="88" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">Issue appears</text>
+          <text x="496" y="103" text-anchor="middle" font-size="9" fill="#1d4ed8">in NDC accordion</text>
+          <text x="496" y="116" text-anchor="middle" font-size="9" fill="#1d4ed8">+ map</text>
+        </svg>
+        <figcaption>The four-step flow: fill in the panel, build and paste the prompt into claude.ai, paste the JSON response back, click Import — the issue appears on the map immediately.</figcaption>
+      </figure>
+
+      <h3>What Claude generates</h3>
+      <p>
+        The prompt asks Claude for a JSON object with: meta information (title, community, NDC,
+        description, date), an issue polygon (approximate lat/lng coordinates around the affected
+        area), and a list of parcels with stances (pro/con/unknown). Claude estimates coordinates
+        from its knowledge of the area. Refine them later in issue-polygon-map.html.
+      </p>
+      <pre>{
+  "meta": { "id", "title", "community", "ndc", "coordinator", "date", "status", "description" },
+  "issue": { "centroid": [lat, lng], "polygon": [[lat,lng], ...] },
+  "parcels": [{ "id", "label", "latLng": [lat,lng], "stance": "pro/con/unknown", "notes" }]
+}</pre>
+
+      <h3>Refining an issue in the editing tool</h3>
+      <p>
+        After importing, click <strong>→ Open full Issue Map</strong> next to the issue name.
+        This opens issue-polygon-map.html, which lets you: drag parcel markers to correct
+        positions, edit stances and notes, draw or adjust polygons, and export the refined JSON.
+        Save the exported JSON back to <code>tools/issue-data/{key}.json</code> to update what
+        the map loads.
+      </p>
+
+      <h3>The issue-index.json file</h3>
+      <p>
+        All issues are registered in <code>tools/issue-data/issue-index.json</code>. The Import
+        button updates it automatically. To remove an issue, delete its entry from that file and
+        remove the JSON file from <code>tools/issue-data/</code>. To add an issue from a
+        different source (e.g., a JSON file you built manually in issue-polygon-map.html), add
+        an entry to issue-index.json directly:
+      </p>
+      <pre>{ "key": "az--my-issue", "label": "My Issue", "ndc": "Leo's NDC",
+  "url": "http://localhost:8765/tools/issue-data/az--my-issue.json",
+  "map": "http://localhost:8765/tools/issue-polygon-map.html?issue=az--my-issue" }</pre>
+      <div class="note">Issue index and data files live in <code>tools/issue-data/</code>. They are served by sofi-proxy and loaded fresh each time the map opens. There is no need to rebuild <code>rcn_static_data.js</code> for issues.</div>
+    </section>
+
+    <!-- §16: UPDATING GEOGRAPHIC DATA -->
+    <section id="s16">
+      <h2>16. Updating geographic data</h2>
+      <p>
+        The map's geographic layers — admin boundaries, ecological zones, NDC zone polygons, mineral
+        deposits, and churches — come from <code>rcn_static_data.js</code> in the <code>maps/</code>
+        folder. This file is auto-generated and should not be edited by hand.
+      </p>
+
+      <h3>Data files</h3>
+      <table class="feat-table">
+        <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>maps/rcn_static_data.js</code></td>
+            <td>Generated output — all geographic features as a JavaScript file. Exports two variables: <code>RCN_PLACES</code> (GeoJSON FeatureCollection of all place features) and <code>RCN_NDCS</code> (GeoJSON FeatureCollection of NDC point locations).</td>
+          </tr>
+          <tr>
+            <td><code>maps/generate_static_data.py</code></td>
+            <td>Python script that queries the RCN geo database and writes <code>rcn_static_data.js</code>. Run this whenever the source database changes.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Regenerating the static data</h3>
+      <ol>
+        <li>Update the source geo database with any new features, boundary changes, or new NDC locations.</li>
+        <li>Run <code>python3 maps/generate_static_data.py</code> from the <code>rcn/</code> root directory.</li>
+        <li>The script overwrites <code>maps/rcn_static_data.js</code>.</li>
+        <li>Reload <code>rcn_map.html</code> in the browser — new features appear immediately.</li>
+      </ol>
+
+      <h3>Feature properties</h3>
+      <p>Each feature in <code>RCN_PLACES</code> needs these properties to render correctly:</p>
+      <table class="feat-table">
+        <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>name</code></td><td>string</td><td>Display name (shown in popups and legend)</td></tr>
+          <tr><td><code>state</code></td><td>string</td><td>State/country code — groups features in the legend (AZ, MI, WA, TX, GA, WLS)</td></tr>
+          <tr><td><code>place_type</code></td><td>string</td><td>One of: <code>admin_boundary</code>, <code>ecological_zone</code>, <code>ndc_zone</code>, <code>mineral_deposit</code>, <code>church</code></td></tr>
+          <tr><td><code>area_mi2</code></td><td>number</td><td>Area in square miles — used for polygon draw order (largest drawn first)</td></tr>
+          <tr><td><code>boundary_source</code></td><td>string</td><td>Attribution shown in popups (e.g., "OpenStreetMap", "USGS")</td></tr>
+        </tbody>
+      </table>
+      <p>Each feature in <code>RCN_NDCS</code> needs:</p>
+      <table class="feat-table">
+        <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>name</code></td><td>string</td><td>NDC name — must match the <code>name</code> field in <code>NDC_LIST</code></td></tr>
+          <tr><td><code>state</code></td><td>string</td><td>State/country code — used to filter NDC markers in per-NDC view</td></tr>
+          <tr><td><code>address</code></td><td>string</td><td>Street address shown in the marker popup</td></tr>
+        </tbody>
+      </table>
+      <div class="note">The geometry for <code>RCN_NDCS</code> features must be GeoJSON <code>Point</code> type with coordinates in <code>[longitude, latitude]</code> order (GeoJSON standard).</div>
+
+      <figure class="ui-fig">
+        <svg viewBox="0 0 500 140" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh15"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)"/></filter>
+          </defs>
+          <rect x="0" y="0" width="500" height="140" fill="white"/>
+          <!-- Box 1: Geo database -->
+          <rect x="10" y="30" width="100" height="52" rx="6" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1.5" filter="url(#sh15)"/>
+          <text x="60" y="52" text-anchor="middle" font-size="11" font-weight="700" fill="#1e293b">Geo database</text>
+          <text x="60" y="67" text-anchor="middle" font-size="9" fill="#64748b">source of truth</text>
+          <!-- Arrow 1 -->
+          <line x1="110" y1="56" x2="132" y2="56" stroke="#94a3b8" stroke-width="2"/>
+          <polygon points="128,51 138,56 128,61" fill="#94a3b8"/>
+          <!-- Box 2: generate script -->
+          <rect x="138" y="30" width="118" height="52" rx="6" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5" filter="url(#sh15)"/>
+          <text x="197" y="50" text-anchor="middle" font-size="10" font-weight="700" fill="#1e293b">generate_static_</text>
+          <text x="197" y="63" text-anchor="middle" font-size="10" font-weight="700" fill="#1e293b">data.py</text>
+          <text x="197" y="76" text-anchor="middle" font-size="9" fill="#1d4ed8">run to rebuild</text>
+          <!-- Arrow 2 -->
+          <line x1="256" y1="56" x2="278" y2="56" stroke="#94a3b8" stroke-width="2"/>
+          <polygon points="274,51 284,56 274,61" fill="#94a3b8"/>
+          <!-- Box 3: rcn_static_data.js -->
+          <rect x="284" y="30" width="108" height="52" rx="6" fill="#dcfce7" stroke="#86efac" stroke-width="1.5" filter="url(#sh15)"/>
+          <text x="338" y="52" text-anchor="middle" font-size="10" font-weight="700" fill="#1e293b">rcn_static_data.js</text>
+          <text x="338" y="67" text-anchor="middle" font-size="9" fill="#166534">5.5 MB data file</text>
+          <!-- Arrow 3 -->
+          <line x1="392" y1="56" x2="412" y2="56" stroke="#94a3b8" stroke-width="2"/>
+          <polygon points="408,51 418,56 408,61" fill="#94a3b8"/>
+          <!-- Box 4: rcn_map.html -->
+          <rect x="418" y="30" width="72" height="52" rx="6" fill="#ffedd5" stroke="#fdba74" stroke-width="1.5" filter="url(#sh15)"/>
+          <text x="454" y="52" text-anchor="middle" font-size="10" font-weight="700" fill="#1e293b">rcn_map.html</text>
+          <text x="454" y="67" text-anchor="middle" font-size="9" fill="#c2410c">loads on open</text>
+        </svg>
+        <figcaption>When NDC boundaries change in the source database, run generate_static_data.py to rebuild rcn_static_data.js. The map loads the rebuilt file automatically on next open — no other steps needed.</figcaption>
+      </figure>
+    </section>
+
+    <!-- Footer -->
+    <div class="doc-footer">
+      <span>RCN NDC Map · Open source · Free by design</span>
+      <span>
+        <a href="rcn-map-intro.html">← Introduction</a>
+        &nbsp;·&nbsp;
+        <a href="rcn_map.html">Open the Map →</a>
+      </span>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>
