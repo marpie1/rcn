@@ -29,20 +29,22 @@ function SystemGrid({ variables, roles }) {
   const meanAS = n ? variables.reduce((s, v) => s + (roles[v.id]?.AS ?? 0), 0) / n : 0;
   const meanPS = n ? variables.reduce((s, v) => s + (roles[v.id]?.PS ?? 0), 0) / n : 0;
 
-  const px = as => PAD + (as / maxAS) * pw;
-  const py = ps => H - PAD - (ps / maxPS) * ph;
-  const mx = px(meanAS);
-  const my = py(meanPS);
+  // X = PS (passive), Y = AS (active) — gives: Active=upper-left, Critical=upper-right,
+  // Passive=lower-right, Buffering=lower-left
+  const px = ps => PAD + (ps / maxPS) * pw;
+  const py = as => H - PAD - (as / maxAS) * ph;
+  const mx = px(meanPS);
+  const my = py(meanAS);
 
   return (
     <div>
       <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>System Grid</div>
       <svg width={W} height={H} style={{ border: "1px solid #e5e7eb", borderRadius: 6, background: "white", display: "block" }}>
-        {/* Quadrant shading */}
-        <rect x={PAD} y={PAD}  width={mx - PAD}      height={my - PAD}      fill="#bfdbfe" opacity="0.25" />
+        {/* Quadrant shading: upper-left=Active, upper-right=Critical, lower-left=Buffering, lower-right=Passive */}
+        <rect x={PAD} y={PAD}  width={mx - PAD}      height={my - PAD}      fill="#fed7aa" opacity="0.25" />
         <rect x={mx}  y={PAD}  width={W - PAD - mx}  height={my - PAD}      fill="#fca5a5" opacity="0.25" />
         <rect x={PAD} y={my}   width={mx - PAD}      height={H - PAD - my}  fill="#e5e7eb" opacity="0.4"  />
-        <rect x={mx}  y={my}   width={W - PAD - mx}  height={H - PAD - my}  fill="#fed7aa" opacity="0.25" />
+        <rect x={mx}  y={my}   width={W - PAD - mx}  height={H - PAD - my}  fill="#bfdbfe" opacity="0.25" />
         {/* Mean lines */}
         <line x1={mx} y1={PAD} x2={mx} y2={H - PAD} stroke="#94a3b8" strokeWidth="1" strokeDasharray="4,3" />
         <line x1={PAD} y1={my} x2={W - PAD} y2={my} stroke="#94a3b8" strokeWidth="1" strokeDasharray="4,3" />
@@ -50,22 +52,22 @@ function SystemGrid({ variables, roles }) {
         <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="#374151" strokeWidth="1.5" />
         <line x1={PAD} y1={PAD}     x2={PAD}     y2={H - PAD} stroke="#374151" strokeWidth="1.5" />
         {/* Axis labels */}
-        <text x={W / 2} y={H - 5} textAnchor="middle" fontSize="10" fill="#64748b" fontFamily="Arial,sans-serif">AS (Active Sum)</text>
-        <text x={11} y={H / 2} textAnchor="middle" fontSize="10" fill="#64748b" fontFamily="Arial,sans-serif" transform={`rotate(-90,11,${H / 2})`}>PS (Passive Sum)</text>
+        <text x={W / 2} y={H - 5} textAnchor="middle" fontSize="10" fill="#64748b" fontFamily="Arial,sans-serif">PS (Passive Sum) →</text>
+        <text x={11} y={H / 2} textAnchor="middle" fontSize="10" fill="#64748b" fontFamily="Arial,sans-serif" transform={`rotate(-90,11,${H / 2})`}>← AS (Active Sum)</text>
         {/* Quadrant labels */}
-        <text x={PAD + 5} y={PAD + 12}   fontSize="9" fill="#1e3a5f" opacity="0.7" fontFamily="Arial,sans-serif">Passive</text>
-        <text x={W-PAD-4} y={PAD + 12}   fontSize="9" fill="#7f1d1d" opacity="0.7" textAnchor="end" fontFamily="Arial,sans-serif">Critical</text>
+        <text x={PAD + 5} y={PAD + 12}   fontSize="9" fill="#7c2d12" opacity="0.8" fontFamily="Arial,sans-serif">Active</text>
+        <text x={W-PAD-4} y={PAD + 12}   fontSize="9" fill="#7f1d1d" opacity="0.8" textAnchor="end" fontFamily="Arial,sans-serif">Critical</text>
         <text x={PAD + 5} y={H-PAD - 5}  fontSize="9" fill="#374151" opacity="0.6" fontFamily="Arial,sans-serif">Buffering</text>
-        <text x={W-PAD-4} y={H-PAD - 5}  fontSize="9" fill="#7c2d12" opacity="0.7" textAnchor="end" fontFamily="Arial,sans-serif">Active</text>
-        {/* Points */}
+        <text x={W-PAD-4} y={H-PAD - 5}  fontSize="9" fill="#1e3a5f" opacity="0.7" textAnchor="end" fontFamily="Arial,sans-serif">Passive</text>
+        {/* Points — plotted at (PS, AS) */}
         {variables.map(v => {
           const r = roles[v.id];
           if (!r) return null;
           const meta = ROLE_META[r.role ?? "buffering"];
           return (
             <g key={v.id}>
-              <circle cx={px(r.AS)} cy={py(r.PS)} r={11} fill={meta.bg} stroke={meta.border} strokeWidth="1.5" />
-              <text x={px(r.AS)} y={py(r.PS) + 4} textAnchor="middle" fontSize="9" fontWeight="bold" fill={meta.text} fontFamily="Arial,sans-serif">{v.number}</text>
+              <circle cx={px(r.PS)} cy={py(r.AS)} r={11} fill={meta.bg} stroke={meta.border} strokeWidth="1.5" />
+              <text x={px(r.PS)} y={py(r.AS) + 4} textAnchor="middle" fontSize="9" fontWeight="bold" fill={meta.text} fontFamily="Arial,sans-serif">{v.number}</text>
             </g>
           );
         })}
