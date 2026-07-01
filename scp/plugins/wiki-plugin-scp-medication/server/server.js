@@ -8,7 +8,9 @@ var clientFile = path.join(__dirname, '..', 'client', 'scp-medication.js');
 var aliasTypes = [
   'scp-vital', 'scp-symptom', 'scp-visit',
   'scp-about', 'scp-provider', 'scp-diagnosis', 'scp-reaction',
-  'scp-history', 'scp-next-step', 'scp-directive', 'scp-access'
+  'scp-history', 'scp-next-step', 'scp-directive', 'scp-access',
+  'scp-controls', 'scp-previsit', 'scp-log-entry', 'scp-care-member', 'scp-vital-chart',
+  'scp-factory'
 ];
 
 module.exports = {
