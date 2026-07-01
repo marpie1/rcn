@@ -6,8 +6,9 @@ import { computeRoles, buildSFDJSON, getNote, setNote } from "../store.js";
 
 const CELL_SIZE = 34;
 
-const SCORE_BG   = ["#f3f4f6", "#bfdbfe", "#3b82f6", "#1e3a8a"];
-const SCORE_TEXT = ["#9ca3af", "#1e40af", "#ffffff",  "#ffffff"];
+// null = blank (not yet evaluated), 0-3 = scored
+const scoreBg   = s => s === null ? "#ffffff" : s === 0 ? "#f1f5f9" : s === 1 ? "#bfdbfe" : s === 2 ? "#3b82f6" : "#1e3a8a";
+const scoreText = s => s === null ? "#d1d5db" : s === 0 ? "#9ca3af" : s === 1 ? "#1e40af" : "#ffffff";
 
 const ROLE_META = {
   critical:  { bg: "#fca5a5", border: "#dc2626", text: "#7f1d1d", label: "Critical"  },
@@ -83,11 +84,17 @@ export default function ImpactMatrix({ variables, matrix, setMatrix, modelName, 
     );
   }
 
-  const getScore = (srcId, tgtId) => matrix?.[srcId]?.[tgtId] ?? 0;
+  // null = not yet evaluated; undefined key also reads as null
+  const getScore = (srcId, tgtId) => {
+    const v = matrix?.[srcId]?.[tgtId];
+    return v === undefined ? null : v;
+  };
 
+  // cycle: null → 0 → 1 → 2 → 3 → null
   const cycleScore = (srcId, tgtId) => {
     if (srcId === tgtId) return;
-    const next = (getScore(srcId, tgtId) + 1) % 4;
+    const cur  = getScore(srcId, tgtId);
+    const next = cur === null ? 0 : cur === 3 ? null : cur + 1;
     setMatrix(prev => ({ ...prev, [srcId]: { ...prev?.[srcId], [tgtId]: next } }));
   };
 
@@ -157,8 +164,8 @@ export default function ImpactMatrix({ variables, matrix, setMatrix, modelName, 
                   return (
                     <td key={tgt.id} onClick={() => cycleScore(src.id, tgt.id)}
                       title={isDiag ? undefined : `${src.name || "#" + src.number} → ${tgt.name || "#" + tgt.number}`}
-                      style={{ width: CELL_SIZE, minWidth: CELL_SIZE, height: CELL_SIZE, padding: 0, textAlign: "center", verticalAlign: "middle", background: isDiag ? "#e5e7eb" : SCORE_BG[score], color: isDiag ? "#9ca3af" : SCORE_TEXT[score], cursor: isDiag ? "default" : "pointer", pointerEvents: isDiag ? "none" : "auto", fontSize: 11, fontWeight: 600, border: "1px solid #e5e7eb", transition: "background 0.1s", lineHeight: `${CELL_SIZE}px` }}>
-                      {isDiag ? "—" : score}
+                      style={{ width: CELL_SIZE, minWidth: CELL_SIZE, height: CELL_SIZE, padding: 0, textAlign: "center", verticalAlign: "middle", background: isDiag ? "#e5e7eb" : scoreBg(score), color: isDiag ? "#9ca3af" : scoreText(score), cursor: isDiag ? "default" : "pointer", pointerEvents: isDiag ? "none" : "auto", fontSize: 11, fontWeight: 600, border: "1px solid #e5e7eb", transition: "background 0.1s", lineHeight: `${CELL_SIZE}px` }}>
+                      {isDiag ? "—" : score === null ? "" : score}
                     </td>
                   );
                 })}
@@ -186,10 +193,10 @@ export default function ImpactMatrix({ variables, matrix, setMatrix, modelName, 
       {/* ── Score legend ── */}
       <div style={{ display: "flex", gap: 16, marginBottom: 28, alignItems: "center", flexWrap: "wrap" }}>
         <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>Influence:</span>
-        {[0, 1, 2, 3].map(s => (
-          <span key={s} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#374151" }}>
-            <span style={{ display: "inline-block", width: 16, height: 16, background: SCORE_BG[s], border: "1px solid #d1d5db", borderRadius: 2 }} />
-            {s === 0 ? "0 none" : s === 1 ? "1 weak" : s === 2 ? "2 medium" : "3 strong"}
+        {[null, 0, 1, 2, 3].map(s => (
+          <span key={String(s)} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#374151" }}>
+            <span style={{ display: "inline-block", width: 16, height: 16, background: scoreBg(s), border: "1px solid #d1d5db", borderRadius: 2 }} />
+            {s === null ? "blank — not evaluated" : s === 0 ? "0 none" : s === 1 ? "1 weak" : s === 2 ? "2 medium" : "3 strong"}
           </span>
         ))}
       </div>

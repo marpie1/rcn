@@ -224,7 +224,11 @@ export const getNote = (notes, toolId) => notes?.[toolId] ?? "";
 export const setNote = (notes, toolId, value) => ({ ...notes, [toolId]: value });
 
 // ── Influence Matrix ──────────────────────────────────────────────────────────
-export const getScore = (matrix, fromId, toId) => matrix?.[fromId]?.[toId] ?? 0;
+// Returns null when not yet evaluated, 0-3 when scored
+export const getScore = (matrix, fromId, toId) => {
+  const v = matrix?.[fromId]?.[toId];
+  return v === undefined ? null : v;
+};
 
 export const setScore = (matrix, fromId, toId, value) => ({
   ...matrix,
@@ -236,8 +240,8 @@ export const computeRoles = (variables, matrix) => {
   if (n === 0) return {};
   const stats = {};
   variables.forEach(v => {
-    const AS = variables.reduce((s, v2) => v2.id === v.id ? s : s + getScore(matrix, v.id, v2.id), 0);
-    const PS = variables.reduce((s, v2) => v2.id === v.id ? s : s + getScore(matrix, v2.id, v.id), 0);
+    const AS = variables.reduce((s, v2) => v2.id === v.id ? s : s + (getScore(matrix, v.id, v2.id) ?? 0), 0);
+    const PS = variables.reduce((s, v2) => v2.id === v.id ? s : s + (getScore(matrix, v2.id, v.id) ?? 0), 0);
     stats[v.id] = { AS, PS, Q: AS * PS };
   });
   const vals = Object.values(stats);
