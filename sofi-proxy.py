@@ -34,6 +34,20 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        if self.path == '/config':
+            cfg = {
+                'proxyUrl':     os.environ.get('PROXY_URL', 'http://localhost:8765'),
+                'wikiSite':     os.environ.get('WIKI_SITE', 'localhost'),
+                'proxySecret':  PROXY_SECRET,
+            }
+            body = json.dumps(cfg).encode()
+            self.send_response(200)
+            self._cors()
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
         if self.path.startswith('/api/wiki-read-page'):
             from urllib.parse import urlparse, parse_qs
             qs = parse_qs(urlparse(self.path).query)

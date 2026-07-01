@@ -262,10 +262,15 @@
 
 <!-- ═══════════════════════════════════════════════════════════ SCRIPT -->
 <script>
-// ─── Deployment config — edit these three lines for Mac Mini ─────────────────
-const PROXY        = 'http://localhost:8765'   // ← public URL of sofi-proxy (e.g. https://sodoto.example.com)
-const WIKI_SITE    = 'localhost'               // ← FedWiki hostname for ledger + narrative pages
-const PROXY_SECRET = ''                        // ← value of SODOTO_PROXY_SECRET env var on the server
+// ─── Deployment config — loaded at runtime from /config endpoint ─────────────
+let PROXY        = window.location.origin   // fallback until /config responds
+let WIKI_SITE    = 'localhost'
+let PROXY_SECRET = ''
+fetch('/config').then(r => r.json()).then(cfg => {
+  if (cfg.proxyUrl)    PROXY        = cfg.proxyUrl;
+  if (cfg.wikiSite)    WIKI_SITE    = cfg.wikiSite;
+  if (cfg.proxySecret) PROXY_SECRET = cfg.proxySecret;
+}).catch(() => { /* use fallback values above */ });
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Constants ────────────────────────────────────────────────────────────────
