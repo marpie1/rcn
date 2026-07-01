@@ -4,8 +4,8 @@ const TOOLS = [
   { id: "variables", label: "1  Variable Set" },
   { id: "criteria",  label: "2  System Criteria" },
   { id: "matrix",    label: "3  Impact Matrix" },
-  { id: "roles",     label: "4  System Roles",     stub: true },
-  { id: "scenario",  label: "5  Partial Scenario", stub: true },
+  { id: "roles",     label: "4  System Roles" },
+  { id: "scenario",  label: "5  Partial Scenario" },
 ];
 
 export default function NavBar({ activeTool, onSelect, modelName }) {

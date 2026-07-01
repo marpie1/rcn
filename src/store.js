@@ -36,6 +36,7 @@ export const emptyStore = () => {
     criteriaLabels: {},       // { [criterionKey]: string }
     systemDescription: "",    // free-text system description (Step 0)
     influenceMatrix: {},      // { [fromId]: { [toId]: 0|1|2|3 } }
+    transferCurves: {},       // { [`${fromId}:${toId}`]: [[x, y], ...] }
     notes: {},                // { [toolId]: string }
   };
 };
@@ -217,6 +218,28 @@ export const setCriterionLabel = (criteriaLabels, key, value) => ({
   ...criteriaLabels,
   [key]: value,
 });
+
+// ── Transfer Curves ───────────────────────────────────────────────────────────
+// Key: `${fromId}:${toId}`, value: sorted [[x, y], ...] control points
+// x = source state (0–30), y = effect on target per sim step
+export const curveKey   = (fromId, toId) => `${fromId}:${toId}`;
+export const getCurve   = (curves, fromId, toId) => curves?.[curveKey(fromId, toId)] ?? [];
+export const setCurve   = (curves, fromId, toId, points) => ({ ...curves, [curveKey(fromId, toId)]: points });
+
+// Linear interpolation along the curve; returns 0 for empty curve
+export const evalCurve  = (points, x) => {
+  if (!points || points.length === 0) return 0;
+  const s = [...points].sort((a, b) => a[0] - b[0]);
+  if (x <= s[0][0]) return s[0][1];
+  if (x >= s[s.length - 1][0]) return s[s.length - 1][1];
+  for (let i = 1; i < s.length; i++) {
+    if (x <= s[i][0]) {
+      const t = (x - s[i-1][0]) / (s[i][0] - s[i-1][0]);
+      return s[i-1][1] + t * (s[i][1] - s[i-1][1]);
+    }
+  }
+  return 0;
+};
 
 // ── Notes ─────────────────────────────────────────────────────────────────────
 // { [toolId]: string } — one scratchpad per tool

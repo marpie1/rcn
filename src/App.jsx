@@ -9,6 +9,8 @@ import SystemDescription from "./components/SystemDescription.jsx";
 import VariableSet from "./components/VariableSet.jsx";
 import SystemCriteria from "./components/SystemCriteria.jsx";
 import ImpactMatrix from "./components/ImpactMatrix.jsx";
+import SystemRoles from "./components/SystemRoles.jsx";
+import PartialScenario from "./components/PartialScenario.jsx";
 
 export default function App() {
   const [modelName,            setModelName]            = useState(() => loadFromStorage()?.modelName            ?? emptyStore().modelName);
@@ -20,6 +22,7 @@ export default function App() {
   const [criteriaLabels,       setCriteriaLabels]       = useState(() => loadFromStorage()?.criteriaLabels       ?? {});
   const [notes,                setNotes]                = useState(() => loadFromStorage()?.notes                ?? {});
   const [matrix,               setMatrix]               = useState(() => loadFromStorage()?.matrix               ?? {});
+  const [transferCurves,       setTransferCurves]       = useState(() => loadFromStorage()?.transferCurves       ?? {});
   const [activeTool,           setActiveTool]           = useState("system");
   const [lastSaved,            setLastSaved]            = useState(() => loadFromStorage()?.savedAt ?? null);
   const [importError,          setImportError]          = useState(false);
@@ -27,12 +30,12 @@ export default function App() {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    const state = { modelName, modelPurpose, systemDescription, variables, criteria, criteriaDefinitions, criteriaLabels, notes, matrix, savedAt: new Date().toISOString() };
+    const state = { modelName, modelPurpose, systemDescription, variables, criteria, criteriaDefinitions, criteriaLabels, notes, matrix, transferCurves, savedAt: new Date().toISOString() };
     saveToStorage(state);
     setLastSaved(state.savedAt);
-  }, [modelName, modelPurpose, systemDescription, variables, criteria, criteriaDefinitions, criteriaLabels, notes, matrix]);
+  }, [modelName, modelPurpose, systemDescription, variables, criteria, criteriaDefinitions, criteriaLabels, notes, matrix, transferCurves]);
 
-  const handleSave = () => exportJSON({ modelName, modelPurpose, systemDescription, variables, criteria, criteriaDefinitions, criteriaLabels, notes, matrix });
+  const handleSave = () => exportJSON({ modelName, modelPurpose, systemDescription, variables, criteria, criteriaDefinitions, criteriaLabels, notes, matrix, transferCurves });
 
   const handleLoad = (e) => {
     const file = e.target.files[0];
@@ -50,6 +53,7 @@ export default function App() {
         setCriteriaLabels(data.criteriaLabels ?? {});
         setNotes(data.notes ?? {});
         setMatrix(data.matrix ?? {});
+        setTransferCurves(data.transferCurves ?? {});
         setLastSaved(data.savedAt ?? null);
       },
       () => setImportError(true)
@@ -122,6 +126,25 @@ export default function App() {
             matrix={matrix}
             setMatrix={setMatrix}
             modelName={modelName}
+            notes={notes}
+            setNotes={setNotes}
+          />
+        )}
+        {activeTool === "roles" && (
+          <SystemRoles
+            variables={variables}
+            matrix={matrix}
+            onNavigate={setActiveTool}
+            notes={notes}
+            setNotes={setNotes}
+          />
+        )}
+        {activeTool === "scenario" && (
+          <PartialScenario
+            variables={variables}
+            matrix={matrix}
+            transferCurves={transferCurves}
+            setTransferCurves={setTransferCurves}
             notes={notes}
             setNotes={setNotes}
           />
