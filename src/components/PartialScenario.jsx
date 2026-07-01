@@ -3,8 +3,29 @@
 // Select a subset of variables, define transfer curves for each scored
 // relationship, then run the simulation and view trajectories.
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, Component } from "react";
 import { computeRoles, getScore, getCurve, setCurve, evalCurve, getNote, setNote } from "../store.js";
+
+// ── Error boundary (class component) ─────────────────────────────────────────
+class CurveErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(e) { return { error: e }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 20, background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, color: "#7f1d1d", fontSize: 13, maxWidth: 400 }}>
+          <strong>Curve editor error:</strong><br />
+          {this.state.error.message}<br />
+          <button onClick={() => this.setState({ error: null })}
+            style={{ marginTop: 8, padding: "4px 10px", background: "#dc2626", color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 12 }}>
+            Reset
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SCALE_MAX = 30;   // variable state range 0–30
@@ -92,7 +113,7 @@ function CurveEditor({ fromVar, toVar, scaleLabels, points, onChange, descriptio
   // Scale labels from Step 1 — keyed by state position
   const labelEntries = Object.entries(scaleLabels || {})
     .map(([pos, label]) => [Number(pos), label])
-    .filter(([pos]) => pos >= 0 && pos <= SCALE_MAX && label)
+    .filter(([pos, label]) => pos >= 0 && pos <= SCALE_MAX && label)
     .sort((a, b) => a[0] - b[0]);
 
   return (
@@ -426,11 +447,20 @@ export default function PartialScenario({ variables, matrix, transferCurves, set
     });
   });
 
-  // Active curve edge
-  const edgeParts = selectedEdge ? selectedEdge.split(":") : null;
-  const edgeFrom = edgeParts ? variables.find(v => v.id === edgeParts[0]) : null;
-  const edgeTo   = edgeParts ? variables.find(v => v.id === edgeParts[1]) : null;
-  const activeCurve = edgeParts ? getCurve(transferCurves, edgeParts[0], edgeParts[1]) : [];
+  // Active curve edge — split at FIRST colon only to be robust against any ID format
+  let edgeFromId = null, edgeToId = null;
+  if (selectedEdge) {
+    const sep = selectedEdge.indexOf(":");
+    if (sep > 0) {
+      edgeFromId = selectedEdge.slice(0, sep);
+      edgeToId   = selectedEdge.slice(sep + 1);
+    }
+  }
+  const edgeFrom = edgeFromId ? variables.find(v => v.id === edgeFromId) ?? null : null;
+  const edgeTo   = edgeToId   ? variables.find(v => v.id === edgeToId)   ?? null : null;
+  const activeCurve = (edgeFromId && edgeToId)
+    ? getCurve(transferCurves ?? {}, edgeFromId, edgeToId)
+    : [];
 
   // Initialize states from variable scale optimum / default to 15
   const initStates = useCallback(() => {
@@ -626,25 +656,42 @@ export default function PartialScenario({ variables, matrix, transferCurves, set
           </div>
 
           {/* Curve editor */}
-          {edgeFrom && edgeTo && (
-            <CurveEditor
-              fromVar={edgeFrom}
-              toVar={edgeTo}
-              scaleLabels={Object.fromEntries(
-                (edgeFrom.scale?.intermediates ?? []).map(({ position, label }) => [position, label])
-                  .concat([[0, edgeFrom.scale?.minLabel || ""], [SCALE_MAX, edgeFrom.scale?.maxLabel || ""]])
-                  .filter(([, l]) => l)
-              )}
-              points={activeCurve}
-              onChange={pts => setTransferCurves(prev => setCurve(prev, edgeFrom.id, edgeTo.id, pts))}
-              description={curveDescs[selectedEdge] ?? ""}
-              onDescChange={val => setCurveDescs(prev => ({ ...prev, [selectedEdge]: val }))}
-            />
-          )}
+          {edgeFrom && edgeTo && (() => {
+            // Build scale label map: { statePosition: labelString }
+            // Guard against malformed intermediates (null entries, missing fields)
+            const scaleLabels = {};
+            const intermediates = edgeFrom.scale?.intermediates ?? [];
+            intermediates.forEach(item => {
+              if (item && typeof item.position === "number" && item.label) {
+                scaleLabels[item.position] = item.label;
+              }
+            });
+            if (edgeFrom.scale?.minLabel) scaleLabels[0]        = edgeFrom.scale.minLabel;
+            if (edgeFrom.scale?.maxLabel) scaleLabels[SCALE_MAX] = edgeFrom.scale.maxLabel;
+
+            return (
+              <CurveErrorBoundary key={selectedEdge}>
+                <CurveEditor
+                  fromVar={edgeFrom}
+                  toVar={edgeTo}
+                  scaleLabels={scaleLabels}
+                  points={activeCurve}
+                  onChange={pts => setTransferCurves(prev => setCurve(prev ?? {}, edgeFrom.id, edgeTo.id, pts))}
+                  description={curveDescs[selectedEdge] ?? ""}
+                  onDescChange={val => setCurveDescs(prev => ({ ...prev, [selectedEdge]: val }))}
+                />
+              </CurveErrorBoundary>
+            );
+          })()}
 
           {!selectedEdge && (
             <div style={{ padding: "24px 28px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, color: "#9ca3af", fontSize: 13 }}>
               Select a relationship from the list to define its transfer curve.
+            </div>
+          )}
+          {selectedEdge && (!edgeFrom || !edgeTo) && (
+            <div style={{ padding: "16px 20px", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 8, color: "#92400e", fontSize: 13 }}>
+              Could not resolve the selected relationship. Try clicking a different one.
             </div>
           )}
         </div>
