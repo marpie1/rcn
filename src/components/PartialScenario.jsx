@@ -26,77 +26,78 @@ const ROLE_BG = {
 };
 
 // ── Curve Editor ──────────────────────────────────────────────────────────────
-// Shows a piecewise-linear transfer curve for one relationship.
-// X = source variable state (0–SCALE_MAX), Y = effect per step (signed).
-// Points are draggable; click empty area to add; double-click point to remove.
+// Vester orientation:
+//   Y axis (vertical, left side)  = source variable state, 0 at bottom → 30 at top
+//   X axis (horizontal, bottom)   = effect per step, −EFFECT_MAX left → 0 center → +EFFECT_MAX right
+// Points stored as [sourceState, effect]; sorted by sourceState for drawing.
+// Click to add · drag to move · double-click to remove.
 function CurveEditor({ fromVar, toVar, scaleLabels, points, onChange, description, onDescChange }) {
-  const W = 420, H = 320;
-  const PAD_L = 56, PAD_R = 20, PAD_T = 20, PAD_B = 48;
-  const pw = W - PAD_L - PAD_R;
-  const ph = H - PAD_T - PAD_B;
+  // Canvas dimensions — taller than wide to give the state axis room
+  const W = 360, H = 420;
+  // Generous left padding for scale labels; bottom for effect ticks; top/right minimal
+  const PAD_L = 140, PAD_R = 24, PAD_T = 24, PAD_B = 40;
+  const pw = W - PAD_L - PAD_R;  // plot width  (effect axis)
+  const ph = H - PAD_T - PAD_B;  // plot height (state axis)
 
   const svgRef = useRef(null);
-  const [dragging, setDragging] = useState(null); // index of point being dragged
+  const [dragging, setDragging] = useState(null);
 
-  // coordinate conversions
-  const toSvgX = x  => PAD_L + (x / SCALE_MAX) * pw;
-  const toSvgY = y  => PAD_T + ((EFFECT_MAX - y) / (2 * EFFECT_MAX)) * ph;
-  const fromSvgX = sx => Math.max(0, Math.min(SCALE_MAX, ((sx - PAD_L) / pw) * SCALE_MAX));
-  const fromSvgY = sy => Math.max(-EFFECT_MAX, Math.min(EFFECT_MAX, EFFECT_MAX - ((sy - PAD_T) / ph) * 2 * EFFECT_MAX));
+  // ── coordinate conversions ─────────────────────────────────────────────────
+  // svgX  ← effect value  (−5 = left edge, 0 = centre, +5 = right edge)
+  const toSvgX   = eff   => PAD_L + ((eff + EFFECT_MAX) / (2 * EFFECT_MAX)) * pw;
+  // svgY  ← source state  (0 = bottom, 30 = top)
+  const toSvgY   = state => PAD_T + ph - (state / SCALE_MAX) * ph;
+  const fromSvgX = sx    => Math.max(-EFFECT_MAX, Math.min(EFFECT_MAX,
+                              ((sx - PAD_L) / pw) * 2 * EFFECT_MAX - EFFECT_MAX));
+  const fromSvgY = sy    => Math.max(0, Math.min(SCALE_MAX,
+                              SCALE_MAX * (1 - (sy - PAD_T) / ph)));
 
+  // Sort points by sourceState (ascending) so polyline runs bottom → top
   const sorted = [...points].sort((a, b) => a[0] - b[0]);
 
-  const getSvgPos = (e) => {
+  const getSvgPos = e => {
     const rect = svgRef.current.getBoundingClientRect();
     return [e.clientX - rect.left, e.clientY - rect.top];
   };
 
-  const handleMouseDown = (e, idx) => {
-    e.stopPropagation();
-    setDragging(idx);
-  };
-
-  const handleSvgMouseMove = useCallback((e) => {
-    if (dragging === null) return;
-    const [sx, sy] = getSvgPos(e);
-    const nx = Math.round(fromSvgX(sx));
-    const ny = Math.round(fromSvgY(sy) * 10) / 10;
-    const next = points.map((p, i) => i === dragging ? [nx, ny] : p);
-    onChange(next);
-  }, [dragging, points, onChange]);
-
+  const handleMouseDown = (e, idx) => { e.stopPropagation(); setDragging(idx); };
   const handleSvgMouseUp = () => setDragging(null);
 
-  const handleSvgClick = (e) => {
+  const handleSvgMouseMove = useCallback(e => {
+    if (dragging === null) return;
+    const [sx, sy] = getSvgPos(e);
+    const newState  = Math.round(fromSvgY(sy));
+    const newEffect = Math.round(fromSvgX(sx) * 10) / 10;
+    onChange(points.map((p, i) => i === dragging ? [newState, newEffect] : p));
+  }, [dragging, points, onChange]);
+
+  const handleSvgClick = e => {
     if (e.target.closest("circle")) return;
     const [sx, sy] = getSvgPos(e);
     if (sx < PAD_L || sx > W - PAD_R || sy < PAD_T || sy > H - PAD_B) return;
-    const nx = Math.round(fromSvgX(sx));
-    const ny = Math.round(fromSvgY(sy) * 10) / 10;
-    // Don't add if very close to existing
-    if (points.some(p => Math.abs(p[0] - nx) < 1)) return;
-    onChange([...points, [nx, ny]]);
+    const newState  = Math.round(fromSvgY(sy));
+    const newEffect = Math.round(fromSvgX(sx) * 10) / 10;
+    // Don't add if too close in state to an existing point
+    if (points.some(p => Math.abs(p[0] - newState) < 1)) return;
+    onChange([...points, [newState, newEffect]]);
   };
 
-  const handleDblClick = (e, idx) => {
-    e.stopPropagation();
-    onChange(points.filter((_, i) => i !== idx));
-  };
+  const handleDblClick = (e, idx) => { e.stopPropagation(); onChange(points.filter((_, i) => i !== idx)); };
 
-  // Grid ticks
-  const xTicks = [0, 5, 10, 15, 20, 25, 30];
-  const yTicks = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5];
-  const zeroY  = toSvgY(0);
+  // ── grid values ────────────────────────────────────────────────────────────
+  const effectTicks = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5];
+  const stateTicks  = [0, 5, 10, 15, 20, 25, 30];
+  const zeroX = toSvgX(0);   // vertical zero-effect line
 
-  // Scale labels (from Step 1)
+  // Scale labels from Step 1 — keyed by state position
   const labelEntries = Object.entries(scaleLabels || {})
     .map(([pos, label]) => [Number(pos), label])
-    .filter(([pos]) => pos >= 0 && pos <= SCALE_MAX)
+    .filter(([pos]) => pos >= 0 && pos <= SCALE_MAX && label)
     .sort((a, b) => a[0] - b[0]);
 
   return (
     <div>
-      {/* Header */}
+      {/* Relationship header */}
       <div style={{ marginBottom: 8 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: "#1e3a5f" }}>
           {fromVar.name || `#${fromVar.number}`}
@@ -107,74 +108,115 @@ function CurveEditor({ fromVar, toVar, scaleLabels, points, onChange, descriptio
         </span>
       </div>
 
-      {/* SVG canvas */}
       <svg ref={svgRef} width={W} height={H}
-        style={{ display: "block", border: "1px solid #d1d5db", borderRadius: 6, background: "white", cursor: dragging !== null ? "grabbing" : "crosshair" }}
+        style={{ display: "block", border: "1px solid #d1d5db", borderRadius: 6, background: "white",
+                 cursor: dragging !== null ? "grabbing" : "crosshair" }}
         onMouseMove={handleSvgMouseMove}
         onMouseUp={handleSvgMouseUp}
         onMouseLeave={handleSvgMouseUp}
         onClick={handleSvgClick}>
 
-        {/* Zero-effect band */}
-        <rect x={PAD_L} y={zeroY - 1} width={pw} height={2} fill="#e5e7eb" />
+        {/* ── Plot area background ── */}
+        <rect x={PAD_L} y={PAD_T} width={pw} height={ph} fill="#fafafa" />
 
-        {/* Grid */}
-        {xTicks.map(v => (
-          <g key={`xt-${v}`}>
-            <line x1={toSvgX(v)} y1={PAD_T} x2={toSvgX(v)} y2={H - PAD_B} stroke="#f1f5f9" strokeWidth="1" />
-            <text x={toSvgX(v)} y={H - PAD_B + 14} textAnchor="middle" fontSize="9" fill="#9ca3af" fontFamily="Arial,sans-serif">{v}</text>
+        {/* ── Positive / negative half shading ── */}
+        <rect x={zeroX} y={PAD_T} width={W - PAD_R - zeroX} height={ph} fill="#dcfce7" opacity="0.35" />
+        <rect x={PAD_L} y={PAD_T} width={zeroX - PAD_L}     height={ph} fill="#fee2e2" opacity="0.25" />
+
+        {/* ── Effect-axis grid (vertical lines) ── */}
+        {effectTicks.map(v => (
+          <g key={`et-${v}`}>
+            <line x1={toSvgX(v)} y1={PAD_T} x2={toSvgX(v)} y2={H - PAD_B}
+              stroke={v === 0 ? "#94a3b8" : "#e5e7eb"}
+              strokeWidth={v === 0 ? 1.5 : 1}
+              strokeDasharray={v === 0 ? "none" : "3,3"} />
+            <text x={toSvgX(v)} y={H - PAD_B + 14} textAnchor="middle"
+              fontSize="9" fill={v === 0 ? "#64748b" : "#9ca3af"} fontFamily="Arial,sans-serif">{v}</text>
           </g>
         ))}
-        {yTicks.map(v => (
-          <g key={`yt-${v}`}>
-            <line x1={PAD_L} y1={toSvgY(v)} x2={W - PAD_R} y2={toSvgY(v)}
-              stroke={v === 0 ? "#94a3b8" : "#f1f5f9"} strokeWidth={v === 0 ? 1.5 : 1} />
-            <text x={PAD_L - 6} y={toSvgY(v) + 4} textAnchor="end" fontSize="9" fill="#9ca3af" fontFamily="Arial,sans-serif">{v}</text>
-          </g>
+
+        {/* ── State-axis grid (horizontal lines) ── */}
+        {stateTicks.map(v => (
+          <line key={`st-${v}`}
+            x1={PAD_L} y1={toSvgY(v)} x2={W - PAD_R} y2={toSvgY(v)}
+            stroke="#e5e7eb" strokeWidth="1" />
         ))}
 
-        {/* Scale labels from Step 1 — small notches on X axis */}
+        {/* ── Scale labels from Step 1 (left of plot, at their state height) ── */}
         {labelEntries.map(([pos, label]) => (
           <g key={`sl-${pos}`}>
-            <line x1={toSvgX(pos)} y1={H - PAD_B} x2={toSvgX(pos)} y2={H - PAD_B + 4} stroke="#94a3b8" strokeWidth="1.5" />
-            <text x={toSvgX(pos)} y={H - PAD_B + 26} textAnchor="middle" fontSize="8" fill="#94a3b8" fontFamily="Arial,sans-serif"
-              style={{ whiteSpace: "pre" }}>
-              {label.length > 12 ? label.slice(0, 12) + "…" : label}
+            {/* Tick mark on Y axis */}
+            <line x1={PAD_L - 4} y1={toSvgY(pos)} x2={PAD_L} y2={toSvgY(pos)}
+              stroke="#94a3b8" strokeWidth="1.5" />
+            {/* Horizontal guide line across plot */}
+            <line x1={PAD_L} y1={toSvgY(pos)} x2={W - PAD_R} y2={toSvgY(pos)}
+              stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="4,4" />
+            <text x={PAD_L - 8} y={toSvgY(pos) + 4} textAnchor="end"
+              fontSize="9" fill="#64748b" fontFamily="Arial,sans-serif">
+              {label.length > 18 ? label.slice(0, 17) + "…" : label}
             </text>
           </g>
         ))}
 
-        {/* Curve line (stepped: horizontal then vertical) */}
-        {sorted.length >= 2 && (
-          <polyline
-            points={sorted.map(([x, y]) => `${toSvgX(x)},${toSvgY(y)}`).join(" ")}
-            fill="none" stroke="#1d4ed8" strokeWidth="2" strokeLinejoin="round" />
-        )}
-        {/* Extend to edges */}
+        {/* ── State-axis numeric ticks ── */}
+        {stateTicks.map(v => (
+          <text key={`stn-${v}`} x={PAD_L - (labelEntries.length ? 6 : 6)} y={toSvgY(v) + 4}
+            textAnchor="end" fontSize="9"
+            fill={labelEntries.length ? "#c4c4c4" : "#9ca3af"}
+            fontFamily="Arial,sans-serif">{v}</text>
+        ))}
+
+        {/* ── Zero-effect vertical axis line ── */}
+        <line x1={zeroX} y1={PAD_T} x2={zeroX} y2={H - PAD_B}
+          stroke="#64748b" strokeWidth="1.5" />
+
+        {/* ── Curve — extend to top/bottom beyond outermost points ── */}
         {sorted.length >= 1 && (
           <>
-            <line x1={PAD_L} y1={toSvgY(sorted[0][1])} x2={toSvgX(sorted[0][0])} y2={toSvgY(sorted[0][1])} stroke="#1d4ed8" strokeWidth="2" strokeDasharray="4,3" opacity="0.5" />
-            <line x1={toSvgX(sorted[sorted.length - 1][0])} y1={toSvgY(sorted[sorted.length - 1][1])} x2={W - PAD_R} y2={toSvgY(sorted[sorted.length - 1][1])} stroke="#1d4ed8" strokeWidth="2" strokeDasharray="4,3" opacity="0.5" />
+            {/* Extension below lowest-state point (constant effect) */}
+            <line
+              x1={toSvgX(sorted[0][1])} y1={toSvgY(sorted[0][0])}
+              x2={toSvgX(sorted[0][1])} y2={H - PAD_B}
+              stroke="#1d4ed8" strokeWidth="2" strokeDasharray="4,3" opacity="0.45" />
+            {/* Extension above highest-state point */}
+            <line
+              x1={toSvgX(sorted[sorted.length - 1][1])} y1={toSvgY(sorted[sorted.length - 1][0])}
+              x2={toSvgX(sorted[sorted.length - 1][1])} y2={PAD_T}
+              stroke="#1d4ed8" strokeWidth="2" strokeDasharray="4,3" opacity="0.45" />
           </>
         )}
+        {sorted.length >= 2 && (
+          <polyline
+            points={sorted.map(([state, eff]) => `${toSvgX(eff)},${toSvgY(state)}`).join(" ")}
+            fill="none" stroke="#1d4ed8" strokeWidth="2.5" strokeLinejoin="round" />
+        )}
 
-        {/* Axes */}
+        {/* ── Axes ── */}
+        {/* Y axis (state) */}
         <line x1={PAD_L} y1={PAD_T} x2={PAD_L} y2={H - PAD_B} stroke="#374151" strokeWidth="1.5" />
+        {/* X axis (effect) at bottom */}
         <line x1={PAD_L} y1={H - PAD_B} x2={W - PAD_R} y2={H - PAD_B} stroke="#374151" strokeWidth="1.5" />
 
-        {/* Axis labels */}
-        <text x={W / 2} y={H - 4} textAnchor="middle" fontSize="10" fill="#374151" fontFamily="Arial,sans-serif">
-          State of {fromVar.name || `#${fromVar.number}`} (0–30)
+        {/* ── Axis labels ── */}
+        {/* Y axis label — rotated, sitting to the left */}
+        <text x={11} y={PAD_T + ph / 2} textAnchor="middle"
+          fontSize="10" fill="#374151" fontFamily="Arial,sans-serif"
+          transform={`rotate(-90,11,${PAD_T + ph / 2})`}>
+          State of {(fromVar.name || `#${fromVar.number}`).slice(0, 20)} (0–30)  ↑
         </text>
-        <text x={12} y={(PAD_T + H - PAD_B) / 2} textAnchor="middle" fontSize="10" fill="#374151" fontFamily="Arial,sans-serif"
-          transform={`rotate(-90,12,${(PAD_T + H - PAD_B) / 2})`}>
-          Effect per step
+        {/* X axis label */}
+        <text x={PAD_L + pw / 2} y={H - 5} textAnchor="middle"
+          fontSize="10" fill="#374151" fontFamily="Arial,sans-serif">
+          ← dampens · effect per step · amplifies →
         </text>
+        {/* −/+ hints at ends */}
+        <text x={PAD_L + 4} y={H - PAD_B + 14} fontSize="9" fill="#ef4444" fontFamily="Arial,sans-serif">−</text>
+        <text x={W - PAD_R - 4} y={H - PAD_B + 14} fontSize="9" fill="#16a34a" textAnchor="end" fontFamily="Arial,sans-serif">+</text>
 
-        {/* Control points */}
+        {/* ── Control points ── */}
         {points.map((pt, i) => (
           <circle key={i}
-            cx={toSvgX(pt[0])} cy={toSvgY(pt[1])} r={6}
+            cx={toSvgX(pt[1])} cy={toSvgY(pt[0])} r={7}
             fill={dragging === i ? "#1d4ed8" : "white"}
             stroke="#1d4ed8" strokeWidth={dragging === i ? 2.5 : 2}
             style={{ cursor: "grab" }}
@@ -187,7 +229,7 @@ function CurveEditor({ fromVar, toVar, scaleLabels, points, onChange, descriptio
         Click to add point · Drag to move · Double-click to remove
       </div>
 
-      {/* Description field */}
+      {/* Description */}
       <div style={{ marginTop: 12 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4 }}>
           Curve description
@@ -195,8 +237,8 @@ function CurveEditor({ fromVar, toVar, scaleLabels, points, onChange, descriptio
         <textarea
           value={description}
           onChange={e => onDescChange(e.target.value)}
-          placeholder="Explain the logic of this transfer curve…"
-          rows={3}
+          placeholder="Explain the logic of this transfer curve — narrative first, then what each segment means…"
+          rows={4}
           style={{ width: "100%", boxSizing: "border-box", padding: "6px 10px", border: "1px solid #d1d5db", borderRadius: 5, fontSize: 13, lineHeight: 1.6, resize: "vertical" }}
         />
       </div>
