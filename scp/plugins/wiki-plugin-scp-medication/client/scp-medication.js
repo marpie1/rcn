@@ -65,6 +65,12 @@
     '  border:1px solid #86efac; border-radius:4px; cursor:pointer; color:#166534;',
     '  margin:0 6px 4px 0; font-family:inherit; }',
     '.scp-factory-btn:hover { background:#dcfce7; border-color:#4ade80; }',
+    '.scp-discard-btn { display:inline-block; margin-top:8px; margin-left:8px; padding:5px 12px; font-size:.82rem;',
+    '  background:#fff; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; cursor:pointer; }',
+    '.scp-discard-btn:hover { background:#fef2f2; border-color:#ef4444; }',
+    '.scp-edit-btn { float:right; background:none; border:none; cursor:pointer;',
+    '  font-size:.75rem; color:#aaa; padding:0 4px; line-height:1; margin-right:2px; }',
+    '.scp-edit-btn:hover { color:#2563eb; }',
   ].join('\n');
 
   var injected = false;
@@ -247,6 +253,18 @@
     });
   }
 
+  // ── Edit helper for editable (non-log) committed items ─────────────────────
+
+  function addEditButton($item, item, emitFn, bindFn) {
+    bindFoldToggle($item);
+    $item.find('.scp-edit-btn').on('click', function () {
+      item.committed = false;
+      $item.empty();
+      emitFn($item, item);
+      bindFn($item, item);
+    });
+  }
+
   // ── Health Log push ─────────────────────────────────────────────────────────
 
   function pvId() {
@@ -380,7 +398,7 @@
     if (item.committed) {
       $item.append(
         '<div class="scp scp-done">' +
-        '<div class="scp-head">Medication<button class="scp-fold-btn">▲</button></div>' +
+        '<div class="scp-head">Medication<button class="scp-fold-btn">▲</button><button class="scp-edit-btn">✎ Edit</button></div>' +
         '<div class="scp-detail">' + medicationDetailHtml(item) + '</div>' +
         '<div class="scp-summary" style="display:none">' + medicationSummaryHtml(item) + '</div>' +
         '</div>'
@@ -405,7 +423,7 @@
   }
 
   function bindMedication($item, item) {
-    if (item.committed) { bindFoldToggle($item); return; }
+    if (item.committed) { addEditButton($item, item, emitMedication, bindMedication); return; }
 
     $item.find('.scp-directions, .scp-use, .scp-not-prescribed').each(function () { grow(this); });
 
@@ -828,7 +846,7 @@
     if (item.committed) {
       $item.append(
         '<div class="scp scp-done">' +
-        '<div class="scp-head">About Me<button class="scp-fold-btn">▲</button></div>' +
+        '<div class="scp-head">About Me<button class="scp-fold-btn">▲</button><button class="scp-edit-btn">✎ Edit</button></div>' +
         '<div class="scp-detail">' + aboutDetailHtml(item) + '</div>' +
         '<div class="scp-summary" style="display:none">' + esc(item.preferred_name || item.legal_name || 'About Me') + '</div>' +
         '</div>'
@@ -854,7 +872,7 @@
   }
 
   function bindAbout($item, item) {
-    if (item.committed) { bindFoldToggle($item); return; }
+    if (item.committed) { addEditButton($item, item, emitAbout, bindAbout); return; }
     $item.find('.scp-about-address, .scp-about-notes').each(function () { grow(this); });
     $item.find('.scp-about-preferred').on('input', function () { item.preferred_name    = this.value; });
     $item.find('.scp-about-legal').on('input',     function () { item.legal_name        = this.value; });
@@ -906,7 +924,7 @@
       var summary = esc(item.name || 'Provider') + (item.role ? ' — ' + esc(item.role) : '');
       $item.append(
         '<div class="scp scp-done">' +
-        '<div class="scp-head">Care Team<button class="scp-fold-btn">▲</button></div>' +
+        '<div class="scp-head">Care Team<button class="scp-fold-btn">▲</button><button class="scp-edit-btn">✎ Edit</button></div>' +
         '<div class="scp-detail">' + providerDetailHtml(item) + '</div>' +
         '<div class="scp-summary" style="display:none">' + summary + '</div>' +
         '</div>'
@@ -950,7 +968,7 @@
   }
 
   function bindProvider($item, item) {
-    if (item.committed) { bindFoldToggle($item); return; }
+    if (item.committed) { addEditButton($item, item, emitProvider, bindProvider); return; }
     $item.find('.scp-prov-when, .scp-prov-notes').each(function () { grow(this); });
     $item.find('.scp-prov-name').on('input', function () {
       item.name = this.value;
@@ -1005,7 +1023,7 @@
       var summary = esc(item.condition || 'Diagnosis') + (item.status ? ' (' + esc(item.status) + ')' : '');
       $item.append(
         '<div class="scp scp-done">' +
-        '<div class="scp-head">Diagnosis<button class="scp-fold-btn">▲</button></div>' +
+        '<div class="scp-head">Diagnosis<button class="scp-fold-btn">▲</button><button class="scp-edit-btn">✎ Edit</button></div>' +
         '<div class="scp-detail">' + diagnosisDetailHtml(item) + '</div>' +
         '<div class="scp-summary" style="display:none">' + summary + '</div>' +
         '</div>'
@@ -1027,7 +1045,7 @@
   }
 
   function bindDiagnosis($item, item) {
-    if (item.committed) { bindFoldToggle($item); return; }
+    if (item.committed) { addEditButton($item, item, emitDiagnosis, bindDiagnosis); return; }
     $item.find('.scp-dx-notes').each(function () { grow(this); });
     $item.find('.scp-dx-condition').on('input', function () {
       item.condition = this.value;
@@ -1080,7 +1098,7 @@
       var summary = esc(item.substance || 'Reaction') + (item.severity ? ' — ' + esc(item.severity) : '');
       $item.append(
         '<div class="scp scp-done">' +
-        '<div class="scp-head">Reaction<button class="scp-fold-btn">▲</button></div>' +
+        '<div class="scp-head">Reaction<button class="scp-fold-btn">▲</button><button class="scp-edit-btn">✎ Edit</button></div>' +
         '<div class="scp-detail">' + reactionDetailHtml(item) + '</div>' +
         '<div class="scp-summary" style="display:none">' + summary + '</div>' +
         '</div>'
@@ -1101,7 +1119,7 @@
   }
 
   function bindReaction($item, item) {
-    if (item.committed) { bindFoldToggle($item); return; }
+    if (item.committed) { addEditButton($item, item, emitReaction, bindReaction); return; }
     $item.find('.scp-rxn-reaction, .scp-rxn-notes').each(function () { grow(this); });
     $item.find('.scp-rxn-substance').on('input', function () {
       item.substance = this.value;
@@ -1153,7 +1171,7 @@
     if (item.committed) {
       $item.append(
         '<div class="scp scp-done">' +
-        '<div class="scp-head">History<button class="scp-fold-btn">▲</button></div>' +
+        '<div class="scp-head">History<button class="scp-fold-btn">▲</button><button class="scp-edit-btn">✎ Edit</button></div>' +
         '<div class="scp-detail">' + historyDetailHtml(item) + '</div>' +
         '<div class="scp-summary" style="display:none">' + historySummaryHtml(item) + '</div>' +
         '</div>'
@@ -1173,7 +1191,7 @@
   }
 
   function bindHistory($item, item) {
-    if (item.committed) { bindFoldToggle($item); return; }
+    if (item.committed) { addEditButton($item, item, emitHistory, bindHistory); return; }
     $item.find('.scp-hist-event, .scp-hist-notes').each(function () { grow(this); });
     $item.find('.scp-hist-event').on('input', function () {
       grow(this); item.event = this.value;
@@ -1223,7 +1241,7 @@
       var summary = esc(item.action || 'Next Step') + (item.status ? ' (' + esc(item.status) + ')' : '');
       $item.append(
         '<div class="scp scp-done">' +
-        '<div class="scp-head">Next Step<button class="scp-fold-btn">▲</button></div>' +
+        '<div class="scp-head">Next Step<button class="scp-fold-btn">▲</button><button class="scp-edit-btn">✎ Edit</button></div>' +
         '<div class="scp-detail">' + nextStepDetailHtml(item) + '</div>' +
         '<div class="scp-summary" style="display:none">' + summary + '</div>' +
         '</div>'
@@ -1244,7 +1262,7 @@
   }
 
   function bindNextStep($item, item) {
-    if (item.committed) { bindFoldToggle($item); return; }
+    if (item.committed) { addEditButton($item, item, emitNextStep, bindNextStep); return; }
     $item.find('.scp-step-action, .scp-step-notes').each(function () { grow(this); });
     $item.find('.scp-step-action').on('input', function () {
       grow(this); item.action = this.value;
@@ -1295,7 +1313,7 @@
     if (item.committed) {
       $item.append(
         '<div class="scp scp-done">' +
-        '<div class="scp-head">Directive<button class="scp-fold-btn">▲</button></div>' +
+        '<div class="scp-head">Directive<button class="scp-fold-btn">▲</button><button class="scp-edit-btn">✎ Edit</button></div>' +
         '<div class="scp-detail">' + directiveDetailHtml(item) + '</div>' +
         '<div class="scp-summary" style="display:none">' + esc(item.directive_type || 'Advanced Directive') + '</div>' +
         '</div>'
@@ -1317,7 +1335,7 @@
   }
 
   function bindDirective($item, item) {
-    if (item.committed) { bindFoldToggle($item); return; }
+    if (item.committed) { addEditButton($item, item, emitDirective, bindDirective); return; }
     $item.find('.scp-dir-details').each(function () { grow(this); });
     $item.find('.scp-dir-details').on('input',  function () { grow(this); item.details           = this.value; });
     $item.find('.scp-dir-proxy').on('input',    function () { item.proxy_name          = this.value; });
@@ -2246,7 +2264,7 @@
       var summary = esc(item.name || 'Care Member') + ' — ' + esc(careMemberRole(item));
       $item.append(
         '<div class="scp scp-done">' +
-        '<div class="scp-head">Care Team<button class="scp-fold-btn">▲</button></div>' +
+        '<div class="scp-head">Care Team<button class="scp-fold-btn">▲</button><button class="scp-edit-btn">✎ Edit</button></div>' +
         '<div class="scp-detail">' + careMemberDetailHtml(item) + '</div>' +
         '<div class="scp-summary" style="display:none">' + summary + '</div>' +
         '</div>'
@@ -2267,7 +2285,7 @@
   }
 
   function bindCareMember($item, item) {
-    if (item.committed) { bindFoldToggle($item); return; }
+    if (item.committed) { addEditButton($item, item, emitCareMember, bindCareMember); return; }
 
     // Show/hide "Specify Role" based on selection
     function toggleOther() {
@@ -2390,6 +2408,13 @@
       wiki.getPlugin(chosenType, function (plugin) {
         plugin.emit($newEl, newItem);
         plugin.bind($newEl, newItem);
+        $newEl.find('.scp-commit-btn').first().after(
+          '<button class="scp-discard-btn">&#x2715; Discard</button>'
+        );
+        $newEl.find('.scp-discard-btn').on('click', function () {
+          wiki.pageHandler.put($page, { type: 'remove', id: newId });
+          $newEl.remove();
+        });
       });
 
       $newEl[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
