@@ -108,6 +108,11 @@
     <h2>⬇ Export JSON → Excel</h2>
     <p>Paste your eVSM JSON below, then click Export. The Excel file will download with five sheets: Survey Meta, Spheres, Edges, Worlds Categories, and Layer Reference.</p>
     <textarea id="jsonInput" placeholder='Paste eVSM JSON here...'></textarea>
+    <div id="jsonDropZone" class="drop-zone" style="margin-top:8px;">
+      <span class="dz-icon">📄</span>
+      Click to choose or drag a .json file here
+      <div class="dz-sub">.json only</div>
+    </div>
     <div class="row" style="margin-top:12px;">
       <button class="btn btn-primary" onclick="exportToExcel()">⬇ Export to Excel</button>
       <button class="btn btn-outline" onclick="loadSample()">Load Sample JSON</button>
@@ -402,8 +407,8 @@ async function exportWithSheetJS(json) {
 
 // ── Import drop zone ─────────────────────────────────────────────────────────
 (function() {
-  function initDZ() {
-    const dz = document.getElementById('xlsxDropZone');
+  function wireDZ(id, accept, onFile) {
+    const dz = document.getElementById(id);
     if (!dz) return;
     dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
     dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
@@ -411,13 +416,24 @@ async function exportWithSheetJS(json) {
       e.preventDefault();
       dz.classList.remove('drag-over');
       const file = e.dataTransfer.files[0];
-      if (file) importFromExcel(file);
+      if (file) onFile(file);
     });
     dz.addEventListener('click', () => {
       const inp = document.createElement('input');
-      inp.type = 'file'; inp.accept = '.xlsx';
-      inp.onchange = e => { if (e.target.files[0]) importFromExcel(e.target.files[0]); };
+      inp.type = 'file'; inp.accept = accept;
+      inp.onchange = e => { if (e.target.files[0]) onFile(e.target.files[0]); };
       inp.click();
+    });
+  }
+  function initDZ() {
+    wireDZ('xlsxDropZone', '.xlsx', importFromExcel);
+    wireDZ('jsonDropZone', '.json', file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('jsonInput').value = e.target.result;
+        setStatus('exportStatus', `ℹ Loaded "${file.name}" — click Export to convert.`, 'info');
+      };
+      reader.readAsText(file);
     });
   }
   if (document.readyState === 'loading')
