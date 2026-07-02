@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>eVSM — Excel Import / Export</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; background: #f4f6f9; color: #222; }
@@ -51,15 +52,18 @@
   .btn-outline   { background: white; color: #1a3a5c; border: 2px solid #1a3a5c; }
   .btn-outline:hover { background: #d6e4f0; }
 
-  .file-label {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 10px 20px; border-radius: 5px;
-    background: white; color: #1a3a5c; border: 2px solid #1a3a5c;
-    font-size: 13px; font-weight: bold; cursor: pointer;
-    transition: background 0.15s;
+  .drop-zone {
+    border: 2px dashed #b6cfe0; border-radius: 8px;
+    padding: 28px 20px; text-align: center;
+    font-size: 13px; color: #64748b; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    user-select: none;
   }
-  .file-label:hover { background: #d6e4f0; }
-  input[type="file"] { display: none; }
+  .drop-zone:hover, .drop-zone.drag-over {
+    background: #eaf2f8; border-color: #1a3a5c; color: #1a3a5c;
+  }
+  .drop-zone .dz-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+  .drop-zone .dz-sub  { font-size: 11px; color: #94a3b8; margin-top: 4px; }
 
   .status {
     margin-top: 14px; padding: 10px 14px; border-radius: 4px;
@@ -115,12 +119,11 @@
   <!-- IMPORT -->
   <div class="card">
     <h2>⬆ Import Excel → JSON</h2>
-    <p>Upload a filled-out eVSM Excel file. The tool will read all sheets and generate an eVSM-compatible JSON file for download.</p>
-    <div class="row">
-      <label class="file-label">
-        📂 Choose Excel File
-        <input type="file" id="xlsxInput" accept=".xlsx" onchange="importFromExcel(this)">
-      </label>
+    <p>Drop a filled-out eVSM Excel file here (or click to browse). The tool reads all sheets and generates an eVSM-compatible JSON file for download.</p>
+    <div id="xlsxDropZone" class="drop-zone">
+      <span class="dz-icon">📂</span>
+      Click to choose or drag an .xlsx file here
+      <div class="dz-sub">.xlsx only</div>
     </div>
     <div id="importStatus" class="status"></div>
     <div id="importPreview" style="display:none; margin-top:16px;">
@@ -188,8 +191,72 @@ function titleRow(ws, text, cols) {
   ws.getRow(1).height = 26;
 }
 
+// ── XLSX styles XML injected via JSZip (SheetJS community ignores cell.s) ────
+const STYLES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="3">
+<font><sz val="11"/><color theme="1"/><name val="Calibri"/><family val="2"/><scheme val="minor"/></font>
+<font><sz val="10"/><color rgb="FF222222"/><name val="Arial"/><family val="2"/></font>
+<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/><family val="2"/></font>
+</fonts>
+<fills count="3">
+<fill><patternFill patternType="none"/></fill>
+<fill><patternFill patternType="gray125"/></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FF1A3A5C"/><bgColor indexed="64"/></patternFill></fill>
+</fills>
+<borders count="2">
+<border><left/><right/><top/><bottom/><diagonal/></border>
+<border>
+<left style="thin"><color rgb="FFCCCCCC"/></left>
+<right style="thin"><color rgb="FFCCCCCC"/></right>
+<top style="thin"><color rgb="FFCCCCCC"/></top>
+<bottom style="thin"><color rgb="FFCCCCCC"/></bottom>
+<diagonal/>
+</border>
+</borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="3">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1">
+<alignment wrapText="1" vertical="top"/>
+</xf>
+<xf numFmtId="0" fontId="2" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1">
+<alignment wrapText="1" vertical="middle" horizontal="center"/>
+</xf>
+</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+<dxfs count="0"/>
+<tableStyles count="0" defaultTableStyle="TableStyleMedium9" defaultPivotStyle="PivotStyleMedium4"/>
+</styleSheet>`;
+
+// Estimate row height in points from cell values and column widths
+function calcRowHt(row, colWidths) {
+  let maxLines = 1;
+  row.forEach((v, c) => {
+    const txt = String(v || '');
+    const w = colWidths[c] || 20;
+    const lines = txt.split('\n').reduce(
+      (sum, seg) => sum + Math.max(1, Math.ceil(seg.length / w)), 0);
+    if (lines > maxLines) maxLines = lines;
+  });
+  return Math.min(Math.max(20, maxLines * 15 + 4), 240);
+}
+
+// Patch a sheet's XML: inject s attrs on cells + ht attrs on rows
+function patchSheetXml(xml, rowHts) {
+  // s="2" on header row cells, s="1" on data row cells
+  xml = xml.replace(/<c r="([A-Z]+)(\d+)"/g,
+    (m, col, rn) => `<c r="${col}${rn}" s="${rn === '1' ? 2 : 1}"`);
+  // row heights
+  xml = xml.replace(/<row r="(\d+)"/g, (m, rn) => {
+    const ht = rowHts[parseInt(rn) - 1] || 20;
+    return `<row r="${rn}" ht="${ht}" customHeight="1"`;
+  });
+  return xml;
+}
+
 // ── Export JSON → Excel ───────────────────────────────────────────────────────
-function exportToExcel() {
+async function exportToExcel() {
   let json;
   try {
     json = JSON.parse(document.getElementById("jsonInput").value);
@@ -197,13 +264,14 @@ function exportToExcel() {
     setStatus("exportStatus", "❌ Invalid JSON — please check your input.", "error");
     return;
   }
-
-  const wb = new ExcelJS.Workbook ? null : null; // fallback to SheetJS
-  // Using SheetJS (XLSX) which is loaded
-  exportWithSheetJS(json);
+  try {
+    await exportWithSheetJS(json);
+  } catch(e) {
+    setStatus("exportStatus", `❌ Export failed: ${e.message}`, "error");
+  }
 }
 
-function exportWithSheetJS(json) {
+async function exportWithSheetJS(json) {
   const wb = XLSX.utils.book_new();
 
   // Sheet 1: Survey Meta
@@ -229,7 +297,12 @@ function exportWithSheetJS(json) {
     const italicMatch = raw.match(/^_(.+?)_/s);
     const boldMatch   = raw.match(/\*\*(.+?)\*\*/s);
     if (italicMatch) anat = italicMatch[1];
-    if (boldMatch)   vern = boldMatch[1];
+    else {
+      // fallback: plain text before first ** (description without _ markers)
+      const plainPart = raw.split("**")[0].trim();
+      if (plainPart) anat = plainPart;
+    }
+    if (boldMatch) vern = boldMatch[1];
     sphereData.push([sid, labels[sid], layerFor(sid), anat, vern, status[sid]||"", ""]);
   });
   const ws2 = XLSX.utils.aoa_to_sheet(sphereData);
@@ -241,7 +314,7 @@ function exportWithSheetJS(json) {
                        "Anatomical Framing (italic)","Domain Assertion (bold)",
                        "Status","Evidence / Example","Suggestion"];
   const edgeData = [edgeHeaders];
-  const edgeDescs   = json.edgeDescriptions || {};
+  const edgeDescs    = json.edgeDescriptions || {};
   const edgeStatuses = json.edgeStatus || {};
 
   Object.entries(edgeDescs).forEach(([eid, raw]) => {
@@ -287,15 +360,74 @@ function exportWithSheetJS(json) {
   ws5["!cols"] = [{wch:24},{wch:20},{wch:50},{wch:50}];
   XLSX.utils.book_append_sheet(wb, ws5, "Layer Reference");
 
-  XLSX.writeFile(wb, "NDC_eVSM_Setup.xlsx");
+  // ── JSZip patch: inject styles + wrapText + row heights ──────────────────
+  const colW = {
+    'Survey Meta':       [22, 50],
+    'Spheres':           [6, 28, 24, 44, 44, 14, 24],
+    'Edges':             [7, 7, 14, 26, 26, 40, 40, 14, 28, 28],
+    'Worlds Categories': [5, 34, 44],
+    'Layer Reference':   [24, 20, 50, 50],
+  };
+  const htMap = {};
+  const allData = {
+    'Survey Meta': metaData, 'Spheres': sphereData, 'Edges': edgeData,
+    'Worlds Categories': worldsData, 'Layer Reference': layerData,
+  };
+  for (const name of wb.SheetNames) {
+    const rows = allData[name] || [];
+    htMap[name] = rows.map((r, i) => i === 0 ? 28 : calcRowHt(r, colW[name] || []));
+  }
+
+  const buf = XLSX.write(wb, {bookType: 'xlsx', type: 'array'});
+  const zip = await JSZip.loadAsync(buf);
+
+  zip.file('xl/styles.xml', STYLES_XML);
+
+  for (let i = 0; i < wb.SheetNames.length; i++) {
+    const file = `xl/worksheets/sheet${i + 1}.xml`;
+    const entry = zip.file(file);
+    if (!entry) continue;
+    let xml = await entry.async('string');
+    xml = patchSheetXml(xml, htMap[wb.SheetNames[i]] || []);
+    zip.file(file, xml);
+  }
+
+  const blob = await zip.generateAsync({type: 'blob', compression: 'DEFLATE'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'NDC_eVSM_Setup.xlsx';
+  a.click();
   setStatus("exportStatus", "✅ Excel file downloaded successfully.", "ok");
 }
 
-// ── Import Excel → JSON ───────────────────────────────────────────────────────
-function importFromExcel(input) {
-  const file = input.files[0];
-  if (!file) return;
+// ── Import drop zone ─────────────────────────────────────────────────────────
+(function() {
+  function initDZ() {
+    const dz = document.getElementById('xlsxDropZone');
+    if (!dz) return;
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault();
+      dz.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) importFromExcel(file);
+    });
+    dz.addEventListener('click', () => {
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = '.xlsx';
+      inp.onchange = e => { if (e.target.files[0]) importFromExcel(e.target.files[0]); };
+      inp.click();
+    });
+  }
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', initDZ);
+  else
+    initDZ();
+})();
 
+// ── Import Excel → JSON ───────────────────────────────────────────────────────
+function importFromExcel(file) {
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
@@ -308,7 +440,7 @@ function importFromExcel(input) {
       const ws1   = wb.Sheets["Survey Meta"];
       const rows1 = XLSX.utils.sheet_to_json(ws1, { header: 1 });
       const meta  = {};
-      rows1.slice(2).forEach(r => {
+      rows1.slice(1).forEach(r => {
         if (r[0]) {
           let val = r[1] !== undefined ? r[1] : "";
           if (r[0] === "anonymousMode") val = (String(val).toLowerCase() === "true");
@@ -321,7 +453,7 @@ function importFromExcel(input) {
       const ws2   = wb.Sheets["Spheres"];
       const rows2 = XLSX.utils.sheet_to_json(ws2, { header: 1 });
       const nodeLabels = {}, nodeDescs = {}, nodeStatus = {};
-      rows2.slice(2).forEach(r => {
+      rows2.slice(1).forEach(r => {
         const sid = r[0]; if (!sid) return;
         nodeLabels[sid] = r[1] || "";
         const anat = r[3] || "", vern = r[4] || "";
@@ -339,7 +471,7 @@ function importFromExcel(input) {
       const ws3   = wb.Sheets["Edges"];
       const rows3 = XLSX.utils.sheet_to_json(ws3, { header: 1 });
       const edgeDescs = {}, edgeStatus = {};
-      rows3.slice(2).forEach(r => {
+      rows3.slice(1).forEach(r => {
         const frm = r[0], to = r[1]; if (!frm || !to) return;
         const fNum = String(frm).replace("S-","");
         const tNum = String(to).replace("S-","");
@@ -357,7 +489,7 @@ function importFromExcel(input) {
       // Worlds Categories
       const ws4   = wb.Sheets["Worlds Categories"];
       const rows4 = XLSX.utils.sheet_to_json(ws4, { header: 1 });
-      json.worldsCategories = rows4.slice(2).map(r => r[1]).filter(Boolean);
+      json.worldsCategories = rows4.slice(1).map(r => r[1]).filter(Boolean);
 
       importedJson = json;
 
@@ -373,7 +505,13 @@ function importFromExcel(input) {
           <tr><td>Worlds Categories</td><td>${json.worldsCategories.length} categories</td></tr>
         </table>`;
       document.getElementById("importPreview").style.display = "block";
-      setStatus("importStatus", `✅ Imported "${file.name}" successfully.`, "ok");
+      setStatus("importStatus", `✅ Imported "${file.name}" — JSON loaded into Export section above.`, "ok");
+
+      // Populate the export textarea so the round-trip is ready immediately
+      const jsonInput = document.getElementById("jsonInput");
+      jsonInput.value = JSON.stringify(json, null, 2);
+      jsonInput.scrollIntoView({ behavior: "smooth", block: "start" });
+      setStatus("exportStatus", `ℹ Loaded from "${file.name}" — edit then re-export.`, "info");
 
     } catch(err) {
       setStatus("importStatus", `❌ Error reading file: ${err.message}`, "error");
