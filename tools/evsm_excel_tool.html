@@ -295,6 +295,10 @@ async function exportWithSheetJS(json) {
   const descs  = json.nodeDescriptions || {};
   const status = json.nodeStatus || {};
 
+  // Build sphere → Excel row map (row 1 = header, data starts at row 2)
+  const sphereRow = {};
+  Object.keys(labels).forEach((sid, i) => { sphereRow[sid] = i + 2; });
+
   // Parse combined description back into two columns
   Object.keys(labels).forEach(sid => {
     const raw = descs[sid] || "";
@@ -332,11 +336,22 @@ async function exportWithSheetJS(json) {
     if (italicMatch) anat      = italicMatch[1];
     if (boldMatch)   assertion = boldMatch[1];
     edgeData.push([frm, to, eid,
-      labels[frm]||"", labels[to]||"",
+      labels[frm]||"", labels[to]||"",   // placeholder text — replaced with formulas below
       anat, assertion,
       edgeStatuses[eid]||"","",""]);
   });
   const ws3 = XLSX.utils.aoa_to_sheet(edgeData);
+
+  // Replace From Label (col D) and To Label (col E) with cross-sheet formulas
+  // so editing a sphere label in the Spheres sheet propagates everywhere.
+  edgeData.forEach((row, ri) => {
+    if (ri === 0) return; // skip header
+    const frm = row[0], to = row[1];
+    if (sphereRow[frm])
+      ws3[XLSX.utils.encode_cell({r: ri, c: 3})] = {t: 'f', f: `Spheres!B${sphereRow[frm]}`};
+    if (sphereRow[to])
+      ws3[XLSX.utils.encode_cell({r: ri, c: 4})] = {t: 'f', f: `Spheres!B${sphereRow[to]}`};
+  });
   ws3["!cols"] = [{wch:7},{wch:7},{wch:14},{wch:26},{wch:26},
                   {wch:40},{wch:40},{wch:14},{wch:28},{wch:28}];
   XLSX.utils.book_append_sheet(wb, ws3, "Edges");
