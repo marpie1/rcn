@@ -760,6 +760,27 @@ const EDGE_LIST = [
   [11,3],[11,4],[11,5],[11,6],[11,7],[11,8],[11,9],[11,10]
 ].map(([tail,head]) => ({tail,head}));
 
+// ── Edge consistency check ────────────────────────────────────────────────────
+(function checkEdgeConsistency() {
+  const listKeys = new Set(EDGE_LIST.map(({tail,head}) => `${tail}->${head}`));
+  const descKeys = new Set(Object.keys(edgeDescriptions));
+  const extra   = [...descKeys].filter(k => !listKeys.has(k));
+  const missing = [...listKeys].filter(k => !descKeys.has(k));
+  if (extra.length || missing.length) {
+    const lines = [];
+    if (extra.length)   lines.push(`edgeDescriptions has keys not in EDGE_LIST: ${extra.join(', ')}`);
+    if (missing.length) lines.push(`EDGE_LIST has edges missing from edgeDescriptions: ${missing.join(', ')}`);
+    console.error('[eVSM] Edge mismatch:\n' + lines.join('\n'));
+    // Surface in UI after page load so it isn't silently swallowed
+    window.addEventListener('DOMContentLoaded', () => {
+      const banner = document.createElement('div');
+      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#dc2626;color:#fff;font:bold 13px/1.6 monospace;padding:8px 14px;white-space:pre-wrap';
+      banner.textContent = '⚠ eVSM edge mismatch — check console:\n' + lines.join('\n');
+      document.body.appendChild(banner);
+    });
+  }
+})();
+
 // Flat sequence for Prev/Next: nodes first, then edges
 function buildAssessmentSequence() {
   const nodes = Object.keys(nodeLabels).map(id => ({type:'node', id}));
