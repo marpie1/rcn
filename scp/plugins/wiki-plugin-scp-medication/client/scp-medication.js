@@ -90,6 +90,33 @@
       .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // Parse [[Page Title]] and https://... into clickable HTML links.
+  function renderLinks(text) {
+    if (!text) return '';
+    var result = '';
+    var re = /(\[\[[^\]]+\]\]|https?:\/\/[^\s]+)/g;
+    var match, lastIndex = 0;
+    while ((match = re.exec(text)) !== null) {
+      if (match.index > lastIndex) result += esc(text.slice(lastIndex, match.index));
+      var token = match[0];
+      if (token.charAt(0) === '[') {
+        var title = token.slice(2, -2);
+        var slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        result += '<a class="scp-wiki-link" href="/view/' + slug + '">' + esc(title) + '</a>';
+      } else {
+        result += '<a class="scp-ext-link" href="' + esc(token) + '" target="_blank" rel="noopener">' + esc(token) + '</a>';
+      }
+      lastIndex = match.index + token.length;
+    }
+    if (lastIndex < text.length) result += esc(text.slice(lastIndex));
+    return result;
+  }
+
+  // Strip [[brackets]] for search indexing via item.text.
+  function noteToText(note) {
+    return (note || '').replace(/\[\[([^\]]+)\]\]/g, '$1');
+  }
+
   // ── Search text generation ──────────────────────────────────────────────────
   // Populates item.text so FedWiki's search index can find SCP content.
   // Called automatically by save() for every type.
@@ -193,6 +220,11 @@
         if (item.role) p.push('(' + item.role + ')');
         add('on',      item.date ? item.date + '.' : null);
         add('Reason:', item.reason);
+        break;
+      case 'scp-previsit':
+        add('Reason for visit:', item.reason_for_visit);
+        if (item.visit_topics && item.visit_topics.length)
+          p.push('Visit topics: ' + item.visit_topics.join(', ') + '.');
         break;
       case 'scp-care-member':
         var cmRole = item.role === 'Other' ? (item.other_role || 'Other') : (item.role || '');
@@ -387,8 +419,8 @@
       (item.rxnorm_code   ? '<div class="scp-row"><span class="scp-lbl">RxNorm</span><div class="scp-val">'        + esc(item.rxnorm_code)   + '</div></div>' : '') +
       (item.prescribed_by ? '<div class="scp-row"><span class="scp-lbl">Prescribed By</span><div class="scp-val">' + esc(item.prescribed_by) + '</div></div>' : '') +
       (item.started       ? '<div class="scp-row"><span class="scp-lbl">Started</span><div class="scp-val">'       + esc(item.started)       + '</div></div>' : '') +
-      (item.directions    ? '<div class="scp-row"><span class="scp-lbl">Directions</span><div class="scp-val">'    + esc(item.directions)    + '</div></div>' : '') +
-      (item.use           ? '<div class="scp-row"><span class="scp-lbl">Use / Purpose</span><div class="scp-val">' + esc(item.use)           + '</div></div>' : '') +
+      (item.directions    ? '<div class="scp-row"><span class="scp-lbl">Directions</span><div class="scp-val">'    + renderLinks(item.directions)    + '</div></div>' : '') +
+      (item.use           ? '<div class="scp-row"><span class="scp-lbl">Use / Purpose</span><div class="scp-val">' + renderLinks(item.use)           + '</div></div>' : '') +
       (item.timing && item.timing.length ? '<div class="scp-row"><span class="scp-lbl">Timing</span><div class="scp-val">' + esc(item.timing.join(', ')) + '</div></div>' : '') +
       (item.not_prescribed ? '<div class="scp-flag">Not taken as prescribed: ' + esc(item.not_prescribed) + '</div>' : '');
   }
@@ -493,7 +525,7 @@
       '<div class="scp-row"><span class="scp-lbl">Unit</span><div class="scp-val">' + esc(item.unit || '') + '</div></div>' +
       '<div class="scp-row"><span class="scp-lbl">Date</span><div class="scp-val">' + esc(item.date || '') + '</div></div>' +
       '<div class="scp-row"><span class="scp-lbl">Time</span><div class="scp-val">' + esc(item.time || '') + '</div></div>' +
-      (item.notes ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">' + esc(item.notes) + '</div></div>' : '');
+      (item.notes ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">' + renderLinks(item.notes) + '</div></div>' : '');
   }
 
   function emitVital($item, item) {
@@ -610,8 +642,8 @@
       '<div class="scp-row"><span class="scp-lbl">Severity</span><div class="scp-val">' + esc(item.severity || '') + '</div></div>' +
       '<div class="scp-row"><span class="scp-lbl">Date</span><div class="scp-val">' + esc(item.date || '') + '</div></div>' +
       '<div class="scp-row"><span class="scp-lbl">Duration</span><div class="scp-val">' + esc(item.duration || '') + '</div></div>' +
-      (item.possible_cause ? '<div class="scp-row"><span class="scp-lbl">Possible Cause</span><div class="scp-val">' + esc(item.possible_cause) + '</div></div>' : '') +
-      (item.action_taken   ? '<div class="scp-row"><span class="scp-lbl">Action Taken</span><div class="scp-val">'   + esc(item.action_taken)   + '</div></div>' : '');
+      (item.possible_cause ? '<div class="scp-row"><span class="scp-lbl">Possible Cause</span><div class="scp-val">' + renderLinks(item.possible_cause) + '</div></div>' : '') +
+      (item.action_taken   ? '<div class="scp-row"><span class="scp-lbl">Action Taken</span><div class="scp-val">'   + renderLinks(item.action_taken)   + '</div></div>' : '');
   }
 
   function emitSymptom($item, item) {
@@ -726,9 +758,9 @@
       (item.provider_type ? '<div class="scp-row"><span class="scp-lbl">Provider Type</span><div class="scp-val">' + esc(item.provider_type) + '</div></div>' : '') +
       '<div class="scp-row"><span class="scp-lbl">Visit Type</span><div class="scp-val">' + esc(item.visit_type || '') + '</div></div>' +
       '<div class="scp-row"><span class="scp-lbl">Date</span><div class="scp-val">' + esc(item.date || '') + '</div></div>' +
-      (item.reason    ? '<div class="scp-row"><span class="scp-lbl">Reason</span><div class="scp-val">'    + esc(item.reason)    + '</div></div>' : '') +
-      (item.outcome   ? '<div class="scp-row"><span class="scp-lbl">Outcome</span><div class="scp-val">'   + esc(item.outcome)   + '</div></div>' : '') +
-      (item.follow_up ? '<div class="scp-row"><span class="scp-lbl">Follow Up</span><div class="scp-val">' + esc(item.follow_up) + '</div></div>' : '');
+      (item.reason    ? '<div class="scp-row"><span class="scp-lbl">Reason</span><div class="scp-val">'    + renderLinks(item.reason)    + '</div></div>' : '') +
+      (item.outcome   ? '<div class="scp-row"><span class="scp-lbl">Outcome</span><div class="scp-val">'   + renderLinks(item.outcome)   + '</div></div>' : '') +
+      (item.follow_up ? '<div class="scp-row"><span class="scp-lbl">Follow Up</span><div class="scp-val">' + renderLinks(item.follow_up) + '</div></div>' : '');
   }
 
   function emitVisit($item, item) {
@@ -838,7 +870,7 @@
       (item.address           ? '<div class="scp-row"><span class="scp-lbl">Address</span><div class="scp-val">'           + esc(item.address)           + '</div></div>' : '') +
       (item.emergency_contact ? '<div class="scp-row"><span class="scp-lbl">Emergency Contact</span><div class="scp-val">' + esc(item.emergency_contact) + '</div></div>' : '') +
       (item.emergency_phone   ? '<div class="scp-row"><span class="scp-lbl">Emergency Phone</span><div class="scp-val">'   + esc(item.emergency_phone)   + '</div></div>' : '') +
-      (item.notes             ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">'             + esc(item.notes)             + '</div></div>' : '');
+      (item.notes             ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">'             + renderLinks(item.notes)             + '</div></div>' : '');
   }
 
   function emitAbout($item, item) {
@@ -913,8 +945,8 @@
       (item.specialty    ? '<div class="scp-row"><span class="scp-lbl">Specialty</span><div class="scp-val">'    + esc(item.specialty)    + '</div></div>' : '') +
       '<div class="scp-row"><span class="scp-lbl">Phone</span><div class="scp-val">'          + esc(item.phone || '')     + '</div></div>' +
       (item.fax          ? '<div class="scp-row"><span class="scp-lbl">Fax</span><div class="scp-val">'          + esc(item.fax)          + '</div></div>' : '') +
-      (item.when_to_call ? '<div class="scp-row"><span class="scp-lbl">When to Call</span><div class="scp-val">' + esc(item.when_to_call) + '</div></div>' : '') +
-      (item.notes        ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">'        + esc(item.notes)        + '</div></div>' : '') +
+      (item.when_to_call ? '<div class="scp-row"><span class="scp-lbl">When to Call</span><div class="scp-val">' + renderLinks(item.when_to_call) + '</div></div>' : '') +
+      (item.notes        ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">'        + renderLinks(item.notes)        + '</div></div>' : '') +
       (item.add_to_care_team ? '<div class="scp-row"><span class="scp-lbl">Care Team</span><div class="scp-val" style="color:#059669">Added</div></div>' : '');
   }
 
@@ -1014,7 +1046,7 @@
       '<div class="scp-row"><span class="scp-lbl">Diagnosed</span><div class="scp-val">'          + esc(item.diagnosed_date || '')      + '</div></div>' +
       (item.diagnosing_provider ? '<div class="scp-row"><span class="scp-lbl">Provider</span><div class="scp-val">'           + esc(item.diagnosing_provider) + '</div></div>' : '') +
       '<div class="scp-row"><span class="scp-lbl">Status</span><div class="scp-val">'             + esc(item.status || '')              + '</div></div>' +
-      (item.notes               ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">'              + esc(item.notes)               + '</div></div>' : '');
+      (item.notes               ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">'              + renderLinks(item.notes)               + '</div></div>' : '');
   }
 
   function emitDiagnosis($item, item) {
@@ -1089,7 +1121,7 @@
       (item.reaction        ? '<div class="scp-row"><span class="scp-lbl">Reaction</span><div class="scp-val">'        + esc(item.reaction)        + '</div></div>' : '') +
       '<div class="scp-row"><span class="scp-lbl">Severity</span><div class="scp-val">'            + esc(item.severity || '')         + '</div></div>' +
       (item.date_identified ? '<div class="scp-row"><span class="scp-lbl">Date Identified</span><div class="scp-val">' + esc(item.date_identified) + '</div></div>' : '') +
-      (item.notes           ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">'           + esc(item.notes)           + '</div></div>' : '');
+      (item.notes           ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">'           + renderLinks(item.notes)           + '</div></div>' : '');
   }
 
   function emitReaction($item, item) {
@@ -1163,7 +1195,7 @@
     return '<div class="scp-row"><span class="scp-lbl">Event</span><div class="scp-val">' + esc(item.event || '') + '</div></div>' +
       '<div class="scp-row"><span class="scp-lbl">Date</span><div class="scp-val">' + esc(item.date || '') + '</div></div>' +
       '<div class="scp-row"><span class="scp-lbl">Provider</span><div class="scp-val">' + esc(item.provider || '') + '</div></div>' +
-      (item.notes ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">' + esc(item.notes) + '</div></div>' : '');
+      (item.notes ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">' + renderLinks(item.notes) + '</div></div>' : '');
   }
 
   function emitHistory($item, item) {
@@ -1232,7 +1264,7 @@
       '<div class="scp-row"><span class="scp-lbl">Who</span><div class="scp-val">'          + esc(item.who || '')     + '</div></div>' +
       (item.by_when ? '<div class="scp-row"><span class="scp-lbl">By When</span><div class="scp-val">' + esc(item.by_when) + '</div></div>' : '') +
       '<div class="scp-row"><span class="scp-lbl">Status</span><div class="scp-val">'       + esc(item.status || '')  + '</div></div>' +
-      (item.notes   ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">'   + esc(item.notes)   + '</div></div>' : '');
+      (item.notes   ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">'   + renderLinks(item.notes)   + '</div></div>' : '');
   }
 
   function emitNextStep($item, item) {
@@ -1301,7 +1333,7 @@
 
   function directiveDetailHtml(item) {
     return '<div class="scp-row"><span class="scp-lbl">Type</span><div class="scp-val">'            + esc(item.directive_type || '')    + '</div></div>' +
-      (item.details           ? '<div class="scp-row"><span class="scp-lbl">Details</span><div class="scp-val">'           + esc(item.details)           + '</div></div>' : '') +
+      (item.details           ? '<div class="scp-row"><span class="scp-lbl">Details</span><div class="scp-val">'           + renderLinks(item.details)           + '</div></div>' : '') +
       (item.proxy_name        ? '<div class="scp-row"><span class="scp-lbl">Proxy Name</span><div class="scp-val">'        + esc(item.proxy_name)        + '</div></div>' : '') +
       (item.proxy_phone       ? '<div class="scp-row"><span class="scp-lbl">Proxy Phone</span><div class="scp-val">'       + esc(item.proxy_phone)       + '</div></div>' : '') +
       (item.document_location ? '<div class="scp-row"><span class="scp-lbl">Document Location</span><div class="scp-val">' + esc(item.document_location) + '</div></div>' : '') +
@@ -1381,7 +1413,7 @@
     return '<div class="scp-row"><span class="scp-lbl">Accessor</span><div class="scp-val">' + esc(item.accessor || '') + '</div></div>' +
       '<div class="scp-row"><span class="scp-lbl">Role</span><div class="scp-val">' + esc(item.role || '') + '</div></div>' +
       '<div class="scp-row"><span class="scp-lbl">Date</span><div class="scp-val">' + esc(item.date || '') + '</div></div>' +
-      (item.reason ? '<div class="scp-row"><span class="scp-lbl">Reason</span><div class="scp-val">' + esc(item.reason) + '</div></div>' : '');
+      (item.reason ? '<div class="scp-row"><span class="scp-lbl">Reason</span><div class="scp-val">' + renderLinks(item.reason) + '</div></div>' : '');
   }
 
   function emitAccess($item, item) {
@@ -1440,6 +1472,23 @@
   // ══════════════════════════════════════════════════════════════════════════
   // scp-previsit  — Pre-Visit Summary generator
   // ══════════════════════════════════════════════════════════════════════════
+
+  var VISIT_TOPICS = [
+    'Follow-up / Check-up',
+    'Review Test Results',
+    'New Problem or Symptoms',
+    'Medication Adjustment or Refill',
+    'Chronic Disease Management',
+    'Mental / Emotional Health',
+    'Immunization or Vaccination',
+    'Preventive Care or Screening',
+    'Lab or Imaging Results',
+    'Post-Hospital Follow-up',
+    'Pain Management',
+    'Nutrition / Lifestyle Counseling',
+    'Administrative (Referral, Records, Forms)',
+    'Other',
+  ];
 
   var PREVISIT_SECTIONS = [
     { key: 'about',       label: 'Patient',               page: 'about-me',            type: 'scp-about',      limit: 1 },
@@ -1541,7 +1590,7 @@
             d.icd_code ? 'ICD: ' + d.icd_code : '',
             d.diagnosed_date ? 'Dx: ' + d.diagnosed_date : ''].filter(Boolean).join('  ·  ');
           html += pvRow(d.condition || 'Diagnosis', meta);
-          if (d.notes) html += '<tr><td></td><td class="pv-note">' + esc(d.notes) + '</td></tr>';
+          if (d.notes) html += '<tr><td></td><td class="pv-note">' + renderLinks(d.notes) + '</td></tr>';
         });
         html += '</table>';
         break;
@@ -1553,7 +1602,7 @@
             (n.who    ? '  —  ' + esc(n.who)        : '') +
             (n.by_when ? '  by ' + esc(n.by_when)   : '') +
             (n.status  ? '  <em>(' + esc(n.status) + ')</em>' : '') +
-            (n.notes   ? '<br><span class="pv-note">' + esc(n.notes) + '</span>' : '') +
+            (n.notes   ? '<br><span class="pv-note">' + renderLinks(n.notes) + '</span>' : '') +
             '</li>';
         });
         html += '</ul>';
@@ -1566,7 +1615,7 @@
             s.duration ? 'Duration: ' + s.duration : '',
             s.date].filter(Boolean).join('  ·  ');
           html += pvRow(s.symptom || 'Symptom', meta);
-          if (s.action_taken) html += '<tr><td></td><td class="pv-note">Action taken: ' + esc(s.action_taken) + '</td></tr>';
+          if (s.action_taken) html += '<tr><td></td><td class="pv-note">Action taken: ' + renderLinks(s.action_taken) + '</td></tr>';
         });
         html += '</table>';
         break;
@@ -1577,7 +1626,7 @@
           var role = [p.role, p.specialty].filter(Boolean).join('  ·  ');
           html += pvRow(p.name || 'Provider', role);
           if (p.phone) html += '<tr><td></td><td class="pv-note">Phone: ' + esc(p.phone) +
-            (p.when_to_call ? '  —  ' + esc(p.when_to_call) : '') + '</td></tr>';
+            (p.when_to_call ? '  —  ' + renderLinks(p.when_to_call) : '') + '</td></tr>';
         });
         html += '</table>';
         break;
@@ -1589,7 +1638,7 @@
             m.prescribed_by ? 'Rx: ' + m.prescribed_by : '',
             m.started ? 'Started: ' + m.started : ''].filter(Boolean).join('  ·  ');
           html += pvRow(m.label || 'Medication', meta);
-          if (m.directions) html += '<tr><td></td><td class="pv-note">' + esc(m.directions) + '</td></tr>';
+          if (m.directions) html += '<tr><td></td><td class="pv-note">' + renderLinks(m.directions) + '</td></tr>';
           if (m.timing && m.timing.length)
             html += '<tr><td></td><td class="pv-note">Timing: ' + esc(m.timing.join(', ')) + '</td></tr>';
           if (m.not_prescribed)
@@ -1618,7 +1667,7 @@
         items.forEach(function (r) {
           var detail = [r.severity, r.reaction].filter(Boolean).join(': ');
           html += pvRow(r.substance || 'Substance', detail);
-          if (r.notes) html += '<tr><td></td><td class="pv-note">' + esc(r.notes) + '</td></tr>';
+          if (r.notes) html += '<tr><td></td><td class="pv-note">' + renderLinks(r.notes) + '</td></tr>';
         });
         html += '</table>';
         break;
@@ -1628,7 +1677,7 @@
         items.forEach(function (h) {
           var meta = [h.date, h.provider].filter(Boolean).join('  ·  ');
           html += pvRow(h.event || 'Event', meta);
-          if (h.notes) html += '<tr><td></td><td class="pv-note">' + esc(h.notes) + '</td></tr>';
+          if (h.notes) html += '<tr><td></td><td class="pv-note">' + renderLinks(h.notes) + '</td></tr>';
         });
         html += '</table>';
         break;
@@ -1638,7 +1687,7 @@
         items.forEach(function (d) {
           html += pvRow(d.directive_type || 'Directive',
             d.date_signed ? 'Signed ' + d.date_signed : '');
-          if (d.details) html += '<tr><td></td><td class="pv-note">' + esc(d.details) + '</td></tr>';
+          if (d.details) html += '<tr><td></td><td class="pv-note">' + renderLinks(d.details) + '</td></tr>';
           if (d.proxy_name) html += '<tr><td></td><td class="pv-note">Proxy: ' + esc(d.proxy_name) +
             (d.proxy_phone ? '  —  ' + esc(d.proxy_phone) : '') + '</td></tr>';
           if (d.document_location) html += '<tr><td></td><td class="pv-note">Document: ' +
@@ -1653,7 +1702,7 @@
           var role = m.role === 'Other' ? (m.other_role || 'Other') : (m.role || '');
           html += pvRow(m.name || 'Care Member', role);
           if (m.phone) html += '<tr><td></td><td class="pv-note">Phone: ' + esc(m.phone) + '</td></tr>';
-          if (m.notes) html += '<tr><td></td><td class="pv-note">' + esc(m.notes) + '</td></tr>';
+          if (m.notes) html += '<tr><td></td><td class="pv-note">' + renderLinks(m.notes) + '</td></tr>';
         });
         html += '</table>';
         break;
@@ -1682,7 +1731,7 @@
       '</div>';
   }
 
-  function pvOpenPrint(pageData, active, healthLogData) {
+  function pvOpenPrint(pageData, active, healthLogData, pvItem) {
     // Patient name for header — pulled from about-me even if section is deselected
     var patientName = 'Patient';
     var aboutPage = pageData['about-me'];
@@ -1694,7 +1743,20 @@
     var today = new Date().toLocaleDateString('en-US',
       { year: 'numeric', month: 'long', day: 'numeric' });
 
-    var body = active.map(function (s) { return pvSection(s, pageData); }).join('') +
+    var pvHeader = '';
+    if (pvItem && (pvItem.reason_for_visit || (pvItem.visit_topics && pvItem.visit_topics.length))) {
+      pvHeader += '<div class="pv-section" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:4px;padding:10px 14px;margin-bottom:12px">';
+      if (pvItem.reason_for_visit) {
+        pvHeader += '<div style="margin-bottom:6px"><strong>Reason for Visit:</strong> ' + esc(pvItem.reason_for_visit) + '</div>';
+      }
+      if (pvItem.visit_topics && pvItem.visit_topics.length) {
+        pvHeader += '<div><strong>Visit Topics:</strong> ' + pvItem.visit_topics.map(esc).join('  ·  ') + '</div>';
+      }
+      pvHeader += '</div>';
+    }
+
+    var body = pvHeader +
+               active.map(function (s) { return pvSection(s, pageData); }).join('') +
                (healthLogData ? pvHealthLogHtml(healthLogData) : '');
 
     var doc = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
@@ -1741,10 +1803,32 @@
         '<input type="checkbox" class="scp-pv-sec" value="' + esc(s.key) + '"' + chk + '>' +
         '<span>' + esc(s.label) + '</span></label>';
     }).join('');
+    var topicBoxes = VISIT_TOPICS.map(function(t) {
+      var sel = item.visit_topics && item.visit_topics.indexOf(t) !== -1;
+      return '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.84rem;padding:1px 0">' +
+        '<input type="checkbox" class="scp-pv-topic" value="' + esc(t) + '"' + (sel ? ' checked' : '') + ' style="flex:0 0 auto;margin:0">' +
+        '<span>' + esc(t) + '</span></label>';
+    }).join('');
     $item.append(
       '<div class="scp">' +
       '<div class="scp-head">Pre-Visit Summary</div>' +
-      '<div style="font-size:.78rem;color:#888;margin-bottom:6px">Sections to include:</div>' +
+      row('Reason for Visit',
+        '<div style="display:flex;gap:6px;align-items:flex-start">' +
+        '<textarea class="scp-pv-reason" rows="2" style="flex:1;' +
+          'font:inherit;font-size:.88rem;border:none;border-bottom:1px solid transparent;' +
+          'background:transparent;color:inherit;padding:2px 0;resize:none;overflow:hidden;' +
+          'min-height:1.3em;line-height:1.4;width:100%;box-sizing:border-box">' +
+          esc(item.reason_for_visit || '') + '</textarea>' +
+        '<button class="scp-pv-mic" title="Voice input" style="flex:0 0 auto;background:none;' +
+          'border:1px solid #d1d5db;border-radius:3px;cursor:pointer;padding:2px 6px;' +
+          'font-size:.8rem;color:#6b7280;line-height:1.4">🎤</button>' +
+        '</div>'
+      ) +
+      '<div style="padding:4px 0 6px">' +
+      '<div style="font-size:.7rem;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Visit Topics</div>' +
+      '<div style="display:flex;flex-direction:column;gap:4px">' + topicBoxes + '</div>' +
+      '</div>' +
+      '<div style="font-size:.78rem;color:#888;margin-bottom:6px;margin-top:8px">Sections to include:</div>' +
       '<div class="scp-checks" style="margin-bottom:10px">' + boxes + '</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
       '<button class="scp-commit-btn scp-pv-btn" style="background:#059669;margin-top:0">Generate &amp; Print</button>' +
@@ -1756,6 +1840,40 @@
   }
 
   function bindPrevisit($item, item) {
+    $item.find('.scp-pv-reason').each(function () { grow(this); });
+
+    $item.find('.scp-pv-reason').on('input', function () {
+      grow(this);
+      item.reason_for_visit = this.value;
+      save($item, item);
+    });
+    $item.find('.scp-pv-mic').on('click', function () {
+      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) { alert('Voice input not supported in this browser.'); return; }
+      var rec = new SpeechRecognition();
+      rec.lang = 'en-US';
+      rec.interimResults = false;
+      var $ta = $item.find('.scp-pv-reason');
+      var $btn = $(this);
+      $btn.text('⏺').css('color', '#dc2626');
+      rec.onresult = function(e) {
+        var transcript = e.results[0][0].transcript;
+        $ta.val(($ta.val() + ' ' + transcript).trim());
+        item.reason_for_visit = $ta.val();
+        grow($ta[0]);
+        save($item, item);
+      };
+      rec.onend = function() { $btn.text('🎤').css('color', ''); };
+      rec.onerror = function() { $btn.text('🎤').css('color', ''); };
+      rec.start();
+    });
+    $item.find('.scp-pv-topic').on('change', function () {
+      var v = [];
+      $item.find('.scp-pv-topic:checked').each(function () { v.push(this.value); });
+      item.visit_topics = v;
+      save($item, item);
+    });
+
     // Persist section selections on the item
     $item.find('.scp-pv-sec').on('change', function () {
       var v = [];
@@ -1781,7 +1899,7 @@
           .then(function (data) {
             pageData[slug] = data;
             if (--pending === 0) pvOpenPrint(pageData, active,
-              withHealthLog ? pageData['health-log'] : null);
+              withHealthLog ? pageData['health-log'] : null, item);
           });
       });
     }
@@ -2255,7 +2373,7 @@
     return '<div class="scp-row"><span class="scp-lbl">Name</span><div class="scp-val">'  + esc(item.name || '')  + '</div></div>' +
       '<div class="scp-row"><span class="scp-lbl">Role</span><div class="scp-val">'       + esc(displayRole)      + '</div></div>' +
       (item.phone ? '<div class="scp-row"><span class="scp-lbl">Phone</span><div class="scp-val">' + esc(item.phone) + '</div></div>' : '') +
-      (item.notes ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">' + esc(item.notes) + '</div></div>' : '');
+      (item.notes ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">' + renderLinks(item.notes) + '</div></div>' : '');
   }
 
   function emitCareMember($item, item) {
