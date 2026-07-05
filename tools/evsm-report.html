@@ -95,12 +95,37 @@ body {
   .load-another-btn:hover { background: var(--ink); color: var(--paper); }
 }
 
+/* Sphere filter bar */
+#sphere-filter-bar {
+  display: none; position: sticky; top: 0; z-index: 50;
+  background: var(--paper); border-bottom: 1px solid var(--rule);
+  padding: 8px 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+}
+#sphere-filter-bar .sfb-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 6px;
+}
+.sfb-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+.sfb-pill {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500;
+  padding: 3px 9px; border: 1px solid var(--rule); border-radius: 12px;
+  cursor: pointer; background: var(--paper); color: var(--ink);
+  transition: all 0.1s; user-select: none;
+}
+.sfb-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.sfb-all-link {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--accent);
+  cursor: pointer; text-decoration: underline; margin-left: 8px;
+  background: none; border: none; padding: 0;
+}
+
 @media print {
   body { background: #fff; }
-  .print-btn, .load-another-btn { display: none; }
+  .print-btn, .load-another-btn, #sphere-filter-bar { display: none !important; }
   #report { display: block !important; padding: 0; max-width: 100%; }
-  .sphere-section { page-break-inside: avoid; }
-  .edge-block { page-break-inside: avoid; }
+  .focal-section { page-break-after: always; }
+  .focal-section.sfb-hidden { display: none !important; }
 }
 
 /* Report header */
@@ -143,67 +168,68 @@ body {
   letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px;
 }
 
-/* Sphere section */
-.sphere-section {
-  background: var(--paper); border: 1px solid var(--rule); border-radius: 4px;
-  margin-bottom: 24px; overflow: hidden;
+/* Focal section */
+.focal-section {
+  background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 4px; margin-bottom: 32px; overflow: hidden;
+  page-break-after: always;
 }
-.sphere-header {
-  display: flex; align-items: center; gap: 14px;
-  padding: 14px 20px; border-bottom: 1px solid var(--rule);
+.focal-hdr {
+  display: flex; align-items: baseline; gap: 12px;
+  padding: 14px 20px; background: #edeae2; border-bottom: 2px solid var(--accent);
 }
-.sphere-dot {
-  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+.focal-id {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  font-weight: 500; color: var(--accent); flex-shrink: 0;
 }
-.sphere-title {
-  font-family: 'Libre Baskerville', serif; font-size: 15px; font-weight: 700;
-  flex: 1;
+.focal-label {
+  font-family: 'Libre Baskerville', serif; font-size: 17px; font-weight: 700;
 }
-.sphere-id {
-  font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted);
+.focus-svg-wrap {
+  text-align: center; padding: 16px; background: #fff;
+  border-bottom: 1px solid var(--rule);
 }
-.traffic-summary {
-  padding: 10px 20px; border-bottom: 1px solid var(--rule);
-  background: rgba(0,0,0,0.02);
-}
-.traffic-question {
-  font-size: 11px; color: var(--muted); margin-bottom: 6px; font-style: italic;
-}
-.traffic-row {
-  display: flex; gap: 16px; flex-wrap: wrap;
-}
-.traffic-item {
-  display: flex; align-items: center; gap: 5px; font-size: 12px;
-}
-.traffic-swatch {
-  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
-}
-.traffic-label { font-weight: 600; }
-.traffic-pct { color: var(--muted); font-size: 11px; }
-
-/* Edge block */
-.edge-block {
+.focus-svg-wrap svg { max-width: 100%; height: auto; }
+.sphere-data {
   padding: 16px 20px; border-bottom: 1px solid var(--rule);
 }
-.edge-block:last-child { border-bottom: none; }
-.edge-statement {
-  font-size: 13px; font-weight: 600; margin-bottom: 10px; line-height: 1.4;
+.node-status {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px; font-size: 12px; font-weight: 600;
 }
-.edge-statement .impacts {
-  font-weight: 400; color: var(--muted); font-size: 12px;
+.node-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.pairs-heading {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent);
+  padding: 8px 20px; background: #edeae2;
+  border-bottom: 1px solid var(--rule); border-top: 1px solid var(--rule);
 }
-.edge-counts {
-  display: flex; gap: 20px; margin-bottom: 12px; flex-wrap: wrap;
+.pair-block { border-bottom: 1px solid var(--rule); }
+.pair-block:last-child { border-bottom: none; }
+.pair-hdr {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500;
+  color: var(--accent); padding: 8px 20px 4px;
 }
-.edge-count-item {
-  display: flex; align-items: center; gap: 6px; font-size: 12px;
+.pair-names { color: var(--muted); font-weight: 400; font-size: 9px; }
+.edge-dir {
+  padding: 8px 20px 8px 32px; border-left: 3px solid var(--rule);
+  margin: 4px 16px 4px 20px;
 }
-.count-swatch {
-  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+.edge-dir-lbl {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  color: var(--muted); margin-bottom: 6px; font-weight: 500;
 }
-.count-label { color: var(--muted); }
-.count-n { font-weight: 600; }
-.count-pct { color: var(--muted); font-size: 11px; }
+.edge-dir-names { font-weight: 400; color: #bbb; }
+.edge-desc {
+  font-size: 11px; color: var(--muted); font-style: italic;
+  line-height: 1.5; margin-bottom: 8px;
+}
+.edge-status-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; margin-bottom: 8px;
+}
+.edge-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.not-assessed { font-size: 10px; color: var(--muted); font-style: italic; padding: 2px 0 6px; }
 
 .text-boxes {
   display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
@@ -273,6 +299,15 @@ body {
   </div>
 </div>
 
+<!-- Sphere filter bar (shown after report renders) -->
+<div id="sphere-filter-bar">
+  <div class="sfb-label">Show spheres
+    <button class="sfb-all-link" onclick="sfbToggleAll(true)">all</button>
+    <button class="sfb-all-link" onclick="sfbToggleAll(false)">none</button>
+  </div>
+  <div class="sfb-pills" id="sfb-pills"></div>
+</div>
+
 <!-- REPORT -->
 <div id="report"></div>
 <button class="print-btn" id="print-btn" style="display:none" onclick="window.print()">
@@ -295,6 +330,201 @@ const EDGE_LIST = [
   [10,6],[10,7],[10,8],[10,9],[10,11],
   [11,3],[11,4],[11,5],[11,6],[11,7],[11,8],[11,9],[11,10]
 ].map(([tail,head]) => ({tail,head}));
+
+// SVG namespaces
+const NS  = 'http://www.w3.org/2000/svg';
+const XNS = 'http://www.w3.org/1999/xhtml';
+
+// SVG geometry (matches aggregator/survey tool)
+let radius = 45, space = 90, bend = 4;
+const nudge = Math.PI / 40;
+const mw = () => 3*space + 4.5*radius;
+const ht = () => 10*radius + 4*space + 6;
+
+function buildNodes() {
+  const ex = 3;
+  const oy = i => 2*radius*(i+1) + (i+0.5)*space + ex;
+  const iy = i => (2*i+1)*radius + i*space + ex;
+  return [
+    ...[10,11,5,2,1].map((n,i) => ({n, x:mw()/2, y:iy(i)})),
+    ...[8,6,3].map((n,i) => ({n, x:radius+3, y:oy(i)})),
+    ...[9,7,4].map((n,i) => ({n, x:mw()-radius-3, y:oy(i)}))
+  ].sort((a,b) => a.n - b.n);
+}
+
+function svgEl(tag, attrs={}) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k,v] of Object.entries(attrs)) e.setAttribute(k,v);
+  return e;
+}
+
+function edgeConstructions({tail,head}, nodes) {
+  const {sin,cos,atan2,PI} = Math;
+  const hn = nodes.find(n => +n.n===+head);
+  const tn = nodes.find(n => +n.n===+tail);
+  const sl = atan2(hn.y-tn.y, hn.x-tn.x);
+  const p  = sl + PI/2;
+  const h  = {angle: sl-nudge};
+  const ew = 1;
+  const dtip = radius+3, dtail = dtip+8+ew;
+  h.x  = hn.x - cos(h.angle)*dtip;
+  h.y  = hn.y - sin(h.angle)*dtip;
+  h.ax = hn.x - cos(h.angle)*dtail;
+  h.ay = hn.y - sin(h.angle)*dtail;
+  const t = {angle: sl+nudge};
+  t.x = tn.x + cos(t.angle)*(radius+3);
+  t.y = tn.y + sin(t.angle)*(radius+3);
+  const m = {x: t.x+(h.ax-t.x)/2, y: t.y+(h.ay-t.y)/2};
+  const c = {x: cos(p)*bend+m.x,   y: sin(p)*bend+m.y};
+  return {hn,tn,sl,p,t,h,m,c};
+}
+
+function arrowPath(x,y,deg,ew) {
+  const r  = Math.atan2(3,8);
+  const ln = Math.sqrt(73)+ew;
+  const tx = Math.cos(r)*ln, ty = Math.sin(r)*ln;
+  return svgEl('path',{
+    transform:`translate(${x} ${y}) rotate(${deg})`,
+    d:`M -${tx} -${ty} L 0 0 L -${tx} ${ty} Z`
+  });
+}
+
+// SVG colors for single respondent
+const SNODE_COLORS = { go:'#4a9e5c', caution:'#d4a017', stop:'#c0392b', unsure:'#2471a3', '':'#cccccc', default:'#cccccc' };
+const SEDGE_COLORS = { agree:'#4a9e5c', disagree:'#c0392b', unknown:'#2471a3', '':'#cccccc', default:'#cccccc' };
+
+// Build a focus SVG for a single respondent's data
+// nodeAss: { 'S-1': { status:'go' }, ... }
+// edgeAss: { '1->2': { status:'agree' }, ... }
+// focalN: integer 1..11
+// labels: { 'S-1': 'COORDINATION...' }
+function buildFocusSVG(nodeAss, edgeAss, focalN, labels) {
+  const nodes = buildNodes();
+  const W = mw(), H = ht();
+
+  const neighborNums = new Set();
+  const activeEdgeKeys = new Set();
+  for (const {tail, head} of EDGE_LIST) {
+    if (tail === focalN || head === focalN) {
+      neighborNums.add(tail === focalN ? head : tail);
+      activeEdgeKeys.add(`${tail}->${head}`);
+    }
+  }
+  const activeNodeNums = new Set([focalN, ...neighborNums]);
+
+  const svg = svgEl('svg', {
+    viewBox: `0 0 ${W} ${H}`, width: W, height: H,
+    xmlns: NS, style: 'display:block;overflow:visible;'
+  });
+
+  const st = document.createElementNS(NS, 'style');
+  st.textContent = `
+    .nodelabel{position:absolute;display:flex;flex-direction:column;align-items:center;
+      justify-content:center;text-align:center;font-family:'Libre Baskerville',serif;pointer-events:none;}
+    .edgelabel{position:absolute;font-size:8px;pointer-events:none;}
+    .edgelabel p{position:absolute;width:36px;height:14px;transform:translate(0,-4px);}
+    p{margin:0;}
+  `;
+  svg.appendChild(st);
+
+  const defs = svgEl('defs');
+  const cg = svgEl('g');
+
+  for (const {n, x, y} of nodes) {
+    const id = `S-${n}`;
+    const isActive = activeNodeNums.has(n);
+    const isFocal = n === focalN;
+    const status = (nodeAss[id] && nodeAss[id].status) || '';
+
+    const clipId = `rpt-clip-${n}`;
+    const cp = svgEl('clipPath', {id: clipId});
+    cp.appendChild(svgEl('circle', {r: radius, cx: x, cy: y}));
+    defs.appendChild(cp);
+
+    const gAttrs = {'clip-path': `url(#${clipId})`};
+    if (!isActive) gAttrs.opacity = '0.1';
+    const g = svgEl('g', gAttrs);
+
+    const fillColor = isActive && status ? SNODE_COLORS[status] : SNODE_COLORS.default;
+    g.appendChild(svgEl('rect', {x: x-radius, y: y-radius, width: radius*2, height: radius*2, fill: fillColor}));
+    g.appendChild(svgEl('circle', {
+      r: radius, cx: x, cy: y, fill: 'none',
+      stroke: isFocal ? '#1a1a18' : '#555',
+      'stroke-width': isFocal ? '2.5' : '1.2'
+    }));
+    cg.appendChild(g);
+  }
+  svg.appendChild(defs);
+  svg.appendChild(cg);
+
+  const eg = svgEl('g');
+  for (const {tail, head} of EDGE_LIST) {
+    const key = `${tail}->${head}`;
+    const isActive = activeEdgeKeys.has(key);
+    const ec = edgeConstructions({tail, head}, nodes);
+    const eAss = edgeAss[key] || {};
+    const status = eAss.status || '';
+
+    let col, ew;
+    if (!isActive) {
+      col = SEDGE_COLORS.default; ew = 0.8;
+    } else if (!status) {
+      col = '#333'; ew = 2.5;
+    } else {
+      col = SEDGE_COLORS[status] || SEDGE_COLORS.default;
+      ew = 2;
+    }
+    const deg = ec.h.angle * 180 / Math.PI;
+    const gAttrs = {stroke: col};
+    if (!isActive) gAttrs.opacity = '0.1';
+    const g = svgEl('g', gAttrs);
+    const ag = svgEl('g', {fill: col});
+    ag.appendChild(arrowPath(ec.h.x, ec.h.y, deg, ew));
+    g.appendChild(ag);
+    g.appendChild(svgEl('path', {'stroke-width': ew, fill: 'transparent', d: `M ${ec.h.ax} ${ec.h.ay} Q ${ec.c.x} ${ec.c.y} ${ec.t.x} ${ec.t.y}`}));
+    eg.appendChild(g);
+  }
+  svg.appendChild(eg);
+
+  // Labels
+  const fo = svgEl('foreignObject', {x:0, y:0, width:W, height:H, style:'pointer-events:none;'});
+  const foDiv = document.createElementNS(XNS, 'div');
+  foDiv.setAttribute('xmlns', XNS);
+  foDiv.style.cssText = `position:relative;width:${W}px;height:${H}px;pointer-events:none;`;
+  fo.appendChild(foDiv);
+
+  for (const {n, x, y} of nodes) {
+    const id = `S-${n}`;
+    const isActive = activeNodeNums.has(n);
+    const title = ((labels && labels[id]) || id).replace(/\n/g, '\n');
+    const div = document.createElementNS(XNS, 'div');
+    div.setAttribute('xmlns', XNS);
+    div.className = 'nodelabel';
+    div.style.cssText = `left:${x-radius}px;top:${y-radius}px;width:${radius*2}px;height:${radius*2}px;${!isActive ? 'opacity:0.15;' : ''}`;
+    const lc = '#1a1a18';
+    div.innerHTML = `<p style="font-size:7px;font-weight:700;color:${lc};font-family:'Libre Baskerville',serif;">${id}</p><p style="margin-top:2px;font-size:8px;font-weight:700;color:${lc};line-height:1.2;white-space:pre-wrap;">${title}</p>`;
+    foDiv.appendChild(div);
+  }
+
+  for (const {tail, head} of EDGE_LIST) {
+    if (!activeEdgeKeys.has(`${tail}->${head}`)) continue;
+    const ec = edgeConstructions({tail, head}, nodes);
+    const {cos, sin, PI} = Math;
+    const lx = ec.t.x + cos(ec.t.angle)*25 + cos(ec.p)*4;
+    const ly = ec.t.y + sin(ec.t.angle)*25 + sin(ec.p)*4;
+    let summary, angle, ta;
+    if (ec.h.x - ec.t.x > 0) { summary = `${tail}→${head}`; angle = ec.sl; ta = 'left'; }
+    else { summary = `${head}←${tail}`; angle = ec.sl + PI; ta = 'right'; }
+    const div = document.createElementNS(XNS, 'div');
+    div.setAttribute('xmlns', XNS);
+    div.className = 'edgelabel';
+    div.style.cssText = `left:${lx}px;top:${ly}px;transform-origin:center;transform:rotate(${angle}rad) translate(-20px,0);`;
+    div.innerHTML = `<p style="color:#1a1a18;text-align:${ta};">${summary}</p>`;
+    foDiv.appendChild(div);
+  }
+  svg.appendChild(fo);
+  return svg;
+}
 
 // Edges grouped by source sphere
 function edgesFrom(n) {
@@ -365,183 +595,124 @@ function loadAnother() {
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function renderReport(data) {
   const { respondent, surveyMeta, config, assessments, meta } = data;
-  const labels      = config.nodeLabels       || {};
-  const nodeDesc    = config.nodeDescriptions || {};
-  const edgeDesc    = config.edgeDescriptions || {};
-  const nodeAss     = assessments.nodes || {};
-  const edgeAss     = assessments.edges || {};
-  const sm          = surveyMeta || {};
-  const anon        = !!(sm.anonymousMode);
-  const name        = (respondent && respondent.name) ? respondent.name
-                    : (respondent && respondent.respondentId) ? `ID: ${respondent.respondentId}`
-                    : 'Anonymous';
-  const worlds      = (respondent && respondent.worlds) ? respondent.worlds : [];
+  const labels   = config.nodeLabels       || {};
+  const nodeDesc = config.nodeDescriptions || {};
+  const edgeDesc = config.edgeDescriptions || {};
+  const nodeAss  = assessments.nodes || {};
+  const edgeAss  = assessments.edges || {};
+  const sm       = surveyMeta || {};
+  const name     = (respondent && respondent.name) ? respondent.name
+                 : (respondent && respondent.respondentId) ? `ID: ${respondent.respondentId}`
+                 : 'Anonymous';
+  const worlds   = (respondent && respondent.worlds) ? respondent.worlds : [];
 
-  const nodeKeys = ['S-1','S-2','S-3','S-4','S-5','S-6','S-7','S-8','S-9','S-10','S-11'];
-
-  // Status label mapping for nodes
-  const NODE_LABELS = { go:'Green', caution:'Yellow', stop:'Red', unsure:'Blue', '':'—' };
-  const EDGE_LABELS = { agree:'Agree', disagree:'Disagree', unknown:"Don't Know", '':'—' };
+  const SLABELS  = { go:'Green', caution:'Yellow', stop:'Red', unsure:'Blue', '':'—' };
+  const ELABELS  = { agree:'Agree', disagree:'Disagree', unknown:"Don't Know", '':'—' };
+  const SDOTCLS  = { go:'bg-go', caution:'bg-caution', stop:'bg-stop', unsure:'bg-unknown', '':'bg-unset' };
+  const EDOTCLS  = { agree:'bg-go', disagree:'bg-stop', unknown:'bg-unknown', '':'bg-unset' };
 
   let html = '';
 
-  // ── REPORT HEADER ──
-  html += `<div class="report-header">
-    <div class="meta-block">`;
-
+  // Report header
+  html += `<div class="report-header"><div class="meta-block">`;
   if (sm.enterprise) html += metaRow('Enterprise', sm.enterprise);
   html += metaRow('Respondent', name);
   if (sm.date)       html += metaRow('Date', sm.date);
   if (sm.timeFrame)  html += metaRow('Time Frame', sm.timeFrame);
   if (sm.surveyId)   html += metaRow('Survey ID', sm.surveyId);
   if (worlds.length) {
-    html += `<div class="meta-row">
-      <span class="meta-label">Worlds</span>
-      <div class="worlds-list">${worlds.map(w => `<span class="world-tag">${esc(w)}</span>`).join('')}</div>
-    </div>`;
+    html += `<div class="meta-row"><span class="meta-label">Worlds</span>
+      <div class="worlds-list">${worlds.map(w=>`<span class="world-tag">${esc(w)}</span>`).join('')}</div></div>`;
   }
   if (sm.focalPoint) {
     html += `<div class="meta-row" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--rule);">
       <span class="meta-label">Focal Point</span>
-      <span class="meta-value focal">${esc(sm.focalPoint).replace(/\n/g,'<br>')}</span>
-    </div>`;
+      <span class="meta-value focal">${esc(sm.focalPoint).replace(/\n/g,'<br>')}</span></div>`;
   }
-  if (meta && meta.exportedAt) {
-    html += metaRow('Exported', new Date(meta.exportedAt).toLocaleString());
-  }
+  if (meta && meta.exportedAt) html += metaRow('Exported', new Date(meta.exportedAt).toLocaleString());
+  html += `</div><div><div class="sofi-logo">eVSM<span>Respondent Report</span></div></div></div>`;
 
-  html += `</div>
-    <div>
-      <div class="sofi-logo">eVSM<span>Respondent Report</span></div>
-    </div>
-  </div>`;
+  // Per-sphere sections
+  for (let focalN = 1; focalN <= 11; focalN++) {
+    const focalId  = `S-${focalN}`;
+    const label    = (labels[focalId] || focalId).replace(/\n/g,' ');
+    const desc     = nodeDesc[focalId] || '';
+    const nAss     = nodeAss[focalId] || {};
+    const status   = nAss.status || '';
+    const dotCls   = SDOTCLS[status] || 'bg-unset';
 
-  // ── SPHERE SECTIONS ──
-  for (const key of nodeKeys) {
-    const num    = parseInt(key.replace('S-',''));
-    const label  = (labels[key] || key).replace(/\n/g,' ');
-    const desc   = nodeDesc[key] || '';
-    const nAss   = nodeAss[key] || {};
-    const status = nAss.status || '';
-    const dotCls = NODE_STATUS_COLORS[status] || 'bg-unset';
+    // Build focus SVG
+    const svgElement = buildFocusSVG(nodeAss, edgeAss, focalN, labels);
+    const svgHtml = svgElement.outerHTML;
 
-    // Outgoing edges for this sphere
-    const outEdges = edgesFrom(num);
+    // Find neighbors
+    const neighborSet = new Set();
+    for (const {tail, head} of EDGE_LIST) {
+      if (tail === focalN) neighborSet.add(head);
+      if (head === focalN) neighborSet.add(tail);
+    }
+    const neighbors = [...neighborSet].sort((a,b) => a-b);
 
-    html += `<div class="sphere-section">`;
+    // Build pairs
+    let pairsHtml = '';
+    for (const neighborN of neighbors) {
+      const nId   = `S-${neighborN}`;
+      const nLbl  = (labels[nId] || nId).replace(/\n/g,' ');
 
-    // Sphere header
-    html += `<div class="sphere-header">
-      <div class="sphere-dot ${dotCls}"></div>
-      <div class="sphere-title">${esc(label)}</div>
-      <div class="sphere-id">${key}</div>
-    </div>`;
+      const fwdKey  = `${focalN}->${neighborN}`;
+      const fwdAss  = edgeAss[fwdKey] || {};
+      const fwdSt   = fwdAss.status || '';
+      const fwdDesc = edgeDesc[fwdKey] || '';
 
-    // Traffic signal summary for node
-    const nodeStatusLabel = NODE_LABELS[status] || '—';
-    const nodeStatusCol   = NODE_STATUS_TEXT[status] || 'col-muted';
-    html += `<div class="traffic-summary">
-      <div class="traffic-question">What best describes the overall state of the <strong>${esc(label)}</strong> sphere?</div>
-      <div class="traffic-row">
-        <div class="traffic-item">
-          <div class="traffic-swatch bg-stop"></div>
-          <span class="traffic-label col-stop">Red</span>
-          <span class="traffic-pct">${status==='stop'?'100%':'0%'}</span>
-        </div>
-        <div class="traffic-item">
-          <div class="traffic-swatch bg-caution"></div>
-          <span class="traffic-label col-caution">Yellow</span>
-          <span class="traffic-pct">${status==='caution'?'100%':'0%'}</span>
-        </div>
-        <div class="traffic-item">
-          <div class="traffic-swatch bg-go"></div>
-          <span class="traffic-label col-go">Green</span>
-          <span class="traffic-pct">${status==='go'?'100%':'0%'}</span>
-        </div>
-        <div class="traffic-item">
-          <div class="traffic-swatch bg-unknown"></div>
-          <span class="traffic-label col-unknown">Blue</span>
-          <span class="traffic-pct">${status==='unsure'?'100%':'0%'}</span>
-        </div>
-      </div>
-      ${nAss.evidence || nAss.suggestions ? renderNodeText(nAss) : ''}
-    </div>`;
+      const revKey  = `${neighborN}->${focalN}`;
+      const revAss  = edgeAss[revKey] || {};
+      const revSt   = revAss.status || '';
+      const revDesc = edgeDesc[revKey] || '';
 
-    // Edge blocks
-    for (const {tail, head} of outEdges) {
-      const edgeKey  = `${tail}->${head}`;
-      const eAss     = edgeAss[edgeKey] || {};
-      const eStatus  = eAss.status || '';
-      const eDesc    = edgeDesc[edgeKey] || '';
-      const toLabel  = (labels[`S-${head}`] || `S-${head}`).replace(/\n/g,' ');
-      const assessed = !!eStatus;
-
-      html += `<div class="edge-block">`;
-
-      // Edge statement
-      if (eDesc) {
-        html += `<div class="edge-statement">${esc(eDesc)}
-          <span class="impacts">— impacts (${esc(toLabel)})</span>
-        </div>`;
-      } else {
-        html += `<div class="edge-statement">
-          ${esc(label)} → ${esc(toLabel)}
-          <span class="impacts">(${key} → S-${head})</span>
+      function edgeDirHtml(key, ass, st, desc2, fromN, toN, arrow) {
+        const fromLbl = (labels[`S-${fromN}`]||`S-${fromN}`).replace(/\n/g,' ');
+        const toLbl   = (labels[`S-${toN}`]||`S-${toN}`).replace(/\n/g,' ');
+        const dotC    = EDOTCLS[st] || 'bg-unset';
+        return `<div class="edge-dir">
+          <div class="edge-dir-lbl">${arrow} S-${fromN} → S-${toN} &nbsp;<span class="edge-dir-names">${esc(fromLbl)} → ${esc(toLbl)}</span></div>
+          ${desc2 ? `<div class="edge-desc">${esc(desc2)}</div>` : ''}
+          ${st ? `<div class="edge-status-row"><div class="edge-dot ${dotC}"></div><span>${ELABELS[st]||st}</span></div>` : '<div class="not-assessed">Not assessed</div>'}
+          ${renderTextBoxes(ass.evidence, ass.suggestions)}
         </div>`;
       }
 
-      if (!assessed) {
-        html += `<div class="not-assessed">Not assessed</div>`;
-      } else {
-        // Counts
-        html += `<div class="edge-counts">
-          <div class="edge-count-item">
-            <div class="count-swatch bg-go"></div>
-            <span class="count-label">Agree</span>
-            <span class="count-n">${eStatus==='agree'?1:0}</span>
-            <span class="count-pct">(${eStatus==='agree'?'100%':'0%'})</span>
-          </div>
-          <div class="edge-count-item">
-            <div class="count-swatch bg-stop"></div>
-            <span class="count-label">Disagree</span>
-            <span class="count-n">${eStatus==='disagree'?1:0}</span>
-            <span class="count-pct">(${eStatus==='disagree'?'100%':'0%'})</span>
-          </div>
-          <div class="edge-count-item">
-            <div class="count-swatch bg-unknown"></div>
-            <span class="count-label">Don't Know</span>
-            <span class="count-n">${eStatus==='unknown'?1:0}</span>
-            <span class="count-pct">(${eStatus==='unknown'?'100%':'0%'})</span>
-          </div>
-        </div>`;
-
-        // Evidence + Suggestions
-        html += renderTextBoxes(eAss.evidence, eAss.suggestions);
-      }
-
-      html += `</div>`; // edge-block
+      pairsHtml += `<div class="pair-block">
+        <div class="pair-hdr">S-${focalN} ↔ S-${neighborN} &nbsp;<span class="pair-names">${esc(label)} · ${esc(nLbl)}</span></div>
+        ${edgeDirHtml(fwdKey, fwdAss, fwdSt, fwdDesc, focalN, neighborN, '→')}
+        ${edgeDirHtml(revKey, revAss, revSt, revDesc, neighborN, focalN, '←')}
+      </div>`;
     }
 
-    html += `</div>`; // sphere-section
+    html += `<div class="focal-section" data-n="${focalN}">
+      <div class="focal-hdr">
+        <span class="focal-id">${focalId}</span>
+        <span class="focal-label">${esc(label)}</span>
+      </div>
+      <div class="focus-svg-wrap">${svgHtml}</div>
+      <div class="sphere-data">
+        ${desc ? `<div class="edge-desc" style="margin-bottom:12px;">${miniMd(desc)}</div>` : ''}
+        ${status ? `<div class="node-status"><div class="node-dot ${dotCls}"></div><span>${SLABELS[status]||status}</span></div>` : '<div class="not-assessed">Not assessed</div>'}
+        ${renderTextBoxes(nAss.evidence, nAss.suggestions)}
+      </div>
+      <div class="pairs-heading">Homeostatic Pairs</div>
+      ${pairsHtml}
+    </div>`;
   }
 
-  // Footer
-  html += `<div class="report-footer">
-    eVSM Respondent Report · Generated ${new Date().toLocaleString()}
-  </div>`;
+  html += `<div class="report-footer">eVSM Respondent Report · Generated ${new Date().toLocaleString()}</div>`;
 
   document.getElementById('report').innerHTML = html;
   document.getElementById('report').style.display = 'block';
   document.getElementById('print-btn').style.display = 'block';
   document.getElementById('load-another-btn').style.display = 'block';
   document.getElementById('load-screen').style.display = 'none';
-
   document.title = `eVSM Report — ${name}`;
-}
-
-function renderNodeText(nAss) {
-  if (!nAss.evidence && !nAss.suggestions) return '';
-  return renderTextBoxes(nAss.evidence, nAss.suggestions);
+  initSphereFilterBar(labels);
 }
 
 function renderTextBoxes(evidence, suggestions) {
@@ -560,17 +731,18 @@ function renderTextBoxes(evidence, suggestions) {
 
 function formatQuote(text) {
   if (!text || !text.trim()) return '<span class="text-none">None</span>';
-  // Split on newlines to separate multiple entries, wrap each in quotes
-  return text.trim().split(/\n+/).filter(s=>s.trim()).map(s =>
-    `<p>"${esc(s.trim())}"</p>`
-  ).join('');
+  return text.trim().split(/\n+/).filter(s=>s.trim()).map(s => `<p>"${esc(s.trim())}"</p>`).join('');
 }
 
 function metaRow(label, value) {
-  return `<div class="meta-row">
-    <span class="meta-label">${label}</span>
-    <span class="meta-value">${esc(String(value))}</span>
-  </div>`;
+  return `<div class="meta-row"><span class="meta-label">${label}</span><span class="meta-value">${esc(String(value))}</span></div>`;
+}
+
+function miniMd(s) {
+  if (!s) return '';
+  return esc(s)
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/_(.+?)_/g,'<em>$1</em>');
 }
 
 function esc(s) {
@@ -580,26 +752,68 @@ function esc(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── AUTO-LOAD from survey tool (sessionStorage or URL fragment) ───────────────
+// ── SPHERE FILTER BAR ─────────────────────────────────────────────────────────
+let _sfbLabels = {}; // populated after renderReport
+
+function initSphereFilterBar(labels) {
+  _sfbLabels = labels || {};
+  const pills = document.getElementById('sfb-pills');
+  pills.innerHTML = '';
+  for (let n = 1; n <= 11; n++) {
+    const id = `S-${n}`;
+    const lbl = (_sfbLabels[id] || id).replace(/\n/g,' ').split(' ').slice(0,2).join(' ');
+    const pill = document.createElement('button');
+    pill.className = 'sfb-pill active';
+    pill.dataset.n = n;
+    pill.title = (_sfbLabels[id] || id).replace(/\n/g,' ');
+    pill.textContent = `${id} ${lbl}`;
+    pill.addEventListener('click', () => sfbToggle(n));
+    pills.appendChild(pill);
+  }
+  document.getElementById('sphere-filter-bar').style.display = 'block';
+}
+
+function sfbToggle(n) {
+  const pill = document.querySelector(`.sfb-pill[data-n="${n}"]`);
+  const section = document.querySelector(`.focal-section[data-n="${n}"]`);
+  if (!pill || !section) return;
+  const isActive = pill.classList.contains('active');
+  pill.classList.toggle('active', !isActive);
+  section.classList.toggle('sfb-hidden', isActive);
+  section.style.display = isActive ? 'none' : '';
+}
+
+function sfbToggleAll(show) {
+  for (let n = 1; n <= 11; n++) {
+    const pill = document.querySelector(`.sfb-pill[data-n="${n}"]`);
+    const section = document.querySelector(`.focal-section[data-n="${n}"]`);
+    if (!pill || !section) continue;
+    pill.classList.toggle('active', show);
+    section.classList.toggle('sfb-hidden', !show);
+    section.style.display = show ? '' : 'none';
+  }
+}
+
+var EMBEDDED_REPORT_DATA = null; // sentinel — survey tool replaces this with live payload
+
+// ── AUTO-LOAD ─────────────────────────────────────────────────────────────────
 (function autoLoad() {
+  // Baked-in data (blob URL path — most reliable for local files)
+  if (EMBEDDED_REPORT_DATA) { renderReport(EMBEDDED_REPORT_DATA); return; }
   try {
-    // Try sessionStorage first (same-origin server context)
+    // Try sessionStorage (same-origin server context)
     const stored = sessionStorage.getItem('evsm-print-payload');
     if (stored) {
       sessionStorage.removeItem('evsm-print-payload');
-      const data = JSON.parse(stored);
-      renderReport(data);
+      renderReport(JSON.parse(stored));
       return;
     }
   } catch(e) {}
   try {
-    // Try URL fragment (local file fallback)
+    // Try URL fragment (legacy fallback)
     const hash = window.location.hash;
     if (hash && hash.startsWith('#data=')) {
-      const b64 = hash.slice(6);
-      const json = decodeURIComponent(escape(atob(b64)));
-      const data = JSON.parse(json);
-      renderReport(data);
+      renderReport(JSON.parse(decodeURIComponent(escape(atob(hash.slice(6))))));
       return;
     }
   } catch(e) {}

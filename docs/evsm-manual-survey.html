@@ -144,10 +144,17 @@ code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0
 </ul>
 
 <h3>Exporting the Config</h3>
-<p>When your setup is complete, click <strong>Export Config</strong> in the left panel. This downloads a <code>sofi-config.json</code> file. Send this file to all respondents — it is everything they need to start the survey.</p>
+<p>When your setup is complete, click <strong>Export Config</strong> in the left panel. This downloads a <code>sofi-config.json</code> file. You can send this file directly to respondents, or use the Snapshot method described below.</p>
 
 <div class="note">
   The config JSON contains no respondent assessments — only the structure, labels, descriptions, and metadata you defined. It is safe to share publicly.
+</div>
+
+<h3>Distributing the Survey</h3>
+<p>The recommended distribution method is <strong>Snapshot</strong>. In the Save/Load Config section of the left panel, click <strong>⬇ Snapshot (share as one file)</strong>. This bakes the current config directly into a copy of the Survey Tool HTML and downloads it as <code>{surveyid}-survey.html</code>.</p>
+<p>Share that single file with respondents. When they open it in their browser, they land directly in Survey mode — no config import step, no separate JSON file to keep track of. Setup is still accessible via the tab if they need it.</p>
+<div class="warn">
+  Send the Snapshot file via email or a shared drive (Google Drive, Dropbox, etc.). Do not send it via WhatsApp — WhatsApp may corrupt HTML files.
 </div>
 
 <h2>Survey Mode</h2>
@@ -205,7 +212,10 @@ code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0
 <p>The survey auto-saves your work in the browser's local storage — if you close the tab and reopen the tool, your previous session will be offered. You can also click <strong>Import</strong> and load a previously exported response JSON to continue from where you left off.</p>
 
 <h3>Printing Your Report</h3>
-<p>Click <strong>Print</strong> to open the Respondent Report tool with your data pre-loaded. This generates a formatted, print-ready summary of all your assessments. Use the browser's print dialog to save as PDF.</p>
+<p>Click <strong>⎙ Print My Report</strong> to generate a formatted, print-ready report of your assessments. The tool fetches <code>evsm-report.html</code>, bakes your response data into it as a self-contained blob, and opens it in a new tab. Use the browser's print dialog to save as PDF.</p>
+<div class="note">
+  Both <code>evsm-svg-v3.html</code> and <code>evsm-report.html</code> must be in the same folder for the Print button to work. If it fails, open <code>evsm-report.html</code> directly and drag your exported response JSON onto the drop zone.
+</div>
 
 <h2>Error Messages</h2>
 <table class="control-table">
@@ -213,6 +223,12 @@ code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0
   <tr><td>✗ Could not read file — is it a valid eVSM response?</td><td>The imported file is not a valid eVSM JSON. Check that you are importing the correct file.</td></tr>
   <tr><td>Nothing yet (in description preview)</td><td>No description has been written for this element. Normal during setup before filling in descriptions.</td></tr>
 </table>
+
+<h2>Advanced / Technical Notes</h2>
+
+<h3>Edge Consistency Check</h3>
+<p>At page load, the tool cross-validates all edge descriptions stored in the config against the diagram's built-in edge list. If there is a mismatch — for example, a description references an edge that no longer exists, or an edge in the diagram has no corresponding description entry — a red banner appears at the top of the page and the mismatch is logged to the browser console.</p>
+<p>This check is a safeguard for facilitators and developers. Normal respondents will not encounter it. If you see the banner, open the browser console (F12 → Console) to see which edges are affected, then correct the config in Setup mode and re-export.</p>
 
 </div>
 </body>

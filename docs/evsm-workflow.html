@@ -107,7 +107,9 @@ tr:nth-child(even) td { background: #fafaf7; }
     <div class="phase-body">
       <div class="phase-title">Distribute to Respondents</div>
       <div class="phase-tool"><span class="badge">Facilitator</span></div>
-      <p>Share the config JSON file and the URL of the Survey Tool with all respondents. Respondents need only a web browser — no installation, no login. Include instructions on which world categories apply to them, and ask them to export and return their response file when complete.</p>
+      <p><strong>Primary path — Snapshot:</strong> In Setup mode, click <strong>⬇ Snapshot (share as one file)</strong>. This bakes the current config directly into a copy of the Survey Tool HTML and downloads it as <code>{surveyid}-survey.html</code>. Share that single file with respondents via email or a shared drive — they open it in their browser and land directly in Survey mode, no config import needed. Setup is still accessible via the tab if they need it.</p>
+      <p style="margin-top:8px;"><strong>Alternative path:</strong> Host the Survey Tool on a web server and email the config JSON + link. Respondents import the config manually when they open the tool. This path works but is more friction for respondents.</p>
+      <div class="warn" style="margin-top:8px;">Do not send the Snapshot HTML via WhatsApp — WhatsApp may corrupt the file. Use email or a shared drive (Google Drive, Dropbox, etc.).</div>
     </div>
   </div>
 
@@ -140,8 +142,8 @@ tr:nth-child(even) td { background: #fafaf7; }
     <div class="phase-body" style="border-color:#c4d8fd;background:#f8faff;">
       <div class="phase-title">Generate Personal Report (optional)</div>
       <div class="phase-tool"><span class="badge resp">Respondent</span> · Respondent Report</div>
-      <p>At any time, a respondent can click <strong>Print</strong> in the Survey Tool to open a formatted report of their own assessments. This opens <code>evsm-report.html</code> automatically with their data pre-loaded. They can also open the Report tool independently and drag their response JSON onto it.</p>
-      <p style="margin-top:8px;">The report can be saved as a PDF via the browser's print dialog.</p>
+      <p>At any time, a respondent can click <strong>⎙ Print My Report</strong> in the Survey Tool. The tool fetches <code>evsm-report.html</code>, bakes their response data into it as a blob, and opens it in a new tab — no file download or upload required. Both <code>evsm-svg-v3.html</code> and <code>evsm-report.html</code> must be in the same folder for this to work.</p>
+      <p style="margin-top:8px;">If the automatic path fails, they can open <code>evsm-report.html</code> directly and drag their exported response JSON onto the drop zone. The report can be saved as a PDF via the browser's print dialog.</p>
     </div>
   </div>
 
@@ -163,10 +165,14 @@ tr:nth-child(even) td { background: #fafaf7; }
     <div class="phase-body">
       <div class="phase-title">Aggregate and Analyze</div>
       <div class="phase-tool"><span class="badge analyst">Analyst</span> · Aggregator</div>
-      <p>Open <code>evsm-aggregator.html</code> and drag all response JSON files into the drop zone. The aggregated diagram appears automatically, coloring each sphere and edge by the distribution of responses.</p>
+      <p>Open <code>evsm-aggregator.html</code> and drag all response JSON files into the drop zone. The aggregated diagram appears automatically, coloring each sphere and edge by the distribution of responses. You can also drop a master config JSON first (before any respondent files) to seed the sphere labels without adding assessment counts.</p>
       <p style="margin-top:8px;"><strong>Single view:</strong> click any sphere or edge to see the breakdown of assessments and read all respondents' evidence and suggestions.</p>
       <p style="margin-top:8px;"><strong>Compare view:</strong> define two world sets (e.g., "Longtime residents" vs. "New arrivals") and view side-by-side diagrams to see where assessments differ.</p>
-      <p style="margin-top:8px;"><strong>Claude synthesis:</strong> click "Synthesize with Claude" on any selected element to get a narrative summary of what respondents said, highlighting convergence and divergence. Requires your Anthropic API key.</p>
+      <p style="margin-top:8px;"><strong>Claude synthesis (per element):</strong> click "Synthesize with Claude" on any selected element to get a narrative summary of what respondents said, highlighting convergence and divergence. Requires your Anthropic API key (stored in localStorage; calls go directly to Anthropic — no proxy needed).</p>
+      <p style="margin-top:8px;"><strong>✦ Synthesize All:</strong> click the purple header button to run Claude sequentially for every sphere and relationship that has at least one assessment. A progress overlay shows status with a cancel option. Syntheses are cached in memory.</p>
+      <p style="margin-top:8px;"><strong>⬇ Export Session:</strong> click the amber header button to save everything as a single JSON bundle — all loaded response files, sphere labels, edge descriptions, world set configuration, and all Claude syntheses generated so far. Drop a session bundle back onto the drop zone to restore the full session instantly.</p>
+      <p style="margin-top:8px;"><strong>⎙ Print:</strong> click the green header button to print the current detail panel using the browser's print dialog.</p>
+      <p style="margin-top:8px;"><strong>Respondent identity features:</strong> hover over any sphere or edge to see a floating panel listing each respondent's name and status choice. Click a name in the hover panel (or in the respondent list) to filter evidence and suggestion quotes to that person. Click ⇄ beside any name to jump to Compare mode showing that individual's diagram vs the aggregate. Toggle <strong>⊙ Show Names</strong> in the header to label all quotes with respondent names.</p>
     </div>
   </div>
 
@@ -177,8 +183,8 @@ tr:nth-child(even) td { background: #fafaf7; }
     <div class="phase-body">
       <div class="phase-title">Synthesis and Reporting</div>
       <div class="phase-tool"><span class="badge analyst">Analyst</span> / <span class="badge">Facilitator</span></div>
-      <p>Use the Aggregator's synthesis outputs (copy the Claude narrative text as needed) to build a final report or facilitate a group debrief. Individual respondent reports from Phase 3b can be shared back with participants.</p>
-      <p style="margin-top:8px;">If you need to revise sphere labels or descriptions for a follow-up survey, use the <strong>Excel Tool</strong> to export the config, edit in Excel, and reimport.</p>
+      <p>Click <strong>⎙ Full Report</strong> (blue header button) to generate a complete standalone HTML report in a new browser tab. The report contains: survey metadata header, the eVSM SVG diagram colored by aggregate assessments, all 11 spheres with description/count bars/evidence/suggestions/synthesis, all assessed edges with the same structure, and a Print/Save PDF button. Items without a synthesis still appear — just without the synthesis block.</p>
+      <p style="margin-top:8px;">Individual respondent reports from Phase 3b can also be shared back with participants. If you need to revise sphere labels or descriptions for a follow-up survey, use the <strong>Excel Tool</strong> to export the config, edit in Excel, and reimport.</p>
     </div>
   </div>
 
@@ -217,6 +223,18 @@ tr:nth-child(even) td { background: #fafaf7; }
     <td>Survey Tool (Setup import)</td>
     <td>Config JSON reconstructed from the Excel workbook.</td>
   </tr>
+  <tr>
+    <td><code>{surveyid}-survey.html</code></td>
+    <td>Survey Tool (Setup — Snapshot button)</td>
+    <td>Respondents (open directly in browser)</td>
+    <td>Self-contained Survey Tool with config baked in. Recipients land in Survey mode automatically.</td>
+  </tr>
+  <tr>
+    <td><code>evsm-session-{timestamp}.json</code></td>
+    <td>Aggregator (Export Session button)</td>
+    <td>Aggregator (drop onto drop zone to restore)</td>
+    <td>Complete session bundle: all loaded response files, sphere labels, edge descriptions, world set configuration, and all Claude syntheses generated so far.</td>
+  </tr>
 </table>
 
 <h2>Common Variations</h2>
@@ -236,9 +254,9 @@ tr:nth-child(even) td { background: #fafaf7; }
 <h2>Tool Compatibility Notes</h2>
 
 <ul>
-  <li>All four tools run entirely in the browser. No server installation is required except for the Aggregator's Claude synthesis feature, which calls the Anthropic API directly using the user's own API key.</li>
+  <li>All four tools run entirely in the browser. No server installation is required. The Aggregator calls the Anthropic API directly using the user's own API key (stored in localStorage).</li>
   <li>Response files from one version of the survey can be loaded into a different config version — the Aggregator reads whatever fields are present.</li>
-  <li>The Report tool can be opened independently (drag-drop a response file) or automatically from the Survey Tool's Print button.</li>
+  <li>There are two report types: the <strong>Respondent Report</strong> (<code>evsm-report.html</code> — one person's data, opened from the Survey Tool's Print button via blob URL or by drag-drop) and the <strong>Aggregate Full Report</strong> (generated by the Aggregator's Full Report button — all respondents combined, with Claude syntheses). The Print button in the Survey Tool uses a blob URL and works reliably for local files as long as both HTML files are in the same folder.</li>
   <li>The Excel Tool is for survey design only — it does not import or export respondent assessments.</li>
 </ul>
 

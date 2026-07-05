@@ -440,6 +440,7 @@ input[type=range] { width:100%; accent-color:var(--accent); height:3px; cursor:p
         <button class="btn btn-accent" id="importConfigBtn">⬆ Import</button>
       </div>
       <input type="file" id="configFileInput" accept=".json" style="display:none">
+      <button class="btn" id="snapshotBtn" style="width:100%;margin-top:6px;color:#b45309;border-color:#b45309;" title="Download a single HTML file with this config baked in — share without a separate JSON file">⬇ Snapshot (share as one file)</button>
       <div class="io-msg" id="config-msg"></div>
     </div>
   </aside>
@@ -577,6 +578,8 @@ input[type=range] { width:100%; accent-color:var(--accent); height:3px; cursor:p
 
 <script>
 'use strict';
+
+var EMBEDDED_CONFIG = null; // sentinel — exportSnapshot() replaces this with live config
 
 // ══ CONFIG DATA ═══════════════════════════════════════════════════════════════
 
@@ -1237,21 +1240,42 @@ function initConfigIO() {
     r.onload=ev=>{
       try {
         const d=JSON.parse(ev.target.result);
-        if(d.nodeLabels) Object.assign(nodeLabels,d.nodeLabels);
-        if(d.nodeDescriptions) Object.assign(nodeDescriptions,d.nodeDescriptions);
-        if(d.nodeStatus) Object.assign(nodeStatus,d.nodeStatus);
-        if(d.edgeStatus) Object.assign(edgeStatus,d.edgeStatus);
-        if(d.edgeDescriptions) Object.assign(edgeDescriptions,d.edgeDescriptions);
-        if(d.worldsCategories) worldsCategories=[...d.worldsCategories];
-        if(d.surveyMeta) Object.assign(surveyMeta, d.surveyMeta);
-        initMetaEditor(); renderSurveyMeta();
-        buildLabelEditor(); buildNodeStatusEditor(); buildEdgeStatusEditor();
-        renderWorldsTags(); buildSurveyWorldsList(); buildSphereNavList();
-        renderSetup(); msg('✓ Config loaded!');
+        applyConfig(d);
+        msg('✓ Config loaded!');
       } catch { msg('✗ Invalid JSON'); }
     };
     r.readAsText(file); e.target.value='';
   });
+
+  document.getElementById('snapshotBtn').addEventListener('click', () => {
+    const payload = { surveyMeta, nodeLabels, nodeDescriptions, nodeStatus, edgeStatus, edgeDescriptions, worldsCategories };
+    const sentinel = 'var EMBEDDED_CONFIG = null; // sentinel — exportSnapshot() replaces this with live config';
+    const replacement = 'var EMBEDDED_CONFIG = ' + JSON.stringify(payload) + ';';
+    const src = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    const out = src.replace(sentinel, replacement);
+    if (out === src) { msg('✗ Snapshot failed — sentinel missing'); return; }
+    const eid = surveyMeta.surveyid || 'evsm';
+    const name = eid.replace(/\s+/g,'-').toLowerCase() + '-survey.html';
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(new Blob([out], {type:'text/html'})),
+      download: name
+    }); a.click();
+    msg('✓ Snapshot saved as ' + name);
+  });
+}
+
+function applyConfig(d) {
+  if(d.nodeLabels) Object.assign(nodeLabels,d.nodeLabels);
+  if(d.nodeDescriptions) Object.assign(nodeDescriptions,d.nodeDescriptions);
+  if(d.nodeStatus) Object.assign(nodeStatus,d.nodeStatus);
+  if(d.edgeStatus) Object.assign(edgeStatus,d.edgeStatus);
+  if(d.edgeDescriptions) Object.assign(edgeDescriptions,d.edgeDescriptions);
+  if(d.worldsCategories) worldsCategories=[...d.worldsCategories];
+  if(d.surveyMeta) Object.assign(surveyMeta, d.surveyMeta);
+  initMetaEditor(); renderSurveyMeta();
+  buildLabelEditor(); buildNodeStatusEditor(); buildEdgeStatusEditor();
+  renderWorldsTags(); buildSurveyWorldsList(); buildSphereNavList();
+  renderSetup();
 }
 
 // ── Sliders ──────────────────────────────────────────────
@@ -1587,29 +1611,31 @@ function initSurveyExport() {
 
   function doSurveyPrint() {
     const anon = !!surveyMeta.anonymousMode;
-    const payload={
-      meta:{ exportedAt: new Date().toISOString(), tool:'eVSM SVG v3' },
-      respondent:{
+    const payload = {
+      meta: { exportedAt: new Date().toISOString(), tool: 'eVSM SVG v3' },
+      respondent: {
         name: anon ? null : surveyResponse.respondentName,
         respondentId: surveyMeta.respondentId || null,
         worlds: surveyResponse.selectedWorlds
       },
       surveyMeta,
-      config:{ nodeLabels, nodeDescriptions, edgeDescriptions, worldsCategories },
-      assessments:{
+      config: { nodeLabels, nodeDescriptions, edgeDescriptions, worldsCategories },
+      assessments: {
         nodes: surveyResponse.nodeAssessments,
         edges: surveyResponse.edgeAssessments
       }
     };
-    // Encode as base64 data URI in sessionStorage key, open report tool
-    try {
-      sessionStorage.setItem('evsm-print-payload', JSON.stringify(payload));
-      window.open('evsm-report.html?from=session','_blank');
-    } catch(e) {
-      // Fallback: pass as URL fragment (for same-origin local file)
-      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-      window.open('evsm-report.html#data='+b64, '_blank');
-    }
+    const sentinel = 'var EMBEDDED_REPORT_DATA = null; // sentinel — survey tool replaces this with live payload';
+    const replacement = 'var EMBEDDED_REPORT_DATA = ' + JSON.stringify(payload) + ';';
+    fetch('evsm-report.html')
+      .then(r => r.text())
+      .then(html => {
+        const out = html.replace(sentinel, replacement);
+        if (out === html) { alert('Print failed — could not locate evsm-report.html'); return; }
+        const url = URL.createObjectURL(new Blob([out], {type:'text/html'}));
+        window.open(url, '_blank');
+      })
+      .catch(() => alert('Print failed — make sure evsm-report.html is in the same folder.'));
   }
   document.getElementById('surveyPrintBtn').addEventListener('click', doSurveyPrint);
   document.getElementById('surveyPrintBtn2').addEventListener('click', doSurveyPrint);
@@ -1700,6 +1726,7 @@ buildSphereNavList();
 initMetaEditor();
 renderSurveyMeta();
 renderSetup();
+if (EMBEDDED_CONFIG) { applyConfig(EMBEDDED_CONFIG); switchMode('survey'); }
 </script>
 </body>
 </html>

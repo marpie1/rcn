@@ -103,7 +103,7 @@
   <rect x="630" y="310" width="300" height="70" rx="7" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
   <text x="780" y="338" text-anchor="middle" font-size="12" font-weight="600" fill="#78350f">Anthropic Claude API</text>
   <text x="780" y="354" text-anchor="middle" font-size="10" fill="#92400e">api.anthropic.com/v1/messages</text>
-  <text x="780" y="369" text-anchor="middle" font-size="10" fill="#92400e">claude-sonnet-4-20250514</text>
+  <text x="780" y="369" text-anchor="middle" font-size="10" fill="#92400e">claude-sonnet-4-5</text>
 
   <!-- launchd -->
   <rect x="630" y="155" width="300" height="50" rx="7" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
@@ -122,11 +122,11 @@
   <text x="285" y="547" text-anchor="middle" font-size="10" fill="#5b21b6">Auto-save in browser</text>
   <text x="285" y="560" text-anchor="middle" font-size="10" fill="#5b21b6">Resume partial survey</text>
 
-  <!-- sessionStorage -->
+  <!-- blob URL -->
   <rect x="380" y="508" width="150" height="55" rx="7" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
-  <text x="455" y="531" text-anchor="middle" font-size="12" font-weight="600" fill="#4c1d95">sessionStorage</text>
-  <text x="455" y="547" text-anchor="middle" font-size="10" fill="#5b21b6">Pass data to</text>
-  <text x="455" y="560" text-anchor="middle" font-size="10" fill="#5b21b6">report (print flow)</text>
+  <text x="455" y="531" text-anchor="middle" font-size="12" font-weight="600" fill="#4c1d95">Blob URL</text>
+  <text x="455" y="547" text-anchor="middle" font-size="10" fill="#5b21b6">Pass data to report</text>
+  <text x="455" y="560" text-anchor="middle" font-size="10" fill="#5b21b6">(print flow — local files)</text>
 
   <!-- ── Edges ── -->
 
@@ -175,12 +175,13 @@
   <line x1="680" y1="155" x2="520" y2="250" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
   <text x="575" y="165" font-size="10" fill="#15803d">starts</text>
 
-  <!-- Problem annotation -->
-  <rect x="610" y="390" width="340" height="72" rx="6" fill="#fff1f2" stroke="#f43f5e" stroke-width="1.5"/>
-  <text x="780" y="410" text-anchor="middle" font-size="11" font-weight="700" fill="#be123c">PROBLEM on a server:</text>
-  <text x="780" y="426" text-anchor="middle" font-size="10" fill="#9f1239">When hostname ≠ localhost,</text>
-  <text x="780" y="440" text-anchor="middle" font-size="10" fill="#9f1239">aggregator calls Anthropic directly</text>
-  <text x="780" y="454" text-anchor="middle" font-size="10" fill="#9f1239">— no API key in browser = fails</text>
+  <!-- Note annotation -->
+  <rect x="610" y="390" width="340" height="82" rx="6" fill="#f0f9f4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="780" y="410" text-anchor="middle" font-size="11" font-weight="700" fill="#14532d">Browser API (current design):</text>
+  <text x="780" y="426" text-anchor="middle" font-size="10" fill="#166534">Aggregator calls Anthropic directly</text>
+  <text x="780" y="440" text-anchor="middle" font-size="10" fill="#166534">using user's own API key (localStorage).</text>
+  <text x="780" y="454" text-anchor="middle" font-size="10" fill="#166534">No proxy required for Claude.</text>
+  <text x="780" y="468" text-anchor="middle" font-size="10" fill="#166534">Proxy is optional infrastructure.</text>
 
   <!-- Arrow from aggregator to problem box -->
   <path d="M415,215 C520,215 560,430 608,430" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#arrow-orange)"/>
@@ -204,7 +205,7 @@
   <h2>What you need to do to move to a server</h2>
 
   <div class="warn">
-    <strong>Core issue:</strong> <code>evsm-aggregator.html</code> has a hostname check — on localhost it routes the Claude API call through <code>evsm-proxy.py</code>; anywhere else it tries to call <code>api.anthropic.com</code> directly from the browser (no API key → fails). You must fix this before anything else works.
+    <strong>Note:</strong> The Aggregator now calls the Anthropic API directly from the browser using the user's own API key (stored in localStorage). A proxy server is no longer required for Claude. The steps below describe how to host the static files on a server — the Claude API call will continue to work from the browser without any proxy.
   </div>
 
   <ol>
@@ -212,44 +213,33 @@
       <strong>Pick a server.</strong> Any Linux VPS works (Linode, DigitalOcean, AWS EC2). You need Python 3 and a static file server. No database required for eVSM.
     </li>
     <li>
-      <strong>Copy the files.</strong> Upload <code>tools/evsm-svg-v3.html</code>, <code>tools/evsm-aggregator.html</code>, <code>tools/evsm-report.html</code>, <code>tools/evsm_excel_tool.html</code>, and <code>data/evsm-proxy.py</code> to the server.
+      <strong>Copy the files.</strong> Upload <code>tools/evsm-svg-v3.html</code>, <code>tools/evsm-aggregator.html</code>, <code>tools/evsm-report.html</code>, and <code>tools/evsm_excel_tool.html</code> to the server. <code>data/evsm-proxy.py</code> is optional — it is no longer needed for Claude calls since users supply their own API key in the browser.
     </li>
     <li>
-      <strong>Set the API key on the server.</strong> Add <code>ANTHROPIC_API_KEY=sk-ant-...</code> to the server's environment (e.g., in a systemd unit file or <code>/etc/environment</code>).
+      <strong>Serve the static files.</strong> Use any static file server (Python's <code>http.server</code>, nginx, Apache). No server-side API key configuration is required.
     </li>
     <li>
-      <strong>Fix the API URL in evsm-aggregator.html.</strong> Change lines 1021–1023 from the hostname-sniffing logic to always use a relative path: <code>const apiUrl = '/api/anthropic';</code> — then the proxy handles it regardless of hostname.
+      <strong>Set up a process manager (optional).</strong> Use systemd to keep your file server running. Create a <code>/etc/systemd/system/evsm-tools.service</code> unit file.
     </li>
     <li>
-      <strong>Run evsm-proxy.py on the server.</strong> It already serves static files AND relays the API. Run it on port 443/80 or put nginx in front of it. The proxy serves <code>evsm-aggregator.html</code> from its own directory, so point it at the folder where you uploaded the files.
+      <strong>Open the firewall port</strong> for your static server (or 80/443 if behind nginx). eVSM has no other server-side dependencies.
     </li>
     <li>
-      <strong>Set up a process manager.</strong> Use systemd (not launchd — that's Mac-only) to keep <code>evsm-proxy.py</code> running. Create a <code>/etc/systemd/system/evsm-proxy.service</code> unit file.
+      <strong>Optional: put nginx in front.</strong> Nginx on port 443 (HTTPS) gives you TLS and a clean URL.
     </li>
     <li>
-      <strong>Open firewall port 8765</strong> (or 80/443 if behind nginx). eVSM has no other server-side dependencies.
-    </li>
-    <li>
-      <strong>Optional: put nginx in front.</strong> Nginx on port 443 (HTTPS) proxying to <code>localhost:8765</code> gives you TLS and a clean URL. The proxy's CORS headers will still work.
+      <strong>Optional proxy for shared key.</strong> If you want to provide a shared Anthropic API key rather than requiring each user to supply their own, run <code>evsm-proxy.py</code> and set <code>ANTHROPIC_API_KEY</code> in its environment. Users would then need the proxy's URL configured in the aggregator.
     </li>
   </ol>
 
   <h2 style="margin-top:24px">What does NOT need to change</h2>
   <ol>
-    <li>The HTML tools themselves are pure browser code — no rewrites needed beyond the one URL fix.</li>
+    <li>The HTML tools themselves are pure browser code — no server-side rewrites needed.</li>
     <li>JSON file exchange still happens via download/upload — no shared filesystem needed between respondents and facilitator.</li>
-    <li>sessionStorage print flow works as long as evsm-svg-v3 and evsm-report are served from the same origin.</li>
+    <li>The print flow uses blob URLs (not sessionStorage) — works for local files and served files alike, as long as evsm-svg-v3 and evsm-report are in the same folder (local) or served from the same origin (server).</li>
+    <li>Claude API calls go directly from the browser to Anthropic using the user's own key — no proxy configuration needed.</li>
     <li>Firebase, Neo4j, PostGIS — none of these are used by eVSM. Leave them on this machine.</li>
   </ol>
-
-  <h2 style="margin-top:24px">One-line code fix required</h2>
-  <p style="font-size:13px">In <code>tools/evsm-aggregator.html</code>, lines 1021–1023, replace:</p>
-  <pre style="background:#1e1e2e;color:#cdd6f4;padding:14px;border-radius:6px;font-size:12px;overflow-x:auto">const apiUrl = (window.location.hostname === 'localhost' || window.location.hostname === '')
-  ? 'http://localhost:8765/api/anthropic'
-  : 'https://api.anthropic.com/v1/messages';</pre>
-  <p style="font-size:13px">with:</p>
-  <pre style="background:#1e1e2e;color:#cdd6f4;padding:14px;border-radius:6px;font-size:12px;overflow-x:auto">const apiUrl = '/api/anthropic';</pre>
-  <p style="font-size:13px">This makes the call always go through the proxy, regardless of where the tool is hosted.</p>
 </div>
 
 </body>

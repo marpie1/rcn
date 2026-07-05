@@ -1,0 +1,116 @@
+{
+  "decision": {
+    "problem": "Atrial fibrillation",
+    "problem_code": "49436004",
+    "question": "Should I take a blood thinner (anticoagulant) to reduce my stroke risk?",
+    "pretest_probability": null,
+    "time_horizon": "5 years",
+    "denominator": 1000
+  },
+  "options": [
+    {
+      "id": "apixaban",
+      "label": "Take apixaban (Eliquis) 5 mg twice daily",
+      "type": "drug",
+      "rxnorm": "1364435",
+      "benefits": [
+        {
+          "outcome": "Stroke or blood clot to the body (systemic embolism) prevented",
+          "with_option": 80,
+          "without_option": 130,
+          "nnt": 20,
+          "evidence": {
+            "basis": "RCT",
+            "grade": "high",
+            "source": "Connolly SJ et al. AVERROES. NEJM 2011; Hart RG et al. Ann Intern Med 2007 (Cochrane meta-analysis); numbers extrapolated to 5-year horizon",
+            "funding": "mixed",
+            "population_caveat": "Patients with CHA2DS2-VASc ≥ 2 (moderate-high stroke risk). Stroke rates vary substantially by individual risk score. AVERROES compared to aspirin, not placebo."
+          }
+        }
+      ],
+      "harms": [
+        {
+          "outcome": "Major bleeding (requiring transfusion, hospitalization, or causing ≥ 2 g/dL hemoglobin drop)",
+          "with_option": 70,
+          "without_option": 50,
+          "nnh": 50,
+          "rac": { "severity": "III", "probability": "C", "code": "3C" },
+          "cascade": null,
+          "evidence": {
+            "basis": "meta-analysis",
+            "grade": "high",
+            "source": "Ruff CT et al. Lancet 2014 (meta-analysis of 4 NOAC trials, n=71,683). Rates vs no anticoagulation estimated from baseline arm of AVERROES.",
+            "funding": "industry",
+            "population_caveat": "Original trials compared to warfarin; absolute rates vs no anticoagulation are estimated. Patient age and kidney function substantially affect bleeding risk."
+          }
+        },
+        {
+          "outcome": "Intracranial hemorrhage (bleeding in or around the brain)",
+          "with_option": 15,
+          "without_option": 10,
+          "nnh": 200,
+          "rac": { "severity": "IV", "probability": "B", "code": "4B" },
+          "cascade": "Intracranial hemorrhage has a 30–50% case fatality rate. Survivors frequently have permanent disability affecting movement, speech, or cognition.",
+          "evidence": {
+            "basis": "meta-analysis",
+            "grade": "high",
+            "source": "Ruff CT et al. Lancet 2014. Apixaban ICH rate substantially lower than warfarin; may be comparable to aspirin.",
+            "funding": "industry",
+            "population_caveat": "Risk is higher in patients with prior stroke, uncontrolled hypertension, or heavy alcohol use."
+          }
+        }
+      ],
+      "burden": "Two capsules daily (morning and evening with or without food). Annual kidney function check recommended. Dose reduces to 2.5 mg twice daily if two or more of: age ≥ 80, weight ≤ 60 kg, creatinine ≥ 1.5 mg/dL. No routine INR blood monitoring required. Cost: approximately $500–600/month without insurance; generic expected 2026–2028.",
+      "unknowns": [
+        "No randomized trial has compared apixaban directly to placebo or no treatment — AVERROES compared to aspirin, which itself reduces stroke somewhat.",
+        "Long-term bleeding risk accumulation beyond 5 years is not well characterized in trial follow-up data.",
+        "Benefit for patients with CHA2DS2-VASc = 1 (one risk factor) is uncertain; guideline recommendations vary.",
+        "Effect in patients over age 85, or with severe kidney disease (eGFR < 25), is not well studied."
+      ]
+    },
+    {
+      "id": "watchful-waiting",
+      "label": "No anticoagulant — watchful waiting",
+      "type": "watchful_waiting",
+      "rxnorm": null,
+      "benefits": [
+        {
+          "outcome": "Major bleeding avoided (lower bleeding rate than with anticoagulant)",
+          "with_option": 50,
+          "without_option": 70,
+          "nnt": 50,
+          "evidence": {
+            "basis": "RCT",
+            "grade": "high",
+            "source": "Ruff CT et al. Lancet 2014; Connolly SJ et al. AVERROES. NEJM 2011",
+            "funding": "mixed",
+            "population_caveat": "Baseline bleeding rate in untreated AFib population; individual risk varies by age, alcohol use, prior bleeding history, and concomitant medications."
+          }
+        }
+      ],
+      "harms": [
+        {
+          "outcome": "Stroke or blood clot to the body (untreated — higher rate without anticoagulant)",
+          "with_option": 130,
+          "without_option": 80,
+          "nnh": 20,
+          "rac": { "severity": "IV", "probability": "C", "code": "4C" },
+          "cascade": "Stroke may cause permanent disability affecting speech, mobility, cognition, or swallowing. Risk of a second stroke is substantially elevated after a first event. Systemic embolism may cause limb ischemia requiring amputation.",
+          "evidence": {
+            "basis": "meta-analysis",
+            "grade": "high",
+            "source": "Hart RG et al. Ann Intern Med 2007 (Cochrane); Connolly SJ et al. AVERROES. NEJM 2011",
+            "funding": "mixed",
+            "population_caveat": "CHA2DS2-VASc ≥ 2. Annual stroke risk ranges from approximately 2% (score 2) to 15%+ (score 7+). The 5-year rate here reflects a score of approximately 3."
+          }
+        }
+      ],
+      "burden": "No daily medication required. No blood monitoring required. Continued routine cardiac care. Some clinicians recommend low-dose aspirin as a partial alternative, which carries its own bleeding risk and provides substantially less stroke protection than anticoagulation.",
+      "unknowns": [
+        "Individual stroke risk varies enormously (1–15% per year) based on CHA2DS2-VASc score; population averages may significantly misrepresent your personal risk.",
+        "The benefit-harm balance shifts substantially in patients with a prior stroke (much higher baseline risk) or a prior serious bleed (higher harm from treatment).",
+        "How falls risk should factor into the decision is not well quantified — retrospective data suggest falls risk is often overweighted as a reason to avoid anticoagulation."
+      ]
+    }
+  ]
+}

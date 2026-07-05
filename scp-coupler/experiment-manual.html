@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCP + PKC Integration — User Manual</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #f8f9fa;
+  --surface: #ffffff;
+  --border:  #dee2e6;
+  --navy:    #1e3a5f;
+  --navy-lt: #2a4f7c;
+  --text:    #1a1a2e;
+  --muted:   #6c757d;
+  --green:   #198754;
+  --orange:  #fd7e14;
+  --yellow:  #c89b00;
+  --blue:    #0d6efd;
+  --red:     #dc3545;
+  --gray:    #adb5bd;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  font-size: 1rem;
+}
+
+header {
+  background: var(--navy);
+  color: #fff;
+  padding: 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+header a.back {
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+header a.back:hover { color: #fff; }
+
+header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+nav.toc {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 2rem;
+  font-size: 0.88rem;
+}
+
+nav.toc a {
+  color: var(--navy-lt);
+  text-decoration: none;
+  margin-right: 1.25rem;
+  white-space: nowrap;
+}
+nav.toc a:hover { text-decoration: underline; }
+
+main {
+  max-width: 740px;
+  margin: 2rem auto;
+  padding: 0 1.5rem 4rem;
+}
+
+section {
+  margin-bottom: 2.75rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--navy);
+  border-bottom: 2px solid var(--navy);
+  padding-bottom: 0.3rem;
+  margin-bottom: 1rem;
+}
+
+h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--navy-lt);
+  margin: 1.1rem 0 0.4rem;
+}
+
+p {
+  margin-bottom: 0.9rem;
+}
+
+ul, ol {
+  margin: 0.4rem 0 0.9rem 1.4rem;
+}
+
+li {
+  margin-bottom: 0.35rem;
+}
+
+code, kbd {
+  font-family: ui-monospace, monospace;
+  font-size: 0.88em;
+  background: #e9ecef;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+}
+
+pre {
+  background: #1e3a5f;
+  color: #d0e8ff;
+  padding: 0.9rem 1.1rem;
+  border-radius: 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9rem;
+  overflow-x: auto;
+  margin: 0.6rem 0 1rem;
+}
+
+.note {
+  background: #eef3fa;
+  border-left: 3px solid var(--navy-lt);
+  padding: 0.75rem 1rem;
+  border-radius: 0 5px 5px 0;
+  font-size: 0.93rem;
+  color: var(--navy);
+  margin: 0.75rem 0;
+}
+
+.tip {
+  background: #f0fff4;
+  border-left: 3px solid var(--green);
+  padding: 0.75rem 1rem;
+  border-radius: 0 5px 5px 0;
+  font-size: 0.93rem;
+  color: #145029;
+  margin: 0.75rem 0;
+}
+
+.warn {
+  background: #fff8ec;
+  border-left: 3px solid var(--orange);
+  padding: 0.75rem 1rem;
+  border-radius: 0 5px 5px 0;
+  font-size: 0.93rem;
+  color: #7a4000;
+  margin: 0.75rem 0;
+}
+
+.section-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0 1rem;
+  font-size: 0.92rem;
+}
+
+.section-table th {
+  background: var(--navy);
+  color: #fff;
+  padding: 0.45rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.section-table td {
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.section-table tr:last-child td { border-bottom: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="/">← Back to Coupler</a>
+  <h1>SCP + PKC Integration — User Manual</h1>
+</header>
+
+<nav class="toc">
+  <a href="#s1">1. Prerequisites</a>
+  <a href="#s2">2. Starting</a>
+  <a href="#s3">3. Via FedWiki</a>
+  <a href="#s4">4. Full window</a>
+  <a href="#s5">5. Person &amp; problem</a>
+  <a href="#s6">6. SCP context</a>
+  <a href="#s7">7. Generating a frame</a>
+  <a href="#s8">8. Push frame to wiki</a>
+  <a href="#s9">9. Narrating</a>
+  <a href="#s10">10. Push to pre-visit-summary</a>
+  <a href="#s11">11. Viewing results</a>
+</nav>
+
+<main>
+
+<!-- 1 -->
+<section id="s1">
+<h2>1. Prerequisites</h2>
+
+<p>The integration requires three things to be in place before you start.</p>
+
+<h3>Python 3 and python-pptx</h3>
+<p>The coupler proxy is a Python 3 script. Any Python 3.8 or later will work. No additional packages are required beyond the standard library and the <code>anthropic</code> SDK.</p>
+
+<h3>FedWiki installed</h3>
+<p>FedWiki must be installed globally via npm and runnable with the <code>wiki</code> command. The experiment uses farm mode, which requires FedWiki 0.18 or later.</p>
+
+<h3>scp-experiment.localhost in /etc/hosts</h3>
+<p>The experiment site runs on a subdomain of localhost. Add this line to <code>/etc/hosts</code> if it is not already there:</p>
+<pre>127.0.0.1  scp-experiment.localhost</pre>
+<p>You will need administrator access (<kbd>sudo</kbd>) to edit that file. The line only needs to be added once.</p>
+
+<h3>An Anthropic API key</h3>
+<p>The coupler proxy calls Claude to generate frames and narratives. Set the key as an environment variable before starting the proxy:</p>
+<pre>export ANTHROPIC_API_KEY=sk-ant-...</pre>
+
+<div class="note">The experiment site pages live at <code>~/.wiki/scp-experiment.localhost/pages/</code>. If this directory is empty or missing, copy the seed pages from the production SCP wiki before proceeding.</div>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+<h2>2. Starting the System</h2>
+
+<p>Open two terminal windows. Run one command in each, in any order.</p>
+
+<h3>Terminal 1 — FedWiki</h3>
+<pre>wiki --farm ~/.wiki</pre>
+<p>FedWiki starts in farm mode, serving all sites under <code>~/.wiki/</code> on port 3000. Both the production localhost site and the experiment site are served by this one process. When you see output saying the server is listening on port 3000, FedWiki is ready.</p>
+
+<h3>Terminal 2 — Coupler proxy</h3>
+<pre>python3 ~/rcn/coupler-proxy.py</pre>
+<p>The proxy starts a ThreadingHTTPServer on port 8766. When you see <code>Serving on http://localhost:8766</code>, the proxy is ready. Leave both terminals open while you work — stopping either process ends that part of the system.</p>
+
+<div class="tip">If port 3000 is already in use from a previous FedWiki session, stop that process first. On macOS: <code>lsof -ti:3000 | xargs kill</code>.</div>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+<h2>3. Opening via FedWiki</h2>
+
+<p>With both processes running, open the PKC landing page in the experiment wiki:</p>
+<pre>http://scp-experiment.localhost:3000/problem-knowledge-coupler</pre>
+
+<h3>What you see</h3>
+<p>The page loads in FedWiki's standard lineup view. A FedWiki frame plugin item embeds the coupler UI at 800px height inside the page. The coupler detects the <code>?embed</code> URL parameter (added automatically by the proxy when serving inside a frame) and switches to a compact layout.</p>
+
+<h3>Compact embed layout</h3>
+<p>In embed mode, the coupler looks different from the full-window version:</p>
+<ul>
+  <li>No page header — the FedWiki page header takes its place</li>
+  <li>The left sidebar is 180px wide instead of the full-size version, and the problem list is visible immediately without clicking</li>
+  <li>The toolbar shows a <strong>Push to Wiki</strong> button instead of the standard <strong>FedWiki</strong> button</li>
+  <li>The layout fits within the 800px frame height with internal scrolling</li>
+</ul>
+
+<div class="note">The embed layout is read from the <code>?embed</code> URL parameter. If you open the coupler directly at <code>http://localhost:8766</code>, you get the full-window layout with the standard <strong>FedWiki</strong> button. Both layouts connect to the same proxy, the same database, and the same SCP context injection.</div>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+<h2>4. Opening the Full Window</h2>
+
+<p>To use the coupler outside of the FedWiki frame, open it directly in a browser tab:</p>
+<pre>http://localhost:8766</pre>
+
+<p>This shows the full-window layout: the standard header, the full-width sidebar with the person and problem list, and the <strong>FedWiki</strong> button in the toolbar (instead of <strong>Push to Wiki</strong>). Everything else — SCP context injection, frame generation, push to wiki, narrative, push to pre-visit-summary — works identically.</p>
+
+<p>Use the full window when you want more screen space, when you are printing or exporting a frame, or when you want to view the complete SOAP view without scrolling inside a wiki frame.</p>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+<h2>5. Loading a Person and Selecting a Problem</h2>
+
+<p>The left sidebar shows the list of people in the local database. Click a person's name to open their record. If no people exist yet, click <strong>New Person</strong> and enter a name or identifier.</p>
+
+<p>Once inside a person's record, the sidebar shows their problem list. Click a problem to open it in the main content area. If no problems exist, click <strong>Add Problem</strong> and type a short title — for example, "Uncontrolled hypertension" or "New-onset fatigue."</p>
+
+<div class="tip">The problem title is the primary input to the frame generator. A clear, specific title — "Chest pain on exertion" rather than "Pain" — produces a more useful frame. The SCP context pulled from the wiki is added to the same request, so the AI sees both the title and the existing record.</div>
+
+<p>The selected problem stays open when you switch between embed mode and full-window mode. Both views share the same database.</p>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+<h2>6. What the Coupler Reads from the SCP</h2>
+
+<p>Before generating a frame, <code>coupler-proxy.py</code> automatically fetches context from the experiment site. This happens every time a frame is generated — you do not need to trigger it manually.</p>
+
+<h3>What gets fetched</h3>
+<p>The proxy reads three pages from <code>scp-experiment.localhost:3000</code>:</p>
+<ul>
+  <li><strong>health-log</strong> — vitals, symptoms, and visits recorded via SCP plugins</li>
+  <li><strong>visits</strong> — visit notes and encounter summaries</li>
+  <li><strong>about-me</strong> — demographic background, stated goals, chronic conditions</li>
+</ul>
+<p>The content of these pages is extracted from FedWiki's JSON format, converted to plain text, and appended to the prompt sent to Claude. Claude reads this context before generating findings, so information already in the SCP pre-fills the frame rather than showing as absent.</p>
+
+<h3>Previewing what will be injected</h3>
+<p>To see exactly what the proxy will send to Claude before generating anything, open this URL in a browser:</p>
+<pre>http://localhost:8766/api/scp-context</pre>
+<p>The response is a human-readable HTML table showing each piece of SCP content that will be included. This is useful for verifying that the experiment site has meaningful data and that the proxy is connecting to it correctly.</p>
+
+<div class="note">If <code>scp-experiment.localhost:3000</code> is not reachable, the proxy generates the frame without SCP context. The frame will still be generated; it will just start from scratch rather than from the existing record. No error is shown to the user — check the proxy terminal output for a connection warning.</div>
+</section>
+
+<!-- 7 -->
+<section id="s7">
+<h2>7. Generating a Frame</h2>
+
+<p>With a problem selected, click <strong>Generate Frame</strong>. A spinner shows while the proxy fetches SCP context and sends the combined request to Claude. Frame generation takes 15–40 seconds depending on how much SCP context is available and the current API response time.</p>
+
+<h3>How SCP data pre-fills findings</h3>
+<p>When the frame appears, findings that correspond to data already in the SCP will show as filled or partial rather than absent. For example, if the health-log page contains a recent blood pressure reading, the OBJECTIVE finding for blood pressure will show as filled with that value, rather than showing as a gap. The AI reads the SCP entries and maps them onto the frame slots automatically.</p>
+
+<p>Not all SCP data will match frame slots. The AI uses judgment about which entries are relevant to the specific problem. Entries that don't map to a slot are not shown in the frame but are visible at the <code>/api/scp-context</code> endpoint.</p>
+
+<div class="tip">After reviewing the pre-filled frame, add any findings you know about that weren't captured in the SCP. Then run Re-Match to update the probability estimates with the complete picture.</div>
+</section>
+
+<!-- 8 -->
+<section id="s8">
+<h2>8. Pushing the Frame to FedWiki</h2>
+
+<h3>The button</h3>
+<p>In embed mode (inside the FedWiki frame), the toolbar shows a <strong>Push to Wiki</strong> button. In full-window mode, the same function is available via the <strong>FedWiki</strong> button in the toolbar. Both buttons do the same thing: write the current frame as a new FedWiki page on <code>scp-experiment.localhost</code>.</p>
+
+<p>Click the button. The proxy writes the page and the coupler sends a <code>doInternalLink</code> postMessage to FedWiki, which opens the new page to the right in the lineup. The page title is derived from the problem title — for example, a problem titled "Uncontrolled hypertension" produces a page called <code>pkc-uncontrolled-hypertension</code>.</p>
+
+<h3>What the wiki page looks like</h3>
+<p>The page contains a paragraph item with the problem title and the date, followed by a single HTML item with five collapsible sections:</p>
+
+<table class="section-table">
+  <thead>
+    <tr><th>Section</th><th>Contents</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>SUBJECTIVE</strong></td>
+      <td>Filled and partial subjective findings with their recorded values; absent findings listed as gaps</td>
+    </tr>
+    <tr>
+      <td><strong>OBJECTIVE</strong></td>
+      <td>Filled and partial objective findings; absent findings listed as gaps</td>
+    </tr>
+    <tr>
+      <td><strong>ASSESSMENT</strong></td>
+      <td>Ranked candidate diagnoses with probability estimates, attention codes, and supporting/refuting findings</td>
+    </tr>
+    <tr>
+      <td><strong>PLAN</strong></td>
+      <td>Plan considerations with current status</td>
+    </tr>
+    <tr>
+      <td><strong>NOT YET GATHERED</strong></td>
+      <td>All absent findings across all sections, collected in one place so gaps are immediately visible</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Each section uses a <code>&lt;details&gt;&lt;summary&gt;</code> element and defaults to collapsed. Click a section header to expand it. All five sections can be open at once.</p>
+
+<div class="note">Pushing the frame again for the same problem creates a new page with the current date appended to the title. It does not overwrite the previous version — both pages remain in the lineup history.</div>
+</section>
+
+<!-- 9 -->
+<section id="s9">
+<h2>9. Narrating</h2>
+
+<p>The <strong>Narrate</strong> button generates a plain-language paragraph summarizing the current state of the problem record. Click it at any time after generating a frame. The proxy sends the current record to Claude and returns a paragraph covering:</p>
+<ul>
+  <li>What has been reported and measured</li>
+  <li>The leading diagnostic possibilities and the evidence for each</li>
+  <li>What remains unknown and which gaps would most change the picture if filled</li>
+</ul>
+
+<p>The paragraph appears in the Narrate section below the frame. It is editable — click inside it to revise wording or add context before pushing it to the SCP.</p>
+
+<div class="tip">Narrate is useful at the end of a visit. The paragraph is written to be understood without clinical training, so it can be shared with the person, their family, or a clinician picking up the record cold.</div>
+</section>
+
+<!-- 10 -->
+<section id="s10">
+<h2>10. Pushing the Narrative to Pre-Visit Summary</h2>
+
+<p>After generating (and optionally editing) the narrative paragraph, click <strong>Push to SCP</strong> below the narrate output. This writes the paragraph to the <code>pre-visit-summary</code> page on <code>scp-experiment.localhost</code>.</p>
+
+<h3>What gets written</h3>
+<p>The narrative lands on the pre-visit-summary page as a collapsible HTML block. The block is labeled with the problem number, title, and date — for example:</p>
+<pre>PROBLEM 1: Uncontrolled hypertension — 2026-07-04</pre>
+<p>The block is collapsed by default. Expand it to read the full narrative paragraph. The pre-visit-summary page accumulates entries across problems and visits, so the summary page gives a complete picture of what is known across all active problems at the time of the last push.</p>
+
+<h3>Re-pushing</h3>
+<p>If you push a narrative for a problem that already has an entry on the pre-visit-summary page, the proxy finds the existing block by its label and replaces it in place. The page does not accumulate duplicate entries for the same problem. Only the most recent narrative for each problem is kept.</p>
+
+<p>After writing, the proxy sends a <code>doInternalLink</code> postMessage to open the <code>pre-visit-summary</code> page to the right in the lineup so you can confirm what was written.</p>
+
+<div class="warn">Push to SCP writes directly to the FedWiki page file on disk. The change is immediately visible to anyone viewing the page. If you push a draft narrative by accident, edit the pre-visit-summary page directly in FedWiki to correct it.</div>
+</section>
+
+<!-- 11 -->
+<section id="s11">
+<h2>11. Viewing Results in the FedWiki Lineup</h2>
+
+<p>After pushing a frame or narrative, FedWiki opens the target page to the right of the current page in the lineup. This is standard FedWiki behavior — each push extends the lineup by one page.</p>
+
+<p>The lineup after a typical session might look like this, left to right:</p>
+<ol>
+  <li><code>problem-knowledge-coupler</code> — the landing page with the embedded coupler</li>
+  <li><code>pkc-uncontrolled-hypertension</code> — the pushed frame page</li>
+  <li><code>pre-visit-summary</code> — the narrative summary page</li>
+</ol>
+
+<p>All three pages are on <code>scp-experiment.localhost</code>. You can navigate to any of them directly at:</p>
+<pre>http://scp-experiment.localhost:3000/[page-title]</pre>
+
+<p>FedWiki's standard page history is available for all pushed pages — click the page flag to see the journal of changes. Each push appears as a journal entry with the timestamp of the write.</p>
+
+<div class="note">Pages pushed by the coupler proxy are written as full FedWiki page JSON files. They can be edited in FedWiki using the standard double-click-to-edit pattern, forked, or shared. They behave like any other FedWiki page.</div>
+</section>
+
+</main>
+</body>
+</html>

@@ -43,6 +43,8 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
   vester/     Vester chapter notes and SensiMod context
   archive/    old numbered drafts
   veramo/     SODOTO credential infrastructure (see SODOTO section below)
+  scp-coupler/ standalone PKC tool + experiment integration files
+  coupler-proxy.py  PKC proxy (port 8766)
   database.rules.json   Firebase Realtime DB security rules (scoped to sessions/ and topics/ paths)
   SODOTO-CLAUDE-CODE-CONTEXT.md   full SODOTO onboarding doc (authoritative)
 
@@ -57,9 +59,9 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 |------|---------|--------|
 | `graph-tool-v22.html` | CLD/EIP/NRM/OPM/Trace/Wardley/Triples graph diagramming, MDL/.dot/XMILE/Cypher/Wardley JSON I/O, multi-trace edges, reifiable triples with meta-edges, canvas legend, node+edge layers, Print; **→ Wiki** button sends enriched SVG ghost page to FedWiki lineup (node labels become clickable internal links) | **Active** |
 | `nrm-tripod-beta.html` | Standalone Tripod Beta / NRM incident analysis tool — full canvas, barriers, save/load | **Active** |
-| `evsm-aggregator.html` | eVSM 11-sphere visualizer, multi-respondent synthesis, Claude API streaming | Active |
-| `evsm-svg-v3.html` | eVSM directed edge assessment (Agree/Disagree/Unknown) | Active |
-| `evsm-report.html` | eVSM survey report generator | Active |
+| `evsm-aggregator.html` | eVSM 11-sphere visualizer, multi-respondent synthesis, Claude API streaming (direct browser→Anthropic, user's own key); Synthesize All (sequential Claude across all spheres/edges), Full Report (standalone HTML with diagram + syntheses), Export/restore session as JSON bundle | Active |
+| `evsm-svg-v3.html` | eVSM directed edge assessment (Agree/Disagree/Unknown); Snapshot button bakes config into a single distributable HTML file; Print My Report generates blob-based individual report | Active |
+| `evsm-report.html` | eVSM individual respondent report — one person's assessment data; opened via blob URL from Survey Tool or by drag-drop; for aggregate reports across all respondents use Aggregator's Full Report | Active |
 | `ibis-map-rcn.html` | IBIS argument mapping (post-hoc mode preferred) | Active |
 | `rcn_map.html` (in maps/) | Leaflet NDC map — 7 NDCs, 7 base layers, geographic context layers, issue overlay, shift+click legend, custom location pins, NDC location correction, user boundary layer builder (OSM search + Claude bridge); all user data in localStorage | Active |
 | `issue-polygon-map.html` | Polycentric governance / Issue Polygon viewer — data-driven via `?issue=` URL param; loads `issue-data/*.json`; parcel stances, layer toggles, draw polygon, GeoJSON export | Active |
@@ -73,7 +75,7 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 | `bias-checker-manual.html` | Conversation Navigator — User Manual | Docs |
 | `cfa-dsc-creator.html` | Conversations for Action / Dyadic Smart Contract creator | Active |
 | `contract-creator.html` | Contract UI | Active |
-| `evsm_excel_tool.html` | eVSM Excel export | Active |
+| `evsm_excel_tool.html` | eVSM JSON↔Excel conversion; drag-and-drop import (Excel onto Import card) and export (JSON onto Export card); round-trip auto-loads import result into Export textarea; navy header styling + word-wrap; cross-sheet formula linking in Edges sheet | Active |
 | `sodoto-issuer.html` | SODOTO credential issuance — gate-by-gate workflow, people registry, Ed25519 signing, FedWiki portfolio + ledger writes | **Active** |
 
 ---
@@ -242,6 +244,7 @@ Kept outside ~/rcn/ because of node_modules size.
 | Neo4j | Relational/temporal truth, point types, H3 arrays |
 | FedWiki | `localfedwiki.relocalizecreativity.net`, launchd auto-start, port 3000 |
 | sofi-proxy | `~/rcn/sofi-proxy.py`, port 8765 — Anthropic API relay + FedWiki filesystem write API + static file server for `~/rcn/` |
+| coupler-proxy | `~/rcn/coupler-proxy.py`, port 8766 — PKC AI proxy + FedWiki write API; serves `~/rcn/scp-coupler/` |
 
 Spatial architecture: PostGIS (precise polygon operations) + Neo4j (point types, H3 arrays)
 linked via shared `place_id` UUID.
@@ -259,6 +262,8 @@ linked via shared `place_id` UUID.
 - **eVSM survey tool**: Port to Wiki Café.
 
 - **SCP + Groove**: Shared Care Plan as native FedWiki plugins + Groove workspace (port 3001). 12 typed item plugins built and working on localhost (June 2026). Pilot: Superior AZ NDC (Leo's). See `scp-groove-handoff.md` and the FedWiki SCP Plugins section below.
+
+- **SCP + PKC Integration Experiment**: Three-way integration between the Problem-Knowledge Coupler (port 8766), the Shared Care Plan FedWiki plugins, and a local experimental wiki site (`scp-experiment.localhost`). PKC reads from and writes to the SCP wiki. Coupler frames push as collapsible FedWiki pages. Narratives push to pre-visit-summary. Experiment site isolated from WikiCafe production. See `scp-coupler/experiment-intro.html` and `scp-coupler/experiment-manual.html`.
 
 - **SODOTO Mac Mini deployment**: issuer tool and FedWiki running on shared Mac Mini. Each issuer accesses sodoto-issuer.html through their own browser; keys never leave the signer's machine. Next steps: launchd plists for auto-start, network config, private key storage (out of plain JSON), people registry portability (localStorage → SEED_PEOPLE or server-side file), PROXY constant in sodoto-issuer.html updated from localhost to Mac Mini hostname.
 

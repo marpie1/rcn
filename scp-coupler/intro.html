@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What Is the Problem-Knowledge Coupler?</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #f8f9fa;
+  --surface: #ffffff;
+  --border:  #dee2e6;
+  --navy:    #1e3a5f;
+  --navy-lt: #2a4f7c;
+  --text:    #1a1a2e;
+  --muted:   #6c757d;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+header {
+  background: var(--navy);
+  color: #fff;
+  padding: 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+header a.back {
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+header a.back:hover { color: #fff; }
+
+header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+main {
+  max-width: 680px;
+  margin: 2.5rem auto;
+  padding: 0 1.5rem 4rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 0.5rem;
+}
+
+p {
+  margin-bottom: 1.2rem;
+  color: var(--text);
+}
+
+.lead {
+  font-size: 1.1rem;
+  color: var(--navy-lt);
+  font-weight: 500;
+  margin-bottom: 1.6rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+.role-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.role-block strong {
+  display: block;
+  color: var(--navy);
+  font-size: 0.95rem;
+  margin-bottom: 0.4rem;
+}
+
+.role-block p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.note {
+  background: #eef3fa;
+  border-left: 3px solid var(--navy-lt);
+  padding: 0.9rem 1.1rem;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.93rem;
+  color: var(--navy);
+  margin-top: 1.5rem;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="/">← Back to Coupler</a>
+  <h1>Problem-Knowledge Coupler — Introduction</h1>
+</header>
+
+<main>
+
+<h2>The Record Should Teach You What You Don't Know</h2>
+
+<p class="lead">Lawrence Weed spent fifty years arguing that the medical record is broken — not because physicians are careless, but because the record never shows what's missing.</p>
+
+<p>When a clinician writes a note, they record what they found and thought. The blank space where an important finding was never sought simply looks like nothing — it is invisible. Yet the difference between "we checked and it was normal" and "we never checked" is enormous. One rules something out; the other leaves a diagnostic gap that can quietly widen into harm.</p>
+
+<p>Weed's response was the Problem-Knowledge Coupler: for every problem a patient carries, enumerate the complete set of findings that a rigorous workup would gather. Display that full frame alongside the record. Now the gaps are visible — not as accusation, but as orientation. The record becomes a teaching instrument that shows where attention is still needed.</p>
+
+<hr>
+
+<h2>What This Tool Does</h2>
+
+<p>For each problem on a person's list, the coupler generates a structured frame organized in SOAP order — Subjective, Objective, Assessment, and Plan. Each slot in the frame is marked filled, partial, or absent based on what has actually been recorded. Missing data shows up as a visible gap, not as a blank page.</p>
+
+<p>The Assessment section goes further. The AI generates a ranked list of candidate diagnoses with estimated probabilities, drawn from current evidence in the person's record. Each candidate is tagged with supporting findings (evidence that raises the probability) and refuting findings (evidence that lowers it). Alongside probability, each candidate receives an Attention Code — a number from 1 to 5 that reflects both clinical severity and how likely the diagnosis is at this moment. A code 1 means "act now regardless of certainty"; a code 5 means "keep it in view but don't rush." These codes drive visual prominence throughout the interface.</p>
+
+<p>An Attention Strip at the top of the assessment always surfaces any code-1 or code-2 candidates, no matter where they fall in the probability ranking. High-severity possibilities should never scroll out of sight because a more common diagnosis ranks higher.</p>
+
+<p>Probability histories are cumulative. Every time you add new findings and run Re-Match, the old estimates are preserved and a new row is appended. You can watch the picture sharpen — or shift — as evidence arrives.</p>
+
+<p>A Narrate function produces a plain-language paragraph summarizing the person's current status: what is known, what remains uncertain, and what the open gaps mean for next steps. This paragraph is readable by the person, their family, or any clinician picking up the record cold.</p>
+
+<hr>
+
+<h2>What This Tool Does Not Do</h2>
+
+<p>The coupler does not diagnose. It does not recommend treatments. It does not make decisions. The probability estimates are informational — they are the AI's best reading of the evidence at hand, not a clinical verdict. The frame it generates is a starting point for structured thinking, not an authority to defer to.</p>
+
+<p>All content generated by the AI is human-readable and directly editable. Nothing is locked. The record belongs to the person and the care team.</p>
+
+<hr>
+
+<h2>The Activation Band</h2>
+
+<p>A full coupler frame can be overwhelming. Presenting seventeen absent findings and seven candidate diagnoses to someone who is still learning to navigate their own health may not help — it may close the door. Lawrence Weed understood this too: knowledge without the skill and confidence to act on it is incomplete care.</p>
+
+<p>The coupler borrows a measure of this readiness — <em>activation</em> — from Judith Hibbard's Patient Activation Measure (PAM), which describes the degree to which a person has the knowledge, skill, and confidence to manage their own health, across four levels that can change over time. Rather than requiring the licensed PAM instrument, the coupler uses the PANAS Positive Affect scale as a validated proxy: ten adjectives (active, alert, attentive, determined, enthusiastic, excited, inspired, interested, proud, strong), each rated 1–5 for the past week. This is a self-administered one-minute check-in, not a clinical assessment. The raw score and the crosswalk table that maps it to a band are both stored — so if better cut-points arrive from Mahoney's research, the mapping updates without touching any recorded scores.</p>
+
+<p>The band — 1 through 4 — does not gatekeep access to the record. The full coupler frame is always present and one click away. What it changes is how much surfaces by default and how actions are worded. At bands 1–2, only the highest-attention candidates appear, the top three absent findings per section are shown, and plan options are phrased as things to ask the care team about. At bands 3–4, the full frame is visible and plan options are phrased as things the person can do themselves. A single "Show full frame" toggle overrides the filter at any moment without changing the band.</p>
+
+<p>Activation is versioned just like probability. Each check-in appends to a history. If Weed is right that the record teaches whoever touches it, activation should rise as a person uses the coupler over time. The data to test that claim is kept from the first assessment onward — it is a measurable, publishable hypothesis built into the design.</p>
+
+<hr>
+
+<h2>Three Roles, One Record</h2>
+
+<div class="role-block">
+  <strong>Person and Family</strong>
+  <p>Fill in their experience: symptoms, duration, what makes things better or worse, concerns, goals. The subjective frame gives them specific questions to answer rather than an open field to stare at.</p>
+</div>
+
+<div class="role-block">
+  <strong>Community Health Worker</strong>
+  <p>Facilitates the conversation, records findings in the appropriate slots, flags gaps that need clinical attention, and helps the person understand what the assessment candidates mean in plain language.</p>
+</div>
+
+<div class="role-block">
+  <strong>Physician</strong>
+  <p>Reads a Weed-standard record: a complete frame with explicit gaps, a probability-ranked assessment with supporting and refuting evidence, and an attention-coded summary. The gaps are already named. The missing labs are already visible. The physician's time goes to judgment, not reconstruction.</p>
+</div>
+
+<hr>
+
+<h2>The Role of AI</h2>
+
+<p>The AI drafts the coupler frame for a given problem — the list of findings worth gathering — based on its training across clinical literature. It estimates probabilities from the recorded findings and generates the Narrate paragraph. It does none of this invisibly: every estimate, every gap label, every supporting link is shown in full so the care team can evaluate it.</p>
+
+<p>The AI does not decide. It drafts. Clinical judgment — including the decision to accept, reject, or modify any part of the frame — belongs to the people using it.</p>
+
+<div class="note">
+  This tool runs locally. No data leaves this machine unless you explicitly export it. The proxy that connects the interface to the AI model runs on your own computer at port 8766.
+</div>
+
+</main>
+</body>
+</html>

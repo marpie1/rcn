@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCP + PKC — Prospective Work</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #f8f9fa;
+  --surface: #ffffff;
+  --border:  #dee2e6;
+  --navy:    #1e3a5f;
+  --navy-lt: #2a4f7c;
+  --text:    #1a1a2e;
+  --muted:   #6c757d;
+  --accent:  #7a5c9e;
+  --green:   #2d7a4f;
+  --amber:   #8a5c00;
+  --amber-bg:#fff8e6;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+header {
+  background: var(--navy);
+  color: #fff;
+  padding: 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+header a.back {
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+header a.back:hover { color: #fff; }
+
+header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+main {
+  max-width: 720px;
+  margin: 2.5rem auto;
+  padding: 0 1.5rem 4rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 0.5rem;
+  margin-top: 2.5rem;
+}
+
+h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--navy-lt);
+  margin-bottom: 0.35rem;
+  margin-top: 1.5rem;
+}
+
+p {
+  margin-bottom: 1.1rem;
+  color: var(--text);
+}
+
+.lead {
+  font-size: 1.1rem;
+  color: var(--navy-lt);
+  font-weight: 500;
+  margin-bottom: 1.6rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.5rem 0;
+}
+
+ul {
+  padding-left: 1.4rem;
+  margin-bottom: 1.1rem;
+}
+
+ul li {
+  margin-bottom: 0.4rem;
+  color: var(--text);
+}
+
+.track {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--navy-lt);
+  border-radius: 0 8px 8px 0;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.track.accent { border-left-color: var(--accent); }
+.track.green  { border-left-color: var(--green); }
+.track.amber  { border-left-color: var(--amber); }
+
+.track-label {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+
+.track h3 {
+  margin-top: 0;
+  font-size: 1.05rem;
+  color: var(--navy);
+}
+
+.track p {
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.track ul {
+  margin-bottom: 0;
+  font-size: 0.93rem;
+}
+
+.note {
+  background: #eef3fa;
+  border-left: 3px solid var(--navy-lt);
+  padding: 0.9rem 1.1rem;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.93rem;
+  color: var(--navy);
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.status-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  margin-bottom: 1.5rem;
+}
+
+.status-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  background: var(--navy);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.status-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.status-table tr:last-child td { border-bottom: none; }
+
+.badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  padding: 0.15rem 0.45rem;
+}
+.badge.done   { background: #d4edda; color: var(--green); }
+.badge.next   { background: #e8e0f7; color: var(--accent); }
+.badge.later  { background: #f0f0f0; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="/">← Back to Coupler</a>
+  <h1>SCP + PKC Integration — Prospective Work</h1>
+</header>
+
+<main>
+
+<h2>Where We Are</h2>
+
+<p class="lead">The SCP-PKC experiment is running. A Problem-Knowledge Coupler embedded in a FedWiki page can read health-log and visit context, generate structured SOAP-format assessments, push them to the patient's wiki, and narrate a pre-visit summary — all from within the care plan.</p>
+
+<p>The table below reflects current status across the three integration steps that were planned at the outset:</p>
+
+<table class="status-table">
+  <thead>
+    <tr>
+      <th>Step</th>
+      <th>Description</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>FedWiki export — push structured SOAP assessment to patient wiki page</td>
+      <td><span class="badge done">Done</span></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>SCP context pull — inject health-log, visits, and about-me into Claude frame calls</td>
+      <td><span class="badge done">Done</span></td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>PKC landing page — embed coupler in FedWiki via frame plugin; push narrative to pre-visit summary</td>
+      <td><span class="badge done">Done</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>What follows is a structured view of the work that remains — organized by theme rather than sequence, because the order will depend on what the pilot surfaces.</p>
+
+<hr>
+
+<h2>Two New Subprojects</h2>
+
+<p>Two independent workstreams have been scoped and are ready to build. Each has its own directory alongside <code>scp-coupler/</code>.</p>
+
+<div class="track green">
+  <span class="track-label">Subproject · In progress</span>
+  <h3>Option Box — <code>scp-optionbox/</code> · port 8768</h3>
+  <p>When the coupler's Plan proposes an intervention, generate a patient-held fact box: options side by side, benefits and harms in natural frequencies per 1,000 people, each harm carrying a RAC cell, evidence quality and funding stated, unknowns stated as unknowns. The same severity × probability logic the coupler already uses for ranking diagnostic possibilities now ranks intervention consequences.</p>
+  <ul>
+    <li><strong>Phase 1 — done:</strong> Schema (<code>optionbox-schema.json</code>), validator (<code>validate-optionbox.js</code>), HTML renderer with icon arrays, hand-built AF anticoagulation example (<code>data/nnt-library/af-anticoagulation.json</code>)</li>
+    <li><strong>Phase 2:</strong> openFDA drug label + FAERS clients; RxNorm name→RxCUI lookup; on-disk cache; ONC high-priority interaction list</li>
+    <li><strong>Phase 3:</strong> Test-library math — pretest p → 2×2 → per-1,000 rendering; coupler-proxy trigger route; curation queue</li>
+    <li><strong>Phase 4:</strong> SCP attachment; print stylesheet; "questions to ask" footer from unknowns list</li>
+  </ul>
+</div>
+
+<div class="track amber">
+  <span class="track-label">Subproject · Awaiting Epic app config</span>
+  <h3>SMART on FHIR — <code>scp-fhir/</code> · port 8767</h3>
+  <p>Pull real clinical data from PeaceHealth's Epic system into the SCP/Coupler environment using SMART on FHIR standalone patient launch with PKCE. Epic developer account registered; app registration next. All PHI stays local; data is gitignored.</p>
+  <ul>
+    <li><strong>Phase 0 — manual:</strong> Register app at fhir.epic.com — patient-facing, standalone launch, public client (PKCE), redirect URI <code>http://localhost:8767/callback</code>, scopes: <code>openid fhirUser patient/*.read</code>. Records sandbox and production client IDs in <code>scp-fhir/config.json</code> (gitignored).</li>
+    <li><strong>Phase 1:</strong> <code>smart-proxy.py</code> — PKCE flow, sandbox proof, raw bundle pull for one test patient, console summary</li>
+    <li><strong>Phase 2:</strong> PeaceHealth production — swap config, Marc authenticates with MyChart credentials</li>
+    <li><strong>Phase 3:</strong> Map FHIR → SCP/coupler schema: Condition → problem list, Observation → answered coupler questions, MedicationRequest → active meds, CarePlan/Goal → compare without overwriting</li>
+    <li><strong>Phase 4:</strong> Dynamic client registration (refresh tokens); multi-provider merge; TEFCA IAS if needed</li>
+  </ul>
+  <p style="font-size:0.88rem;margin-top:0.5rem"><strong>Key Epic quirks:</strong> <code>aud</code> parameter required on authorize request; Observation and CarePlan searches require <code>category</code>; use non-prod client ID against sandbox only; always follow Bundle next-page links.</p>
+</div>
+
+<hr>
+
+<h2>Near-Term Work</h2>
+
+<p>These items are well-understood technically and follow naturally from what exists today.</p>
+
+<div class="track">
+  <span class="track-label">Data fidelity</span>
+  <h3>Populate scp-experiment with real (or realistic) SCP data</h3>
+  <p>The experiment site currently uses placeholder health-log entries and visit records. Replacing these with representative data — modeled on the Superior AZ pilot — will reveal gaps in the context-fetch logic and make the Claude output meaningful enough to evaluate clinically.</p>
+  <ul>
+    <li>Map all scp-field and scp-log-entry types actually used in the pilot</li>
+    <li>Seed scp-experiment.localhost with 2–3 representative patients</li>
+    <li>Confirm context fetch covers every field type relevant to the coupler</li>
+  </ul>
+</div>
+
+<div class="track">
+  <span class="track-label">Closing the loop</span>
+  <h3>Write coupler findings back to health-log</h3>
+  <p>Right now, the coupler reads from the SCP but writes only to stand-alone assessment pages. The next logical step is to post a scp-log-entry item into health-log when a SOAP note is finalized — so the coupler's output becomes part of the longitudinal record it will later read.</p>
+  <ul>
+    <li>Define a minimal scp-log-entry schema for a PKC-sourced entry</li>
+    <li>Add a "Log to health record" button (separate from "Push to Wiki")</li>
+    <li>Ensure logged entries carry enough metadata to distinguish them from CHW-entered data</li>
+  </ul>
+</div>
+
+<div class="track">
+  <span class="track-label">Workflow</span>
+  <h3>Multi-problem visit brief</h3>
+  <p>Pre-visit summary currently operates one problem at a time. A visit typically involves several active problems. The coupler should be able to assemble a single, prioritized brief covering all problems the CHW plans to address — exported as one coherent page or section.</p>
+  <ul>
+    <li>Add a "Build visit brief" button that iterates over selected problems</li>
+    <li>Produce a single pre-visit-summary page with all problems as sections</li>
+    <li>Allow CHW to deselect problems they are not addressing in this visit</li>
+  </ul>
+</div>
+
+<div class="track">
+  <span class="track-label">Infrastructure</span>
+  <h3>Person → wiki site mapping</h3>
+  <p>The proxy currently hardcodes <code>scp-experiment.localhost</code>. For any real deployment covering more than one patient, the coupler needs to know which FedWiki site corresponds to each person_id. This mapping also needs to survive the proxy being restarted.</p>
+  <ul>
+    <li>Add a simple person-to-site registry (JSON file or in-memory dict loaded at startup)</li>
+    <li>Push and context-fetch endpoints use the registry rather than the hardcoded constant</li>
+    <li>Admin endpoint or UI to register a new person ↔ site pairing</li>
+  </ul>
+</div>
+
+<hr>
+
+<h2>Medium-Term Work</h2>
+
+<p>These items depend on the near-term work being stable, or require design decisions that aren't yet settled.</p>
+
+<div class="track accent">
+  <span class="track-label">Clinical quality</span>
+  <h3>Problem library and prompt refinement</h3>
+  <p>The coupler's value depends on the quality of the knowledge base it draws on for each problem. The current prompts are generic. A library of problem-specific frames — what findings to gather, what to watch for, what NOT YET GATHERED items are most important — would make the output actionable rather than advisory.</p>
+  <ul>
+    <li>Build a problem library (JSON): problem name, key findings, red-flag items, relevant labs</li>
+    <li>Inject problem-specific frame into the system prompt for each Claude call</li>
+    <li>Allow the library to be extended by the clinical team without code changes</li>
+  </ul>
+</div>
+
+<div class="track accent">
+  <span class="track-label">CHW workflow</span>
+  <h3>End-to-end CHW visit flow</h3>
+  <p>The current toolchain requires a technically proficient user. To be viable for the CHW pilot, the workflow must run from within the SCP page with no separate browser windows, proxy setup awareness, or JSON inspection. The experience needs to be invisible as infrastructure.</p>
+  <ul>
+    <li>Test complete flow with a non-technical CHW participant</li>
+    <li>Document the visit steps from the CHW's point of view, not the developer's</li>
+    <li>Identify friction points and resolve them before the next pilot contact</li>
+    <li>Confirm the pre-visit summary renders correctly on mobile (CHWs often use phones)</li>
+  </ul>
+</div>
+
+<div class="track accent">
+  <span class="track-label">Federation</span>
+  <h3>Cross-site context fetch</h3>
+  <p>In the SCP model, data lives on the patient's personal wiki site, not the CHW's. The coupler currently reads from a single known site. For real federation, it needs to read context from any authorized site in the neighborhood — following the FedWiki model of distributed, person-controlled pages.</p>
+  <ul>
+    <li>Fetch context from the patient's own site (not just the experiment site)</li>
+    <li>Handle authorization — FedWiki "friends" security or equivalent</li>
+    <li>Support the case where health-log and about-me live on different sites</li>
+  </ul>
+</div>
+
+<hr>
+
+<h2>Longer-Term Work</h2>
+
+<p>These items represent larger architectural or clinical decisions that will take time to develop.</p>
+
+<div class="track green">
+  <span class="track-label">Pilot readiness</span>
+  <h3>Multi-person real pilot</h3>
+  <p>Moving from a single experiment patient to a real pilot cohort — even two or three participants — requires the person-mapping infrastructure, CHW workflow refinement, clinical review of prompts, and a clear plan for what constitutes a successful interaction.</p>
+</div>
+
+<div class="track green">
+  <span class="track-label">Closing the evidence loop</span>
+  <h3>Outcomes tracking</h3>
+  <p>Did the coupler's NOT YET GATHERED items actually prompt new data collection? Did the pre-visit summary change what the CHW focused on? Answering these questions requires embedding lightweight tracking into the workflow — not surveillance, but enough to evaluate the tool's effect on care quality.</p>
+</div>
+
+<div class="track green">
+  <span class="track-label">Weed's vision</span>
+  <h3>Longitudinal gap analysis</h3>
+  <p>The deep goal of Weed's coupler is not just to structure today's visit — it is to make cumulative gaps visible over time. A patient who has been seen twelve times without a particular finding being gathered should have that gap become progressively more prominent. This requires storing and comparing gap state across visits.</p>
+</div>
+
+<div class="track amber">
+  <span class="track-label">Architecture</span>
+  <h3>Transition from local proxy to hosted service</h3>
+  <p>The current architecture requires a Python proxy running on localhost — workable for development and small pilots, but not for deployment at scale or across sites. At some point the proxy logic needs to move to a hosted service, likely alongside the Mac Mini infrastructure already planned for SODOTO.</p>
+  <ul>
+    <li>Evaluate hosting options consistent with health data sensitivity</li>
+    <li>Separate the Claude API key management from the application logic</li>
+    <li>Consider whether the proxy should be part of the FedWiki server or a standalone service</li>
+  </ul>
+</div>
+
+<hr>
+
+<h2>Open Questions</h2>
+
+<p>These are not tasks — they are questions that will shape which of the above work actually gets done and in what order.</p>
+
+<div class="note">
+  <strong>Who reviews the clinical quality of the coupler's output?</strong><br>
+  The SOAP structure and NOT YET GATHERED items come from Claude. Without a clinician reviewing prompt design and sample outputs, there is no quality assurance on the clinical content. This is the highest-stakes open question.
+</div>
+
+<div class="note">
+  <strong>What is the right relationship between the coupler and the CHW's own judgment?</strong><br>
+  The coupler should amplify the CHW's assessment, not replace it. The framing of outputs — how certain or directive they sound — matters. Weed was explicit that the tool is for the person carrying the problem, not a substitute for their agency.
+</div>
+
+<div class="note">
+  <strong>How does authorization work when context crosses site boundaries?</strong><br>
+  The FedWiki security model (friends, owners, neighborhoods) is well-suited to this use case, but the coupler is currently outside that model — it fetches pages via HTTP with no authentication. Before any real patient data is involved, this needs to be resolved.
+</div>
+
+<div class="note">
+  <strong>What does "done" look like for this experiment?</strong><br>
+  The experiment needs an exit criterion — a set of observations that would justify moving to a broader pilot, or a set of findings that would send the design back to the drawing board. Defining this now prevents the experiment from drifting indefinitely.
+</div>
+
+<hr>
+
+<p style="font-size:0.88rem; color:var(--muted);">Last updated July 2026 · SCP + PKC Integration Experiment · Option Box Phase 1 complete · FHIR Phase 0 in progress</p>
+
+</main>
+</body>
+</html>

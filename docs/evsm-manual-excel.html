@@ -75,13 +75,17 @@ tr:nth-child(even) td { background: #fafaf7; }
 
 <ol class="step-list">
   <li>Open <code>evsm_excel_tool.html</code> in your browser.</li>
-  <li>In the <strong>Export JSON → Excel</strong> card, paste your eVSM config JSON into the text area. If you are starting from scratch, click <strong>Load Sample JSON</strong> to populate it with a working example.</li>
+  <li>In the <strong>Export JSON → Excel</strong> card, paste your eVSM config JSON into the text area, or <strong>drag a config JSON file directly onto the Export card</strong> — it loads automatically. If you are starting from scratch, click <strong>Load Sample JSON</strong> to populate it with a working example.</li>
   <li>Click <strong>⬇ Export to Excel</strong>.</li>
   <li>A file named <code>NDC_Sofi_Setup.xlsx</code> downloads to your computer.</li>
   <li>Open it in Excel, Google Sheets, or LibreOffice Calc.</li>
 </ol>
 
 <p>Click <strong>Clear</strong> to empty the text area and start over.</p>
+
+<div class="note">
+  Exported workbooks have navy-colored header rows and word-wrapped data cells for readability.
+</div>
 
 <h2>The Excel Workbook Structure</h2>
 
@@ -117,7 +121,7 @@ tr:nth-child(even) td { background: #fafaf7; }
       <li><strong>Anatomical Framing</strong> — the structural description of this relationship (appears as italic)</li>
       <li><strong>Domain Assertion</strong> — the statement of what this relationship should accomplish (appears as bold)</li>
     </ul>
-    From Label, To Label, and Edge ID are read-only reference columns auto-filled from the Spheres sheet.
+    From Label and To Label are Excel formula references to the Spheres sheet (e.g., <code>=Spheres!B2</code>). If you rename a sphere label in the Spheres sheet, those columns update automatically everywhere in the Edges sheet.
   </div>
 </div>
 
@@ -140,8 +144,9 @@ tr:nth-child(even) td { background: #fafaf7; }
 
 <ol class="step-list">
   <li>After editing the workbook, save it as <code>.xlsx</code> (not <code>.xls</code> or <code>.csv</code>).</li>
-  <li>In the <strong>Import Excel → JSON</strong> card, click <strong>📂 Choose Excel File</strong> and select your workbook.</li>
+  <li>In the <strong>Import Excel → JSON</strong> card, <strong>drag your workbook directly onto the card</strong>, or click <strong>📂 Choose Excel File</strong> to browse.</li>
   <li>A preview table appears confirming what was read: number of spheres, number of edges with content, number of world categories, and survey metadata.</li>
+  <li>The resulting JSON is automatically loaded into the Export card's textarea — you can inspect or re-export it immediately without an extra step.</li>
   <li>Click <strong>⬇ Download JSON</strong> to save the result as <code>NDC_Sofi_export.json</code>.</li>
   <li>Load this file into the Survey Tool via the <strong>Import</strong> button in Setup mode.</li>
 </ol>
@@ -183,7 +188,9 @@ tr:nth-child(even) td { background: #fafaf7; }
 
 <ul>
   <li>Start from the sample JSON rather than writing a config from scratch. Click <strong>Load Sample JSON</strong>, export to Excel, and edit from there.</li>
+  <li><strong>Round-trip workflow:</strong> after importing an Excel file, the resulting JSON auto-loads into the Export textarea. You can immediately re-export to Excel, inspect the JSON, or copy it to the Survey Tool — no extra steps needed.</li>
   <li>After importing and downloading the JSON, load it into the Survey Tool's Setup mode to verify that the labels and descriptions appear correctly before distributing to respondents.</li>
+  <li>Rename sphere labels in the Spheres sheet and the Edges sheet updates automatically via cross-sheet formula linking.</li>
   <li>The workbook can be shared with co-designers who do not have access to the Survey Tool. They can fill in descriptions in Excel and return the file for import.</li>
   <li>Google Sheets can edit <code>.xlsx</code> files — but save back to <code>.xlsx</code> format before importing, not as Google Sheets format.</li>
 </ul>

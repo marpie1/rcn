@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Problem-Knowledge Coupler — User Manual</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #f8f9fa;
+  --surface: #ffffff;
+  --border:  #dee2e6;
+  --navy:    #1e3a5f;
+  --navy-lt: #2a4f7c;
+  --text:    #1a1a2e;
+  --muted:   #6c757d;
+  --green:   #198754;
+  --orange:  #fd7e14;
+  --yellow:  #c89b00;
+  --blue:    #0d6efd;
+  --red:     #dc3545;
+  --gray:    #adb5bd;
+
+  --ac1: #dc3545;
+  --ac2: #fd7e14;
+  --ac3: #c89b00;
+  --ac4: #0d6efd;
+  --ac5: #198754;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  font-size: 1rem;
+}
+
+header {
+  background: var(--navy);
+  color: #fff;
+  padding: 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+header a.back {
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+header a.back:hover { color: #fff; }
+
+header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+nav.toc {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 2rem;
+  font-size: 0.88rem;
+}
+
+nav.toc a {
+  color: var(--navy-lt);
+  text-decoration: none;
+  margin-right: 1.25rem;
+  white-space: nowrap;
+}
+nav.toc a:hover { text-decoration: underline; }
+
+main {
+  max-width: 740px;
+  margin: 2rem auto;
+  padding: 0 1.5rem 4rem;
+}
+
+section {
+  margin-bottom: 2.75rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--navy);
+  border-bottom: 2px solid var(--navy);
+  padding-bottom: 0.3rem;
+  margin-bottom: 1rem;
+}
+
+h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--navy-lt);
+  margin: 1.1rem 0 0.4rem;
+}
+
+p {
+  margin-bottom: 0.9rem;
+}
+
+ul, ol {
+  margin: 0.4rem 0 0.9rem 1.4rem;
+}
+
+li {
+  margin-bottom: 0.35rem;
+}
+
+code, kbd {
+  font-family: ui-monospace, monospace;
+  font-size: 0.88em;
+  background: #e9ecef;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+}
+
+pre {
+  background: #1e3a5f;
+  color: #d0e8ff;
+  padding: 0.9rem 1.1rem;
+  border-radius: 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9rem;
+  overflow-x: auto;
+  margin: 0.6rem 0 1rem;
+}
+
+.note {
+  background: #eef3fa;
+  border-left: 3px solid var(--navy-lt);
+  padding: 0.75rem 1rem;
+  border-radius: 0 5px 5px 0;
+  font-size: 0.93rem;
+  color: var(--navy);
+  margin: 0.75rem 0;
+}
+
+.tip {
+  background: #f0fff4;
+  border-left: 3px solid var(--green);
+  padding: 0.75rem 1rem;
+  border-radius: 0 5px 5px 0;
+  font-size: 0.93rem;
+  color: #145029;
+  margin: 0.75rem 0;
+}
+
+.warn {
+  background: #fff8ec;
+  border-left: 3px solid var(--orange);
+  padding: 0.75rem 1rem;
+  border-radius: 0 5px 5px 0;
+  font-size: 0.93rem;
+  color: #7a4000;
+  margin: 0.75rem 0;
+}
+
+.ac-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0 1rem;
+  font-size: 0.92rem;
+}
+
+.ac-table th {
+  background: var(--navy);
+  color: #fff;
+  padding: 0.45rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.ac-table td {
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.ac-table tr:last-child td { border-bottom: none; }
+
+.badge {
+  display: inline-block;
+  min-width: 1.6rem;
+  text-align: center;
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+  font-weight: 700;
+  font-size: 0.9em;
+  color: #fff;
+}
+.badge-1 { background: var(--ac1); }
+.badge-2 { background: var(--ac2); }
+.badge-3 { background: var(--ac3); color: #333; }
+.badge-4 { background: var(--ac4); }
+.badge-5 { background: var(--ac5); }
+
+.dot-row {
+  display: flex;
+  gap: 1.25rem;
+  margin: 0.5rem 0 1rem;
+  flex-wrap: wrap;
+}
+
+.dot-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.92rem;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-filled  { background: var(--green); }
+.dot-partial { background: var(--orange); }
+.dot-absent  { background: var(--gray); border: 1px solid #868e96; }
+
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  background: var(--navy);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-right: 0.4rem;
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="/">← Back to Coupler</a>
+  <h1>Problem-Knowledge Coupler — User Manual</h1>
+</header>
+
+<nav class="toc">
+  <a href="#s1">1. Starting</a>
+  <a href="#s2">2. People &amp; Problems</a>
+  <a href="#s3">3. Generating a Frame</a>
+  <a href="#s4">4. Reading SOAP</a>
+  <a href="#s5">5. Re-Match</a>
+  <a href="#s6">6. Assessment Candidates</a>
+  <a href="#s7">7. Attention Strip</a>
+  <a href="#s8">8. Narrate</a>
+  <a href="#s9">9. Auto-Save</a>
+  <a href="#s10">10. Save Bundle &amp; FedWiki</a>
+  <a href="#s11">11. Print View</a>
+  <a href="#s12">12. Activation Band</a>
+</nav>
+
+<main>
+
+<!-- 1 -->
+<section id="s1">
+<h2>1. Starting the Tool</h2>
+
+<p>The coupler runs locally. You need a terminal and Python 3 on your machine. The AI model is reached through a local proxy — no data leaves your machine except through that proxy.</p>
+
+<p>Open a terminal and run:</p>
+
+<pre>python3 coupler-proxy.py</pre>
+
+<p>When you see a line like <code>Serving on http://localhost:8766</code>, open your browser and go to:</p>
+
+<pre>http://localhost:8766</pre>
+
+<p>Leave the terminal window open while you work. The proxy must stay running. If the browser shows a connection error, check that the terminal is still active and try again.</p>
+
+<div class="note">The proxy process can be stopped at any time with <kbd>Ctrl+C</kbd> in the terminal. Your data is already saved — stopping the proxy does not lose anything.</div>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+<h2>2. Adding a Person and Problems</h2>
+
+<p>The main screen shows your list of people. Click <strong>New Person</strong> to add someone. Enter a name or identifier — the tool does not require a medical record number or any formal ID.</p>
+
+<p>Once inside a person's record, the left panel shows their problem list. Click <strong>Add Problem</strong> and type a short problem title: for example, "Uncontrolled hypertension" or "New-onset fatigue." Problems can be anything the person considers worth tracking — a diagnosed condition, a symptom, a concern.</p>
+
+<div class="tip">Keep problem titles short and specific. "Chest pain on exertion" is more useful than "Pain." The AI uses the title to build the frame, so clarity here improves everything downstream.</div>
+
+<p>You can add as many problems as needed. Each one gets its own coupler frame. Click a problem in the list to open it.</p>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+<h2>3. Generating a Frame</h2>
+
+<p>When you open a problem that has no frame yet, you will see a <strong>Generate Frame</strong> button. Click it.</p>
+
+<p>The AI builds a complete set of findings worth gathering for this problem — Subjective questions, Objective measurements, Assessment candidates, and Plan considerations. This takes 10–30 seconds depending on connection speed. A spinner shows while it works.</p>
+
+<p>What the AI does during this step:</p>
+<ul>
+  <li>Reads the problem title and any existing record entries for this person</li>
+  <li>Produces a structured list of findings organized in SOAP order</li>
+  <li>Generates an initial ranked list of diagnostic candidates with probability estimates</li>
+  <li>Assigns an Attention Code to each candidate based on severity and probability</li>
+</ul>
+
+<p>When the spinner clears, the full frame appears. Every slot that exists in the frame is visible — filled, partial, or absent.</p>
+
+<div class="note">The generated frame is a starting point. You can add, edit, or remove any slot. The AI's judgment about what findings matter is based on general clinical knowledge — the care team decides what applies to this specific person.</div>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+<h2>4. Reading the SOAP View</h2>
+
+<p>The frame is organized into four sections: Subjective, Objective, Assessment, and Plan. Each section contains rows — one per finding. Every row shows a status dot on the left.</p>
+
+<div class="dot-row">
+  <div class="dot-item"><div class="dot dot-filled"></div> Filled — a record entry exists for this finding</div>
+  <div class="dot-item"><div class="dot dot-partial"></div> Partial — some information exists but the finding is incomplete</div>
+  <div class="dot-item"><div class="dot dot-absent"></div> Absent — nothing has been recorded for this finding yet</div>
+</div>
+
+<p>Absent slots are the whole point. A gray dot on a finding is not a failure — it is information. It tells the care team, the physician, and the person themselves: this is something we haven't looked at yet for this problem.</p>
+
+<h3>Entering a Record Entry</h3>
+<p>Click any finding row to expand it. You will see the current record entries for that finding (if any) and a text field to add a new entry. Type what you know — a date, a measurement, a description, a direct quote from the person — and press <strong>Save Entry</strong>. The dot updates immediately.</p>
+
+<h3>Navigating Sections</h3>
+<p>Use the section tabs (S / O / A / P) at the top of the frame to jump between sections, or scroll through all four. The count of absent slots in each section is shown next to the tab label so you can see at a glance where the biggest gaps are.</p>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+<h2>5. Re-Match: Updating the Picture</h2>
+
+<p>Re-Match is the core update cycle. After you have added new record entries — one finding, several findings, or a whole visit's worth — click <strong>Re-Match</strong> in the Assessment header.</p>
+
+<p>Re-Match does two things:</p>
+<ol>
+  <li><strong>Re-evaluates slot status.</strong> Every finding row is re-checked against the current record. Dots update from absent to partial or filled as appropriate.</li>
+  <li><strong>Re-estimates probabilities.</strong> The AI re-reads all current record entries and produces new probability estimates for every diagnostic candidate. The old estimates are preserved — a new row is appended to each candidate's probability history. You can see how the picture has shifted over time.</li>
+</ol>
+
+<p>Think of Re-Match as: "Update everything with what we now know." You should run it at the end of each visit or whenever a significant new finding has been entered.</p>
+
+<div class="tip">Probability history rows are never deleted or overwritten. If a candidate was 35% likely at the first visit and is 60% likely now, both numbers stay in the record. This is an intentional design choice — the trajectory of evidence matters as much as the current estimate.</div>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+<h2>6. Reading Assessment Candidates</h2>
+
+<p>The Assessment section shows a ranked list of diagnostic candidates. Each candidate displays:</p>
+
+<ul>
+  <li><strong>Name</strong> — the diagnostic label</li>
+  <li><strong>Attention Code</strong> — a number 1–5 (see table below)</li>
+  <li><strong>Probability bar</strong> — a visual bar proportional to the current estimate, with the percentage shown</li>
+  <li><strong>Severity class</strong> — the clinical weight of this diagnosis if confirmed (I = most severe)</li>
+  <li><strong>Supported by</strong> — findings in the record that raise this candidate's probability</li>
+  <li><strong>Refuted by</strong> — findings in the record that lower this candidate's probability</li>
+  <li><strong>Probability history</strong> — a row for each Re-Match run, showing the estimate at that point in time</li>
+</ul>
+
+<p>Click any candidate card to expand the full evidence detail.</p>
+
+<h3>Attention Codes</h3>
+
+<table class="ac-table">
+  <thead>
+    <tr>
+      <th>Code</th>
+      <th>Meaning</th>
+      <th>What it implies</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="badge badge-1">1</span></td>
+      <td>Act Now</td>
+      <td>High severity, possibility cannot be ignored regardless of probability rank. Needs immediate clinical attention.</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-2">2</span></td>
+      <td>Urgent</td>
+      <td>High severity with meaningful probability. Elevate to clinical review within this visit or same day.</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-3">3</span></td>
+      <td>Watch</td>
+      <td>Moderate severity or moderate probability. Keep active, monitor, close gaps in the next visit.</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-4">4</span></td>
+      <td>Follow</td>
+      <td>Lower severity or lower probability. Worth tracking but not time-sensitive.</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-5">5</span></td>
+      <td>Let It Rest</td>
+      <td>Low severity and low probability. On the list for completeness; no action indicated now.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The code is determined by a matrix that crosses severity class (I–IV) against probability band (A–D). A severe diagnosis at low probability still earns a high attention code. A mild diagnosis at high probability earns a low one. This ensures that rare but serious possibilities stay visible.</p>
+</section>
+
+<!-- 7 -->
+<section id="s7">
+<h2>7. The Attention Strip</h2>
+
+<p>At the very top of the Assessment section — above the ranked candidate list — is the Attention Strip. It always shows every candidate carrying a code <span class="badge badge-1">1</span> or <span class="badge badge-2">2</span>, regardless of where that candidate ranks by probability.</p>
+
+<p>The strip exists because probability ranking alone is not safe. A diagnosis that is 12% likely but immediately life-threatening must not scroll off the bottom because five more-probable benign diagnoses rank above it. The strip keeps it anchored at the top of the reader's attention.</p>
+
+<p>If the Attention Strip is empty, no high-attention candidates are currently present. This is worth noting but does not mean the situation is low-risk — it means the evidence gathered so far does not strongly implicate a severe diagnosis. Continue filling gaps.</p>
+</section>
+
+<!-- 8 -->
+<section id="s8">
+<h2>8. Narrate</h2>
+
+<p>The <strong>Narrate</strong> button generates a plain-language paragraph summarizing the current state of this problem's record. Click it at any time — it reads the current record entries and assessment and produces a paragraph covering:</p>
+
+<ul>
+  <li>What the person has reported and what has been measured</li>
+  <li>The leading diagnostic possibilities and the evidence behind them</li>
+  <li>What remains unknown — specifically, which high-priority gaps haven't been filled</li>
+  <li>What the gaps mean: what information would most change the picture if obtained</li>
+</ul>
+
+<p>The paragraph is editable. Click inside it to revise wording, add context, or remove anything that doesn't apply. Once you are satisfied, it can be copied into any other record system or printed as part of the visit summary.</p>
+
+<div class="tip">Narrate is particularly useful at the end of a visit to produce a handoff note, or to share a plain-language summary with the person and their family. It is written to be understood without clinical training.</div>
+</section>
+
+<!-- 9 -->
+<section id="s9">
+<h2>9. Saving Work</h2>
+
+<p>Everything saves automatically as you work. Every record entry, every status update, every probability history row is written to disk the moment you make it. There is no Save button and no risk of losing work by closing the browser tab.</p>
+
+<p>If you close the browser and come back later, open <code>http://localhost:8766</code> again (with the proxy still running or restarted) and your data will be exactly as you left it.</p>
+
+<div class="note">The data lives on this machine. If the machine is lost or replaced, you will need a Bundle (see Section 10) to restore it elsewhere.</div>
+</section>
+
+<!-- 10 -->
+<section id="s10">
+<h2>10. Save Bundle and FedWiki Export</h2>
+
+<h3>Save Bundle</h3>
+<p>A Bundle is a portable full backup of the entire database — all people, all problems, all record entries, all probability histories. Use it to:</p>
+<ul>
+  <li>Back up your work to an external drive or cloud storage</li>
+  <li>Move the record to another machine running the coupler proxy</li>
+  <li>Hand off a complete record to another care team member</li>
+</ul>
+<p>Click <strong>Save Bundle</strong> in the top toolbar. A <code>.json</code> file downloads to your machine. To restore it on any machine running the proxy, click <strong>Load Bundle</strong> and select the file. The entire database is replaced with the bundle contents.</p>
+
+<div class="warn">Load Bundle replaces the current database entirely. If the target machine has its own records, save a Bundle from that machine first before loading a new one.</div>
+
+<h3>FedWiki Export</h3>
+<p>FedWiki export produces a one-way clinical view formatted for import into the Shared Care Plan (SCP) or a Groove workspace. It generates a set of FedWiki-formatted pages — one per problem — containing the filled findings, the assessment candidates, and the Narrate paragraph.</p>
+<p>This export is read-only from FedWiki's perspective. Changes made in FedWiki do not flow back to the coupler. Use it to share a clinical snapshot, not as a sync mechanism.</p>
+<p>Click <strong>FedWiki Export</strong> in the toolbar. A <code>.json</code> file downloads. Import it into your FedWiki instance using the standard page import procedure.</p>
+</section>
+
+<!-- 11 -->
+<section id="s11">
+<h2>11. Print View</h2>
+
+<p>Click <strong>Print</strong> in the top toolbar to open a print-optimized view of the current problem's full record. The print view includes:</p>
+<ul>
+  <li>All SOAP findings with their current status and record entries</li>
+  <li>The ranked assessment candidates with attention codes and evidence</li>
+  <li>The most recent Narrate paragraph if one has been generated</li>
+  <li>Probability history table for each candidate</li>
+</ul>
+
+<p>The print view suppresses navigation chrome and renders in black-and-white-friendly contrast. Use your browser's built-in print dialog (<kbd>Ctrl+P</kbd> or <kbd>Cmd+P</kbd>) to print or save as PDF.</p>
+
+<div class="tip">Printing to PDF is a lightweight way to share a visit summary with a specialist or to create a point-in-time record snapshot without using the Bundle format.</div>
+</section>
+
+<!-- 12 -->
+<section id="s12">
+<h2>12. Activation Band and the PANAS Check-in</h2>
+
+<p>The coupler can adapt how much of the frame is shown by default, based on how activated — how ready and confident — the person currently feels about managing their health. This is grounded in Judith Hibbard's Patient Activation Measure (PAM) research. The tool uses the PANAS Positive Affect scale as a one-minute proxy rather than the licensed PAM instrument.</p>
+
+<h3>Taking the Check-in</h3>
+<p>Click <strong>Take PANAS</strong> below the person's name in the sidebar. A modal opens with ten words:</p>
+<p style="font-style:italic;color:var(--muted);padding:0 0 .5rem 1rem">active · alert · attentive · determined · enthusiastic · excited · inspired · interested · proud · strong</p>
+<p>For each word, tap the number (1–5) that best describes how much you felt that way <strong>during the past week</strong>. The scale runs from 1 (Very slightly or not at all) to 5 (Extremely). All ten words must be rated — the form shows your running count. When done, select who is recording (person, CHW, or family) and click <strong>Save activation score</strong>.</p>
+
+<div class="tip">The check-in takes about one minute. It is a state measure — "past week" scores fluctuate — so it can be repeated at each visit. The trajectory over visits is stored and shown alongside the probability histories.</div>
+
+<h3>The Four Bands</h3>
+
+<table class="ac-table">
+  <thead><tr><th>Band</th><th>Score range</th><th>Plain meaning</th><th>View default</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><span class="badge" style="background:#842029;min-width:1.8rem">1</span></td>
+      <td>10 – 24</td>
+      <td>Learning the basics — still building knowledge and confidence</td>
+      <td>Focused: urgent candidates only, top 3 absent findings</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#664d03;min-width:1.8rem">2</span></td>
+      <td>25 – 31</td>
+      <td>Building awareness — engaged but not yet fully confident</td>
+      <td>Focused: same as band 1</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#0f5132;min-width:1.8rem">3</span></td>
+      <td>32 – 38</td>
+      <td>Taking action — actively managing, growing in confidence</td>
+      <td>Full frame visible</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#084298;min-width:1.8rem">4</span></td>
+      <td>39 – 50</td>
+      <td>Staying the course — high confidence, proactive self-management</td>
+      <td>Full frame visible</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note">Score ranges are provisional thresholds drawn from Watson &amp; Clark manual norms (past-week adult M≈31, SD≈7). They will be updated when Mahoney's PA→PAM cut-points are obtained. The crosswalk is a named table in the proxy code — changing it never affects stored raw scores.</div>
+
+<h3>Focused View (Bands 1–2)</h3>
+<p>When a band-1 or band-2 score is on record, the default view shows:</p>
+<ul>
+  <li><strong>Assessment:</strong> only candidates with attention code 1 or 2 — the ones that need action regardless of how likely they are</li>
+  <li><strong>Subjective and Objective:</strong> filled and partial findings always shown; only the top three absent findings per section displayed</li>
+  <li><strong>Plan options:</strong> phrased as "Ask your nurse, doctor, or CHW about this" rather than steps the person takes independently</li>
+</ul>
+<p>A yellow bar at the top of the problem view states the band and shows a <strong>Show full frame</strong> button. Click it at any time to see everything. Clicking again returns to the focused view. The band score does not change.</p>
+
+<h3>Full View (Bands 3–4)</h3>
+<p>The complete frame is shown: all candidates, all absent findings, all plan options phrased as things the person can do. There is no filter bar.</p>
+
+<h3>Optional: Negative Affect Scale (NA-10)</h3>
+<p>The check-in modal includes an optional second set of ten words measuring negative affect: afraid, ashamed, distressed, guilty, hostile, irritable, jittery, nervous, scared, upset. This takes another minute. If completed, the score is stored alongside the positive affect score and visible in the record. It is not used to change the view in this version — it is kept so it can inform care team decisions and future analysis. High negative affect alongside low activation often signals distress that warrants gentler pacing independent of the band.</p>
+
+<h3>Activation History</h3>
+<p>The band badge in the sidebar shows the current band and, on hover, the raw score and date. Below it, the most recent prior score is shown in small text. The full history is included in Save Bundle exports — it travels with the person's record.</p>
+
+<div class="tip">If activation is rising visit over visit, the record may be doing what Weed intended: teaching whoever touches it. The trajectory is stored from the first check-in so the pattern can be seen over time.</div>
+</section>
+
+</main>
+</body>
+</html>

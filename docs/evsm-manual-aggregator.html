@@ -70,6 +70,9 @@ tr:nth-child(even) td { background: #fafaf7; }
   <li><strong>World set filtering</strong> — narrow the view to a subgroup defined by world categories</li>
   <li><strong>Compare mode</strong> — view two subgroups side by side</li>
   <li><strong>Claude synthesis</strong> — AI-generated narrative summaries of what a group of respondents said about a specific sphere or relationship</li>
+  <li><strong>Synthesize All</strong> — run Claude sequentially across every sphere and edge with at least one assessment; syntheses are cached in memory</li>
+  <li><strong>Full Report</strong> — generate a complete standalone HTML report containing the diagram, all sphere and edge detail, evidence, suggestions, and syntheses</li>
+  <li><strong>Session export / restore</strong> — save the entire session (responses, labels, syntheses) as a JSON bundle; drop it back in to restore the session without re-running Claude</li>
 </ul>
 
 <h2>Layout</h2>
@@ -89,7 +92,7 @@ tr:nth-child(even) td { background: #fafaf7; }
       <div style="font-size:10px;color:#666;margin-top:4px;">Selected element detail<br>Stat bars + quotes<br>Claude synthesis area<br>API key</div>
     </div>
   </div>
-  <div style="margin-top:8px;font-size:10px;color:#666;">Header: eVSM Aggregator · respondent count badge · Single View / Compare Sets buttons</div>
+  <div style="margin-top:8px;font-size:10px;color:#666;">Header: eVSM Aggregator · respondent count badge · Single View / Compare Sets buttons · ✦ Synthesize All (purple) · ⎙ Full Report (blue) · ⬇ Export Session (amber) · ⎙ Print (green)</div>
 </div>
 
 <h2>Loading Responses</h2>
@@ -104,6 +107,14 @@ tr:nth-child(even) td { background: #fafaf7; }
 <p>You can load files in batches — drag another set of files at any time and they are added to the existing set. Duplicate responses (same respondent ID or same filename) are ignored silently.</p>
 
 <p>To remove a respondent, click the <strong>×</strong> button beside their name in the list.</p>
+
+<div class="note">
+  <strong>Session bundles:</strong> dropping an <code>evsm-session-*.json</code> file onto the drop zone restores a previously saved session — all respondents reappear, labels load, world set filters restore, and cached syntheses are available immediately. See "Saving and Restoring Sessions" below.
+</div>
+
+<div class="note">
+  <strong>Master config tip:</strong> if you want authoritative sphere labels (not derived from any respondent's potentially-modified config), drop a clean master config JSON onto the drop zone first, before any respondent files. It seeds the labels without adding any assessment counts.
+</div>
 
 <div class="note">
   Load as many or as few response files as you have. The Aggregator works with partial data — you do not need to wait for every respondent.
@@ -134,7 +145,28 @@ tr:nth-child(even) td { background: #fafaf7; }
   <li><strong>Suggestions</strong> — all respondents' suggestion text, grouped by world categories</li>
 </ul>
 
-<p>The evidence and suggestions show who said what in terms of their world category memberships, without revealing individual identities (unless respondents chose to include their name in their text).</p>
+<p>The evidence and suggestions show who said what in terms of their world category memberships. Use the respondent identity features below to see individual contributions when needed.</p>
+
+<h2>Respondent Identity</h2>
+
+<p>Four features let you move from aggregate patterns down to individual respondents and back.</p>
+
+<h3>Show Names (⊙)</h3>
+<p>Click <strong>⊙ Show Names</strong> in the header to reveal each respondent's name or ID alongside their evidence and suggestion quotes in the detail panel. Click again (<strong>⊙ Hide Names</strong>) to return to anonymous display. This setting persists across element selections until toggled off.</p>
+
+<h3>Per-respondent filter</h3>
+<p>In the respondent list (left panel), click any respondent's name to filter the detail panel to show only that person's quotes. The selected name is highlighted. Click the name again, or click <strong>× Clear respondent filter</strong> that appears at the top of the list, to return to the full view.</p>
+
+<h3>Compare individual vs aggregate (⇄)</h3>
+<p>Each respondent in the left panel has a <strong>⇄</strong> button. Clicking it immediately switches to Compare mode with that respondent as Set A and "All Respondents" as Set B. You can see at a glance where one person's assessments differ from the group consensus. The per-respondent filter (above) is also activated simultaneously, so the detail panel shows only that person's quotes.</p>
+
+<h3>Rich hover panel</h3>
+<p>Hover over any sphere or edge in the SVG diagram to see a floating panel listing every respondent who assessed that element, with a colored dot showing their status choice (green = Go, yellow = Caution, red = Stop, blue = Unsure). Two actions are available from the hover panel:</p>
+<ul>
+  <li><strong>Click a respondent's name</strong> — activates the per-respondent filter for the detail panel (same as clicking the name in the left panel).</li>
+  <li><strong>Click ⇄</strong> beside a name — activates both the per-respondent filter and Compare mode for that individual vs all respondents.</li>
+</ul>
+<p>The hover panel stays open while your mouse is over it, giving you time to click. It disappears when you move the mouse away from both the SVG element and the panel.</p>
 
 <h2>World Set Filtering</h2>
 
@@ -178,6 +210,10 @@ tr:nth-child(even) td { background: #fafaf7; }
 <h3>Setting your API key</h3>
 <p>Look for the <strong>API key</strong> area in the right panel (below the Synthesize button). If no key is stored, it shows an input field. Paste your Anthropic API key (<code>sk-ant-...</code>) and press Enter or click Save. The key is stored in your browser's local storage — you only need to enter it once per browser.</p>
 
+<div class="note">
+  The Aggregator calls the Anthropic API directly from the browser using your own API key. No proxy server is required. The model used is <code>claude-sonnet-4-5</code>.
+</div>
+
 <div class="warn">
   Your API key is stored in your browser only. It is never sent to any server other than Anthropic's API directly. You are billed by Anthropic for each synthesis request at standard API rates.
 </div>
@@ -192,10 +228,46 @@ tr:nth-child(even) td { background: #fafaf7; }
 
 <p>For comparative synthesis (Compare mode), select "Compare Set A vs Set B" from the selector, then click the synthesis button that appears. Claude will articulate where the two groups converge and where their perspectives diverge.</p>
 
+<p>Any synthesis generated via the per-element Synthesize button is cached in memory and included in the session export (see below). Sessions can be saved and resumed without re-running Claude.</p>
+
+<h2>Synthesize All</h2>
+
+<p>Click <strong>✦ Synthesize All</strong> (purple button in the header) to run Claude sequentially for every sphere and relationship that has at least one assessment. This is the fastest way to prepare a full set of narrative summaries before generating the Full Report.</p>
+
+<p>A progress overlay appears showing which element is currently being synthesized and how many remain. A <strong>Cancel</strong> option is available — any syntheses completed before cancellation are kept. When all syntheses are complete, the tool offers to generate the Full Report immediately.</p>
+
+<h2>Full Report</h2>
+
+<p>Click <strong>⎙ Full Report</strong> (blue button in the header) to generate a complete standalone HTML report in a new browser tab. The report contains:</p>
+<ul>
+  <li>Survey metadata header</li>
+  <li>The eVSM SVG diagram, colored by aggregate assessments</li>
+  <li>All 11 spheres — each with description, response count bars, evidence, suggestions, and synthesis (if available)</li>
+  <li>All assessed edges — same structure</li>
+  <li>A Print / Save PDF button</li>
+</ul>
+
+<p>The Full Report works with partial syntheses — items that have not been synthesized still appear with their evidence and suggestions; they just have no synthesis block. Use Synthesize All first for a complete report.</p>
+
+<h2>Saving and Restoring Sessions</h2>
+
+<p>Click <strong>⬇ Export Session</strong> (amber button in the header) to save the entire current session as a single JSON bundle. The file is named <code>evsm-session-{timestamp}.json</code> and contains:</p>
+<ul>
+  <li>All loaded respondent response files</li>
+  <li>Sphere labels and edge descriptions</li>
+  <li>World set configuration (Set A and Set B filters)</li>
+  <li>All Claude syntheses generated so far</li>
+</ul>
+
+<p>To restore a session, drop an <code>evsm-session-*.json</code> bundle onto the Aggregator's drop zone. All respondents reappear, labels reload, world set filters restore, and cached syntheses are available immediately — without re-running Claude.</p>
+
+<h3>Print button</h3>
+<p>Click <strong>⎙ Print</strong> (green button in the header) to print the current detail panel — whatever sphere or edge was last selected — using the browser's print dialog. All other panels are hidden during print. Use this for quick single-element printouts without generating the full report.</p>
+
 <h2>Error Messages</h2>
 <table>
   <tr><th>Message</th><th>Cause and fix</th></tr>
-  <tr><td>{filename}: not a recognised eVSM file</td><td>The file is not a valid response JSON. Check that you are loading the correct files.</td></tr>
+  <tr><td>{filename}: not a recognised eVSM file</td><td>The file is not a valid response JSON or session bundle. Check that you are loading the correct files.</td></tr>
   <tr><td>Enter your Anthropic API key below the Synthesize button.</td><td>No API key is stored. Enter it in the key field and save.</td></tr>
   <tr><td>Error: {API error message}</td><td>The API call failed. Check that your key is valid and has available credit.</td></tr>
 </table>

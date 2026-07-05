@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Problem-Knowledge Coupler</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #f8f9fa;
+  --surface:  #ffffff;
+  --border:   #dee2e6;
+  --navy:     #1e3a5f;
+  --navy-lt:  #2a4f7c;
+  --text:     #1a1a2e;
+  --muted:    #6c757d;
+  --green:    #198754;
+  --orange:   #fd7e14;
+  --yellow:   #ffc107;
+  --blue:     #0d6efd;
+  --red:      #dc3545;
+  --gray:     #adb5bd;
+
+  /* attention code colors */
+  --ac1: #dc3545;
+  --ac2: #fd7e14;
+  --ac3: #ffc107;
+  --ac4: #0d6efd;
+  --ac5: #198754;
+
+  /* status colors */
+  --st-filled:  #198754;
+  --st-partial: #fd7e14;
+  --st-absent:  #adb5bd;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+#header {
+  background: var(--navy);
+  color: #fff;
+  padding: 10px 16px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+#header h1 { font-size: .95rem; font-weight: 600; letter-spacing: .02em; }
+#header-sub { font-size: .75rem; color: rgba(255,255,255,.65); margin-top: 1px; }
+#header-actions { margin-left: auto; display: flex; gap: 8px; }
+.hbtn {
+  background: rgba(255,255,255,.13);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: .75rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.hbtn:hover { background: rgba(255,255,255,.24); }
+.hbtn:disabled { opacity: .4; cursor: default; }
+a.hbtn { text-decoration: none; display: inline-flex; align-items: center; }
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+#layout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+#sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#sidebar-header {
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--border);
+}
+#person-select {
+  width: 100%;
+  padding: 5px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: .8rem;
+  background: var(--bg);
+}
+#problem-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+.problem-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background .1s;
+}
+.problem-item:hover { background: var(--bg); }
+.problem-item.active { border-left-color: var(--navy); background: #e8f0fe; }
+.problem-num { font-size: .68rem; color: var(--muted); font-weight: 600; letter-spacing: .05em; }
+.problem-vernacular { font-size: .82rem; font-weight: 500; line-height: 1.3; }
+.problem-clinical { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+.status-dot {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); margin-right: 4px; vertical-align: middle;
+}
+.status-dot.inactive { background: var(--gray); }
+.status-dot.resolved { background: var(--blue); }
+
+#sidebar-footer {
+  border-top: 1px solid var(--border);
+  padding: 8px 12px;
+}
+.sidebar-btn {
+  width: 100%; padding: 5px; font-size: .75rem;
+  border: 1px solid var(--border); border-radius: 4px;
+  background: var(--bg); cursor: pointer;
+}
+.sidebar-btn:hover { background: var(--border); }
+
+/* ── Main panel ──────────────────────────────────────────────────────────── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+#toolbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+#problem-title { font-weight: 600; font-size: .9rem; flex: 1; min-width: 0; }
+#problem-clinical-title { font-size: .75rem; color: var(--muted); }
+.tbtn {
+  padding: 5px 12px; font-size: .78rem; border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--bg); white-space: nowrap;
+}
+.tbtn:hover { background: #e9ecef; }
+.tbtn:disabled { opacity: .4; cursor: default; }
+.tbtn.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
+.tbtn.primary:hover { background: var(--navy-lt); }
+#status-msg { font-size: .75rem; color: var(--muted); flex-shrink: 0; }
+
+/* ── Content ─────────────────────────────────────────────────────────────── */
+#content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* ── Attention strip ─────────────────────────────────────────────────────── */
+#attention-strip {
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  display: none;
+}
+#attention-strip.has-ac1 { background: #f8d7da; border-color: #dc3545; }
+#attention-strip h3 { font-size: .8rem; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+.attention-item { display: flex; align-items: flex-start; gap: 8px; margin-top: 5px; }
+.attention-item:first-of-type { margin-top: 0; }
+
+/* ── Narrative box ───────────────────────────────────────────────────────── */
+#narrative-box {
+  background: #e8f4fd;
+  border: 1px solid #bee3f8;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: .84rem;
+  line-height: 1.6;
+  display: none;
+}
+#narrative-box strong { display: block; font-size: .72rem; color: var(--muted); margin-bottom: 4px; }
+
+/* ── SOAP sections ───────────────────────────────────────────────────────── */
+.soap-section { margin-bottom: 18px; }
+.soap-title {
+  font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); padding: 0 0 6px; border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.finding-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 7px 10px; border-radius: 5px; margin-bottom: 4px;
+  background: var(--surface); border: 1px solid var(--border);
+  cursor: pointer; transition: border-color .15s;
+}
+.finding-row:hover { border-color: var(--navy); }
+.finding-row.status-filled  { border-left: 3px solid var(--st-filled); }
+.finding-row.status-partial { border-left: 3px solid var(--st-partial); }
+.finding-row.status-absent  { border-left: 3px solid var(--st-absent); opacity: .8; }
+.finding-status-dot {
+  width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 3px;
+}
+.finding-status-dot.filled  { background: var(--st-filled); }
+.finding-status-dot.partial { background: var(--st-partial); }
+.finding-status-dot.absent  { background: var(--st-absent); }
+.finding-body { flex: 1; min-width: 0; }
+.finding-term { font-weight: 600; font-size: .83rem; }
+.finding-vernacular { font-size: .78rem; color: var(--muted); }
+.finding-value { font-size: .8rem; margin-top: 3px; color: var(--text); }
+.finding-missing { font-size: .76rem; color: var(--orange); margin-top: 2px; }
+.finding-why { font-size: .72rem; color: #555; margin-top: 2px; font-style: italic; }
+.finding-meta { font-size: .68rem; color: var(--muted); margin-top: 2px; }
+.entry-badge {
+  font-size: .65rem; background: #e8f4fd; color: #0d6efd;
+  border-radius: 3px; padding: 1px 4px; margin-left: 4px;
+}
+
+/* ── Assessment candidates ───────────────────────────────────────────────── */
+.candidate-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 12px; margin-bottom: 6px;
+}
+.candidate-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.candidate-term { font-weight: 700; font-size: .88rem; }
+.candidate-vernacular { font-size: .78rem; color: var(--muted); }
+.ac-badge {
+  font-size: .68rem; font-weight: 700; border-radius: 4px;
+  padding: 2px 7px; color: #fff; flex-shrink: 0; white-space: nowrap;
+}
+.ac-1 { background: var(--ac1); }
+.ac-2 { background: var(--ac2); }
+.ac-3 { background: var(--ac3); color: #333; }
+.ac-4 { background: var(--ac4); }
+.ac-5 { background: var(--ac5); }
+.prob-bar-wrap { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.prob-bar-bg { flex: 1; height: 5px; background: #e9ecef; border-radius: 3px; overflow: hidden; }
+.prob-bar { height: 100%; border-radius: 3px; background: var(--navy); }
+.prob-label { font-size: .72rem; color: var(--muted); flex-shrink: 0; }
+.band-badge {
+  font-size: .68rem; border-radius: 3px; padding: 1px 5px;
+  background: #e9ecef; color: var(--text); font-weight: 600;
+}
+.candidate-body { font-size: .78rem; margin-top: 8px; display: grid; gap: 4px; }
+.cand-row { display: flex; gap: 6px; }
+.cand-label { font-weight: 600; color: var(--muted); min-width: 100px; flex-shrink: 0; }
+.cand-val { flex: 1; }
+.severity-row { color: var(--red); font-size: .76rem; }
+.history-toggle {
+  font-size: .7rem; color: var(--blue); cursor: pointer; margin-top: 4px;
+  display: inline-block;
+}
+.prob-history { display: none; font-size: .72rem; color: var(--muted); margin-top: 4px; }
+.prob-history.open { display: block; }
+
+/* ── Residual ────────────────────────────────────────────────────────────── */
+.residual-row {
+  background: #f8f9fa; border: 1px dashed var(--border);
+  border-radius: 5px; padding: 7px 10px; font-size: .8rem; color: var(--muted);
+}
+
+/* ── Plan options ────────────────────────────────────────────────────────── */
+.plan-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 5px; padding: 8px 12px; margin-bottom: 4px;
+}
+.plan-term { font-weight: 600; font-size: .83rem; }
+.plan-vernacular { font-size: .78rem; color: var(--muted); }
+.plan-basis { font-size: .75rem; color: #555; margin-top: 3px; }
+.plan-who { font-size: .73rem; color: var(--navy); margin-top: 2px; }
+.plan-link { font-size: .7rem; color: var(--muted); }
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+#empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; color: var(--muted); gap: 8px;
+}
+#empty-state h2 { font-size: 1rem; font-weight: 600; }
+#empty-state p { font-size: .84rem; text-align: center; max-width: 380px; line-height: 1.5; }
+
+/* ── Modal ───────────────────────────────────────────────────────────────── */
+#modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  display: none; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+#modal-overlay.open { display: flex; }
+#modal {
+  background: #fff; border-radius: 8px; padding: 20px 22px;
+  width: 480px; max-width: 95vw; max-height: 85vh; overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+}
+#modal h2 { font-size: .95rem; font-weight: 700; margin-bottom: 4px; }
+#modal .modal-sub { font-size: .78rem; color: var(--muted); margin-bottom: 14px; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: .78rem; font-weight: 600; margin-bottom: 4px; }
+.form-group input, .form-group textarea, .form-group select {
+  width: 100%; padding: 6px 8px; border: 1px solid var(--border);
+  border-radius: 4px; font-size: .83rem; font-family: inherit;
+}
+.form-group textarea { resize: vertical; min-height: 70px; }
+.form-check { display: flex; align-items: center; gap: 6px; font-size: .8rem; }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+.btn { padding: 6px 14px; border-radius: 4px; font-size: .8rem; cursor: pointer; border: 1px solid var(--border); }
+.btn.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
+.btn.primary:hover { background: var(--navy-lt); }
+.btn.danger { background: var(--red); color: #fff; border-color: var(--red); }
+
+/* ── Person modal ────────────────────────────────────────────────────────── */
+#person-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  display: none; align-items: center; justify-content: center; z-index: 1000;
+}
+#person-modal-overlay.open { display: flex; }
+#person-modal {
+  background: #fff; border-radius: 8px; padding: 20px 22px;
+  width: 420px; max-width: 95vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+}
+
+/* ── Print ───────────────────────────────────────────────────────────────── */
+@media print {
+  #header, #sidebar, #toolbar, #modal-overlay, #person-modal-overlay { display: none !important; }
+  #layout { display: block; }
+  #main { overflow: visible; }
+  #content { overflow: visible; padding: 0; }
+  .finding-row { cursor: default; }
+  .history-toggle { display: none; }
+}
+
+/* ── Embed mode (FedWiki frame) ──────────────────────────────────────────── */
+body.embed #header           { display: none; }
+body.embed #activation-area  { display: none; }
+body.embed #sidebar          { width: 180px; }
+body.embed .problem-clinical { display: none; }
+body.embed #btn-export-tb    { display: inline-flex !important; }
+
+/* Slim title bar replacing header */
+#embed-bar {
+  display: none; background: var(--navy); color: #fff;
+  padding: 4px 12px; font-size: .72rem;
+  align-items: center; gap: 8px; flex-shrink: 0;
+}
+body.embed #embed-bar { display: flex; }
+#embed-bar span { opacity: .7; }
+
+/* ── Activation band ─────────────────────────────────────────────────────── */
+#activation-area {
+  padding: 8px 12px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.act-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: .72rem; border-radius: 4px; padding: 3px 8px;
+  font-weight: 600; cursor: default;
+}
+.act-b1 { background: #f8d7da; color: #842029; }
+.act-b2 { background: #fff3cd; color: #664d03; }
+.act-b3 { background: #d1e7dd; color: #0f5132; }
+.act-b4 { background: #cfe2ff; color: #084298; }
+.act-none { background: #e9ecef; color: var(--muted); }
+#act-take-btn {
+  font-size: .7rem; color: var(--blue); cursor: pointer;
+  background: none; border: none; padding: 0; margin-left: 4px;
+  text-decoration: underline;
+}
+.act-history { font-size: .68rem; color: var(--muted); margin-top: 3px; }
+
+/* ── Band filter banner ───────────────────────────────────────────────────── */
+#band-filter-bar {
+  background: #fff3cd; border: 1px solid #ffc107; border-radius: 5px;
+  padding: 7px 12px; margin-bottom: 12px;
+  display: none; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+#band-filter-bar.active { display: flex; }
+#band-filter-bar span { font-size: .8rem; flex: 1; }
+#band-show-all-btn {
+  font-size: .75rem; color: var(--navy); cursor: pointer;
+  background: none; border: 1px solid var(--navy); border-radius: 3px;
+  padding: 2px 8px;
+}
+
+/* ── PANAS modal ─────────────────────────────────────────────────────────── */
+#panas-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  display: none; align-items: center; justify-content: center; z-index: 1000;
+}
+#panas-overlay.open { display: flex; }
+#panas-modal {
+  background: #fff; border-radius: 8px; padding: 20px 24px;
+  width: 540px; max-width: 96vw; max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+}
+#panas-modal h2 { font-size: .95rem; font-weight: 700; margin-bottom: 4px; }
+.panas-intro { font-size: .8rem; color: #333; line-height: 1.5; margin-bottom: 14px; }
+.panas-scale-legend {
+  display: flex; gap: 0; margin-bottom: 14px; font-size: .68rem; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+}
+.panas-scale-legend div {
+  flex: 1; text-align: center; padding: 4px 2px; border-right: 1px solid var(--border);
+}
+.panas-scale-legend div:last-child { border-right: none; }
+.panas-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 0; border-bottom: 1px solid #f0f0f0;
+}
+.panas-item:last-child { border-bottom: none; }
+.panas-word { font-weight: 600; font-size: .85rem; min-width: 110px; }
+.panas-btns { display: flex; gap: 4px; }
+.panas-btn {
+  width: 32px; height: 28px; border: 1px solid var(--border);
+  border-radius: 4px; background: var(--bg); font-size: .8rem;
+  cursor: pointer; font-weight: 600;
+}
+.panas-btn.selected { background: var(--navy); color: #fff; border-color: var(--navy); }
+.panas-score-display {
+  font-size: .8rem; color: var(--muted); margin-top: 12px; text-align: right;
+}
+.panas-na-section { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); }
+.panas-na-toggle {
+  font-size: .75rem; color: var(--blue); cursor: pointer; background: none;
+  border: none; padding: 0; text-decoration: underline; margin-bottom: 8px;
+}
+
+/* ── Spinner ─────────────────────────────────────────────────────────────── */
+.spin {
+  display: inline-block; width: 12px; height: 12px;
+  border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
+  border-radius: 50%; animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Help panel ──────────────────────────────────────────────────────────── */
+/* ── FHIR panel ──────────────────────────────────────────────────────────── */
+#fhir-overlay { position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-start;justify-content:flex-end;z-index:1000; }
+#fhir-overlay.open { display:flex; }
+#fhir-panel {
+  background:#fff; width:400px; max-width:95vw; height:100vh;
+  overflow-y:auto; box-shadow:-4px 0 24px rgba(0,0,0,.18);
+  display:flex; flex-direction:column;
+}
+#fhir-panel-header {
+  background:var(--navy); color:#fff; padding:12px 14px;
+  display:flex; align-items:center; gap:8px; flex-shrink:0;
+}
+#fhir-panel-header h2 { font-size:.9rem; font-weight:600; flex:1; }
+#fhir-panel-header button {
+  background:rgba(255,255,255,.15); border:none; color:#fff;
+  border-radius:4px; padding:3px 8px; cursor:pointer; font-size:.8rem;
+}
+#fhir-panel-body { padding:12px 14px; flex:1; }
+#fhir-patient-card {
+  background:#eef3fa; border-radius:6px; padding:10px 12px;
+  margin-bottom:12px; font-size:.82rem; color:var(--navy);
+}
+#fhir-patient-card strong { display:block; font-size:.9rem; margin-bottom:2px; }
+.fhir-section-head {
+  font-size:.68rem; font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--muted);
+  margin:12px 0 5px; padding-bottom:3px; border-bottom:1px solid var(--border);
+}
+.fhir-entry {
+  display:flex; gap:6px; padding:5px 0;
+  border-bottom:1px solid #f0f0f0; font-size:.8rem; line-height:1.4;
+}
+.fhir-entry:last-child { border-bottom:none; }
+.fhir-date { color:var(--muted); font-size:.72rem; flex-shrink:0; width:72px; }
+.fhir-type-chip {
+  font-size:.64rem; font-weight:700; border-radius:3px;
+  padding:1px 5px; flex-shrink:0; align-self:flex-start; margin-top:1px;
+}
+.chip-Diagnosis    { background:#f8d7da; color:var(--red); }
+.chip-Medication   { background:#d1e7dd; color:#0f5132; }
+.chip-Allergy      { background:#fff3cd; color:#664d03; }
+.chip-Lab          { background:#dbeafe; color:#1d4ed8; }
+.chip-Vital        { background:#e8e0f7; color:#7a5c9e; }
+.chip-Report       { background:#e9ecef; color:#495057; }
+.chip-Goal         { background:#d4edda; color:#155724; }
+.chip-Immunization { background:#fce8d3; color:#7c3d12; }
+.chip-Procedure    { background:#f3d9fa; color:#6f2da8; }
+.chip-CarePlan     { background:#d0f4de; color:#1a6b3a; }
+.chip-Background   { background:#e9ecef; color:#495057; }
+.fhir-text { flex:1; }
+.fhir-badge-none  { background:rgba(255,255,255,.2); color:rgba(255,255,255,.7); }
+.hbtn.fhir-loaded { background:rgba(46,160,67,.35); border-color:rgba(46,160,67,.6); }
+
+#help-panel {
+  background: #fff; border-radius: 8px; padding: 20px 22px;
+  width: 520px; max-width: 95vw; max-height: 85vh; overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+}
+#help-panel h2 { font-size: .95rem; font-weight: 700; margin-bottom: 14px; }
+#help-panel h3 { font-size: .82rem; font-weight: 700; margin: 12px 0 4px; color: var(--navy); }
+#help-panel p  { font-size: .8rem; line-height: 1.6; color: #333; margin-bottom: 6px; }
+#help-panel ul { font-size: .8rem; line-height: 1.7; color: #333; padding-left: 18px; }
+#help-panel .save-badge {
+  display: inline-block; background: #d1e7dd; color: #0f5132;
+  border-radius: 3px; padding: 1px 6px; font-size: .72rem; font-weight: 600;
+}
+#help-panel .export-badge {
+  display: inline-block; background: #cfe2ff; color: #084298;
+  border-radius: 3px; padding: 1px 6px; font-size: .72rem; font-weight: 600;
+}
+
+/* ── Saved indicator ─────────────────────────────────────────────────────── */
+#saved-indicator {
+  font-size: .7rem; color: rgba(255,255,255,.55); flex-shrink: 0;
+}
+
+/* ── Bundle input (hidden) ───────────────────────────────────────────────── */
+#bundle-file-input { display: none; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div id="header">
+  <div>
+    <div id="header-text">
+      <h1>Problem-Knowledge Coupler</h1>
+      <div id="header-sub">Weed-style problem-oriented record — all gaps visible</div>
+    </div>
+  </div>
+  <div id="header-actions">
+    <span id="saved-indicator"></span>
+    <button class="hbtn" id="btn-print" onclick="window.print()" disabled>Print</button>
+    <button class="hbtn" id="btn-export" onclick="exportFedWiki()" disabled>FedWiki</button>
+    <button class="hbtn" id="btn-save-bundle" onclick="saveBundle()" disabled>Save Bundle</button>
+    <button class="hbtn" onclick="document.getElementById('bundle-file-input').click()">Load Bundle</button>
+    <button class="hbtn" id="btn-new-person" onclick="openPersonModal()">+ Person</button>
+    <button class="hbtn" id="btn-fhir" onclick="openFhirPanel()">FHIR —</button>
+    <a class="hbtn" href="roadmap.html" target="_blank">Roadmap</a>
+    <button class="hbtn" onclick="openHelp()">?</button>
+  </div>
+</div>
+<input type="file" id="bundle-file-input" accept=".json" onchange="loadBundle(event)">
+
+<!-- Embed bar (visible only in embed mode) -->
+<div id="embed-bar">
+  <span>Problem-Knowledge Coupler</span>
+</div>
+
+<!-- Layout -->
+<div id="layout">
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <select id="person-select" onchange="loadPerson(this.value)">
+        <option value="">— select person —</option>
+      </select>
+    </div>
+    <div id="activation-area" style="display:none">
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+        <span id="act-badge" class="act-badge act-none">No activation score</span>
+        <button id="act-take-btn" onclick="openPanas()">Take PANAS</button>
+      </div>
+      <div id="act-history" class="act-history"></div>
+    </div>
+    <div id="problem-list"></div>
+    <div id="sidebar-footer">
+      <button class="sidebar-btn" id="btn-add-problem" onclick="openAddProblem()" disabled>+ Add problem</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+    <div id="toolbar">
+      <div>
+        <div id="problem-title">Select a person and problem</div>
+        <div id="problem-clinical-title"></div>
+      </div>
+      <button class="tbtn primary" id="btn-gen-frame" onclick="generateFrame()" disabled>Generate Frame</button>
+      <button class="tbtn" id="btn-rematch" onclick="reMatch()" disabled>Re-Match</button>
+      <button class="tbtn" id="btn-narrate" onclick="narrate()" disabled>Narrate</button>
+      <button class="tbtn" id="btn-export-tb" onclick="exportFedWiki()" disabled style="display:none">Push to Wiki</button>
+      <div id="status-msg"></div>
+    </div>
+    <div id="content">
+      <div id="empty-state">
+        <h2>No problem selected</h2>
+        <p>Select a person from the sidebar, then choose a problem to view its coupler frame. Use Generate Frame to build the frame with AI.</p>
+      </div>
+      <div id="problem-view" style="display:none">
+        <div id="band-filter-bar">
+          <span id="band-filter-msg"></span>
+          <button id="band-show-all-btn" onclick="toggleShowAll()">Show full frame</button>
+        </div>
+        <div id="attention-strip"></div>
+        <div id="narrative-box">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <strong>Summary</strong>
+            <button id="btn-push-narrative" onclick="pushNarrative()"
+              style="display:none;font-size:.72rem;padding:2px 8px;border:1px solid var(--border);
+                     border-radius:3px;background:var(--bg);cursor:pointer">
+              Push to SCP
+            </button>
+          </div>
+          <span id="narrative-text"></span>
+        </div>
+
+        <div class="soap-section">
+          <div class="soap-title">Subjective</div>
+          <div id="subjective-list"></div>
+        </div>
+        <div class="soap-section">
+          <div class="soap-title">Objective</div>
+          <div id="objective-list"></div>
+        </div>
+        <div class="soap-section">
+          <div class="soap-title">Assessment — Candidate Explanations</div>
+          <div id="assessment-list"></div>
+          <div id="residual-display"></div>
+        </div>
+        <div class="soap-section">
+          <div class="soap-title">Plan Options</div>
+          <div id="plan-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PANAS modal -->
+<div id="panas-overlay" onclick="if(event.target===this) closePanas()">
+  <div id="panas-modal">
+    <h2>Activation Check-in — PANAS PA-10</h2>
+    <p class="panas-intro">
+      For each word below, indicate how much you have felt this way <strong>during the past week</strong>.
+      This takes about one minute. Your answers shape how much of the record is shown at once — the full picture is always there; this just sets the starting view.
+    </p>
+    <div class="panas-scale-legend">
+      <div>1<br>Very slightly<br>or not at all</div>
+      <div>2<br>A little</div>
+      <div>3<br>Moderately</div>
+      <div>4<br>Quite a bit</div>
+      <div>5<br>Extremely</div>
+    </div>
+    <div id="panas-items"></div>
+    <div class="panas-score-display" id="panas-score-display"></div>
+
+    <div class="panas-na-section">
+      <button class="panas-na-toggle" onclick="toggleNA()">+ Optional: also rate negative feelings (NA-10)</button>
+      <div id="panas-na-items" style="display:none"></div>
+    </div>
+
+    <div style="margin-top:4px">
+      <label style="font-size:.75rem;color:var(--muted)">
+        Recorded by:
+        <select id="panas-by" style="margin-left:4px;font-size:.75rem;border:1px solid var(--border);border-radius:3px;padding:2px 4px">
+          <option value="self">Person of record (self)</option>
+          <option value="chw">Community health worker</option>
+          <option value="family">Family member</option>
+        </select>
+      </label>
+    </div>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="btn" onclick="closePanas()">Cancel</button>
+      <button class="btn primary" onclick="submitPanas()">Save activation score</button>
+    </div>
+  </div>
+</div>
+
+<!-- Help modal -->
+<!-- FHIR panel -->
+<div id="fhir-overlay" onclick="if(event.target===this) closeFhirPanel()">
+  <div id="fhir-panel">
+    <div id="fhir-panel-header">
+      <h2>FHIR Data</h2>
+      <button onclick="closeFhirPanel()">✕</button>
+    </div>
+    <div id="fhir-panel-body">
+      <p style="font-size:.82rem;color:var(--muted)">Loading…</p>
+    </div>
+  </div>
+</div>
+
+<div id="help-overlay" onclick="if(event.target===this) closeHelp()" style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:1000">
+  <div id="help-panel">
+    <h2>How the coupler works</h2>
+
+    <h3>Your work saves automatically</h3>
+    <p>Every entry you record and every frame the AI generates is written to disk on this machine as soon as you save or generate it. <strong>There is nothing to manually save.</strong> Close the browser, restart the proxy, come back — select the same person and problem and everything is exactly where you left it.</p>
+
+    <h3>Two kinds of export — different purposes</h3>
+    <p><span class="save-badge">Save Bundle</span> — the portable backup format. Downloads a single <code>.json</code> file containing the full state for a person: all problems, all record entries, all frame versions including history. Use this to move work between machines, hand off to a colleague, or keep an archive. Load it back with <strong>Load Bundle</strong> — it restores everything and adds the person to the sidebar if they aren't already there.</p>
+    <p><span class="export-badge">FedWiki</span> — a one-way clinical view. Exports the current problem's frame as a FedWiki-format page for import into the Shared Care Plan or a Groove workspace. It is not designed to come back in as coupler data — it is a clinical document for a care team.</p>
+
+    <h3>Toolbar buttons</h3>
+    <ul>
+      <li><strong>Generate Frame</strong> — asks the AI to build the full workup frame for this problem from scratch, using any record entries already present. Creates a new saved version.</li>
+      <li><strong>Re-Match</strong> — takes the existing frame and any new record entries you've added, and asks the AI to update every slot's status (filled / partial / absent) and re-estimate probabilities. Appends to the probability history — nothing is overwritten. Use this each time you add new findings.</li>
+      <li><strong>Narrate</strong> — generates a plain-language paragraph: what we know, what's missing, what the gaps mean. Updates the summary box at the top of the problem view.</li>
+    </ul>
+
+    <h3>Entering findings</h3>
+    <p>Click any finding row in Subjective or Objective to open the entry form. Fill in the value, who recorded it, and the date. Check "Written by other" if the person of record did not record this themselves. Entries save immediately. Then click Re-Match to see probabilities update.</p>
+
+    <h3>Attention codes</h3>
+    <p>Each candidate assessment carries a code 1–5 computed from two inputs: how likely it is (probability band A–D) and how bad it would be to miss (severity class I–IV). The code is a deterministic table lookup — the AI never assigns it. Codes 1 and 2 always surface at the top of the page regardless of probability rank.</p>
+
+    <div class="modal-btns" style="margin-top:16px">
+      <button class="btn primary" onclick="closeHelp()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Entry modal -->
+<div id="modal-overlay" onclick="if(event.target===this) closeModal()">
+  <div id="modal">
+    <h2 id="modal-title">Record Entry</h2>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="form-group">
+      <label>Value / finding</label>
+      <textarea id="entry-value" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Recorded by</label>
+      <input id="entry-by" type="text" placeholder="Name or role">
+    </div>
+    <div class="form-group">
+      <label>Date</label>
+      <input id="entry-date" type="date">
+    </div>
+    <div class="form-group">
+      <label class="form-check">
+        <input id="entry-other" type="checkbox">
+        Written by other (person of record did not record this themselves)
+      </label>
+    </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <input id="entry-notes" type="text">
+    </div>
+    <div class="modal-btns">
+      <button class="btn" id="btn-delete-entry" onclick="deleteEntry()" style="display:none">Delete entry</button>
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Person / problem modal -->
+<div id="person-modal-overlay" onclick="if(event.target===this) closePersonModal()">
+  <div id="person-modal">
+    <h2 id="pm-title">New Person</h2>
+    <div id="pm-body"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closePersonModal()">Cancel</button>
+      <button class="btn primary" id="pm-save-btn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+const PROXY = 'http://localhost:8766';
+let state = {
+  personId: null,
+  problem: null,
+  frame: null,
+  record: [],
+  narrative: null,
+  activation: null,   // person's current activation object from person.json
+  showAll: false,     // override band-based filtering
+  modalSlot: null,
+  modalEntryId: null
+};
+
+const AC_LABELS = {1:'Act Now', 2:'Move Fast', 3:'Work On It', 4:'Watch It', 5:'Let It Rest'};
+const BAND_TEXT = {A:'Likely', B:'Possible', C:'Less likely', D:'Unlikely'};
+const ACT_BAND_LABELS = {1:'Learning the basics', 2:'Building awareness', 3:'Taking action', 4:'Staying the course'};
+const ACT_BAND_CLASSES = {1:'act-b1', 2:'act-b2', 3:'act-b3', 4:'act-b4'};
+
+// Pacing: bands 1-2 → filtered view (AC 1-2 only, top-3 absent findings)
+const FILTERED_BANDS = new Set([1, 2]);
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+async function boot() {
+  // Embed mode: ?embed param in URL (iframe window.top check is blocked by sandbox)
+  if (new URLSearchParams(location.search).has('embed')) {
+    document.body.classList.add('embed');
+  }
+
+  const data = await api('GET', '/api/people').catch(() => []);
+  const sel = document.getElementById('person-select');
+  data.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name + (p.dob ? ` (${p.dob.slice(0,4)})` : '');
+    sel.appendChild(opt);
+  });
+}
+boot();
+
+// ── API helper ───────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch(PROXY + path, opts);
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({error: r.statusText}));
+    throw new Error(err.error || r.statusText);
+  }
+  return r.json();
+}
+
+// ── Load person ──────────────────────────────────────────────────────────────
+async function loadPerson(personId) {
+  if (!personId) return;
+  state.personId = personId;
+  state.problem = null;
+  state.frame = null;
+  state.record = [];
+  state.activation = null;
+  state.showAll = false;
+  document.getElementById('btn-add-problem').disabled = false;
+  setStatus('');
+
+  const [problems, person] = await Promise.all([
+    api('GET', `/api/problems/${personId}`).catch(() => []),
+    api('GET', `/api/person/${personId}`).catch(() => ({})),
+  ]);
+  state.activation = person.activation || null;
+  renderActivationBadge();
+  renderProblemList(problems);
+  showEmpty();
+}
+
+function renderProblemList(problems) {
+  const list = document.getElementById('problem-list');
+  list.innerHTML = '';
+  if (!problems.length) {
+    list.innerHTML = '<div style="padding:12px;font-size:.78rem;color:var(--muted)">No problems yet.</div>';
+    return;
+  }
+  problems.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'problem-item' + (state.problem?.number === p.number ? ' active' : '');
+    div.onclick = () => loadProblem(p);
+    const dot = `<span class="status-dot ${p.status !== 'active' ? p.status : ''}"></span>`;
+    div.innerHTML = `
+      <div class="problem-num">PROBLEM ${p.number}</div>
+      <div class="problem-vernacular">${dot}${esc(p.statement_vernacular)}</div>
+      <div class="problem-clinical">${esc(p.statement_clinical)}</div>`;
+    list.appendChild(div);
+  });
+}
+
+// ── Load problem ─────────────────────────────────────────────────────────────
+async function loadProblem(problem) {
+  state.problem = problem;
+  state.frame = null;
+  state.record = [];
+  setStatus('Loading…');
+
+  // Highlight sidebar
+  document.querySelectorAll('.problem-item').forEach((el, i) => {
+    el.classList.toggle('active', i === problem.number - 1);
+  });
+
+  document.getElementById('problem-title').textContent =
+    `Problem ${problem.number}: ${problem.statement_vernacular}`;
+  document.getElementById('problem-clinical-title').textContent = problem.statement_clinical;
+
+  // Load record
+  state.record = await api('GET', `/api/record/${state.personId}/${problem.number}`).catch(() => []);
+
+  // Load latest frame
+  const frames = await api('GET', `/api/frames/${state.personId}/${problem.number}`).catch(() => []);
+  if (frames.length) {
+    state.frame = frames[frames.length - 1].frame;
+    renderFrame();
+  } else {
+    showEmpty('No frame yet. Click Generate Frame to build one.');
+  }
+
+  document.getElementById('btn-gen-frame').disabled = false;
+  document.getElementById('btn-rematch').disabled = !state.frame;
+  document.getElementById('btn-narrate').disabled = !state.frame;
+  document.getElementById('btn-print').disabled = !state.frame;
+  document.getElementById('btn-export').disabled = !state.frame;
+  document.getElementById('btn-export-tb').disabled = !state.frame;
+  document.getElementById('btn-save-bundle').disabled = false;
+  if (state.frame) {
+    const saved = frames.length ? frames[frames.length-1].saved : null;
+    setSaved(saved);
+  }
+  setStatus('');
+}
+
+// ── Generate frame ───────────────────────────────────────────────────────────
+async function generateFrame() {
+  if (!state.problem) return;
+  setStatus('Generating frame… (may take ~30s)');
+  setBusy(true);
+  try {
+    const res = await api('POST', '/api/frame', {
+      person_id: state.personId,
+      problem: state.problem,
+      record: state.record
+    });
+    state.frame = res.frame;
+    renderFrame();
+    document.getElementById('btn-rematch').disabled = false;
+    document.getElementById('btn-narrate').disabled = false;
+    document.getElementById('btn-print').disabled = false;
+    document.getElementById('btn-export').disabled = false;
+    document.getElementById('btn-export-tb').disabled = false;
+    setSaved(state.frame.generated, 'Frame v' + (state.frame.version || 1) + ' saved');
+    setStatus(`Frame v${state.frame.version || 1} generated`);
+  } catch(e) {
+    setStatus('Error: ' + e.message);
+  }
+  setBusy(false);
+}
+
+// ── Re-match ─────────────────────────────────────────────────────────────────
+async function reMatch() {
+  if (!state.frame || !state.problem) return;
+  setStatus('Matching record against frame…');
+  setBusy(true);
+  try {
+    const res = await api('POST', '/api/match', {
+      person_id: state.personId,
+      problem_n: state.problem.number,
+      frame: state.frame,
+      record: state.record
+    });
+    state.frame = res.frame;
+    renderFrame();
+    setSaved(new Date().toISOString(), 'Re-matched v' + (state.frame.version || '?') + ' saved');
+    setStatus(`Matched — frame v${state.frame.version || '?'}`);
+  } catch(e) {
+    setStatus('Error: ' + e.message);
+  }
+  setBusy(false);
+}
+
+// ── Narrate ───────────────────────────────────────────────────────────────────
+async function narrate() {
+  if (!state.frame) return;
+  setStatus('Generating narrative…');
+  setBusy(true);
+  try {
+    const res = await api('POST', '/api/narrate', { frame: state.frame });
+    state.narrative = res.narrative;
+    document.getElementById('narrative-text').textContent = res.narrative;
+    document.getElementById('narrative-box').style.display = 'block';
+    document.getElementById('btn-push-narrative').style.display = 'inline-block';
+    setStatus('Narrative ready');
+  } catch(e) {
+    setStatus('Error: ' + e.message);
+  }
+  setBusy(false);
+}
+
+async function pushNarrative() {
+  if (!state.narrative || !state.problem) return;
+  const btn = document.getElementById('btn-push-narrative');
+  btn.textContent = 'Pushing…'; btn.disabled = true;
+  try {
+    const res = await api('POST',
+      `/api/push-narrative/${state.personId}/${state.problem.number}`,
+      { narrative: state.narrative, problem: state.problem });
+    setStatus('Narrative pushed to pre-visit-summary');
+    if (document.body.classList.contains('embed')) {
+      window.parent.postMessage({
+        action: 'doInternalLink',
+        title: 'pre-visit-summary',
+        site: 'scp-experiment.localhost',
+        keepLineup: false
+      }, '*');
+    }
+  } catch(e) {
+    setStatus('Push error: ' + e.message);
+  }
+  btn.textContent = 'Push to SCP'; btn.disabled = false;
+}
+
+// ── Push frame to scp-experiment.localhost ────────────────────────────────────
+async function exportFedWiki() {
+  if (!state.problem) return;
+  const btns = ['btn-export', 'btn-export-tb'].map(id => document.getElementById(id));
+  btns.forEach(b => { b.disabled = true; b.textContent = 'Pushing…'; });
+  try {
+    const res = await api('POST', `/api/push-fedwiki/${state.personId}/${state.problem.number}`, {});
+    setStatus(`Pushed: ${res.title}`);
+    if (document.body.classList.contains('embed')) {
+      window.parent.postMessage({
+        action: 'doInternalLink',
+        title: res.slug,
+        site: 'scp-experiment.localhost',
+        keepLineup: false
+      }, '*');
+    } else {
+      const el = document.getElementById('status-msg');
+      el.innerHTML = '';
+      const a = document.createElement('a');
+      a.href = res.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.style.color = 'inherit';
+      a.textContent = `Pushed: ${res.title}`;
+      el.appendChild(a);
+    }
+  } catch(e) {
+    setStatus('Wiki push error: ' + e.message);
+  } finally {
+    btns[0].disabled = false; btns[0].textContent = 'FedWiki';
+    btns[1].disabled = false; btns[1].textContent = 'Push to Wiki';
+  }
+}
+
+// ── Bundle save / load ────────────────────────────────────────────────────────
+async function saveBundle() {
+  if (!state.personId) return;
+  try {
+    const bundle = await api('GET', `/api/bundle/${state.personId}`);
+    const name = bundle.person?.name?.toLowerCase().replace(/[^a-z0-9]+/g,'-') || state.personId;
+    const date = new Date().toISOString().slice(0,10);
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${name}-${date}.coupler.json`;
+    a.click();
+    setSaved(new Date().toISOString(), 'Bundle saved');
+  } catch(e) {
+    setStatus('Bundle save error: ' + e.message);
+  }
+}
+
+async function loadBundle(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+  try {
+    const text = await file.text();
+    const bundle = JSON.parse(text);
+    const res = await api('POST', '/api/import-bundle', bundle);
+    // Add to person selector if not there
+    const sel = document.getElementById('person-select');
+    if (![...sel.options].some(o => o.value === res.person_id)) {
+      const opt = document.createElement('option');
+      opt.value = res.person_id;
+      const dob = bundle.person?.dob?.slice(0,4);
+      opt.textContent = res.name + (dob ? ` (${dob})` : '');
+      sel.appendChild(opt);
+    }
+    sel.value = res.person_id;
+    await loadPerson(res.person_id);
+    setStatus(`Loaded bundle for ${res.name}`);
+  } catch(e) {
+    setStatus('Bundle load error: ' + e.message);
+  }
+}
+
+// ── Help ──────────────────────────────────────────────────────────────────────
+function openHelp()  { document.getElementById('help-overlay').style.display = 'flex'; }
+function closeHelp() { document.getElementById('help-overlay').style.display = 'none'; }
+
+// ── FHIR panel ────────────────────────────────────────────────────────────────
+async function loadFhirStatus() {
+  try {
+    const data = await api('GET', '/api/fhir-context');
+    const btn = document.getElementById('btn-fhir');
+    if (data.loaded && data.entry_count > 0) {
+      btn.textContent = `FHIR ${data.entry_count}`;
+      btn.classList.add('fhir-loaded');
+      btn.title = `${data.entry_count} FHIR entries loaded from Epic — click to view`;
+    } else {
+      btn.textContent = 'FHIR —';
+      btn.classList.remove('fhir-loaded');
+      btn.title = 'No FHIR data loaded. Run smart-proxy.py to connect Epic.';
+    }
+    return data;
+  } catch(e) {
+    return { loaded: false, entries: [] };
+  }
+}
+
+async function openFhirPanel() {
+  document.getElementById('fhir-overlay').classList.add('open');
+  const body = document.getElementById('fhir-panel-body');
+  body.innerHTML = '<p style="font-size:.82rem;color:var(--muted)">Loading…</p>';
+
+  const data = await loadFhirStatus();
+
+  if (!data.loaded || !data.entry_count) {
+    body.innerHTML = `
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:12px">No FHIR data loaded yet.</p>
+      <p style="font-size:.82rem;color:var(--muted)">Start <code>smart-proxy.py</code> on port 8767 and authenticate with Epic to pull your clinical record.</p>`;
+    return;
+  }
+
+  const p = data.patient || {};
+  let html = '';
+
+  // Patient card
+  if (p.name) {
+    const pulled = data.transformed_at ? data.transformed_at.slice(0,10) : '';
+    html += `<div id="fhir-patient-card">
+      <strong>${esc(p.name)}</strong>
+      ${esc(p.gender || '')} · born ${esc(p.dob || '')}
+      ${pulled ? `<span style="float:right;font-size:.72rem;color:var(--muted)">pulled ${pulled}</span>` : ''}
+    </div>`;
+  }
+
+  // Group entries by type
+  const TYPE_ORDER = ['Diagnosis','Medication','Allergy','Lab','Vital','Report','Goal','Immunization','Procedure','CarePlan','Background'];
+  const byType = {};
+  for (const e of data.entries) {
+    const t = e.entry_type || 'Other';
+    (byType[t] = byType[t] || []).push(e);
+  }
+
+  for (const type of [...TYPE_ORDER, ...Object.keys(byType).filter(t => !TYPE_ORDER.includes(t))]) {
+    const items = byType[type];
+    if (!items || !items.length) continue;
+    html += `<div class="fhir-section-head">${esc(type)} (${items.length})</div>`;
+    for (const e of items) {
+      const text = (e.text || '').replace(/^[^:]+:\s*/, ''); // strip "Type: " prefix
+      html += `<div class="fhir-entry">
+        <span class="fhir-date">${esc(e.date || '')}</span>
+        <span class="fhir-type-chip chip-${esc(type)}">${esc(type)}</span>
+        <span class="fhir-text">${esc(text)}</span>
+      </div>`;
+    }
+  }
+
+  html += `<p style="font-size:.75rem;color:var(--muted);margin-top:16px">
+    All ${data.entry_count} entries are injected into every Generate Frame and Re-Match call.
+    Source: Epic FHIR R4 (sandbox).
+  </p>`;
+
+  body.innerHTML = html;
+}
+
+function closeFhirPanel() {
+  document.getElementById('fhir-overlay').classList.remove('open');
+}
+
+// Load FHIR status on boot
+loadFhirStatus();
+
+// ── Render frame ─────────────────────────────────────────────────────────────
+function renderFrame() {
+  const frame = state.frame;
+  if (!frame) return;
+
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('problem-view').style.display = 'block';
+  document.getElementById('narrative-box').style.display = 'none';
+  document.getElementById('btn-push-narrative').style.display = 'none';
+  state.narrative = null;
+
+  const band = state.activation?.band || null;
+  const filtering = band && FILTERED_BANDS.has(band) && !state.showAll;
+  renderBandFilterBar(band, filtering);
+  renderAttentionStrip(frame);
+  renderSOAP('subjective-list', frame.subjective || [], 'subjective', filtering);
+  renderSOAP('objective-list', frame.objective || [], 'objective', filtering);
+  renderAssessments(frame, filtering);
+  renderPlan(frame, band);
+}
+
+function renderBandFilterBar(band, filtering) {
+  const bar = document.getElementById('band-filter-bar');
+  const msg = document.getElementById('band-filter-msg');
+  const btn = document.getElementById('band-show-all-btn');
+  if (!filtering) {
+    bar.classList.remove('active');
+    return;
+  }
+  bar.classList.add('active');
+  msg.textContent = `Showing focused view for Band ${band} (${ACT_BAND_LABELS[band] || ''}): urgent candidates and top missing findings. `;
+  btn.textContent = state.showAll ? 'Show focused view' : 'Show full frame';
+}
+
+function toggleShowAll() {
+  state.showAll = !state.showAll;
+  renderFrame();
+}
+
+function renderAttentionStrip(frame) {
+  const strip = document.getElementById('attention-strip');
+  const urgent = (frame.assessment_candidates || []).filter(c => (c.attention_code || 5) <= 2);
+  if (!urgent.length) { strip.style.display = 'none'; return; }
+
+  const hasAC1 = urgent.some(c => c.attention_code === 1);
+  strip.className = 'attention-strip' + (hasAC1 ? ' has-ac1' : '');
+  strip.style.display = 'block';
+  strip.innerHTML = `<h3>${hasAC1 ? 'Act Now / Move Fast' : 'Move Fast'}</h3>` +
+    urgent.map(c => `
+      <div class="attention-item">
+        <span class="ac-badge ac-${c.attention_code}">${AC_LABELS[c.attention_code]}</span>
+        <span><strong>${esc(c.term)}</strong> — ${esc(c.severity_vernacular || '')}</span>
+      </div>`).join('');
+}
+
+function renderSOAP(containerId, items, type, filtering) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  if (!items.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:.78rem;padding:6px">No items</div>';
+    return;
+  }
+
+  // Band 1-2 filtering: show filled/partial always; show only top 3 absent
+  let displayItems = items;
+  let hiddenCount = 0;
+  if (filtering) {
+    const filled  = items.filter(i => i.status !== 'absent');
+    const absent  = items.filter(i => i.status === 'absent');
+    const shown   = absent.slice(0, 3);
+    hiddenCount   = absent.length - shown.length;
+    displayItems  = [...filled, ...shown];
+  }
+
+  displayItems.forEach(item => {
+    const status = item.status || 'absent';
+    // Find matching record entry
+    const entry = state.record.find(e => e.slot_id === item.id);
+
+    const div = document.createElement('div');
+    div.className = `finding-row status-${status}`;
+    div.onclick = () => openEntryModal(item, type, entry);
+
+    let valueHtml = '';
+    if (status === 'filled' && item.value) {
+      const meta = entry ? ` · ${esc(entry.recorded_by || '')} · ${esc(entry.recorded_date || '')}` : '';
+      valueHtml = `<div class="finding-value">${esc(item.value)}<span class="finding-meta">${meta}</span></div>`;
+    } else if (status === 'partial') {
+      valueHtml = `<div class="finding-value">${esc(item.value || '')}</div>
+                   <div class="finding-missing">Partial: ${esc(item.missing || '')}</div>`;
+    }
+
+    const howObtained = item.how_obtained ? `<div class="finding-why">via ${esc(item.how_obtained)}</div>` : '';
+    const whyHtml = item.why_it_matters ? `<div class="finding-why">${esc(item.why_it_matters)}</div>` : howObtained;
+    const entryBadge = entry ? `<span class="entry-badge">recorded</span>` : '';
+
+    div.innerHTML = `
+      <div class="finding-status-dot ${status}"></div>
+      <div class="finding-body">
+        <div class="finding-term">${esc(item.term)}${entryBadge}</div>
+        <div class="finding-vernacular">${esc(item.vernacular || '')}</div>
+        ${valueHtml}
+        ${whyHtml}
+      </div>`;
+    el.appendChild(div);
+  });
+
+  if (hiddenCount > 0) {
+    const note = document.createElement('div');
+    note.style.cssText = 'font-size:.75rem;color:var(--muted);padding:5px 0;font-style:italic';
+    note.textContent = `${hiddenCount} more "not yet gathered" items hidden in focused view.`;
+    el.appendChild(note);
+  }
+}
+
+function renderAssessments(frame, filtering) {
+  const el = document.getElementById('assessment-list');
+  el.innerHTML = '';
+
+  let candidates = [...(frame.assessment_candidates || [])]
+    .sort((a, b) => (b.probability?.estimate || 0) - (a.probability?.estimate || 0));
+
+  // Band 1-2: show only AC 1-2
+  if (filtering) {
+    const urgent = candidates.filter(c => (c.attention_code || 5) <= 2);
+    const hidden = candidates.length - urgent.length;
+    candidates = urgent;
+    if (hidden > 0) {
+      const note = document.createElement('div');
+      note.style.cssText = 'font-size:.75rem;color:var(--muted);padding:5px 0;font-style:italic';
+      note.textContent = `${hidden} lower-urgency candidate(s) hidden in focused view — click "Show full frame" to see all.`;
+      el.appendChild(note);
+    }
+  }
+
+  candidates.forEach(c => {
+    const prob = c.probability || {};
+    const pct = Math.round((prob.estimate || 0) * 100);
+    const code = c.attention_code || 5;
+    const band = prob.band || prob_to_band(prob.estimate || 0);
+    const history = prob.history || [];
+
+    const histId = `hist-${c.id}`;
+    const histHtml = history.length ? `
+      <span class="history-toggle" onclick="toggleHistory('${histId}')">Probability history (${history.length})</span>
+      <div class="prob-history" id="${histId}">
+        ${history.map(h => `${h.as_of}: ${Math.round((h.estimate||0)*100)}% Band ${h.band} — moved by ${(h.moved_by||[]).join(', ') || 'none'}`).join('<br>')}
+      </div>` : '';
+
+    const supported = c.supported_by?.length ? `<div class="cand-row"><span class="cand-label">Supported by</span><span class="cand-val">${esc(c.supported_by.join(', '))}</span></div>` : '';
+    const refuted   = c.refuted_by?.length   ? `<div class="cand-row"><span class="cand-label">Refuted by</span><span class="cand-val">${esc(c.refuted_by.join(', '))}</span></div>` : '';
+    const ntestable = c.not_yet_testable?.length ? `<div class="cand-row"><span class="cand-label">Not yet testable</span><span class="cand-val">${esc(c.not_yet_testable.join('; '))}</span></div>` : '';
+
+    const div = document.createElement('div');
+    div.className = 'candidate-card';
+    div.innerHTML = `
+      <div class="candidate-header">
+        <span class="ac-badge ac-${code}">${code} — ${AC_LABELS[code] || ''}</span>
+        <span class="candidate-term">${esc(c.term)}</span>
+        <span class="band-badge">Band ${band} · ${BAND_TEXT[band] || ''}</span>
+        <span style="font-size:.72rem;color:var(--muted)">Class ${c.severity_class || '?'}</span>
+      </div>
+      <div class="candidate-vernacular">${esc(c.vernacular || '')}</div>
+      <div class="prob-bar-wrap">
+        <div class="prob-bar-bg"><div class="prob-bar" style="width:${pct}%"></div></div>
+        <span class="prob-label">${pct}%</span>
+      </div>
+      <div class="candidate-body">
+        ${supported}${refuted}${ntestable}
+        <div class="cand-row"><span class="cand-label">Basis</span><span class="cand-val">${esc(c.basis || '')}</span></div>
+        <div class="cand-row"><span class="cand-label">Uncertainty</span><span class="cand-val" style="font-style:italic">${esc(c.confidence_note || '')}</span></div>
+        <div class="severity-row">If missed: ${esc(c.severity_vernacular || '')}</div>
+        ${histHtml}
+      </div>`;
+    el.appendChild(div);
+  });
+
+  // Residual
+  const residual = frame.residual || {};
+  const resPct = Math.round((residual.probability_estimate || 0.1) * 100);
+  document.getElementById('residual-display').innerHTML = `
+    <div class="residual-row">
+      <strong>Residual</strong> (${resPct}%) — ${esc(residual.vernacular || 'Something not on this list — the differential is never closed')}
+    </div>`;
+}
+
+function renderPlan(frame, band) {
+  const el = document.getElementById('plan-list');
+  el.innerHTML = '';
+  const options = frame.plan_options || [];
+  if (!options.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:.78rem;padding:6px">No plan options</div>';
+    return;
+  }
+  // Band 1-2: "Ask your care team about…"; band 3-4: "What you can do"
+  const askMode = band && FILTERED_BANDS.has(band) && !state.showAll;
+  if (askMode) {
+    const note = document.createElement('div');
+    note.style.cssText = 'font-size:.75rem;color:var(--muted);margin-bottom:8px;font-style:italic';
+    note.textContent = 'These are things to ask your nurse, doctor, or CHW about at your next contact.';
+    el.appendChild(note);
+  }
+  options.forEach(p => {
+    const linked = (frame.assessment_candidates || []).find(c => c.id === p.linked_assessment);
+    const linkLabel = linked ? ` → ${esc(linked.term)}` : '';
+    const whoLabel = askMode
+      ? `Ask about this: ${esc(p.who_can_act || '')}`
+      : `Can be done by: ${esc(p.who_can_act || '')}`;
+    const div = document.createElement('div');
+    div.className = 'plan-card';
+    div.innerHTML = `
+      <div class="plan-term">${esc(p.term)}<span class="plan-link">${linkLabel}</span></div>
+      <div class="plan-vernacular">${esc(p.vernacular || '')}</div>
+      <div class="plan-basis">${esc(p.basis || '')}</div>
+      <div class="plan-who">${whoLabel}</div>`;
+    el.appendChild(div);
+  });
+}
+
+// ── Entry modal ───────────────────────────────────────────────────────────────
+function openEntryModal(item, type, existingEntry) {
+  state.modalSlot = {id: item.id, type, term: item.term, vernacular: item.vernacular};
+  state.modalEntryId = existingEntry?.id || null;
+
+  document.getElementById('modal-title').textContent = item.term;
+  document.getElementById('modal-sub').textContent = item.vernacular || '';
+  document.getElementById('entry-value').value = existingEntry?.value || '';
+  document.getElementById('entry-by').value = existingEntry?.recorded_by || '';
+  document.getElementById('entry-date').value = existingEntry?.recorded_date || new Date().toISOString().slice(0,10);
+  document.getElementById('entry-other').checked = existingEntry?.written_by_other || false;
+  document.getElementById('entry-notes').value = existingEntry?.notes || '';
+  document.getElementById('btn-delete-entry').style.display = existingEntry ? 'inline-block' : 'none';
+
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('entry-value').focus();
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  state.modalSlot = null; state.modalEntryId = null;
+}
+
+async function saveEntry() {
+  if (!state.modalSlot || !state.personId || !state.problem) return;
+  const entry = {
+    id: state.modalEntryId || ('entry-' + Date.now().toString(36)),
+    slot_id: state.modalSlot.id,
+    type: state.modalSlot.type,
+    value: document.getElementById('entry-value').value.trim(),
+    recorded_by: document.getElementById('entry-by').value.trim(),
+    recorded_date: document.getElementById('entry-date').value,
+    written_by_other: document.getElementById('entry-other').checked,
+    notes: document.getElementById('entry-notes').value.trim(),
+  };
+  if (!entry.value) { alert('Please enter a value.'); return; }
+  try {
+    await api('POST', `/api/record-entry/${state.personId}/${state.problem.number}`, entry);
+    // Update local record
+    const idx = state.record.findIndex(e => e.id === entry.id);
+    if (idx >= 0) state.record[idx] = entry; else state.record.push(entry);
+    closeModal();
+    // Locally update frame slot status for immediate feedback
+    localUpdateSlot(entry);
+  } catch(e) {
+    alert('Save failed: ' + e.message);
+  }
+}
+
+function localUpdateSlot(entry) {
+  if (!state.frame) return;
+  const section = entry.type === 'subjective' ? 'subjective' : 'objective';
+  const items = state.frame[section] || [];
+  const item = items.find(i => i.id === entry.slot_id);
+  if (item) {
+    item.status = 'filled';
+    item.value = entry.value;
+    item.missing = null;
+  }
+  renderFrame();
+}
+
+async function deleteEntry() {
+  if (!state.modalEntryId || !state.personId || !state.problem) return;
+  if (!confirm('Delete this entry?')) return;
+  try {
+    await api('POST', `/api/delete-entry/${state.personId}/${state.problem.number}/${state.modalEntryId}`);
+    state.record = state.record.filter(e => e.id !== state.modalEntryId);
+    closeModal();
+    if (state.frame) {
+      // Reset slot status
+      const entry = {slot_id: state.modalSlot.id, type: state.modalSlot.type};
+      const section = entry.type === 'subjective' ? 'subjective' : 'objective';
+      const item = (state.frame[section] || []).find(i => i.id === entry.slot_id);
+      if (item) { item.status = 'absent'; item.value = null; }
+      renderFrame();
+    }
+  } catch(e) {
+    alert('Delete failed: ' + e.message);
+  }
+}
+
+// ── Add problem ───────────────────────────────────────────────────────────────
+function openAddProblem() {
+  document.getElementById('pm-title').textContent = 'Add Problem';
+  document.getElementById('pm-body').innerHTML = `
+    <div class="form-group"><label>Plain language (vernacular)</label>
+      <input id="pm-vern" type="text" placeholder="e.g. Tired all the time for three months"></div>
+    <div class="form-group"><label>Clinical statement</label>
+      <input id="pm-clin" type="text" placeholder="e.g. Fatigue, subacute, etiology undetermined"></div>
+    <div class="form-group"><label>Status</label>
+      <select id="pm-status"><option value="active">Active</option><option value="inactive">Inactive</option><option value="resolved">Resolved</option></select></div>`;
+  document.getElementById('pm-save-btn').onclick = saveProblem;
+  document.getElementById('person-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('pm-vern').focus(), 50);
+}
+
+async function saveProblem() {
+  const vern = document.getElementById('pm-vern').value.trim();
+  const clin = document.getElementById('pm-clin').value.trim();
+  const status = document.getElementById('pm-status').value;
+  if (!vern) { alert('Please enter a plain language description.'); return; }
+
+  const problems = await api('GET', `/api/problems/${state.personId}`).catch(() => []);
+  const num = problems.length + 1;
+  problems.push({number: num, statement_vernacular: vern, statement_clinical: clin || vern, status});
+  await api('POST', `/api/problems/${state.personId}`, problems);
+  closePersonModal();
+  renderProblemList(problems);
+}
+
+// ── Person modal ──────────────────────────────────────────────────────────────
+function openPersonModal() {
+  document.getElementById('pm-title').textContent = 'New Person';
+  document.getElementById('pm-body').innerHTML = `
+    <div class="form-group"><label>Name</label>
+      <input id="pm-name" type="text" placeholder="Full name"></div>
+    <div class="form-group"><label>Date of birth</label>
+      <input id="pm-dob" type="date"></div>
+    <div class="form-group"><label>Location</label>
+      <input id="pm-loc" type="text" placeholder="City, State"></div>
+    <div class="form-group"><label>CHW (if applicable)</label>
+      <input id="pm-chw" type="text" placeholder="Community health worker name"></div>`;
+  document.getElementById('pm-save-btn').onclick = saveNewPerson;
+  document.getElementById('person-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('pm-name').focus(), 50);
+}
+
+async function saveNewPerson() {
+  const name = document.getElementById('pm-name').value.trim();
+  if (!name) { alert('Name required.'); return; }
+  const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const person = {
+    id, name,
+    dob: document.getElementById('pm-dob').value || '',
+    location: document.getElementById('pm-loc').value.trim(),
+    chw: document.getElementById('pm-chw').value.trim()
+  };
+  await api('POST', `/api/person/${id}`, person);
+
+  const sel = document.getElementById('person-select');
+  const opt = document.createElement('option');
+  opt.value = id;
+  opt.textContent = name + (person.dob ? ` (${person.dob.slice(0,4)})` : '');
+  sel.appendChild(opt);
+  sel.value = id;
+  closePersonModal();
+  await loadPerson(id);
+}
+
+function closePersonModal() {
+  document.getElementById('person-modal-overlay').classList.remove('open');
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Activation / PANAS ───────────────────────────────────────────────────────
+function renderActivationBadge() {
+  const area = document.getElementById('activation-area');
+  const badge = document.getElementById('act-badge');
+  const hist  = document.getElementById('act-history');
+  area.style.display = 'block';
+
+  const act = state.activation;
+  if (!act || act.raw_score == null) {
+    badge.className = 'act-badge act-none';
+    badge.textContent = 'No activation score';
+    hist.textContent = '';
+    return;
+  }
+  const band = act.band;
+  badge.className = `act-badge ${ACT_BAND_CLASSES[band] || 'act-none'}`;
+  badge.textContent = `Band ${band} — ${ACT_BAND_LABELS[band] || ''}`;
+  badge.title = `PANAS PA-10 raw score: ${act.raw_score}/50 · ${act.as_of}`;
+
+  const history = act.history || [];
+  if (history.length) {
+    const last = history[history.length - 1];
+    hist.textContent = `Previous: Band ${last.band} · raw ${last.raw_score} · ${last.as_of}`;
+  } else {
+    hist.textContent = `Score: ${act.raw_score}/50 · ${act.as_of}`;
+  }
+}
+
+let panasScores  = {};  // item index 0-9 → score 1-5
+let panasNaScores = {};
+let panasNaShown = false;
+const PA10_WORDS = ['active','alert','attentive','determined','enthusiastic',
+                    'excited','inspired','interested','proud','strong'];
+const NA10_WORDS = ['afraid','ashamed','distressed','guilty','hostile',
+                    'irritable','jittery','nervous','scared','upset'];
+
+async function openPanas() {
+  panasScores  = {};
+  panasNaScores = {};
+  panasNaShown = false;
+  document.getElementById('panas-na-items').style.display = 'none';
+
+  const itemsEl = document.getElementById('panas-items');
+  itemsEl.innerHTML = PA10_WORDS.map((word, i) => `
+    <div class="panas-item">
+      <span class="panas-word">${word.charAt(0).toUpperCase() + word.slice(1)}</span>
+      <div class="panas-btns" id="pb-${i}">
+        ${[1,2,3,4,5].map(v =>
+          `<button class="panas-btn" onclick="setPanas(${i}, ${v}, 'pa')">${v}</button>`
+        ).join('')}
+      </div>
+    </div>`).join('');
+
+  const naEl = document.getElementById('panas-na-items');
+  naEl.innerHTML = NA10_WORDS.map((word, i) => `
+    <div class="panas-item">
+      <span class="panas-word">${word.charAt(0).toUpperCase() + word.slice(1)}</span>
+      <div class="panas-btns" id="nb-${i}">
+        ${[1,2,3,4,5].map(v =>
+          `<button class="panas-btn" onclick="setPanas(${i}, ${v}, 'na')">${v}</button>`
+        ).join('')}
+      </div>
+    </div>`).join('');
+
+  // Pre-fill from existing scores if re-taking
+  if (state.activation?.items?.length === 10) {
+    state.activation.items.forEach((v, i) => { panasScores[i] = v; updatePanasBtn(i, v, 'pa'); });
+  }
+
+  updatePanasScore();
+  document.getElementById('panas-overlay').classList.add('open');
+}
+
+function setPanas(idx, val, type) {
+  if (type === 'pa') {
+    panasScores[idx] = val;
+    updatePanasBtn(idx, val, 'pa');
+  } else {
+    panasNaScores[idx] = val;
+    updatePanasBtn(idx, val, 'na');
+  }
+  updatePanasScore();
+}
+
+function updatePanasBtn(idx, val, type) {
+  const prefix = type === 'pa' ? 'pb' : 'nb';
+  const group = document.getElementById(`${prefix}-${idx}`);
+  if (!group) return;
+  group.querySelectorAll('.panas-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.textContent) === val);
+  });
+}
+
+function updatePanasScore() {
+  const vals = Object.values(panasScores);
+  const display = document.getElementById('panas-score-display');
+  if (vals.length < 10) {
+    display.textContent = `${vals.length}/10 words rated`;
+    return;
+  }
+  const raw = vals.reduce((a,b) => a+b, 0);
+  // Rough band preview using same crosswalk
+  const band = raw <= 24 ? 1 : raw <= 31 ? 2 : raw <= 38 ? 3 : 4;
+  display.textContent = `Score: ${raw}/50 · Band ${band} — ${ACT_BAND_LABELS[band] || ''}`;
+}
+
+function toggleNA() {
+  panasNaShown = !panasNaShown;
+  document.getElementById('panas-na-items').style.display = panasNaShown ? 'block' : 'none';
+}
+
+function closePanas() {
+  document.getElementById('panas-overlay').classList.remove('open');
+}
+
+async function submitPanas() {
+  const vals = Object.values(panasScores);
+  if (vals.length < 10) {
+    alert(`Please rate all 10 words (${10 - vals.length} remaining).`);
+    return;
+  }
+  const items = PA10_WORDS.map((_, i) => panasScores[i] || 1);
+  const naItems = panasNaShown && Object.keys(panasNaScores).length === 10
+    ? NA10_WORDS.map((_, i) => panasNaScores[i] || 1)
+    : [];
+
+  try {
+    const res = await api('POST', `/api/activation/${state.personId}`, {
+      items,
+      na_items: naItems,
+      assessed_by: document.getElementById('panas-by').value,
+      as_of: new Date().toISOString().slice(0, 10),
+    });
+    // Update local state
+    state.activation = state.activation || {};
+    const prev = state.activation.raw_score != null ? {
+      raw_score: state.activation.raw_score,
+      band: state.activation.band,
+      as_of: state.activation.as_of,
+    } : null;
+    state.activation = {
+      raw_score: res.raw_score,
+      band: res.band,
+      as_of: res.as_of,
+      items,
+      history: prev ? [...(state.activation.history || []), prev] : (state.activation.history || []),
+    };
+    renderActivationBadge();
+    closePanas();
+    if (state.frame) renderFrame();  // re-apply band filtering
+    setStatus(`Activation saved: Band ${res.band} (${res.band_label}), score ${res.raw_score}/50`);
+  } catch(e) {
+    alert('Save failed: ' + e.message);
+  }
+}
+
+function showEmpty(msg) {
+  document.getElementById('empty-state').style.display = '';
+  document.getElementById('problem-view').style.display = 'none';
+  if (msg) document.getElementById('empty-state').querySelector('p').textContent = msg;
+}
+
+function setStatus(msg) {
+  const el = document.getElementById('status-msg');
+  el.innerHTML = '';
+  el.textContent = msg;
+}
+
+function setSaved(isoTimestamp, label) {
+  const el = document.getElementById('saved-indicator');
+  if (!isoTimestamp) { el.textContent = ''; return; }
+  const d = new Date(isoTimestamp);
+  const fmt = d.toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+  el.textContent = (label || 'Saved') + ' ' + fmt;
+}
+
+function setBusy(on) {
+  ['btn-gen-frame','btn-rematch','btn-narrate'].forEach(id => {
+    document.getElementById(id).disabled = on || !state.problem;
+  });
+}
+
+function prob_to_band(estimate) {
+  if (estimate >= 0.60) return 'A';
+  if (estimate >= 0.30) return 'B';
+  if (estimate >= 0.10) return 'C';
+  return 'D';
+}
+
+function toggleHistory(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
