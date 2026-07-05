@@ -337,6 +337,69 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
   margin-left: 4px;
 }
 
+/* ── Drug safety panel ───────────────────────────────────────────────────── */
+.drug-safety-bar {
+  font-size: 0.69rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 5px 12px;
+  background: #f5f0fb; color: var(--purple); border-top: 2px solid var(--purple);
+}
+.drug-safety-body { padding: 10px 12px; }
+
+.boxed-warning {
+  background: #fff0f0;
+  border: 1.5px solid var(--red);
+  border-radius: 5px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.boxed-warning-label {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--red); margin-bottom: 4px;
+}
+
+.faers-header {
+  font-size: 0.78rem; font-weight: 600; color: var(--text); margin-bottom: 5px;
+}
+.faers-total { font-size: 0.72rem; color: var(--muted); }
+.faers-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.faers-chip {
+  font-size: 0.69rem; border-radius: 3px; padding: 2px 6px;
+  background: #ede9f8; color: var(--purple); font-weight: 500;
+  cursor: default;
+}
+.faers-chip[data-def]:hover { background: #d8cff5; }
+
+/* Shared floating tooltip — positioned by JS */
+#term-tooltip {
+  display: none;
+  position: fixed;
+  width: 240px;
+  background: rgba(255,255,255,0.97);
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text);
+  z-index: 200;
+  pointer-events: none;
+  text-align: left;
+}
+#term-tooltip.has-link { pointer-events: auto; }
+.term-tip-title { font-weight: 700; margin-bottom: 3px; color: var(--navy); }
+.term-tip-link  { display: block; margin-top: 5px; color: var(--purple); font-size: 0.7rem; }
+.drug-safety-note {
+  font-size: 0.72rem; color: var(--muted); margin-top: 6px; font-style: italic;
+}
+.bw-toggle {
+  background: none; border: none; color: var(--red); font-size: 0.75rem;
+  font-weight: 600; cursor: pointer; padding: 4px 0 0; display: block;
+}
+.bw-toggle:hover { text-decoration: underline; }
+
 /* ── Disclaimer ──────────────────────────────────────────────────────────── */
 .disclaimer {
   font-size: 0.8rem;
@@ -378,6 +441,7 @@ body.dragging #drop-overlay { display: flex; }
 <body>
 
 <div id="drop-overlay">Drop JSON to load fact box</div>
+<div id="term-tooltip"></div>
 
 <div id="header">
   <a class="back" href="../scp-coupler/">← Coupler</a>
@@ -576,6 +640,13 @@ function renderOption(opt, decision) {
     card.appendChild(bt);
   }
 
+  // Drug safety panel — async, appends when cache loads
+  if (opt.type === 'drug' && opt.rxnorm) {
+    loadDrugData(opt.rxnorm).then(drugData => {
+      if (drugData) renderDrugSafety(card, drugData);
+    });
+  }
+
   return card;
 }
 
@@ -649,6 +720,140 @@ function render(data) {
   disc.textContent = 'This fact box presents information to support a conversation with your clinician. It does not make recommendations. Numbers represent averages across groups of people and may not reflect your individual situation. All treatment decisions should be made with a clinician who knows your full medical history.';
   box.appendChild(disc);
 }
+
+// ── Drug safety data ─────────────────────────────────────────────────────────
+const drugCache = {};  // rxnorm → drug data or null
+
+async function loadDrugData(rxnorm) {
+  if (rxnorm in drugCache) return drugCache[rxnorm];
+  try {
+    const res = await fetch(`data/cache/${encodeURIComponent(rxnorm)}.json`);
+    if (!res.ok) { drugCache[rxnorm] = null; return null; }
+    drugCache[rxnorm] = await res.json();
+  } catch { drugCache[rxnorm] = null; }
+  return drugCache[rxnorm];
+}
+
+function renderDrugSafety(card, drugData) {
+  if (!drugData) return;
+
+  const bar = document.createElement('div');
+  bar.className = 'drug-safety-bar';
+  bar.textContent = 'Drug Safety (FDA)';
+  card.appendChild(bar);
+
+  const body = document.createElement('div');
+  body.className = 'drug-safety-body';
+
+  // Boxed warning with read-more toggle
+  const bw = drugData.label?.boxed_warning;
+  if (bw) {
+    const PREVIEW = 320;
+    const needsToggle = bw.length > PREVIEW;
+    const preview = needsToggle ? bw.slice(0, PREVIEW).trimEnd() + '…' : bw;
+    const uid = `bw-${Math.random().toString(36).slice(2)}`;
+    const bwEl = document.createElement('div');
+    bwEl.className = 'boxed-warning';
+    bwEl.innerHTML = `
+      <div class="boxed-warning-label">⬛ FDA Boxed Warning</div>
+      <div class="bw-text" id="${uid}">${esc(preview)}</div>
+      ${needsToggle ? `<button class="bw-toggle" data-uid="${uid}" data-full="${esc(bw)}" data-preview="${esc(preview)}">Read full warning ▾</button>` : ''}
+    `;
+    body.appendChild(bwEl);
+  }
+
+  // FAERS top reactions with MedlinePlus hover definitions
+  const faers = drugData.faers;
+  if (faers && faers.top_reactions?.length) {
+    const defs = faers.term_definitions || {};
+    // Filter out known bad MedlinePlus matches (generic terms that return irrelevant topics)
+    const BLOCKLIST = new Set(['death', 'off label use', 'drug ineffective']);
+    const chips = faers.top_reactions.slice(0, 12).map(r => {
+      const def = (!BLOCKLIST.has(r.term) && defs[r.term]?.title) ? defs[r.term] : null;
+      const countTip = `${r.count.toLocaleString()} FDA adverse event reports`;
+      if (def) {
+        return `<span class="faers-chip" data-def="1"
+          data-title="${esc(def.title)}"
+          data-summary="${esc(def.summary || '')}"
+          data-url="${esc(def.url || '')}"
+          data-count="${esc(countTip)}">${esc(r.term)}</span>`;
+      }
+      return `<span class="faers-chip" title="${countTip}">${esc(r.term)}</span>`;
+    }).join('');
+    const total = faers.total_reports ? `${faers.total_reports.toLocaleString()} total FDA adverse event reports` : '';
+    body.innerHTML += `
+      <div class="faers-header">Most-reported adverse events <span class="faers-total">${esc(total)}</span></div>
+      <div class="faers-chips">${chips}</div>
+      <div class="drug-safety-note">Source: FDA FAERS. Frequency reflects reports, not causation. Hover a chip for plain-language definition.</div>
+    `;
+  }
+
+  card.appendChild(body);
+}
+
+// ── Term tooltip (viewport-aware) ────────────────────────────────────────────
+const TOOLTIP = document.getElementById('term-tooltip');
+const TIP_PAD = 8; // min px from viewport edge
+
+document.addEventListener('mouseover', e => {
+  const chip = e.target.closest('.faers-chip[data-def]');
+  if (!chip) return;
+
+  const { title, summary, url, count } = chip.dataset;
+  TOOLTIP.innerHTML =
+    `<div class="term-tip-title">${esc(title)}</div>` +
+    (summary ? `<div>${esc(summary)}</div>` : '') +
+    `<div style="font-size:0.68rem;color:var(--muted);margin-top:4px">${esc(count)}</div>` +
+    (url ? `<a class="term-tip-link" href="${esc(url)}" target="_blank" rel="noopener">MedlinePlus ↗</a>` : '');
+
+  TOOLTIP.className = url ? 'has-link' : '';
+  TOOLTIP.style.display = 'block';
+
+  // Position above the chip, then clamp to viewport
+  const rect = chip.getBoundingClientRect();
+  const tw = TOOLTIP.offsetWidth;
+  const th = TOOLTIP.offsetHeight;
+  const vw = window.innerWidth;
+
+  let left = rect.left + rect.width / 2 - tw / 2;
+  let top  = rect.top - th - 8;
+
+  // Clamp horizontally
+  left = Math.max(TIP_PAD, Math.min(left, vw - tw - TIP_PAD));
+  // If no room above, flip below
+  if (top < TIP_PAD) top = rect.bottom + 8;
+
+  TOOLTIP.style.left = left + 'px';
+  TOOLTIP.style.top  = top  + 'px';
+});
+
+document.addEventListener('mouseout', e => {
+  const chip = e.target.closest('.faers-chip[data-def]');
+  if (!chip) return;
+  // If moving into the tooltip itself (has-link), keep it visible
+  if (TOOLTIP.classList.contains('has-link') && TOOLTIP.contains(e.relatedTarget)) return;
+  TOOLTIP.style.display = 'none';
+});
+
+TOOLTIP.addEventListener('mouseleave', () => { TOOLTIP.style.display = 'none'; });
+
+// Read-more toggle for boxed warnings
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.bw-toggle');
+  if (!btn) return;
+  const uid  = btn.dataset.uid;
+  const el   = document.getElementById(uid);
+  const expanded = btn.dataset.expanded === '1';
+  if (expanded) {
+    el.textContent = btn.dataset.preview;
+    btn.textContent = 'Read full warning ▾';
+    btn.dataset.expanded = '0';
+  } else {
+    el.textContent = btn.dataset.full;
+    btn.textContent = 'Collapse ▴';
+    btn.dataset.expanded = '1';
+  }
+});
 
 // ── File loading ─────────────────────────────────────────────────────────────
 function loadJSON(text, filename) {
