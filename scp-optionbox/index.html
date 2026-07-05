@@ -114,6 +114,64 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
   margin-bottom: 1rem;
 }
 
+/* ── How to read this ────────────────────────────────────────────────────── */
+.how-to-read {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.how-to-read-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--navy-lt);
+  text-align: left;
+}
+.how-to-read-toggle:hover { background: #f5f7fa; }
+.how-to-read-toggle .arrow { font-size: 0.7rem; color: var(--muted); transition: transform 0.2s; }
+.how-to-read-toggle.open .arrow { transform: rotate(180deg); }
+.how-to-read-body {
+  display: none;
+  padding: 0 1rem 1rem;
+  font-size: 0.83rem;
+  line-height: 1.65;
+  color: var(--text);
+  border-top: 1px solid var(--border);
+}
+.how-to-read-body.open { display: block; }
+.htr-section { margin-top: 0.75rem; }
+.htr-section h4 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.htr-dot-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 0.4rem; }
+.htr-dot {
+  width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; margin-top: 3px;
+}
+.htr-example {
+  background: #f0f4fa;
+  border-left: 3px solid var(--navy-lt);
+  border-radius: 0 4px 4px 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  margin-top: 0.6rem;
+  color: var(--navy-lt);
+  line-height: 1.55;
+}
+
 /* ── Icon array legend ───────────────────────────────────────────────────── */
 .icon-legend {
   display: flex;
@@ -507,7 +565,7 @@ function iconArray(withOpt, withoutOpt, type, denom) {
     cLo  = '#d97706'; // still affected even with this option
     cMid = '#2d7a4f'; // prevented by this option
   } else if (withOpt >= withoutOpt) {
-    cLo  = '#f59e0b'; // harmed regardless
+    cLo  = '#f59e0b'; // baseline harm — occurs regardless, not caused by this option
     cMid = '#c0392b'; // extra harm caused by this option
   } else {
     cLo  = '#e0e0e0';
@@ -683,15 +741,93 @@ function render(data) {
   pb.innerHTML = `Of <strong>${decision.denominator.toLocaleString()} people</strong> with ${esc(decision.problem)} over <strong>${esc(decision.time_horizon)}</strong>…`;
   box.appendChild(pb);
 
+  // How to read this
+  const htr = document.createElement('div');
+  htr.className = 'how-to-read';
+  htr.innerHTML = `
+    <button class="how-to-read-toggle" onclick="toggleHowToRead(this)">
+      How to read the dot displays <span class="arrow">▾</span>
+    </button>
+    <div class="how-to-read-body">
+      <div class="htr-section">
+        <h4>What are the dots?</h4>
+        Each dot stands for one person. There are 1,000 dots in every display —
+        one for each person in an imaginary group of 1,000 people like you,
+        followed over ${esc(decision.time_horizon)}.
+        Showing 1,000 people instead of a percentage makes the differences
+        concrete: you can see how many people are actually affected, rather
+        than doing the math yourself.
+      </div>
+      <div class="htr-section">
+        <h4>What do the colors mean?</h4>
+        <div class="htr-dot-row">
+          <span class="htr-dot" style="background:#2d7a4f"></span>
+          <span><strong>Green</strong> — people who benefit from this choice. These are outcomes
+          that would have happened without this treatment but do not happen with it.</span>
+        </div>
+        <div class="htr-dot-row">
+          <span class="htr-dot" style="background:#d97706"></span>
+          <span><strong>Amber</strong> — appears in benefit rows. These people experienced
+          the bad outcome <em>despite</em> taking the treatment. The drug did not protect them —
+          it failed to prevent the outcome for this group.</span>
+        </div>
+        <div class="htr-dot-row">
+          <span class="htr-dot" style="background:#c0392b"></span>
+          <span><strong>Red</strong> — people who are harmed by this choice. These are outcomes
+          that would not have happened without this treatment but do happen with it.</span>
+        </div>
+        <div class="htr-dot-row">
+          <span class="htr-dot" style="background:#f59e0b"></span>
+          <span><strong>Orange</strong> — appears in harm rows. These people experienced
+          this side effect <em>regardless</em> of the treatment — it happened for other
+          reasons (other illnesses, age, lifestyle). The drug is not responsible for them.</span>
+        </div>
+        <div class="htr-dot-row">
+          <span class="htr-dot" style="background:#e0e0e0"></span>
+          <span><strong>Grey</strong> — people who are not affected by this outcome either way.</span>
+        </div>
+      </div>
+      <div class="htr-section">
+        <h4>Reading a benefit row</h4>
+        <div class="htr-example">
+          Example: "80 with this choice vs 130 without it."<br>
+          The <strong style="color:#2d7a4f">50 green dots</strong> are people
+          whose outcome was prevented. The
+          <strong style="color:#d97706">80 amber dots</strong> had the outcome anyway.
+          The remaining 870 grey dots were unaffected.
+        </div>
+      </div>
+      <div class="htr-section">
+        <h4>Reading a harm row</h4>
+        <div class="htr-example">
+          Example: "70 with this choice vs 50 without it."<br>
+          The <strong style="color:#f59e0b">50 orange dots</strong> had this side
+          effect regardless — from other causes, not the drug. The <strong style="color:#c0392b">20 red dots</strong>
+          had it only because of this treatment — those are the extra harms.
+          The remaining 930 grey dots were unaffected.
+        </div>
+      </div>
+      <div class="htr-section">
+        <h4>Important to know</h4>
+        These numbers describe what happens on average across groups of people.
+        They cannot tell you what will happen to you specifically —
+        your personal risk depends on your age, health history, and other factors
+        your clinician knows. Use these numbers as a starting point for
+        conversation, not as a prediction.
+      </div>
+    </div>
+  `;
+  box.appendChild(htr);
+
   // Legend
   const legend = document.createElement('div');
   legend.className = 'icon-legend';
   legend.innerHTML = `
     <strong style="color:var(--muted);font-size:0.75rem">Icon arrays:</strong>
-    <span class="legend-item"><span class="legend-dot" style="background:#2d7a4f"></span>Benefit — outcome prevented or reduced</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#d97706"></span>Still occurs despite treatment</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#c0392b"></span>Extra harm caused by this choice</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Occurs with or without treatment</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#2d7a4f"></span>Prevented by this choice</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#d97706"></span>Not prevented — treatment didn't help</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#c0392b"></span>Caused by this choice</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Background — not caused by treatment</span>
     <span class="legend-item"><span class="legend-dot" style="background:#e0e0e0"></span>Not affected</span>
   `;
   box.appendChild(legend);
@@ -725,6 +861,13 @@ function render(data) {
   disc.className = 'disclaimer';
   disc.textContent = 'This fact box presents information to support a conversation with your clinician. It does not make recommendations. Numbers represent averages across groups of people and may not reflect your individual situation. All treatment decisions should be made with a clinician who knows your full medical history.';
   box.appendChild(disc);
+}
+
+// ── How to read this toggle ───────────────────────────────────────────────────
+function toggleHowToRead(btn) {
+  const body = btn.nextElementSibling;
+  const open = body.classList.toggle('open');
+  btn.classList.toggle('open', open);
 }
 
 // ── Drug safety data ─────────────────────────────────────────────────────────
