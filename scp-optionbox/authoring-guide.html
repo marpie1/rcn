@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option Box — Authoring Guide</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #f8f9fa;
+  --surface:  #ffffff;
+  --border:   #dee2e6;
+  --navy:     #1e3a5f;
+  --navy-lt:  #2a4f7c;
+  --text:     #1a1a2e;
+  --muted:    #6c757d;
+  --purple:   #6d3fbf;
+  --purple-bg:#f0ebfa;
+  --green:    #2d7a4f;
+  --green-bg: #d4edda;
+  --amber:    #8a5c00;
+  --amber-bg: #fff8e6;
+  --red:      #c0392b;
+  --red-bg:   #f8d7da;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  font-size: 1rem;
+}
+
+header {
+  background: var(--navy);
+  color: #fff;
+  padding: 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+header a.back {
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+header a.back:hover { color: #fff; }
+header h1 { font-size: 1.25rem; font-weight: 600; }
+header .sub { font-size: 0.8rem; color: rgba(255,255,255,0.65); margin-top: 2px; }
+
+main {
+  max-width: 740px;
+  margin: 2.5rem auto;
+  padding: 0 1.5rem 5rem;
+}
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-top: 2.5rem;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid var(--border);
+}
+h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--navy-lt);
+  margin-top: 1.5rem;
+  margin-bottom: 0.4rem;
+}
+p { margin-bottom: 0.85rem; color: var(--text); }
+p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 1.4rem; margin-bottom: 0.85rem; }
+li { margin-bottom: 0.3rem; }
+li::marker { color: var(--muted); }
+
+code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.88em;
+  background: #eef0f3;
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--navy);
+}
+pre {
+  background: #1e2a3a;
+  color: #e2e8f0;
+  padding: 1rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  margin: 0.75rem 0 1rem;
+  font-family: ui-monospace, monospace;
+}
+
+/* ── Callout boxes ───────────────────────────────────────────────────────── */
+.callout {
+  border-radius: 6px;
+  padding: 0.9rem 1.1rem;
+  margin: 1rem 0;
+  font-size: 0.93rem;
+}
+.callout-audience {
+  background: var(--purple-bg);
+  border-left: 4px solid var(--purple);
+}
+.callout-audience strong { color: var(--purple); }
+.callout-note {
+  background: var(--amber-bg);
+  border-left: 4px solid #d97706;
+}
+.callout-note strong { color: var(--amber); }
+.callout-rule {
+  background: var(--red-bg);
+  border-left: 4px solid var(--red);
+}
+.callout-rule strong { color: var(--red); }
+.callout-tip {
+  background: var(--green-bg);
+  border-left: 4px solid var(--green);
+}
+.callout-tip strong { color: var(--green); }
+
+/* ── Step list ───────────────────────────────────────────────────────────── */
+.step-list { list-style: none; padding: 0; counter-reset: step; }
+.step-list li {
+  counter-increment: step;
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-start;
+}
+.step-list li::before {
+  content: counter(step);
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+.step-body { flex: 1; }
+.step-body strong { display: block; font-size: 1rem; margin-bottom: 0.25rem; color: var(--navy); }
+
+/* ── Color key ───────────────────────────────────────────────────────────── */
+.color-key { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.75rem 0; }
+.color-row { display: flex; align-items: flex-start; gap: 10px; font-size: 0.92rem; }
+.color-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; margin: 0.75rem 0 1rem; font-size: 0.9rem; }
+th { background: var(--navy); color: #fff; padding: 7px 10px; text-align: left; font-size: 0.8rem; }
+td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:nth-child(even) td { background: #f5f7fa; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="index.html">← Option Box</a>
+  <div>
+    <h1>Option Box — Authoring Guide</h1>
+    <div class="sub">How fact boxes are created, validated, and published</div>
+  </div>
+</header>
+
+<main>
+
+<div class="callout callout-audience">
+  <strong>Who this is for</strong><br>
+  This guide is written for <strong>clinical curators</strong> — clinicians, clinical informaticists,
+  or trained health communicators who have the background to evaluate published evidence and
+  translate it into patient-facing numbers. It is not a guide for patients. Every fact box
+  requires a person with clinical training to verify the numbers before publication.
+</div>
+
+<h2>What is an Option Box?</h2>
+
+<p>
+  An Option Box is a one-page shared decision-making tool. It presents the benefits and harms of
+  a clinical choice in plain numbers — not relative risks or percentages, but absolute frequencies:
+  <em>of 1,000 people like you over 5 years, 18 fewer will have a heart attack.</em>
+</p>
+<p>
+  The design follows the fact box model developed by the
+  <a href="https://www.hardingcenter.de/en" target="_blank" rel="noopener">Harding Center for Risk Literacy</a>
+  (Berlin). The core principle: patients deserve to know what actually happens to groups of people
+  who make each choice, not how doctors summarize those choices. Every number must come from
+  published evidence. The tool never makes a recommendation.
+</p>
+<p>
+  Option Boxes appear in the Shared Care Plan (SCP) workflow. When a clinician opens a patient's
+  problem in the coupler and a matching fact box exists, a <strong>Fact Box</strong> button
+  appears in the toolbar. Clicking it opens the Option Box in a new tab, pre-loaded to the
+  relevant decision. Clinician and patient review it together.
+</p>
+
+<h2>What makes a good candidate decision?</h2>
+
+<p>A good Option Box decision has all of these:</p>
+<ul>
+  <li><strong>A genuine fork.</strong> Reasonable, informed people make different choices. There is no single right answer.</li>
+  <li><strong>Quantified evidence.</strong> At least one major RCT or high-quality meta-analysis exists with event counts per denominator.</li>
+  <li><strong>A meaningful time horizon.</strong> The outcomes play out over a knowable period (1, 5, or 10 years).</li>
+  <li><strong>A watchful waiting comparator.</strong> Every fact box should include a "no treatment" or "lifestyle only" option — this anchors the patient's choice in reality.</li>
+  <li><strong>Patient-relevant outcomes.</strong> Not surrogate endpoints (LDL level, blood pressure number) but outcomes patients care about: stroke, heart attack, death, disability, quality of life.</li>
+</ul>
+
+<div class="callout callout-rule">
+  <strong>Hard rule</strong><br>
+  Never build a fact box from surrogate endpoints alone. "Reduces LDL by 30%" is not an outcome
+  a patient can reason about. "18 fewer heart attacks per 1,000 people over 5 years" is.
+</div>
+
+<h2>The authoring pipeline</h2>
+
+<ol class="step-list">
+  <li>
+    <div class="step-body">
+      <strong>Choose the decision</strong>
+      Identify a clinical fork that meets the candidate criteria above. Current library:
+      atrial fibrillation anticoagulation, statin for primary prevention, hypertension medication vs lifestyle.
+      Good candidates: knee OA (PT vs surgery vs watchful waiting), breast cancer screening,
+      PSA testing, low back pain imaging.
+    </div>
+  </li>
+  <li>
+    <div class="step-body">
+      <strong>Research the numbers</strong>
+      Find event counts from the highest-quality available evidence. Preferred sources in order:
+      <ol>
+        <li>Cochrane systematic reviews with meta-analysis</li>
+        <li>Cholesterol Treatment Trialists / Blood Pressure Lowering Treatment Trialists (for CV decisions)</li>
+        <li>USPSTF evidence reviews</li>
+        <li>Individual large RCTs (SPRINT, JUPITER, AVERROES, etc.)</li>
+      </ol>
+      <br>
+      You need: <em>event count with option</em>, <em>event count without option</em>,
+      denominator, and time horizon — for each outcome. Do not use relative risks alone;
+      convert to absolute numbers per 1,000.
+    </div>
+  </li>
+  <li>
+    <div class="step-body">
+      <strong>Author the JSON file</strong>
+      Create <code>data/nnt-library/{decision-id}.json</code> following the schema.
+      Use an existing fact box as your template. Required fields per option:
+      <code>id</code>, <code>label</code>, <code>type</code>,
+      <code>benefits[]</code>, <code>harms[]</code>, <code>burden</code>, <code>unknowns[]</code>.
+      Each outcome needs <code>with_option</code>, <code>without_option</code>,
+      and an <code>evidence</code> block with basis, grade, source, and funding.
+      <br><br>
+      Harms also take a <code>rac</code> field — a two-character severity × probability code
+      (e.g. <code>3C</code> = major severity, possible probability). See the RAC table below.
+    </div>
+  </li>
+  <li>
+    <div class="step-body">
+      <strong>Validate</strong>
+<pre>node validate-optionbox.js data/nnt-library/{file}.json</pre>
+      Fix any errors before proceeding. The validator checks required fields, RAC code
+      consistency, value bounds vs denominator, and watchful waiting presence.
+    </div>
+  </li>
+  <li>
+    <div class="step-body">
+      <strong>Fetch drug safety data</strong>
+      For any drug-type option, run:
+<pre>python3 drug-fetch.py "{generic drug name}"</pre>
+      This resolves the drug name to an RxCUI, fetches the FDA label (including any
+      boxed warnings), pulls the top 20 most-reported adverse events from FDA FAERS,
+      and fetches plain-language MedlinePlus definitions for each adverse event term.
+      Everything is cached to <code>data/cache/</code> and appears automatically in the
+      rendered Option Box — no further wiring needed.
+      <br><br>
+      Make sure the option's <code>rxnorm</code> field in the JSON contains the
+      ingredient-level RxCUI (e.g. <code>"29046"</code> for lisinopril).
+      The fetch script creates alias cache files for all related product-level RxCUIs.
+    </div>
+  </li>
+  <li>
+    <div class="step-body">
+      <strong>Register in the library</strong>
+      Add one entry to <code>data/nnt-library/index.json</code>:
+<pre>{
+  "id": "your-decision-id",
+  "label": "Plain label for the Library picker and coupler sidebar",
+  "file": "data/nnt-library/your-decision-id.json",
+  "keywords": ["term1", "term2", "condition name"]
+}</pre>
+      Keywords drive the automatic match in the coupler sidebar.
+      Use terms that will appear in a clinician's problem statement —
+      plain language and clinical synonyms both.
+    </div>
+  </li>
+  <li>
+    <div class="step-body">
+      <strong>Review in the renderer</strong>
+      Open <code>http://localhost:8770/index.html</code>, click <strong>Library ▾</strong>,
+      and select your fact box. Review every outcome for: correct natural frequency sentence,
+      correct icon array colors, NNT/NNH badges, RAC badge, evidence chips, drug safety panel,
+      cascade notes. Load in the coupler and confirm the Fact Box button appears on the
+      right problems.
+    </div>
+  </li>
+  <li>
+    <div class="step-body">
+      <strong>Commit</strong>
+      Stage and commit the JSON file, any drug cache files, and the updated
+      <code>index.json</code>. Do not commit <code>data/cache/</code> — it is gitignored
+      and regenerated on demand.
+    </div>
+  </li>
+</ol>
+
+<h2>The icon array — what each color means</h2>
+
+<p>
+  Every outcome displays a grid of 1,000 dots — one per person in the reference population
+  over the stated time horizon. The colors carry precise meanings:
+</p>
+
+<div class="color-key">
+  <div class="color-row">
+    <span class="color-dot" style="background:#2d7a4f"></span>
+    <div><strong>Green</strong> — <em>Prevented by this choice.</em>
+    People who would have experienced this bad outcome without the treatment, but do not experience it with the treatment.</div>
+  </div>
+  <div class="color-row">
+    <span class="color-dot" style="background:#d97706"></span>
+    <div><strong>Amber</strong> — <em>Treatment failure</em> (benefit rows only).
+    People who experienced the bad outcome <em>despite</em> taking the treatment. The drug did not protect them.</div>
+  </div>
+  <div class="color-row">
+    <span class="color-dot" style="background:#c0392b"></span>
+    <div><strong>Red</strong> — <em>Caused by this choice.</em>
+    People who experienced this harm specifically because of the treatment — it would not have happened without it.</div>
+  </div>
+  <div class="color-row">
+    <span class="color-dot" style="background:#f59e0b"></span>
+    <div><strong>Orange</strong> — <em>Background rate</em> (harm rows only).
+    People who experienced this side effect regardless of treatment — from other causes.
+    The drug is not responsible for them.</div>
+  </div>
+  <div class="color-row">
+    <span class="color-dot" style="background:#e0e0e0"></span>
+    <div><strong>Grey</strong> — <em>Not affected.</em> People for whom this outcome is irrelevant either way.</div>
+  </div>
+</div>
+
+<div class="callout callout-note">
+  <strong>Amber vs Orange</strong><br>
+  These look similar but mean opposite things. Amber (in benefit rows) signals a <em>limit of the drug's effectiveness</em> —
+  the treatment didn't work well enough for these people. Orange (in harm rows) signals a
+  <em>background event</em> — the side effect was already happening in this population for other
+  reasons, and the drug is not to blame. Never conflate them.
+</div>
+
+<h2>RAC codes</h2>
+
+<p>
+  Every harm outcome carries a RAC (Risk Assessment Code) — a two-character code that combines
+  severity and probability. Use it to communicate how serious and how likely a harm is, not just
+  how frequent it is in trial data.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>A — Rare (&lt;1%)</th>
+      <th>B — Unlikely (1–10%)</th>
+      <th>C — Possible (10–40%)</th>
+      <th>D — Likely (&gt;40%)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>I — Minor</strong></td><td>1A</td><td>1B</td><td>1C</td><td>1D</td></tr>
+    <tr><td><strong>II — Moderate</strong></td><td>2A</td><td>2B</td><td>2C</td><td>2D</td></tr>
+    <tr><td><strong>III — Major</strong></td><td>3A</td><td>3B</td><td>3C</td><td>3D</td></tr>
+    <tr><td><strong>IV — Catastrophic</strong></td><td>4A</td><td>4B</td><td>4C</td><td>4D</td></tr>
+  </tbody>
+</table>
+
+<p>Examples from the current library:</p>
+<ul>
+  <li><strong>4B</strong> — Stroke without anticoagulation in AF. Catastrophic outcome (disability or death), unlikely over 5 years for an individual.</li>
+  <li><strong>3C</strong> — Major bleeding on apixaban. Major outcome (hospitalization), possible probability.</li>
+  <li><strong>1D</strong> — ACE inhibitor cough. Minor outcome (resolves on stopping), likely to occur.</li>
+  <li><strong>4A</strong> — Angioedema from lisinopril. Catastrophic if airway involved, rare probability.</li>
+</ul>
+
+<h2>Evidence grading</h2>
+
+<table>
+  <thead>
+    <tr><th>Grade</th><th>Basis</th><th>When to use</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>High</strong></td>
+      <td>Meta-analysis of RCTs, or large well-designed RCT</td>
+      <td>Multiple consistent trials; effect estimate unlikely to change substantially</td>
+    </tr>
+    <tr>
+      <td><strong>Moderate</strong></td>
+      <td>Single RCT, or meta-analysis with limitations</td>
+      <td>One dominant trial; or trials with heterogeneity, early stopping, or surrogate outcomes</td>
+    </tr>
+    <tr>
+      <td><strong>Low</strong></td>
+      <td>Observational studies, registry data</td>
+      <td>No RCT available; confounding possible</td>
+    </tr>
+    <tr>
+      <td><strong>Very low</strong></td>
+      <td>Expert opinion, extrapolation, case series</td>
+      <td>Use sparingly; always flag in population_caveat</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Writing the unknowns section</h2>
+
+<p>
+  Every option must include an <code>unknowns</code> array — explicit statements of what the evidence
+  does <em>not</em> tell us. This is not a disclaimer; it is clinically important information.
+  Good unknowns address:
+</p>
+<ul>
+  <li>Populations excluded from or underrepresented in the trials</li>
+  <li>Time horizons beyond the trial follow-up</li>
+  <li>Subgroups where the benefit-harm balance may differ substantially</li>
+  <li>Methodological caveats (early stopping, surrogate endpoints, open-label design)</li>
+  <li>Decisions where individual variation dominates group averages</li>
+</ul>
+
+<div class="callout callout-tip">
+  <strong>Good unknown example</strong><br>
+  "Whether people who stop statins due to perceived muscle symptoms would have the same symptoms
+  on placebo — SAMSON showed ~90% of symptoms are nocebo-driven, but predicting individual
+  response is not yet possible."
+</div>
+
+<h2>Scaling and throughput</h2>
+
+<p>
+  The current pipeline produces approximately 2–4 well-researched fact boxes per week with one
+  clinical curator. Steps 4–6 (validation, drug fetch, library registration) are automated and
+  take under 5 minutes. The bottleneck is steps 2 and 3 — finding and verifying the numbers,
+  and authoring the JSON.
+</p>
+<p>
+  AI assistance is appropriate for steps 2 and 3 as a <em>drafting</em> tool — generating a
+  research brief, pulling candidate numbers from the literature, and producing a draft JSON.
+  A clinician must review and approve every number before the fact box is published.
+  AI output is a starting point, not a finished product.
+</p>
+<p>
+  Steps 1 and 7 (decision selection and final clinical review) must remain human. These are
+  judgment calls about clinical relevance and patient safety that require clinical training and
+  accountability.
+</p>
+
+<h2>Files and locations</h2>
+
+<table>
+  <thead><tr><th>File / Directory</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>data/nnt-library/</code></td><td>Fact box JSON files — one per clinical decision</td></tr>
+    <tr><td><code>data/nnt-library/index.json</code></td><td>Library registry — drives the picker and coupler keyword match</td></tr>
+    <tr><td><code>data/cache/</code></td><td>Drug safety cache — auto-generated, gitignored, regenerated on demand</td></tr>
+    <tr><td><code>data/cache/terms/</code></td><td>MedlinePlus term definition cache — gitignored</td></tr>
+    <tr><td><code>optionbox-schema.json</code></td><td>JSON Schema for fact box validation</td></tr>
+    <tr><td><code>validate-optionbox.js</code></td><td>CLI validator — run before every commit</td></tr>
+    <tr><td><code>drug-fetch.py</code></td><td>Drug safety pipeline — RxNorm + openFDA + FAERS + MedlinePlus</td></tr>
+    <tr><td><code>drug-interactions.py</code></td><td>Drug-drug interaction checker via RxNorm API</td></tr>
+    <tr><td><code>medlineplus_fetch.py</code></td><td>Plain-language term definitions from MedlinePlus</td></tr>
+    <tr><td><code>index.html</code></td><td>Patient-facing renderer — served at localhost:8770</td></tr>
+    <tr><td><code>authoring-guide.html</code></td><td>This document</td></tr>
+  </tbody>
+</table>
+
+</main>
+</body>
+</html>
