@@ -1,0 +1,116 @@
+{
+  "decision": {
+    "problem": "High LDL cholesterol — primary cardiovascular prevention",
+    "problem_code": "13644009",
+    "question": "Should I take a statin to lower my risk of heart attack and stroke?",
+    "pretest_probability": null,
+    "time_horizon": "5 years",
+    "denominator": 1000
+  },
+  "options": [
+    {
+      "id": "rosuvastatin",
+      "label": "Take rosuvastatin (Crestor) 10–20 mg daily",
+      "type": "drug",
+      "rxnorm": "301542",
+      "benefits": [
+        {
+          "outcome": "Major cardiovascular event prevented (heart attack, stroke, or cardiovascular death)",
+          "with_option": 38,
+          "without_option": 56,
+          "nnt": 56,
+          "evidence": {
+            "basis": "meta-analysis",
+            "grade": "high",
+            "source": "Taylor F et al. Cochrane 2013 (18 RCTs, n=56,934 primary prevention); Collins R et al. Lancet 2016 (CTT, n=170,000). Numbers reflect a moderate-risk primary prevention population.",
+            "funding": "mixed",
+            "population_caveat": "NNT varies widely by individual risk: roughly 167 for low 10-year ASCVD risk (<5%), down to ~30 for higher risk (10–20%). Your clinician can calculate your specific risk score using age, blood pressure, cholesterol, and smoking status."
+          }
+        }
+      ],
+      "harms": [
+        {
+          "outcome": "New-onset type 2 diabetes",
+          "with_option": 31,
+          "without_option": 25,
+          "nnh": 167,
+          "rac": { "severity": "II", "probability": "C", "code": "2C" },
+          "cascade": null,
+          "evidence": {
+            "basis": "meta-analysis",
+            "grade": "high",
+            "source": "Sattar N et al. Lancet Diabetes Endocrinol 2021 (14 RCTs, n=78,445, median 4.3 years, moderate-intensity statins).",
+            "funding": "mixed",
+            "population_caveat": "Risk concentrated in people already predisposed to diabetes — prediabetes, metabolic syndrome, or overweight. In JUPITER, participants with no diabetes risk factors showed zero excess new diabetes cases."
+          }
+        },
+        {
+          "outcome": "Muscle pain or weakness leading to stopping the drug",
+          "with_option": 25,
+          "without_option": 15,
+          "nnh": 100,
+          "rac": { "severity": "I", "probability": "C", "code": "1C" },
+          "cascade": null,
+          "evidence": {
+            "basis": "RCT",
+            "grade": "moderate",
+            "source": "Wood E et al. NEJM 2020 (SAMSON n-of-1 trial); CTT Collaboration 2022. Blinded trials show true pharmacological muscle symptoms in ~1% of patients; ~90% of reported symptoms in unblinded settings are nocebo effect.",
+            "funding": "public",
+            "population_caveat": "Symptoms are dose-dependent and more common at high intensity. Switching to a different statin or lower dose resolves symptoms in most cases. Serious rhabdomyolysis is rare: fewer than 1 in 10,000 per year."
+          }
+        }
+      ],
+      "burden": "One tablet taken daily, with or without food. Typically a repeat fasting lipid panel at 4–12 weeks to confirm LDL response, then annually. No routine liver or muscle monitoring needed unless symptoms develop. Cost: ~$15–30/month for generic rosuvastatin. Does not require dietary changes to work, though a heart-healthy diet adds independent benefit.",
+      "unknowns": [
+        "Whether benefit continues to accumulate proportionally beyond 5 years — most primary prevention trials ran 2–5 years and do not capture lifetime effects.",
+        "How much of the benefit seen in JUPITER is generalizable: the trial was stopped early at a median of 1.9 years, which tends to make NNTs look more favorable than they would at full follow-up.",
+        "Whether individuals who report muscle symptoms on a statin would have the same symptoms on placebo — SAMSON showed ~90% of symptoms are nocebo-driven, but predicting individual response is not yet possible.",
+        "Whether pharmacogenomic testing (SLCO1B1*5 variant, which increases statin muscle exposure) should routinely guide drug choice or starting dose."
+      ]
+    },
+    {
+      "id": "watchful-waiting",
+      "label": "No statin — lifestyle focus and watchful waiting",
+      "type": "watchful_waiting",
+      "rxnorm": null,
+      "benefits": [
+        {
+          "outcome": "Avoid statin-associated new-onset diabetes",
+          "with_option": 25,
+          "without_option": 31,
+          "nnt": 167,
+          "evidence": {
+            "basis": "meta-analysis",
+            "grade": "high",
+            "source": "Sattar N et al. Lancet Diabetes Endocrinol 2021. Same data as above — avoiding the statin avoids the small excess diabetes risk.",
+            "funding": "mixed",
+            "population_caveat": "Benefit greatest for those already predisposed to diabetes. For people with no diabetes risk factors, excess risk from statin is near zero, so this benefit effectively disappears."
+          }
+        }
+      ],
+      "harms": [
+        {
+          "outcome": "Major cardiovascular event — higher rate without statin (heart attack, stroke, or cardiovascular death)",
+          "with_option": 56,
+          "without_option": 38,
+          "nnh": 56,
+          "rac": { "severity": "IV", "probability": "B", "code": "4B" },
+          "cascade": "Heart attack and stroke can cause permanent disability or death. Survivors of MI have substantially higher risk of a second event. Cardiovascular disease is the leading cause of death in this population.",
+          "evidence": {
+            "basis": "meta-analysis",
+            "grade": "high",
+            "source": "Taylor F et al. Cochrane 2013; Collins R et al. Lancet 2016 (CTT). Mirror of the statin benefit — same data, opposite framing.",
+            "funding": "mixed",
+            "population_caveat": "Risk is highly individual. At 10-year ASCVD risk <5%, the 5-year NNH rises to ~167. At 10-year risk >10%, it falls to ~30. Diet, exercise, blood pressure control, and not smoking all reduce baseline risk independently of statins."
+          }
+        }
+      ],
+      "burden": "No medication. Continue or intensify heart-healthy lifestyle: Mediterranean or DASH diet, 150 min/week of moderate aerobic activity, smoking cessation, blood pressure control. Repeat lipid panel every 1–3 years. Some clinicians offer coronary artery calcium (CAC) scoring to sharpen risk assessment before deciding whether to start a statin.",
+      "unknowns": [
+        "Whether sustained intensive lifestyle change alone (Mediterranean diet plus regular exercise) can achieve cardiovascular risk reduction comparable to statin therapy in people at moderate risk — some cohort data are encouraging but head-to-head RCT evidence is limited.",
+        "How a coronary artery calcium (CAC) score of 0 should shift the decision: a CAC of 0 at age 55 predicts very low 5-year event risk and may support continued watchful waiting.",
+        "How long primary prevention watchful waiting remains appropriate before subclinical atherosclerosis has progressed to the point where statin benefit is smaller relative to accumulated plaque burden."
+      ]
+    }
+  ]
+}
