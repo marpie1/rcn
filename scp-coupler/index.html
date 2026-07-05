@@ -165,6 +165,8 @@ a.hbtn { text-decoration: none; display: inline-flex; align-items: center; }
 .tbtn:disabled { opacity: .4; cursor: default; }
 .tbtn.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
 .tbtn.primary:hover { background: var(--navy-lt); }
+.tbtn.factbox { background: #f0ebfa; color: #6d3fbf; border-color: #c4aff0; }
+.tbtn.factbox:hover { background: #e4d9f7; }
 #status-msg { font-size: .75rem; color: var(--muted); flex-shrink: 0; }
 
 /* ── Content ─────────────────────────────────────────────────────────────── */
@@ -593,6 +595,7 @@ body.embed #embed-bar { display: flex; }
       <button class="tbtn primary" id="btn-gen-frame" onclick="generateFrame()" disabled>Generate Frame</button>
       <button class="tbtn" id="btn-rematch" onclick="reMatch()" disabled>Re-Match</button>
       <button class="tbtn" id="btn-narrate" onclick="narrate()" disabled>Narrate</button>
+      <button class="tbtn factbox" id="btn-factbox" onclick="openFactBox()" style="display:none">Fact Box ↗</button>
       <button class="tbtn" id="btn-export-tb" onclick="exportFedWiki()" disabled style="display:none">Push to Wiki</button>
       <div id="status-msg"></div>
     </div>
@@ -784,7 +787,8 @@ let state = {
   activation: null,   // person's current activation object from person.json
   showAll: false,     // override band-based filtering
   modalSlot: null,
-  modalEntryId: null
+  modalEntryId: null,
+  factBoxMatch: null
 };
 
 const AC_LABELS = {1:'Act Now', 2:'Move Fast', 3:'Work On It', 4:'Watch It', 5:'Let It Rest'};
@@ -882,6 +886,17 @@ async function loadProblem(problem) {
   document.getElementById('problem-title').textContent =
     `Problem ${problem.number}: ${problem.statement_vernacular}`;
   document.getElementById('problem-clinical-title').textContent = problem.statement_clinical;
+
+  // Fact Box match
+  const match = matchFactBox(problem);
+  state.factBoxMatch = match;
+  const fbBtn = document.getElementById('btn-factbox');
+  if (match) {
+    fbBtn.textContent = `Fact Box: ${match.label} ↗`;
+    fbBtn.style.display = '';
+  } else {
+    fbBtn.style.display = 'none';
+  }
 
   // Load record
   state.record = await api('GET', `/api/record/${state.personId}/${problem.number}`).catch(() => []);
@@ -1160,6 +1175,40 @@ function closeFhirPanel() {
 
 // Load FHIR status on boot
 loadFhirStatus();
+
+// ── Option Box library ────────────────────────────────────────────────────────
+let optionBoxLibrary = [];   // {id, label, file, keywords[], base_url}
+let optionBoxBaseUrl = 'http://localhost:8770';
+
+async function loadOptionBoxLibrary() {
+  try {
+    const res = await api('GET', '/api/optionbox-index');
+    optionBoxLibrary = (res.items || []).map(item => ({
+      ...item,
+      keywords: (item.keywords || []).map(k => k.toLowerCase())
+    }));
+    optionBoxBaseUrl = res.base_url || optionBoxBaseUrl;
+  } catch { /* optional service — fail silently */ }
+}
+
+function matchFactBox(problem) {
+  if (!problem || !optionBoxLibrary.length) return null;
+  const haystack = [
+    problem.statement_vernacular || '',
+    problem.statement_clinical   || ''
+  ].join(' ').toLowerCase();
+  return optionBoxLibrary.find(entry =>
+    entry.keywords.some(kw => haystack.includes(kw))
+  ) || null;
+}
+
+function openFactBox() {
+  const match = state.factBoxMatch;
+  if (!match) return;
+  window.open(`${optionBoxBaseUrl}/index.html?load=${encodeURIComponent(match.id)}`, '_blank');
+}
+
+loadOptionBoxLibrary();
 
 // ── Render frame ─────────────────────────────────────────────────────────────
 function renderFrame() {

@@ -25,7 +25,9 @@ DATA_DIR  = os.path.join(BASE_DIR, 'scp-coupler', 'data')
 UI_DIR    = os.path.join(BASE_DIR, 'scp-coupler')
 WIKI_HOST = 'scp-experiment.localhost'
 WIKI_PAGES_DIR = os.path.expanduser(f'~/.wiki/{WIKI_HOST}/pages')
-FHIR_IMPORT = os.path.join(BASE_DIR, 'scp-fhir', 'data', 'scp-import.json')
+FHIR_IMPORT        = os.path.join(BASE_DIR, 'scp-fhir', 'data', 'scp-import.json')
+OPTIONBOX_INDEX    = os.path.join(BASE_DIR, 'scp-optionbox', 'data', 'nnt-library', 'index.json')
+OPTIONBOX_BASE_URL = 'http://localhost:8770'
 
 # ── Attention Matrix ─────────────────────────────────────────────────────────
 # Severity I-IV × Probability band A-D → attention code 1-5
@@ -360,6 +362,18 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         # SCP context — human-readable view of what gets injected into frame calls
+        if path == '/api/optionbox-index':
+            try:
+                with open(OPTIONBOX_INDEX) as f:
+                    items = json.load(f)
+                # Inject the base URL so the client knows where to open the option box
+                self._json(200, {'base_url': OPTIONBOX_BASE_URL, 'items': items})
+            except FileNotFoundError:
+                self._json(200, {'base_url': OPTIONBOX_BASE_URL, 'items': []})
+            except Exception as e:
+                self._json(500, {'error': str(e)})
+            return
+
         if path == '/api/fhir-context':
             entries = fetch_fhir_context()
             if not os.path.exists(FHIR_IMPORT):
@@ -450,7 +464,7 @@ Source: <strong>{WIKI_HOST}</strong></p>
             bundle = {
                 'type': 'coupler-bundle',
                 'bundle_version': 1,
-                'exported': datetime.datetime.utcnow().isoformat() + 'Z',
+                'exported': datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 'person': person,
                 'problems': problems,
                 'records': records,
@@ -656,7 +670,7 @@ Source: <strong>{WIKI_HOST}</strong></p>
                 versions = safe_read(fp, [])
                 version_num = len(versions) + 1
                 frame['version'] = version_num
-                versions.append({'version': version_num, 'saved': datetime.datetime.utcnow().isoformat() + 'Z', 'frame': frame})
+                versions.append({'version': version_num, 'saved': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'frame': frame})
                 safe_write(fp, versions)
                 print(f'  FRAME SAVE  {person_id}/p{problem_n} v{version_num}')
                 self._json(200, {'ok': True, 'version': version_num, 'frame': frame})
@@ -743,7 +757,7 @@ Generate the coupler frame for this problem."""
 
                 frame = json.loads(text)
                 frame['model'] = MODEL
-                frame['generated'] = datetime.datetime.utcnow().isoformat() + 'Z'
+                frame['generated'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
                 frame = apply_attention_codes(frame)
 
                 # Persist if person_id + problem_n provided
@@ -798,7 +812,7 @@ Update the frame with these record entries. Return the complete updated frame JS
                     versions = safe_read(fp, [])
                     version_num = len(versions) + 1
                     updated['version'] = version_num
-                    versions.append({'version': version_num, 'saved': datetime.datetime.utcnow().isoformat() + 'Z', 'frame': updated})
+                    versions.append({'version': version_num, 'saved': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'frame': updated})
                     safe_write(fp, versions)
                     print(f'  MATCH SAVED {person_id}/p{problem_n} v{version_num}')
 
