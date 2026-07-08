@@ -71,7 +71,7 @@ tr:nth-child(even) td { background: #fafaf7; }
   <li><strong>Compare mode</strong> — view two subgroups side by side</li>
   <li><strong>Claude synthesis</strong> — AI-generated narrative summaries of what a group of respondents said about a specific sphere or relationship</li>
   <li><strong>Synthesize All</strong> — run Claude sequentially across every sphere and edge with at least one assessment; syntheses are cached in memory</li>
-  <li><strong>Full Report</strong> — generate a complete standalone HTML report containing the diagram, all sphere and edge detail, evidence, suggestions, and syntheses</li>
+  <li><strong>Full Report</strong> — generate a Homeostatic Pairs Report: one page per sphere showing a focus diagram, sphere assessment, and both directions of every regulatory pair; a sphere picker lets you include only the spheres you want</li>
   <li><strong>Session export / restore</strong> — save the entire session (responses, labels, syntheses) as a JSON bundle; drop it back in to restore the session without re-running Claude</li>
 </ul>
 
@@ -236,18 +236,22 @@ tr:nth-child(even) td { background: #fafaf7; }
 
 <p>A progress overlay appears showing which element is currently being synthesized and how many remain. A <strong>Cancel</strong> option is available — any syntheses completed before cancellation are kept. When all syntheses are complete, the tool offers to generate the Full Report immediately.</p>
 
-<h2>Full Report</h2>
+<h2>Full Report — Homeostatic Pairs</h2>
 
-<p>Click <strong>⎙ Full Report</strong> (blue button in the header) to generate a complete standalone HTML report in a new browser tab. The report contains:</p>
+<p>Click <strong>⎙ Full Report</strong> (blue button in the header) to open a sphere picker and then generate a standalone HTML report in a new browser tab.</p>
+
+<h3>Sphere picker</h3>
+<p>A modal lists all 11 spheres, each pre-checked. Uncheck any spheres you do not want in the output, use <strong>Select all / Clear all</strong> links for bulk changes, then click <strong>⎙ Generate Report</strong>. Click Cancel or click outside the modal to dismiss without generating.</p>
+
+<h3>Report structure</h3>
+<p>The report is organized by focal sphere — one page-break-separated section per selected sphere. Each section contains:</p>
 <ul>
-  <li>Survey metadata header</li>
-  <li>The eVSM SVG diagram, colored by aggregate assessments</li>
-  <li>All 11 spheres — each with description, response count bars, evidence, suggestions, and synthesis (if available)</li>
-  <li>All assessed edges — same structure</li>
-  <li>A Print / Save PDF button</li>
+  <li><strong>Focus diagram</strong> — the full eVSM SVG with only the focal sphere and its directly connected neighbors colorized; all other spheres and edges are faded to 10% opacity, providing spatial context without visual clutter. Assessed connections are colored (green / yellow / red / blue); unassessed connections in the active neighborhood are shown as bold black arrows.</li>
+  <li><strong>Sphere assessment</strong> — description, response count bars (Go / Caution / Stop / Unsure), evidence, suggestions, and Claude synthesis if available.</li>
+  <li><strong>Homeostatic Pairs</strong> — one pair block per directly connected neighbor. Each pair shows <em>both</em> directions of the relationship: the focal→neighbor edge and the neighbor→focal edge, each with its own description, count bars, evidence, suggestions, and synthesis. Unassessed edges are marked "Not assessed." This reflects the cybernetic structure: each sphere's state is the outcome of its coupled regulatory processes with its neighbors.</li>
 </ul>
 
-<p>The Full Report works with partial syntheses — items that have not been synthesized still appear with their evidence and suggestions; they just have no synthesis block. Use Synthesize All first for a complete report.</p>
+<p>Items without a synthesis still appear — just without a synthesis block. Use <strong>✦ Synthesize All</strong> before generating the report for complete coverage.</p>
 
 <h2>Saving and Restoring Sessions</h2>
 
