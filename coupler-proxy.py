@@ -23,8 +23,19 @@ MODEL   = 'claude-sonnet-4-6'
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR  = os.path.join(BASE_DIR, 'scp-coupler', 'data')
 UI_DIR    = os.path.join(BASE_DIR, 'scp-coupler')
-WIKI_HOST = 'scp-experiment.localhost'
-WIKI_PAGES_DIR = os.path.expanduser(f'~/.wiki/{WIKI_HOST}/pages')
+WIKI_HOST_FALLBACK = 'scp-experiment.localhost'
+
+def get_wiki_host(person_id):
+    """Return the wiki_site for person_id, falling back to scp-experiment.localhost."""
+    if not person_id:
+        return WIKI_HOST_FALLBACK
+    people = safe_read(os.path.join(DATA_DIR, 'people.json'), [])
+    person = next((p for p in people if p.get('id') == person_id), None)
+    return (person or {}).get('wiki_site', WIKI_HOST_FALLBACK)
+
+def wiki_pages_dir(wiki_host):
+    return os.path.expanduser(f'~/.wiki/{wiki_host}/pages')
+
 FHIR_IMPORT        = os.path.join(BASE_DIR, 'scp-fhir', 'data', 'scp-import.json')
 OPTIONBOX_INDEX    = os.path.join(BASE_DIR, 'scp-optionbox', 'data', 'nnt-library', 'index.json')
 OPTIONBOX_BASE_URL = 'http://localhost:8770'
@@ -102,6 +113,134 @@ def safe_write(path, data):
 
 def record_path(person_id, problem_n):
     return os.path.join(person_dir(person_id), f'p{problem_n}-record.json')
+
+# ── Audit scoring ─────────────────────────────────────────────────────────────
+def score_problem_audit(person_id, prob, weights):
+    n = str(prob['number'])
+    frames = safe_read(frames_path(person_id, n), [])
+    record = safe_read(record_path(person_id, n), [])
+
+    # 1. Treatment stakes — is this diagnosis driving medication or procedure?
+    treatment_raw = 0
+    if frames:
+        frame = frames[-1]['frame']
+        plan_opts = frame.get('plan_options') or []
+        if not isinstance(plan_opts, list): plan_opts = []
+        plan_text = ' '.join(
+            p.get('option', '') + ' ' + p.get('rationale', '') + ' ' + p.get('can_do', '')
+            for p in plan_opts
+        ).lower()
+        med_kw = ['medication', 'drug', ' mg', 'dose', 'prescri', 'initiat',
+                  'therapy', 'treatment', 'anticoagul', 'statin', 'antihyperten',
+                  'insulin', 'metformin', 'pharmacoth']
+        if any(kw in plan_text for kw in med_kw):
+            treatment_raw = 7
+        if any(e.get('slot_id') == 'shared-decision' for e in record):
+            treatment_raw = max(treatment_raw, 9)
+    else:
+        treatment_raw = 5  # no frame — unknown stakes
+
+    # 2. Evidence thinness — ratio of absent findings in latest frame
+    if not frames:
+        thinness_raw = 10
+    else:
+        frame = frames[-1]['frame']
+        findings = []
+        for section in ['subjective', 'objective']:
+            sect = frame.get(section) or []
+            if isinstance(sect, list):
+                findings.extend(sect)
+        if not findings:
+            thinness_raw = 8
+        else:
+            absent = sum(1 for f in findings if f.get('status') == 'absent')
+            thinness_raw = round((absent / len(findings)) * 10)
+
+    # 3. Diagnostic uncertainty flags
+    uncertainty_raw = 0
+    if not frames:
+        uncertainty_raw += 4
+    if prob.get('statement_clinical', '') == prob.get('statement_vernacular', ''):
+        uncertainty_raw += 3  # no clinical refinement — likely symptom-level only
+    sources_text = ' '.join(e.get('recorded_by', '') for e in record).lower()
+    if any(s in sources_text for s in ['fhir', 'epic', 'ehr', 'import']):
+        uncertainty_raw += 2
+    if any(s in sources_text for s in ['self', 'patient report']):
+        uncertainty_raw += 1
+    uncertainty_raw = min(uncertainty_raw, 10)
+
+    # 4. Source conflict — any conflict entries in record
+    conflict_raw = 0
+    record_text = ' '.join(
+        e.get('value', '') + ' ' + e.get('slot_id', '') for e in record
+    ).lower()
+    if 'conflict' in record_text or any(e.get('slot_id') == 'conflict' for e in record):
+        conflict_raw = 9
+
+    # Weighted total → 0-100
+    w_t  = max(0, weights.get('treatment',   5))
+    w_th = max(0, weights.get('thinness',    5))
+    w_u  = max(0, weights.get('uncertainty', 5))
+    w_c  = max(0, weights.get('conflict',    5))
+    total       = treatment_raw*w_t + thinness_raw*w_th + uncertainty_raw*w_u + conflict_raw*w_c
+    max_possible = 10 * (w_t + w_th + w_u + w_c)
+    score = round((total / max_possible) * 100) if max_possible > 0 else 0
+
+    # Path: T3=conflict, T1=high priority, T2=standard
+    if conflict_raw >= 6:
+        path_code = 'T3'
+    elif score >= 60:
+        path_code = 'T1'
+    else:
+        path_code = 'T2'
+
+    # Evidence note for display
+    if not frames:
+        evidence_note = 'No coupler frame run yet'
+    elif thinness_raw >= 8:
+        frame_f = frames[-1]['frame']
+        all_f = []
+        for s in ['subjective','objective']:
+            sect = frame_f.get(s) or []
+            if isinstance(sect, list): all_f.extend(sect)
+        total_f  = len(all_f)
+        absent_f = sum(1 for f in all_f if f.get('status') == 'absent')
+        evidence_note = f'{absent_f} of {total_f} findings absent'
+    elif thinness_raw >= 5:
+        evidence_note = 'Partial evidence — gaps present'
+    else:
+        evidence_note = 'Frame mostly complete'
+    if conflict_raw >= 6:
+        evidence_note = 'Source conflict flagged'
+    if any(e.get('slot_id') == 'shared-decision' for e in record):
+        evidence_note += ' · treatment decision recorded'
+
+    # Last audit outcome from record entries
+    audit_entries = [e for e in record if e.get('slot_id') == 'diagnosis-audit']
+    last_audit = audit_entries[-1] if audit_entries else None
+
+    return {
+        'number':              prob['number'],
+        'statement_vernacular': prob['statement_vernacular'],
+        'statement_clinical':  prob['statement_clinical'],
+        'status':              prob['status'],
+        'priority_score':      score,
+        'path':                path_code,
+        'scores': {
+            'treatment':   treatment_raw,
+            'thinness':    thinness_raw,
+            'uncertainty': uncertainty_raw,
+            'conflict':    conflict_raw,
+        },
+        'has_frame':       bool(frames),
+        'last_frame_date': frames[-1].get('timestamp', '')[:10] if frames else None,
+        'evidence_note':   evidence_note,
+        'last_audit': {
+            'outcome': last_audit.get('audit_outcome', ''),
+            'date':    last_audit.get('recorded_date', ''),
+            'notes':   last_audit.get('value', ''),
+        } if last_audit else None,
+    }
 
 def frames_path(person_id, problem_n):
     return os.path.join(person_dir(person_id), f'p{problem_n}-frames.json')
@@ -246,12 +385,13 @@ Conservative matching: when unsure whether an entry fully satisfies a slot, mark
 Output: the complete updated frame JSON. Same schema as input, with updated fields. STRICT JSON ONLY — no commentary, no markdown.
 """
 
-NARRATE_SYSTEM = """You receive a Problem-Knowledge Coupler frame with completeness statuses. Write a single paragraph of plain language.
+NARRATE_SYSTEM = """You receive a Problem-Knowledge Coupler frame with completeness statuses, and optionally a list of shared decisions already made by the patient and care team. Write a single paragraph of plain language.
 
 Cover:
 - What we know (filled findings and what they suggest about the candidates)
 - What we do not know yet (the absent and partial findings that matter most)
 - What the gaps mean (which missing pieces would most change the picture)
+- If shared decisions are present, end with one sentence naming the decision that was made.
 
 Rules:
 - One paragraph, 3–6 sentences.
@@ -296,6 +436,19 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     # ── GET ──────────────────────────────────────────────────────────────────
+    def _qs(self):
+        """Return dict of query-string params from the current request path."""
+        raw = self.path
+        if '?' not in raw:
+            return {}
+        qs = raw.split('?', 1)[1]
+        params = {}
+        for kv in qs.split('&'):
+            if '=' in kv:
+                k, v = kv.split('=', 1)
+                params[k] = v
+        return params
+
     def do_GET(self):
         path = self.path.split('?')[0]
 
@@ -362,6 +515,82 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         # SCP context — human-readable view of what gets injected into frame calls
+        if path.startswith('/api/wiki-page/'):
+            parts = path.split('/')
+            person_id = parts[3]; problem_n = parts[4]
+            try:
+                frames = safe_read(frames_path(person_id, problem_n), [])
+                if frames:
+                    frame = frames[-1]['frame']
+                    prob = frame.get('problem', {})
+                    title = f"Problem {prob.get('number','?')}: {prob.get('statement_vernacular','')}"
+                else:
+                    # Fall back to problems.json
+                    probs = safe_read(os.path.join(person_dir(person_id), 'problems.json'), [])
+                    prob = next((p for p in probs if str(p.get('number')) == str(problem_n)), {})
+                    title = f"Problem {prob.get('number','?')}: {prob.get('statement_vernacular','')}"
+                slug = wiki_slug(title)
+                wiki_host = get_wiki_host(person_id)
+                page_path = os.path.join(wiki_pages_dir(wiki_host), slug)
+                exists = os.path.isfile(page_path)
+                url = f'http://{wiki_host}:3000/view/{slug}' if exists else None
+                self._json(200, {'exists': exists, 'slug': slug, 'url': url})
+            except Exception as e:
+                self._json(200, {'exists': False, 'slug': '', 'url': None})
+            return
+
+        # Scan SCP wiki pages for Problem pages — for import into My Health Picture
+        if path == '/api/scp-problems':
+            import re as _re
+            results = []
+            _pid = self._qs().get('person_id', '')
+            _wiki_host = get_wiki_host(_pid)
+            _wpdir = wiki_pages_dir(_wiki_host)
+            if os.path.isdir(_wpdir):
+                for fname in sorted(os.listdir(_wpdir)):
+                    fpath = os.path.join(_wpdir, fname)
+                    if not os.path.isfile(fpath): continue
+                    try:
+                        page = safe_read(fpath)
+                        if not isinstance(page, dict): continue
+                        title = page.get('title', '')
+                        m = _re.match(r'^Problem\s+(\d+):\s+(.+)$', title, _re.IGNORECASE)
+                        if not m: continue
+                        num = int(m.group(1))
+                        vernacular = m.group(2).strip()
+                        # Extract clinical statement from first markdown item
+                        clinical = vernacular
+                        story = page.get('story', [])
+                        for item in story:
+                            if item.get('type') == 'markdown':
+                                txt = item.get('text', '').strip()
+                                if txt and not txt.startswith('Status:'):
+                                    clinical = _re.sub(r'\*\*', '', txt).strip()
+                                    break
+                        # Extract status from second markdown item
+                        status = 'active'
+                        for item in story[1:]:
+                            if item.get('type') == 'markdown':
+                                txt = item.get('text', '')
+                                if 'Status:' in txt:
+                                    if 'Inactive' in txt: status = 'inactive'
+                                    elif 'Resolved' in txt: status = 'resolved'
+                                    else: status = 'active'
+                                    break
+                        results.append({
+                            'number': num,
+                            'statement_vernacular': vernacular,
+                            'statement_clinical': clinical,
+                            'status': status,
+                            'slug': fname,
+                            'url': f'http://{_wiki_host}:3000/view/{fname}',
+                        })
+                    except Exception:
+                        continue
+            results.sort(key=lambda p: p['number'])
+            self._json(200, results)
+            return
+
         if path == '/api/optionbox-index':
             try:
                 with open(OPTIONBOX_INDEX) as f:
@@ -394,7 +623,9 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if path == '/api/scp-context':
-            entries = fetch_scp_context() + fetch_fhir_context()
+            _ctx_pid = self._qs().get('person_id', '')
+            _ctx_host = get_wiki_host(_ctx_pid)
+            entries = fetch_scp_context(_ctx_host) + fetch_fhir_context()
             by_source = {}
             for e in entries:
                 by_source.setdefault(e['source'], []).append(e)
@@ -419,7 +650,7 @@ class Handler(BaseHTTPRequestHandler):
             html = f"""<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8">
-<title>SCP Context — {WIKI_HOST}</title>
+<title>SCP Context — {_ctx_host}</title>
 <style>
 body {{ font-family: system-ui, sans-serif; max-width: 820px; margin: 2rem auto; padding: 0 1rem; color: #1a1a2e; }}
 h1 {{ font-size: 1.2rem; color: #1e3a5f; margin-bottom: 0.25rem; }}
@@ -437,7 +668,7 @@ td.text {{ }}
 <body>
 <h1>SCP Context Preview</h1>
 <p class="sub">These {len(entries)} entries will be injected into every Generate Frame call.
-Source: <strong>{WIKI_HOST}</strong></p>
+Source: <strong>{_ctx_host}</strong></p>
 {rows_html}
 </body></html>"""
             body = html.encode()
@@ -497,6 +728,25 @@ Source: <strong>{WIKI_HOST}</strong></p>
     # ── POST ─────────────────────────────────────────────────────────────────
     def do_POST(self):
         path = self.path.split('?')[0]
+
+        # Audit run — score all active problems for a person
+        if path.startswith('/api/audit-run/'):
+            person_id = path.split('/')[3]
+            try:
+                data    = self._read_body()
+                weights = data.get('weights', {'treatment':5,'thinness':5,'uncertainty':5,'conflict':5})
+                probs   = safe_read(os.path.join(person_dir(person_id), 'problems.json'), [])
+                results = []
+                for prob in probs:
+                    if prob.get('status') in ('inactive', 'resolved'):
+                        continue
+                    results.append(score_problem_audit(person_id, prob, weights))
+                results.sort(key=lambda x: x['priority_score'], reverse=True)
+                print(f'  AUDIT RUN   {person_id} ({len(results)} problems scored)')
+                self._json(200, results)
+            except Exception as e:
+                self._err(500, str(e))
+            return
 
         # Save person
         if path.startswith('/api/person/'):
@@ -687,9 +937,13 @@ Source: <strong>{WIKI_HOST}</strong></p>
                 if not frames:
                     self._err(404, 'No frames for this problem'); return
                 frame = frames[-1]['frame']
-                wiki_page = build_fedwiki_page(frame)
+                record = safe_read(record_path(person_id, problem_n), [])
+                decisions = [e for e in record if e.get('slot_id') == 'shared-decision']
+                wiki_page = build_fedwiki_page(frame, decisions)
                 slug = wiki_slug(wiki_page['title'])
-                dest = os.path.join(WIKI_PAGES_DIR, slug)
+                wiki_host = get_wiki_host(person_id)
+                wpdir = wiki_pages_dir(wiki_host)
+                dest = os.path.join(wpdir, slug)
 
                 # Preserve existing journal if page already exists
                 existing = safe_read(dest)
@@ -702,15 +956,15 @@ Source: <strong>{WIKI_HOST}</strong></p>
                         'item': {'title': wiki_page['title']},
                     }]
 
-                os.makedirs(WIKI_PAGES_DIR, exist_ok=True)
+                os.makedirs(wpdir, exist_ok=True)
                 with open(dest, 'w', encoding='utf-8') as f:
                     json.dump(wiki_page, f, ensure_ascii=False)
-                print(f'  WIKI PUSH   {slug} → {WIKI_HOST}')
+                print(f'  WIKI PUSH   {slug} → {wiki_host}')
                 self._json(200, {
                     'ok': True,
                     'slug': slug,
                     'title': wiki_page['title'],
-                    'url': f'http://{WIKI_HOST}:3000/view/{slug}',
+                    'url': f'http://{wiki_host}:3000/view/{slug}',
                 })
             except Exception as e:
                 print(f'  WIKI ERR    {e}')
@@ -731,7 +985,7 @@ Source: <strong>{WIKI_HOST}</strong></p>
                 record    = body.get('record', [])
 
                 # Augment record with SCP wiki context and FHIR data
-                scp_entries  = fetch_scp_context()
+                scp_entries  = fetch_scp_context(get_wiki_host(person_id))
                 fhir_entries = fetch_fhir_context()
                 if scp_entries or fhir_entries:
                     record = list(record) + scp_entries + fhir_entries
@@ -825,10 +1079,15 @@ Update the frame with these record entries. Return the complete updated frame JS
         # Narrate
         if path == '/api/narrate':
             try:
-                body  = self._read_body()
-                frame = body.get('frame', {})
+                body      = self._read_body()
+                frame     = body.get('frame', {})
+                decisions = body.get('decisions', [])
+                decisions_block = ''
+                if decisions:
+                    lines = [f'- {d.get("value","")} (recorded {d.get("recorded_date","")})' for d in decisions]
+                    decisions_block = f'\n\nShared decisions already documented by the patient and care team:\n' + '\n'.join(lines)
                 user_msg = f"""Frame:
-{json.dumps(frame, ensure_ascii=False, indent=2)}
+{json.dumps(frame, ensure_ascii=False, indent=2)}{decisions_block}
 
 Write the plain-language paragraph."""
                 print(f'  NARRATE')
@@ -851,7 +1110,8 @@ Write the plain-language paragraph."""
                 if not narrative:
                     self._err(400, 'No narrative text'); return
 
-                dest = os.path.join(WIKI_PAGES_DIR, 'pre-visit-summary')
+                wiki_host = get_wiki_host(person_id)
+                dest = os.path.join(wiki_pages_dir(wiki_host), 'pre-visit-summary')
                 page = safe_read(dest)
                 if page is None:
                     self._err(404, 'pre-visit-summary not found in wiki'); return
@@ -896,7 +1156,7 @@ Write the plain-language paragraph."""
                 self._json(200, {
                     'ok':   True,
                     'slug': 'pre-visit-summary',
-                    'url':  f'http://{WIKI_HOST}:3000/view/pre-visit-summary',
+                    'url':  f'http://{wiki_host}:3000/view/pre-visit-summary',
                 })
             except Exception as e:
                 print(f'  NARRATIVE ERR {e}')
@@ -907,26 +1167,26 @@ Write the plain-language paragraph."""
 
 
 # ── SCP context fetch ────────────────────────────────────────────────────────
-def fetch_wiki_page(slug):
-    """Fetch a page from scp-experiment.localhost. Returns story list or []."""
+def fetch_wiki_page(slug, wiki_host):
+    """Fetch a page from the patient's wiki site. Returns story list or []."""
     try:
-        url = f'http://{WIKI_HOST}:3000/{slug}.json'
+        url = f'http://{wiki_host}:3000/{slug}.json'
         req = urllib.request.Request(url)
         with urllib.request.urlopen(req, timeout=4) as r:
             return json.loads(r.read())['story']
     except Exception:
         return []
 
-def fetch_scp_context():
+def fetch_scp_context(wiki_host):
     """
-    Pull health-log, visits, and about-me from scp-experiment and return
+    Pull health-log, visits, and about-me from the patient's wiki site and return
     a list of record-entry dicts that can be appended to the coupler record
     before the Claude call.
     """
     entries = []
 
     # health-log — diagnoses, symptoms, medications, lab results
-    for item in fetch_wiki_page('health-log'):
+    for item in fetch_wiki_page('health-log', wiki_host):
         if item.get('type') == 'scp-log-entry':
             text = item.get('text') or item.get('summary', '')
             if text and text not in ('Diagnosis', 'Symptom', 'Medication', 'Lab'):
@@ -938,7 +1198,7 @@ def fetch_scp_context():
                 })
 
     # visits — provider, visit type, date
-    for item in fetch_wiki_page('visits'):
+    for item in fetch_wiki_page('visits', wiki_host):
         if item.get('type') == 'scp-visit' and item.get('committed'):
             entries.append({
                 'source': 'scp-visits',
@@ -950,7 +1210,7 @@ def fetch_scp_context():
             })
 
     # about-me — filled scp-field values
-    for item in fetch_wiki_page('about-me'):
+    for item in fetch_wiki_page('about-me', wiki_host):
         if item.get('type') == 'scp-field' and item.get('value'):
             val = item['value']
             if isinstance(val, list):
@@ -993,7 +1253,7 @@ def wiki_slug(title):
     import re
     return re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
 
-def build_fedwiki_page(frame):
+def build_fedwiki_page(frame, decisions=None):
     now_ms = int(time.time() * 1000)
     problem = frame.get('problem', {})
     title = f"Problem {problem.get('number', '?')}: {problem.get('statement_vernacular', '')}"
@@ -1095,6 +1355,20 @@ def build_fedwiki_page(frame):
         rows.append(f'{esc(p.get("basis",""))} — Can be done by: {esc(p.get("who_can_act",""))}')
         rows.append('<hr>')
     details('PLAN Options', rows)
+
+    # Shared Decisions
+    if decisions:
+        rows = []
+        for d in decisions:
+            dd = d.get('decision_data', {})
+            rows.append(f'<strong>{esc(d.get("value",""))}</strong>')
+            rows.append(f'Recorded by: {esc(d.get("recorded_by","Option Box"))} · {esc(d.get("recorded_date",""))}')
+            if dd.get('fact_box_id'):
+                rows.append(f'Fact Box: {esc(dd["fact_box_id"])}')
+            if d.get('notes'):
+                rows.append(f'Notes: {esc(d["notes"])}')
+            rows.append('<hr>')
+        details('SHARED DECISIONS', rows)
 
     # Not yet gathered summary (always visible — it is the gap list)
     absent_s = [i['term'] for i in frame.get('subjective', []) if i.get('status') == 'absent']

@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Health Choices — Health Choices Guide</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #f8f9fa;
+  --surface:  #ffffff;
+  --border:   #dee2e6;
+  --navy:     #1e3a5f;
+  --navy-lt:  #2a4f7c;
+  --text:     #1a1a2e;
+  --muted:    #6c757d;
+  --purple:   #6d3fbf;
+  --purple-bg:#f5f0fb;
+  --green:    #2d7a4f;
+  --green-bg: #eaf4ee;
+  --amber:    #d97706;
+  --red:      #c0392b;
+  --orange:   #f59e0b;
+  --grey:     #adb5bd;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 1.05rem;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+header {
+  background: var(--navy);
+  color: #fff;
+  padding: 1.5rem 2rem;
+}
+
+header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
+header p {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.7);
+}
+
+/* ── Layout ────────────────────────────────────────────────────────────────── */
+main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 5rem;
+}
+
+/* ── Section headings ──────────────────────────────────────────────────────── */
+.section-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--purple);
+  margin-bottom: 0.4rem;
+}
+
+h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 0.6rem;
+  line-height: 1.3;
+}
+
+h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--navy-lt);
+  margin: 1.4rem 0 0.4rem;
+}
+
+p { margin-bottom: 1rem; }
+
+hr {
+  border: none;
+  border-top: 2px solid var(--border);
+  margin: 2.5rem 0;
+}
+
+/* ── Big intro ─────────────────────────────────────────────────────────────── */
+.intro-lead {
+  font-size: 1.25rem;
+  color: var(--navy-lt);
+  font-weight: 500;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+/* ── PHS overview cards ────────────────────────────────────────────────────── */
+.phs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.phs-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 1.1rem 1.2rem;
+  position: relative;
+}
+
+.phs-card.active {
+  border-color: var(--purple);
+  background: var(--purple-bg);
+}
+
+.phs-card .card-icon {
+  font-size: 1.8rem;
+  margin-bottom: 0.4rem;
+  display: block;
+}
+
+.phs-card .card-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--navy);
+  margin-bottom: 0.2rem;
+}
+
+.phs-card.active .card-name { color: var(--purple); }
+
+.phs-card .card-desc {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.phs-card .card-you-are-here {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--purple);
+  margin-top: 0.5rem;
+}
+
+/* ── Step blocks ───────────────────────────────────────────────────────────── */
+.step {
+  display: flex;
+  gap: 1.2rem;
+  margin-bottom: 1.4rem;
+  align-items: flex-start;
+}
+
+.step-num {
+  flex-shrink: 0;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-body { flex: 1; }
+.step-body strong { display: block; font-size: 1rem; color: var(--navy); margin-bottom: 0.2rem; }
+.step-body p { margin: 0; font-size: 0.95rem; color: var(--muted); }
+
+/* ── 1000 dots display ─────────────────────────────────────────────────────── */
+.dot-display-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.2rem 0;
+}
+
+.dot-display-wrap h4 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+.dot-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 0.75rem;
+  max-width: 460px;
+}
+
+.d {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.d-green  { background: var(--green); }
+.d-amber  { background: var(--amber); }
+.d-red    { background: var(--red); }
+.d-orange { background: var(--orange); }
+.d-grey   { background: var(--grey); }
+
+.dot-caption {
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+/* ── Color key ─────────────────────────────────────────────────────────────── */
+.color-key {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin: 1.2rem 0;
+}
+
+.color-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+}
+
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.color-row-text strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 0.1rem;
+}
+
+.color-row-text span {
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+/* ── Example box ───────────────────────────────────────────────────────────── */
+.example-box {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin: 1.25rem 0;
+}
+
+.example-box-header {
+  background: var(--navy);
+  color: #fff;
+  padding: 0.6rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.example-box-body {
+  padding: 1rem 1.2rem;
+  background: var(--surface);
+}
+
+.example-box-body p {
+  margin-bottom: 0.6rem;
+  font-size: 0.95rem;
+}
+
+.example-box-body p:last-child { margin-bottom: 0; }
+
+/* ── Callout blocks ────────────────────────────────────────────────────────── */
+.callout {
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin: 1.2rem 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.callout-purple {
+  background: var(--purple-bg);
+  border-left: 4px solid var(--purple);
+  color: #2e1760;
+}
+
+.callout-green {
+  background: var(--green-bg);
+  border-left: 4px solid var(--green);
+  color: #1a4a30;
+}
+
+.callout strong { display: block; margin-bottom: 0.3rem; }
+
+/* ── Who is in my support network ─────────────────────────────────────────── */
+.network-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.85rem;
+  margin: 1.2rem 0;
+}
+
+.network-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  text-align: center;
+}
+
+.network-card .nc-icon { font-size: 1.8rem; margin-bottom: 0.3rem; display: block; }
+.network-card .nc-name { font-weight: 700; font-size: 0.9rem; color: var(--navy); margin-bottom: 0.2rem; }
+.network-card .nc-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+
+/* ── Decision flow ─────────────────────────────────────────────────────────── */
+.decision-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 1.2rem 0;
+  position: relative;
+}
+
+.flow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  position: relative;
+}
+
+.flow-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--purple);
+  flex-shrink: 0;
+  margin-top: 5px;
+  position: relative;
+  z-index: 1;
+}
+
+.flow-line {
+  position: absolute;
+  left: 6px;
+  top: 22px;
+  bottom: -22px;
+  width: 2px;
+  background: #ddd;
+}
+
+.flow-step:last-child .flow-line { display: none; }
+
+.flow-text strong { display: block; font-size: 0.95rem; color: var(--navy); }
+.flow-text span { font-size: 0.88rem; color: var(--muted); }
+
+/* ── Big reassurance footer ────────────────────────────────────────────────── */
+.footer-note {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  border-top: 2px solid var(--border);
+  margin-top: 3rem;
+}
+
+.footer-note strong {
+  display: block;
+  font-size: 1.1rem;
+  color: var(--navy);
+  margin-bottom: 0.4rem;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 520px) {
+  h2 { font-size: 1.3rem; }
+  .intro-lead { font-size: 1.05rem; }
+  .dot-grid { gap: 1.5px; }
+  .d { width: 7px; height: 7px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>My Health Choices</h1>
+  <p>My Personal Health Supporter — Health Choices Guide</p>
+</header>
+
+<main>
+
+<!-- ── What is My PHS ──────────────────────────────────────────────────────── -->
+<div class="section-label" style="margin-top:0.5rem">Your Personal Health Supporter</div>
+<h2>Everything in one place — for you, with your people</h2>
+
+<p class="intro-lead">My Personal Health Supporter (My PHS) is a set of tools that helps you understand what is going on with your health, look at your choices, and keep track of what you decide — together with the people you choose to involve.</p>
+
+<p>It belongs to you. Not to a clinic, not to an insurance company. You decide who sees it and who helps you use it.</p>
+
+<div class="phs-grid">
+  <div class="phs-card">
+    <span class="card-icon">🖼</span>
+    <div class="card-name">My Health Picture</div>
+    <div class="card-desc">Shows everything worth knowing about a health problem — what we know, what we haven't checked yet, and what the possibilities are.</div>
+  </div>
+  <div class="phs-card active">
+    <span class="card-icon">⚖️</span>
+    <div class="card-name">My Health Choices</div>
+    <div class="card-desc">Shows the benefits and risks of each treatment option in plain numbers — so you can see what is likely to happen, not just hear about it.</div>
+    <div class="card-you-are-here">← You are here</div>
+  </div>
+  <div class="phs-card">
+    <span class="card-icon">📋</span>
+    <div class="card-name">My Shared Care Plan</div>
+    <div class="card-desc">The ongoing record of your health — your history, your decisions, your plan — that you and your care team can both read.</div>
+  </div>
+  <div class="phs-card">
+    <span class="card-icon">📝</span>
+    <div class="card-name">My Current Health Summary</div>
+    <div class="card-desc">A plain-language paragraph you can share with anyone — a family member, a new doctor, a specialist — to bring them up to speed quickly.</div>
+  </div>
+  <div class="phs-card">
+    <span class="card-icon">🤝</span>
+    <div class="card-name">My Support Network</div>
+    <div class="card-desc">The people who help you — your community health worker, a family member, a trusted friend. They can use all of these tools alongside you.</div>
+  </div>
+</div>
+
+<hr>
+
+<!-- ── What is My Health Choices ───────────────────────────────────────────── -->
+<div class="section-label">My Health Choices</div>
+<h2>Why numbers matter more than words</h2>
+
+<p>When a doctor says "this medication reduces your risk of a heart attack by 27%," what does that actually mean for you? Is that a lot? A little? Worth the side effects?</p>
+
+<p>A percentage doesn't answer those questions. My Health Choices does something different: it shows you what happens to <strong>1,000 people just like you</strong> — people with your same health problem — over a set period of time. Some of those people take the treatment. Some don't. You can see exactly how many in each group have good outcomes, bad outcomes, or are unaffected either way.</p>
+
+<p>This is not a calculator. It is not a recommendation. It is a way of seeing the numbers clearly so you can have a real conversation about what matters most to you.</p>
+
+<hr>
+
+<!-- ── How to read the dots ────────────────────────────────────────────────── -->
+<div class="section-label">Reading the display</div>
+<h2>1,000 people — each dot is one person</h2>
+
+<p>Every display you see in My Health Choices shows <strong>1,000 dots</strong>. Each dot is one person in a group of 1,000 people with your health problem, followed over time (usually 5 years).</p>
+
+<p>The dots are color-coded. Here is what each color means:</p>
+
+<div class="color-key">
+  <div class="color-row">
+    <div class="color-swatch" style="background:var(--green)"></div>
+    <div class="color-row-text">
+      <strong>Green — helped by this choice</strong>
+      <span>These people had a bad outcome prevented. Without this treatment, they would have had a heart attack, stroke, or other serious event — with the treatment, they didn't.</span>
+    </div>
+  </div>
+  <div class="color-row">
+    <div class="color-swatch" style="background:var(--amber)"></div>
+    <div class="color-row-text">
+      <strong>Amber — the treatment didn't protect them</strong>
+      <span>These people took the treatment but still had the bad outcome. The medication didn't prevent it for this group. You see amber in the benefit rows.</span>
+    </div>
+  </div>
+  <div class="color-row">
+    <div class="color-swatch" style="background:var(--red)"></div>
+    <div class="color-row-text">
+      <strong>Red — harmed by this choice</strong>
+      <span>These people had a side effect or complication that was caused by the treatment — it would not have happened if they hadn't taken it.</span>
+    </div>
+  </div>
+  <div class="color-row">
+    <div class="color-swatch" style="background:var(--orange)"></div>
+    <div class="color-row-text">
+      <strong>Orange — would have happened anyway</strong>
+      <span>These people had this side effect from other causes — not from the treatment. It would have happened with or without the medication. You see orange in the harm rows.</span>
+    </div>
+  </div>
+  <div class="color-row">
+    <div class="color-swatch" style="background:var(--grey)"></div>
+    <div class="color-row-text">
+      <strong>Grey — not affected either way</strong>
+      <span>Most people. Nothing different happened for them with or without the treatment for this particular outcome.</span>
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<!-- ── Benefit example ─────────────────────────────────────────────────────── -->
+<div class="section-label">Worked example — benefit</div>
+<h2>Reading a benefit row</h2>
+
+<p>Here is an example from the heart medication fact sheet. The question is: how many people are protected from a heart attack or stroke?</p>
+
+<div class="dot-display-wrap">
+  <h4>Heart attack or stroke prevented — out of 1,000 people over 5 years</h4>
+  <div class="dot-grid" id="benefit-dots"></div>
+  <div class="dot-caption">
+    <strong>With the medication: 40 people</strong> had a heart attack or stroke.
+    <strong>Without the medication: 55 people</strong> had a heart attack or stroke.<br>
+    That means <strong style="color:var(--green)">15 green dots</strong> — 15 people out of 1,000 — were protected by taking the medication.
+    The <strong style="color:var(--amber)">40 amber dots</strong> took the medication but still had the event — the drug didn't protect everyone.
+    The remaining <strong style="color:var(--grey)">945 grey dots</strong> were unaffected either way.
+  </div>
+</div>
+
+<div class="callout callout-green">
+  <strong>What this means in plain language:</strong>
+  If 1,000 people with your condition take this medication for 5 years, about 15 of them will avoid a heart attack or stroke that they otherwise would have had. For the other 985, the medication made no difference to this outcome — though it may help in other ways, or cause side effects.
+</div>
+
+<hr>
+
+<!-- ── Harm example ─────────────────────────────────────────────────────────── -->
+<div class="section-label">Worked example — harm</div>
+<h2>Reading a harm row</h2>
+
+<p>Every treatment has side effects. Here is how to read a harm row — using dry cough from a blood pressure medication as an example.</p>
+
+<div class="dot-display-wrap">
+  <h4>Dry cough requiring stopping the medication — out of 1,000 people over 5 years</h4>
+  <div class="dot-grid" id="harm-dots"></div>
+  <div class="dot-caption">
+    <strong>With the medication: 50 people</strong> developed a dry cough that caused them to stop taking it.
+    <strong>Without the medication: 5 people</strong> developed a similar cough from other causes.<br>
+    That means <strong style="color:var(--red)">45 red dots</strong> — 45 people out of 1,000 — developed the cough specifically because of the medication.
+    The <strong style="color:var(--orange)">5 orange dots</strong> would have had a cough regardless — from other causes, not the drug.
+    The remaining <strong style="color:var(--grey)">950 grey dots</strong> had no cough either way.
+  </div>
+</div>
+
+<div class="callout callout-purple">
+  <strong>Why show orange at all?</strong>
+  Because it is honest. Some people who take a medication and experience a side effect would have had that same problem without the drug — from aging, other conditions, or other causes. Showing orange dots separates "this happened because of the medication" (red) from "this would have happened anyway" (orange). Only the red dots are the medication's responsibility.
+</div>
+
+<hr>
+
+<!-- ── Drug safety ──────────────────────────────────────────────────────────── -->
+<div class="section-label">Drug safety information</div>
+<h2>What else you will see for medications</h2>
+
+<p>For each medication option, My Health Choices also shows two additional pieces of information from the U.S. Food and Drug Administration (FDA):</p>
+
+<h3>Boxed Warning</h3>
+<p>If a medication has a serious safety concern that the FDA requires to be highlighted — called a "black box warning" — it will appear at the top of the medication card. Not all medications have one. If you see it, it is worth discussing with your doctor before starting the medication.</p>
+
+<h3>Reported Side Effects</h3>
+<p>The FDA tracks side effects that patients and doctors report after a medication is on the market. My Health Choices shows you the most commonly reported effects as colored chips. Hover over or tap any chip to see a plain-language explanation of what that medical term means.</p>
+
+<p style="color:var(--muted);font-size:0.9rem">These are reported effects — not proven causes. A side effect being listed does not mean the medication caused it. It means it was reported by people taking the medication. Your doctor can help you understand which reports are relevant to your situation.</p>
+
+<hr>
+
+<!-- ── Making a choice ─────────────────────────────────────────────────────── -->
+<div class="section-label">Making your decision</div>
+<h2>How to use My Health Choices with your support network</h2>
+
+<p>My Health Choices is not meant to be used alone. It is designed to be a starting point for a conversation — with your community health worker, a family member, or your doctor.</p>
+
+<div class="decision-flow">
+  <div class="flow-step">
+    <div style="position:relative"><div class="flow-dot"></div><div class="flow-line"></div></div>
+    <div class="flow-text">
+      <strong>Open My Health Choices for your health problem</strong>
+      <span>Your community health worker or doctor will open the right fact sheet for your situation. Or you can open it yourself from My Health Picture.</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div style="position:relative"><div class="flow-dot"></div><div class="flow-line"></div></div>
+    <div class="flow-text">
+      <strong>Look at each option side by side</strong>
+      <span>Each option — including "watch and wait" or "lifestyle changes only" — gets its own card with its own dot displays for benefits and harms.</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div style="position:relative"><div class="flow-dot"></div><div class="flow-line"></div></div>
+    <div class="flow-text">
+      <strong>Ask questions</strong>
+      <span>What matters most to you? Are you more worried about the side effects or the risks of not treating? Does the "watch and wait" option feel right for now? There are no wrong questions.</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div style="position:relative"><div class="flow-dot"></div><div class="flow-line"></div></div>
+    <div class="flow-text">
+      <strong>Document your choice</strong>
+      <span>When you have reached a decision together, click "Document this choice" on the option you chose. This saves your decision to your record.</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div style="position:relative"><div class="flow-dot"></div><div class="flow-line"></div></div>
+    <div class="flow-text">
+      <strong>Your choice appears in My Health Picture and My Shared Care Plan</strong>
+      <span>The decision is saved at the top of your plan — visible to anyone you share your record with. Your current health summary will also mention it.</span>
+    </div>
+  </div>
+</div>
+
+<div class="callout callout-purple">
+  <strong>You can change your mind.</strong>
+  A documented choice is not a contract. If you decide later to try a different option, document that choice instead. Your full history of decisions is kept — nothing is erased.
+</div>
+
+<hr>
+
+<!-- ── Support network ─────────────────────────────────────────────────────── -->
+<div class="section-label">My Support Network</div>
+<h2>You don't have to do this alone</h2>
+
+<p>My Personal Health Supporter is built for you and your people — not just for clinicians. Here is who can be part of your support network:</p>
+
+<div class="network-grid">
+  <div class="network-card">
+    <span class="nc-icon">🫂</span>
+    <div class="nc-name">You</div>
+    <div class="nc-desc">Your experience, your values, your questions. You are the expert on your own life.</div>
+  </div>
+  <div class="network-card">
+    <span class="nc-icon">👨‍👩‍👧</span>
+    <div class="nc-name">Family or friends</div>
+    <div class="nc-desc">Anyone you choose to bring into the conversation — a spouse, a sibling, a trusted neighbor.</div>
+  </div>
+  <div class="network-card">
+    <span class="nc-icon">🏘</span>
+    <div class="nc-name">Community Health Worker</div>
+    <div class="nc-desc">Your CHW helps you navigate the tools, records what you share, and connects you to the right care.</div>
+  </div>
+  <div class="network-card">
+    <span class="nc-icon">🩺</span>
+    <div class="nc-name">Your doctor or nurse</div>
+    <div class="nc-desc">They can see your full Health Picture and shared decisions, and add their clinical judgment.</div>
+  </div>
+</div>
+
+<hr>
+
+<!-- ── Important to know ───────────────────────────────────────────────────── -->
+<div class="section-label">Important to know</div>
+<h2>What My Health Choices is — and is not</h2>
+
+<div class="callout callout-green" style="margin-bottom:0.85rem">
+  <strong>What it is:</strong>
+  A tool to help you understand your options in plain numbers. A starting point for honest conversations with your care team. A record of the choices you make together.
+</div>
+
+<div class="callout" style="background:#fff8ec;border-left:4px solid #f59e0b;color:#7a4000;margin-bottom:0.85rem">
+  <strong>What it is not:</strong>
+  A diagnosis. A recommendation. A substitute for a conversation with a clinician who knows your full history. The numbers in My Health Choices come from large studies of groups of people — your personal situation may be different. Your doctor can help you understand how the numbers apply to you specifically.
+</div>
+
+<p style="color:var(--muted);font-size:0.88rem">All numbers in My Health Choices come from published medical research. Each fact sheet shows where the numbers come from and how strong the evidence is. If you want to dig into the sources, tap the small "evidence" note under any outcome row.</p>
+
+<!-- ── Footer ───────────────────────────────────────────────────────────────── -->
+<div class="footer-note">
+  <strong>This is your information. My PHS belongs to you.</strong>
+  Your health record, your choices, your support network — all in one place,
+  under your control. No data leaves your community's system without your knowledge.
+</div>
+
+</main>
+
+<script>
+// ── Draw benefit dot example ──────────────────────────────────────────────────
+function drawDots(containerId, counts, colors) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const total = counts.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < counts.length; i++) {
+    for (let j = 0; j < counts[i]; j++) {
+      const d = document.createElement('div');
+      d.className = `d ${colors[i]}`;
+      el.appendChild(d);
+    }
+  }
+  // Fill remaining with grey
+  const remaining = 1000 - total;
+  for (let k = 0; k < remaining; k++) {
+    const d = document.createElement('div');
+    d.className = 'd d-grey';
+    el.appendChild(d);
+  }
+}
+
+// Benefit example: 15 green (prevented), 40 amber (failed), 945 grey
+drawDots('benefit-dots', [15, 40], ['d-green', 'd-amber']);
+
+// Harm example: 45 red (caused), 5 orange (background), 950 grey
+drawDots('harm-dots', [45, 5], ['d-red', 'd-orange']);
+</script>
+
+</body>
+</html>

@@ -163,28 +163,28 @@ pre {
 
 <h2>What the Experiment Does</h2>
 
-<p>Three integration steps were built and are running on <code>scp-experiment.localhost:3000</code>.</p>
+<p>Three integration steps were built. Each patient has their own FedWiki site (<code>rosa-delgado.localhost:3000</code>, <code>alex-rivera.localhost:3000</code>, …) and the coupler routes all wiki reads and writes to the site of the person currently selected.</p>
 
 <div class="step-block">
   <strong>Step 1 — Push frame to wiki</strong>
-  <p>After generating a coupler frame, the "FedWiki" button (or "Push to Wiki" in embed mode) writes the full assessment as a FedWiki page on the experiment site. The page has five collapsible sections — SUBJECTIVE, OBJECTIVE, ASSESSMENT, PLAN, NOT YET GATHERED — each collapsed by default using <code>&lt;details&gt;&lt;summary&gt;</code>. The page opens immediately to the right in the FedWiki lineup via the <code>doInternalLink</code> postMessage.</p>
+  <p>After generating a coupler frame, the "FedWiki" button (or "Push to Wiki" in embed mode) writes the full assessment as a FedWiki page on the selected patient's site. The page has five collapsible sections — SUBJECTIVE, OBJECTIVE, ASSESSMENT, PLAN, NOT YET GATHERED — each collapsed by default using <code>&lt;details&gt;&lt;summary&gt;</code>. The page opens immediately to the right in the FedWiki lineup via the <code>doInternalLink</code> postMessage.</p>
 </div>
 
 <div class="step-block">
   <strong>Step 2 — Pull SCP context into the frame</strong>
-  <p>Before Claude generates a frame, <code>coupler-proxy.py</code> automatically fetches the health-log, visits, and about-me pages from <code>scp-experiment.localhost:3000</code> and injects those entries into the record sent to the model. Claude pre-fills findings from what the SCP already knows — vitals, diagnoses, medications, and background appear in the frame rather than starting from scratch. The endpoint <code>http://localhost:8766/api/scp-context</code> shows a human-readable table of what will be injected before you generate anything.</p>
+  <p>Before Claude generates a frame, <code>coupler-proxy.py</code> automatically fetches the health-log, visits, and about-me pages from the selected patient's wiki site and injects those entries into the record sent to the model. Claude pre-fills findings from what the SCP already knows — vitals, diagnoses, medications, and background appear in the frame rather than starting from scratch. The endpoint <code>http://localhost:8766/api/scp-context</code> shows a human-readable table of what will be injected before you generate anything.</p>
 </div>
 
 <div class="step-block">
   <strong>Step 3 — PKC landing page in wiki</strong>
-  <p>A page called <code>problem-knowledge-coupler</code> on the experiment site embeds the coupler UI via FedWiki's frame plugin at 800px height. The coupler detects the <code>?embed</code> URL parameter and switches to a compact layout: no page header, 180px sidebar with the problem list visible, and a "Push to Wiki" button in the toolbar instead of the standard "FedWiki" button. The coupler is usable without ever leaving the wiki lineup.</p>
+  <p>A page called <code>problem-knowledge-coupler</code> on a patient site embeds the coupler UI via FedWiki's frame plugin at 800px height. The coupler detects the <code>?embed</code> URL parameter and switches to a compact layout: no page header, 180px sidebar with the problem list visible, and a "Push to Wiki" button in the toolbar instead of the standard "FedWiki" button. The coupler is usable without ever leaving the wiki lineup.</p>
 </div>
 
 <hr>
 
 <h2>Narrate to Pre-Visit Summary</h2>
 
-<p>After generating a narrative paragraph for a problem, clicking "Push to SCP" writes the narrative to the <code>pre-visit-summary</code> page on the experiment site. Each narrative lands as a collapsible HTML item labeled <strong>PROBLEM N: TITLE — DATE</strong>, collapsed by default so the summary page stays scannable even as entries accumulate.</p>
+<p>After generating a narrative paragraph for a problem, clicking "Push to SCP" writes the narrative to the <code>pre-visit-summary</code> page on the patient's site. Each narrative lands as a collapsible HTML item labeled <strong>PROBLEM N: TITLE — DATE</strong>, collapsed by default so the summary page stays scannable even as entries accumulate.</p>
 
 <p>Re-pushing the narrative for a problem that already has an entry updates the existing block rather than duplicating it. The pre-visit-summary page then opens to the right in the lineup so you can confirm what was written.</p>
 
@@ -192,7 +192,7 @@ pre {
 
 <h2>What This Is Not</h2>
 
-<p>This is a local testbed, not a production system. The experiment site is isolated — it is not federated with WikiCafe or any other live FedWiki farm. Pages on <code>scp-experiment.localhost</code> do not replicate to production and are not visible outside this machine.</p>
+<p>This is a local testbed, not a production system. The patient sites are isolated — they are not federated with WikiCafe or any other live FedWiki farm. Pages on the <code>*.localhost</code> patient sites do not replicate to production and are not visible outside this machine.</p>
 
 <p>The experiment does not replace the standalone PKC tool. It does not replace the SCP plugins running on <code>localhost:3000</code>. It is one possible architecture for how these two systems could connect — built to find out what works and what doesn't before committing either system's design to it.</p>
 
@@ -200,11 +200,11 @@ pre {
 
 <hr>
 
-<h2>The scp-experiment Site</h2>
+<h2>Per-Patient Wiki Sites</h2>
 
-<p>The experiment runs on a FedWiki site called <code>scp-experiment.localhost</code>, served by the same FedWiki farm process that runs the production localhost site (port 3000). Its pages are stored at <code>~/.wiki/scp-experiment.localhost/pages/</code> — separate from the production site's pages.</p>
+<p>Each patient in the coupler's registry (<code>scp-coupler/data/people.json</code>) has a <code>wiki_site</code> field naming their own FedWiki site — e.g. <code>rosa-delgado.localhost</code>, <code>alex-rivera.localhost</code>. All sites are served by the same FedWiki farm process on port 3000, with pages stored at <code>~/.wiki/{site}/pages/</code>. The coupler proxy resolves the correct site per-request from the selected person, falling back to <code>scp-experiment.localhost</code> if a person has no site registered.</p>
 
-<p>The site was seeded with 15 pages copied from the production SCP wiki. These include the standard SCP pages (health-log, visits, about-me, medications, diagnoses, care team, pre-visit-summary) and the <code>problem-knowledge-coupler</code> landing page with the frame plugin embed. All pages are editable. Nothing written here touches production.</p>
+<p>New patient sites are provisioned automatically by sofi-proxy's <code>/api/provision-patient</code>, which seeds all 17 canonical page templates from <code>~/rcn/scp/pages/</code> — the standard SCP pages (health-log, visits, about-me, medications, diagnoses, my-care-team, lab-results, pre-visit-summary, and more), each with dismissible example items (all 13 plugin types support Dismiss). All pages are editable. Nothing written here touches production. Provisioning also registers the site in <code>~/.wiki/config.json</code> under <code>wikiDomains</code>.</p>
 
 <hr>
 
@@ -215,11 +215,11 @@ pre {
 <pre>wiki --farm ~/.wiki</pre>
 <pre>python3 ~/rcn/coupler-proxy.py</pre>
 
-<p>The first starts FedWiki in farm mode, serving both localhost and scp-experiment.localhost on port 3000. The second starts the coupler proxy at port 8766.</p>
+<p>The first starts FedWiki in farm mode, serving localhost and all patient sites on port 3000. The second starts the coupler proxy at port 8766.</p>
 
-<p>Once both are running, open the PKC landing page in the experiment wiki:</p>
+<p>Once both are running, open a patient's SCP directly:</p>
 
-<pre>http://scp-experiment.localhost:3000/problem-knowledge-coupler</pre>
+<pre>http://rosa-delgado.localhost:3000/view/welcome-visitors</pre>
 
 <p>The coupler will be embedded in the wiki lineup in compact mode. From there, all three integration steps are accessible without opening a separate browser tab.</p>
 
@@ -228,7 +228,7 @@ pre {
 </div>
 
 <div class="warn">
-  <code>scp-experiment.localhost</code> requires the host entry in <code>/etc/hosts</code>. If the page doesn't load, check that <code>127.0.0.1 scp-experiment.localhost</code> is present in that file.
+  Each <code>*.localhost</code> patient site requires a host entry in <code>/etc/hosts</code>. If a site doesn't load, check that <code>127.0.0.1 rosa-delgado.localhost</code> (etc.) is present in that file.
 </div>
 
 </main>

@@ -262,6 +262,8 @@ pre {
   <a href="#s10">10. Save Bundle &amp; FedWiki</a>
   <a href="#s11">11. Print View</a>
   <a href="#s12">12. Activation Band</a>
+  <a href="#s13">13. My Health Choices</a>
+  <a href="#s14">14. Shared Decisions</a>
 </nav>
 
 <main>
@@ -444,6 +446,8 @@ pre {
 <p>The paragraph is editable. Click inside it to revise wording, add context, or remove anything that doesn't apply. Once you are satisfied, it can be copied into any other record system or printed as part of the visit summary.</p>
 
 <div class="tip">Narrate is particularly useful at the end of a visit to produce a handoff note, or to share a plain-language summary with the person and their family. It is written to be understood without clinical training.</div>
+
+<p>If a shared decision has been documented for this problem (see Section 14), Narrate automatically incorporates it into the paragraph — ending with a sentence naming the decision the person and care team made.</p>
 </section>
 
 <!-- 9 -->
@@ -472,10 +476,26 @@ pre {
 
 <div class="warn">Load Bundle replaces the current database entirely. If the target machine has its own records, save a Bundle from that machine first before loading a new one.</div>
 
-<h3>FedWiki Export</h3>
-<p>FedWiki export produces a one-way clinical view formatted for import into the Shared Care Plan (SCP) or a Groove workspace. It generates a set of FedWiki-formatted pages — one per problem — containing the filled findings, the assessment candidates, and the Narrate paragraph.</p>
-<p>This export is read-only from FedWiki's perspective. Changes made in FedWiki do not flow back to the coupler. Use it to share a clinical snapshot, not as a sync mechanism.</p>
-<p>Click <strong>FedWiki Export</strong> in the toolbar. A <code>.json</code> file downloads. Import it into your FedWiki instance using the standard page import procedure.</p>
+<h3>Update My Shared Care Plan</h3>
+<p>Update My Shared Care Plan sends the current problem's coupler frame to the selected patient's Shared Care Plan wiki (e.g. <code>rosa-delgado.localhost</code>) as a collapsible FedWiki page. The page contains:</p>
+<ul>
+  <li>The problem statement and frame generation date</li>
+  <li>Any candidates flagged for urgent attention</li>
+  <li>All Subjective and Objective findings with their status</li>
+  <li>The full ranked assessment with probabilities and evidence</li>
+  <li>Any shared decisions documented for this problem — these appear first, above plan options</li>
+  <li>The "Not yet gathered" gap list</li>
+</ul>
+<p>Click <strong>Update My Shared Care Plan</strong> in the problem toolbar. The page is written or updated immediately. Use <strong>View in SCP ↗</strong> (which appears in the toolbar once the page exists) to open it directly.</p>
+
+<h3>View in SCP ↗</h3>
+<p>Once a problem has been pushed to the SCP wiki, a <strong>View in SCP ↗</strong> button appears in the problem toolbar. Click it to open the FedWiki page for that problem in a new tab. The button is hidden until the page exists — it will not appear for problems that have never been pushed.</p>
+
+<h3>Narrate → Update My Shared Care Plan</h3>
+<p>The <strong>Narrate</strong> button generates a plain-language paragraph and shows a <strong>Update My Shared Care Plan</strong> button below it. Pushing the narrative writes it to the <code>pre-visit-summary</code> wiki page, which serves as a running visit log for the person's care team.</p>
+
+<h3>FedWiki Export (file download)</h3>
+<p>The <strong>FedWiki</strong> button in the top toolbar downloads the current problem's frame as a <code>.json</code> file in FedWiki page format. Use this to import the frame into any FedWiki instance outside the SCP experiment site.</p>
 </section>
 
 <!-- 11 -->
@@ -561,6 +581,68 @@ pre {
 <p>The band badge in the sidebar shows the current band and, on hover, the raw score and date. Below it, the most recent prior score is shown in small text. The full history is included in Save Bundle exports — it travels with the person's record.</p>
 
 <div class="tip">If activation is rising visit over visit, the record may be doing what Weed intended: teaching whoever touches it. The trajectory is stored from the first check-in so the pattern can be seen over time.</div>
+</section>
+
+<!-- 13 -->
+<section id="s13">
+<h2>13. My Health Choices — Fact-Based Decision Support</h2>
+
+<p>When a problem on the list matches a clinical decision in the My Health Choices library, a purple <strong>My Health Choices ↗</strong> button appears in the problem toolbar. The current library covers:</p>
+<ul>
+  <li>Atrial fibrillation — anticoagulation (apixaban vs. watchful waiting)</li>
+  <li>High LDL — statin for primary prevention (rosuvastatin vs. watchful waiting)</li>
+  <li>Hypertension — medication vs. lifestyle (lisinopril vs. lifestyle modification)</li>
+</ul>
+
+<h3>Opening the My Health Choices</h3>
+<p>Click <strong>My Health Choices ↗</strong>. The My Health Choices opens in a new tab, pre-loaded with the matching health choice and the person and problem number passed as context. A <strong>← Back to Coupler</strong> button in the My Health Choices header closes the tab and returns to the coupler.</p>
+
+<h3>Reading the Icon Arrays</h3>
+<p>Each option card shows benefits and harms as grids of 1,000 dots — one per person in an imagined group of 1,000 people with this condition, followed over the stated time horizon. Colors:</p>
+<ul>
+  <li><strong style="color:#2d7a4f">Green</strong> — prevented by this choice (outcome that would have happened, didn't)</li>
+  <li><strong style="color:#d97706">Amber</strong> — not prevented (outcome happened anyway, in benefit rows)</li>
+  <li><strong style="color:#c0392b">Red</strong> — caused by this choice (outcome that would not have happened otherwise)</li>
+  <li><strong style="color:#f59e0b">Orange</strong> — background rate (outcome from other causes, unrelated to treatment, in harm rows)</li>
+  <li><strong style="color:#adb5bd">Grey</strong> — unaffected either way</li>
+</ul>
+<p>A collapsible <strong>How to read the dot displays</strong> section at the top walks through a worked benefit example and a worked harm example.</p>
+
+<h3>Drug Safety Data</h3>
+<p>For drug options, a <strong>Drug Safety</strong> panel appears below the icon arrays. It shows: the FDA boxed warning (if any), and the top reported adverse reactions from the FDA's adverse event reporting system (FAERS). Hovering any adverse reaction chip shows a plain-language definition pulled from MedlinePlus.</p>
+
+<h3>Switching Fact Boxes</h3>
+<p>The <strong>Library ▾</strong> dropdown in the My Health Choices header lets you switch to any health choice in the library without leaving the page. This is useful when a person has multiple matching problems.</p>
+</section>
+
+<!-- 14 -->
+<section id="s14">
+<h2>14. Shared Decisions</h2>
+
+<p>After reviewing options in the My Health Choices with a person, the care team can record what was decided. Each option card has a <strong>Document this choice</strong> button at the bottom (only visible when the My Health Choices was opened from the coupler with a person and problem in context).</p>
+
+<h3>Documenting a Decision</h3>
+<ol>
+  <li>Open the My Health Choices via <strong>My Health Choices ↗</strong> from the coupler</li>
+  <li>Review the options with the person</li>
+  <li>Click <strong>Document this choice</strong> on the chosen option</li>
+  <li>The button turns green and shows <em>✓ Documented</em></li>
+  <li>Click <strong>← Back to Coupler</strong> — the coupler reloads the record automatically</li>
+</ol>
+
+<p>Clicking <strong>Document this choice</strong> more than once on the same option upserts the same record entry — it does not create duplicates.</p>
+
+<h3>Where the Decision Appears</h3>
+<p>The documented decision appears as a purple-highlighted card at the <strong>top of the Plan Options section</strong> — the first thing visible in Plan, before the AI-generated plan options. It shows the option label, the decision question it answers, and the date recorded.</p>
+
+<p>If a person later changes their mind and chooses a different option, document that option. The new entry upserts under a different ID (one per option), so both decisions are in the record with their dates — the full history is kept.</p>
+
+<h3>Shared Decisions in Narrate and the SCP</h3>
+<p>When you run <strong>Narrate</strong> after a shared decision is on record, the generated paragraph ends with a sentence summarizing the decision: <em>"The patient and care team have decided…"</em></p>
+
+<p>When you run <strong>Update My Shared Care Plan</strong>, the FedWiki page for this problem includes a <strong>SHARED DECISIONS</strong> section above the plan options. Anyone opening the SCP page sees the decision prominently, before the clinical options list.</p>
+
+<div class="tip">The Plan section auto-refreshes when you return to the coupler tab from the My Health Choices. You do not need to re-click the problem — the shared decision card appears as soon as the tab is focused.</div>
 </section>
 
 </main>

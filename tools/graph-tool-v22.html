@@ -805,6 +805,7 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
     <span style="font-size:11px;color:#64748b;margin-left:8px;flex-shrink:0">
       <span style="color:#854d0e;background:#fef9c3;border:1px solid #fde047;border-radius:4px;padding:1px 5px">[bracketed]</span> = appears elsewhere — click to highlight
     </span>
+    <button class="tb-btn" onclick="exportTreeSVG()" style="flex-shrink:0;margin-left:auto" title="Download this tree as an SVG file">Export SVG</button>
   </div>
   <div id="tree-canvas">
     <svg id="tree-svg"></svg>
@@ -1294,6 +1295,102 @@ function highlightTreeLabel(label){
       el.classList.remove('tree-highlight');
     }
   });
+}
+
+// ── TREE SVG EXPORT ───────────────────────────────────────
+function exportTreeSVG(){
+  var canvas=document.getElementById('tree-canvas');
+  var treeSvg=document.getElementById('tree-svg');
+  if(!canvas||!treeSvg){toast('Nothing to export');return;}
+
+  // Canvas logical dimensions come from the minWidth/minHeight set during buildTree
+  var W=parseFloat(canvas.style.minWidth)||800;
+  var H=parseFloat(canvas.style.minHeight)||600;
+  var MARGIN=32;
+  var svgW=W+MARGIN*2;
+  var svgH=H+MARGIN*2;
+
+  var out=[];
+  out.push('<?xml version="1.0" encoding="UTF-8"?>');
+  out.push('<svg xmlns="http://www.w3.org/2000/svg"'
+    +' width="'+svgW+'" height="'+svgH+'"'
+    +' viewBox="-'+MARGIN+' -'+MARGIN+' '+svgW+' '+svgH+'"'
+    +' style="font-family:system-ui,sans-serif">');
+  out.push('<rect x="-'+MARGIN+'" y="-'+MARGIN+'" width="'+svgW+'" height="'+svgH+'" fill="#ffffff"/>');
+
+  // ── Edges: copy the existing SVG paths + their defs verbatim ──
+  // #tree-svg already contains <defs> with arrowhead markers and all <path> elements
+  out.push('<g id="edges">'+treeSvg.innerHTML+'</g>');
+
+  // ── Nodes: walk .tree-node divs ───────────────────────────────
+  var NODE_W=140;
+  out.push('<g id="nodes">');
+  canvas.querySelectorAll('.tree-node').forEach(function(el){
+    var x=parseFloat(el.style.left)||0;
+    var y=parseFloat(el.style.top)||0;
+    var h=el.offsetHeight||40;          // actual rendered height from DOM
+
+    var isRoot=el.classList.contains('tree-root');
+    var isRepeat=el.classList.contains('tree-repeat');
+    var isHL=el.classList.contains('tree-highlight');
+
+    var fill=isRoot?'#dbeafe':isRepeat?'#fef9c3':'#ffffff';
+    var stroke=isRoot?'#3b82f6':isRepeat?'#fde047':'#cbd5e1';
+    var sw=isHL?'3':'1.5';
+    var tc=isRoot?'#1d4ed8':isRepeat?'#854d0e':'#1e293b';
+    var fw=isRoot?'700':'500';
+
+    out.push('<rect x="'+x+'" y="'+y+'" width="'+NODE_W+'" height="'+h
+      +'" rx="8" ry="8" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"/>');
+
+    // Wrap text into lines matching the div's approx character capacity
+    var rawText=el.textContent;
+    var charsPerLine=Math.floor((NODE_W-20)/6.8);
+    var words=rawText.split(' ');
+    var lines=[],cur='';
+    words.forEach(function(w){
+      var test=(cur?cur+' ':'')+w;
+      if(test.length>charsPerLine&&cur){lines.push(cur);cur=w;}
+      else cur=test;
+    });
+    if(cur)lines.push(cur);
+
+    var lineH=15,fontSize=12;
+    var totalTH=lines.length*lineH;
+    var ty=y+(h-totalTH)/2+fontSize;   // vertically centre text block
+    lines.forEach(function(line,i){
+      out.push('<text x="'+(x+NODE_W/2)+'" y="'+(ty+i*lineH)+'"'
+        +' text-anchor="middle" font-size="'+fontSize+'" font-weight="'+fw+'" fill="'+tc+'">'
+        +escX(line)+'</text>');
+    });
+  });
+  out.push('</g>');
+
+  // ── Polarity labels: walk .tree-edge-label divs ───────────────
+  out.push('<g id="polarity">');
+  canvas.querySelectorAll('.tree-edge-label').forEach(function(el){
+    var x=parseFloat(el.style.left)||0;
+    var y=parseFloat(el.style.top)||0;
+    var color=el.classList.contains('plus')?'#16a34a':'#dc2626';
+    // The div is positioned with left/top at the label centre-ish; add half-width offset
+    out.push('<text x="'+(x+10)+'" y="'+(y+18)+'"'
+      +' text-anchor="middle" font-size="18" font-weight="800" fill="'+color+'">'
+      +escX(el.textContent)+'</text>');
+  });
+  out.push('</g>');
+
+  // ── Title ────────────────────────────────────────────────────
+  var title=document.getElementById('tree-title').textContent||'';
+  if(title){
+    out.push('<text x="'+(W/2)+'" y="'+(H+MARGIN-6)+'"'
+      +' text-anchor="middle" font-size="11" fill="#94a3b8">'+escX(title)+'</text>');
+  }
+
+  out.push('</svg>');
+
+  var fname=(title||'tree').replace(/[^a-z0-9]+/gi,'-').toLowerCase()+'.svg';
+  download(fname,'image/svg+xml',out.join('\n'));
+  toast('SVG exported — '+fname);
 }
 
 // ── EIP MODE ──────────────────────────────────────────────
@@ -3715,7 +3812,7 @@ function applyDagreLayout(){
 }
 function setBgColor(c){canvasBg=c;document.getElementById('canvas-wrap').style.background=c;var p=document.getElementById('canvas-bg-picker');if(p&&p.value!==c)p.value=c;}
 function gridLayout(){if(!nodes.length)return;snap();var W=svgEl.clientWidth||600,H=svgEl.clientHeight||480,cols=Math.ceil(Math.sqrt(nodes.length)),padX=80,padY=70,cellW=(W-padX*2)/Math.max(cols-1,1),cellH=(H-padY*2)/Math.max(Math.ceil(nodes.length/cols)-1,1);nodes.forEach(function(n,i){n.x=(padX+(i%cols)*cellW-pan.x)/zoom;n.y=(padY+Math.floor(i/cols)*cellH-pan.y)/zoom;});renderAll();}
-function zoomFit(){if(!nodes.length){pan={x:0,y:0};zoom=1;applyT();return;}function doFit(){var xs=nodes.map(function(n){return n.x;}),ys=nodes.map(function(n){return n.y;});var W=svgEl.clientWidth||500,H=svgEl.clientHeight||400;if(W<10){requestAnimationFrame(function(){requestAnimationFrame(doFit);});return;}var pad=80,minX=Math.min.apply(null,xs)-pad,maxX=Math.max.apply(null,xs)+pad,minY=Math.min.apply(null,ys)-pad,maxY=Math.max.apply(null,ys)+pad;zoom=Math.min(W/(maxX-minX||1),H/(maxY-minY||1),2.4);pan.x=W/2-((minX+maxX)/2)*zoom;pan.y=H/2-((minY+maxY)/2)*zoom;applyT();}requestAnimationFrame(function(){requestAnimationFrame(doFit);});}
+function zoomFit(){if(!nodes.length){pan={x:0,y:0};zoom=1;applyT();return;}function doFit(){var W=svgEl.clientWidth||500,H=svgEl.clientHeight||400;if(W<10){requestAnimationFrame(function(){requestAnimationFrame(doFit);});return;}var pad=40,minX=Math.min.apply(null,nodes.map(function(n){return n.x-(n.w||108)/2;}))-pad,maxX=Math.max.apply(null,nodes.map(function(n){return n.x+(n.w||108)/2;}))+pad,minY=Math.min.apply(null,nodes.map(function(n){return n.y-(n.h||46)/2;}))-pad,maxY=Math.max.apply(null,nodes.map(function(n){return n.y+(n.h||46)/2;}))+pad;zoom=Math.min(W/(maxX-minX||1),H/(maxY-minY||1),2.4);pan.x=W/2-((minX+maxX)/2)*zoom;pan.y=H/2-((minY+maxY)/2)*zoom;applyT();}requestAnimationFrame(function(){requestAnimationFrame(doFit);});}
 function forceLayout(){if(!nodes.length)return;if(simulation)simulation.stop();snap();var N=nodes.length,spread=Math.max(600,N*80);nodes.forEach(function(n){n.x=(Math.random()-.5)*spread;n.y=(Math.random()-.5)*spread;});var d3n=nodes.map(function(n){return{id:n.id,x:n.x,y:n.y};});var d3l=edges.map(function(e){return{source:e.src,target:e.tgt};});var linkDist=Math.max(100,Math.min(220,2800/Math.max(N,1)));var charge=-Math.max(200,Math.min(700,60000/Math.max(N,1)));if(N<=30){simulation=d3.forceSimulation(d3n).force('link',d3.forceLink(d3l).id(function(d){return d.id;}).distance(linkDist).strength(0.5)).force('charge',d3.forceManyBody().strength(charge)).force('center',d3.forceCenter(0,0)).force('collision',d3.forceCollide().radius(function(d){var n=nodeById(d.id);return n?Math.max(n.w,n.h)/2+6:55;})).on('tick',function(){d3n.forEach(function(d){var n=nodeById(d.id);if(n){n.x=d.x;n.y=d.y;}});renderAll();}).on('end',function(){zoomFit();toast('Layout complete — '+N+' nodes');});}else{toast('Running layout for '+N+' nodes...');var sim=d3.forceSimulation(d3n).force('link',d3.forceLink(d3l).id(function(d){return d.id;}).distance(linkDist).strength(0.5)).force('charge',d3.forceManyBody().strength(charge)).force('center',d3.forceCenter(0,0)).force('collision',d3.forceCollide().radius(function(d){var n=nodeById(d.id);return n?Math.max(n.w,n.h)/2+6:55;})).stop();for(var t=0;t<400;t++)sim.tick();sim.stop();d3n.forEach(function(d){var n=nodeById(d.id);if(n){n.x=d.x;n.y=d.y;}});renderAll();zoomFit();setTimeout(function(){toast('Layout complete — '+N+' nodes');},400);}}
 function paletteHTML(sel,fn){var h='<div style="display:grid;grid-template-columns:repeat(10,18px);gap:2px;padding:6px 12px 8px;border-bottom:1px solid #f1f5f9">';for(var i=0;i<PALETTE.length;i++){h+='<div class="cs'+(PALETTE[i]===sel?' selected':'')+'" style="background:'+PALETTE[i]+'" title="'+PALETTE[i]+'" onclick="'+fn+'(\''+PALETTE[i]+'\')"></div>';}return h+'</div>';}
 function fontColorPaletteHTML(sel,fn){var h='<div style="display:flex;flex-wrap:wrap;gap:3px;padding:6px 12px 8px;border-bottom:1px solid #f1f5f9">';for(var i=0;i<FONT_COLORS.length;i++){h+='<div class="cs'+(FONT_COLORS[i]===sel?' selected':'')+'" style="background:'+FONT_COLORS[i]+'" title="'+FONT_COLORS[i]+'" onclick="'+fn+'(\''+FONT_COLORS[i]+'\')"></div>';}var autoSel=(sel==='auto'||!sel);h+='<div class="cs'+(autoSel?' selected':'')+'" style="background:linear-gradient(135deg,#94a3b8 50%,#f1f5f9 50%)" title="Auto" onclick="'+fn+'(\'auto\')"></div>';return h+'</div>';}

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Option Box</title>
+<title>My Health Choices</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -395,6 +395,35 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
   margin-left: 4px;
 }
 
+/* ── Decision documentation ──────────────────────────────────────────────── */
+.doc-btn-wrap {
+  padding: 12px 14px 14px;
+  border-top: 2px solid #e8e0f2;
+  background: #faf8fd;
+}
+.doc-context {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.doc-btn {
+  background: var(--purple);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 7px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.doc-btn:hover:not(:disabled) { background: #5e4480; }
+.doc-btn:disabled { cursor: default; }
+.doc-btn.doc-done {
+  background: var(--green);
+  cursor: default;
+}
+
 /* ── Drug safety panel ───────────────────────────────────────────────────── */
 .drug-safety-bar {
   font-size: 0.69rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
@@ -502,12 +531,14 @@ body.dragging #drop-overlay { display: flex; }
 <div id="term-tooltip"></div>
 
 <div id="header">
-  <a class="back" href="../scp-coupler/">← Coupler</a>
+  <a class="back" id="hdr-back" href="http://localhost:8766/">← My Health Picture</a>
   <div id="header-title">
-    <h1>Option Box</h1>
-    <div id="header-sub">Benefits and harms in plain numbers</div>
+    <h1>My Health Choices</h1>
+    <div id="header-sub">My Personal Health Supporter — benefits and harms in plain numbers</div>
   </div>
   <div id="header-actions">
+    <a class="hbtn" id="btn-support-net" href="#" target="_blank" rel="noopener" style="display:none">My Support Network ↗</a>
+    <button class="hbtn" id="btn-back-coupler" style="display:none" onclick="window.close()">← My Health Picture</button>
     <div style="position:relative">
       <button class="hbtn" id="btn-library" onclick="toggleLibrary()">Library ▾</button>
       <div id="library-menu" style="display:none;position:absolute;top:calc(100% + 4px);right:0;
@@ -515,6 +546,7 @@ body.dragging #drop-overlay { display: flex; }
            box-shadow:0 4px 14px rgba(0,0,0,0.15);z-index:100;overflow:hidden"></div>
     </div>
     <button class="hbtn" id="btn-load" onclick="document.getElementById('file-input').click()">Load JSON</button>
+    <a class="hbtn" href="health-choices-guide.html" target="_blank">Health Choices Guide</a>
     <a class="hbtn" href="authoring-guide.html" target="_blank">Authoring Guide</a>
     <button class="hbtn" onclick="window.print()">Print</button>
   </div>
@@ -712,6 +744,24 @@ function renderOption(opt, decision) {
     });
   }
 
+  // Decision documentation button (only when launched from coupler with context)
+  if (HAS_DOC_CTX) {
+    const docWrap = document.createElement('div');
+    docWrap.className = 'doc-btn-wrap';
+    if (DOC_CTX.ptitle) {
+      const ctx = document.createElement('div');
+      ctx.className = 'doc-context';
+      ctx.textContent = `For: ${DOC_CTX.ptitle} (Problem ${DOC_CTX.problem})`;
+      docWrap.appendChild(ctx);
+    }
+    const btn = document.createElement('button');
+    btn.className = 'doc-btn';
+    btn.textContent = 'Document this choice';
+    btn.onclick = () => documentChoice(opt, decision, btn);
+    docWrap.appendChild(btn);
+    card.appendChild(docWrap);
+  }
+
   return card;
 }
 
@@ -721,7 +771,7 @@ function render(data) {
   box.innerHTML = '';
 
   const { decision, options } = data;
-  document.title = `Option Box — ${decision.problem}`;
+  document.title = `My Health Choices — ${decision.problem}`;
 
   // Decision header
   const dh = document.createElement('div');
@@ -860,7 +910,7 @@ function render(data) {
   // Disclaimer
   const disc = document.createElement('div');
   disc.className = 'disclaimer';
-  disc.textContent = 'This fact box presents information to support a conversation with your clinician. It does not make recommendations. Numbers represent averages across groups of people and may not reflect your individual situation. All treatment decisions should be made with a clinician who knows your full medical history.';
+  disc.textContent = 'My Health Choices presents information to support a conversation with your care team. It does not make recommendations. Numbers represent averages across groups of people and may not reflect your individual situation. All treatment decisions should be made with a clinician who knows your full medical history.';
   box.appendChild(disc);
 }
 
@@ -1089,9 +1139,82 @@ document.addEventListener('drop', e => {
 // ── Default data (AF anticoagulation) ────────────────────────────────────────
 const DEFAULT_DATA = {"decision":{"problem":"Atrial fibrillation","problem_code":"49436004","question":"Should I take a blood thinner (anticoagulant) to reduce my stroke risk?","pretest_probability":null,"time_horizon":"5 years","denominator":1000},"options":[{"id":"apixaban","label":"Take apixaban (Eliquis) 5 mg twice daily","type":"drug","rxnorm":"1364435","benefits":[{"outcome":"Stroke or blood clot to the body (systemic embolism) prevented","with_option":80,"without_option":130,"nnt":20,"evidence":{"basis":"meta-analysis","grade":"high","source":"Connolly SJ et al. AVERROES. NEJM 2011; Hart RG et al. Ann Intern Med 2007 (Cochrane); numbers extrapolated to 5-year horizon","funding":"mixed","population_caveat":"Patients with CHA2DS2-VASc \u2265 2 (moderate-high stroke risk). AVERROES compared apixaban to aspirin, not placebo. Stroke rates vary substantially by individual risk score."}}],"harms":[{"outcome":"Major bleeding (requiring transfusion, hospitalization, or causing \u2265 2 g/dL hemoglobin drop)","with_option":70,"without_option":50,"nnh":50,"rac":{"severity":"III","probability":"C","code":"3C"},"cascade":null,"evidence":{"basis":"meta-analysis","grade":"high","source":"Ruff CT et al. Lancet 2014 (meta-analysis of 4 NOAC trials, n=71,683). Rates vs no anticoagulation estimated from baseline arm of AVERROES.","funding":"industry","population_caveat":"Patient age and kidney function substantially affect bleeding risk."}},{"outcome":"Intracranial hemorrhage (bleeding in or around the brain)","with_option":15,"without_option":10,"nnh":200,"rac":{"severity":"IV","probability":"B","code":"4B"},"cascade":"Intracranial hemorrhage has a 30\u201350% case fatality rate. Survivors frequently have permanent disability affecting movement, speech, or cognition.","evidence":{"basis":"meta-analysis","grade":"high","source":"Ruff CT et al. Lancet 2014. Apixaban ICH rate substantially lower than warfarin; may be comparable to aspirin.","funding":"industry","population_caveat":"Risk is higher in patients with prior stroke, uncontrolled hypertension, or heavy alcohol use."}}],"burden":"Two capsules daily (morning and evening). Annual kidney function check recommended. Dose reduces to 2.5 mg twice daily if two or more of: age \u2265 80, weight \u2264 60 kg, creatinine \u2265 1.5 mg/dL. No routine INR monitoring required. Cost: approximately $500\u2013600/month without insurance.","unknowns":["No randomized trial has compared apixaban directly to placebo or no treatment \u2014 AVERROES compared to aspirin, which itself reduces stroke somewhat.","Long-term bleeding risk accumulation beyond 5 years is not well characterized in trial follow-up data.","Benefit for patients with CHA2DS2-VASc = 1 (one risk factor) is uncertain; guideline recommendations vary.","Effect in patients over age 85, or with severe kidney disease (eGFR < 25), is not well studied."]},{"id":"watchful-waiting","label":"No anticoagulant \u2014 watchful waiting","type":"watchful_waiting","rxnorm":null,"benefits":[{"outcome":"Major bleeding avoided (lower bleeding rate than with anticoagulant)","with_option":50,"without_option":70,"nnt":50,"evidence":{"basis":"meta-analysis","grade":"high","source":"Ruff CT et al. Lancet 2014; Connolly SJ et al. AVERROES. NEJM 2011","funding":"mixed","population_caveat":"Baseline bleeding rate in untreated AFib population; individual risk varies by age, alcohol use, prior bleeding history, and concomitant medications."}}],"harms":[{"outcome":"Stroke or blood clot to the body (untreated \u2014 higher rate without anticoagulant)","with_option":130,"without_option":80,"nnh":20,"rac":{"severity":"IV","probability":"C","code":"4C"},"cascade":"Stroke may cause permanent disability affecting speech, mobility, cognition, or swallowing. Risk of a second stroke is substantially elevated after a first event. Systemic embolism may cause limb ischemia requiring amputation.","evidence":{"basis":"meta-analysis","grade":"high","source":"Hart RG et al. Ann Intern Med 2007 (Cochrane); Connolly SJ et al. AVERROES. NEJM 2011","funding":"mixed","population_caveat":"CHA2DS2-VASc \u2265 2. Annual stroke risk ranges from approximately 2% (score 2) to 15%+ (score 7+). The 5-year rate here reflects a score of approximately 3."}}],"burden":"No daily medication required. No blood monitoring required. Continued routine cardiac care. Some clinicians recommend low-dose aspirin as a partial alternative, which carries its own bleeding risk and provides substantially less stroke protection than anticoagulation.","unknowns":["Individual stroke risk varies enormously (1\u201315% per year) based on CHA2DS2-VASc score; population averages may significantly misrepresent your personal risk.","The benefit-harm balance shifts substantially in patients with a prior stroke (much higher baseline risk) or a prior serious bleed (higher harm from treatment).","How falls risk should factor into the decision is not well quantified \u2014 retrospective data suggest falls risk is often overweighted as a reason to avoid anticoagulation."]}]};
 
+// ── Decision documentation context ───────────────────────────────────────────
+const _sp = new URLSearchParams(location.search);
+const DOC_CTX = {
+  person:  _sp.get('person')  || '',
+  problem: _sp.get('problem') || '',
+  ptitle:  _sp.get('ptitle')  || '',
+  pname:   _sp.get('pname')   || '',
+  load:    _sp.get('load')    || '',
+};
+const HAS_DOC_CTX = !!(DOC_CTX.person && DOC_CTX.problem);
+
+// ── Header orientation bar ────────────────────────────────────────────────────
+(function() {
+  if (DOC_CTX.person) {
+    const back = document.getElementById('hdr-back');
+    back.href = `http://localhost:8766/?person=${encodeURIComponent(DOC_CTX.person)}`;
+    const sub = document.getElementById('header-sub');
+    const parts = [];
+    if (DOC_CTX.pname)  parts.push(DOC_CTX.pname);
+    if (DOC_CTX.ptitle) parts.push(DOC_CTX.ptitle);
+    if (parts.length)   sub.textContent = parts.join(' · ');
+    const snLink = document.getElementById('btn-support-net');
+    snLink.href = `http://localhost:8765/tools/my-support-network.html?site=${encodeURIComponent(DOC_CTX.person)}.localhost`;
+    snLink.style.display = '';
+  }
+  if (HAS_DOC_CTX) {
+    document.getElementById('btn-back-coupler').style.display = '';
+  }
+})();
+
+const COUPLER_ORIGIN = 'http://localhost:8766';
+
+async function documentChoice(opt, decision, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  // Deterministic ID: one entry per person+problem+factbox+option — upserts on repeat clicks
+  const entryId = `sd-${DOC_CTX.load}-${opt.id}`;
+  const entry = {
+    id:              entryId,
+    type:            'plan',
+    slot_id:         'shared-decision',
+    value:           `Shared decision: ${opt.label} — ${decision.question}`,
+    recorded_by:     'My Health Choices',
+    recorded_date:   new Date().toISOString().slice(0, 10),
+    written_by_other: false,
+    notes:           '',
+    decision_data: {
+      fact_box_id:       DOC_CTX.load,
+      option_id:         opt.id,
+      option_label:      opt.label,
+      decision_question: decision.question,
+    },
+  };
+  try {
+    const res = await fetch(
+      `${COUPLER_ORIGIN}/api/record-entry/${encodeURIComponent(DOC_CTX.person)}/${encodeURIComponent(DOC_CTX.problem)}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry) }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    btn.textContent = '✓ Documented';
+    btn.classList.add('doc-done');
+    const note = btn.parentElement;
+    const msg = document.createElement('div');
+    msg.style.cssText = 'font-size:.75rem;color:var(--green);margin-top:6px';
+    msg.textContent = 'Saved. Switch back to My Health Picture — it will refresh automatically. Then click "Update My Shared Care Plan" to send the updated plan to the SCP.';
+    note.appendChild(msg);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Document this choice';
+    alert(`Could not save — is My Health Picture running? ${e.message}`);
+  }
+}
+
 // URL param: ?load=statin-primary-prevention  loads from library by id
 (async () => {
-  const id = new URLSearchParams(location.search).get('load');
+  const id = DOC_CTX.load;
   if (id) {
     try {
       const idx = await fetch('data/nnt-library/index.json').then(r => r.json());

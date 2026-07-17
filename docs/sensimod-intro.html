@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SensiMod — Introduction</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; background: #fafaf8; }
+.page { max-width: 820px; margin: 0 auto; padding: 48px 32px 80px; }
+nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 48px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+nav a { color: #2d6a4f; text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+nav .current { color: #1a1a1a; font-weight: 500; }
+.doc-header { margin-bottom: 48px; }
+.doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 600px; }
+.filename { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #888; margin-top: 8px; }
+h2 { font-size: 19px; font-weight: 600; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
+h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: #2d6a4f; }
+h4 { font-size: 13px; font-weight: 600; margin: 18px 0 6px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; }
+p { margin-bottom: 14px; }
+ul, ol { padding-left: 22px; margin-bottom: 14px; }
+li { margin-bottom: 6px; }
+code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f0ec; padding: 1px 5px; border-radius: 3px; }
+.note { background: #f0f9f4; border-left: 3px solid #2d6a4f; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0; }
+.warn { background: #fff8e1; border-left: 3px solid #f59e0b; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0; }
+.step-list { counter-reset: steps; list-style: none; padding: 0; margin-bottom: 14px; }
+.step-list li { counter-increment: steps; display: flex; gap: 14px; margin-bottom: 12px; align-items: flex-start; }
+.step-list li::before { content: counter(steps); flex-shrink: 0; width: 24px; height: 24px; background: #2d6a4f; color: #fff; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+.control-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+.control-table th { text-align: left; padding: 8px 12px; background: #f0f0ec; font-weight: 600; font-size: 12px; border: 1px solid #ddd; }
+.control-table td { padding: 8px 12px; border: 1px solid #e0e0da; vertical-align: top; }
+.control-table tr:nth-child(even) td { background: #fafaf7; }
+.status-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 8px 0 16px; }
+.status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.quadrant-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+.quadrant-table th { text-align: center; padding: 10px 14px; background: #f0f0ec; font-weight: 600; font-size: 12px; border: 1px solid #ddd; }
+.quadrant-table td { padding: 14px 16px; border: 1px solid #ddd; vertical-align: top; font-size: 13px; line-height: 1.5; }
+.q-active { background: #e8f4fd; }
+.q-critical { background: #fdecea; }
+.q-buffering { background: #f0f9f4; }
+.q-passive { background: #fdf6e3; }
+.q-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+.tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0 24px; }
+.tool-card { border: 1px solid #dde; border-radius: 6px; padding: 18px 20px; background: #fff; }
+.tool-card .tool-name { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; color: #2d6a4f; margin-bottom: 4px; }
+.tool-card .tool-url { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; margin-bottom: 12px; }
+.tool-card .tool-scope { font-size: 12px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+.tool-card ul { padding-left: 16px; margin: 0; }
+.tool-card li { font-size: 13px; margin-bottom: 4px; }
+.step-status-built { color: #2d6a4f; font-weight: 500; }
+.step-status-planned { color: #888; }
+@media (max-width: 600px) { .tool-grid { grid-template-columns: 1fr; } }
+@media print { nav { display: none; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav>
+  <span class="current">Introduction</span>
+  <a href="sensimod-manual.html">User Manual</a>
+</nav>
+
+<div class="doc-header">
+  <div class="suite">Vester Sensitivity Model · Tool Suite</div>
+  <h1>Introduction to the SensiMod Suite</h1>
+  <p class="lead">A nine-step method for understanding complex systems through biocybernetic analysis — implemented as an interoperable set of participatory tools.</p>
+</div>
+
+<h2>What is the Vester Sensitivity Model?</h2>
+
+<p>Frederic Vester's sensitivity model (<em>Sensitivitätsmodell</em>) is a structured group process for understanding complex systems, developed from his work at the Study Group for Biology and Environment and formalized in <em>The Art of Interconnected Thinking</em> (2007). It has been applied to corporate strategy, regional planning, healthcare, risk management, urban design, and counter-terrorism analysis.</p>
+
+<p>The core insight: complex systems cannot be understood by analyzing parts in isolation. Optimizing individual variables often destroys systemic balance. Only by mapping influence relationships across the whole can leverage points, instabilities, and safe intervention strategies be identified.</p>
+
+<p>Vester's method is explicitly participatory — the matrix scoring, criteria assessment, and lookup table construction are designed to be done by a group, not by an analyst. The model that emerges is owned by the group, not imposed on it.</p>
+
+<h2>The Nine Steps</h2>
+
+<ol class="step-list">
+  <li><div><strong>System Description</strong> — Define the problem, purpose, and system boundary in plain language. Who is affected? What is inside vs. outside?</div></li>
+  <li><div><strong>Variable Set</strong> — Identify 20–30 key variables. Describe each and define a 0–30 measurable scale with observable anchor points and an optimum if relevant.</div></li>
+  <li><div><strong>System Criteria</strong> — Assess each variable against 24 criteria in 5 groups (Spheres of Life, Physical, Dynamical, System Relationships, Corporate Performance Criteria). Reveals the character of each variable in the system.</div></li>
+  <li><div><strong>Cross-Impact Matrix</strong> — Score pairwise influence: how strongly does variable A influence variable B? (0=none, 1=weak, 2=medium, 3=strong). Active Sum = row total; Passive Sum = column total.</div></li>
+  <li><div><strong>System Roles</strong> — Plot variables on the Active Sum × Passive Sum quadrant. Classify as: Active (high AS, low PS), Passive/Indicator (low AS, high PS), Critical/Reactive (high both), or Buffering (low both).</div></li>
+  <li><div><strong>Partial Scenario</strong> — Select 2–4 leverage variables (typically Active or Critical). Define alternative states and trace first-order consequences through the matrix.</div></li>
+  <li><div><strong>Stock &amp; Flow Diagram</strong> — Translate variable relationships into a formal structure of stocks, flows (valves), auxiliaries, and clouds — the structural layer for simulation.</div></li>
+  <li><div><strong>Lookup Table Curves</strong> — Replace mathematical equations with group-constructed graphical functions (Vester's "biokybernetik" curves) that capture qualitative expert knowledge about how variables relate.</div></li>
+  <li><div><strong>Simulation</strong> — Run the model using Euler integration reading from lookup tables. Test interventions. Evaluate results against Vester's 8 biocybernetic basic rules.</div></li>
+</ol>
+
+<h2>The AS×PS Quadrant</h2>
+
+<p>After the cross-impact matrix is scored (Step 4), every variable receives an Active Sum (total influence it exerts) and a Passive Sum (total influence it receives). Plotting these two values places each variable in one of four roles:</p>
+
+<table class="quadrant-table">
+  <tr>
+    <th></th>
+    <th>Low PS</th>
+    <th>High PS</th>
+  </tr>
+  <tr>
+    <td style="font-weight:600;font-size:12px;text-align:right;padding-right:12px;background:#f0f0ec;">High AS</td>
+    <td class="q-active">
+      <div class="q-label">Active</div>
+      Strong drivers with few feedbacks. These are the levers — they push the system but are relatively insensitive to it.
+    </td>
+    <td class="q-critical">
+      <div class="q-label">Critical</div>
+      High leverage, highly influenced — the most dangerous to disturb. Both cause change and absorb it; small interventions can cascade unpredictably.
+    </td>
+  </tr>
+  <tr>
+    <td style="font-weight:600;font-size:12px;text-align:right;padding-right:12px;background:#f0f0ec;">Low AS</td>
+    <td class="q-buffering">
+      <div class="q-label">Buffering</div>
+      Stable dampers that absorb shocks without amplifying them. Preserve these — disrupting them can destabilize the whole system.
+    </td>
+    <td class="q-passive">
+      <div class="q-label">Passive / Indicator</div>
+      Result variables — they respond to the system but do little to drive it. Measure outcomes here; do not intervene here.
+    </td>
+  </tr>
+</table>
+
+<p>Active variables are levers. Passive variables are indicators. Critical variables are the most dangerous to disturb — they are both highly influential and highly influenced. Buffering variables provide stability; disrupting them can destabilize the whole system.</p>
+
+<h2>Our Implementation</h2>
+
+<p>Two tools, interoperable. Variables defined in SensiMod become the named objects shared across the full pipeline — matrix, SFD structure, lookup curves, and simulation all reference the same variable set.</p>
+
+<div class="tool-grid">
+  <div class="tool-card">
+    <div class="tool-name">SensiMod</div>
+    <div class="tool-url">vester.relocalizecreativity.net</div>
+    <div class="tool-scope">Steps 1–6</div>
+    <p style="font-size:13px;margin-bottom:10px;">A browser-based React/Vite app. Variables defined here become the named objects shared across the whole pipeline. Data persists as JSON.</p>
+    <ul>
+      <li><span class="step-status-built">Step 1 — System Description: Built</span></li>
+      <li><span class="step-status-built">Step 2 — Variable Set: Built</span></li>
+      <li><span class="step-status-built">Step 3 — System Criteria: Built</span></li>
+      <li><span class="step-status-built">Step 4 — Cross-Impact Matrix: Built</span></li>
+      <li><span class="step-status-planned">Step 5 — System Roles: Planned</span></li>
+      <li><span class="step-status-planned">Step 6 — Partial Scenario: Planned</span></li>
+    </ul>
+  </div>
+  <div class="tool-card">
+    <div class="tool-name">RCN Graph Tool — SFD mode</div>
+    <div class="tool-url">graph-tool-v22.html</div>
+    <div class="tool-scope">Steps 7–9</div>
+    <p style="font-size:13px;margin-bottom:10px;">The graph tool's Stock &amp; Flow Diagram mode uses the Stella approach (valves as regular nodes, pipe segments as edges). XMILE export bridges to Vensim/Insightmaker.</p>
+    <ul>
+      <li><span class="step-status-built">Step 7 — SFD structure + XMILE export: Built</span></li>
+      <li><span class="step-status-planned">Step 8 — Lookup Table Curves: Planned</span></li>
+      <li><span class="step-status-planned">Step 9 — Simulation: Planned</span></li>
+    </ul>
+  </div>
+</div>
+
+<h2>The "Control the Whole Space" Requirement</h2>
+
+<p>Because variables must be the same objects across SensiMod, the SFD, simulation, and reporting — changing a variable in one place should update it everywhere. This cross-tool variable identity is the architectural goal driving the interoperability design.</p>
+
+<div class="note">
+  Variable names are the shared key. The JSON export from SensiMod carries variable IDs that the SFD mode and simulation layer can reference directly. Renaming a variable in SensiMod and re-importing updates the full downstream chain.
+</div>
+
+<h2>Vester's Eight Biocybernetic Basic Rules</h2>
+
+<p>These rules run as a diagnostic thread throughout the process and are applied formally in Step 9. A system that scores well on all eight rules is a biocybernetically mature system.</p>
+
+<ol>
+  <li>Negative feedback must dominate over positive feedback</li>
+  <li>System function must be independent of quantitative growth</li>
+  <li>Function-oriented, not product-oriented</li>
+  <li>Exploit existing forces (ju-jitsu principle)</li>
+  <li>Multiple use of products, functions, and structures</li>
+  <li>Recycling — circular processes</li>
+  <li>Symbiosis — reciprocal use of differences</li>
+  <li>Biological design through feedback planning</li>
+</ol>
+
+<div class="note">
+  These rules are not a checklist applied at the end — they inform modeling choices throughout the process. When a proposed intervention violates rule 1 (amplifies positive feedback) or rule 2 (requires growth to sustain function), the model surfaces that tension before it becomes a real-world failure.
+</div>
+
+<h2>About This Project</h2>
+
+<p>The RCN implementation adapts Vester's method for Neighborhood Development Cooperative work. The pilot application is the Superior AZ NDC. The participatory emphasis is deliberate: the tools are designed for workshop use, not individual analysis.</p>
+
+<p>Vester developed the sensitivity model specifically because technical experts working alone tend to produce models that communities cannot interrogate or own. The workshop format — where variable definitions, matrix scores, and lookup curves are all produced by the group in the room — is not a concession to participation. It is the epistemological core of the method.</p>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A New Model for Community Health in Whatcom County</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.75; color: #1a1a1a; background: #fafaf8; }
+.page { max-width: 860px; margin: 0 auto; padding: 48px 32px 100px; }
+
+.doc-header { margin-bottom: 56px; padding-bottom: 32px; border-bottom: 2px solid #1e3a5f; }
+.doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+.doc-header h1 { font-size: 34px; font-weight: 600; line-height: 1.15; color: #1e3a5f; margin-bottom: 16px; }
+.doc-header .lead { font-size: 17px; color: #444; font-weight: 300; max-width: 680px; line-height: 1.65; }
+.doc-header .audience { margin-top: 20px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #666; }
+
+h2 { font-size: 20px; font-weight: 600; color: #1e3a5f; margin: 52px 0 14px; padding-bottom: 8px; border-bottom: 1px solid #dde3ed; }
+h3 { font-size: 15px; font-weight: 600; margin: 28px 0 8px; color: #0f766e; }
+p { margin-bottom: 16px; }
+ul, ol { padding-left: 22px; margin-bottom: 16px; }
+li { margin-bottom: 6px; }
+strong { font-weight: 600; }
+em { font-style: italic; }
+
+.callout { background: #1e3a5f; color: white; border-radius: 10px; padding: 28px 32px; margin: 32px 0; }
+.callout .callout-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.6; margin-bottom: 10px; }
+.callout h3 { color: white; font-size: 18px; margin: 0 0 12px; }
+.callout p { color: rgba(255,255,255,0.88); margin-bottom: 10px; font-size: 14px; }
+.callout p:last-child { margin-bottom: 0; }
+.callout .char-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 8px; }
+.callout .char-block { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 10px 14px; min-width: 140px; flex: 1; }
+.callout .char-block .hanzi { font-size: 28px; line-height: 1; margin-bottom: 4px; }
+.callout .char-block .romanized { font-family: 'IBM Plex Mono', monospace; font-size: 10px; opacity: 0.6; margin-bottom: 4px; }
+.callout .char-block .meaning { font-size: 12px; opacity: 0.88; line-height: 1.4; }
+.callout .synthesis { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 14px; color: rgba(255,255,255,0.92); font-style: italic; }
+
+.note { background: #f0f9f4; border-left: 3px solid #0f766e; padding: 14px 18px; border-radius: 0 8px 8px 0; font-size: 14px; margin: 20px 0 28px; }
+.highlight { background: #fffbeb; border-left: 3px solid #d97706; padding: 14px 18px; border-radius: 0 8px 8px 0; font-size: 14px; margin: 20px 0 28px; }
+
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 24px 0 32px; }
+.tool-card { background: white; border: 1.5px solid #dde3ed; border-radius: 10px; padding: 20px 22px; }
+.tool-card .tool-name { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #0f766e; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.tool-card h4 { font-size: 15px; font-weight: 600; color: #1e3a5f; margin-bottom: 8px; }
+.tool-card p { font-size: 13px; color: #444; line-height: 1.55; margin: 0; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 24px 0 32px; }
+.level-card { background: white; border: 1.5px solid #dde3ed; border-radius: 10px; padding: 22px 24px; }
+.level-card .level-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.level-card h4 { font-size: 15px; font-weight: 600; color: #1e3a5f; margin-bottom: 10px; }
+.level-card ul { font-size: 13px; color: #444; padding-left: 18px; margin: 0; }
+.level-card li { margin-bottom: 5px; }
+
+.flow-row { display: flex; align-items: center; gap: 0; margin: 24px 0; flex-wrap: wrap; }
+.flow-box { background: white; border: 1.5px solid #dde3ed; border-radius: 8px; padding: 12px 16px; font-size: 13px; font-weight: 500; color: #1e3a5f; text-align: center; flex: 1; min-width: 100px; }
+.flow-arrow { font-size: 18px; color: #0f766e; padding: 0 6px; flex-shrink: 0; }
+
+.economics-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 24px 0; }
+.econ-card { border-radius: 8px; padding: 16px 18px; text-align: center; }
+.econ-card.green { background: #dcfce7; border: 1px solid #86efac; }
+.econ-card.amber { background: #fef3c7; border: 1px solid #fcd34d; }
+.econ-card.blue { background: #dbeafe; border: 1px solid #93c5fd; }
+.econ-card .econ-who { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #666; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.econ-card .econ-what { font-size: 13px; font-weight: 600; color: #1a1a1a; line-height: 1.4; }
+
+.ask-list { list-style: none; padding: 0; counter-reset: asks; margin: 16px 0 24px; }
+.ask-list li { counter-increment: asks; padding: 14px 0 14px 52px; position: relative; border-bottom: 1px solid #eee; font-size: 15px; }
+.ask-list li:last-child { border-bottom: none; }
+.ask-list li::before { content: counter(asks); position: absolute; left: 0; top: 14px; width: 32px; height: 32px; background: #1e3a5f; color: white; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; line-height: 32px; text-align: center; }
+
+.footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid #ddd; font-size: 12px; color: #888; font-family: 'IBM Plex Mono', monospace; }
+
+@media (max-width: 640px) {
+  .three-col, .two-col, .economics-row { grid-template-columns: 1fr; }
+  .doc-header h1 { font-size: 26px; }
+  .callout .char-row { flex-direction: column; }
+}
+@media print {
+  body { background: white; font-size: 13px; }
+  .page { padding: 24px 20px 40px; }
+  .callout { break-inside: avoid; }
+  .three-col, .two-col { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="doc-header">
+  <div class="suite">Whatcom Wealth and Health Association · Planning Document</div>
+  <h1>A New Model for<br>Community Health<br>in Whatcom County</h1>
+  <p class="lead">What if a community owned its own healthcare system — one that paid care workers for keeping people healthy, gave every person a complete picture of their own health, and got stronger the more people used it?</p>
+  <div class="audience">Prepared for: Whatcom Wealth and Health Association · July 2026</div>
+</div>
+
+
+<h2>The Problem We Are Trying to Solve</h2>
+
+<p>Healthcare in America is organized around a fundamental misalignment: the system earns money when you are sick and uses services, not when you are healthy and well-managed. A hospital earns nothing when a community health worker catches a dangerous drug interaction before it sends someone to the emergency room. A clinic earns nothing when a careful conversation helps a person understand that they do not, in fact, need the surgery that was recommended.</p>
+
+<p>This is not a criticism of the people who work in healthcare. Most of them entered the field because they genuinely want to help. It is a structural problem — the rules of the game reward volume and procedures, not outcomes and prevention.</p>
+
+<p>The result, in Whatcom County as in most of rural America:</p>
+
+<ul>
+  <li>People arrive at the emergency room with conditions that could have been managed months earlier</li>
+  <li>Prior diagnoses travel from provider to provider, often with no supporting evidence — just a label on a form that everyone assumes someone else verified</li>
+  <li>The physician who knows your situation best has fifteen minutes per visit and a full waiting room</li>
+  <li>Community health workers — the people who actually have time to listen — have no tools to do anything with what they learn</li>
+  <li>Your health record belongs to the clinic, not to you</li>
+</ul>
+
+<p>None of this is inevitable. It is the consequence of specific organizational choices that can be made differently.</p>
+
+
+<h2>A Different Kind of Organization</h2>
+
+<p>A healthcare cooperative is owned by its members — the people it serves. Like a credit union (not a bank), or a food cooperative (not a supermarket chain), the cooperative's financial interests are aligned with its members' health. When the cooperative keeps people healthy and out of the hospital, it saves money that flows back to members as lower costs and to care teams as higher earnings.</p>
+
+<p>The Whatcom County cooperative we are proposing has four defining features:</p>
+
+<ol>
+  <li><strong>Member-owned and governed.</strong> People who enroll are members with a voice in how the cooperative operates, not customers of a corporation.</li>
+  <li><strong>Pays for results, not procedures.</strong> Care teams earn based on problems resolved and health maintained — not on the number of visits or tests ordered.</li>
+  <li><strong>Built around community health workers.</strong> Trained, credentialed community health workers are the center of each care relationship — supported by physicians who provide expert review when needed.</li>
+  <li><strong>Uses tools that belong to the person.</strong> Every member has a complete, current health picture that they own and can share with anyone they choose.</li>
+</ol>
+
+
+<h2>The Tools: My Personal Health Supporter</h2>
+
+<p>The tools that make this cooperative function are collectively called <strong>My Personal Health Supporter</strong> (My PHS). They were designed from the beginning with one principle: every piece of information belongs to the person, not to the system.</p>
+
+<div class="three-col">
+  <div class="tool-card">
+    <div class="tool-name">Tool 1</div>
+    <h4>My Health Picture</h4>
+    <p>A complete, structured record of every health problem a person is working on — in plain language, with the evidence behind each diagnosis, and a clear indication of what information would help most right now.</p>
+  </div>
+  <div class="tool-card">
+    <div class="tool-name">Tool 2</div>
+    <h4>My Health Choices</h4>
+    <p>A guided exploration of treatment options for each condition — what the evidence says, what the tradeoffs are, and what questions to ask. Designed to support informed decision-making, not to replace the physician.</p>
+  </div>
+  <div class="tool-card">
+    <div class="tool-name">Tool 3</div>
+    <h4>My Shared Care Plan</h4>
+    <p>A living document visible to the whole care team — the person, their community health worker, their physician, and their support network. Updated after every interaction. Everyone reads the same record.</p>
+  </div>
+</div>
+
+<h3>My Health Picture in plain terms</h3>
+
+<p>Imagine a document that says: <em>"Here are the health problems we are working on together. Here is the evidence that supports each diagnosis. Here is what we still don't know. Here is what finding that out would change."</em></p>
+
+<p>That document does not currently exist in most healthcare settings. Diagnoses accumulate over years — often from different providers, often without supporting evidence, often never revisited. A person can be prescribed medication for a condition that was never properly confirmed, because it appeared on a form fifteen years ago and everyone assumed someone else had verified it.</p>
+
+<p>My Health Picture changes that. Before each visit, the community health worker walks through the picture with the person. Missing information is identified. Prior diagnoses are reviewed. The physician receives a structured summary of exactly what needs their attention — not a stack of old records to interpret in fifteen minutes.</p>
+
+<div class="note">
+  <strong>A concrete example:</strong> A 68-year-old woman has "Type 2 Diabetes" on her record from 2011. She has been taking metformin ever since. My Health Picture shows that her original HbA1c was 6.4% — borderline, not diagnostic — and that no follow-up test was ever done. The community health worker flags this for audit. The physician reviews and requests a current HbA1c. It comes back at 5.7% — normal. The medication is reviewed. This is not a failure. It is the system working exactly as it should.
+</div>
+
+
+<h2>The Care Team</h2>
+
+<h3>The community health worker — your health partner</h3>
+
+<p>The community health worker (we call them health partners) is the person at the center of every care relationship in this model. They are not receptionists. They are not clerks. They are trained, credentialed practitioners who:</p>
+
+<ul>
+  <li>Meet people where they are — in homes, community centers, and NDC locations</li>
+  <li>Walk through the Health Picture before every physician encounter</li>
+  <li>Gather the structured information the physician needs to make a good decision</li>
+  <li>Know when to escalate and how to hand off efficiently</li>
+  <li>Are from the community — they understand the context, the culture, the real constraints</li>
+</ul>
+
+<p>In the current healthcare system, the community health worker often has the deepest relationship with the person — and the fewest tools. My PHS changes that. The health partner has a complete picture, a clear protocol, and a direct channel to physician review when needed.</p>
+
+<h3>The physician — supported, not replaced</h3>
+
+<p>Nothing in this model asks the physician to do less. It asks the system to protect their expertise — to ensure that the time they spend with a patient is spent on the decisions that actually require a physician, not on reconstructing a health history from incomplete records.</p>
+
+<p>When a case is escalated for physician review, the physician receives:</p>
+
+<ul>
+  <li>The specific problem, stated at the appropriate level of certainty</li>
+  <li>The evidence that supports it and the evidence that doesn't</li>
+  <li>What the community health worker observed</li>
+  <li>A single clear question: <em>Given this, what do you recommend?</em></li>
+</ul>
+
+<p>The physician can respond in two minutes or in twenty, depending on the complexity. Their response goes directly into the Shared Care Plan — not into a phone call that disappears, not into a note that no one reads.</p>
+
+
+<h2>Neighborhood Care Teams — The Microenterprise</h2>
+
+<p>Each care team in the cooperative is organized as a <strong>microenterprise</strong> — a self-managing group of five to fifteen health partners, supported by contracted physician partners, serving an enrolled neighborhood population.</p>
+
+<p>The microenterprise model comes from Haier Group in China, where it has reorganized one of the world's largest manufacturers into a network of thousands of self-managing teams. Each team owns its economics, its performance, and its relationships. There is no manager above them telling them what to do — there is a set of commitments they have made, a live record of how they are performing against those commitments, and a direct connection between their performance and their earnings.</p>
+
+<p>In the healthcare cooperative, each microenterprise:</p>
+
+<ul>
+  <li>Has a clear enrolled panel — the people it is responsible for</li>
+  <li>Tracks its own performance: how many health problems are being actively managed, how many have been resolved, how many physician reviews have been completed</li>
+  <li>Earns based on that performance — not on the number of visits logged</li>
+  <li>Invests in its own capability: training, credentials, tools</li>
+</ul>
+
+<p>The physician is not an employee of the microenterprise. They are a contracted partner — a specialist node that the care team calls on when needed. This creates a professional relationship organized around quality and responsiveness rather than institutional hierarchy.</p>
+
+
+<h2>人单合一 — RenDanHeYi</h2>
+
+<div class="callout">
+  <div class="callout-label">The organizing philosophy</div>
+  <h3>人单合一 · RenDanHeYi</h3>
+  <div class="char-row">
+    <div class="char-block">
+      <div class="hanzi">人</div>
+      <div class="romanized">Rén</div>
+      <div class="meaning">Person. The individual practitioner — not a role or a resource, but a moral agent with dignity and initiative.</div>
+    </div>
+    <div class="char-block">
+      <div class="hanzi">单</div>
+      <div class="romanized">Dān</div>
+      <div class="meaning">Order. A specific, concrete, named need — not "diabetes management" but <em>this person's</em> open problem, today, with its specific evidence and stakes.</div>
+    </div>
+    <div class="char-block">
+      <div class="hanzi">合</div>
+      <div class="romanized">Hé</div>
+      <div class="meaning">To merge. The active process of closing the distance between practitioner and need. Not coordination — the boundary dissolves.</div>
+    </div>
+    <div class="char-block">
+      <div class="hanzi">一</div>
+      <div class="romanized">Yī</div>
+      <div class="meaning">One. The state of oneness achieved — where there were two, there is now one. The need met, the gap closed.</div>
+    </div>
+  </div>
+  <div class="synthesis">人单合一 is not "person-order-integration." It is: <em>The person (人) and the order (单) are in the active process (合) of becoming one (一).</em> The health partner's daily work IS the person's need — not a response to it. That is the condition these tools are designed to create.</div>
+</div>
+
+<p>This philosophy answers the question that every healthcare organization eventually confronts: <em>what is the fundamental unit of care?</em> Not the visit. Not the procedure. Not the diagnosis code. The specific, named, evidenced problem — the Dan — and the practitioner whose work is inseparable from resolving it.</p>
+
+
+<h2>Learning and Credentials — SODOTO</h2>
+
+<p>Health partners in the cooperative develop their skills through a framework called <strong>SODOTO</strong>: See One, Do One, Teach One. Borrowed from surgical training, adapted for community health.</p>
+
+<ul>
+  <li><strong>See One:</strong> observe a skilled health partner complete a task — a prior diagnosis audit, a physician review escalation, a Health Choices conversation</li>
+  <li><strong>Do One:</strong> perform the task under supervision and demonstrate competency</li>
+  <li><strong>Teach One:</strong> teach the skill to a peer, earning a master credential</li>
+</ul>
+
+<p>Each step earns a verifiable digital credential — a badge that is part of the health partner's permanent record and that directly affects their earnings. The Teach One step is critical: it makes every expert practitioner a node in the network's learning infrastructure. The cooperative gets smarter without a training department.</p>
+
+<p>SODOTO also creates peer effects. A health partner who has taught five peers has shaped the practice of five other people. Rare cases encountered by one team, worked through and taught, become common knowledge across the network. The tools improve. The whole EMC — the Ecosystem Microenterprise Community — becomes more capable.</p>
+
+
+<h2>How the Money Works</h2>
+
+<p>The cooperative is self-insured. Members pay premiums into a shared pool. When the cooperative keeps people healthy and out of the hospital, that pool runs a surplus. That surplus has three destinations:</p>
+
+<div class="economics-row">
+  <div class="econ-card green">
+    <div class="econ-who">Members</div>
+    <div class="econ-what">Lower cost-sharing and premium adjustments for engaged members</div>
+  </div>
+  <div class="econ-card amber">
+    <div class="econ-who">Care Teams</div>
+    <div class="econ-what">Performance pools distributed based on Dan resolution rates and SODOTO credentials</div>
+  </div>
+  <div class="econ-card blue">
+    <div class="econ-who">Infrastructure</div>
+    <div class="econ-what">Tool improvement, new coupler frames, expanded physician networks</div>
+  </div>
+</div>
+
+<p>The actuarial logic is straightforward. A hospitalization for a preventable condition costs $15,000–$40,000. A medication review that catches a problem that was never evidenced costs the health partner two hours and the physician ten minutes. When the cooperative captures that cost avoidance internally, it can afford to pay the health partner and the physician well for their work — and still return value to members.</p>
+
+<div class="highlight">
+  <strong>The key difference from fee-for-service:</strong> The cooperative's incentives are aligned with the person's interests from the start. There is no tension between "what earns revenue" and "what keeps this person healthy." They are the same thing.
+</div>
+
+<p>Individual behavior is aligned through direct incentives:</p>
+<ul>
+  <li>A member who keeps their Health Picture current and completes their annual Health Choices review pays less in cost-sharing</li>
+  <li>A health partner who earns SODOTO credentials and resolves more Dans earns more</li>
+  <li>A physician partner whose engagement capacity score is high — who responds thoroughly and promptly — earns a higher differential reimbursement rate</li>
+</ul>
+
+<p>None of this requires separate reporting infrastructure. The same records the tools generate for clinical care are the records the cooperative uses for financial management.</p>
+
+
+<h2>Why Whatcom County, Why Now</h2>
+
+<p>Whatcom County has several characteristics that make it an unusually good environment for this model:</p>
+
+<ul>
+  <li><strong>Rural and frontier geography.</strong> The traditional clinic-centered model has never served the county's dispersed population well. Community health workers who meet people where they are — and tools that enable asynchronous physician review — are a structural improvement for everyone outside Bellingham.</li>
+  <li><strong>Cooperative tradition.</strong> The county has existing cooperative institutions and a population familiar with member-owned organizations. The concept does not need to be introduced from scratch.</li>
+  <li><strong>An organized planning group.</strong> The Whatcom Wealth and Health Association represents exactly the kind of multi-stakeholder group that can move this from concept to pilot without waiting for a large institution to act.</li>
+  <li><strong>A moment of openness.</strong> Healthcare costs are high enough, and outcomes poor enough, that people who would not have considered an alternative model five years ago are now actively looking for one.</li>
+</ul>
+
+
+<h2>What We Are Asking</h2>
+
+<p>We are not asking for a commitment to a fully-formed system. We are asking for the work that makes a pilot possible.</p>
+
+<ol class="ask-list">
+  <li><strong>Join the planning group.</strong> The cooperative needs stakeholders from health, finance, community organizing, and local government in the same room. If you or someone you know belongs in that room, tell us.</li>
+  <li><strong>Identify the first three neighborhood sites.</strong> We need to know which communities in Whatcom County have the relationships and the will to host the first microenterprise care teams. Likely candidates are communities with existing CHW presence, strong social networks, and underserved health needs.</li>
+  <li><strong>Connect us with physician partners.</strong> We need two or three physicians or nurse practitioners willing to pilot the review loop — asynchronous, structured, compensated. They do not need to be on-site. They need to be willing to respond to structured review packages within a defined window.</li>
+  <li><strong>Help us establish the actuarial baseline.</strong> Before we can design the premium structure, we need to understand the current cost pattern for the populations we would serve. This requires someone with access to claims data and the willingness to model the scenario.</li>
+  <li><strong>Tell us what we are missing.</strong> This model has been designed by people who know the tools and the theory. It needs to be stress-tested by people who know Whatcom County. What are the conditions on the ground that this plan does not account for?</li>
+</ol>
+
+
+<h2>The Vision</h2>
+
+<p>A county where every person has a complete, current picture of their own health — in their own language, owned by them, accessible to anyone they choose to share it with.</p>
+
+<p>Where every community health worker has the tools, the credentials, and the compensation to do work that actually matters — and where the system gets smarter every time one of them teaches a peer.</p>
+
+<p>Where every physician's expertise reaches exactly where it is most needed — not diluted across paperwork and administrative overhead, but directed at the specific questions that only a physician can answer.</p>
+
+<p>Where the cooperative grows stronger as the community gets healthier — because those two things are, for once, the same thing.</p>
+
+<p>That is what we are building. We would like to build it in Whatcom County.</p>
+
+
+<div class="footer">
+  Whatcom Wealth and Health Association · Planning Document · July 2026<br>
+  My Personal Health Supporter tools developed by RCN · rcn.community
+</div>
+
+</div>
+</body>
+</html>

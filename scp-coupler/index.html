@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Problem-Knowledge Coupler</title>
+<title>My Health Picture</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -135,6 +135,42 @@ a.hbtn { text-decoration: none; display: inline-flex; align-items: center; }
   background: var(--bg); cursor: pointer;
 }
 .sidebar-btn:hover { background: var(--border); }
+.sidebar-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+/* ── Audit queue ─────────────────────────────────────────────────────────── */
+#audit-weight-panel { padding: 8px 12px; border-bottom: 1px solid var(--border); display: none; background: #fafbfc; }
+#audit-weight-panel label { font-size: .72rem; color: var(--muted); display: block; margin-bottom: 1px; }
+#audit-weight-panel input[type=range] { width: 100%; margin-bottom: 6px; accent-color: var(--navy); }
+.audit-preset-row { display: flex; gap: 4px; margin-bottom: 8px; }
+.audit-preset-row select { flex: 1; font-size: .75rem; padding: 3px 4px; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+#btn-run-audit { width: 100%; padding: 5px; font-size: .78rem; font-weight: 600;
+  background: var(--navy); color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+#btn-run-audit:hover { background: var(--navy-lt); }
+#btn-run-audit:disabled { background: var(--muted); cursor: default; }
+
+.audit-item { padding: 7px 10px; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
+.audit-item:hover { background: #f1f5f9; }
+.audit-item.selected { background: #eef3fa; }
+.audit-item-top { display: flex; align-items: center; gap: 6px; }
+.audit-badge { font-size: .68rem; font-weight: 700; padding: 1px 6px; border-radius: 10px; flex-shrink: 0; }
+.audit-badge.T1 { background: #fecaca; color: #7f1d1d; }
+.audit-badge.T2 { background: #ede9fe; color: #4c1d95; }
+.audit-badge.T3 { background: #cffafe; color: #164e63; }
+.audit-score { font-size: .7rem; color: var(--muted); margin-left: auto; flex-shrink: 0; }
+.audit-label { font-size: .82rem; font-weight: 600; color: var(--text); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.audit-note { font-size: .72rem; color: var(--muted); }
+.audit-prior { font-size: .7rem; color: #16a34a; }
+
+/* ── Audit outcome card ──────────────────────────────────────────────────── */
+#audit-outcome-card { display: none; margin: 10px 14px 0; padding: 10px 12px;
+  border: 1px solid #fbbf24; border-radius: 6px; background: #fffbeb; }
+#audit-outcome-card h4 { font-size: .8rem; font-weight: 700; color: #78350f; margin-bottom: 8px; }
+.audit-radio-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.audit-radio-row label { display: flex; align-items: center; gap: 4px; font-size: .78rem; cursor: pointer; }
+#audit-outcome-notes { width: 100%; font-size: .78rem; padding: 4px 6px; border: 1px solid var(--border);
+  border-radius: 4px; resize: vertical; min-height: 40px; margin-bottom: 6px; font-family: inherit; }
+#btn-save-audit-outcome { padding: 4px 12px; font-size: .78rem; font-weight: 600;
+  background: var(--navy); color: #fff; border: none; border-radius: 4px; cursor: pointer; }
 
 /* ── Main panel ──────────────────────────────────────────────────────────── */
 #main {
@@ -167,6 +203,21 @@ a.hbtn { text-decoration: none; display: inline-flex; align-items: center; }
 .tbtn.primary:hover { background: var(--navy-lt); }
 .tbtn.factbox { background: #f0ebfa; color: #6d3fbf; border-color: #c4aff0; }
 .tbtn.factbox:hover { background: #e4d9f7; }
+
+.factbox-badge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+  background: #ede9f8;
+  color: #6d3fbf;
+  border: 1px solid #c4aff0;
+  border-radius: 3px;
+  padding: 1px 5px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
 #status-msg { font-size: .75rem; color: var(--muted); flex-shrink: 0; }
 
 /* ── Content ─────────────────────────────────────────────────────────────── */
@@ -540,16 +591,18 @@ body.embed #embed-bar { display: flex; }
 <div id="header">
   <div>
     <div id="header-text">
-      <h1>Problem-Knowledge Coupler</h1>
-      <div id="header-sub">Weed-style problem-oriented record — all gaps visible</div>
+      <h1>My Health Picture</h1>
+      <div id="header-sub">My Personal Health Supporter — all gaps visible</div>
     </div>
   </div>
   <div id="header-actions">
     <span id="saved-indicator"></span>
     <button class="hbtn" id="btn-print" onclick="window.print()" disabled>Print</button>
-    <button class="hbtn" id="btn-export" onclick="exportFedWiki()" disabled>FedWiki</button>
+    <button class="hbtn" id="btn-export" onclick="exportFedWiki()" disabled>To SCP</button>
     <button class="hbtn" id="btn-save-bundle" onclick="saveBundle()" disabled>Save Bundle</button>
     <button class="hbtn" onclick="document.getElementById('bundle-file-input').click()">Load Bundle</button>
+    <a class="hbtn" id="btn-scp-link" href="#" target="_blank" rel="noopener">My Shared Care Plan ↗</a>
+    <a class="hbtn" id="btn-support-net" href="#" target="_blank" rel="noopener" style="opacity:.4;pointer-events:none">My Support Network ↗</a>
     <button class="hbtn" id="btn-new-person" onclick="openPersonModal()">+ Person</button>
     <button class="hbtn" id="btn-fhir" onclick="openFhirPanel()">FHIR —</button>
     <a class="hbtn" href="roadmap.html" target="_blank">Roadmap</a>
@@ -560,7 +613,7 @@ body.embed #embed-bar { display: flex; }
 
 <!-- Embed bar (visible only in embed mode) -->
 <div id="embed-bar">
-  <span>Problem-Knowledge Coupler</span>
+  <span>My Health Picture</span>
 </div>
 
 <!-- Layout -->
@@ -579,9 +632,58 @@ body.embed #embed-bar { display: flex; }
       </div>
       <div id="act-history" class="act-history"></div>
     </div>
+    <!-- Audit weight panel (shown in audit mode) -->
+    <div id="audit-weight-panel">
+      <div class="audit-preset-row">
+        <select id="audit-preset" onchange="applyAuditPreset(this.value)">
+          <option value="balanced">Balanced</option>
+          <option value="pre-visit">Pre-visit prep</option>
+          <option value="treatment-safety">Treatment safety</option>
+          <option value="evidence-quality">Evidence quality</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <label>Treatment stakes <span id="lbl-treatment">5</span></label>
+      <input type="range" id="w-treatment" min="0" max="10" value="5" oninput="document.getElementById('lbl-treatment').textContent=this.value">
+      <label>Evidence thinness <span id="lbl-thinness">5</span></label>
+      <input type="range" id="w-thinness" min="0" max="10" value="5" oninput="document.getElementById('lbl-thinness').textContent=this.value">
+      <label>Diagnostic uncertainty <span id="lbl-uncertainty">5</span></label>
+      <input type="range" id="w-uncertainty" min="0" max="10" value="5" oninput="document.getElementById('lbl-uncertainty').textContent=this.value">
+      <label>Source conflict <span id="lbl-conflict">5</span></label>
+      <input type="range" id="w-conflict" min="0" max="10" value="5" oninput="document.getElementById('lbl-conflict').textContent=this.value">
+      <button id="btn-run-audit" onclick="runAudit()" disabled>Run audit</button>
+      <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:7px;display:flex;flex-direction:column;gap:3px">
+        <div style="font-size:.68rem;color:var(--muted);margin-bottom:1px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Priority paths</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="audit-badge T1">Urgent</span>
+          <span style="font-size:.72rem;color:var(--text)">Driving treatment — evidence thin</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="audit-badge T2">Review</span>
+          <span style="font-size:.72rem;color:var(--text)">Gather evidence over visits</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="audit-badge T3">Disputed</span>
+          <span style="font-size:.72rem;color:var(--text)">Two sources disagree</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="problem-list-legend" style="display:none;padding:4px 12px 2px;display:flex;gap:10px;border-bottom:1px solid var(--border)">
+      <span style="display:flex;align-items:center;gap:3px;font-size:.68rem;color:var(--muted)"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>Active</span>
+      <span style="display:flex;align-items:center;gap:3px;font-size:.68rem;color:var(--muted)"><span style="width:6px;height:6px;border-radius:50%;background:var(--gray);display:inline-block"></span>Inactive</span>
+      <span style="display:flex;align-items:center;gap:3px;font-size:.68rem;color:var(--muted)"><span style="width:6px;height:6px;border-radius:50%;background:var(--blue);display:inline-block"></span>Resolved</span>
+    </div>
     <div id="problem-list"></div>
     <div id="sidebar-footer">
-      <button class="sidebar-btn" id="btn-add-problem" onclick="openAddProblem()" disabled>+ Add problem</button>
+      <div style="display:flex;gap:4px;margin-bottom:6px">
+        <button class="sidebar-btn active" id="btn-mode-list" onclick="setSidebarMode('list')" style="flex:1">List</button>
+        <button class="sidebar-btn" id="btn-mode-audit" onclick="setSidebarMode('audit')" disabled style="flex:1">Audit</button>
+      </div>
+      <div id="footer-list-actions">
+        <button class="sidebar-btn" id="btn-add-problem" onclick="openAddProblem()" disabled>+ Add problem</button>
+        <button class="sidebar-btn" id="btn-import-scp" onclick="openImportScp()" disabled style="margin-top:4px">↓ Import from SCP</button>
+      </div>
     </div>
   </div>
 
@@ -594,11 +696,26 @@ body.embed #embed-bar { display: flex; }
       </div>
       <button class="tbtn primary" id="btn-gen-frame" onclick="generateFrame()" disabled>Generate Frame</button>
       <button class="tbtn" id="btn-rematch" onclick="reMatch()" disabled>Re-Match</button>
-      <button class="tbtn" id="btn-narrate" onclick="narrate()" disabled>Narrate</button>
-      <button class="tbtn factbox" id="btn-factbox" onclick="openFactBox()" style="display:none">Fact Box ↗</button>
-      <button class="tbtn" id="btn-export-tb" onclick="exportFedWiki()" disabled style="display:none">Push to Wiki</button>
+      <button class="tbtn" id="btn-narrate" onclick="narrate()" disabled>My Summary</button>
+      <button class="tbtn factbox" id="btn-factbox" onclick="openFactBox()" style="display:none">My Health Choices ↗</button>
+      <button class="tbtn" id="btn-export-tb" onclick="exportFedWiki()" disabled style="display:none">Update My Shared Care Plan</button>
+      <a class="tbtn" id="btn-view-scp" href="#" target="_blank" rel="noopener" style="display:none">View My Shared Care Plan ↗</a>
       <div id="status-msg"></div>
     </div>
+
+    <!-- Audit outcome card (shown when in audit mode with a problem selected) -->
+    <div id="audit-outcome-card">
+      <h4>Record audit outcome for this problem</h4>
+      <div class="audit-radio-row">
+        <label><input type="radio" name="audit-outcome" value="confirmed"> Confirmed — evidence solid</label>
+        <label><input type="radio" name="audit-outcome" value="needs-more-data"> Needs more data</label>
+        <label><input type="radio" name="audit-outcome" value="reopened"> Reopen as new problem</label>
+        <label><input type="radio" name="audit-outcome" value="conflict"> Conflict — escalate</label>
+      </div>
+      <textarea id="audit-outcome-notes" placeholder="Notes (optional)…"></textarea>
+      <button id="btn-save-audit-outcome" onclick="saveAuditOutcome()">Save outcome</button>
+    </div>
+
     <div id="content">
       <div id="empty-state">
         <h2>No problem selected</h2>
@@ -616,14 +733,21 @@ body.embed #embed-bar { display: flex; }
             <button id="btn-push-narrative" onclick="pushNarrative()"
               style="display:none;font-size:.72rem;padding:2px 8px;border:1px solid var(--border);
                      border-radius:3px;background:var(--bg);cursor:pointer">
-              Push to SCP
+              Update My Shared Care Plan
             </button>
           </div>
           <span id="narrative-text"></span>
         </div>
 
         <div class="soap-section">
-          <div class="soap-title">Subjective</div>
+          <div class="soap-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+            <span>Subjective</span>
+            <span style="display:flex;align-items:center;gap:10px;font-size:.7rem;font-weight:400;color:var(--muted)">
+              <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:var(--st-filled);display:inline-block"></span>Recorded</span>
+              <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:var(--st-partial);display:inline-block"></span>Partial</span>
+              <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:var(--st-absent);display:inline-block"></span>Not yet gathered</span>
+            </span>
+          </div>
           <div id="subjective-list"></div>
         </div>
         <div class="soap-section">
@@ -763,6 +887,21 @@ body.embed #embed-bar { display: flex; }
   </div>
 </div>
 
+<!-- Import from SCP modal -->
+<div id="scp-import-overlay" onclick="if(event.target===this) closeImportScp()" style="
+  position:fixed;inset:0;background:rgba(0,0,0,.4);
+  display:none;align-items:center;justify-content:center;z-index:1000;">
+  <div style="background:#fff;border-radius:8px;padding:20px 22px;width:480px;max-width:95vw;max-height:80vh;display:flex;flex-direction:column;gap:12px">
+    <h2 style="font-size:1.1rem;font-weight:700;color:var(--navy)">Import from My Shared Care Plan</h2>
+    <p style="font-size:.85rem;color:var(--muted);margin:0">Problems already in My Health Picture are skipped. Check the ones you want to add.</p>
+    <div id="scp-import-list" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px;min-height:60px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeImportScp()">Cancel</button>
+      <button class="btn primary" id="scp-import-btn" onclick="confirmImportScp()">Import selected</button>
+    </div>
+  </div>
+</div>
+
 <!-- Person / problem modal -->
 <div id="person-modal-overlay" onclick="if(event.target===this) closePersonModal()">
   <div id="person-modal">
@@ -780,6 +919,7 @@ body.embed #embed-bar { display: flex; }
 const PROXY = 'http://localhost:8766';
 let state = {
   personId: null,
+  wikiHost: 'scp-experiment.localhost',  // set from people.json on loadPerson
   problem: null,
   frame: null,
   record: [],
@@ -788,7 +928,9 @@ let state = {
   showAll: false,     // override band-based filtering
   modalSlot: null,
   modalEntryId: null,
-  factBoxMatch: null
+  factBoxMatch: null,
+  problems: [],
+  peopleList: []  // cached from /api/people
 };
 
 const AC_LABELS = {1:'Act Now', 2:'Move Fast', 3:'Work On It', 4:'Watch It', 5:'Let It Rest'};
@@ -807,6 +949,7 @@ async function boot() {
   }
 
   const data = await api('GET', '/api/people').catch(() => []);
+  state.peopleList = data;
   const sel = document.getElementById('person-select');
   data.forEach(p => {
     const opt = document.createElement('option');
@@ -814,6 +957,11 @@ async function boot() {
     opt.textContent = p.name + (p.dob ? ` (${p.dob.slice(0,4)})` : '');
     sel.appendChild(opt);
   });
+  const initPerson = new URLSearchParams(location.search).get('person');
+  if (initPerson && data.find(p => p.id === initPerson)) {
+    sel.value = initPerson;
+    loadPerson(initPerson);
+  }
 }
 boot();
 
@@ -833,12 +981,19 @@ async function api(method, path, body) {
 async function loadPerson(personId) {
   if (!personId) return;
   state.personId = personId;
+  const personEntry = state.peopleList.find(p => p.id === personId);
+  state.wikiHost = (personEntry && personEntry.wiki_site) || (personId + '.localhost');
+  document.getElementById('btn-scp-link').href = `http://${state.wikiHost}:3000/view/welcome-visitors`;
   state.problem = null;
   state.frame = null;
   state.record = [];
   state.activation = null;
   state.showAll = false;
   document.getElementById('btn-add-problem').disabled = false;
+  document.getElementById('btn-import-scp').disabled = false;
+  document.getElementById('btn-mode-audit').disabled = false;
+  document.getElementById('btn-run-audit').disabled = false;
+  document.getElementById('problem-list-legend').style.display = 'flex';
   setStatus('');
 
   const [problems, person] = await Promise.all([
@@ -848,6 +1003,10 @@ async function loadPerson(personId) {
   state.activation = person.activation || null;
   renderActivationBadge();
   renderProblemList(problems);
+  const snLink = document.getElementById('btn-support-net');
+  snLink.href = `http://localhost:8765/tools/my-support-network.html?site=${personId}.localhost`;
+  snLink.style.opacity = '';
+  snLink.style.pointerEvents = '';
   showEmpty();
 }
 
@@ -858,16 +1017,43 @@ function renderProblemList(problems) {
     list.innerHTML = '<div style="padding:12px;font-size:.78rem;color:var(--muted)">No problems yet.</div>';
     return;
   }
-  problems.forEach(p => {
+  state.problems = problems;
+  problems.forEach((p, idx) => {
     const div = document.createElement('div');
     div.className = 'problem-item' + (state.problem?.number === p.number ? ' active' : '');
+    div.dataset.problemIdx = idx;
     div.onclick = () => loadProblem(p);
     const dot = `<span class="status-dot ${p.status !== 'active' ? p.status : ''}"></span>`;
+    const match = matchFactBox(p);
+    const badge = match
+      ? `<span class="factbox-badge" title="${esc(match.label)}">Fact Box</span>`
+      : '';
     div.innerHTML = `
       <div class="problem-num">PROBLEM ${p.number}</div>
       <div class="problem-vernacular">${dot}${esc(p.statement_vernacular)}</div>
-      <div class="problem-clinical">${esc(p.statement_clinical)}</div>`;
+      <div class="problem-clinical">${esc(p.statement_clinical)}${badge}</div>`;
     list.appendChild(div);
+  });
+}
+
+function injectFactBoxBadges() {
+  if (!state.problems?.length) return;
+  document.querySelectorAll('.problem-item[data-problem-idx]').forEach(el => {
+    const p = state.problems[+el.dataset.problemIdx];
+    if (!p) return;
+    const match = matchFactBox(p);
+    const clinical = el.querySelector('.problem-clinical');
+    if (!clinical) return;
+    const existing = clinical.querySelector('.factbox-badge');
+    if (match && !existing) {
+      const badge = document.createElement('span');
+      badge.className = 'factbox-badge';
+      badge.title = match.label;
+      badge.textContent = 'My Health Choices';
+      clinical.appendChild(badge);
+    } else if (!match && existing) {
+      existing.remove();
+    }
   });
 }
 
@@ -917,6 +1103,12 @@ async function loadProblem(problem) {
   document.getElementById('btn-export').disabled = !state.frame;
   document.getElementById('btn-export-tb').disabled = !state.frame;
   document.getElementById('btn-save-bundle').disabled = false;
+  updateScpLink(null); // clear until existence confirmed
+  if (state.problem) {
+    api('GET', `/api/wiki-page/${state.personId}/${state.problem.number}`)
+      .then(r => { if (r.url) updateScpLink(r.url); })
+      .catch(() => {});
+  }
   if (state.frame) {
     const saved = frames.length ? frames[frames.length-1].saved : null;
     setSaved(saved);
@@ -978,7 +1170,8 @@ async function narrate() {
   setStatus('Generating narrative…');
   setBusy(true);
   try {
-    const res = await api('POST', '/api/narrate', { frame: state.frame });
+    const decisions = (state.record || []).filter(e => e.slot_id === 'shared-decision');
+    const res = await api('POST', '/api/narrate', { frame: state.frame, decisions });
     state.narrative = res.narrative;
     document.getElementById('narrative-text').textContent = res.narrative;
     document.getElementById('narrative-box').style.display = 'block';
@@ -1003,29 +1196,48 @@ async function pushNarrative() {
       window.parent.postMessage({
         action: 'doInternalLink',
         title: 'pre-visit-summary',
-        site: 'scp-experiment.localhost',
+        site: state.wikiHost,
         keepLineup: false
       }, '*');
     }
   } catch(e) {
     setStatus('Push error: ' + e.message);
   }
-  btn.textContent = 'Push to SCP'; btn.disabled = false;
+  btn.textContent = 'Update My Shared Care Plan'; btn.disabled = false;
 }
 
-// ── Push frame to scp-experiment.localhost ────────────────────────────────────
+// ── SCP wiki link helpers ─────────────────────────────────────────────────────
+function wikiBase() { return `http://${state.wikiHost}:3000`; }
+
+function wikiSlug(title) {
+  return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function wikiUrlForProblem(problem) {
+  const title = `Problem ${problem.number}: ${problem.statement_vernacular}`;
+  return `${wikiBase()}/view/${wikiSlug(title)}`;
+}
+
+function updateScpLink(url) {
+  const btn = document.getElementById('btn-view-scp');
+  if (url) { btn.href = url; btn.style.display = ''; }
+  else      { btn.style.display = 'none'; }
+}
+
+// ── Push frame to patient's wiki site ────────────────────────────────────────
 async function exportFedWiki() {
   if (!state.problem) return;
   const btns = ['btn-export', 'btn-export-tb'].map(id => document.getElementById(id));
   btns.forEach(b => { b.disabled = true; b.textContent = 'Pushing…'; });
   try {
     const res = await api('POST', `/api/push-fedwiki/${state.personId}/${state.problem.number}`, {});
+    updateScpLink(res.url);
     setStatus(`Pushed: ${res.title}`);
     if (document.body.classList.contains('embed')) {
       window.parent.postMessage({
         action: 'doInternalLink',
         title: res.slug,
-        site: 'scp-experiment.localhost',
+        site: state.wikiHost,
         keepLineup: false
       }, '*');
     } else {
@@ -1040,8 +1252,8 @@ async function exportFedWiki() {
   } catch(e) {
     setStatus('Wiki push error: ' + e.message);
   } finally {
-    btns[0].disabled = false; btns[0].textContent = 'FedWiki';
-    btns[1].disabled = false; btns[1].textContent = 'Push to Wiki';
+    btns[0].disabled = false; btns[0].textContent = 'To SCP';
+    btns[1].disabled = false; btns[1].textContent = 'Update My Shared Care Plan';
   }
 }
 
@@ -1205,10 +1417,33 @@ function matchFactBox(problem) {
 function openFactBox() {
   const match = state.factBoxMatch;
   if (!match) return;
-  window.open(`${optionBoxBaseUrl}/index.html?load=${encodeURIComponent(match.id)}`, '_blank');
+  const sel = document.getElementById('person-select');
+  const pname = sel.options[sel.selectedIndex]?.text?.replace(/ \(\d{4}\)$/, '') || '';
+  const params = new URLSearchParams({
+    load:    match.id,
+    person:  state.personId,
+    problem: state.problem.number,
+    ptitle:  state.problem.statement_vernacular,
+    pname:   pname,
+  });
+  window.open(`${optionBoxBaseUrl}/index.html?${params}`, '_blank');
 }
 
-loadOptionBoxLibrary();
+loadOptionBoxLibrary().then(injectFactBoxBadges);
+
+// Refresh record when tab regains focus (e.g. returning from Option Box after documenting a choice)
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible') return;
+  if (!state.personId || !state.problem) return;
+  try {
+    const fresh = await api('GET', `/api/record/${state.personId}/${state.problem.number}`);
+    const before = JSON.stringify(state.record);
+    state.record = fresh;
+    if (JSON.stringify(fresh) !== before) {
+      renderFrame(); // re-render plan section with updated shared decisions
+    }
+  } catch {}
+});
 
 // ── Render frame ─────────────────────────────────────────────────────────────
 function renderFrame() {
@@ -1399,34 +1634,54 @@ function renderAssessments(frame, filtering) {
 function renderPlan(frame, band) {
   const el = document.getElementById('plan-list');
   el.innerHTML = '';
+
+  // Shared decisions FIRST — always above plan options
+  const decisions = (state.record || []).filter(e => e.slot_id === 'shared-decision');
+  if (decisions.length) {
+    decisions.forEach(e => {
+      const div = document.createElement('div');
+      div.className = 'plan-card';
+      div.style.cssText = 'border-left:4px solid var(--purple);background:#faf8fd;margin-bottom:10px';
+      div.innerHTML = `
+        <div style="font-size:.69rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--purple);margin-bottom:4px">Shared Decision</div>
+        <div class="plan-term" style="color:var(--purple)">${esc(e.value)}</div>
+        <div class="plan-who">Recorded: ${esc(e.recorded_date || '')} · ${esc(e.recorded_by || 'Option Box')}</div>`;
+      el.appendChild(div);
+    });
+    const divider = document.createElement('div');
+    divider.style.cssText = 'font-size:.69rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:10px 0 6px';
+    divider.textContent = 'Options to Consider';
+    el.appendChild(divider);
+  }
+
+  // Plan options
   const options = frame.plan_options || [];
   if (!options.length) {
-    el.innerHTML = '<div style="color:var(--muted);font-size:.78rem;padding:6px">No plan options</div>';
-    return;
+    el.innerHTML += '<div style="color:var(--muted);font-size:.78rem;padding:6px">No plan options</div>';
+  } else {
+    const askMode = band && FILTERED_BANDS.has(band) && !state.showAll;
+    if (askMode) {
+      const note = document.createElement('div');
+      note.style.cssText = 'font-size:.75rem;color:var(--muted);margin-bottom:8px;font-style:italic';
+      note.textContent = 'These are things to ask your nurse, doctor, or CHW about at your next contact.';
+      el.appendChild(note);
+    }
+    options.forEach(p => {
+      const linked = (frame.assessment_candidates || []).find(c => c.id === p.linked_assessment);
+      const linkLabel = linked ? ` → ${esc(linked.term)}` : '';
+      const whoLabel = askMode
+        ? `Ask about this: ${esc(p.who_can_act || '')}`
+        : `Can be done by: ${esc(p.who_can_act || '')}`;
+      const div = document.createElement('div');
+      div.className = 'plan-card';
+      div.innerHTML = `
+        <div class="plan-term">${esc(p.term)}<span class="plan-link">${linkLabel}</span></div>
+        <div class="plan-vernacular">${esc(p.vernacular || '')}</div>
+        <div class="plan-basis">${esc(p.basis || '')}</div>
+        <div class="plan-who">${whoLabel}</div>`;
+      el.appendChild(div);
+    });
   }
-  // Band 1-2: "Ask your care team about…"; band 3-4: "What you can do"
-  const askMode = band && FILTERED_BANDS.has(band) && !state.showAll;
-  if (askMode) {
-    const note = document.createElement('div');
-    note.style.cssText = 'font-size:.75rem;color:var(--muted);margin-bottom:8px;font-style:italic';
-    note.textContent = 'These are things to ask your nurse, doctor, or CHW about at your next contact.';
-    el.appendChild(note);
-  }
-  options.forEach(p => {
-    const linked = (frame.assessment_candidates || []).find(c => c.id === p.linked_assessment);
-    const linkLabel = linked ? ` → ${esc(linked.term)}` : '';
-    const whoLabel = askMode
-      ? `Ask about this: ${esc(p.who_can_act || '')}`
-      : `Can be done by: ${esc(p.who_can_act || '')}`;
-    const div = document.createElement('div');
-    div.className = 'plan-card';
-    div.innerHTML = `
-      <div class="plan-term">${esc(p.term)}<span class="plan-link">${linkLabel}</span></div>
-      <div class="plan-vernacular">${esc(p.vernacular || '')}</div>
-      <div class="plan-basis">${esc(p.basis || '')}</div>
-      <div class="plan-who">${whoLabel}</div>`;
-    el.appendChild(div);
-  });
 }
 
 // ── Entry modal ───────────────────────────────────────────────────────────────
@@ -1581,6 +1836,245 @@ async function saveNewPerson() {
 
 function closePersonModal() {
   document.getElementById('person-modal-overlay').classList.remove('open');
+}
+
+// ── Import from SCP ───────────────────────────────────────────────────────────
+let _scpCandidates = [];
+
+async function openImportScp() {
+  const overlay = document.getElementById('scp-import-overlay');
+  const listEl  = document.getElementById('scp-import-list');
+  listEl.innerHTML = '<div style="color:var(--muted);font-size:.85rem">Loading…</div>';
+  overlay.style.display = 'flex';
+
+  try {
+    const pages = await api('GET', `/api/scp-problems?person_id=${state.personId || ''}`);
+
+    if (!pages.length) {
+      listEl.innerHTML = '<div style="padding:12px;font-size:.88rem;color:var(--text)">No problem pages found in My Shared Care Plan. Push a problem to SCP first.</div>';
+      document.getElementById('scp-import-btn').disabled = true;
+      return;
+    }
+
+    const existingNums = new Set((state.problems || []).map(p => Number(p.number)));
+    _scpCandidates = pages.filter(p => !existingNums.has(p.number));
+    const alreadyHave = pages.filter(p => existingNums.has(p.number));
+
+    document.getElementById('scp-import-btn').disabled = _scpCandidates.length === 0;
+    listEl.innerHTML = '';
+
+    _scpCandidates.forEach((p, i) => {
+      const row = document.createElement('label');
+      row.style.cssText = 'display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:.88rem';
+      row.innerHTML = `
+        <input type="checkbox" data-idx="${i}" checked style="margin-top:2px;flex-shrink:0">
+        <div>
+          <div style="font-weight:600;color:var(--navy)">Problem ${p.number}: ${esc(p.statement_vernacular)}</div>
+          ${p.statement_clinical !== p.statement_vernacular ? `<div style="color:var(--muted);font-size:.8rem">${esc(p.statement_clinical)}</div>` : ''}
+          <div style="color:var(--muted);font-size:.78rem;margin-top:2px">Status: ${p.status} · <a href="${p.url}" target="_blank" style="color:var(--navy-lt)">View in SCP ↗</a></div>
+        </div>`;
+      listEl.appendChild(row);
+    });
+
+    if (alreadyHave.length) {
+      const hdr = document.createElement('div');
+      hdr.style.cssText = 'font-size:.78rem;color:var(--muted);margin-top:6px;padding:0 2px';
+      hdr.textContent = `Already in My Health Picture (${alreadyHave.length}):`;
+      listEl.appendChild(hdr);
+      alreadyHave.forEach(p => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:.88rem;opacity:.5';
+        row.innerHTML = `
+          <span style="margin-top:2px;flex-shrink:0;width:13px">✓</span>
+          <div>
+            <div style="font-weight:600;color:var(--navy)">Problem ${p.number}: ${esc(p.statement_vernacular)}</div>
+          </div>`;
+        listEl.appendChild(row);
+      });
+    }
+
+    if (_scpCandidates.length === 0) {
+      const msg = document.createElement('div');
+      msg.style.cssText = 'padding:10px 2px;font-size:.88rem;color:var(--text)';
+      msg.textContent = 'All SCP problems are already in My Health Picture.';
+      listEl.insertBefore(msg, listEl.firstChild);
+    }
+
+  } catch (e) {
+    listEl.innerHTML = `<div style="color:var(--red);font-size:.85rem">Could not reach SCP: ${esc(String(e))}</div>`;
+    document.getElementById('scp-import-btn').disabled = true;
+  }
+}
+
+async function confirmImportScp() {
+  const checks = document.querySelectorAll('#scp-import-list input[type=checkbox]');
+  const toAdd = [];
+  checks.forEach(cb => { if (cb.checked) toAdd.push(_scpCandidates[+cb.dataset.idx]); });
+  if (!toAdd.length) { closeImportScp(); return; }
+
+  const problems = [...(state.problems || [])];
+  toAdd.forEach(p => {
+    problems.push({
+      number: p.number,
+      statement_vernacular: p.statement_vernacular,
+      statement_clinical: p.statement_clinical,
+      status: p.status,
+    });
+  });
+  // Re-number to be contiguous if needed
+  problems.sort((a, b) => a.number - b.number);
+  problems.forEach((p, i) => { p.number = i + 1; });
+
+  await api('POST', `/api/problems/${state.personId}`, problems);
+  closeImportScp();
+  renderProblemList(problems);
+  injectFactBoxBadges();
+  setStatus(`Imported ${toAdd.length} problem${toAdd.length > 1 ? 's' : ''} from SCP`);
+}
+
+function closeImportScp() {
+  document.getElementById('scp-import-overlay').style.display = 'none';
+  _scpCandidates = [];
+}
+
+// ── Audit queue ───────────────────────────────────────────────────────────────
+const AUDIT_PRESETS = {
+  'balanced':         { treatment:5, thinness:5, uncertainty:5, conflict:5 },
+  'pre-visit':        { treatment:9, thinness:4, uncertainty:4, conflict:8 },
+  'treatment-safety': { treatment:10, thinness:7, uncertainty:5, conflict:6 },
+  'evidence-quality': { treatment:3, thinness:9, uncertainty:9, conflict:5 },
+};
+
+let _auditMode = false;
+let _auditResults = [];
+
+function setSidebarMode(mode) {
+  _auditMode = (mode === 'audit');
+  document.getElementById('btn-mode-list').classList.toggle('active',  !_auditMode);
+  document.getElementById('btn-mode-audit').classList.toggle('active',  _auditMode);
+  document.getElementById('audit-weight-panel').style.display = _auditMode ? 'block' : 'none';
+  document.getElementById('footer-list-actions').style.display = _auditMode ? 'none' : 'block';
+  document.getElementById('audit-outcome-card').style.display = 'none';
+  if (_auditMode && _auditResults.length) {
+    renderAuditList(_auditResults);
+  } else if (_auditMode) {
+    document.getElementById('problem-list').innerHTML =
+      '<div style="padding:12px;font-size:.78rem;color:var(--muted)">Set weights and click Run audit.</div>';
+  } else {
+    renderProblemList(state.problems || []);
+  }
+}
+
+function applyAuditPreset(key) {
+  const p = AUDIT_PRESETS[key];
+  if (!p) return;
+  ['treatment','thinness','uncertainty','conflict'].forEach(k => {
+    const el = document.getElementById('w-' + k);
+    const lb = document.getElementById('lbl-' + k);
+    if (el) { el.value = p[k]; lb.textContent = p[k]; }
+  });
+}
+
+function getAuditWeights() {
+  return {
+    treatment:   +document.getElementById('w-treatment').value,
+    thinness:    +document.getElementById('w-thinness').value,
+    uncertainty: +document.getElementById('w-uncertainty').value,
+    conflict:    +document.getElementById('w-conflict').value,
+  };
+}
+
+async function runAudit() {
+  const btn = document.getElementById('btn-run-audit');
+  btn.textContent = 'Running…'; btn.disabled = true;
+  try {
+    const weights = getAuditWeights();
+    _auditResults = await api('POST', `/api/audit-run/${state.personId}`, { weights });
+    renderAuditList(_auditResults);
+    setStatus(`Audit complete — ${_auditResults.length} problems scored`);
+  } catch(e) {
+    setStatus('Audit error: ' + e.message);
+  } finally {
+    btn.textContent = 'Run audit'; btn.disabled = false;
+  }
+}
+
+function renderAuditList(results) {
+  const list = document.getElementById('problem-list');
+  list.innerHTML = '';
+  if (!results.length) {
+    list.innerHTML = '<div style="padding:12px;font-size:.78rem;color:var(--muted)">No active problems.</div>';
+    return;
+  }
+  results.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'audit-item' + (state.problem && state.problem.number === r.number ? ' selected' : '');
+    div.dataset.problemNum = r.number;
+
+    const priorHtml = r.last_audit
+      ? `<div class="audit-prior">✓ ${r.last_audit.outcome.replace(/-/g,' ')} · ${r.last_audit.date}</div>`
+      : '';
+
+    div.innerHTML = `
+      <div class="audit-item-top">
+        <span class="audit-badge ${r.path}">${{T1:'Urgent',T2:'Review',T3:'Disputed'}[r.path]||r.path}</span>
+        <span class="audit-label">${esc(r.statement_vernacular)}</span>
+        <span class="audit-score">${r.priority_score}</span>
+      </div>
+      <div class="audit-note">${esc(r.evidence_note)}</div>
+      ${priorHtml}`;
+
+    div.addEventListener('click', () => {
+      const prob = (state.problems || []).find(p => p.number === r.number);
+      if (prob) selectProblem(prob, (state.problems || []).indexOf(prob));
+      document.querySelectorAll('.audit-item').forEach(el => el.classList.remove('selected'));
+      div.classList.add('selected');
+      document.getElementById('audit-outcome-card').style.display = 'block';
+      // Pre-fill notes if prior audit exists
+      if (r.last_audit) {
+        document.querySelector(`input[name="audit-outcome"][value="${r.last_audit.outcome}"]`)
+          && (document.querySelector(`input[name="audit-outcome"][value="${r.last_audit.outcome}"]`).checked = true);
+        document.getElementById('audit-outcome-notes').value = '';
+      } else {
+        document.querySelectorAll('input[name="audit-outcome"]').forEach(el => el.checked = false);
+        document.getElementById('audit-outcome-notes').value = '';
+      }
+    });
+    list.appendChild(div);
+  });
+}
+
+async function saveAuditOutcome() {
+  const outcome = document.querySelector('input[name="audit-outcome"]:checked')?.value;
+  if (!outcome) { alert('Select an outcome first.'); return; }
+  if (!state.problem) return;
+
+  const notes = document.getElementById('audit-outcome-notes').value.trim();
+  const weights = getAuditWeights();
+  const result  = _auditResults.find(r => r.number === state.problem.number);
+
+  const entry = {
+    id:             `audit-${Date.now()}`,
+    type:           'plan',
+    slot_id:        'diagnosis-audit',
+    audit_outcome:  outcome,
+    audit_weights:  weights,
+    audit_priority_score: result?.priority_score ?? null,
+    audit_path:     result?.path ?? null,
+    value:          `Audit: ${outcome.replace(/-/g,' ')}${notes ? ' — ' + notes : ''}`,
+    recorded_by:    'Audit',
+    recorded_date:  new Date().toISOString().slice(0,10),
+  };
+
+  await api('POST', `/api/record-entry/${state.personId}/${state.problem.number}`, entry);
+  state.record = await api('GET', `/api/record/${state.personId}/${state.problem.number}`);
+
+  // Refresh audit list with updated outcome
+  if (result) result.last_audit = { outcome, date: entry.recorded_date, notes };
+  renderAuditList(_auditResults);
+
+  setStatus(`Audit outcome saved: ${outcome.replace(/-/g,' ')}`);
+  document.getElementById('audit-outcome-card').style.display = 'none';
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

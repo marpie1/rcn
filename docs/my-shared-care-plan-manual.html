@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Shared Care Plan — Health Partner Manual</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; background: #fafaf8; }
+.page { max-width: 860px; margin: 0 auto; padding: 48px 32px 80px; }
+nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 48px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+nav a { color: #0f766e; text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+nav .current { color: #1a1a1a; font-weight: 500; }
+.doc-header { margin-bottom: 48px; }
+.doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 640px; line-height: 1.65; }
+h2 { font-size: 19px; font-weight: 600; margin: 44px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
+h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: #7c3aed; }
+p { margin-bottom: 14px; }
+ul, ol { padding-left: 22px; margin-bottom: 14px; }
+li { margin-bottom: 6px; }
+strong { font-weight: 600; }
+
+.note { background: #f0fdf4; border-left: 3px solid #0f766e; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0 24px; line-height: 1.6; }
+.note strong { color: #065f46; }
+.callout { background: #faf5ff; border-left: 3px solid #7c3aed; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0 24px; line-height: 1.6; }
+.callout strong { color: #5b21b6; }
+.warn { background: #fffbeb; border-left: 3px solid #d97706; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0 24px; line-height: 1.6; }
+.warn strong { color: #92400e; }
+
+.step-list { list-style: none; padding: 0; counter-reset: steps; margin: 16px 0 28px; }
+.step-list li { counter-increment: steps; padding: 12px 0 12px 52px; position: relative; border-bottom: 1px solid #f0f0ec; font-size: 14px; line-height: 1.6; }
+.step-list li:last-child { border-bottom: none; }
+.step-list li::before { content: counter(steps); position: absolute; left: 0; top: 13px; width: 30px; height: 30px; background: #7c3aed; color: white; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; line-height: 30px; text-align: center; }
+.step-list li strong { color: #1e3a5f; }
+
+.section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0 28px; }
+.section-card { background: white; border: 1.5px solid #dde3ed; border-radius: 8px; padding: 14px 16px; }
+.section-card .sc-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #7c3aed; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 5px; }
+.section-card h4 { font-size: 14px; font-weight: 600; color: #1e3a5f; margin-bottom: 5px; }
+.section-card p { font-size: 12px; color: #555; line-height: 1.5; margin: 0; }
+
+.scenario { background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 10px; padding: 18px 22px; margin: 16px 0 24px; }
+.scenario .sc-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #92400e; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+.scenario p { font-size: 14px; color: #78350f; line-height: 1.65; margin: 0; }
+.scenario p + p { margin-top: 10px; }
+
+.example-note { background: white; border: 1.5px solid #c4b5fd; border-radius: 8px; padding: 14px 16px; margin: 12px 0; font-size: 13px; }
+.example-note .en-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #7c3aed; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.example-note p { color: #1a1a1a; margin: 0; line-height: 1.6; font-style: italic; }
+.example-note .en-note { font-size: 12px; color: #666; font-style: normal; margin-top: 6px; }
+
+.role-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+.role-table th { text-align: left; padding: 8px 12px; background: #f0f0ec; font-weight: 600; font-size: 12px; border: 1px solid #ddd; }
+.role-table td { padding: 10px 12px; border: 1px solid #e0e0da; vertical-align: top; line-height: 1.5; }
+.role-table tr:nth-child(even) td { background: #fafaf7; }
+
+.chat-feature { background: #faf5ff; border: 1.5px solid #c4b5fd; border-radius: 10px; padding: 18px 22px; margin: 16px 0 24px; }
+.chat-feature .cf-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #7c3aed; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+.chat-feature h4 { font-size: 15px; font-weight: 600; color: #1e3a5f; margin-bottom: 8px; }
+.chat-feature p { font-size: 14px; color: #444; line-height: 1.65; margin: 0; }
+.chat-feature p + p { margin-top: 8px; }
+
+@media (max-width: 620px) { .section-grid { grid-template-columns: 1fr; } }
+@media print { nav { display: none; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav>
+  <a href="my-phs-intro.html">My PHS Introduction</a>
+  <a href="my-health-picture-intro.html">My Health Picture</a>
+  <a href="my-health-choices-manual.html">My Health Choices</a>
+  <span class="current">My Shared Care Plan</span>
+  <a href="sodoto-intro.html">SODOTO</a>
+</nav>
+
+<div class="doc-header">
+  <div class="suite">My Personal Health Supporter · Tool 3</div>
+  <h1>My Shared Care Plan</h1>
+  <p class="lead">A living record that every member of a person's care team can read and contribute to. The place where nothing gets lost, no recommendation disappears, and everyone works from the same information.</p>
+</div>
+
+<h2>What My Shared Care Plan Is</h2>
+
+<p>My Shared Care Plan is the ongoing record of a person's health — not a snapshot from a single visit, but a living document that grows and changes over time. It holds their diagnoses, their current symptoms, their care team, their vitals, and the next steps their care team has agreed on. It is updated after every significant interaction. Everyone who is part of the person's care — health partner, physician, family members the person has chosen to include — reads the same record.</p>
+
+<p>Most care coordination fails not because people do not care, but because information exists only in someone's memory. A physician gives a recommendation over the phone and nobody writes it down. A health partner notices a worrying change and mentions it verbally and it never reaches the physician. A new specialist asks for the person's history and gets a verbal summary full of gaps. My Shared Care Plan is the answer to all of these failures: a single record, always current, readable by everyone who needs it.</p>
+
+<div class="callout">
+<strong>The cardinal rule:</strong> If it is not in the Shared Care Plan, it did not happen. Every observation, recommendation, decision, or change that matters — write it down, date it, sign it. The Plan is only as useful as its last entry.
+</div>
+
+<h2>The Eight Sections</h2>
+
+<p>My Shared Care Plan is organized into eight sections. Each section has a specific purpose. When you maintain the Plan, you are responsible for keeping all relevant sections current — not just the notes you wrote yourself.</p>
+
+<div class="section-grid">
+  <div class="section-card">
+    <div class="sc-label">Section 1</div>
+    <h4>About Me</h4>
+    <p>The person's basic information — name, preferred name, date of birth, language, contact details, and any personal context they want their care team to know.</p>
+  </div>
+  <div class="section-card">
+    <div class="sc-label">Section 2</div>
+    <h4>Recent Vitals</h4>
+    <p>Up to four recent vital sign readings — blood pressure, heart rate, weight, temperature, blood glucose — with dates. Updated by the health partner at home visits.</p>
+  </div>
+  <div class="section-card">
+    <div class="sc-label">Section 3</div>
+    <h4>Active Diagnoses</h4>
+    <p>Current health diagnoses with their status and supporting evidence. Linked to My Health Picture — changes there are reflected here.</p>
+  </div>
+  <div class="section-card">
+    <div class="sc-label">Section 4</div>
+    <h4>Care Plan / Next Steps</h4>
+    <p>The specific actions, follow-ups, and plans the care team has agreed on — with who is responsible and by when. The most action-oriented section of the Plan.</p>
+  </div>
+  <div class="section-card">
+    <div class="sc-label">Section 5</div>
+    <h4>Current Symptoms</h4>
+    <p>Up to three current symptoms the person is experiencing — described in their words, with onset date and severity. Updated when symptoms change.</p>
+  </div>
+  <div class="section-card">
+    <div class="sc-label">Section 6</div>
+    <h4>Medical Providers</h4>
+    <p>All physicians, specialists, and other licensed providers currently involved in the person's care — names, roles, and contact information.</p>
+  </div>
+  <div class="section-card">
+    <div class="sc-label">Section 7</div>
+    <h4>Care Team</h4>
+    <p>The full care team — including the health partner, trusted family members, and anyone else the person has chosen to include. Roles and contact information for each person.</p>
+  </div>
+  <div class="section-card" style="grid-column: span 2">
+    <div class="sc-label">Section 8</div>
+    <h4>Pre-Visit Summary</h4>
+    <p>A preparation record completed before each medical appointment — the reason for the visit, specific topics the person wants to discuss, and questions they want answered. Generated together using the Appointment Prep chat tool.</p>
+  </div>
+</div>
+
+<h2>Your Role as Health Partner</h2>
+
+<p>You are the primary maintainer of the Shared Care Plan. The physician contributes when they respond to a package. Family members may contribute notes. But you are the person who keeps it current — who writes after every visit, updates vitals, adds symptoms, and makes sure the next steps section reflects what has actually been agreed on.</p>
+
+<table class="role-table">
+  <tr>
+    <th>Who</th>
+    <th>What they contribute</th>
+    <th>When</th>
+  </tr>
+  <tr>
+    <td><strong>Health partner</strong></td>
+    <td>Observations, vitals, symptom updates, next steps progress, visit notes, pre-visit summaries</td>
+    <td>After every home visit or check-in; before every medical appointment</td>
+  </tr>
+  <tr>
+    <td><strong>Physician partner</strong></td>
+    <td>Clinical recommendations, diagnosis updates, medication changes, responses to packages</td>
+    <td>After receiving and responding to a structured package from the health partner</td>
+  </tr>
+  <tr>
+    <td><strong>Person themselves</strong></td>
+    <td>Symptoms in their own words, personal context, visit topics they want to raise, their choices and preferences</td>
+    <td>Any time; especially when preparing for an appointment</td>
+  </tr>
+  <tr>
+    <td><strong>Chosen family member</strong></td>
+    <td>Observations from the home, concerns they want the care team to know</td>
+    <td>With the person's permission, at any time</td>
+  </tr>
+</table>
+
+<h2>Writing Good Care Plan Notes</h2>
+
+<p>Every note you write in the Shared Care Plan becomes part of a permanent record. Write with that in mind — clearly, factually, and specifically. A physician reading your note should be able to understand exactly what happened without asking you to explain it.</p>
+
+<h3>The four parts of a good note</h3>
+<ol>
+  <li><strong>Date and your name</strong> — always the first line</li>
+  <li><strong>What you observed or discussed</strong> — specific, factual, in plain language</li>
+  <li><strong>What was decided or agreed</strong> — if anything</li>
+  <li><strong>What needs to happen next</strong> — who does what, by when</li>
+</ol>
+
+<h3>Example notes</h3>
+
+<div class="example-note">
+  <div class="en-label">Good — specific and actionable</div>
+  <p>2026-07-06 · Elena Reyes, health partner<br>Home visit. BP 162/96 (right arm, seated, 5 min rest). Higher than last two readings (148/88 on 6/22, 151/90 on 6/15). Rosa reports she has been taking her lisinopril inconsistently — ran out three days ago and has not refilled. No headache or visual changes. Will call pharmacy today to confirm refill is ready. If BP remains above 160 systolic at next visit, will prepare physician package. Next visit: 7/10.</p>
+  <div class="en-note">This note is complete: it has a date, specific numbers, a comparison to prior readings, the likely cause, the person's reported symptoms, the action taken, and the follow-up plan.</div>
+</div>
+
+<div class="example-note">
+  <div class="en-label">Too vague — not useful</div>
+  <p>Visited Rosa. Blood pressure was high. She hasn't been taking her pills. Will check again next time.</p>
+  <div class="en-note">No numbers, no comparison, no clear next step, no date. A physician receiving this note has no basis for clinical judgment.</div>
+</div>
+
+<div class="example-note">
+  <div class="en-label">Good — documenting a difficult conversation</div>
+  <p>2026-07-08 · Elena Reyes, health partner<br>Phone check-in, 15 min. Rosa states she does not want to restart the lisinopril — says it makes her feel "foggy." Explained what the medication is for and what the elevated readings mean. She understands and has decided not to restart at this time. Marked as Not Pursuing in Health Picture. Will note in next physician package that patient has declined lisinopril and the reason given. Rosa agreed to continue monitoring BP at home visits.</p>
+  <div class="en-note">Documents the person's choice with their own words, your response, the outcome, and the follow-up plan — without judgment.</div>
+</div>
+
+<h3>What not to write</h3>
+<ul>
+  <li>Clinical diagnoses or interpretations — "she seems to be getting worse" — write what you observed, not your clinical conclusion</li>
+  <li>Judgments about the person's behavior or choices — document what happened, not what you think of it</li>
+  <li>Vague time references — "last week" or "recently" — always use specific dates</li>
+  <li>Abbreviations or jargon the person or another care team member might not understand</li>
+  <li>Information the person has not agreed to share — confirm before writing anything sensitive</li>
+</ul>
+
+<h2>Updating Vitals</h2>
+
+<p>The Vitals section holds up to four recent readings. Measure and record vitals at every home visit where it is relevant to the person's active problems. The most useful vitals are the ones measured consistently — same arm, same position, same time of day — so that changes are meaningful rather than just noise.</p>
+
+<h3>Recording a vital</h3>
+<ul>
+  <li>Record the date, time, value, and measurement conditions ("right arm, seated, 5 minutes rest")</li>
+  <li>Note anything that might affect the reading ("person had just walked up stairs," "anxious about upcoming appointment")</li>
+  <li>Compare to the previous readings — if there is a significant change, note it explicitly</li>
+</ul>
+
+<h3>When a vital reading should trigger a physician package</h3>
+<ul>
+  <li>Blood pressure consistently above 160 systolic or 100 diastolic across two or more readings</li>
+  <li>Any single reading above 180/110</li>
+  <li>A significant change from baseline — even within "normal" ranges — that is sustained across visits</li>
+  <li>Blood glucose outside the range the physician has specified for this person</li>
+  <li>Any vital that concerns you or the person, even if you are not sure it is significant</li>
+</ul>
+
+<div class="warn">
+<strong>When to call emergency services instead.</strong> A single extremely high blood pressure reading (above 180/120) with symptoms — severe headache, vision changes, chest pain, difficulty breathing — is a hypertensive emergency. Do not write a note first. Call emergency services. The Shared Care Plan is for ongoing care, not for emergencies.
+</div>
+
+<h2>The Appointment Prep Chat</h2>
+
+<p>The Appointment Prep chat is a built-in feature of My Shared Care Plan. When a person has a medical appointment coming up, you open the chat tool together and it reads their entire Shared Care Plan, then helps them prepare — organizing their thoughts, surfacing things worth raising with their provider, and helping them formulate the specific questions they want answered.</p>
+
+<div class="chat-feature">
+  <div class="cf-label">Prepare for Your Appointment — how it works</div>
+  <h4>A guided conversation before every medical encounter</h4>
+  <p>The chat tool loads the person's Shared Care Plan automatically and begins a warm, plain-language conversation about what is on their mind about the upcoming appointment. It surfaces items from the Plan that might be worth discussing — symptoms that have changed, next steps that were not completed, medications that seem disconnected from current diagnoses.</p>
+  <p>It does not diagnose or prescribe. It helps the person feel prepared and organized — so that the fifteen minutes they have with their physician is focused on what actually matters.</p>
+  <p>At the end of the session, you can print or save the conversation as appointment preparation notes — a summary of what the person wants to discuss that can go into the Pre-Visit Summary section or be brought to the appointment.</p>
+</div>
+
+<h3>How to use the Appointment Prep chat</h3>
+
+<ol class="step-list">
+  <li><strong>Open the chat at least one day before the appointment</strong> — not the morning of. The person needs time to think through what comes up.</li>
+  <li><strong>Sit together.</strong> This is not something to do alone. The chat works best when you are beside the person, helping them understand what they are reading and answering their questions about the Plan.</li>
+  <li><strong>Let the chat lead the conversation.</strong> It will greet the person by name and ask what is on their mind. Follow where the person wants to go — do not redirect unless something important is being missed.</li>
+  <li><strong>Make sure every topic they care about gets covered.</strong> If they flagged specific visit topics in the Pre-Visit Summary section, the chat will surface them. Make sure none of them are skipped.</li>
+  <li><strong>Write down questions that come up.</strong> The chat will help formulate questions, but you should also keep a separate list of anything specific the person wants to ask. These go into the Pre-Visit Summary.</li>
+  <li><strong>Print or save the session.</strong> Use the print button to save a summary of what was discussed. Bring this to the appointment or add it to the Pre-Visit Summary section.</li>
+</ol>
+
+<div class="scenario">
+  <div class="sc-label">Example — James prepares for his cardiology follow-up</div>
+  <p>James has a cardiology follow-up in two days. His health partner, Marcus, opens the Appointment Prep chat the evening before. The chat greets James and asks what is on his mind. James says he is worried about whether he needs to change his medication — his blood pressure has been higher than usual the past three weeks.</p>
+  <p>The chat surfaces his recent vitals from the Plan (Marcus recorded them at three home visits), notes that the Care Plan section mentions a medication review was supposed to happen at this appointment, and helps James formulate a specific question: "My blood pressure has been between 158 and 166 systolic at home over the past three weeks. Should we adjust my medication, and if so, which one and by how much?"</p>
+  <p>Marcus writes this question into the Pre-Visit Summary. At the appointment, James reads it directly to the cardiologist — and gets a specific answer that goes back into the Shared Care Plan that evening.</p>
+</div>
+
+<h2>Sharing with the Physician — the Package</h2>
+
+<p>When you prepare a structured physician package from My Health Picture, the Shared Care Plan is the context behind it — and the destination for what comes back. The physician's response goes into the Care Plan / Next Steps section, with a date and their name. This closes the loop: the question was asked, the answer was given, the answer is written down.</p>
+
+<h3>After you receive a physician response</h3>
+<ol>
+  <li>Add their recommendation to the Care Plan / Next Steps section — verbatim if possible, or a close paraphrase with the date</li>
+  <li>Update the Active Diagnoses section if the diagnosis status changed</li>
+  <li>Update My Health Picture — certainty levels, evidence, medications as appropriate</li>
+  <li>Tell the person what the physician said, in plain language</li>
+  <li>Write a brief note in the Plan summarizing what you told the person and their response</li>
+</ol>
+
+<h2>Access and Privacy</h2>
+
+<p>The Shared Care Plan belongs to the person. They decide who can read it and who can contribute to it. No institution has automatic access. Before adding anyone to the Care Team section, confirm with the person that they want that person to have access.</p>
+
+<h3>Who should be on the care team</h3>
+<ul>
+  <li>The person's health partner — always</li>
+  <li>Any physician partners who will receive packages</li>
+  <li>Family members or trusted friends the person explicitly wants included</li>
+  <li>Any other care providers the person has consented to include</li>
+</ul>
+
+<h3>What the person controls</h3>
+<ul>
+  <li>Who is added to the care team</li>
+  <li>Who can read the full Plan vs. specific sections</li>
+  <li>Whether any notes or entries are marked private</li>
+  <li>The right to remove anyone from the care team at any time</li>
+</ul>
+
+<div class="note">
+<strong>When in doubt about sharing, ask.</strong> Before forwarding any part of the Shared Care Plan to a new provider, specialist, or family member — even someone who seems obviously helpful — confirm with the person that they want that information shared. This is their record. It moves when they say it moves.
+</div>
+
+<h2>Keeping the Plan Current — A Checklist</h2>
+
+<p>After every home visit, work through this checklist before you close the Plan:</p>
+
+<ul>
+  <li>Did I add a visit note with today's date and my name?</li>
+  <li>Did I record any vitals I measured today?</li>
+  <li>Did any symptoms change? Did I update the Symptoms section?</li>
+  <li>Did we discuss any next steps? Did I update the Care Plan section?</li>
+  <li>Were any next steps from a previous visit completed? Did I mark them done?</li>
+  <li>Do any of the Active Diagnoses need updating based on what I observed or discussed today?</li>
+  <li>Is there anything I need to include in a physician package after this visit?</li>
+</ul>
+
+<p>This takes two to five minutes at the end of a visit. The habit of updating immediately — while the details are fresh — is what makes the Shared Care Plan useful rather than a record of stale information.</p>
+
+<h2>Related Documentation</h2>
+<ul>
+  <li><a href="my-phs-intro.html">My Personal Health Supporter — Suite Introduction</a></li>
+  <li><a href="my-health-picture-intro.html">My Health Picture — Introduction and Guide</a></li>
+  <li><a href="my-health-choices-manual.html">My Health Choices — Health Partner Manual</a></li>
+  <li><a href="sodoto-intro.html">SODOTO — Credentialing Guide</a></li>
+</ul>
+
+</div><!-- /page -->
+</body>
+</html>

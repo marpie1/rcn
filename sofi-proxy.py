@@ -8,7 +8,7 @@ Usage:
 Then open evsm-aggregator.html via http://localhost:8765
 """
 import os, json, urllib.request, urllib.error
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 PORT = 8765
 API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
@@ -68,6 +68,34 @@ class Handler(BaseHTTPRequestHandler):
             except FileNotFoundError:
                 self.send_response(404); self._cors(); self.end_headers()
                 self.wfile.write(b'Page not found')
+            return
+
+        if self.path == '/api/list-patients':
+            try:
+                config_path = os.path.expanduser('~/.wiki/config.json')
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    cfg = json.load(f)
+                patients = []
+                for site, meta in cfg.get('wikiDomains', {}).items():
+                    if site == 'localhost' or not site.endswith('.localhost'):
+                        continue
+                    owner_path = meta.get('id', '')
+                    owner_name = site.replace('.localhost', '')
+                    if os.path.exists(owner_path):
+                        try:
+                            with open(owner_path) as f:
+                                o = json.load(f)
+                            owner_name = o.get('name', owner_name)
+                        except Exception:
+                            pass
+                    slug = site.replace('.localhost', '')
+                    patients.append({'name': owner_name, 'slug': slug, 'site': site})
+                self.send_response(200); self._cors()
+                self.send_header('Content-Type', 'application/json'); self.end_headers()
+                self.wfile.write(json.dumps({'patients': patients}).encode())
+            except Exception as e:
+                self.send_response(500); self._cors(); self.end_headers()
+                self.wfile.write(json.dumps({'error': str(e)}).encode())
             return
 
         if self.path.startswith('/api/people-registry'):
@@ -188,6 +216,111 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({'error': str(e)}).encode())
             return
 
+        if self.path == '/api/provision-patient':
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length))
+            try:
+                import re, time as _time, secrets as _secrets
+                name = body.get('name', '').strip()
+                slug = body.get('slug', '').strip()
+                if not name or not slug:
+                    raise ValueError('name and slug are required')
+                # Safety: slug must be lowercase alphanumeric + hyphens only
+                if not re.match(r'^[a-z0-9][a-z0-9-]*[a-z0-9]$', slug):
+                    raise ValueError('slug must be lowercase letters, numbers, and hyphens')
+                site = slug + '.localhost'
+                wiki_root = os.path.expanduser('~/.wiki')
+                site_dir  = os.path.join(wiki_root, site)
+                pages_dir = os.path.join(site_dir, 'pages')
+                os.makedirs(pages_dir, exist_ok=True)
+
+                # owner.json — include friend.secret for reclaim
+                reclaim_secret = _secrets.token_hex(32)
+                owner = {'name': name, 'email': slug + '@localhost', 'color': '#0f766e',
+                         'friend': {'secret': reclaim_secret}}
+                with open(os.path.join(site_dir, 'owner.json'), 'w') as f:
+                    json.dump(owner, f, indent=2)
+
+                # about-me page (only if it doesn't exist)
+                about_path = os.path.join(pages_dir, 'about-me')
+                if not os.path.exists(about_path):
+                    about_id = re.sub(r'[^a-z0-9]', '', slug)[:16].ljust(16, '0')
+                    about_page = {
+                        'title': 'About Me',
+                        'story': [
+                            {'type': 'scp-about', 'id': about_id,
+                             'legal_name': name, 'preferred_name': name,
+                             'primary_language': 'English', 'committed': True}
+                        ],
+                        'journal': [
+                            {'type': 'create', 'id': 'init',
+                             'date': int(_time.time() * 1000),
+                             'item': {'title': 'About Me'}}
+                        ]
+                    }
+                    with open(about_path, 'w', encoding='utf-8') as f:
+                        json.dump(about_page, f, ensure_ascii=False, indent=2)
+
+                # Seed all canonical SCP page templates (only pages that don't exist)
+                templates_dir = os.path.expanduser('~/rcn/scp/pages')
+                seeded = []
+                if os.path.isdir(templates_dir):
+                    for fname in sorted(os.listdir(templates_dir)):
+                        if not fname.endswith('.json'):
+                            continue
+                        page_slug = fname[:-5]
+                        if page_slug == 'about-me':
+                            continue  # personalized version created above
+                        dest = os.path.join(pages_dir, page_slug)
+                        if os.path.exists(dest):
+                            continue
+                        with open(os.path.join(templates_dir, fname), encoding='utf-8') as f:
+                            page = json.load(f)
+                        if page_slug == 'welcome-visitors':
+                            # Personalize: [Patient Name] → name, add tool buttons
+                            for it in page.get('story', []):
+                                if isinstance(it.get('text'), str):
+                                    it['text'] = it['text'].replace('[Patient Name]', name)
+                            page['story'].append({
+                                'type': 'html', 'id': 'wv-tools0000000001',
+                                'text': (f'<p style="display:flex;gap:10px">'
+                                         f'<a href="http://localhost:8765/tools/my-health-picture.html?person={slug}" style="display:inline-block;background:#0f766e;color:white;padding:7px 16px;border-radius:6px;font-weight:600;font-size:13px;text-decoration:none">Health Picture</a>'
+                                         f'<a href="http://localhost:8765/tools/scp-chat.html?site={site}" style="display:inline-block;background:#7c3aed;color:white;padding:7px 16px;border-radius:6px;font-weight:600;font-size:13px;text-decoration:none">Appointment Prep</a>'
+                                         f'<a href="http://localhost:8766/" style="display:inline-block;background:#b45309;color:white;padding:7px 16px;border-radius:6px;font-weight:600;font-size:13px;text-decoration:none">Health Choices</a></p>')
+                            })
+                        with open(dest, 'w', encoding='utf-8') as f:
+                            json.dump(page, f, ensure_ascii=False)
+                        seeded.append(page_slug)
+
+                # config.json — add wikiDomains entry if missing
+                config_path = os.path.join(wiki_root, 'config.json')
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    cfg = json.load(f)
+                cfg.setdefault('wikiDomains', {})
+                if site not in cfg['wikiDomains']:
+                    cfg['wikiDomains'][site] = {'id': os.path.join(site_dir, 'owner.json')}
+                    with open(config_path, 'w', encoding='utf-8') as f:
+                        json.dump(cfg, f, ensure_ascii=False, indent=2)
+                    needs_restart = True
+                else:
+                    needs_restart = False
+
+                print(f"  PROVISION  {site} ({name})")
+                self.send_response(200); self._cors()
+                self.send_header('Content-Type', 'application/json'); self.end_headers()
+                self.wfile.write(json.dumps({
+                    'ok': True, 'slug': slug, 'site': site,
+                    'wikiUrl':     f'http://{site}:3000',
+                    'mhpUrl':      f'/tools/my-health-picture.html?person={slug}',
+                    'reclaimCode': reclaim_secret,
+                    'seeded': seeded,
+                    'needsWikiRestart': needs_restart
+                }).encode())
+            except Exception as e:
+                self.send_response(400); self._cors(); self.end_headers()
+                self.wfile.write(json.dumps({'error': str(e)}).encode())
+            return
+
         if not self._auth_ok():
             self.send_response(401)
             self._cors()
@@ -246,7 +379,7 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 data = json.loads(body)
                 contract = data.get('contract', {})
-                neo4j_password = 'sucramsucram'
+                neo4j_password = os.environ.get('NEO4J_PASSWORD', 'neo4j')
                 results = {'neo4j': None, 'fedwiki': [], 'errors': []}
 
                 cid     = contract.get('id','')
@@ -596,4 +729,4 @@ if __name__ == '__main__':
         print(f"Auth: Bearer token required (SODOTO_PROXY_SECRET is set)")
     else:
         print(f"⚠  SODOTO_PROXY_SECRET not set — API endpoints are open.")
-    HTTPServer(('0.0.0.0', PORT), Handler).serve_forever()
+    ThreadingHTTPServer(('0.0.0.0', PORT), Handler).serve_forever()

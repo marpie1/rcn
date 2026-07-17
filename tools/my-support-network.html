@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Support Network</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; font-size: 15px; background: #f8f9fa; color: #1a1a2e; min-height: 100vh; }
+
+/* ── Header ── */
+#header { background: #0f766e; color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 50; }
+#header-text { flex: 1; min-width: 0; }
+#header h1 { font-size: 1rem; font-weight: 600; }
+#patient-label { font-size: .75rem; color: rgba(255,255,255,.7); margin-top: 1px; }
+.hdr-btn { background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.3); border-radius: 5px; padding: 5px 11px; font-size: .75rem; cursor: pointer; white-space: nowrap; }
+.hdr-btn:hover { background: rgba(255,255,255,.28); }
+
+/* ── Completeness hero ── */
+#completeness { background: #fff; border-bottom: 1.5px solid #e5e7eb; padding: 20px 20px 16px; display: flex; align-items: center; gap: 24px; }
+#ring-wrap { flex-shrink: 0; position: relative; width: 96px; height: 96px; }
+#ring-wrap svg { width: 96px; height: 96px; }
+#ring-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+#ring-filled { font-size: 1.5rem; font-weight: 700; color: #0f766e; line-height: 1; }
+#ring-total { font-size: .68rem; color: #6b7280; margin-top: 2px; }
+#completeness-text h2 { font-size: 1.05rem; font-weight: 700; color: #1e3a5f; margin-bottom: 4px; }
+#completeness-text p { font-size: .82rem; color: #6b7280; line-height: 1.5; }
+
+/* ── Tabs ── */
+#tabs { display: flex; border-bottom: 1.5px solid #e5e7eb; background: white; padding: 0 16px; }
+.tab { padding: 10px 18px; font-size: .85rem; font-weight: 600; color: #6b7280; border-bottom: 2.5px solid transparent; cursor: pointer; margin-bottom: -1.5px; }
+.tab.active { color: #0f766e; border-bottom-color: #0f766e; }
+
+/* ── Main content ── */
+#main { max-width: 860px; margin: 0 auto; padding: 20px 16px 60px; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── Category section ── */
+.cat-section { margin-bottom: 28px; }
+.cat-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.cat-title { font-size: .78rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.cat-count { font-size: .72rem; color: #9ca3af; margin-left: auto; }
+.role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+
+/* ── Role cards ── */
+.role-card { border-radius: 9px; padding: 12px 13px; border: 1.5px solid; cursor: pointer; transition: box-shadow .15s; }
+.role-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+.role-card.filled { }
+.role-card.ghost { border-style: dashed; background: white !important; }
+.role-card .rc-role { font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 4px; opacity: .7; }
+.role-card.ghost .rc-role { color: #9ca3af; }
+.role-card .rc-name { font-size: .88rem; font-weight: 600; line-height: 1.3; }
+.role-card.ghost .rc-name { color: #9ca3af; font-weight: 400; font-style: italic; }
+.role-card .rc-phone { font-size: .72rem; margin-top: 3px; opacity: .7; }
+.role-card .rc-add { font-size: .72rem; font-weight: 600; color: #0f766e; margin-top: 4px; }
+
+/* ── Graph view ── */
+#graph-svg-wrap { background: white; border: 1.5px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+#graph-svg-wrap svg { display: block; width: 100%; height: auto; }
+
+/* ── Add modal ── */
+#modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+#modal-bg.show { display: flex; }
+#modal { background: white; border-radius: 12px; max-width: 480px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+#modal-header { padding: 16px 20px 14px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; }
+#modal-header h3 { flex: 1; font-size: 1rem; color: #1e3a5f; }
+#modal-close { background: none; border: none; cursor: pointer; font-size: 1.3rem; color: #9ca3af; }
+#modal-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+.form-group label { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6b7280; margin-bottom: 5px; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; border: 1.5px solid #e5e7eb; border-radius: 7px; padding: 9px 11px;
+  font: inherit; font-size: .88rem; color: #1a1a2e;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #0f766e; }
+#modal-footer { padding: 12px 20px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px; justify-content: flex-end; }
+.btn-save { background: #0f766e; color: white; border: none; border-radius: 7px; padding: 9px 20px; font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; }
+.btn-save:hover { background: #0d6460; }
+.btn-cancel { background: white; color: #374151; border: 1.5px solid #e5e7eb; border-radius: 7px; padding: 9px 16px; font: inherit; font-size: .85rem; cursor: pointer; }
+
+/* ── Loading ── */
+#loading { position: fixed; inset: 0; background: rgba(255,255,255,.92); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; z-index: 100; }
+.spin { width: 28px; height: 28px; border: 3px solid #d1fae5; border-top-color: #0f766e; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading p { font-size: .85rem; color: #6b7280; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-text">
+    <h1>My Support Network</h1>
+    <div id="patient-label">Loading…</div>
+  </div>
+  <button class="hdr-btn" onclick="openMHP()">Health Picture ↗</button>
+  <button class="hdr-btn" onclick="openSCP()">SCP ↗</button>
+  <button class="hdr-btn" onclick="openAdd(null)">+ Add Member</button>
+</div>
+
+<div id="completeness">
+  <div id="ring-wrap">
+    <svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="48" cy="48" r="40" fill="none" stroke="#e5e7eb" stroke-width="10"/>
+      <circle id="ring-arc" cx="48" cy="48" r="40" fill="none" stroke="#0f766e" stroke-width="10"
+        stroke-linecap="round" stroke-dasharray="0 251" transform="rotate(-90 48 48)"/>
+    </svg>
+    <div id="ring-label">
+      <div id="ring-filled">0</div>
+      <div id="ring-total">of 27</div>
+    </div>
+  </div>
+  <div id="completeness-text">
+    <h2 id="comp-headline">Building your care team</h2>
+    <p id="comp-subline">A full support network means faster recovery, better self-management, and fewer crises. See which roles are filled and who might be missing.</p>
+  </div>
+</div>
+
+<div id="tabs">
+  <div class="tab active" onclick="showTab('team')">Team</div>
+  <div class="tab" onclick="showTab('graph')">Network Graph</div>
+</div>
+
+<div id="main">
+  <div id="view-team" class="view active"></div>
+  <div id="view-graph" class="view">
+    <div id="graph-svg-wrap"></div>
+  </div>
+</div>
+
+<div id="modal-bg">
+  <div id="modal">
+    <div id="modal-header">
+      <h3>Add Care Team Member</h3>
+      <button id="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div id="modal-body">
+      <div class="form-group">
+        <label>Role</label>
+        <select id="f-role" onchange="onRoleChange()"></select>
+      </div>
+      <div class="form-group" id="fg-other" style="display:none">
+        <label>Role description</label>
+        <input id="f-other-role" type="text" placeholder="Describe the role…">
+      </div>
+      <div class="form-group">
+        <label>Name</label>
+        <input id="f-name" type="text" placeholder="Full name">
+      </div>
+      <div class="form-group">
+        <label>Phone</label>
+        <input id="f-phone" type="tel" placeholder="(optional)">
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="f-notes" rows="2" placeholder="(optional)"></textarea>
+      </div>
+      <div id="modal-error" style="font-size:.8rem;color:#dc2626;min-height:16px"></div>
+    </div>
+    <div id="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveMember()">Save to SCP</button>
+    </div>
+  </div>
+</div>
+
+<div id="loading"><div class="spin"></div><p>Loading care team…</p></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var PROXY = 'http://localhost:8765';
+  var params = new URLSearchParams(window.location.search);
+  var WIKI_SITE = params.get('site') || 'localhost';
+  var patientName = 'Patient';
+
+  // ── Role taxonomy ───────────────────────────────────────────────
+  var CATEGORIES = [
+    { id: 'medical',    label: 'Medical Care',             color: '#1e3a5f', bg: '#eff6ff', border: '#93c5fd',
+      roles: ['Primary Care Physician','Nurse Practitioner / PA','Specialist','Psychiatrist','Dentist','Pharmacist'] },
+    { id: 'therapy',   label: 'Therapy & Rehab',           color: '#0f766e', bg: '#f0fdfa', border: '#5eead4',
+      roles: ['Mental Health Counselor','Physical Therapist','Occupational Therapist','Dietitian / Nutritionist','Speech Therapist'] },
+    { id: 'community', label: 'Community & Navigation',    color: '#166534', bg: '#f0fdf4', border: '#86efac',
+      roles: ['Community Health Worker','Health Partner','Case Manager','Patient Navigator','Peer Support Specialist','Social Worker','Health Coach'] },
+    { id: 'informal',  label: 'Informal Support',          color: '#92400e', bg: '#fffbeb', border: '#fcd34d',
+      roles: ['Primary Family Caregiver','Family Member','Friend / Neighbor','Spiritual / Faith Support','Legal Aid / Advocate'] },
+    { id: 'practical', label: 'Practical Support',         color: '#4c1d95', bg: '#faf5ff', border: '#c4b5fd',
+      roles: ['Home Health Aide','Transportation Coordinator','Insurance Navigator','Interpreter'] }
+  ];
+
+  var ALL_ROLES = [];
+  CATEGORIES.forEach(function(c){ c.roles.forEach(function(r){ ALL_ROLES.push(r); }); });
+
+  // Keywords for matching scp-care-member roles to maximal list
+  var ROLE_KEYWORDS = {
+    'Primary Care Physician':    ['physician','doctor','pcp','primary care','family medicine','family doctor','general practice','md','d.o'],
+    'Nurse Practitioner / PA':   ['nurse practitioner','np','physician assistant','pa-c','advanced practice','arnp'],
+    'Specialist':                ['specialist','cardiologist','endocrinologist','neurologist','oncologist','rheumatologist','pulmonologist','gastroenterologist','nephrologist','dermatologist','ophthalmologist','orthopedic','urologis'],
+    'Psychiatrist':              ['psychiatrist','psychiatry'],
+    'Dentist':                   ['dentist','dental','orthodontist'],
+    'Pharmacist':                ['pharmacist','pharmacy'],
+    'Mental Health Counselor':   ['counselor','therapist','psychologist','mental health','lcsw','lmft','behavioral health'],
+    'Physical Therapist':        ['physical therapist','physiotherapist'],
+    'Occupational Therapist':    ['occupational therapist'],
+    'Dietitian / Nutritionist':  ['dietitian','nutritionist','dietician','nutrition'],
+    'Speech Therapist':          ['speech therapist','speech-language','slp'],
+    'Community Health Worker':   ['community health worker','chw','promotora'],
+    'Health Partner':            ['health partner'],
+    'Case Manager':              ['case manager','care manager'],
+    'Patient Navigator':         ['navigator','patient navigator','care navigator'],
+    'Peer Support Specialist':   ['peer support','peer specialist','recovery coach'],
+    'Social Worker':             ['social worker','msw','lsw'],
+    'Health Coach':              ['health coach','wellness coach','lifestyle coach'],
+    'Primary Family Caregiver':  ['primary caregiver','primary family caregiver','main caregiver'],
+    'Family Member':             ['family','spouse','partner','parent','sibling','son','daughter','sister','brother','husband','wife','aunt','uncle','cousin'],
+    'Friend / Neighbor':         ['friend','neighbor','neighbour'],
+    'Spiritual / Faith Support': ['spiritual','pastor','priest','minister','chaplain','faith','religious'],
+    'Legal Aid / Advocate':      ['legal','advocate','patient advocate','attorney','lawyer','ombudsman'],
+    'Home Health Aide':          ['home health','home aide','home care','personal care attendant','pca'],
+    'Transportation Coordinator':['transportation','driver','transport'],
+    'Insurance Navigator':       ['insurance','benefits','enrollment'],
+    'Interpreter':               ['interpreter','translator','language access']
+  };
+
+  function matchRole(member) {
+    var text = ((member.role || '') + ' ' + (member.other_role || '') + ' ' + (member.name || '')).toLowerCase();
+    var best = null;
+    for (var role in ROLE_KEYWORDS) {
+      var kws = ROLE_KEYWORDS[role];
+      for (var k = 0; k < kws.length; k++) {
+        if (text.indexOf(kws[k]) >= 0) { best = role; break; }
+      }
+      if (best) break;
+    }
+    return best;
+  }
+
+  function catForRole(roleName) {
+    for (var i = 0; i < CATEGORIES.length; i++) {
+      if (CATEGORIES[i].roles.indexOf(roleName) >= 0) return CATEGORIES[i];
+    }
+    return null;
+  }
+
+  // ── SCP I/O ─────────────────────────────────────────────────────
+  function fetchPage(slug) {
+    return fetch(PROXY + '/api/wiki-read-page?site=' + encodeURIComponent(WIKI_SITE) + '&slug=' + encodeURIComponent(slug))
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .catch(function(){ return null; });
+  }
+
+  function writePage(slug, page) {
+    return fetch(PROXY + '/api/wiki-write-page', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ site: WIKI_SITE, slug: slug, page: page })
+    }).then(function(r){ return r.json(); });
+  }
+
+  // ── State ────────────────────────────────────────────────────────
+  var members = [];       // scp-care-member items
+  var pageData = null;    // full page JSON
+  var roleMap  = {};      // maximal role name → [member, ...]
+
+  // ── Navigation ──────────────────────────────────────────────────
+  function openMHP() { window.open('http://localhost:8766/?person=' + WIKI_SITE.replace(/\.localhost$/,''), '_blank'); }
+  function openSCP() { window.open('http://' + WIKI_SITE + ':3000', '_blank'); }
+  window.openMHP = openMHP; window.openSCP = openSCP;
+
+  // ── Tab switching ───────────────────────────────────────────────
+  window.showTab = function(name) {
+    document.querySelectorAll('.tab').forEach(function(t,i){
+      var names = ['team','graph'];
+      t.classList.toggle('active', names[i] === name);
+    });
+    document.getElementById('view-team').classList.toggle('active', name === 'team');
+    document.getElementById('view-graph').classList.toggle('active', name === 'graph');
+    if (name === 'graph') renderGraph();
+  };
+
+  // ── Completeness ring ────────────────────────────────────────────
+  function updateRing(filled, total) {
+    var pct = total ? filled / total : 0;
+    var circ = 2 * Math.PI * 40;
+    var dash = pct * circ;
+    document.getElementById('ring-arc').setAttribute('stroke-dasharray', dash.toFixed(1) + ' ' + circ.toFixed(1));
+    document.getElementById('ring-filled').textContent = filled;
+    document.getElementById('ring-total').textContent = 'of ' + total;
+    var headline = filled === 0 ? 'No care team members yet'
+      : filled < 5  ? 'Getting started'
+      : filled < 10 ? 'A growing team'
+      : filled < 18 ? 'A solid support network'
+      : 'A remarkably complete team';
+    document.getElementById('comp-headline').textContent = headline;
+  }
+
+  // ── Build role map ───────────────────────────────────────────────
+  function buildRoleMap() {
+    roleMap = {};
+    ALL_ROLES.forEach(function(r){ roleMap[r] = []; });
+    members.forEach(function(m) {
+      var matched = matchRole(m);
+      if (matched && roleMap[matched] !== undefined) {
+        roleMap[matched].push(m);
+      }
+    });
+  }
+
+  // ── Render team grid ─────────────────────────────────────────────
+  function renderTeam() {
+    var filledCount = ALL_ROLES.filter(function(r){ return roleMap[r] && roleMap[r].length > 0; }).length;
+    updateRing(filledCount, ALL_ROLES.length);
+
+    var html = '';
+    CATEGORIES.forEach(function(cat) {
+      var catFilled = cat.roles.filter(function(r){ return roleMap[r] && roleMap[r].length > 0; }).length;
+      html += '<div class="cat-section">';
+      html += '<div class="cat-header">'
+        + '<div class="cat-dot" style="background:' + cat.color + '"></div>'
+        + '<div class="cat-title" style="color:' + cat.color + '">' + cat.label + '</div>'
+        + '<div class="cat-count">' + catFilled + ' / ' + cat.roles.length + '</div>'
+        + '</div>';
+      html += '<div class="role-grid">';
+      cat.roles.forEach(function(role) {
+        var ms = roleMap[role] || [];
+        if (ms.length > 0) {
+          ms.forEach(function(m) {
+            var dispName = m.name || '(unnamed)';
+            html += '<div class="role-card filled" style="background:' + cat.bg + ';border-color:' + cat.border + ';color:' + cat.color + '" onclick="openEdit(\'' + escAttr(m.id) + '\')">'
+              + '<div class="rc-role">' + escH(role) + '</div>'
+              + '<div class="rc-name">' + escH(dispName) + '</div>'
+              + (m.phone ? '<div class="rc-phone">' + escH(m.phone) + '</div>' : '')
+              + '</div>';
+          });
+        } else {
+          html += '<div class="role-card ghost" style="border-color:#d1d5db" onclick="openAdd(\'' + escAttr(role) + '\')">'
+            + '<div class="rc-role" style="color:#9ca3af">' + escH(role) + '</div>'
+            + '<div class="rc-name" style="color:#9ca3af">Not yet filled</div>'
+            + '<div class="rc-add">+ Add</div>'
+            + '</div>';
+        }
+      });
+      html += '</div></div>';
+    });
+
+    // Unmatched members
+    var unmatched = members.filter(function(m){
+      return !matchRole(m);
+    });
+    if (unmatched.length) {
+      html += '<div class="cat-section"><div class="cat-header"><div class="cat-dot" style="background:#6b7280"></div><div class="cat-title" style="color:#6b7280">Other Team Members</div></div><div class="role-grid">';
+      unmatched.forEach(function(m) {
+        html += '<div class="role-card filled" style="background:#f9fafb;border-color:#d1d5db;color:#374151" onclick="openEdit(\'' + escAttr(m.id) + '\')">'
+          + '<div class="rc-role">' + escH(m.role === 'Other' ? (m.other_role || 'Other') : (m.role || 'Team Member')) + '</div>'
+          + '<div class="rc-name">' + escH(m.name || '(unnamed)') + '</div>'
+          + (m.phone ? '<div class="rc-phone">' + escH(m.phone) + '</div>' : '')
+          + '</div>';
+      });
+      html += '</div></div>';
+    }
+
+    document.getElementById('view-team').innerHTML = html;
+  }
+
+  // ── Network graph ────────────────────────────────────────────────
+  function renderGraph() {
+    var W = 800, H = 520;
+    var cx = W / 2, cy = H / 2;
+    var innerR = 160, outerR = 260;
+
+    var filled = members.filter(function(m){ return matchRole(m); });
+    var catsFilled = CATEGORIES.filter(function(cat){
+      return cat.roles.some(function(r){ return roleMap[r] && roleMap[r].length > 0; });
+    });
+    var catsEmpty = CATEGORIES.filter(function(cat){
+      return !cat.roles.some(function(r){ return roleMap[r] && roleMap[r].length > 0; });
+    });
+
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif">';
+
+    // Subtle grid
+    svg += '<rect width="' + W + '" height="' + H + '" fill="#fafafa"/>';
+
+    // Ghost outer ring for empty categories
+    catsEmpty.forEach(function(cat, i) {
+      var angle = (i / Math.max(catsEmpty.length, 1)) * 2 * Math.PI - Math.PI / 2;
+      var x = cx + outerR * Math.cos(angle);
+      var y = cy + outerR * Math.sin(angle);
+      svg += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="36" fill="white" stroke="#e5e7eb" stroke-width="1.5" stroke-dasharray="4 3"/>';
+      svg += '<text x="' + x.toFixed(1) + '" y="' + (y - 6).toFixed(1) + '" text-anchor="middle" font-size="9" fill="#9ca3af" font-weight="600">' + escH(cat.label.split(' ')[0].toUpperCase()) + '</text>';
+      svg += '<text x="' + x.toFixed(1) + '" y="' + (y + 7).toFixed(1) + '" text-anchor="middle" font-size="8" fill="#9ca3af">empty</text>';
+      // spoke
+      svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + x.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="4 3"/>';
+    });
+
+    // Filled member nodes
+    filled.forEach(function(m, i) {
+      var angle = (i / Math.max(filled.length, 1)) * 2 * Math.PI - Math.PI / 2;
+      var x = cx + innerR * Math.cos(angle);
+      var y = cy + innerR * Math.sin(angle);
+      var role = matchRole(m);
+      var cat = catForRole(role) || { color: '#6b7280', bg: '#f3f4f6' };
+      var dispName = (m.name || '').split(' ')[0];
+      var roleShort = role ? role.split(' ').slice(0,2).join(' ') : 'Member';
+
+      // spoke
+      svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + x.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="' + cat.color + '" stroke-width="1.5" opacity=".35"/>';
+      // node
+      svg += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="38" fill="' + cat.bg + '" stroke="' + cat.color + '" stroke-width="2"/>';
+      svg += '<text x="' + x.toFixed(1) + '" y="' + (y - 7).toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="700" fill="' + cat.color + '">' + escH(dispName) + '</text>';
+      svg += '<text x="' + x.toFixed(1) + '" y="' + (y + 7).toFixed(1) + '" text-anchor="middle" font-size="8" fill="' + cat.color + '" opacity=".75">' + escH(roleShort) + '</text>';
+    });
+
+    // Center: patient
+    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="52" fill="#0f766e"/>';
+    var nameWords = patientName.split(' ');
+    if (nameWords.length > 1) {
+      svg += '<text x="' + cx + '" y="' + (cy - 7) + '" text-anchor="middle" font-size="13" font-weight="700" fill="white">' + escH(nameWords[0]) + '</text>';
+      svg += '<text x="' + cx + '" y="' + (cy + 9) + '" text-anchor="middle" font-size="13" font-weight="700" fill="white">' + escH(nameWords.slice(1).join(' ')) + '</text>';
+    } else {
+      svg += '<text x="' + cx + '" y="' + (cy + 5) + '" text-anchor="middle" font-size="13" font-weight="700" fill="white">' + escH(patientName) + '</text>';
+    }
+    svg += '<text x="' + cx + '" y="' + (cy + 24) + '" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.7)">My Support Network</text>';
+
+    svg += '</svg>';
+    document.getElementById('graph-svg-wrap').innerHTML = svg;
+  }
+
+  // ── Add / Edit modal ─────────────────────────────────────────────
+  var editingId = null;
+
+  window.openAdd = function(preRole) {
+    editingId = null;
+    document.getElementById('modal-error').textContent = '';
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-phone').value = '';
+    document.getElementById('f-notes').value = '';
+
+    var sel = document.getElementById('f-role');
+    sel.value = preRole || '';
+    onRoleChange();
+    document.getElementById('modal-bg').classList.add('show');
+    document.getElementById('f-name').focus();
+  };
+
+  window.openEdit = function(id) {
+    var m = members.find(function(x){ return x.id === id; });
+    if (!m) return;
+    editingId = id;
+    document.getElementById('modal-error').textContent = '';
+    var sel = document.getElementById('f-role');
+    var matched = matchRole(m) || 'Other';
+    sel.value = matched;
+    onRoleChange();
+    if (matched === 'Other') document.getElementById('f-other-role').value = m.other_role || m.role || '';
+    document.getElementById('f-name').value = m.name || '';
+    document.getElementById('f-phone').value = m.phone || '';
+    document.getElementById('f-notes').value = m.notes || '';
+    document.getElementById('modal-bg').classList.add('show');
+  };
+
+  window.closeModal = function() { document.getElementById('modal-bg').classList.remove('show'); };
+
+  window.onRoleChange = function() {
+    var v = document.getElementById('f-role').value;
+    document.getElementById('fg-other').style.display = v === 'Other' ? 'block' : 'none';
+  };
+
+  window.saveMember = async function() {
+    var role = document.getElementById('f-role').value;
+    var name = document.getElementById('f-name').value.trim();
+    var err = document.getElementById('modal-error');
+    if (!name) { err.textContent = 'Please enter a name.'; return; }
+
+    var item = {
+      type: 'scp-care-member',
+      id: editingId || hex8(),
+      name: name,
+      role: role === 'Other' ? 'Other' : role,
+      other_role: role === 'Other' ? document.getElementById('f-other-role').value.trim() : '',
+      phone: document.getElementById('f-phone').value.trim(),
+      notes: document.getElementById('f-notes').value.trim(),
+      committed: true
+    };
+
+    // Update or add
+    var page = JSON.parse(JSON.stringify(pageData));
+    if (editingId) {
+      var idx = page.story.findIndex(function(s){ return s.id === editingId; });
+      if (idx >= 0) page.story[idx] = item;
+    } else {
+      page.story.push(item);
+    }
+    page.journal.push({ type: editingId ? 'edit' : 'add', id: item.id, item: item, date: Date.now() });
+
+    try {
+      var res = await writePage('my-care-team', page);
+      if (res && res.error) throw new Error(res.error);
+      pageData = page;
+      members = page.story.filter(function(i){ return i.type === 'scp-care-member' && i.committed; });
+      buildRoleMap();
+      renderTeam();
+      closeModal();
+    } catch(e) {
+      err.textContent = 'Could not save: ' + e.message;
+    }
+  };
+
+  // ── Utilities ────────────────────────────────────────────────────
+  function hex8() { return Math.random().toString(16).slice(2,10).padStart(8,'0'); }
+  function escH(s)    { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escAttr(s) { return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+  // ── Populate role dropdown ───────────────────────────────────────
+  function buildRoleSelect() {
+    var sel = document.getElementById('f-role');
+    CATEGORIES.forEach(function(cat) {
+      var og = document.createElement('optgroup');
+      og.label = cat.label;
+      cat.roles.forEach(function(r) {
+        var o = document.createElement('option');
+        o.value = r; o.textContent = r;
+        og.appendChild(o);
+      });
+      sel.appendChild(og);
+    });
+    var other = document.createElement('option');
+    other.value = 'Other'; other.textContent = 'Other / Custom';
+    sel.appendChild(other);
+  }
+
+  // ── Init ─────────────────────────────────────────────────────────
+  async function init() {
+    buildRoleSelect();
+
+    // Load patient name from about-me
+    var aboutResp = await fetchPage('about-me');
+    if (aboutResp && aboutResp.page && aboutResp.page.story) {
+      var ai = aboutResp.page.story.find(function(i){ return i.type === 'scp-about' && i.committed; });
+      if (ai) patientName = ai.preferred_name || ai.legal_name || patientName;
+    }
+    document.getElementById('patient-label').textContent = patientName;
+    document.title = 'My Support Network — ' + patientName;
+
+    // Load care team
+    var ctResp = await fetchPage('my-care-team');
+    if (ctResp && ctResp.page) {
+      pageData = ctResp.page;
+      members = pageData.story.filter(function(i){ return i.type === 'scp-care-member' && i.committed; });
+    } else {
+      // Create blank page if not found
+      pageData = { title: 'My Care Team', story: [], journal: [{ type: 'create', id: 'init', date: Date.now(), item: { title: 'My Care Team' } }] };
+    }
+
+    buildRoleMap();
+    renderTeam();
+    document.getElementById('loading').style.display = 'none';
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

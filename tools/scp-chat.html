@@ -39,7 +39,7 @@ body {
   color: rgba(255,255,255,.7);
   margin-top: 2px;
 }
-#print-btn {
+#print-btn, .hdr-btn {
   flex-shrink: 0;
   background: rgba(255,255,255,.15);
   color: #fff;
@@ -51,7 +51,7 @@ body {
   white-space: nowrap;
   transition: background .15s;
 }
-#print-btn:hover { background: rgba(255,255,255,.28); }
+#print-btn:hover, .hdr-btn:hover { background: rgba(255,255,255,.28); }
 #print-btn:disabled { opacity: .4; cursor: default; }
 
 /* ── Disclaimer ─────────────────────────────────────────────── */
@@ -222,6 +222,8 @@ body {
     <h1>Prepare for Your Appointment</h1>
     <div id="patient-label">Loading…</div>
   </div>
+  <button class="hdr-btn" id="btn-fedwiki" onclick="window.open('http://localhost:3000','_blank')" title="Open Shared Care Plan in FedWiki">SCP ↗</button>
+  <button class="hdr-btn" id="btn-health-picture" title="Open Health Picture">Health Picture ↗</button>
   <button id="print-btn" disabled title="Print conversation">&#128438; Print</button>
 </div>
 
@@ -244,6 +246,11 @@ body {
 
   var PROXY = 'http://localhost:8765';
   var MODEL = 'claude-sonnet-4-6';
+  var WIKI_SITE = new URLSearchParams(window.location.search).get('site') || 'localhost';
+
+  document.getElementById('btn-health-picture').addEventListener('click', function() {
+    window.open('/tools/my-health-picture.html?person=' + WIKI_SITE.replace(/\.localhost$/, ''), '_blank');
+  });
 
   // ── SCP page definitions (mirrors PREVISIT_SECTIONS) ──────────────
   var SECTIONS = [
@@ -263,7 +270,7 @@ body {
 
   // ── Fetch a FedWiki page via proxy ─────────────────────────────────
   function fetchPage(slug) {
-    return fetch(PROXY + '/api/wiki-read-page?site=localhost&slug=' + encodeURIComponent(slug))
+    return fetch(PROXY + '/api/wiki-read-page?site=' + encodeURIComponent(WIKI_SITE) + '&slug=' + encodeURIComponent(slug))
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; });
   }
@@ -725,6 +732,10 @@ body {
 
   // ── Load SCP data and initialise ────────────────────────────────────
   async function init() {
+    // Point SCP ↗ button at the right FedWiki site
+    var fedwikiBtn = document.getElementById('btn-fedwiki');
+    if (fedwikiBtn) fedwikiBtn.onclick = function() { window.open('http://' + WIKI_SITE + ':3000', '_blank'); };
+
     var slugs = ['about-me', 'pre-visit-summary'];
     SECTIONS.forEach(function (s) {
       if (slugs.indexOf(s.page) === -1) slugs.push(s.page);

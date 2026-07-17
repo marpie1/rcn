@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Personal Health Supporter — Community Health Partner Orientation</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; background: #111827; color: #1a1a1a; }
+.deck { width: 100vw; height: 100vh; position: relative; }
+.slide { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.35s ease; padding: 48px 64px; }
+.slide.active { opacity: 1; pointer-events: all; }
+.progress { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 100; flex-wrap: wrap; justify-content: center; max-width: 90vw; }
+.pip { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.25); transition: background 0.3s; cursor: pointer; }
+.pip.active { background: rgba(255,255,255,0.85); }
+.nav-hint { position: fixed; bottom: 36px; right: 32px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.3); z-index: 100; }
+.slide-num { position: fixed; bottom: 36px; left: 32px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.25); z-index: 100; }
+
+/* ── SLIDE TYPES ── */
+.slide-cover { background: #1e3a5f; }
+.slide-cover .suite { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: rgba(255,255,255,0.45); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 20px; text-align: center; }
+.slide-cover h1 { font-size: 50px; font-weight: 600; color: white; line-height: 1.1; text-align: center; margin-bottom: 24px; max-width: 820px; }
+.slide-cover .subtitle { font-size: 19px; color: rgba(255,255,255,0.65); font-weight: 300; text-align: center; max-width: 680px; line-height: 1.6; }
+.slide-cover .tag { margin-top: 36px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.3); }
+
+.slide-section { background: #0f4c5c; }
+.slide-section h2 { font-size: 42px; font-weight: 600; color: white; line-height: 1.1; text-align: center; max-width: 700px; }
+.slide-section .section-sub { font-size: 18px; color: rgba(255,255,255,0.55); font-weight: 300; margin-top: 16px; text-align: center; max-width: 600px; line-height: 1.5; }
+
+.slide-content { background: #ffffff; }
+.slide-content .slide-inner { max-width: 900px; width: 100%; }
+.slide-content h2 { font-size: 27px; font-weight: 600; color: #1e3a5f; margin-bottom: 20px; line-height: 1.2; }
+.slide-content h2 .accent { color: #0f766e; }
+.slide-content p { font-size: 16px; color: #333; line-height: 1.7; margin-bottom: 14px; }
+.slide-content ul { padding-left: 0; list-style: none; }
+.slide-content ul li { font-size: 15px; color: #333; padding: 9px 0 9px 30px; position: relative; border-bottom: 1px solid #f0f0ec; line-height: 1.55; }
+.slide-content ul li:last-child { border-bottom: none; }
+.slide-content ul li::before { content: "→"; position: absolute; left: 0; color: #0f766e; font-weight: 600; }
+.label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #888; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+
+.slide-grey { background: #f8f9fa; }
+.slide-grey .slide-inner { max-width: 900px; width: 100%; }
+.slide-grey h2 { font-size: 27px; font-weight: 600; color: #1e3a5f; margin-bottom: 20px; line-height: 1.2; }
+
+.slide-dark { background: #1e3a5f; }
+.slide-dark .slide-inner { max-width: 900px; width: 100%; }
+.slide-dark h2 { font-size: 27px; font-weight: 600; color: white; margin-bottom: 20px; line-height: 1.2; }
+.slide-dark p { font-size: 16px; color: rgba(255,255,255,0.8); line-height: 1.7; margin-bottom: 14px; }
+
+.slide-quote { background: #1e3a5f; }
+.slide-quote blockquote { font-size: 28px; font-weight: 300; color: white; line-height: 1.65; text-align: center; max-width: 820px; font-style: italic; }
+.slide-quote .attribution { margin-top: 28px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: rgba(255,255,255,0.4); text-align: center; }
+
+.slide-vision { background: linear-gradient(135deg, #1e3a5f 0%, #0f4c5c 100%); }
+.vision-title { font-size: 28px; font-weight: 600; color: white; text-align: center; margin-bottom: 28px; max-width: 680px; line-height: 1.3; }
+.vision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 860px; width: 100%; }
+.vision-item { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 18px 20px; }
+.vision-item p { font-size: 14px; color: rgba(255,255,255,0.88); line-height: 1.6; margin: 0; }
+.vision-item p strong { color: white; }
+
+/* ── COMPONENTS ── */
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; width: 100%; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; width: 100%; }
+.four-col { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; width: 100%; }
+
+.card { background: white; border: 1.5px solid #dde3ed; border-radius: 10px; padding: 18px 16px; }
+.card.teal { border-color: #99f6e4; background: #f0fdfa; }
+.card.amber { border-color: #fcd34d; background: #fffbeb; }
+.card.green { border-color: #86efac; background: #f0fdf4; }
+.card.blue { border-color: #93c5fd; background: #eff6ff; }
+.card.purple { border-color: #c4b5fd; background: #faf5ff; }
+.card.navy { background: #1e3a5f; border-color: #1e3a5f; }
+.card .card-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #0f766e; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.card.navy .card-label { color: rgba(255,255,255,0.45); }
+.card h4 { font-size: 15px; font-weight: 600; color: #1e3a5f; margin-bottom: 8px; line-height: 1.3; }
+.card.navy h4 { color: white; }
+.card p { font-size: 13px; color: #444; line-height: 1.55; margin: 0; }
+.card.navy p { color: rgba(255,255,255,0.75); }
+
+.col-block h3 { font-size: 16px; font-weight: 600; color: #1e3a5f; margin-bottom: 12px; }
+.col-block ul { list-style: none; padding: 0; }
+.col-block ul li { font-size: 13px; color: #444; padding: 6px 0 6px 24px; position: relative; border-bottom: 1px solid #f0f0ec; line-height: 1.5; }
+.col-block ul li:last-child { border-bottom: none; }
+.col-block ul li::before { content: "→"; position: absolute; left: 0; color: #0f766e; }
+
+.flow-row { display: flex; align-items: center; gap: 0; width: 100%; margin: 16px 0; }
+.flow-box { background: white; border: 2px solid #dde3ed; border-radius: 8px; padding: 11px 12px; font-size: 12px; font-weight: 500; color: #1e3a5f; text-align: center; flex: 1; line-height: 1.35; }
+.flow-box.teal { background: #f0fdfa; border-color: #14b8a6; }
+.flow-box.green { background: #f0fdf4; border-color: #22c55e; }
+.flow-box.blue { background: #eff6ff; border-color: #3b82f6; }
+.flow-box.purple { background: #faf5ff; border-color: #a855f7; }
+.flow-arrow { font-size: 16px; color: #0f766e; padding: 0 5px; flex-shrink: 0; font-weight: 600; }
+
+/* ── TOOL HEADER CARDS ── */
+.tool-header { display: flex; align-items: flex-start; gap: 20px; width: 100%; margin-bottom: 20px; }
+.tool-badge { border-radius: 12px; padding: 14px 18px; min-width: 140px; text-align: center; flex-shrink: 0; }
+.tool-badge.blue { background: #eff6ff; border: 2px solid #3b82f6; }
+.tool-badge.teal { background: #f0fdfa; border: 2px solid #14b8a6; }
+.tool-badge.purple { background: #faf5ff; border: 2px solid #a855f7; }
+.tool-badge.green { background: #f0fdf4; border: 2px solid #22c55e; }
+.tool-badge .tool-num { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+.tool-badge.blue .tool-num { color: #1d4ed8; }
+.tool-badge.teal .tool-num { color: #0f766e; }
+.tool-badge.purple .tool-num { color: #7c3aed; }
+.tool-badge.green .tool-num { color: #166534; }
+.tool-badge .tool-name { font-size: 15px; font-weight: 600; color: #1e3a5f; line-height: 1.2; }
+.tool-tagline { font-size: 14px; color: #555; font-style: italic; margin-top: 6px; }
+.tool-desc { font-size: 15px; color: #333; line-height: 1.65; flex: 1; padding-top: 2px; }
+
+/* ── SCENARIO CARD ── */
+.scenario { background: #fffbeb; border: 2px solid #fcd34d; border-radius: 12px; padding: 20px 24px; width: 100%; }
+.scenario .scenario-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #92400e; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+.scenario p { font-size: 14px; color: #78350f; line-height: 1.65; margin: 0; }
+
+@media print {
+  html, body { overflow: visible; height: auto; }
+  .deck { height: auto; }
+  .slide { position: relative; inset: auto; opacity: 1; pointer-events: all; height: 100vh; page-break-after: always; }
+  .progress, .nav-hint, .slide-num { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- 1. COVER -->
+<div class="slide slide-cover active">
+  <div class="suite">My Personal Health Supporter · Community Health Partner Orientation</div>
+  <h1>Tools for People<br>Who Do Health Work<br>in Neighborhoods</h1>
+  <p class="subtitle">Five open-source tools that give community health partners what they have always needed — and never had.</p>
+  <div class="tag">Open Source CC 4.0 · Whatcom Wealth and Health · RCN</div>
+</div>
+
+<!-- 2. YOU ARE ALREADY THE HEALTH SYSTEM -->
+<div class="slide slide-quote">
+  <blockquote>Most of what creates and preserves a person's health happens at home — in their daily choices, their relationships, and the community around them.</blockquote>
+  <div class="attribution">You are already working in the place where health is actually made.<br>These tools are built for you.</div>
+</div>
+
+<!-- 3. THE FIVE TOOLS -->
+<div class="slide slide-grey">
+  <div class="slide-inner">
+    <div class="label">My Personal Health Supporter</div>
+    <h2>Five tools. One complete picture.</h2>
+    <div class="three-col" style="margin-top:12px">
+      <div class="card blue">
+        <div class="card-label">Tool 1</div>
+        <h4>My Health Picture</h4>
+        <p>The active problem view — SOAP structure, three flags per problem, PANAS activation score. Draws from the Shared Care Plan.</p>
+      </div>
+      <div class="card teal">
+        <div class="card-label">Tool 2</div>
+        <h4>My Health Choices</h4>
+        <p>AI-assisted conversation about a specific problem. Full SCP context pre-loaded. Option Box shows evidence as 1,000 colored dots.</p>
+      </div>
+      <div class="card purple">
+        <div class="card-label">Tool 3</div>
+        <h4>My Shared Care Plan</h4>
+        <p>The actual clinical record — person-owned, decentralized. Diagnoses, medications, vitals, visits, history. Every other tool draws from this.</p>
+      </div>
+    </div>
+    <div class="two-col" style="margin-top:12px">
+      <div class="card amber">
+        <div class="card-label">Tool 4</div>
+        <h4>My Support Network</h4>
+        <p>Shows the person's care team against 27 possible roles across 5 categories. Completeness ring and network graph — who is present, who is missing.</p>
+      </div>
+      <div class="card green">
+        <div class="card-label">Tool 5</div>
+        <h4>SODOTO</h4>
+        <p>See One · Do One · Teach One. A credentialing system that recognizes your skills, rewards your teaching, and grows the network.</p>
+      </div>
+    </div>
+    <p style="font-size:13px;color:#666;text-align:center;margin-top:14px">All five tools are open source, free to use, and owned by no institution. They belong to the people who use them.</p>
+  </div>
+</div>
+
+<!-- 4. MY HEALTH PICTURE -->
+<div class="slide slide-content">
+  <div class="slide-inner">
+    <div class="tool-header">
+      <div class="tool-badge blue">
+        <div class="tool-num">Tool 1</div>
+        <div class="tool-name">My Health Picture</div>
+        <div class="tool-tagline" style="color:#1d4ed8;font-size:11px;margin-top:4px">The health record</div>
+      </div>
+      <div class="tool-desc">
+        My Health Picture is the person's active problem view — organized by Subjective, Objective, Assessment, and Plan. It draws from the Shared Care Plan to show every active problem with three flags: how certain it is, how urgent it is, and what evidence is still missing. A PANAS activation score helps focus the session.
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="col-block">
+        <h3>What you do with it</h3>
+        <ul>
+          <li>Check the PANAS activation score at each visit — it shows whether to focus on priority problems or work through the full list</li>
+          <li>Walk through the active problem list together — certainty, urgency, next best question</li>
+          <li>Add your own observations — what you saw, what they told you</li>
+          <li>Flag problems that look urgent or have changed</li>
+          <li>Tap "Explore choices" on any problem to open My Health Choices with the full context pre-loaded</li>
+          <li>Hand a structured package to the physician when needed</li>
+        </ul>
+      </div>
+      <div class="col-block">
+        <h3>What it gives the person</h3>
+        <ul>
+          <li>A clear view of every active problem — at its actual level of certainty</li>
+          <li>An activation score that shapes how the session is paced</li>
+          <li>The "next best question" for each problem — what is most needed to know</li>
+          <li>A direct path into My Health Choices for any problem</li>
+          <li>The ability to say "not pursuing this" for problems they have chosen to set aside</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5. MY HEALTH CHOICES -->
+<div class="slide slide-grey">
+  <div class="slide-inner">
+    <div class="tool-header">
+      <div class="tool-badge teal">
+        <div class="tool-num">Tool 2</div>
+        <div class="tool-name">My Health Choices</div>
+        <div class="tool-tagline" style="color:#0f766e;font-size:11px;margin-top:4px">The option explorer</div>
+      </div>
+      <div class="tool-desc">
+        My Health Choices is an AI-assisted conversation that opens pre-loaded with the person's full clinical record and focuses on a specific active problem. It presents the evidence, the tradeoffs, and the uncertainties in plain language — not to tell them what to do, but to make sure they understand what they are actually choosing between. When the AI discusses specific options with quantified evidence, it triggers an Option Box: 1,000 dots where teal = benefit, red = harm, grey = unaffected.
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="col-block">
+        <h3>What you do with it</h3>
+        <ul>
+          <li>Open from "Explore choices" in My Health Picture — context is pre-loaded</li>
+          <li>Ask questions together in plain language — AI responds from the medical literature</li>
+          <li>Walk through the Option Box together when it appears</li>
+          <li>Use suggestion chips to guide the conversation</li>
+          <li>Press Save Summary at the end — saves the exploration to the Shared Care Plan</li>
+          <li>Record key decisions back in My Health Picture</li>
+        </ul>
+      </div>
+      <div class="col-block">
+        <h3>What makes it different</h3>
+        <ul>
+          <li>Full SCP context pre-loaded — no setup, no re-entering information</li>
+          <li>AI draws on the medical literature in real time — not pre-authored option sets</li>
+          <li>Option Box makes evidence visible at a glance — 1,000 dots, three colors</li>
+          <li>Suggestion chips guide the conversation forward</li>
+          <li>Available at home, before the appointment, without time pressure</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 6. MY SHARED CARE PLAN -->
+<div class="slide slide-content">
+  <div class="slide-inner">
+    <div class="tool-header">
+      <div class="tool-badge purple">
+        <div class="tool-num">Tool 3</div>
+        <div class="tool-name">My Shared<br>Care Plan</div>
+        <div class="tool-tagline" style="color:#7c3aed;font-size:11px;margin-top:4px">The living record</div>
+      </div>
+      <div class="tool-desc">
+        My Shared Care Plan is a living document that every member of a person's care team — health partner, physician, family member they choose — can read and contribute to. It is updated after every significant interaction. No phone call disappears. No recommendation gets lost. Everyone reads the same record.
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="col-block">
+        <h3>What you do with it</h3>
+        <ul>
+          <li>Write a brief note after every visit or check-in</li>
+          <li>Record what you observed, what was discussed, what was decided</li>
+          <li>Share it with the physician when you escalate</li>
+          <li>Read it before every visit so you know where things stand</li>
+          <li>Keep it current — it is only as useful as its last entry</li>
+        </ul>
+      </div>
+      <div class="col-block">
+        <h3>What it prevents</h3>
+        <ul>
+          <li>Information that exists only in someone's memory</li>
+          <li>Physician advice that no one wrote down</li>
+          <li>The person having to repeat their story every time</li>
+          <li>Care team members working from different information</li>
+          <li>Decisions made without knowing what was already tried</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 7. SODOTO -->
+<div class="slide slide-grey">
+  <div class="slide-inner">
+    <div class="tool-header">
+      <div class="tool-badge green">
+        <div class="tool-num">Tool 5</div>
+        <div class="tool-name">SODOTO</div>
+        <div class="tool-tagline" style="color:#166534;font-size:11px;margin-top:4px">See · Do · Teach</div>
+      </div>
+      <div class="tool-desc">
+        SODOTO is how your skills are recognized, verified, and rewarded. Every skill you demonstrate earns a verifiable digital credential. Every skill you teach earns a higher-level credential. The network gets smarter and stronger every time someone teaches — and the economics reward that.
+      </div>
+    </div>
+    <div class="three-col" style="margin-top:4px">
+      <div class="card blue">
+        <div class="card-label">See One</div>
+        <h4>Watch a skilled partner</h4>
+        <p>Observe a health partner complete a task — a Health Picture review, a physician escalation, a Health Choices conversation. Learn the skill.</p>
+      </div>
+      <div class="card teal">
+        <div class="card-label">Do One</div>
+        <h4>Demonstrate competency</h4>
+        <p>Perform the task. A credentialed partner or physician confirms your competency. You earn a verifiable digital credential and move to a higher pay tier.</p>
+      </div>
+      <div class="card green">
+        <div class="card-label">Teach One</div>
+        <h4>Teach a peer — earn more</h4>
+        <p>Guide another health partner through the skill. Earn a master credential. The network grows. Your earnings grow. No training department required.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 8. MY SUPPORT NETWORK -->
+<div class="slide slide-grey">
+  <div class="slide-inner">
+    <div class="tool-header">
+      <div class="tool-badge green">
+        <div class="tool-num">Tool 4</div>
+        <div class="tool-name">My Support Network</div>
+        <div class="tool-tagline" style="color:#166534;font-size:11px;margin-top:4px">Who is around the person</div>
+      </div>
+      <div class="tool-desc">
+        My Support Network shows the person's care team against a maximal list of 27 possible roles across five categories. A completeness ring shows what fraction of the network is filled. A network graph puts the patient at the center — current care members in the inner ring, empty categories as ghost nodes in the outer ring. Absence is as visible as presence.
+      </div>
+    </div>
+    <div class="two-col" style="margin-top:4px">
+      <div class="col-block">
+        <h3>The five categories</h3>
+        <ul>
+          <li>Medical — physicians, specialists, pharmacy</li>
+          <li>Therapy and Rehab — PT, OT, speech, mental health</li>
+          <li>Community and Navigation — health partner, social work, care coordinator</li>
+          <li>Informal Support — family, friends, faith community</li>
+          <li>Practical Support — transportation, meals, housing</li>
+        </ul>
+      </div>
+      <div class="col-block">
+        <h3>What it shows you</h3>
+        <ul>
+          <li>Who is present in the person's network — and who is missing</li>
+          <li>Whether the gaps are clinical or social</li>
+          <li>How complete the network is against all 27 possible roles</li>
+          <li>A visual that the person can see and understand immediately</li>
+          <li>A starting point for the conversation: "Who else is in your corner?"</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 9. HOW THEY WORK TOGETHER -->
+<div class="slide slide-content">
+  <div class="slide-inner">
+    <div class="label">The care flow</div>
+    <h2>How the five tools connect<br><span class="accent">in a single care relationship</span></h2>
+    <div class="flow-row" style="margin-top:8px">
+      <div class="flow-box purple">Shared Care Plan<br><small style="color:#555">the clinical record</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box blue">Health Picture<br><small style="color:#555">PANAS + problem list</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box teal">Health Choices<br><small style="color:#555">AI option exploration</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box" style="background:#f0fdf4;border-color:#22c55e">Support Network<br><small style="color:#555">who is around them</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box" style="background:#fff8f0;border-color:#f59e0b">Physician<br><small style="color:#555">when needed</small></div>
+    </div>
+    <div class="flow-row" style="margin-top:4px">
+      <div class="flow-box" style="background:#fff8f0;border-color:#f59e0b;flex:none;min-width:120px">Physician response<br><small style="color:#555">structured, written</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box purple">Back into the Plan<br><small style="color:#555">visible to all</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box blue">Health Picture updated<br><small style="color:#555">record stays current</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box green">SODOTO credential<br><small style="color:#555">skill recognized</small></div>
+    </div>
+    <div class="scenario" style="margin-top:16px">
+      <div class="scenario-label">What this looks like — Rosa</div>
+      <p>You visit Rosa on Tuesday. You take the PANAS score — she's at Band 2, so you focus on the top two urgent problems. Her blood pressure reading from last month was never followed up. You tap "Explore choices" on that problem — My Health Choices opens with her full record pre-loaded. You explore the options together; an Option Box shows the evidence. You save the summary. You write a note in the Shared Care Plan. You check My Support Network — her practical support is empty; no one to help with transportation. On Thursday you send a structured question to her physician. The answer comes back Friday and goes straight into the Plan. Rosa reads it at your next visit.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 9. THE PHYSICIAN RELATIONSHIP -->
+<div class="slide slide-grey">
+  <div class="slide-inner">
+    <div class="label">When you need a physician partner</div>
+    <h2>You are not asking for an appointment.<br>You are sending a structured question.</h2>
+    <p style="font-size:15px;color:#555;margin-bottom:16px">When a problem in the Health Picture needs physician input, you do not start from scratch. You send a package — everything the physician needs, in the form that makes the fastest and best response possible.</p>
+    <div class="flow-row">
+      <div class="flow-box blue">The specific problem<br><small style="color:#555">at its level of certainty</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box blue">Evidence gathered<br><small style="color:#555">what is known, what is missing</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box teal">Your observations<br><small style="color:#555">what you actually saw</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box green">One clear question<br><small style="color:#555">what do you recommend?</small></div>
+    </div>
+    <div class="two-col" style="margin-top:16px">
+      <div class="card teal">
+        <div class="card-label">The physician receives</div>
+        <h4>A focused, structured package</h4>
+        <p>Not a stack of records. Not a vague "please call." A specific problem, specific evidence, a specific question — and your direct observations from the home visit.</p>
+      </div>
+      <div class="card green">
+        <div class="card-label">The response goes</div>
+        <h4>Into the Shared Care Plan</h4>
+        <p>Not into a phone call that disappears. Written, dated, visible to the whole care team. Rosa can read it. You can act on it. It becomes part of her record.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 10. YOUR LEARNING PATH -->
+<div class="slide slide-dark">
+  <div class="slide-inner">
+    <div class="label" style="color:rgba(255,255,255,0.4)">Growing as a health partner</div>
+    <h2>Every skill you learn,<br>every skill you teach</h2>
+    <p style="color:rgba(255,255,255,0.7);margin-bottom:16px">Your SODOTO credentials grow with you. Each new skill earns a credential. Each skill you teach earns a higher credential and a higher pay tier. There is no ceiling — the more you know and teach, the more the cooperative values your contribution.</p>
+    <div class="three-col">
+      <div class="card navy">
+        <div class="card-label">Foundation skills</div>
+        <h4>Getting started</h4>
+        <p>Health Picture review. Appointment preparation. Shared Care Plan note-writing. Basic escalation protocol. These are the first credentials you earn.</p>
+      </div>
+      <div class="card navy">
+        <div class="card-label">Advanced skills</div>
+        <h4>Going deeper</h4>
+        <p>Health Choices facilitation. Physician package preparation. Diagnosis audit support. Evidence gap identification. Each earns a higher credential.</p>
+      </div>
+      <div class="card navy">
+        <div class="card-label">Master skills</div>
+        <h4>Teaching others</h4>
+        <p>Teach any skill to a peer and earn a master credential for it. The network learns. Your earnings reflect your contribution to the whole team.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 11. GETTING STARTED -->
+<div class="slide slide-content">
+  <div class="slide-inner">
+    <div class="label">First steps</div>
+    <h2>How to begin — as a<br><span class="accent">neighborhood health partner</span></h2>
+    <div class="two-col" style="margin-top:8px">
+      <div class="col-block">
+        <h3>In the first week</h3>
+        <ul>
+          <li>Learn to open and read a Health Picture with a person</li>
+          <li>Write your first Shared Care Plan note after a home visit</li>
+          <li>Complete your first SODOTO foundation credential</li>
+          <li>Meet your physician partner — understand how they prefer to receive packages</li>
+          <li>Identify three people in your neighborhood who would benefit from a Health Picture review</li>
+        </ul>
+      </div>
+      <div class="col-block">
+        <h3>In the first month</h3>
+        <ul>
+          <li>Complete Health Picture reviews for your enrolled households</li>
+          <li>Send your first structured physician package</li>
+          <li>Facilitate a Health Choices conversation</li>
+          <li>Earn your Health Choices credential</li>
+          <li>Begin teaching the Health Picture review to a newer partner</li>
+        </ul>
+      </div>
+    </div>
+    <div class="scenario" style="margin-top:16px">
+      <div class="scenario-label">Remember</div>
+      <p>You do not need to know medicine. You need to know the people in your neighborhood — and how to use these tools well. The tools carry the knowledge. You carry the relationship. That combination is what makes this work.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 12. CLOSING VISION -->
+<div class="slide slide-vision">
+  <p class="vision-title">Give people everything they need — and watch what neighborhoods do</p>
+  <div class="vision-grid">
+    <div class="vision-item">
+      <p><strong>Every person</strong> has a complete, current picture of their own health — in their hands, at home, in their language, shareable with anyone they choose.</p>
+    </div>
+    <div class="vision-item">
+      <p><strong>Every health partner</strong> has real tools, real credentials, and real compensation — working in the neighborhood they know, for the people they know.</p>
+    </div>
+    <div class="vision-item">
+      <p><strong>Every physician's expertise</strong> reaches exactly where it is most needed — focused on real decisions, freed from reconstructing history that was never written down.</p>
+    </div>
+    <div class="vision-item">
+      <p><strong>The neighborhood</strong> gets healthier and stronger together — because the tools, the economics, and the relationships all point toward the same thing.</p>
+    </div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<div class="progress" id="progress"></div>
+<div class="nav-hint">← → space</div>
+<div class="slide-num" id="slideNum"></div>
+
+<script>
+(function(){
+  var slides = Array.from(document.querySelectorAll('.slide'));
+  var prog = document.getElementById('progress');
+  var numEl = document.getElementById('slideNum');
+  var cur = 0;
+  var n = slides.length;
+
+  slides.forEach(function(_, i){
+    var pip = document.createElement('span');
+    pip.className = 'pip' + (i===0?' active':'');
+    pip.addEventListener('click', function(){ go(i); });
+    prog.appendChild(pip);
+  });
+
+  function go(idx){
+    slides[cur].classList.remove('active');
+    prog.children[cur].classList.remove('active');
+    cur = (idx + n) % n;
+    slides[cur].classList.add('active');
+    prog.children[cur].classList.add('active');
+    numEl.textContent = (cur+1) + ' / ' + n;
+  }
+
+  go(0);
+
+  document.addEventListener('keydown', function(e){
+    if(e.key==='ArrowRight'||e.key===' ') go(cur+1);
+    if(e.key==='ArrowLeft') go(cur-1);
+  });
+
+  document.getElementById('deck').addEventListener('click', function(e){
+    var x = e.clientX / window.innerWidth;
+    go(x < 0.4 ? cur-1 : cur+1);
+  });
+})();
+</script>
+</body>
+</html>

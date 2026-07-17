@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A New Model for Community Health — Whatcom County</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; background: #111827; color: #1a1a1a; }
+.deck { width: 100vw; height: 100vh; position: relative; }
+.slide { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.35s ease; padding: 48px 64px; }
+.slide.active { opacity: 1; pointer-events: all; }
+.progress { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 100; flex-wrap: wrap; justify-content: center; max-width: 90vw; }
+.pip { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.25); transition: background 0.3s; cursor: pointer; }
+.pip.active { background: rgba(255,255,255,0.85); }
+.nav-hint { position: fixed; bottom: 36px; right: 32px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.3); z-index: 100; }
+.slide-num { position: fixed; bottom: 36px; left: 32px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.25); z-index: 100; }
+
+/* ── SLIDE TYPES ── */
+.slide-cover { background: #1e3a5f; }
+.slide-cover .suite { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: rgba(255,255,255,0.45); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 20px; text-align: center; }
+.slide-cover h1 { font-size: 50px; font-weight: 600; color: white; line-height: 1.1; text-align: center; margin-bottom: 24px; max-width: 820px; }
+.slide-cover .subtitle { font-size: 19px; color: rgba(255,255,255,0.65); font-weight: 300; text-align: center; max-width: 640px; line-height: 1.6; }
+.slide-cover .tag { margin-top: 36px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.3); }
+
+.slide-section { background: #0f4c5c; }
+.slide-section .section-num { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: rgba(255,255,255,0.35); letter-spacing: 0.1em; margin-bottom: 16px; }
+.slide-section h2 { font-size: 46px; font-weight: 600; color: white; line-height: 1.1; text-align: center; max-width: 700px; }
+.slide-section .section-sub { font-size: 18px; color: rgba(255,255,255,0.55); font-weight: 300; margin-top: 16px; text-align: center; }
+
+.slide-content { background: #ffffff; }
+.slide-content .slide-inner { max-width: 900px; width: 100%; }
+.slide-content h2 { font-size: 28px; font-weight: 600; color: #1e3a5f; margin-bottom: 24px; line-height: 1.2; }
+.slide-content h2 .accent { color: #0f766e; }
+.slide-content p { font-size: 16px; color: #333; line-height: 1.7; margin-bottom: 14px; }
+.slide-content ul { padding-left: 0; list-style: none; margin-bottom: 0; }
+.slide-content ul li { font-size: 16px; color: #333; padding: 9px 0 9px 32px; position: relative; border-bottom: 1px solid #f0f0ec; line-height: 1.55; }
+.slide-content ul li:last-child { border-bottom: none; }
+.slide-content ul li::before { content: "→"; position: absolute; left: 0; color: #0f766e; font-weight: 600; }
+.label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #888; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+
+.slide-grey { background: #f8f9fa; }
+.slide-grey .slide-inner { max-width: 900px; width: 100%; }
+.slide-grey h2 { font-size: 28px; font-weight: 600; color: #1e3a5f; margin-bottom: 24px; line-height: 1.2; }
+
+.slide-dark { background: #1e3a5f; }
+.slide-dark .slide-inner { max-width: 900px; width: 100%; }
+.slide-dark h2 { font-size: 28px; font-weight: 600; color: white; margin-bottom: 24px; line-height: 1.2; }
+.slide-dark p { font-size: 16px; color: rgba(255,255,255,0.8); line-height: 1.7; margin-bottom: 14px; }
+
+.slide-quote { background: #1e3a5f; }
+.slide-quote blockquote { font-size: 28px; font-weight: 300; color: white; line-height: 1.6; text-align: center; max-width: 820px; font-style: italic; }
+.slide-quote .attribution { margin-top: 28px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: rgba(255,255,255,0.4); text-align: center; }
+
+.slide-rdhy { background: #1e3a5f; }
+.slide-rdhy h2 { font-size: 20px; font-weight: 600; color: rgba(255,255,255,0.5); text-align: center; margin-bottom: 28px; letter-spacing: 0.05em; }
+.rdhy-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; width: 100%; max-width: 900px; margin-bottom: 28px; }
+.rdhy-card { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); border-radius: 10px; padding: 20px 16px; text-align: center; }
+.rdhy-card .hanzi { font-size: 44px; line-height: 1; margin-bottom: 8px; color: white; }
+.rdhy-card .romanized { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.45); margin-bottom: 8px; }
+.rdhy-card .meaning { font-size: 12px; color: rgba(255,255,255,0.82); line-height: 1.5; }
+.rdhy-synthesis { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 16px 22px; max-width: 900px; width: 100%; text-align: center; }
+.rdhy-synthesis p { font-size: 15px; color: rgba(255,255,255,0.88); font-style: italic; line-height: 1.65; margin: 0; }
+
+.slide-vision { background: linear-gradient(135deg, #1e3a5f 0%, #0f4c5c 100%); }
+.vision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 860px; width: 100%; }
+.vision-item { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 18px 20px; }
+.vision-item p { font-size: 14px; color: rgba(255,255,255,0.88); line-height: 1.6; margin: 0; }
+.vision-item p strong { color: white; }
+.vision-title { font-size: 26px; font-weight: 600; color: white; text-align: center; margin-bottom: 24px; max-width: 680px; line-height: 1.3; }
+
+/* ── COMPONENTS ── */
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; width: 100%; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; width: 100%; }
+
+.card { background: white; border: 1.5px solid #dde3ed; border-radius: 10px; padding: 20px 18px; }
+.card.teal { border-color: #99f6e4; background: #f0fdfa; }
+.card.amber { border-color: #fcd34d; background: #fffbeb; }
+.card.green { border-color: #86efac; background: #f0fdf4; }
+.card.blue { border-color: #93c5fd; background: #eff6ff; }
+.card.purple { border-color: #c4b5fd; background: #faf5ff; }
+.card.red { border-color: #fca5a5; background: #fef2f2; }
+.card.navy { background: #1e3a5f; border-color: #1e3a5f; }
+.card .card-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #0f766e; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.card.navy .card-label { color: rgba(255,255,255,0.45); }
+.card h4 { font-size: 15px; font-weight: 600; color: #1e3a5f; margin-bottom: 8px; line-height: 1.3; }
+.card.navy h4 { color: white; }
+.card p { font-size: 13px; color: #444; line-height: 1.55; margin: 0; }
+.card.navy p { color: rgba(255,255,255,0.75); }
+.card .result { font-size: 20px; font-weight: 600; color: #0f766e; margin-top: 10px; }
+
+.col-block h3 { font-size: 17px; font-weight: 600; color: #1e3a5f; margin-bottom: 12px; }
+.col-block ul { list-style: none; padding: 0; }
+.col-block ul li { font-size: 14px; color: #444; padding: 7px 0 7px 26px; position: relative; border-bottom: 1px solid #f0f0ec; line-height: 1.5; }
+.col-block ul li:last-child { border-bottom: none; }
+.col-block ul li::before { content: "→"; position: absolute; left: 0; color: #0f766e; }
+
+.flow-row { display: flex; align-items: center; gap: 0; width: 100%; margin: 16px 0; }
+.flow-box { background: white; border: 2px solid #dde3ed; border-radius: 8px; padding: 12px 14px; font-size: 13px; font-weight: 500; color: #1e3a5f; text-align: center; flex: 1; line-height: 1.35; }
+.flow-box.teal { background: #f0fdfa; border-color: #14b8a6; }
+.flow-box.green { background: #f0fdf4; border-color: #22c55e; }
+.flow-arrow { font-size: 18px; color: #0f766e; padding: 0 6px; flex-shrink: 0; font-weight: 600; }
+
+.econ-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; width: 100%; }
+.econ-card { border-radius: 10px; padding: 18px 16px; text-align: center; }
+.econ-card.green { background: #dcfce7; border: 1.5px solid #86efac; }
+.econ-card.amber { background: #fef3c7; border: 1.5px solid #fcd34d; }
+.econ-card.blue { background: #dbeafe; border: 1.5px solid #93c5fd; }
+.econ-card .who { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #555; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+.econ-card .what { font-size: 13px; font-weight: 500; color: #1a1a1a; line-height: 1.45; }
+
+.stat-row { display: flex; gap: 20px; width: 100%; justify-content: center; margin: 14px 0; }
+.stat-box { text-align: center; flex: 1; max-width: 200px; }
+.stat-box .number { font-size: 38px; font-weight: 600; color: #1e3a5f; line-height: 1; margin-bottom: 8px; }
+.stat-box .stat-label { font-size: 12px; color: #555; line-height: 1.4; }
+
+.ask-list { list-style: none; padding: 0; counter-reset: asks; width: 100%; }
+.ask-list li { counter-increment: asks; padding: 11px 0 11px 50px; position: relative; border-bottom: 1px solid #eee; font-size: 15px; color: #333; line-height: 1.5; }
+.ask-list li:last-child { border-bottom: none; }
+.ask-list li::before { content: counter(asks); position: absolute; left: 0; top: 11px; width: 30px; height: 30px; background: #1e3a5f; color: white; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; line-height: 30px; text-align: center; }
+
+.open-source-box { background: #dcfce7; border: 2px solid #22c55e; border-radius: 12px; padding: 24px 32px; max-width: 820px; width: 100%; text-align: center; }
+.open-source-box .os-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #166534; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+.open-source-box p { font-size: 20px; font-weight: 500; color: #14532d; line-height: 1.55; margin: 0; }
+.open-source-box .os-sub { font-size: 14px; color: #166534; margin-top: 12px; font-weight: 400; }
+
+@media print {
+  html, body { overflow: visible; height: auto; }
+  .deck { height: auto; }
+  .slide { position: relative; inset: auto; opacity: 1; pointer-events: all; height: 100vh; page-break-after: always; }
+  .progress, .nav-hint, .slide-num { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- 1. COVER -->
+<div class="slide slide-cover active">
+  <div class="suite">Whatcom Wealth and Health Association · July 2026</div>
+  <h1>A New Model for<br>Community Health<br>in Whatcom County</h1>
+  <p class="subtitle">What if a community owned its own healthcare system — one that paid for health, not for procedures, and got stronger the more people used it?</p>
+  <div class="tag">My Personal Health Supporter · Open Source CC 4.0 · RCN</div>
+</div>
+
+<!-- 2. WHERE HEALTH LIVES -->
+<div class="slide slide-content">
+  <div class="slide-inner">
+    <div class="label">The founding insight</div>
+    <h2>Most of what creates and preserves your health<br><span class="accent">happens at home.</span></h2>
+    <p style="font-size:15px;color:#555;margin-bottom:10px">The choices you make every day, the people around you, the knowledge you carry, the support you can count on — these determine far more of your health than any clinic visit. Neighborhoods are the true health system. They always have been.</p>
+    <ul>
+      <li>Your health record belongs to the clinic — not to you, not in your home</li>
+      <li>Community health workers have the deepest relationships — and the fewest tools</li>
+      <li>When you need medical care, there is no organized picture of your health ready to hand over</li>
+      <li>Rural Whatcom County has never been well-served by a clinic-centered model</li>
+      <li>What has been missing is giving people and their communities everything they need to do what they already do — far better</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 3. THIS IS NOT AN EXPERIMENT -->
+<div class="slide slide-grey">
+  <div class="slide-inner">
+    <div class="label">Proof of concept</div>
+    <h2>This is not an experiment.<br>It has already worked — three times.</h2>
+    <div class="three-col" style="margin-top:8px">
+      <div class="card teal">
+        <div class="card-label">Alaska · Southcentral Foundation</div>
+        <h4>Nuka System of Care</h4>
+        <p>Alaska Native-owned. Community health aides at the center of care. Person-designed, relationship-based primary care.</p>
+        <div class="result">−36% ED visits<br>−40% specialist visits</div>
+      </div>
+      <div class="card blue">
+        <div class="card-label">Sweden · Jönköping County</div>
+        <h4>The Esther Project</h4>
+        <p>Entire county health system redesigned from the patient's point of view. Quality improvement as a continuous property of the system.</p>
+        <div class="result">Baldrige-level<br>outcomes, sustained</div>
+      </div>
+      <div class="card green">
+        <div class="card-label">USA · Health Rosetta</div>
+        <h4>Employer Self-Insurance</h4>
+        <p>Self-insured employers who purchase care differently — direct primary care, transparent pricing, fiduciary benefits advisors.</p>
+        <div class="result">20–40% cost<br>reduction documented</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. SECTION -->
+<div class="slide slide-section">
+  <div class="section-num">Part One</div>
+  <h2>A Different Kind of Organization</h2>
+  <div class="section-sub">Member-owned · Results-driven · Community-centered</div>
+</div>
+
+<!-- 5. THE COOPERATIVE -->
+<div class="slide slide-content">
+  <div class="slide-inner">
+    <div class="label">The cooperative model</div>
+    <h2>Like a credit union — but for health</h2>
+    <div class="three-col" style="margin-top:8px">
+      <div class="card teal">
+        <div class="card-label">Owned by</div>
+        <h4>Its members</h4>
+        <p>Enrollees are members with a voice — not customers of a corporation. Starts with large Whatcom employers and governments. Open to all who choose to join.</p>
+      </div>
+      <div class="card green">
+        <div class="card-label">Pays for</div>
+        <h4>Results, not procedures</h4>
+        <p>Care teams earn based on problems resolved and health maintained — not on visits logged or tests ordered.</p>
+      </div>
+      <div class="card amber">
+        <div class="card-label">Built around</div>
+        <h4>Community health workers</h4>
+        <p>Trained, credentialed health partners at the center of every care relationship — supported by physicians when needed, not as gatekeepers.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 6. SECTION -->
+<div class="slide slide-section">
+  <div class="section-num">Part Two</div>
+  <h2>The Tools</h2>
+  <div class="section-sub">My Personal Health Supporter · Open source · Person-owned</div>
+</div>
+
+<!-- 7. THREE TOOLS -->
+<div class="slide slide-content">
+  <div class="slide-inner">
+    <div class="label">My Personal Health Supporter</div>
+    <h2>Three tools. One complete picture.</h2>
+    <div class="three-col" style="margin-top:8px">
+      <div class="card blue">
+        <div class="card-label">Tool 1</div>
+        <h4>My Health Picture</h4>
+        <p>Your complete health record — in plain language, owned by you. Every problem, every piece of evidence, every gap in the evidence clearly shown.</p>
+      </div>
+      <div class="card teal">
+        <div class="card-label">Tool 2</div>
+        <h4>My Health Choices</h4>
+        <p>A guided exploration of treatment options. What the evidence says. What the tradeoffs are. Designed to support real informed decision-making.</p>
+      </div>
+      <div class="card purple">
+        <div class="card-label">Tool 3</div>
+        <h4>My Shared Care Plan</h4>
+        <p>A living document your whole care team can see and contribute to. Updated after every interaction. Everyone reads the same record.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 8. MY HEALTH PICTURE -->
+<div class="slide slide-grey">
+  <div class="slide-inner">
+    <div class="label">My Health Picture — the core tool</div>
+    <h2>The first health record that belongs to you —<br>not to a clinic, not to a health system</h2>
+    <p style="font-size:15px;color:#555;margin-bottom:14px">Every health record that existed before this one was owned by an institution. My Health Picture is yours — at home, with you, carried into every conversation with anyone who helps you. It connects to the medical system when you need it. It does not depend on or orbit it.</p>
+    <div class="two-col" style="margin-top:4px">
+      <div class="col-block">
+        <h3>What it holds</h3>
+        <ul>
+          <li>Every active problem, in plain language, at its actual level of certainty</li>
+          <li>The evidence behind each diagnosis — and what is still missing</li>
+          <li>Your choices and preferences, updated over time</li>
+          <li>A structured summary ready to hand to any provider, anywhere</li>
+        </ul>
+      </div>
+      <div class="col-block">
+        <h3>What it changes</h3>
+        <ul>
+          <li>You arrive at every encounter knowing your own health picture</li>
+          <li>Old diagnoses no longer travel silently forward without evidence</li>
+          <li>Your health partner can review it with you at home, before any visit</li>
+          <li>You can share it with family, with a new physician, with anyone you choose</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 9. SECTION -->
+<div class="slide slide-section">
+  <div class="section-num">Part Three</div>
+  <h2>The Care Team</h2>
+  <div class="section-sub">Health partners · Physician partners · Self-managing microenterprises</div>
+</div>
+
+<!-- 10. CHW -->
+<div class="slide slide-content">
+  <div class="slide-inner">
+    <div class="label">The health partner</div>
+    <h2>The person who has time<br>to actually listen</h2>
+    <div class="two-col" style="margin-top:8px">
+      <div class="col-block">
+        <h3>What they do</h3>
+        <ul>
+          <li>Walk through the Health Picture before every physician encounter</li>
+          <li>Gather the structured evidence the physician needs to decide</li>
+          <li>Know when to escalate — and how to hand off efficiently</li>
+          <li>Meet people at home, at community centers, where they are</li>
+          <li>Build trust over time in the community they are from</li>
+        </ul>
+      </div>
+      <div class="col-block">
+        <h3>What they are not</h3>
+        <ul>
+          <li>A receptionist or data entry clerk</li>
+          <li>A case manager with a checklist and no authority</li>
+          <li>A volunteer doing work the system does not value</li>
+          <li>Someone standing between the person and real care</li>
+          <li>Someone who has to apologize for not being a doctor</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 11. PHYSICIAN -->
+<div class="slide slide-grey">
+  <div class="slide-inner">
+    <div class="label">The physician partner</div>
+    <h2>Expertise directed where it is most needed</h2>
+    <p style="font-size:15px;color:#555;margin-bottom:16px">When a case is escalated, the physician receives a structured package — not a stack of old records to interpret in fifteen minutes.</p>
+    <div class="flow-row">
+      <div class="flow-box teal">The specific problem<br><small style="color:#666">at its level of certainty</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box teal">Evidence gathered<br><small style="color:#666">and what is missing</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box teal">CHW observations<br><small style="color:#666">what they actually saw</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box green">One clear question<br><small style="color:#666">what do you recommend?</small></div>
+    </div>
+    <p style="font-size:14px;color:#555;margin-top:16px;text-align:center">The response goes into the Shared Care Plan — not into a phone call that disappears.</p>
+  </div>
+</div>
+
+<!-- 12. MICROENTERPRISE -->
+<div class="slide slide-content">
+  <div class="slide-inner">
+    <div class="label">The neighborhood care team</div>
+    <h2>A self-managing microenterprise</h2>
+    <div class="three-col" style="margin-top:8px">
+      <div class="card">
+        <div class="card-label">Structure</div>
+        <h4>5–15 health partners</h4>
+        <p>A small, self-managing team serving an enrolled neighborhood population. Their own performance record. Their own economics. No management above them — only commitments they have made.</p>
+      </div>
+      <div class="card teal">
+        <div class="card-label">Compensation</div>
+        <h4>Paid for problems resolved</h4>
+        <p>Not for visits logged. The team earns more when more health problems move toward resolution. The system earns when the person gets better — not despite it.</p>
+      </div>
+      <div class="card green">
+        <div class="card-label">Connection</div>
+        <h4>Contracted physician partners</h4>
+        <p>Physicians are expert partners called on when needed — compensated for quality and responsiveness, their engagement score tracked and rewarded.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 13. THE TEAM -->
+<div class="slide slide-dark">
+  <div class="slide-inner">
+    <div class="label" style="color:rgba(255,255,255,0.4)">Who is organizing this</div>
+    <h2>Thirty years of preparation.<br>The right moment. The right team.</h2>
+    <div class="two-col" style="margin-top:16px">
+      <div class="card navy">
+        <div class="card-label">Marc Pierson MD</div>
+        <h4>Co-founder, My PHS tools</h4>
+        <p>ER physician. Created the first rural Level II Trauma System in the US. Led Pursuing Perfection for Whatcom County (RWJ Foundation). Organized Whatcom Integrated Delivery System in 1995. Worked directly with Larry Weed. Founded ReThink Health in this region.</p>
+      </div>
+      <div class="card navy">
+        <div class="card-label">Dave Chase</div>
+        <h4>Co-founder, Health Rosetta</h4>
+        <p>Author of the Health Rosetta blueprint for employer health benefits transformation. Lives in Whatcom County. His documented case studies show 20–40% cost reduction is achievable. Long-time colleague of Marc's.</p>
+      </div>
+    </div>
+    <p style="color:rgba(255,255,255,0.6);font-size:14px;margin-top:16px;text-align:center">Plus: a local insurance broker with benefits expertise · two Whatcom community business leaders</p>
+  </div>
+</div>
+
+<!-- 14. RENDANHEYI -->
+<div class="slide slide-rdhy">
+  <h2>The organizing philosophy · 人单合一</h2>
+  <div class="rdhy-grid">
+    <div class="rdhy-card">
+      <div class="hanzi">人</div>
+      <div class="romanized">Rén</div>
+      <div class="meaning">Person. Not a role or a resource — a moral agent with dignity and initiative.</div>
+    </div>
+    <div class="rdhy-card">
+      <div class="hanzi">单</div>
+      <div class="romanized">Dān</div>
+      <div class="meaning">Order. A specific, concrete need — not "diabetes management" but <em>this person's</em> open problem, today.</div>
+    </div>
+    <div class="rdhy-card">
+      <div class="hanzi">合</div>
+      <div class="romanized">Hé</div>
+      <div class="meaning">Active merging. The living process of person and need coming together — not yet resolved, but in genuine motion. The care relationship itself.</div>
+    </div>
+    <div class="rdhy-card">
+      <div class="hanzi">一</div>
+      <div class="romanized">Yī</div>
+      <div class="meaning">Achieved oneness. Resolution. The problem actually addressed — not managed, not tracked, but met. What the cooperative is paid for.</div>
+    </div>
+  </div>
+  <div class="rdhy-synthesis">
+    <p>The person and the order are in the active process of becoming one. The health partner earns when 一 is achieved — which means the tools, the relationship, and the economics all point toward the same thing: health.</p>
+  </div>
+</div>
+
+<!-- 15. SODOTO -->
+<div class="slide slide-grey">
+  <div class="slide-inner">
+    <div class="label">Learning and credentials</div>
+    <h2>See One · Do One · Teach One</h2>
+    <div class="three-col" style="margin-top:8px">
+      <div class="card blue">
+        <div class="card-label">See One</div>
+        <h4>Observe a skill</h4>
+        <p>Watch a skilled health partner complete a task — an audit, a physician escalation, a Health Choices conversation.</p>
+      </div>
+      <div class="card teal">
+        <div class="card-label">Do One</div>
+        <h4>Demonstrate competency</h4>
+        <p>Perform the task under supervision. Earn a verifiable digital credential. Earn more.</p>
+      </div>
+      <div class="card green">
+        <div class="card-label">Teach One</div>
+        <h4>Teach a peer — earn more</h4>
+        <p>Teach the skill to another health partner. Earn a master credential. The network gets smarter every time. No training department needed.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 16. OPEN SOURCE -->
+<div class="slide slide-content">
+  <div class="slide-inner" style="display:flex;flex-direction:column;align-items:center;gap:28px">
+    <div class="label" style="text-align:center">A structural commitment</div>
+    <div class="open-source-box">
+      <div class="os-label">Open Source · CC 4.0 · Forever</div>
+      <p>Every tool in this system is open source, licensed Creative Commons 4.0, and will never be for sale.</p>
+      <p class="os-sub">Anyone can use them, adapt them, deploy them — in Whatcom County, in rural Alaska, in a clinic anywhere in the world — without asking anyone's permission.</p>
+    </div>
+    <div class="two-col" style="max-width:860px">
+      <div class="card green">
+        <h4>The cooperative earns by using the tools well</h4>
+        <p>Not by owning them. The tools belong to the commons. The cooperative is the financial sustainability model.</p>
+      </div>
+      <div class="card red">
+        <h4>What happened to Larry Weed's tools</h4>
+        <p>His Problem Knowledge Couplers were trapped in IP disputes after he sold the rights. The vision became inaccessible. That cannot happen here.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 17. WHY NOW — WIDS STORY -->
+<div class="slide slide-grey">
+  <div class="slide-inner">
+    <div class="label">Why now — thirty years in the making</div>
+    <h2>We tried this in 1995.<br>Here is what was missing then.</h2>
+    <div class="two-col" style="margin-top:8px">
+      <div class="col-block">
+        <h3>Whatcom Integrated Delivery System, 1995</h3>
+        <ul>
+          <li>Organized every medical provider, the hospital, and Blue Cross into one system</li>
+          <li>Built county-wide medical records and a secure healthcare network</li>
+          <li>Washington State mandate for managed care set for July 1995</li>
+          <li>State withdrew the mandate the week before launch</li>
+          <li>The business structure dissolved — the quality work continued</li>
+        </ul>
+      </div>
+      <div class="col-block">
+        <h3>What is different now</h3>
+        <ul>
+          <li>No state mandate needed — a voluntary cooperative starts with employers who choose to join</li>
+          <li>The tools now exist — My PHS, shared care plans, physician review loops</li>
+          <li>The cooperative model sidesteps institutional permission entirely</li>
+          <li>The same team, thirty years wiser, with the structural conditions finally right</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 18. ECONOMICS -->
+<div class="slide slide-content">
+  <div class="slide-inner">
+    <div class="label">How the money works</div>
+    <h2>Surplus flows back to the people who created it</h2>
+    <div class="econ-row" style="margin:16px 0">
+      <div class="econ-card green">
+        <div class="who">Members</div>
+        <div class="what">Lower cost-sharing for engaged members who keep their health picture current</div>
+      </div>
+      <div class="econ-card amber">
+        <div class="who">Care Teams</div>
+        <div class="what">Performance pools based on problems resolved, SODOTO credentials, review loops closed</div>
+      </div>
+      <div class="econ-card blue">
+        <div class="who">Infrastructure</div>
+        <div class="what">Open source tool improvement, expanded physician networks, new care capabilities</div>
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="number">$15k–40k</div>
+        <div class="stat-label">Saved per preventable hospitalization</div>
+      </div>
+      <div class="stat-box">
+        <div class="number">2 hrs</div>
+        <div class="stat-label">Health partner time to catch the problem early</div>
+      </div>
+      <div class="stat-box">
+        <div class="number">10 min</div>
+        <div class="stat-label">Physician review of a structured package</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 19. FIVE ASKS -->
+<div class="slide slide-content">
+  <div class="slide-inner">
+    <div class="label">What we are asking</div>
+    <h2>Five things that make a pilot possible</h2>
+    <ol class="ask-list">
+      <li><strong>Join the planning group</strong> — health, finance, community organizing, and local government at the same table</li>
+      <li><strong>Identify the first three neighborhood sites</strong> — communities with CHW presence, strong social networks, underserved health needs</li>
+      <li><strong>Connect us with physician partners</strong> — willing to pilot structured asynchronous review, compensated fairly</li>
+      <li><strong>Help establish the actuarial baseline</strong> — claims data and someone who can model the scenario for Whatcom County's population</li>
+      <li><strong>Tell us what we are missing</strong> — stress-test this with what you know about Whatcom County on the ground</li>
+    </ol>
+  </div>
+</div>
+
+<!-- 20. VISION -->
+<div class="slide slide-vision">
+  <p class="vision-title">Give people everything they need — and watch what neighborhoods do</p>
+  <div class="vision-grid">
+    <div class="vision-item">
+      <p><strong>Every person</strong> has a complete, current picture of their own health — in their hands, at home, owned by them, shareable with anyone they choose.</p>
+    </div>
+    <div class="vision-item">
+      <p><strong>Every neighborhood</strong> has health partners with real tools, real credentials, and real compensation — people from the community, working in the community, for the community.</p>
+    </div>
+    <div class="vision-item">
+      <p><strong>Every physician's expertise</strong> reaches exactly where it is most needed — directed at real decisions, protected from overload, compensated for quality and responsiveness.</p>
+    </div>
+    <div class="vision-item">
+      <p><strong>The cooperative</strong> grows stronger as the community gets healthier — because for the first time, those two things are the same thing.</p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="progress" id="progress"></div>
+<div class="slide-num" id="slideNum"></div>
+<div class="nav-hint">← → or click</div>
+
+<script>
+const slides = Array.from(document.querySelectorAll('.slide'));
+const progress = document.getElementById('progress');
+const slideNum = document.getElementById('slideNum');
+let current = 0;
+slides.forEach(function(_,i){ var p=document.createElement('div'); p.className='pip'+(i===0?' active':''); p.addEventListener('click',function(){go(i);}); progress.appendChild(p); });
+function go(n){ slides[current].classList.remove('active'); progress.children[current].classList.remove('active'); current=Math.max(0,Math.min(slides.length-1,n)); slides[current].classList.add('active'); progress.children[current].classList.add('active'); slideNum.textContent=(current+1)+' / '+slides.length; }
+go(0);
+document.addEventListener('keydown',function(e){ if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '){e.preventDefault();go(current+1);} if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();go(current-1);} if(e.key==='Home')go(0); if(e.key==='End')go(slides.length-1); });
+document.getElementById('deck').addEventListener('click',function(e){ if(e.target.closest('.pip'))return; go(e.clientX>window.innerWidth*0.5?current+1:current-1); });
+</script>
+</body>
+</html>

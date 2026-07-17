@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCP 3.0 — Risks</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #f8f9fa;
+  --surface: #ffffff;
+  --border:  #dee2e6;
+  --navy:    #1e3a5f;
+  --navy-lt: #2a4f7c;
+  --text:    #1a1a2e;
+  --muted:   #6c757d;
+  --red:     #9b1c1c;
+  --red-bg:  #fef2f2;
+  --red-bd:  #fca5a5;
+  --amber:   #78350f;
+  --amber-bg:#fffbeb;
+  --amber-bd:#fcd34d;
+  --green:   #14532d;
+  --green-bg:#f0fdf4;
+  --green-bd:#86efac;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+header {
+  background: var(--navy);
+  color: #fff;
+  padding: 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+header a.back {
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+header a.back:hover { color: #fff; }
+
+header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+main {
+  max-width: 740px;
+  margin: 2.5rem auto;
+  padding: 0 1.5rem 4rem;
+}
+
+h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 2rem 0 0.5rem;
+}
+
+h2:first-of-type { margin-top: 0; }
+
+h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--navy-lt);
+  margin: 1.1rem 0 0.3rem;
+}
+
+p { margin-bottom: 1.1rem; }
+
+ul, ol {
+  margin: 0.3rem 0 1rem 1.4rem;
+}
+
+li { margin-bottom: 0.35rem; }
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+.lead {
+  font-size: 1.05rem;
+  color: var(--navy-lt);
+  font-weight: 500;
+  margin-bottom: 1.6rem;
+  line-height: 1.65;
+}
+
+/* Risk cards */
+.risk {
+  border-radius: 8px;
+  border: 1px solid;
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1.25rem;
+}
+
+.risk-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.risk-num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  padding: 0.15em 0.5em;
+  border-radius: 3px;
+}
+
+.risk-title {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.risk p, .risk ul { margin-bottom: 0.6rem; font-size: 0.95rem; }
+.risk p:last-child, .risk ul:last-child { margin-bottom: 0; }
+
+.risk.high   { background: var(--red-bg);   border-color: var(--red-bd); }
+.risk.medium { background: var(--amber-bg); border-color: var(--amber-bd); }
+.risk.low    { background: var(--green-bg); border-color: var(--green-bd); }
+
+.risk.high   .risk-num { background: var(--red-bd);   color: var(--red); }
+.risk.medium .risk-num { background: var(--amber-bd); color: var(--amber); }
+.risk.low    .risk-num { background: var(--green-bd); color: var(--green); }
+
+.risk.high   .risk-title { color: var(--red); }
+.risk.medium .risk-title { color: var(--amber); }
+.risk.low    .risk-title { color: var(--green); }
+
+.mitigation {
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  font-size: 0.93rem;
+}
+
+.mitigation strong {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+  color: var(--muted);
+}
+
+/* Summary table */
+.risk-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.risk-table th {
+  background: var(--navy);
+  color: #fff;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.risk-table td {
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.risk-table tr:last-child td { border-bottom: none; }
+
+.tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.1em 0.5em;
+  border-radius: 3px;
+}
+
+.tag-now   { background: #fee2e2; color: #991b1b; }
+.tag-decide { background: #fef3c7; color: #92400e; }
+.tag-accept { background: #d1fae5; color: #065f46; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="/">← My Health Picture</a>
+  <h1>My PHS — Risks and Considerations</h1>
+</header>
+
+<main>
+
+<p class="lead">My Health Picture and My Health Choices are powerful tools operating in a high-stakes domain. This document names the real risks, in order of severity, with honest mitigation paths. The goal is not to avoid risk — it is to know which risks are accepted, which are managed, and which require decisions before clinical deployment.</p>
+
+<hr>
+
+<h2>High-Severity Risks</h2>
+
+<div class="risk high">
+  <div class="risk-header">
+    <span class="risk-num">Risk 1 — High</span>
+    <span class="risk-title">PHI transmission to Anthropic — HIPAA violation</span>
+  </div>
+  <p>Every Generate Frame, Re-Match, and Narrate call sends patient clinical data — problem statements, symptoms, record entries, FHIR-sourced conditions and medications — to Anthropic's API. Anthropic does not have a Business Associate Agreement (BAA) with RCN. Using the tool with real identified patients is a HIPAA violation under current configuration.</p>
+  <div class="mitigation">
+    <strong>Mitigation path</strong>
+    Require de-identified data (initials, codes, no birthdates or MRNs) for all pilot work until a BAA is in place. Anthropic offers BAAs for enterprise customers — this is a procurement step, not a technical one. The Superior AZ pilot must resolve this before any real patient data enters the system.
+  </div>
+</div>
+
+<div class="risk high">
+  <div class="risk-header">
+    <span class="risk-num">Risk 2 — High</span>
+    <span class="risk-title">PHI at rest — no encryption, no access control</span>
+  </div>
+  <p>Patient records are stored as plain JSON files on a local machine with no encryption at rest. The proxy has no authentication — anyone who can reach <code>localhost:8766</code> can read every record. In a shared CHW office, a shared computer, or on a machine that is lost or stolen, all records are exposed.</p>
+  <div class="mitigation">
+    <strong>Mitigation path</strong>
+    Short term: run only on the clinician's personal machine with OS-level disk encryption (FileVault on Mac) enabled. Never on a shared or public computer. Longer term: add authentication to the proxy and encrypt the JSON store. This is buildable — it is not yet built.
+  </div>
+</div>
+
+<div class="risk high">
+  <div class="risk-header">
+    <span class="risk-num">Risk 3 — High</span>
+    <span class="risk-title">No physician review loop — CHW operating unsupported</span>
+  </div>
+  <p>The three-role design (person / CHW / physician) is clear on paper. In practice — especially in rural Superior AZ where physician contact may be infrequent — the CHW may be the only person looking at AI-generated assessment candidates and attention codes for days or weeks. The tool does not prevent a CHW from acting on what they see. The physician review loop is listed as future work. It is not optional — it is the primary clinical safety control.</p>
+  <div class="mitigation">
+    <strong>Mitigation path</strong>
+    Written protocol before pilot launch: no clinical action taken on any Attention Code 1 or 2 candidate without same-day physician contact. This must be documented, trained, and enforced — not just described in the intro. Build the physician review loop before expanding beyond the initial pilot.
+  </div>
+</div>
+
+<div class="risk high">
+  <div class="risk-header">
+    <span class="risk-num">Risk 4 — High</span>
+    <span class="risk-title">FDA Software as Medical Device (SaMD) — possible regulatory violation</span>
+  </div>
+  <p>Clinical decision support software that influences diagnosis or treatment decisions may be regulated by the FDA as a Software as Medical Device. The coupler generates ranked differential diagnoses with probability estimates and Attention Codes labeled "Act Now" and "Move Fast." The FDA's 2022 guidance exempts tools that display medical information without directing clinical management. The Attention Code system, with its explicit urgency language tied to clinical action, likely crosses that line.</p>
+  <div class="mitigation">
+    <strong>Mitigation path</strong>
+    Legal review before any clinical deployment. The safest current framing is "educational aid used to structure a care conversation" — not clinical decision support. Change the language of Attention Codes if needed to move below the regulatory threshold. Do not expand to additional NDCs or clinic settings without this review.
+  </div>
+</div>
+
+<hr>
+
+<h2>Medium-Severity Risks</h2>
+
+<div class="risk medium">
+  <div class="risk-header">
+    <span class="risk-num">Risk 5 — Medium</span>
+    <span class="risk-title">AI probability estimates mistaken for clinical verdicts</span>
+  </div>
+  <p>The most likely real-world failure mode: a CHW, patient, or family member reads "Iron-deficiency anemia — 60%" and treats it as a diagnosis rather than a ranked hypothesis. The Attention Strip protects against high-severity candidates being missed; it does not protect against the middle of the differential — things rated 20–40% — being over-interpreted.</p>
+  <p>The interface is persuasive. Probability bars, color-coded attention codes, and ranked lists carry implicit authority even when surrounded by disclaimers. The gap between "this is a hypothesis" and "this is what you have" closes faster in practice than in design.</p>
+  <div class="mitigation">
+    <strong>Mitigation path</strong>
+    CHW training must include explicit instruction on the difference between a hypothesis and a diagnosis. Consider renaming "Probability" to "Evidence strength" or "Likelihood" in the interface — language that is less clinical-verdict-like. The intro text already states the tool does not diagnose; that message needs to be visible inside the frame, not only in a separate document.
+  </div>
+</div>
+
+<div class="risk medium">
+  <div class="risk-header">
+    <span class="risk-num">Risk 6 — Medium</span>
+    <span class="risk-title">AI severity misclassification — attention code firewall has a gap</span>
+  </div>
+  <p>The Attention Code matrix is deterministic — given severity class and probability band, the code is computed from a fixed table, not assigned by the AI. This is a deliberate safety design. However, the AI assigns the severity class and probability band. If Claude rates a condition as Class II when it is Class IV, the attention code is wrong and the Attention Strip will not surface it. The firewall protects against AI gaming the urgency signal; it does not protect against AI misclassifying severity.</p>
+  <div class="mitigation">
+    <strong>Mitigation path</strong>
+    Physician review of severity classes, not just attention codes, as part of the physician review loop. Add a "severity reviewed" flag to each candidate. Frame severity classifications as provisional until clinician-confirmed.
+  </div>
+</div>
+
+<div class="risk medium">
+  <div class="risk-header">
+    <span class="risk-num">Risk 7 — Medium</span>
+    <span class="risk-title">My Health Choices population mismatch — NNT/NNH may not apply</span>
+  </div>
+  <p>The My Health Choices numbers — NNT 67 for lisinopril, NNT 56 for rosuvastatin — come from large RCTs with populations that are predominantly white, insured, and enrolled in academic medical centers. The Superior AZ population is rural, predominantly Hispanic, and may have substantially different baseline cardiovascular risk, medication adherence patterns, and access to follow-up care. An NNT of 67 in the Lancet meta-analysis may be 40 or 100 in this specific community.</p>
+  <p>Each health choice card includes population caveats — but they are collapsed by default. Most users will not open them.</p>
+  <div class="mitigation">
+    <strong>Mitigation path</strong>
+    Make population caveats visible by default, not collapsed. Add a prominent note above each My Health Choices card: "These numbers come from large studies — your clinician can calculate your personal risk." Consider adding a field for the person's 10-year ASCVD score when known, to contextualize the generic NNT.
+  </div>
+</div>
+
+<div class="risk medium">
+  <div class="risk-header">
+    <span class="risk-num">Risk 8 — Medium</span>
+    <span class="risk-title">CHW scope of practice — the gap between facilitation and clinical action</span>
+  </div>
+  <p>CHWs in Arizona are not licensed to diagnose or prescribe. The tool is designed for CHWs to facilitate, not to act on clinical findings. In practice, especially in a rural setting where the nearest physician may be in Tucson, the CHW is often the only person in the room with clinical knowledge. The tool does not enforce the facilitation boundary — it only describes it.</p>
+  <div class="mitigation">
+    <strong>Mitigation path</strong>
+    Explicit written protocol and training before pilot launch. The tool should surface a visible reminder when an Attention Code 1 or 2 candidate is present: "This finding needs physician review — contact the supervising clinician." This is a one-line UI change and a significant safety improvement.
+  </div>
+</div>
+
+<div class="risk medium">
+  <div class="risk-header">
+    <span class="risk-num">Risk 9 — Medium</span>
+    <span class="risk-title">Model drift — probability estimates are not reproducible</span>
+  </div>
+  <p>Claude's outputs are not reproducible. A frame generated today under <code>claude-sonnet-4-6</code> will differ from one generated next month under a future model version. Probability estimates are not calibrated to external ground truth — they reflect Claude's current training, which changes with each model update.</p>
+  <p>This matters most for probability histories: a 40% estimate on June 20 and a 40% estimate on July 3 may have been generated by models with different calibration. The trend appears meaningful but may partly reflect model variation rather than evidence accumulation.</p>
+  <div class="mitigation">
+    <strong>Mitigation path</strong>
+    The model version is already logged with every frame (current practice — good). Treat probability histories as directional signal, not precise longitudinal data. Document this limitation explicitly for any clinical user. Do not use probability trends as standalone clinical evidence.
+  </div>
+</div>
+
+<hr>
+
+<h2>Lower-Severity Risks</h2>
+
+<div class="risk low">
+  <div class="risk-header">
+    <span class="risk-num">Risk 10 — Lower</span>
+    <span class="risk-title">No audit trail for AI contributions</span>
+  </div>
+  <p>Probability histories are kept. Frame versions are stored. But there is no audit log of what Claude was prompted with, what it returned, who reviewed it, or what clinical action followed. In a clinical adverse event, reconstructing the AI's contribution would require inspecting raw JSON files — not a realistic forensic path.</p>
+  <div class="mitigation">
+    <strong>Mitigation path</strong>
+    Log the full prompt and response for each AI call alongside the frame. This is a privacy concern (the prompt contains PHI) but also a safety and accountability requirement for clinical deployment. Encrypt the log; keep it local.
+  </div>
+</div>
+
+<div class="risk low">
+  <div class="risk-header">
+    <span class="risk-num">Risk 11 — Lower</span>
+    <span class="risk-title">Liability ambiguity</span>
+  </div>
+  <p>If the tool contributes to a missed diagnosis or a harmful treatment decision, it is not clear who bears liability: the CHW who used it, the physician who did or did not review the frame, Marc/RCN as the developer, the NDC as the deploying organization, or Anthropic as the AI provider. This ambiguity is not unique to this tool — it is the unresolved frontier of clinical AI liability — but it needs to be named before deployment.</p>
+  <div class="mitigation">
+    <strong>Mitigation path</strong>
+    Legal review of liability allocation before pilot launch. At minimum, terms of use and an informed consent process for participating persons that makes the experimental nature and limitations explicit. RCN should not carry this liability alone.
+  </div>
+</div>
+
+<div class="risk low">
+  <div class="risk-header">
+    <span class="risk-num">Risk 12 — Lower</span>
+    <span class="risk-title">Activation band as gatekeeping — even with the override</span>
+  </div>
+  <p>The activation band system is designed as pacing, not gatekeeping — the full frame is always one click away. In practice, a person at Band 1 who sees a focused view showing only two candidates may not know the full differential exists. The "Show full frame" button is present but small. The design intent is good; the execution risk is that selective display feels complete to someone who does not know what they are not seeing.</p>
+  <div class="mitigation">
+    <strong>Mitigation path</strong>
+    Make the focused-view indicator more prominent: "Showing a simplified view — 5 additional candidates and 12 additional findings not shown. Show full frame ↓" The current band filter bar does something like this; strengthen the language.
+  </div>
+</div>
+
+<hr>
+
+<h2>Summary: Manage Now vs. Decide Before Deployment</h2>
+
+<table class="risk-table">
+  <thead>
+    <tr>
+      <th>Risk</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>PHI transmission to Anthropic (HIPAA)</td>
+      <td><span class="tag tag-decide">Decision needed — BAA or de-identification</span></td>
+    </tr>
+    <tr>
+      <td>PHI at rest — no encryption</td>
+      <td><span class="tag tag-now">Manage now — FileVault + personal machine only</span></td>
+    </tr>
+    <tr>
+      <td>No physician review loop</td>
+      <td><span class="tag tag-decide">Decision needed — build before pilot expansion</span></td>
+    </tr>
+    <tr>
+      <td>FDA SaMD — possible regulatory requirement</td>
+      <td><span class="tag tag-decide">Decision needed — legal review before any clinical use</span></td>
+    </tr>
+    <tr>
+      <td>AI probabilities mistaken for diagnoses</td>
+      <td><span class="tag tag-now">Manage now — CHW training + in-frame language</span></td>
+    </tr>
+    <tr>
+      <td>AI severity misclassification</td>
+      <td><span class="tag tag-now">Manage now — physician severity review in protocol</span></td>
+    </tr>
+    <tr>
+      <td>My Health Choices population mismatch</td>
+      <td><span class="tag tag-now">Manage now — show caveats by default</span></td>
+    </tr>
+    <tr>
+      <td>CHW scope of practice</td>
+      <td><span class="tag tag-decide">Decision needed — written protocol + UI reminder</span></td>
+    </tr>
+    <tr>
+      <td>Model drift / non-reproducibility</td>
+      <td><span class="tag tag-accept">Accept — model version logged; treat trends as directional</span></td>
+    </tr>
+    <tr>
+      <td>No AI audit trail</td>
+      <td><span class="tag tag-now">Manage now — log prompt + response to encrypted file</span></td>
+    </tr>
+    <tr>
+      <td>Liability ambiguity</td>
+      <td><span class="tag tag-decide">Decision needed — legal review + informed consent process</span></td>
+    </tr>
+    <tr>
+      <td>Activation band as inadvertent gatekeeping</td>
+      <td><span class="tag tag-now">Manage now — strengthen focused-view indicator language</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<p style="color:var(--muted);font-size:0.9rem">Last updated: July 2026. This document should be reviewed before each expansion of the pilot — new settings, new CHWs, new NDC sites — and updated as the regulatory and legal landscape for clinical AI evolves.</p>
+
+</main>
+</body>
+</html>

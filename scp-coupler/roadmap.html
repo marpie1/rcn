@@ -275,11 +275,11 @@ ul li {
 
 <div class="track">
   <span class="track-label">Data fidelity</span>
-  <h3>Populate scp-experiment with real (or realistic) SCP data</h3>
-  <p>The experiment site currently uses placeholder health-log entries and visit records. Replacing these with representative data — modeled on the Superior AZ pilot — will reveal gaps in the context-fetch logic and make the Claude output meaningful enough to evaluate clinically.</p>
+  <h3>Populate patient sites with real (or realistic) SCP data</h3>
+  <p>Two per-patient sites exist with representative data (rosa-delgado.localhost, alex-rivera.localhost) — modeled on the Superior AZ pilot. Deepening this data will reveal gaps in the context-fetch logic and make the Claude output meaningful enough to evaluate clinically.</p>
   <ul>
     <li>Map all scp-field and scp-log-entry types actually used in the pilot</li>
-    <li>Seed scp-experiment.localhost with 2–3 representative patients</li>
+    <li><s>Seed 2–3 representative patients</s> — done: Rosa Delgado and Alex Rivera per-patient sites</li>
     <li>Confirm context fetch covers every field type relevant to the coupler</li>
   </ul>
 </div>
@@ -308,12 +308,12 @@ ul li {
 
 <div class="track">
   <span class="track-label">Infrastructure</span>
-  <h3>Person → wiki site mapping</h3>
-  <p>The proxy currently hardcodes <code>scp-experiment.localhost</code>. For any real deployment covering more than one patient, the coupler needs to know which FedWiki site corresponds to each person_id. This mapping also needs to survive the proxy being restarted.</p>
+  <h3>Person → wiki site mapping <span style="color:#0f766e;font-size:.8em">✓ done July 2026</span></h3>
+  <p>Each person in <code>data/people.json</code> carries a <code>wiki_site</code> field. The proxy resolves the site per-request via <code>get_wiki_host(person_id)</code>, falling back to <code>scp-experiment.localhost</code> for unregistered people. All push and context-fetch endpoints use the registry.</p>
   <ul>
-    <li>Add a simple person-to-site registry (JSON file or in-memory dict loaded at startup)</li>
-    <li>Push and context-fetch endpoints use the registry rather than the hardcoded constant</li>
-    <li>Admin endpoint or UI to register a new person ↔ site pairing</li>
+    <li><s>Add a simple person-to-site registry</s> — done: <code>wiki_site</code> in people.json</li>
+    <li><s>Push and context-fetch endpoints use the registry</s> — done</li>
+    <li><s>Admin endpoint to register a new person ↔ site pairing</s> — done: <code>/api/provision-patient</code> in sofi-proxy creates the site, seeds all 17 canonical page templates (personalizing welcome-visitors and about-me), and registers it in <code>~/.wiki/config.json</code> wikiDomains</li>
   </ul>
 </div>
 

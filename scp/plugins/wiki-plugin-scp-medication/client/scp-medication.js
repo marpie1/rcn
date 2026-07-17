@@ -71,6 +71,20 @@
     '.scp-edit-btn { float:right; background:none; border:none; cursor:pointer;',
     '  font-size:.75rem; color:#aaa; padding:0 4px; line-height:1; margin-right:2px; }',
     '.scp-edit-btn:hover { color:#2563eb; }',
+    '.scp-example { border:1px dashed #f59e0b; border-radius:4px; padding:6px 8px; }',
+    '.scp-example-banner { display:flex; align-items:center; justify-content:space-between;',
+    '  font-size:.72rem; color:#92400e; background:#fef3c7; border-radius:3px;',
+    '  padding:3px 8px; margin-bottom:6px; }',
+    '.scp-example-label { font-weight:600; letter-spacing:.03em; }',
+    '.scp-dismiss-btn { background:none; border:none; cursor:pointer; font-size:.78rem;',
+    '  color:#92400e; padding:0 0 0 12px; font-weight:600; white-space:nowrap; }',
+    '.scp-dismiss-btn:hover { text-decoration:underline; }',
+    '.scp-lab-status-H { color:#dc2626; font-weight:700; }',
+    '.scp-lab-status-L { color:#2563eb; font-weight:700; }',
+    '.scp-lab-status-A { color:#dc2626; font-weight:700; }',
+    '.scp-lab-status-B { color:#d97706; font-weight:700; }',
+    '.scp-lab-status-N { color:#059669; font-weight:700; }',
+    '.scp-lab-status-P { color:#6b7280; font-style:italic; }',
   ].join('\n');
 
   var injected = false;
@@ -220,6 +234,17 @@
         if (item.role) p.push('(' + item.role + ')');
         add('on',      item.date ? item.date + '.' : null);
         add('Reason:', item.reason);
+        break;
+      case 'scp-lab':
+        add('Lab:', item.test);
+        add('',     item.value);
+        add('',     item.unit);
+        if (item.status) p.push('(' + item.status + ')');
+        add('on',        item.date ? item.date + '.' : null);
+        add('LOINC:',    item.loinc ? item.loinc + '.' : null);
+        add('Range:',    item.reference_range ? item.reference_range + '.' : null);
+        add('Ordered by:', item.ordered_by ? item.ordered_by + '.' : null);
+        add('',          item.notes);
         break;
       case 'scp-previsit':
         add('Reason for visit:', item.reason_for_visit);
@@ -398,6 +423,27 @@
   });
 
 
+  // ── Shared example-item helpers ─────────────────────────────────────────────
+  // Items with example:true render with an amber dismiss banner instead of
+  // a normal committed card. Dismiss fires a FedWiki 'remove' action so the
+  // item is permanently deleted from the page. Not counted in exports/reports.
+
+  function exampleBannerHtml() {
+    return '<div class="scp-example-banner">' +
+      '<span class="scp-example-label">Example — this is not your data</span>' +
+      '<button class="scp-dismiss-btn" title="Remove this example">✕ Dismiss</button>' +
+      '</div>';
+  }
+
+  function bindDismiss($item, item) {
+    $item.find('.scp-dismiss-btn').on('click', function () {
+      var $page = $item.parents('.page:first');
+      wiki.pageHandler.put($page, { type: 'remove', id: item.id });
+      $item.fadeOut(200, function () { $item.remove(); });
+    });
+  }
+
+
   // ══════════════════════════════════════════════════════════════════════════
   // scp-medication
   // ══════════════════════════════════════════════════════════════════════════
@@ -427,6 +473,15 @@
 
   function emitMedication($item, item) {
     injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + medicationDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
     if (item.committed) {
       $item.append(
         '<div class="scp scp-done">' +
@@ -455,6 +510,7 @@
   }
 
   function bindMedication($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
     if (item.committed) { addEditButton($item, item, emitMedication, bindMedication); return; }
 
     $item.find('.scp-directions, .scp-use, .scp-not-prescribed').each(function () { grow(this); });
@@ -530,6 +586,15 @@
 
   function emitVital($item, item) {
     injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + vitalDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
     if (item.committed) {
       $item.append(
         '<div class="scp scp-done">' +
@@ -555,6 +620,7 @@
   }
 
   function bindVital($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
     if (item.committed) {
       $item.find('.scp-fold-btn').on('click', function () {
         if ($item.find('.scp-detail').is(':visible')) {
@@ -648,6 +714,15 @@
 
   function emitSymptom($item, item) {
     injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + symptomDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
     if (item.committed) {
       $item.append(
         '<div class="scp scp-done">' +
@@ -673,6 +748,7 @@
   }
 
   function bindSymptom($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
     if (item.committed) {
       $item.find('.scp-fold-btn').on('click', function () {
         if ($item.find('.scp-detail').is(':visible')) {
@@ -765,6 +841,15 @@
 
   function emitVisit($item, item) {
     injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + visitDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
     if (item.committed) {
       $item.append(
         '<div class="scp scp-done">' +
@@ -791,6 +876,7 @@
   }
 
   function bindVisit($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
     if (item.committed) {
       $item.find('.scp-fold-btn').on('click', function () {
         if ($item.find('.scp-detail').is(':visible')) {
@@ -875,6 +961,15 @@
 
   function emitAbout($item, item) {
     injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + aboutDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
     if (item.committed) {
       $item.append(
         '<div class="scp scp-done">' +
@@ -904,6 +999,7 @@
   }
 
   function bindAbout($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
     if (item.committed) { addEditButton($item, item, emitAbout, bindAbout); return; }
     $item.find('.scp-about-address, .scp-about-notes').each(function () { grow(this); });
     $item.find('.scp-about-preferred').on('input', function () { item.preferred_name    = this.value; });
@@ -952,6 +1048,15 @@
 
   function emitProvider($item, item) {
     injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + providerDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
     if (item.committed) {
       var summary = esc(item.name || 'Provider') + (item.role ? ' — ' + esc(item.role) : '');
       $item.append(
@@ -1000,6 +1105,7 @@
   }
 
   function bindProvider($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
     if (item.committed) { addEditButton($item, item, emitProvider, bindProvider); return; }
     $item.find('.scp-prov-when, .scp-prov-notes').each(function () { grow(this); });
     $item.find('.scp-prov-name').on('input', function () {
@@ -1051,6 +1157,15 @@
 
   function emitDiagnosis($item, item) {
     injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + diagnosisDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
     if (item.committed) {
       var summary = esc(item.condition || 'Diagnosis') + (item.status ? ' (' + esc(item.status) + ')' : '');
       $item.append(
@@ -1077,6 +1192,7 @@
   }
 
   function bindDiagnosis($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
     if (item.committed) { addEditButton($item, item, emitDiagnosis, bindDiagnosis); return; }
     $item.find('.scp-dx-notes').each(function () { grow(this); });
     $item.find('.scp-dx-condition').on('input', function () {
@@ -1126,6 +1242,15 @@
 
   function emitReaction($item, item) {
     injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + reactionDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
     if (item.committed) {
       var summary = esc(item.substance || 'Reaction') + (item.severity ? ' — ' + esc(item.severity) : '');
       $item.append(
@@ -1151,6 +1276,7 @@
   }
 
   function bindReaction($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
     if (item.committed) { addEditButton($item, item, emitReaction, bindReaction); return; }
     $item.find('.scp-rxn-reaction, .scp-rxn-notes').each(function () { grow(this); });
     $item.find('.scp-rxn-substance').on('input', function () {
@@ -1200,6 +1326,15 @@
 
   function emitHistory($item, item) {
     injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + historyDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
     if (item.committed) {
       $item.append(
         '<div class="scp scp-done">' +
@@ -1223,6 +1358,7 @@
   }
 
   function bindHistory($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
     if (item.committed) { addEditButton($item, item, emitHistory, bindHistory); return; }
     $item.find('.scp-hist-event, .scp-hist-notes').each(function () { grow(this); });
     $item.find('.scp-hist-event').on('input', function () {
@@ -1269,6 +1405,15 @@
 
   function emitNextStep($item, item) {
     injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + nextStepDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
     if (item.committed) {
       var summary = esc(item.action || 'Next Step') + (item.status ? ' (' + esc(item.status) + ')' : '');
       $item.append(
@@ -1294,6 +1439,7 @@
   }
 
   function bindNextStep($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
     if (item.committed) { addEditButton($item, item, emitNextStep, bindNextStep); return; }
     $item.find('.scp-step-action, .scp-step-notes').each(function () { grow(this); });
     $item.find('.scp-step-action').on('input', function () {
@@ -1342,6 +1488,15 @@
 
   function emitDirective($item, item) {
     injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + directiveDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
     if (item.committed) {
       $item.append(
         '<div class="scp scp-done">' +
@@ -1367,6 +1522,7 @@
   }
 
   function bindDirective($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
     if (item.committed) { addEditButton($item, item, emitDirective, bindDirective); return; }
     $item.find('.scp-dir-details').each(function () { grow(this); });
     $item.find('.scp-dir-details').on('input',  function () { grow(this); item.details           = this.value; });
@@ -1418,6 +1574,15 @@
 
   function emitAccess($item, item) {
     injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + accessDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
     if (item.committed) {
       $item.append(
         '<div class="scp scp-done">' +
@@ -1441,6 +1606,7 @@
   }
 
   function bindAccess($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
     if (item.committed) { bindFoldToggle($item); return; }
     $item.find('.scp-acc-reason').each(function () { grow(this); });
     $item.find('.scp-acc-who').on('input', function () {
@@ -1503,6 +1669,7 @@
     { key: 'allergies',   label: 'Allergies & Reactions',  page: 'allergies-reactions', type: 'scp-reaction'             },
     { key: 'history',     label: 'Medical History',        page: 'medical-history',     type: 'scp-history'              },
     { key: 'directives',  label: 'Medical Directives',     page: 'medical-directives',  type: 'scp-directive'            },
+    { key: 'lab-results', label: 'Lab Results',            page: 'lab-results',         type: 'scp-lab',        limit: 6 },
   ];
 
   // Per-item filters (applied before limit)
@@ -2542,6 +2709,129 @@
   window.plugins['scp-factory'] = {
     emit: emitScpFactory,
     bind: bindScpFactory
+  };
+
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // scp-lab  — Lab Result  (FHIR Observation / laboratory)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  var LAB_STATUS = ['Normal', 'High', 'Low', 'Borderline', 'Abnormal', 'Pending'];
+
+  var LAB_STATUS_CLASS = {
+    'High': 'scp-lab-status-H', 'Low': 'scp-lab-status-L',
+    'Abnormal': 'scp-lab-status-A', 'Borderline': 'scp-lab-status-B',
+    'Normal': 'scp-lab-status-N', 'Pending': 'scp-lab-status-P'
+  };
+
+  function labStatusHtml(status) {
+    var cls = LAB_STATUS_CLASS[status] || '';
+    return status ? '<span class="' + cls + '">' + esc(status) + '</span>' : '';
+  }
+
+  function labSummaryHtml(item) {
+    var s = esc(item.test || 'Lab Result');
+    if (item.value) s += ': ' + esc(item.value) + (item.unit ? ' ' + esc(item.unit) : '');
+    if (item.status) s += ' — ' + item.status;
+    if (item.date)   s += ' (' + esc(item.date) + ')';
+    return s;
+  }
+
+  function labDetailHtml(item) {
+    return '<div class="scp-row"><span class="scp-lbl">Test</span><div class="scp-val">'   + esc(item.test || '')  + '</div></div>' +
+      '<div class="scp-row"><span class="scp-lbl">Result</span><div class="scp-val">'      + esc(item.value || '') + (item.unit ? ' ' + esc(item.unit) : '') + '</div></div>' +
+      '<div class="scp-row"><span class="scp-lbl">Status</span><div class="scp-val">'      + labStatusHtml(item.status) + '</div></div>' +
+      '<div class="scp-row"><span class="scp-lbl">Date</span><div class="scp-val">'        + esc(item.date || '')  + '</div></div>' +
+      (item.reference_range ? '<div class="scp-row"><span class="scp-lbl">Ref Range</span><div class="scp-val">' + esc(item.reference_range) + '</div></div>' : '') +
+      (item.ordered_by      ? '<div class="scp-row"><span class="scp-lbl">Ordered By</span><div class="scp-val">' + esc(item.ordered_by) + '</div></div>' : '') +
+      (item.loinc           ? '<div class="scp-row"><span class="scp-lbl">LOINC</span><div class="scp-val" style="font-family:monospace;font-size:.8rem">' + esc(item.loinc) + '</div></div>' : '') +
+      (item.notes           ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">' + renderLinks(item.notes) + '</div></div>' : '');
+  }
+
+  function emitLab($item, item) {
+    injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + labDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
+    if (item.committed) {
+      $item.append(
+        '<div class="scp scp-done">' +
+        '<div class="scp-head">Lab Result<button class="scp-fold-btn" title="collapse">▲</button></div>' +
+        '<div class="scp-detail">' + labDetailHtml(item) + '</div>' +
+        '<div class="scp-summary" style="display:none">' + labSummaryHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
+    $item.append(
+      '<div class="scp">' +
+      '<div class="scp-head">Lab Result: ' + esc(item.test || '') + '</div>' +
+      row('Test Name',      inp('scp-lab-test',    item.test,    'e.g. Fasting Glucose')) +
+      row('Result',         inp('scp-lab-value',   item.value,   'e.g. 138')) +
+      row('Unit',           inp('scp-lab-unit',    item.unit,    'e.g. mg/dL')) +
+      row('Status',         sel('scp-lab-status',  LAB_STATUS,   item.status)) +
+      row('Date',           dateInp('scp-lab-date', item.date)) +
+      row('Reference Range',inp('scp-lab-range',   item.reference_range, 'e.g. 70–100 mg/dL')) +
+      row('Ordered By',     inp('scp-lab-ordered', item.ordered_by)) +
+      row('LOINC Code',     inp('scp-lab-loinc',   item.loinc,   'optional')) +
+      row('Notes',          ta('scp-lab-notes',    item.notes)) +
+      '<button class="scp-commit-btn">Save Entry</button>' +
+      '</div>'
+    );
+  }
+
+  function bindLab($item, item) {
+    if (item.example) { bindDismiss($item, item); return; }
+    if (item.committed) {
+      bindFoldToggle($item);
+      return;
+    }
+
+    $item.find('.scp-lab-notes').each(function () { grow(this); });
+
+    $item.find('.scp-lab-test').on('input', function () {
+      item.test = this.value;
+      $item.find('.scp-head').text('Lab Result: ' + this.value);
+    });
+    $item.find('.scp-lab-value').on('input',   function () { item.value           = this.value; });
+    $item.find('.scp-lab-unit').on('input',    function () { item.unit            = this.value; });
+    $item.find('.scp-lab-range').on('input',   function () { item.reference_range = this.value; });
+    $item.find('.scp-lab-ordered').on('input', function () { item.ordered_by      = this.value; });
+    $item.find('.scp-lab-loinc').on('input',   function () { item.loinc           = this.value; });
+    $item.find('.scp-lab-notes').on('input',   function () { grow(this); item.notes = this.value; });
+    $item.find('.scp-lab-date').on('input change', function () { item.date        = this.value; });
+    $item.find('.scp-lab-status').on('change', function () { item.status          = this.value; });
+
+    $item.find('.scp-commit-btn').on('click', function () {
+      item.committed = true;
+      save($item, item);
+      var summary = (item.test || 'Lab Result') + (item.value ? ': ' + item.value + (item.unit ? ' ' + item.unit : '') : '');
+      pushToHealthLog('Lab Result', summary, item.date);
+      moveToTop($item, item);
+      $item.empty();
+      emitLab($item, item);
+      bindLab($item, item);
+    });
+  }
+
+  window.plugins['scp-lab'] = {
+    emit: emitLab,
+    bind: bindLab,
+    editor: function ($item, item) {
+      item.test   = item.test   || '';
+      item.status = item.status || 'Normal';
+      $item.empty();
+      emitLab($item, item);
+      bindLab($item, item);
+      save($item, item);
+      moveToTop($item, item);
+    }
   };
 
 }());

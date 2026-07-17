@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meadows Leverage Points - Interactive Network</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f1419;
+            color: #e6edf3;
+        }
+        
+        #container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+            background: #0f1419;
+        }
+        
+        .link {
+            stroke-opacity: 0.6;
+            stroke-width: 1.5px;
+        }
+        
+        .link.supporting {
+            stroke: #58a6ff;
+            marker-end: url(#arrowhead-supporting);
+        }
+        
+        .link.opposing {
+            stroke: #f85149;
+            stroke-dasharray: 5, 3;
+            marker-end: url(#arrowhead-opposing);
+        }
+        
+        .link.highlighted {
+            stroke-opacity: 0.9;
+            stroke-width: 2.5px;
+        }
+        
+        .node {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .node circle {
+            stroke: #30363d;
+            stroke-width: 2px;
+        }
+        
+        .node.leverage-point circle {
+            stroke: #f78166;
+            stroke-width: 3px;
+        }
+        
+        .node.highlighted circle {
+            stroke: #58a6ff;
+            stroke-width: 4px;
+        }
+        
+        .node text {
+            font-size: 11px;
+            fill: #e6edf3;
+            pointer-events: none;
+        }
+        
+        .node text.dark-text {
+            fill: #1f2328;
+        }
+        
+        .node text.light-bg {
+            text-shadow: 
+                1px 1px 0 #ffffff,
+                -1px -1px 0 #ffffff,
+                1px -1px 0 #ffffff,
+                -1px 1px 0 #ffffff,
+                0px 1px 0 #ffffff,
+                0px -1px 0 #ffffff,
+                1px 0px 0 #ffffff,
+                -1px 0px 0 #ffffff;
+        }
+        
+        .node text.dark-bg {
+            text-shadow: 
+                0 0 3px #0f1419, 
+                0 0 3px #0f1419;
+        }
+        
+        .node.highlighted text {
+            font-size: 13px;
+            font-weight: bold;
+            fill: #58a6ff;
+        }
+        
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #161b22;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            max-width: 350px;
+            z-index: 1000;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        #controls h3 {
+            margin: 0 0 10px 0;
+            color: #58a6ff;
+            font-size: 16px;
+        }
+        
+        #controls label {
+            display: block;
+            margin: 8px 0;
+            font-size: 13px;
+        }
+        
+        #controls input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        #controls select, #controls input[type="text"] {
+            width: 100%;
+            padding: 6px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            color: #e6edf3;
+            font-size: 12px;
+            margin: 5px 0;
+        }
+        
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: #161b22;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            max-width: 350px;
+            min-height: 80px;
+        }
+        
+        #info h4 {
+            margin: 0 0 8px 0;
+            color: #58a6ff;
+            font-size: 14px;
+        }
+        
+        #info p {
+            margin: 4px 0;
+            font-size: 12px;
+            color: #8b949e;
+        }
+        
+        #legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #161b22;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+        
+        #legend h4 {
+            margin: 0 0 10px 0;
+            color: #58a6ff;
+            font-size: 14px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+        
+        .legend-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 2px solid;
+        }
+        
+        button {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 5px 5px 5px 0;
+        }
+        
+        button:hover {
+            background: #2ea043;
+        }
+        
+        .editable-text {
+            cursor: text;
+        }
+        
+        .editing {
+            outline: 2px solid #58a6ff;
+        }
+        
+        .link.editable {
+            cursor: pointer;
+        }
+        
+        .link.editable:hover {
+            stroke-width: 3px;
+        }
+        
+        h4 {
+            color: #58a6ff;
+            font-size: 14px;
+        }
+        
+        #edit-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #238636;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            display: none;
+            z-index: 1001;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: #161b22;
+            color: #e6edf3;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #58a6ff;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 2000;
+            max-width: 400px;
+            word-wrap: break-word;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="edit-indicator">EDIT MODE</div>
+        <div id="tooltip" class="tooltip" style="display: none;"></div>
+        <svg id="network">
+            <defs>
+                <!-- Arrowhead for supporting relationships (blue) -->
+                <marker id="arrowhead-supporting" markerWidth="10" markerHeight="10" 
+                        refX="10" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#58a6ff" />
+                </marker>
+                <!-- Arrowhead for opposing relationships (red) -->
+                <marker id="arrowhead-opposing" markerWidth="10" markerHeight="10" 
+                        refX="10" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#f85149" />
+                </marker>
+            </defs>
+        </svg>
+        
+        <div id="controls">
+            <h3>Network Controls</h3>
+            
+            <label>
+                Load XMILE File:
+                <input type="file" id="xmile-upload" accept=".xmile,.xml" style="margin: 5px 0;">
+            </label>
+            
+            <label>
+                <input type="checkbox" id="edit-mode"> Edit Mode
+            </label>
+            
+            <label>
+                Background Color:
+                <select id="background-color">
+                    <option value="#0f1419">Black</option>
+                    <option value="#ffffff">White</option>
+                    <option value="#d0d0d0">Light Grey</option>
+                </select>
+            </label>
+            
+            <div id="edit-controls" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #30363d;">
+                <h4 style="margin: 0 0 10px 0; color: #58a6ff; font-size: 14px;">Add Node</h4>
+                <input type="text" id="new-node-name" placeholder="Node name...">
+                <select id="new-node-type">
+                    <option value="supporting">Supporting Variable</option>
+                    <option value="leverage">Leverage Point</option>
+                    <option value="foundation">Foundation Point</option>
+                </select>
+                <button onclick="addNewNode()">Add Node</button>
+                
+                <h4 style="margin: 15px 0 10px 0; color: #58a6ff; font-size: 14px;">Add Edge</h4>
+                <input type="text" id="new-edge-from" placeholder="From node...">
+                <input type="text" id="new-edge-to" placeholder="To node...">
+                <select id="new-edge-polarity">
+                    <option value="supporting">Supporting</option>
+                    <option value="opposing">Opposing</option>
+                </select>
+                <button onclick="addNewEdge()">Add Edge</button>
+            </div>
+            
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #30363d;">
+                <label>
+                    Search Node:
+                    <input type="text" id="search" placeholder="Type to search...">
+                </label>
+                <label>
+                    Filter by Type:
+                    <select id="filter">
+                        <option value="all">All Nodes</option>
+                        <option value="leverage">Leverage Points Only</option>
+                        <option value="foundation">Foundation Points (-2, -1)</option>
+                    </select>
+                </label>
+                <label>
+                    Link Distance: <span id="distance-value">100</span>
+                    <input type="range" id="link-distance" min="30" max="200" value="100">
+                </label>
+                <label>
+                    Charge Strength: <span id="charge-value">-300</span>
+                    <input type="range" id="charge-strength" min="-600" max="-100" value="-300">
+                </label>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <button onclick="resetView()">Reset View</button>
+                <button onclick="centerGraph()">Center</button>
+                <button onclick="if(hubMode) exitHubMode()">Exit Hub Mode</button>
+                <button onclick="exportHubGraph()" id="export-hub-btn" style="display: none; background: #6e40c9;">Export Hub</button>
+                <button onclick="exportFullGraph()" style="background: #6e40c9;">Export Full</button>
+            </div>
+        </div>
+        
+        <div id="info">
+            <h4>Click on a node for hub-and-spoke view</h4>
+            <p>Click again to return to full network view.</p>
+        </div>
+        
+        <div id="legend">
+            <h4>Legend</h4>
+            <div class="legend-item">
+                <div class="legend-circle" style="background: #f78166; border-color: #f78166;"></div>
+                <span>Leverage Points (1-12)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-circle" style="background: #58a6ff; border-color: #58a6ff;"></div>
+                <span>Foundation Points (-2, -1)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-circle" style="background: #8b949e; border-color: #30363d;"></div>
+                <span>Supporting Variables</span>
+            </div>
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #30363d;">
+                <div class="legend-item">
+                    <svg width="30" height="4" style="margin-right: 8px;">
+                        <line x1="0" y1="2" x2="30" y2="2" stroke="#58a6ff" stroke-width="2"/>
+                    </svg>
+                    <span>Supporting</span>
+                </div>
+                <div class="legend-item">
+                    <svg width="30" height="4" style="margin-right: 8px;">
+                        <line x1="0" y1="2" x2="30" y2="2" stroke="#f85149" stroke-width="2" stroke-dasharray="5,3"/>
+                    </svg>
+                    <span>Opposing</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Parse XMILE data
+        const xmileData = `<?xml version="1.0" encoding="utf-8" ?>
+<xmile version="1.0" xmlns="http://docs.oasis-open.org/xmile/ns/XMILE/v1.0">
+    <model>
+        <variables>
+            <aux name="-1._Extent_of_System_Boundary"><eqn> A FUNCTION OF( Experience_of_Oneness_With_the_World,Fear,Human_Cognitive_Capacity)</eqn></aux>
+            <aux name="-2._Duration_of_Time_Horrizon"><eqn> A FUNCTION OF( "1._Ability_to_Escape_Limits_of_Current_World_View",Experience_of_Oneness_With_the_World,Fear,Multigenerational_Bias_of_Current_Paradigm)</eqn></aux>
+            <aux name="1._Ability_to_Escape_Limits_of_Current_World_View"><eqn> A FUNCTION OF( "-1._Extent_of_System_Boundary","-2._Duration_of_Time_Horrizon","Breadth_and_Depth_of_Experience_(reflection/meditation)","Courage_(persistence)",Existentialness_of_Crises,Experience_of_Oneness_With_the_World,Imagination,"Openness_to_Learning_(about_paradigms)","Scope_of_Understanding_(up_to_the_Cosmos)",Understanding_of_History)</eqn></aux>
+            <aux name="10._Appropriate_Structure_of_Stocks_and_Flows"><eqn> A FUNCTION OF( Access_to_Money,Access_to_Time,"5._Effectiveness_of_Rules","3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System",Scope_of_Design_Control,Size_and_Complexity_of_System)</eqn></aux>
+            <aux name="11._Appropriateness_of_Size_and_Stability_of_Buffers"><eqn> A FUNCTION OF( "10._Appropriate_Structure_of_Stocks_and_Flows","9._Coherence_of_Delays_within_the_System",Ability_to_Change_Inflows,"Ability_to_Change_Outflows_(Frugality)",Awareness_of_Risk,Reliability_of_Suppliers,Variability_in_Demand,Variability_in_Supply)</eqn></aux>
+            <aux name="12._Alignment_of_Parameters_with_Viability"><eqn> A FUNCTION OF( Ability_to_Change_Parameters,"11._Appropriateness_of_Size_and_Stability_of_Buffers",Desire_to_Use_Leverage_Point,Ease_of_Changing_Numbers,"6._Effectiveness_of_Information_Structure","5._Effectiveness_of_Rules","3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System")</eqn></aux>
+            <aux name="2._Accuracy_and_Coherence_of_Worldview"><eqn> A FUNCTION OF( "-1._Extent_of_System_Boundary","-2._Duration_of_Time_Horrizon","1._Ability_to_Escape_Limits_of_Current_World_View","\\"Selfishness\\"_of_Motivatons_(Smaller_Paradigms)","Scope_of_Understanding_(up_to_the_Cosmos)","Willingness_to_Test_(science)_and_Change_Assumption_(worldview)")</eqn></aux>
+            <aux name="3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System"><eqn> A FUNCTION OF( "-1._Extent_of_System_Boundary","-2._Duration_of_Time_Horrizon","10._Appropriate_Structure_of_Stocks_and_Flows",Access_to_Authority,"2._Accuracy_and_Coherence_of_Worldview",Complacency,Creativity,Disatisfaction_with_the_Way_Things_Are,Effort_to_Change_System_Goals,Transparency_of_Current_System_Goals)</eqn></aux>
+            <aux name="4._Ability_and_Power_to_Self-Organize"><eqn> A FUNCTION OF( Ability_to_Control_Resources,Ability_to_Create_Roles,Availability_of_Time,Diversity_of_Parts,Experimentation,"3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System","Proximity-_Adjacency_of_Parts",Rate_of_Interaction_of_Parts)</eqn></aux>
+            <aux name="5._Effectiveness_of_Rules"><eqn> A FUNCTION OF( "4._Ability_and_Power_to_Self-Organize",Access_to_Power_to_Make_Rules,"2._Accuracy_and_Coherence_of_Worldview",Amount_of_Power_available_to_Make_System_Level_Rules,"Newness_(temp_unstuck)_of_Organization_of_System","3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System",Understanding_of_the_Whole_System)</eqn></aux>
+            <aux name="6._Effectiveness_of_Information_Structure"><eqn> A FUNCTION OF( Completeness_of_Models_for_Situated_System,Completeness_of_Useful_Information,Effectiveness_of_Data_and_Communicaton_Infrastructure,"5._Effectiveness_of_Rules","3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System")</eqn></aux>
+            <aux name="7._Virtuosity_of_Reinforcing_Feedback_Loops"><eqn> A FUNCTION OF( "10._Appropriate_Structure_of_Stocks_and_Flows","12._Alignment_of_Parameters_with_Viability","8._Effectiveness_of_Balancing_Feedback_Loops","Ability_to_Change_the_Rate_of_Change_(acceleration)","6._Effectiveness_of_Information_Structure","5._Effectiveness_of_Rules","3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System")</eqn></aux>
+            <aux name="8._Effectiveness_of_Balancing_Feedback_Loops"><eqn> A FUNCTION OF( "10._Appropriate_Structure_of_Stocks_and_Flows","12._Alignment_of_Parameters_with_Viability",Ability_to_Anticipate,Appropriateness_of_Targets,Currency_of_Information,"5._Effectiveness_of_Rules",Interest_in_Control,"3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System")</eqn></aux>
+            <aux name="9._Coherence_of_Delays_within_the_System"><eqn> A FUNCTION OF( "12._Alignment_of_Parameters_with_Viability","6._Effectiveness_of_Information_Structure","8._Effectiveness_of_Balancing_Feedback_Loops",Availability_Energy,Availability_of_Information,Availability_of_Material_Resources,Distance,Flow_Rates,Optimum_Location_of_Stocks,Reliability_of_Suppliers)</eqn></aux>
+        </variables>
+    </model>
+</xmile>`;
+
+        // Function to parse dependencies from equation
+        function parseDependencies(eqn) {
+            if (!eqn) return [];
+            const match = eqn.match(/A FUNCTION OF\((.*)\)/);
+            if (!match) return [];
+            
+            return match[1]
+                .split(',')
+                .map(s => s.trim())
+                .map(s => s.replace(/^"(.+)"$/, '$1'))
+                .filter(s => s.length > 0);
+        }
+
+        // Build graph data from actual XMILE file
+        let nodes = [];
+        let links = [];
+        let nodeMap = new Map();
+
+        // Initial variable data (Meadows model)
+        const initialVariableData = [
+            { name: "-1._Extent_of_System_Boundary", deps: ["Experience_of_Oneness_With_the_World", "Fear", "Human_Cognitive_Capacity"] },
+            { name: "-2._Duration_of_Time_Horrizon", deps: ["1._Ability_to_Escape_Limits_of_Current_World_View", "Experience_of_Oneness_With_the_World", "Fear", "Multigenerational_Bias_of_Current_Paradigm"] },
+            { name: "1._Ability_to_Escape_Limits_of_Current_World_View", deps: ["-1._Extent_of_System_Boundary", "-2._Duration_of_Time_Horrizon", "Breadth_and_Depth_of_Experience_(reflection/meditation)", "Courage_(persistence)", "Existentialness_of_Crises", "Experience_of_Oneness_With_the_World", "Imagination", "Openness_to_Learning_(about_paradigms)", "Scope_of_Understanding_(up_to_the_Cosmos)", "Understanding_of_History"] },
+            { name: "2._Accuracy_and_Coherence_of_Worldview", deps: ["-1._Extent_of_System_Boundary", "-2._Duration_of_Time_Horrizon", "1._Ability_to_Escape_Limits_of_Current_World_View", "\"Selfishness\"_of_Motivatons_(Smaller_Paradigms)", "Scope_of_Understanding_(up_to_the_Cosmos)", "Willingness_to_Test_(science)_and_Change_Assumption_(worldview)"] },
+            { name: "3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System", deps: ["-1._Extent_of_System_Boundary", "-2._Duration_of_Time_Horrizon", "10._Appropriate_Structure_of_Stocks_and_Flows", "Access_to_Authority", "2._Accuracy_and_Coherence_of_Worldview", "Complacency", "Creativity", "Disatisfaction_with_the_Way_Things_Are", "Effort_to_Change_System_Goals", "Transparency_of_Current_System_Goals"] },
+            { name: "4._Ability_and_Power_to_Self-Organize", deps: ["Ability_to_Control_Resources", "Ability_to_Create_Roles", "Availability_of_Time", "Diversity_of_Parts", "Experimentation", "3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System", "Proximity-_Adjacency_of_Parts", "Rate_of_Interaction_of_Parts"] },
+            { name: "5._Effectiveness_of_Rules", deps: ["4._Ability_and_Power_to_Self-Organize", "Access_to_Power_to_Make_Rules", "2._Accuracy_and_Coherence_of_Worldview", "Amount_of_Power_available_to_Make_System_Level_Rules", "Newness_(temp_unstuck)_of_Organization_of_System", "3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System", "Understanding_of_the_Whole_System"] },
+            { name: "6._Effectiveness_of_Information_Structure", deps: ["Completeness_of_Models_for_Situated_System", "Completeness_of_Useful_Information", "Effectiveness_of_Data_and_Communicaton_Infrastructure", "5._Effectiveness_of_Rules", "3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System"] },
+            { name: "7._Virtuosity_of_Reinforcing_Feedback_Loops", deps: ["10._Appropriate_Structure_of_Stocks_and_Flows", "12._Alignment_of_Parameters_with_Viability", "8._Effectiveness_of_Balancing_Feedback_Loops", "Ability_to_Change_the_Rate_of_Change_(acceleration)", "6._Effectiveness_of_Information_Structure", "5._Effectiveness_of_Rules", "3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System"] },
+            { name: "8._Effectiveness_of_Balancing_Feedback_Loops", deps: ["10._Appropriate_Structure_of_Stocks_and_Flows", "12._Alignment_of_Parameters_with_Viability", "Ability_to_Anticipate", "Appropriateness_of_Targets", "Currency_of_Information", "5._Effectiveness_of_Rules", "Interest_in_Control", "3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System"] },
+            { name: "9._Coherence_of_Delays_within_the_System", deps: ["12._Alignment_of_Parameters_with_Viability", "6._Effectiveness_of_Information_Structure", "8._Effectiveness_of_Balancing_Feedback_Loops", "Availability_Energy", "Availability_of_Information", "Availability_of_Material_Resources", "Distance", "Flow_Rates", "Optimum_Location_of_Stocks", "Reliability_of_Suppliers"] },
+            { name: "10._Appropriate_Structure_of_Stocks_and_Flows", deps: ["Access_to_Money", "Access_to_Time", "5._Effectiveness_of_Rules", "3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System", "Scope_of_Design_Control", "Size_and_Complexity_of_System"] },
+            { name: "11._Appropriateness_of_Size_and_Stability_of_Buffers", deps: ["10._Appropriate_Structure_of_Stocks_and_Flows", "9._Coherence_of_Delays_within_the_System", "Ability_to_Change_Inflows", "Ability_to_Change_Outflows_(Frugality)", "Awareness_of_Risk", "Reliability_of_Suppliers", "Variability_in_Demand", "Variability_in_Supply"] },
+            { name: "12._Alignment_of_Parameters_with_Viability", deps: ["Ability_to_Change_Parameters", "11._Appropriateness_of_Size_and_Stability_of_Buffers", "Desire_to_Use_Leverage_Point", "Ease_of_Changing_Numbers", "6._Effectiveness_of_Information_Structure", "5._Effectiveness_of_Rules", "3._Power_to_Create_Goals_Relevant_to_the_Viability_of_the_System"] },
+            // Supporting variables (sample - there are many more in the actual file)
+            { name: "Experience_of_Oneness_With_the_World", deps: [] },
+            { name: "Fear", deps: [] },
+            { name: "Human_Cognitive_Capacity", deps: [] },
+            { name: "Multigenerational_Bias_of_Current_Paradigm", deps: [] },
+            { name: "Breadth_and_Depth_of_Experience_(reflection/meditation)", deps: [] },
+            { name: "Courage_(persistence)", deps: [] },
+            { name: "Existentialness_of_Crises", deps: [] },
+            { name: "Imagination", deps: [] },
+            { name: "Openness_to_Learning_(about_paradigms)", deps: [] },
+            { name: "Scope_of_Understanding_(up_to_the_Cosmos)", deps: ["-1._Extent_of_System_Boundary"] },
+            { name: "Understanding_of_History", deps: ["-2._Duration_of_Time_Horrizon", "Understanding_of_World_Literature"] },
+            { name: "\"Selfishness\"_of_Motivatons_(Smaller_Paradigms)", deps: [] },
+            { name: "Willingness_to_Test_(science)_and_Change_Assumption_(worldview)", deps: ["Identity_Attached_to_Beliefs", "Identity_Attached_to_Posessions", "Openness_to_Learning_(about_paradigms)"] },
+            { name: "Access_to_Authority", deps: [] },
+            { name: "Complacency", deps: [] },
+            { name: "Creativity", deps: [] },
+            { name: "Disatisfaction_with_the_Way_Things_Are", deps: [] },
+            { name: "Effort_to_Change_System_Goals", deps: [] },
+            { name: "Transparency_of_Current_System_Goals", deps: [] },
+            { name: "Ability_to_Control_Resources", deps: ["Access_to_Resources"] },
+            { name: "Ability_to_Create_Roles", deps: [] },
+            { name: "Availability_of_Time", deps: [] },
+            { name: "Diversity_of_Parts", deps: [] },
+            { name: "Experimentation", deps: [] },
+            { name: "Proximity-_Adjacency_of_Parts", deps: ["Ability_to_Change_the_Rate_of_Interaction"] },
+            { name: "Rate_of_Interaction_of_Parts", deps: ["Attraction", "Proximity-_Adjacency_of_Parts"] },
+            { name: "Access_to_Power_to_Make_Rules", deps: ["Proximity-_Adjacency_of_Parts", "Quality_of_Relationship_with_Rule_Makers", "Size_of_Organization"] },
+            { name: "Amount_of_Power_available_to_Make_System_Level_Rules", deps: ["Size_of_Organization", "Size_of_System"] },
+            { name: "Newness_(temp_unstuck)_of_Organization_of_System", deps: [] },
+            { name: "Understanding_of_the_Whole_System", deps: ["2._Accuracy_and_Coherence_of_Worldview"] },
+            { name: "Completeness_of_Models_for_Situated_System", deps: [] },
+            { name: "Completeness_of_Useful_Information", deps: [] },
+            { name: "Effectiveness_of_Data_and_Communicaton_Infrastructure", deps: [] },
+            { name: "Ability_to_Change_the_Rate_of_Change_(acceleration)", deps: ["Access_to_Resources*"] },
+            { name: "Ability_to_Anticipate", deps: ["Quality_of_Anticipatory_Measures", "Quality_of_Scenario_Planning"] },
+            { name: "Appropriateness_of_Targets", deps: ["Quality_of_KPI_Identification", "Understanding_of_the_Whole_System"] },
+            { name: "Currency_of_Information", deps: [] },
+            { name: "Interest_in_Control", deps: [] },
+            { name: "Availability_Energy", deps: [] },
+            { name: "Availability_of_Information", deps: [] },
+            { name: "Availability_of_Material_Resources", deps: [] },
+            { name: "Distance", deps: [] },
+            { name: "Flow_Rates", deps: [] },
+            { name: "Optimum_Location_of_Stocks", deps: [] },
+            { name: "Access_to_Money", deps: ["Credit", "Equity"] },
+            { name: "Access_to_Time", deps: [] },
+            { name: "Scope_of_Design_Control", deps: [] },
+            { name: "Size_and_Complexity_of_System", deps: [] },
+            { name: "Ability_to_Change_Inflows", deps: ["Scope_of_Design_Control"] },
+            { name: "Ability_to_Change_Outflows_(Frugality)", deps: ["Scope_of_Design_Control"] },
+            { name: "Awareness_of_Risk", deps: [] },
+            { name: "Reliability_of_Suppliers", deps: [] },
+            { name: "Variability_in_Demand", deps: [] },
+            { name: "Variability_in_Supply", deps: [] },
+            { name: "Ability_to_Change_Parameters", deps: [] },
+            { name: "Desire_to_Use_Leverage_Point", deps: [] },
+            { name: "Ease_of_Changing_Numbers", deps: [] },
+            { name: "Understanding_of_World_Literature", deps: [] },
+            { name: "Identity_Attached_to_Beliefs", deps: [] },
+            { name: "Identity_Attached_to_Posessions", deps: [] },
+            { name: "Access_to_Resources", deps: [] },
+            { name: "Access_to_Resources*", deps: ["Investment", "Reinvestment"] },
+            { name: "Ability_to_Change_the_Rate_of_Interaction", deps: [] },
+            { name: "Attraction", deps: [] },
+            { name: "Quality_of_Relationship_with_Rule_Makers", deps: [] },
+            { name: "Size_of_Organization", deps: [] },
+            { name: "Size_of_System", deps: [] },
+            { name: "Quality_of_Anticipatory_Measures", deps: [] },
+            { name: "Quality_of_Scenario_Planning", deps: [] },
+            { name: "Quality_of_KPI_Identification", deps: ["6._Effectiveness_of_Information_Structure", "Understanding_of_the_Whole_System"] },
+            { name: "Credit", deps: [] },
+            { name: "Equity", deps: [] },
+            { name: "Investment", deps: [] },
+            { name: "Reinvestment", deps: [] }
+        ];
+
+        // Determine node type
+        function getNodeType(name) {
+            if (name.match(/^-[12]\._/)) return 'foundation';
+            if (name.match(/^[0-9]+\._/)) return 'leverage';
+            return 'supporting';
+        }
+
+        // Determine link polarity (supporting vs opposing)
+        function getLinkPolarity(source, target) {
+            const sourceName = source.label.toLowerCase();
+            const targetName = target.label.toLowerCase();
+            
+            // Negative/opposing relationships - things that inhibit, reduce, or work against
+            const negativeKeywords = [
+                'fear', 'complacency', 'variability', 'distance', 'waste',
+                'panic', 'oscillation', 'selfishness', 'identity attached',
+                'bias', 'smaller paradigm'
+            ];
+            
+            // Check if target is a negative concept
+            const targetIsNegative = negativeKeywords.some(keyword => 
+                targetName.includes(keyword)
+            );
+            
+            // If source is contributing TO a negative concept, it's a positive link to that negative
+            // If source is a positive concept contributing TO something, check the target
+            if (targetIsNegative) {
+                // Positive things feeding into negative concepts are opposing relationships
+                return 'opposing';
+            }
+            
+            // Special cases for known opposing relationships
+            if (sourceName.includes('fear') || 
+                sourceName.includes('complacency') ||
+                sourceName.includes('variability') ||
+                sourceName.includes('bias')) {
+                return 'opposing';
+            }
+            
+            // Default to supporting
+            return 'supporting';
+        }
+
+        // Parse XMILE file
+        function parseXMILE(xmlString) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+            
+            // Check for parsing errors
+            const parseError = xmlDoc.querySelector('parsererror');
+            if (parseError) {
+                throw new Error('Invalid XML file');
+            }
+            
+            const variables = xmlDoc.querySelectorAll('aux, stock, flow');
+            const parsedData = [];
+            
+            console.log(`Found ${variables.length} variables in XMILE file`);
+            
+            variables.forEach(variable => {
+                const name = variable.getAttribute('name');
+                const eqnElement = variable.querySelector('eqn');
+                
+                if (!name) {
+                    console.warn('Variable without name found, skipping');
+                    return;
+                }
+                
+                let deps = [];
+                if (eqnElement && eqnElement.textContent) {
+                    const eqnText = eqnElement.textContent.trim();
+                    const match = eqnText.match(/A FUNCTION OF\s*\((.*)\)/i);
+                    
+                    if (match && match[1].trim()) {
+                        deps = match[1]
+                            .split(',')
+                            .map(s => s.trim())
+                            .map(s => s.replace(/^"(.+)"$/, '$1')) // Remove quotes
+                            .filter(s => s.length > 0);
+                    }
+                }
+                
+                parsedData.push({
+                    name: name,
+                    deps: deps
+                });
+            });
+            
+            console.log(`Parsed ${parsedData.length} variables with ${links.length} total dependencies`);
+            return parsedData;
+        }
+
+        // Load XMILE file and rebuild graph
+        function loadXMILEFile(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const xmlString = e.target.result;
+                    const parsedData = parseXMILE(xmlString);
+                    
+                    if (parsedData.length === 0) {
+                        alert('No variables found in XMILE file');
+                        return;
+                    }
+                    
+                    // Clear existing data
+                    nodes.length = 0;
+                    links.length = 0;
+                    nodeMap.clear();
+                    
+                    // Build new graph from parsed data
+                    buildGraphFromData(parsedData);
+                    
+                    // Diagnostics
+                    const missingDeps = [];
+                    links.forEach(l => {
+                        const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+                        const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+                        if (!nodeMap.has(sourceId)) missingDeps.push(sourceId);
+                        if (!nodeMap.has(targetId)) missingDeps.push(targetId);
+                    });
+                    
+                    if (missingDeps.length > 0) {
+                        console.warn(`Found ${missingDeps.length} references to undefined variables:`, 
+                            [...new Set(missingDeps)]);
+                    }
+                    
+                    console.log(`Successfully loaded: ${nodes.length} nodes, ${links.length} links`);
+                    
+                    // Reset view
+                    if (hubMode) exitHubMode();
+                    updateVisualization();
+                    setTimeout(centerGraph, 1000);
+                    
+                    console.log(`Loaded ${parsedData.length} variables from XMILE file`);
+                    
+                } catch (error) {
+                    alert('Error loading XMILE file: ' + error.message);
+                    console.error(error);
+                }
+            };
+            
+            reader.onerror = function() {
+                alert('Error reading file');
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // Build graph data structure from parsed XMILE data
+        function buildGraphFromData(variableData) {
+            // Create nodes
+            variableData.forEach(v => {
+                const type = getNodeType(v.name);
+                const node = {
+                    id: v.name,
+                    type: type,
+                    label: v.name.replace(/_/g, ' ').replace(/^"(.*)"$/, '$1'),
+                    dependencies: v.deps,
+                    inDegree: 0,
+                    outDegree: 0
+                };
+                nodes.push(node);
+                nodeMap.set(v.name, node);
+            });
+
+            // Create links - IMPORTANT: In XMILE, "A = f(B)" means B→A (B causes A)
+            // So dependencies flow INTO the variable, not out of it
+            variableData.forEach(v => {
+                const targetNode = nodeMap.get(v.name); // The variable being defined
+                v.deps.forEach(dep => {
+                    const sourceNode = nodeMap.get(dep); // What it depends on
+                    if (sourceNode) {
+                        const polarity = getLinkPolarity(sourceNode, targetNode);
+                        links.push({
+                            source: dep,        // Dependency (cause)
+                            target: v.name,     // Variable (effect)
+                            polarity: polarity
+                        });
+                        targetNode.inDegree++;
+                        sourceNode.outDegree++;
+                    }
+                });
+            });
+            
+            // Calculate link offsets for overlapping edges
+            calculateLinkOffsets();
+        }
+        
+        // Calculate offsets for bidirectional or overlapping links
+        function calculateLinkOffsets() {
+            // Clear all offsets first
+            links.forEach(link => link.offset = 0);
+            
+            const processed = new Set();
+            
+            links.forEach(link => {
+                const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+                const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+                
+                const pairKey = [sourceId, targetId].sort().join('<-->');
+                
+                if (processed.has(pairKey)) {
+                    return;
+                }
+                
+                // Find if there's a reverse link
+                const reverseLink = links.find(l => {
+                    const lSource = typeof l.source === 'object' ? l.source.id : l.source;
+                    const lTarget = typeof l.target === 'object' ? l.target.id : l.target;
+                    return lSource === targetId && lTarget === sourceId && l !== link;
+                });
+                
+                if (reverseLink) {
+                    // Found bidirectional pair - mark both with offset
+                    link.offset = 25; // Increased for more visible curve
+                    reverseLink.offset = 25;
+                    link.isBidirectional = true;
+                    reverseLink.isBidirectional = true;
+                    processed.add(pairKey);
+                    console.log(`Bidirectional pair found: ${sourceId} <-> ${targetId}`);
+                }
+            });
+        }
+
+        // File upload handler
+        document.getElementById('xmile-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                loadXMILEFile(file);
+            }
+        });
+
+        // Initialize graph with default Meadows model
+        buildGraphFromData(initialVariableData);
+
+        // Set up SVG and D3 force simulation
+        function getNodeType(name) {
+            if (name.match(/^-[12]\._/)) return 'foundation';
+            if (name.match(/^[0-9]+\._/)) return 'leverage';
+            return 'supporting';
+        }
+
+        // Set up SVG and D3 force simulation
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        const svg = d3.select("#network");
+        const g = svg.append("g");
+
+        // Add zoom behavior
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 4])
+            .on("zoom", (event) => {
+                g.attr("transform", event.transform);
+            });
+
+        svg.call(zoom);
+
+        // Color scale
+        function getNodeColor(d) {
+            if (d.type === 'leverage') return '#f78166';
+            if (d.type === 'foundation') return '#58a6ff';
+            return '#8b949e';
+        }
+
+        // Node size based on connectivity
+        function getNodeSize(d) {
+            const totalConnections = d.inDegree + d.outDegree;
+            if (d.type === 'leverage' || d.type === 'foundation') {
+                return Math.max(8, Math.min(20, 8 + totalConnections));
+            }
+            return Math.max(5, Math.min(12, 5 + totalConnections * 0.5));
+        }
+
+        // Create force simulation
+        let simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(100))
+            .force("charge", d3.forceManyBody().strength(-300))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("collision", d3.forceCollide().radius(d => getNodeSize(d) + 10));
+
+        // Draw links
+        let link = g.append("g")
+            .selectAll("path")
+            .data(links)
+            .enter().append("path")
+            .attr("class", d => `link ${d.polarity}`)
+            .attr("fill", "none");
+
+        // Draw nodes
+        let node = g.append("g")
+            .selectAll("g")
+            .data(nodes)
+            .enter().append("g")
+            .attr("class", d => `node ${d.type === 'leverage' || d.type === 'foundation' ? 'leverage-point' : ''}`)
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended))
+            .on("click", nodeClicked)
+            .on("mouseover", nodeHover)
+            .on("mouseout", nodeUnhover);
+
+        node.append("circle")
+            .attr("r", getNodeSize)
+            .attr("fill", getNodeColor);
+
+        node.append("text")
+            .attr("dx", d => getNodeSize(d) + 5)
+            .attr("dy", 4)
+            .classed('dark-bg', true)
+            .text(d => {
+                const label = d.label;
+                // Show full label for leverage points, abbreviated for others
+                if (d.type === 'leverage' || d.type === 'foundation') {
+                    return label.length > 40 ? label.substring(0, 37) + '...' : label;
+                }
+                return label.length > 25 ? label.substring(0, 22) + '...' : label;
+            });
+
+        // Update positions on simulation tick
+        simulation.on("tick", () => {
+            link.each(function(d) {
+                const sourceX = d.source.x;
+                const sourceY = d.source.y;
+                const targetXRaw = d.target.x;
+                const targetYRaw = d.target.y;
+                
+                const dx = targetXRaw - sourceX;
+                const dy = targetYRaw - sourceY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance === 0) return; // Avoid division by zero
+                
+                const targetRadius = getNodeSize(d.target);
+                
+                // Calculate end point at circle edge
+                const targetX = targetXRaw - (targetRadius / distance) * dx;
+                const targetY = targetYRaw - (targetRadius / distance) * dy;
+                
+                // Calculate curve offset for overlapping edges
+                const offset = d.offset || 0;
+                
+                if (offset === 0) {
+                    // Straight line
+                    d3.select(this).attr("d", `M${sourceX},${sourceY} L${targetX},${targetY}`);
+                } else {
+                    // Curved line for bidirectional edges
+                    const midX = (sourceX + targetX) / 2;
+                    const midY = (sourceY + targetY) / 2;
+                    
+                    // Get source and target IDs for consistent direction
+                    const sourceId = d.source.id || d.source;
+                    const targetId = d.target.id || d.target;
+                    
+                    // Perpendicular vector (90 degree rotation)
+                    // If we rotate (dx, dy) by 90 degrees: (-dy, dx)
+                    const perpX = -dy / distance;
+                    const perpY = dx / distance;
+                    
+                    // Curve direction based on alphabetical order for consistency
+                    // This ensures A->B curves one way and B->A curves the opposite way
+                    const direction = sourceId < targetId ? 1 : -1;
+                    
+                    // Control point for the quadratic bezier
+                    const controlX = midX + perpX * offset * direction;
+                    const controlY = midY + perpY * offset * direction;
+                    
+                    // Draw quadratic bezier curve
+                    d3.select(this).attr("d", 
+                        `M${sourceX},${sourceY} Q${controlX},${controlY} ${targetX},${targetY}`);
+                }
+            });
+
+            node.attr("transform", d => `translate(${d.x},${d.y})`);
+        });
+
+        // Drag functions
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            // Keep node fixed after dragging
+            // d.fx = null;
+            // d.fy = null;
+        }
+
+        // Global state
+        let selectedNode = null;
+        let hubMode = false;
+        let editMode = false;
+        let editingText = null;
+        let currentBackground = '#0f1419';
+        let currentTextColor = '#e6edf3';
+
+        // Background color change
+        document.getElementById('background-color').addEventListener('change', function(e) {
+            currentBackground = e.target.value;
+            
+            // Update SVG background
+            svg.style('background', currentBackground);
+            
+            // Update text color and shadows based on background
+            if (currentBackground === '#ffffff' || currentBackground === '#d0d0d0') {
+                currentTextColor = '#1f2328';
+                node.selectAll('text')
+                    .classed('dark-text', true)
+                    .classed('light-bg', true)
+                    .classed('dark-bg', false);
+            } else {
+                currentTextColor = '#e6edf3';
+                node.selectAll('text')
+                    .classed('dark-text', false)
+                    .classed('light-bg', false)
+                    .classed('dark-bg', true);
+            }
+        });
+
+        // Edit mode toggle
+        document.getElementById('edit-mode').addEventListener('change', function(e) {
+            editMode = e.target.checked;
+            document.getElementById('edit-controls').style.display = editMode ? 'block' : 'none';
+            document.getElementById('edit-indicator').style.display = editMode ? 'block' : 'none';
+            
+            if (editMode) {
+                // Make links clickable for polarity changes
+                link.classed('editable', true)
+                    .on('click', editLinkPolarity);
+                
+                // Make node text editable
+                node.selectAll('text')
+                    .classed('editable-text', true)
+                    .on('dblclick', editNodeText);
+            } else {
+                link.classed('editable', false)
+                    .on('click', null);
+                
+                node.selectAll('text')
+                    .classed('editable-text', false)
+                    .on('dblclick', null);
+            }
+        });
+
+        // Edit link polarity
+        function editLinkPolarity(event, d) {
+            if (!editMode) return;
+            event.stopPropagation();
+            
+            // Toggle polarity
+            d.polarity = d.polarity === 'supporting' ? 'opposing' : 'supporting';
+            
+            // Update link class
+            d3.select(event.target)
+                .attr('class', `link ${d.polarity} ${link.classed('highlighted') ? 'highlighted' : ''}`);
+            
+            console.log(`Changed link polarity: ${d.source.id} -> ${d.target.id} to ${d.polarity}`);
+        }
+
+        // Edit node text
+        function editNodeText(event, d) {
+            if (!editMode) return;
+            event.stopPropagation();
+            
+            const textElement = d3.select(event.target);
+            const currentText = d.label;
+            
+            // Create input element
+            const foreignObject = d3.select(event.target.parentNode)
+                .append('foreignObject')
+                .attr('x', getNodeSize(d) + 5)
+                .attr('y', -10)
+                .attr('width', 200)
+                .attr('height', 30);
+            
+            const input = foreignObject
+                .append('xhtml:input')
+                .attr('type', 'text')
+                .attr('value', currentText)
+                .style('width', '190px')
+                .style('background', '#0d1117')
+                .style('border', '1px solid #58a6ff')
+                .style('color', '#e6edf3')
+                .style('padding', '4px')
+                .style('font-size', '11px')
+                .on('blur', finishEdit)
+                .on('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        finishEdit.call(this);
+                    } else if (e.key === 'Escape') {
+                        foreignObject.remove();
+                    }
+                });
+            
+            input.node().focus();
+            input.node().select();
+            
+            function finishEdit() {
+                const newText = this.value.trim();
+                if (newText && newText !== currentText) {
+                    d.label = newText;
+                    textElement.text(newText.length > 40 ? newText.substring(0, 37) + '...' : newText);
+                }
+                foreignObject.remove();
+            }
+        }
+
+        // Add new node
+        function addNewNode() {
+            const name = document.getElementById('new-node-name').value.trim();
+            const type = document.getElementById('new-node-type').value;
+            
+            if (!name) {
+                alert('Please enter a node name');
+                return;
+            }
+            
+            if (nodeMap.has(name)) {
+                alert('Node with this name already exists');
+                return;
+            }
+            
+            const newNode = {
+                id: name,
+                type: type,
+                label: name,
+                dependencies: [],
+                inDegree: 0,
+                outDegree: 0,
+                x: width / 2 + (Math.random() - 0.5) * 100,
+                y: height / 2 + (Math.random() - 0.5) * 100
+            };
+            
+            nodes.push(newNode);
+            nodeMap.set(name, newNode);
+            
+            // Update visualization
+            updateVisualization();
+            
+            document.getElementById('new-node-name').value = '';
+            console.log(`Added node: ${name} (${type})`);
+        }
+
+        // Add new edge
+        function addNewEdge() {
+            const fromName = document.getElementById('new-edge-from').value.trim();
+            const toName = document.getElementById('new-edge-to').value.trim();
+            const polarity = document.getElementById('new-edge-polarity').value;
+            
+            if (!fromName || !toName) {
+                alert('Please enter both source and target nodes');
+                return;
+            }
+            
+            const fromNode = nodeMap.get(fromName);
+            const toNode = nodeMap.get(toName);
+            
+            if (!fromNode || !toNode) {
+                alert('One or both nodes not found. Check spelling.');
+                return;
+            }
+            
+            // Check if edge already exists
+            const exists = links.some(l => 
+                l.source.id === fromName && l.target.id === toName
+            );
+            
+            if (exists) {
+                alert('Edge already exists');
+                return;
+            }
+            
+            links.push({
+                source: fromName,
+                target: toName,
+                polarity: polarity
+            });
+            
+            toNode.inDegree++;
+            fromNode.outDegree++;
+            
+            // Update visualization
+            updateVisualization();
+            
+            document.getElementById('new-edge-from').value = '';
+            document.getElementById('new-edge-to').value = '';
+            console.log(`Added edge: ${fromName} -> ${toName} (${polarity})`);
+        }
+
+        // Update visualization after changes
+        function updateVisualization() {
+            // Recalculate link offsets
+            calculateLinkOffsets();
+            
+            // Remove old elements
+            g.selectAll('path.link').remove();
+            g.selectAll('g.node').remove();
+            
+            // Recreate links as paths
+            const linkSelection = g.append("g")
+                .selectAll("path")
+                .data(links)
+                .enter().append("path")
+                .attr("class", d => `link ${d.polarity} ${editMode ? 'editable' : ''}`)
+                .attr("fill", "none");
+            
+            if (editMode) {
+                linkSelection.on('click', editLinkPolarity);
+            }
+            
+            // Recreate nodes
+            const nodeSelection = g.append("g")
+                .selectAll("g")
+                .data(nodes)
+                .enter().append("g")
+                .attr("class", d => `node ${d.type === 'leverage' || d.type === 'foundation' ? 'leverage-point' : ''}`)
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended))
+                .on("click", nodeClicked)
+                .on("mouseover", nodeHover)
+                .on("mouseout", nodeUnhover);
+
+            nodeSelection.append("circle")
+                .attr("r", getNodeSize)
+                .attr("fill", getNodeColor);
+
+            nodeSelection.append("text")
+                .attr("dx", d => getNodeSize(d) + 5)
+                .attr("dy", 4)
+                .classed('dark-bg', true)
+                .text(d => {
+                    const label = d.label;
+                    if (d.type === 'leverage' || d.type === 'foundation') {
+                        return label.length > 40 ? label.substring(0, 37) + '...' : label;
+                    }
+                    return label.length > 25 ? label.substring(0, 22) + '...' : label;
+                });
+            
+            if (editMode) {
+                nodeSelection.selectAll('text')
+                    .classed('editable-text', true)
+                    .on('dblclick', editNodeText);
+            }
+            
+            // Update global references
+            link = linkSelection;
+            node = nodeSelection;
+            
+            // Restart simulation
+            simulation.nodes(nodes);
+            simulation.force("link").links(links);
+            simulation.alpha(0.5).restart();
+            
+            simulation.on("tick", () => {
+                link.each(function(d) {
+                    const sourceX = d.source.x;
+                    const sourceY = d.source.y;
+                    const targetXRaw = d.target.x;
+                    const targetYRaw = d.target.y;
+                    
+                    const dx = targetXRaw - sourceX;
+                    const dy = targetYRaw - sourceY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance === 0) return;
+                    
+                    const targetRadius = getNodeSize(d.target);
+                    
+                    // Calculate end point at circle edge
+                    const targetX = targetXRaw - (targetRadius / distance) * dx;
+                    const targetY = targetYRaw - (targetRadius / distance) * dy;
+                    
+                    // Calculate curve offset for overlapping edges
+                    const offset = d.offset || 0;
+                    
+                    if (offset === 0) {
+                        // Straight line
+                        d3.select(this).attr("d", `M${sourceX},${sourceY} L${targetX},${targetY}`);
+                    } else {
+                        // Curved line for bidirectional edges
+                        const midX = (sourceX + targetX) / 2;
+                        const midY = (sourceY + targetY) / 2;
+                        
+                        // Get source and target IDs
+                        const sourceId = d.source.id || d.source;
+                        const targetId = d.target.id || d.target;
+                        
+                        // Perpendicular vector
+                        const perpX = -dy / distance;
+                        const perpY = dx / distance;
+                        
+                        // Curve direction based on ID order
+                        const direction = sourceId < targetId ? 1 : -1;
+                        
+                        // Control point
+                        const controlX = midX + perpX * offset * direction;
+                        const controlY = midY + perpY * offset * direction;
+                        
+                        // Draw curve
+                        d3.select(this).attr("d", 
+                            `M${sourceX},${sourceY} Q${controlX},${controlY} ${targetX},${targetY}`);
+                    }
+                });
+
+                node.attr("transform", d => `translate(${d.x},${d.y})`);
+            });
+        }
+
+        // Export hub graph as SVG
+        function exportHubGraph() {
+            if (!selectedNode || !hubMode) {
+                alert('Please select a node in hub mode first');
+                return;
+            }
+            
+            // Find all adjacent nodes
+            const adjacentNodes = new Set();
+            const connectedLinks = [];
+            
+            links.forEach(l => {
+                if (l.source.id === selectedNode.id) {
+                    adjacentNodes.add(l.target);
+                    connectedLinks.push(l);
+                } else if (l.target.id === selectedNode.id) {
+                    adjacentNodes.add(l.source);
+                    connectedLinks.push(l);
+                }
+            });
+            
+            // Add center node
+            const visibleNodes = [selectedNode, ...Array.from(adjacentNodes)];
+            
+            exportGraphAsSVG(`hub_${selectedNode.id.replace(/[^a-zA-Z0-9]/g, '_')}`, visibleNodes, connectedLinks);
+        }
+
+        // Export full graph as SVG
+        function exportFullGraph() {
+            exportGraphAsSVG('full_network', nodes, links);
+        }
+
+        // Generic SVG export function
+        function exportGraphAsSVG(filename, nodesToExport, linksToExport) {
+            // Create a new SVG element
+            const svgNS = 'http://www.w3.org/2000/svg';
+            const exportSvg = document.createElementNS(svgNS, 'svg');
+            exportSvg.setAttribute('xmlns', svgNS);
+            
+            // Calculate bounding box of nodes to export
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            nodesToExport.forEach(n => {
+                const x = n.fx || n.x;
+                const y = n.fy || n.y;
+                const r = getNodeSize(n) + 50; // Add padding for text
+                minX = Math.min(minX, x - r);
+                minY = Math.min(minY, y - r);
+                maxX = Math.max(maxX, x + r + 100); // Extra for text
+                maxY = Math.max(maxY, y + r);
+            });
+            
+            const padding = 50;
+            const width = maxX - minX + 2 * padding;
+            const height = maxY - minY + 2 * padding;
+            const offsetX = -minX + padding;
+            const offsetY = -minY + padding;
+            
+            exportSvg.setAttribute('width', width);
+            exportSvg.setAttribute('height', height);
+            exportSvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            
+            // Add arrowhead markers
+            const defs = document.createElementNS(svgNS, 'defs');
+            
+            const markerSupporting = document.createElementNS(svgNS, 'marker');
+            markerSupporting.setAttribute('id', 'arrow-supporting');
+            markerSupporting.setAttribute('markerWidth', '10');
+            markerSupporting.setAttribute('markerHeight', '10');
+            markerSupporting.setAttribute('refX', '10');
+            markerSupporting.setAttribute('refY', '3');
+            markerSupporting.setAttribute('orient', 'auto');
+            markerSupporting.setAttribute('markerUnits', 'strokeWidth');
+            const pathSupporting = document.createElementNS(svgNS, 'path');
+            pathSupporting.setAttribute('d', 'M0,0 L0,6 L9,3 z');
+            pathSupporting.setAttribute('fill', '#58a6ff');
+            markerSupporting.appendChild(pathSupporting);
+            
+            const markerOpposing = document.createElementNS(svgNS, 'marker');
+            markerOpposing.setAttribute('id', 'arrow-opposing');
+            markerOpposing.setAttribute('markerWidth', '10');
+            markerOpposing.setAttribute('markerHeight', '10');
+            markerOpposing.setAttribute('refX', '10');
+            markerOpposing.setAttribute('refY', '3');
+            markerOpposing.setAttribute('orient', 'auto');
+            markerOpposing.setAttribute('markerUnits', 'strokeWidth');
+            const pathOpposing = document.createElementNS(svgNS, 'path');
+            pathOpposing.setAttribute('d', 'M0,0 L0,6 L9,3 z');
+            pathOpposing.setAttribute('fill', '#f85149');
+            markerOpposing.appendChild(pathOpposing);
+            
+            defs.appendChild(markerSupporting);
+            defs.appendChild(markerOpposing);
+            exportSvg.appendChild(defs);
+            
+            // Add background
+            const background = document.createElementNS(svgNS, 'rect');
+            background.setAttribute('width', '100%');
+            background.setAttribute('height', '100%');
+            background.setAttribute('fill', currentBackground);
+            exportSvg.appendChild(background);
+            
+            // Add styles
+            const style = document.createElementNS(svgNS, 'style');
+            style.textContent = `
+                .link { stroke-opacity: 0.8; stroke-width: 2px; }
+                .link.supporting { stroke: #58a6ff; }
+                .link.opposing { stroke: #f85149; stroke-dasharray: 5, 3; }
+                .node-circle { stroke-width: 2px; }
+                .node-circle.leverage { stroke: #f78166; stroke-width: 3px; }
+                .node-circle.foundation { stroke: #58a6ff; stroke-width: 3px; }
+                .node-text { 
+                    font-size: 11px; 
+                    fill: ${currentTextColor}; 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                }
+            `;
+            exportSvg.appendChild(style);
+            
+            // Create a group for links
+            const linksGroup = document.createElementNS(svgNS, 'g');
+            linksToExport.forEach(l => {
+                const line = document.createElementNS(svgNS, 'line');
+                
+                // Calculate arrow positioning
+                const sourceX = (l.source.fx || l.source.x);
+                const sourceY = (l.source.fy || l.source.y);
+                const targetXRaw = (l.target.fx || l.target.x);
+                const targetYRaw = (l.target.fy || l.target.y);
+                
+                const dx = targetXRaw - sourceX;
+                const dy = targetYRaw - sourceY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const targetRadius = getNodeSize(l.target);
+                
+                // End point at the edge of target circle
+                const targetX = targetXRaw - (targetRadius / distance) * dx;
+                const targetY = targetYRaw - (targetRadius / distance) * dy;
+                
+                const x1 = sourceX + offsetX;
+                const y1 = sourceY + offsetY;
+                const x2 = targetX + offsetX;
+                const y2 = targetY + offsetY;
+                
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('class', `link ${l.polarity}`);
+                line.setAttribute('marker-end', `url(#arrow-${l.polarity})`);
+                
+                linksGroup.appendChild(line);
+            });
+            exportSvg.appendChild(linksGroup);
+            
+            // Create a group for nodes
+            const nodesGroup = document.createElementNS(svgNS, 'g');
+            nodesToExport.forEach(n => {
+                const nodeGroup = document.createElementNS(svgNS, 'g');
+                const x = (n.fx || n.x) + offsetX;
+                const y = (n.fy || n.y) + offsetY;
+                
+                // Circle
+                const circle = document.createElementNS(svgNS, 'circle');
+                circle.setAttribute('cx', x);
+                circle.setAttribute('cy', y);
+                circle.setAttribute('r', getNodeSize(n));
+                circle.setAttribute('fill', getNodeColor(n));
+                // Use darker stroke for white/light backgrounds
+                const strokeColor = (currentBackground === '#ffffff' || currentBackground === '#d0d0d0') ? '#666666' : '#30363d';
+                circle.setAttribute('stroke', strokeColor);
+                circle.setAttribute('class', `node-circle ${n.type}`);
+                nodeGroup.appendChild(circle);
+                
+                // Text
+                const text = document.createElementNS(svgNS, 'text');
+                text.setAttribute('x', x + getNodeSize(n) + 5);
+                text.setAttribute('y', y + 4);
+                text.setAttribute('class', 'node-text');
+                
+                // Add text stroke for better readability on light backgrounds
+                if (currentBackground === '#ffffff' || currentBackground === '#d0d0d0') {
+                    text.setAttribute('stroke', '#ffffff');
+                    text.setAttribute('stroke-width', '3');
+                    text.setAttribute('paint-order', 'stroke fill');
+                }
+                
+                const label = n.label;
+                const displayLabel = (n.type === 'leverage' || n.type === 'foundation') 
+                    ? (label.length > 40 ? label.substring(0, 37) + '...' : label)
+                    : (label.length > 25 ? label.substring(0, 22) + '...' : label);
+                text.textContent = displayLabel;
+                nodeGroup.appendChild(text);
+                
+                nodesGroup.appendChild(nodeGroup);
+            });
+            exportSvg.appendChild(nodesGroup);
+            
+            // Serialize and download
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(exportSvg);
+            const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${filename}.svg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            URL.revokeObjectURL(url);
+            console.log(`Exported: ${filename}.svg`);
+        }
+
+        function nodeClicked(event, d) {
+            event.stopPropagation();
+            
+            if (selectedNode === d && hubMode) {
+                // Double-click same node to exit hub mode
+                exitHubMode();
+                return;
+            }
+            
+            // Enter hub mode
+            selectedNode = d;
+            hubMode = true;
+            enterHubMode(d);
+            
+            // Update info panel
+            updateInfo(d);
+        }
+
+        function enterHubMode(centerNode) {
+            // Find all adjacent nodes
+            const adjacentNodes = new Set();
+            const connectedLinks = [];
+            
+            links.forEach(l => {
+                if (l.source.id === centerNode.id) {
+                    adjacentNodes.add(l.target);
+                    connectedLinks.push(l);
+                } else if (l.target.id === centerNode.id) {
+                    adjacentNodes.add(l.source);
+                    connectedLinks.push(l);
+                }
+            });
+            
+            const adjacentArray = Array.from(adjacentNodes);
+            
+            // Hide non-connected nodes and links
+            node.style("opacity", n => {
+                if (n === centerNode) return 1;
+                return adjacentNodes.has(n) ? 1 : 0.05;
+            });
+            
+            link.style("opacity", l => {
+                return connectedLinks.includes(l) ? 0.8 : 0.02;
+            }).classed("highlighted", l => connectedLinks.includes(l));
+            
+            // Highlight center node
+            node.classed("highlighted", n => n === centerNode);
+            
+            // Show export hub button
+            document.getElementById('export-hub-btn').style.display = 'inline-block';
+            
+            // Stop the simulation
+            simulation.stop();
+            
+            // Calculate hub-and-spoke positions
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(width, height) * 0.3;
+            
+            // Position center node
+            centerNode.fx = centerX;
+            centerNode.fy = centerY;
+            
+            // Position adjacent nodes in a circle
+            const angleStep = (2 * Math.PI) / adjacentArray.length;
+            adjacentArray.forEach((node, i) => {
+                const angle = i * angleStep - Math.PI / 2; // Start from top
+                node.fx = centerX + radius * Math.cos(angle);
+                node.fy = centerY + radius * Math.sin(angle);
+            });
+            
+            // Animate to new positions
+            node.transition()
+                .duration(750)
+                .attr("transform", d => `translate(${d.fx || d.x},${d.fy || d.y})`);
+            
+            // Update link positions with proper arrow positioning and curves
+            link.transition()
+                .duration(750)
+                .each(function(d) {
+                    const sourceX = d.source.fx || d.source.x;
+                    const sourceY = d.source.fy || d.source.y;
+                    const targetXRaw = d.target.fx || d.target.x;
+                    const targetYRaw = d.target.fy || d.target.y;
+                    
+                    const dx = targetXRaw - sourceX;
+                    const dy = targetYRaw - sourceY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance === 0) return;
+                    
+                    const targetRadius = getNodeSize(d.target);
+                    const targetX = targetXRaw - (targetRadius / distance) * dx;
+                    const targetY = targetYRaw - (targetRadius / distance) * dy;
+                    
+                    const offset = d.offset || 0;
+                    
+                    if (offset === 0) {
+                        // Straight line
+                        d3.select(this).attr("d", `M${sourceX},${sourceY} L${targetX},${targetY}`);
+                    } else {
+                        // Curved line
+                        const midX = (sourceX + targetX) / 2;
+                        const midY = (sourceY + targetY) / 2;
+                        
+                        const sourceId = d.source.id || d.source;
+                        const targetId = d.target.id || d.target;
+                        
+                        const perpX = -dy / distance;
+                        const perpY = dx / distance;
+                        
+                        const direction = sourceId < targetId ? 1 : -1;
+                        
+                        const controlX = midX + perpX * offset * direction;
+                        const controlY = midY + perpY * offset * direction;
+                        
+                        d3.select(this).attr("d", 
+                            `M${sourceX},${sourceY} Q${controlX},${controlY} ${targetX},${targetY}`);
+                    }
+                });
+        }
+
+        function exitHubMode() {
+            hubMode = false;
+            selectedNode = null;
+            
+            // Hide export hub button
+            document.getElementById('export-hub-btn').style.display = 'none';
+            
+            // Release all fixed positions
+            nodes.forEach(d => {
+                d.fx = null;
+                d.fy = null;
+            });
+            
+            // Reset styles
+            node.style("opacity", 1).classed("highlighted", false);
+            link.style("opacity", 0.6).classed("highlighted", false);
+            
+            // Restart simulation
+            simulation.alpha(0.3).restart();
+            
+            document.getElementById('info').innerHTML = `
+                <h4>Click on a node for hub-and-spoke view</h4>
+                <p>Click again to return to full network view.</p>
+            `;
+        }
+
+        function nodeHover(event, d) {
+            if (selectedNode !== d) {
+                d3.select(this).classed("highlighted", true);
+            }
+            
+            // Show tooltip with full text
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.display = 'block';
+            tooltip.innerHTML = `<strong>${d.label}</strong>`;
+            
+            // Position tooltip near mouse
+            tooltip.style.left = (event.pageX + 15) + 'px';
+            tooltip.style.top = (event.pageY + 15) + 'px';
+        }
+
+        function nodeUnhover(event, d) {
+            if (selectedNode !== d) {
+                d3.select(this).classed("highlighted", false);
+            }
+            
+            // Hide tooltip
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.display = 'none';
+        }
+
+        function updateInfo(d) {
+            const info = document.getElementById('info');
+            const influencedBy = links.filter(l => l.source.id === d.id).map(l => l.target.id);
+            const influences = links.filter(l => l.target.id === d.id).map(l => l.source.id);
+            
+            info.innerHTML = `
+                <h4>${d.label}</h4>
+                <p><strong>Type:</strong> ${d.type === 'leverage' ? 'Leverage Point' : d.type === 'foundation' ? 'Foundation Point' : 'Supporting Variable'}</p>
+                <p><strong>Influences:</strong> ${influences.length} node(s)</p>
+                <p><strong>Influenced by:</strong> ${influencedBy.length} node(s)</p>
+                ${influencedBy.length > 0 ? `<p style="font-size: 11px; color: #6e7681;"><strong>Dependencies:</strong> ${influencedBy.slice(0, 5).join(', ')}${influencedBy.length > 5 ? '...' : ''}</p>` : ''}
+            `;
+        }
+
+        // Control functions
+        document.getElementById('link-distance').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('distance-value').textContent = value;
+            simulation.force("link").distance(value);
+            simulation.alpha(0.3).restart();
+        });
+
+        document.getElementById('charge-strength').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('charge-value').textContent = value;
+            simulation.force("charge").strength(value);
+            simulation.alpha(0.3).restart();
+        });
+
+        document.getElementById('search').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            node.style("opacity", d => {
+                if (!searchTerm) return 1;
+                return d.label.toLowerCase().includes(searchTerm) ? 1 : 0.2;
+            });
+            link.style("opacity", l => {
+                if (!searchTerm) return 0.6;
+                const sourceMatch = l.source.label.toLowerCase().includes(searchTerm);
+                const targetMatch = l.target.label.toLowerCase().includes(searchTerm);
+                return sourceMatch || targetMatch ? 0.6 : 0.1;
+            });
+        });
+
+        document.getElementById('filter').addEventListener('change', function(e) {
+            const filterType = e.target.value;
+            node.style("opacity", d => {
+                if (filterType === 'all') return 1;
+                if (filterType === 'leverage') return d.type === 'leverage' ? 1 : 0.2;
+                if (filterType === 'foundation') return d.type === 'foundation' ? 1 : 0.2;
+                return 1;
+            });
+            link.style("opacity", l => {
+                if (filterType === 'all') return 0.6;
+                if (filterType === 'leverage') {
+                    return l.source.type === 'leverage' || l.target.type === 'leverage' ? 0.6 : 0.1;
+                }
+                if (filterType === 'foundation') {
+                    return l.source.type === 'foundation' || l.target.type === 'foundation' ? 0.6 : 0.1;
+                }
+                return 0.6;
+            });
+        });
+
+        function resetView() {
+            // Exit hub mode if active
+            if (hubMode) {
+                exitHubMode();
+            }
+            
+            // Release all fixed nodes
+            nodes.forEach(d => {
+                d.fx = null;
+                d.fy = null;
+            });
+            
+            // Reset controls
+            document.getElementById('link-distance').value = 100;
+            document.getElementById('distance-value').textContent = '100';
+            document.getElementById('charge-strength').value = -300;
+            document.getElementById('charge-value').textContent = '-300';
+            document.getElementById('search').value = '';
+            document.getElementById('filter').value = 'all';
+            
+            // Reset styles
+            node.style("opacity", 1).classed("highlighted", false);
+            link.style("opacity", 0.6).classed("highlighted", false);
+            
+            // Reset simulation
+            simulation.force("link").distance(100);
+            simulation.force("charge").strength(-300);
+            simulation.alpha(1).restart();
+            
+            // Reset zoom
+            svg.transition().duration(750).call(
+                zoom.transform,
+                d3.zoomIdentity
+            );
+            
+            selectedNode = null;
+            
+            document.getElementById('info').innerHTML = `
+                <h4>Click on a node for hub-and-spoke view</h4>
+                <p>Click again to return to full network view.</p>
+            `;
+        }
+
+        function centerGraph() {
+            const bounds = g.node().getBBox();
+            const fullWidth = bounds.width;
+            const fullHeight = bounds.height;
+            const midX = bounds.x + fullWidth / 2;
+            const midY = bounds.y + fullHeight / 2;
+
+            const scale = 0.9 / Math.max(fullWidth / width, fullHeight / height);
+            const translate = [width / 2 - scale * midX, height / 2 - scale * midY];
+
+            svg.transition()
+                .duration(750)
+                .call(zoom.transform, d3.zoomIdentity
+                    .translate(translate[0], translate[1])
+                    .scale(scale));
+        }
+
+        // Initial centering after simulation stabilizes
+        setTimeout(centerGraph, 2000);
+    </script>
+</body>
+</html>

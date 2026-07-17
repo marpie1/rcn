@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Health Choices</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  background: #f8f9fa;
+  color: #1a1a2e;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+#header {
+  background: #4c1d95;
+  color: #fff;
+  padding: 10px 14px 9px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#header-text { flex: 1; min-width: 0; }
+#header h1 { font-size: 1rem; font-weight: 600; letter-spacing: .02em; }
+#patient-label { font-size: .78rem; color: rgba(255,255,255,.7); margin-top: 2px; }
+
+.hdr-btn {
+  flex-shrink: 0;
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 5px;
+  padding: 5px 11px;
+  font-size: .78rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s;
+}
+.hdr-btn:hover { background: rgba(255,255,255,.28); }
+.hdr-btn:disabled { opacity: .4; cursor: default; }
+
+/* ── Disclaimer ─────────────────────────────────────────────── */
+#disclaimer {
+  background: #fff3cd;
+  border-bottom: 1px solid #ffc107;
+  color: #664d03;
+  font-size: .72rem;
+  padding: 5px 14px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+/* ── Main split layout ───────────────────────────────────────── */
+#main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Left: chat panel ────────────────────────────────────────── */
+#chat-panel {
+  flex: 0 0 58%;
+  display: flex;
+  flex-direction: column;
+  border-right: 1.5px solid #e5e7eb;
+  min-width: 0;
+  overflow: hidden;
+}
+
+#messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.msg {
+  max-width: 88%;
+  line-height: 1.55;
+  font-size: .9rem;
+}
+.msg.user {
+  align-self: flex-end;
+  background: #4c1d95;
+  color: white;
+  border-radius: 14px 14px 3px 14px;
+  padding: 9px 14px;
+}
+.msg.assistant {
+  align-self: flex-start;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 3px 14px 14px 14px;
+  padding: 10px 14px;
+  color: #1a1a2e;
+}
+.msg.assistant ul { padding-left: 18px; margin: 4px 0; }
+.msg.assistant li { margin: 2px 0; }
+
+#typing {
+  align-self: flex-start;
+  display: none;
+  padding: 10px 14px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 3px 14px 14px 14px;
+  font-size: .82rem;
+  color: #6b7280;
+}
+@keyframes blink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+.dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: #9ca3af; margin: 0 1px; animation: blink 1.2s infinite; }
+.dot:nth-child(2) { animation-delay: .2s; }
+.dot:nth-child(3) { animation-delay: .4s; }
+
+#status { font-size: .72rem; color: #6b7280; padding: 0 14px 4px; flex-shrink: 0; min-height: 18px; }
+
+#input-row {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+}
+#input {
+  flex: 1;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: .9rem;
+  resize: none;
+  line-height: 1.4;
+  max-height: 120px;
+  overflow-y: auto;
+}
+#input:focus { outline: none; border-color: #7c3aed; }
+#send-btn {
+  background: #4c1d95;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 18px;
+  font: inherit;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+#send-btn:hover { background: #5b21b6; }
+#send-btn:disabled { opacity: .4; cursor: default; }
+
+/* ── Suggestion chips ─────────────────────────────────────────── */
+#suggestions {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 0 12px 10px;
+}
+.chip {
+  background: white;
+  border: 1.5px solid #7c3aed;
+  color: #4c1d95;
+  border-radius: 20px;
+  padding: 5px 13px;
+  font-size: .78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  line-height: 1.4;
+  text-align: left;
+}
+.chip:hover { background: #4c1d95; color: white; }
+
+/* ── Right: option box panel ─────────────────────────────────── */
+#option-panel {
+  flex: 0 0 42%;
+  display: flex;
+  flex-direction: column;
+  background: #faf5ff;
+  overflow-y: auto;
+  padding: 20px 18px;
+  min-width: 0;
+}
+
+#option-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Idle state — problem summary */
+.ob-idle-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #7c3aed;
+  margin-bottom: 4px;
+}
+.ob-idle-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+.ob-idle-fact {
+  background: white;
+  border: 1.5px solid #e9d5ff;
+  border-radius: 8px;
+  padding: 10px 13px;
+  font-size: .82rem;
+  color: #374151;
+  line-height: 1.55;
+}
+.ob-idle-fact strong { color: #4c1d95; }
+.ob-scp-loaded {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 7px;
+  padding: 8px 12px;
+  font-size: .75rem;
+  color: #166534;
+  line-height: 1.5;
+}
+.ob-idle-hint {
+  font-size: .78rem;
+  color: #9ca3af;
+  text-align: center;
+  margin-top: auto;
+  padding-top: 12px;
+  line-height: 1.5;
+}
+
+/* Active state — dot display */
+.ob-active-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #7c3aed;
+  margin-bottom: 4px;
+}
+.ob-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+.ob-population {
+  font-size: .78rem;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+.ob-dots-wrap {
+  background: white;
+  border: 1.5px solid #e9d5ff;
+  border-radius: 10px;
+  padding: 14px;
+}
+.ob-dots-wrap svg { display: block; width: 100%; height: auto; }
+.ob-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 12px;
+}
+.ob-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .78rem;
+  color: #374151;
+}
+.ob-legend-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.ob-legend-count { font-weight: 700; min-width: 28px; }
+.ob-source {
+  font-size: .7rem;
+  color: #9ca3af;
+  margin-top: 10px;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* ── Loading screen ──────────────────────────────────────────── */
+#loading-screen {
+  position: fixed; inset: 0;
+  background: rgba(255,255,255,.92);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; z-index: 100;
+}
+#loading-screen .spin {
+  width: 30px; height: 30px;
+  border: 3px solid #e9d5ff;
+  border-top-color: #7c3aed;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading-msg { font-size: .88rem; color: #6b7280; }
+
+/* ── Summary modal ───────────────────────────────────────────── */
+#summary-modal {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 200;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+#summary-modal.show { display: flex; }
+#summary-box {
+  background: white;
+  border-radius: 12px;
+  max-width: 620px; width: 100%;
+  max-height: 80vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+#summary-header {
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex; align-items: center; gap: 10px;
+}
+#summary-header h3 { flex: 1; font-size: 1rem; color: #1e3a5f; }
+#summary-close {
+  background: none; border: none; cursor: pointer;
+  font-size: 1.3rem; color: #9ca3af; line-height: 1;
+}
+#summary-body {
+  flex: 1; overflow-y: auto;
+  padding: 16px 20px;
+  font-size: .88rem; color: #374151; line-height: 1.65;
+}
+#summary-body ul { padding-left: 18px; margin: 6px 0; }
+#summary-body li { margin: 3px 0; }
+#summary-body h4 { color: #4c1d95; margin: 12px 0 5px; font-size: .9rem; }
+#summary-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+.sum-btn {
+  background: #4c1d95; color: white; border: none;
+  border-radius: 7px; padding: 8px 16px;
+  font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer;
+}
+.sum-btn:hover { background: #5b21b6; }
+.sum-btn.outline {
+  background: white; color: #4c1d95;
+  border: 1.5px solid #4c1d95;
+}
+.sum-btn.outline:hover { background: #faf5ff; }
+#summary-generating { font-size: .82rem; color: #7c3aed; padding: 20px; text-align: center; }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 680px) {
+  #main { flex-direction: column-reverse; }
+  #chat-panel { flex: 1; border-right: none; border-top: 1.5px solid #e5e7eb; }
+  #option-panel { flex: 0 0 220px; padding: 14px; }
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-text">
+    <h1>My Health Choices</h1>
+    <div id="patient-label">Loading…</div>
+  </div>
+  <button class="hdr-btn" id="btn-mhp">Health Picture ↗</button>
+  <button class="hdr-btn" id="btn-scp">SCP ↗</button>
+  <button class="hdr-btn" id="btn-summary" disabled>Save Summary</button>
+</div>
+
+<div id="disclaimer">
+  This tool helps you understand your health options and prepare questions for your care team.
+  It does not provide medical advice and is not a substitute for your doctor.
+</div>
+
+<div id="main">
+  <div id="chat-panel">
+    <div id="messages">
+      <div id="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+    </div>
+    <div id="status"></div>
+    <div id="suggestions"></div>
+    <div id="input-row">
+      <textarea id="input" rows="2" placeholder="Ask about your options…"></textarea>
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <div id="option-panel">
+    <div id="option-box">
+      <div class="ob-idle-label">Option Box</div>
+      <div class="ob-idle-title" id="ob-problem-title">Loading…</div>
+      <div class="ob-idle-fact" id="ob-problem-facts"></div>
+      <div id="ob-scp-loaded" class="ob-scp-loaded"></div>
+      <div class="ob-idle-hint">As you explore options in the conversation,<br>evidence will appear here.</div>
+    </div>
+  </div>
+</div>
+
+<div id="loading-screen">
+  <div class="spin"></div>
+  <div id="loading-msg">Loading your health record…</div>
+</div>
+
+<div id="summary-modal">
+  <div id="summary-box">
+    <div id="summary-header">
+      <h3>Exploration Summary</h3>
+      <button id="summary-close">×</button>
+    </div>
+    <div id="summary-body"><div id="summary-generating">Generating summary…</div></div>
+    <div id="summary-footer">
+      <button class="sum-btn outline" onclick="copySummary()">Copy</button>
+      <button class="sum-btn" onclick="closeSummary()">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var PROXY = 'http://localhost:8765';
+  var MODEL = 'claude-sonnet-4-6';
+  var params  = new URLSearchParams(window.location.search);
+  var WIKI_SITE = params.get('site') || 'localhost';
+  var PROBLEM   = (params.get('problem') || '').trim();
+
+  var messages     = [];
+  var systemPrompt = '';
+  var patientName  = 'the patient';
+  var streaming    = false;
+  var summaryText  = '';
+
+  var $msgs    = document.getElementById('messages');
+  var $typing  = document.getElementById('typing');
+  var $input   = document.getElementById('input');
+  var $sendBtn = document.getElementById('send-btn');
+  var $status  = document.getElementById('status');
+  var $pLabel  = document.getElementById('patient-label');
+  var $loading = document.getElementById('loading-screen');
+  var $loadMsg = document.getElementById('loading-msg');
+  var $sumBtn  = document.getElementById('btn-summary');
+
+  // ── Navigation buttons ─────────────────────────────────────────
+  document.getElementById('btn-mhp').onclick = function () {
+    var slug = WIKI_SITE.replace(/\.localhost$/, '');
+    window.open('/tools/my-health-picture.html?person=' + slug, '_blank');
+  };
+  document.getElementById('btn-scp').onclick = function () {
+    window.open('http://' + WIKI_SITE + ':3000', '_blank');
+  };
+  document.getElementById('btn-summary').onclick = generateSummary;
+
+  // ── SCP page definitions ───────────────────────────────────────
+  var SECTIONS = [
+    { key: 'about',      label: 'Patient',               page: 'about-me',            type: 'scp-about',      limit: 1 },
+    { key: 'vitals',     label: 'Recent Vitals',          page: 'vitals',              type: 'scp-vital',      limit: 4 },
+    { key: 'diagnoses',  label: 'Active Diagnoses',       page: 'diagnoses',           type: 'scp-diagnosis'            },
+    { key: 'symptoms',   label: 'Current Symptoms',       page: 'symptoms',            type: 'scp-symptom',    limit: 3 },
+    { key: 'medications',label: 'Medications',            page: 'medications',         type: 'scp-medication'           },
+    { key: 'allergies',  label: 'Allergies & Reactions',  page: 'allergies-reactions', type: 'scp-reaction'             },
+    { key: 'history',    label: 'Medical History',        page: 'medical-history',     type: 'scp-history'              },
+    { key: 'providers',  label: 'Medical Providers',      page: 'providers',           type: 'scp-provider'             },
+  ];
+
+  function fetchPage(slug) {
+    return fetch(PROXY + '/api/wiki-read-page?site=' + encodeURIComponent(WIKI_SITE) + '&slug=' + encodeURIComponent(slug))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+  }
+
+  function secItems(sec, pageData) {
+    var data = pageData[sec.page];
+    if (!data || !data.story) return [];
+    var items = data.story.filter(function (i) {
+      return i.type === sec.type && i.committed;
+    });
+    if (sec.key === 'diagnoses') items = items.filter(function (i) { return i.status === 'Active'; });
+    if (sec.limit) items = items.slice(0, sec.limit);
+    return items;
+  }
+
+  function age(dob) {
+    if (!dob) return '';
+    var d = new Date(dob), now = new Date();
+    if (isNaN(d)) return '';
+    var a = now.getFullYear() - d.getFullYear();
+    if (now.getMonth() < d.getMonth() ||
+        (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) a--;
+    return a;
+  }
+
+  // ── Build system prompt ────────────────────────────────────────
+  function buildSystemPrompt(pageData) {
+    var today = new Date().toLocaleDateString('en-US',
+      { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    var lines = [];
+    function line(label, val) { if (val != null && val !== '') lines.push('  ' + label + ': ' + String(val)); }
+    function nl() { lines.push(''); }
+
+    var aboutPage = pageData['about-me'];
+    var aboutItem = null;
+    if (aboutPage && aboutPage.story) {
+      aboutItem = aboutPage.story.find(function (i) { return i.type === 'scp-about' && i.committed; });
+      if (aboutItem) patientName = aboutItem.preferred_name || aboutItem.legal_name || 'the patient';
+    }
+
+    lines.push('SHARED CARE PLAN — ' + today); nl();
+
+    if (aboutItem) {
+      var a = aboutItem;
+      var ag = age(a.dob);
+      lines.push('PATIENT INFORMATION');
+      line('Name', a.preferred_name || a.legal_name);
+      line('Age', ag ? ag + ' years (DOB: ' + a.dob + ')' : a.dob);
+      line('Pronouns', a.pronouns);
+      line('Preferred Language', a.language);
+      nl();
+    }
+
+    SECTIONS.forEach(function (sec) {
+      if (sec.key === 'about') return;
+      var items = secItems(sec, pageData);
+      lines.push(sec.label.toUpperCase());
+      if (!items.length) { lines.push('  (none recorded)'); nl(); return; }
+
+      items.forEach(function (i) {
+        switch (sec.type) {
+          case 'scp-vital':
+            var val = (i.value || '') + (i.unit ? ' ' + i.unit : '');
+            lines.push('  • ' + (i.measurement || 'Vital') + ': ' + val + (i.date ? '  (' + i.date + ')' : ''));
+            break;
+          case 'scp-diagnosis':
+            var meta = [i.status, i.icd_code ? 'ICD: ' + i.icd_code : '', i.certainty ? 'Certainty: ' + i.certainty : ''].filter(Boolean).join(', ');
+            lines.push('  • ' + (i.condition || 'Diagnosis') + (meta ? '  [' + meta + ']' : ''));
+            if (i.notes) lines.push('    Notes: ' + i.notes);
+            break;
+          case 'scp-symptom':
+            lines.push('  • ' + (i.symptom || '') + (i.severity ? ' — ' + i.severity : '') + (i.duration ? ', ' + i.duration : ''));
+            break;
+          case 'scp-medication':
+            lines.push('  • ' + (i.label || 'Medication') + (i.directions ? ' — ' + i.directions : ''));
+            break;
+          case 'scp-reaction':
+            lines.push('  • ' + (i.substance || '') + (i.severity ? ' — ' + i.severity : '') + (i.reaction ? ': ' + i.reaction : ''));
+            break;
+          case 'scp-history':
+            lines.push('  • ' + (i.event || '') + (i.date ? '  [' + i.date + ']' : ''));
+            break;
+          case 'scp-provider':
+            lines.push('  • ' + (i.name || '') + (i.role ? ' — ' + i.role : '') + (i.specialty ? ' / ' + i.specialty : ''));
+            break;
+        }
+      });
+      nl();
+    });
+
+    var record = lines.join('\n');
+
+    var problemFocus = PROBLEM
+      ? 'The patient has chosen to explore: **' + PROBLEM + '**.\n' +
+        'Begin by briefly confirming you\'ll explore this together, then start right away.\n\n'
+      : 'The patient has not specified a problem yet. Start by warmly asking which of their health concerns they\'d like to explore today. Briefly list their active diagnoses as options.\n\n';
+
+    return 'You are a health education companion helping ' + patientName + ' understand their health options.\n\n' +
+      'You have full access to their Shared Care Plan (below). Your role:\n' +
+      '• Explain what this health problem means for them specifically, using their SCP data\n' +
+      '• Guide them through treatment and management options in plain language\n' +
+      '• Share what the medical evidence says about each option\n' +
+      '• Help them form clear questions to bring to their doctor\n\n' +
+      problemFocus +
+      'OPTION BOX FORMAT — When you discuss a specific treatment, intervention, or management option, include an Option Box using this exact format (it will be rendered visually and stripped from your displayed message):\n' +
+      '<option_box>{"title":"Option name","population":"description of who these numbers apply to","benefit":340,"harm":50,"neutral":610,"benefit_label":"brief description of benefit","harm_label":"brief description of harm","source":"source or note about evidence quality"}</option_box>\n\n' +
+      'The three numbers must sum to 1000. Use your best estimate from medical literature. Be honest if evidence is limited or uncertain — say so in the source field.\n' +
+      'Include one Option Box per option you discuss. Do not include more than one per response.\n\n' +
+      'SUGGESTION FORMAT — At the end of every response, include 3 short clickable follow-up suggestions using this exact format:\n' +
+      '<suggestions>["First suggestion","Second suggestion","Third suggestion"]</suggestions>\n' +
+      'Suggestions should be short (under 10 words), natural next questions the patient might want to ask. They will be shown as clickable buttons — write them in first-person as if the patient is asking.\n\n' +
+      'You are NOT a doctor. Do not diagnose or prescribe. If the patient describes an emergency, direct them to call 911.\n\n' +
+      'Use warm, plain language. Avoid jargon. Be specific to their situation.\n\n' +
+      '━━━ PATIENT\'S SHARED CARE PLAN ━━━\n\n' +
+      record +
+      '━━━ END OF CARE PLAN ━━━\n\n' +
+      'Keep your opening to 2–3 sentences.';
+  }
+
+  // ── Build idle Option Box from SCP ─────────────────────────────
+  function buildIdleOptionBox(pageData) {
+    var diagPage = pageData['diagnoses'];
+    var medPage  = pageData['medications'];
+    var vitPage  = pageData['vitals'];
+    var facts = [];
+
+    if (PROBLEM && diagPage && diagPage.story) {
+      var match = diagPage.story.find(function (i) {
+        return i.type === 'scp-diagnosis' && i.committed &&
+          (i.condition || '').toLowerCase().indexOf(PROBLEM.toLowerCase()) >= 0;
+      });
+      if (match) {
+        if (match.condition) facts.push('<strong>' + escH(match.condition) + '</strong>');
+        if (match.status)    facts.push('Status: ' + escH(match.status));
+        if (match.certainty) facts.push('Certainty: ' + escH(match.certainty));
+        if (match.diagnosed_date) facts.push('Diagnosed: ' + escH(match.diagnosed_date));
+        if (match.notes)     facts.push(escH(match.notes));
+      }
+    }
+
+    // Build SCP loaded summary
+    var loaded = [];
+    var diagItems = diagPage && diagPage.story
+      ? diagPage.story.filter(function(i){ return i.type === 'scp-diagnosis' && i.committed && i.status === 'Active'; })
+      : [];
+    if (diagItems.length) loaded.push(diagItems.length + ' active diagnosis' + (diagItems.length > 1 ? 'es' : ''));
+
+    var medItems = medPage && medPage.story
+      ? medPage.story.filter(function(i){ return i.type === 'scp-medication' && i.committed; })
+      : [];
+    if (medItems.length) loaded.push(medItems.length + ' medication' + (medItems.length > 1 ? 's' : ''));
+
+    var vitItems = vitPage && vitPage.story
+      ? vitPage.story.filter(function(i){ return i.type === 'scp-vital' && i.committed; })
+      : [];
+    if (vitItems.length) loaded.push(vitItems.length + ' vital reading' + (vitItems.length > 1 ? 's' : ''));
+
+    var titleEl = document.getElementById('ob-problem-title');
+    var factsEl = document.getElementById('ob-problem-facts');
+    var loadedEl = document.getElementById('ob-scp-loaded');
+
+    titleEl.textContent = PROBLEM
+      ? 'Exploring: ' + PROBLEM
+      : 'Choose a topic in the conversation';
+
+    factsEl.innerHTML = facts.length
+      ? facts.join('<br>')
+      : (PROBLEM
+          ? 'Ask about your options, the evidence, and what questions to bring to your doctor.'
+          : 'Tell the assistant which health concern you\'d like to explore.');
+
+    if (loadedEl) {
+      loadedEl.innerHTML = loaded.length
+        ? '&#10003; SCP loaded — ' + loaded.join(', ') + '. The assistant already knows ' + patientName + '\'s health history.'
+        : '&#10003; SCP loaded for ' + patientName + '. The assistant already knows their health history.';
+    }
+  }
+
+  // ── Option Box rendering ───────────────────────────────────────
+  function renderOptionBox(data) {
+    var panel = document.getElementById('option-panel');
+    var cols = 40, rows = 25; // 40×25 = 1000 dots
+    var r = 4, gap = 3, spacing = r * 2 + gap;
+    var svgW = cols * spacing - gap;
+    var svgH = rows * spacing - gap;
+
+    var benefit = Math.max(0, Math.min(1000, data.benefit || 0));
+    var harm    = Math.max(0, Math.min(1000 - benefit, data.harm || 0));
+    var neutral = 1000 - benefit - harm;
+
+    var circles = '';
+    for (var i = 0; i < 1000; i++) {
+      var col = i % cols;
+      var row = Math.floor(i / cols);
+      var cx = col * spacing + r;
+      var cy = row * spacing + r;
+      var fill = i < benefit ? '#0f766e' : i < benefit + harm ? '#dc2626' : '#e5e7eb';
+      circles += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + fill + '"/>';
+    }
+
+    panel.innerHTML =
+      '<div id="option-box">' +
+      '<div class="ob-active-label">Option Box</div>' +
+      '<div class="ob-title">' + escH(data.title || 'Option') + '</div>' +
+      '<div class="ob-population">Of 1,000 ' + escH(data.population || 'people like ' + patientName) + ':</div>' +
+      '<div class="ob-dots-wrap">' +
+      '<svg viewBox="0 0 ' + svgW + ' ' + svgH + '" xmlns="http://www.w3.org/2000/svg">' +
+      circles + '</svg>' +
+      '</div>' +
+      '<div class="ob-legend">' +
+      '<div class="ob-legend-row"><div class="ob-legend-dot" style="background:#0f766e"></div><span class="ob-legend-count">' + benefit + '</span><span>' + escH(data.benefit_label || 'see meaningful benefit') + '</span></div>' +
+      '<div class="ob-legend-row"><div class="ob-legend-dot" style="background:#dc2626"></div><span class="ob-legend-count">' + harm + '</span><span>' + escH(data.harm_label || 'experience significant side effects') + '</span></div>' +
+      '<div class="ob-legend-row"><div class="ob-legend-dot" style="background:#e5e7eb"></div><span class="ob-legend-count">' + neutral + '</span><span>no significant difference</span></div>' +
+      '</div>' +
+      '<div class="ob-source">Source: ' + escH(data.source || 'estimated from medical literature') + '</div>' +
+      '</div>';
+  }
+
+  // ── Markdown → HTML ────────────────────────────────────────────
+  function mdToHtml(text) {
+    var lines = text.split('\n');
+    var out = [], inUl = false, inOl = false;
+    lines.forEach(function (l) {
+      var m;
+      if ((m = l.match(/^#{1,3}\s+(.*)/))) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        if (inOl) { out.push('</ol>'); inOl = false; }
+        out.push('<strong>' + esc(m[1]) + '</strong>'); return;
+      }
+      if ((m = l.match(/^[-*]\s+(.*)/))) {
+        if (inOl) { out.push('</ol>'); inOl = false; }
+        if (!inUl) { out.push('<ul style="margin:4px 0;padding-left:18px">'); inUl = true; }
+        out.push('<li>' + inl(esc(m[1])) + '</li>'); return;
+      }
+      if ((m = l.match(/^\d+\.\s+(.*)/))) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        if (!inOl) { out.push('<ol style="margin:4px 0;padding-left:18px">'); inOl = true; }
+        out.push('<li>' + inl(esc(m[1])) + '</li>'); return;
+      }
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inOl) { out.push('</ol>'); inOl = false; }
+      if (l.trim() === '') { out.push('<br>'); return; }
+      out.push('<p style="margin:3px 0">' + inl(esc(l)) + '</p>');
+    });
+    if (inUl) out.push('</ul>');
+    if (inOl) out.push('</ol>');
+    return out.join('');
+  }
+
+  function esc(s)  { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escH(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function inl(s)  {
+    return s
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+      .replace(/`([^`]+)`/g, '<code style="background:#f3f4f6;padding:1px 4px;border-radius:3px">$1</code>');
+  }
+
+  // ── Render a message bubble ────────────────────────────────────
+  function addMessage(role, html) {
+    var div = document.createElement('div');
+    div.className = 'msg ' + role;
+    div.innerHTML = role === 'assistant' ? mdToHtml(html) : escH(html);
+    $msgs.insertBefore(div, $typing);
+    scrollBottom();
+    return div;
+  }
+
+  function scrollBottom() {
+    $msgs.scrollTop = $msgs.scrollHeight;
+  }
+
+  // ── Parse and strip <option_box> and <suggestions> from response ─
+  function parseResponse(text) {
+    var obMatch = text.match(/<option_box>([\s\S]*?)<\/option_box>/);
+    var sgMatch = text.match(/<suggestions>([\s\S]*?)<\/suggestions>/);
+    var cleaned = text
+      .replace(/<option_box>[\s\S]*?<\/option_box>/g, '')
+      .replace(/<suggestions>[\s\S]*?<\/suggestions>/g, '')
+      .trim();
+    var obData = null, suggestions = [];
+    if (obMatch) { try { obData = JSON.parse(obMatch[1]); } catch(e) {} }
+    if (sgMatch) { try { suggestions = JSON.parse(sgMatch[1]); } catch(e) {} }
+    return { text: cleaned, obData: obData, suggestions: suggestions };
+  }
+
+  function showSuggestions(list) {
+    var $s = document.getElementById('suggestions');
+    $s.innerHTML = '';
+    if (!list || !list.length) return;
+    list.forEach(function(label) {
+      var btn = document.createElement('button');
+      btn.className = 'chip';
+      btn.textContent = label;
+      btn.onclick = function() {
+        $input.value = label;
+        clearSuggestions();
+        $sendBtn.click();
+      };
+      $s.appendChild(btn);
+    });
+  }
+
+  function clearSuggestions() {
+    document.getElementById('suggestions').innerHTML = '';
+  }
+
+  // ── Send a message to Claude ───────────────────────────────────
+  async function sendMessage(userText, silent) {
+    if (streaming) return;
+    streaming = true;
+    $sendBtn.disabled = true;
+    $sumBtn.disabled = true;
+
+    clearSuggestions();
+
+    if (silent) {
+      // Seed with a hidden opening prompt so messages array is never empty
+      messages.push({ role: 'user', content: 'Please begin.' });
+    } else {
+      messages.push({ role: 'user', content: userText });
+      addMessage('user', userText);
+    }
+
+    $typing.style.display = 'block';
+    scrollBottom();
+
+    var body = JSON.stringify({
+      model: MODEL,
+      max_tokens: 1200,
+      stream: true,
+      system: systemPrompt,
+      messages: messages
+    });
+
+    var assistantDiv = null;
+    var fullText = '';
+
+    try {
+      var resp = await fetch(PROXY + '/api/anthropic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: body
+      });
+      if (!resp.ok) throw new Error('API error ' + resp.status);
+
+      $typing.style.display = 'none';
+
+      var reader = resp.body.getReader();
+      var decoder = new TextDecoder();
+      var buf = '';
+
+      while (true) {
+        var chunk = await reader.read();
+        if (chunk.done) break;
+        buf += decoder.decode(chunk.value, { stream: true });
+        var lines = buf.split('\n');
+        buf = lines.pop();
+        for (var li = 0; li < lines.length; li++) {
+          var ln = lines[li].trim();
+          if (!ln.startsWith('data: ')) continue;
+          var raw = ln.slice(6);
+          if (raw === '[DONE]') continue;
+          try {
+            var evt = JSON.parse(raw);
+            if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'text_delta') {
+              fullText += evt.delta.text;
+              // Show text without the option_box tag during streaming
+              var displayText = fullText.replace(/<option_box>[\s\S]*?<\/option_box>/g, '').trim();
+              // Hide partially formed option_box during streaming
+              var partialClean = displayText.replace(/<option_box>[\s\S]*/g, '').trim();
+              if (!assistantDiv) {
+                assistantDiv = addMessage('assistant', partialClean || '…');
+              } else {
+                assistantDiv.innerHTML = mdToHtml(partialClean || fullText);
+                scrollBottom();
+              }
+            }
+          } catch(e) {}
+        }
+      }
+
+      // Final render — parse option box and suggestions
+      var parsed = parseResponse(fullText);
+      if (assistantDiv && parsed.text) {
+        assistantDiv.innerHTML = mdToHtml(parsed.text);
+        scrollBottom();
+      }
+      if (parsed.obData) renderOptionBox(parsed.obData);
+      if (parsed.suggestions && parsed.suggestions.length) showSuggestions(parsed.suggestions);
+
+      messages.push({ role: 'assistant', content: fullText });
+      $status.textContent = '';
+
+    } catch(e) {
+      $typing.style.display = 'none';
+      $status.textContent = 'Error: ' + e.message;
+    }
+
+    streaming = false;
+    $sendBtn.disabled = false;
+    $sumBtn.disabled = messages.length < 2;
+  }
+
+  // ── Summary generation ─────────────────────────────────────────
+  async function generateSummary() {
+    document.getElementById('summary-modal').classList.add('show');
+    document.getElementById('summary-body').innerHTML = '<div id="summary-generating">Generating summary…</div>';
+    summaryText = '';
+
+    var summaryPrompt = 'Based on our conversation so far, please write a brief exploration summary for ' + patientName + '. Include:\n\n' +
+      '**Problem explored:** (one line)\n\n' +
+      '**Key options discussed:** (bullet list — option name + one-line plain-language summary)\n\n' +
+      '**What the evidence suggests:** (2–3 sentences, plain language, honest about uncertainty)\n\n' +
+      '**Questions to bring to your doctor:** (bullet list of 3–5 specific questions)\n\n' +
+      'Be concise. Plain language. No medical jargon. This is for the patient to keep.';
+
+    var summaryMessages = messages.concat([{ role: 'user', content: summaryPrompt }]);
+
+    try {
+      var resp = await fetch(PROXY + '/api/anthropic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: MODEL, max_tokens: 800, stream: true, system: systemPrompt, messages: summaryMessages })
+      });
+      if (!resp.ok) throw new Error('API error ' + resp.status);
+
+      var reader = resp.body.getReader();
+      var decoder = new TextDecoder();
+      var buf = '', full = '';
+
+      while (true) {
+        var chunk = await reader.read();
+        if (chunk.done) break;
+        buf += decoder.decode(chunk.value, { stream: true });
+        var lines = buf.split('\n'); buf = lines.pop();
+        for (var li = 0; li < lines.length; li++) {
+          var ln = lines[li].trim();
+          if (!ln.startsWith('data: ')) continue;
+          var raw = ln.slice(6); if (raw === '[DONE]') continue;
+          try {
+            var evt = JSON.parse(raw);
+            if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'text_delta') {
+              full += evt.delta.text;
+              document.getElementById('summary-body').innerHTML = mdToHtml(full);
+            }
+          } catch(e) {}
+        }
+      }
+      summaryText = full;
+    } catch(e) {
+      document.getElementById('summary-body').innerHTML = '<p style="color:#dc2626">Could not generate summary: ' + escH(e.message) + '</p>';
+    }
+  }
+
+  window.closeSummary = function() {
+    document.getElementById('summary-modal').classList.remove('show');
+  };
+  document.getElementById('summary-close').onclick = window.closeSummary;
+
+  window.copySummary = function() {
+    if (summaryText) navigator.clipboard.writeText(summaryText).catch(function(){});
+  };
+
+  // ── Input handling ─────────────────────────────────────────────
+  $sendBtn.onclick = function () {
+    var text = $input.value.trim();
+    if (!text || streaming) return;
+    $input.value = '';
+    $input.style.height = '';
+    sendMessage(text, false);
+  };
+
+  $input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      $sendBtn.click();
+    }
+  });
+
+  $input.addEventListener('input', function () {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+
+  // ── Init ────────────────────────────────────────────────────────
+  async function init() {
+    $loadMsg.textContent = 'Loading your health record…';
+    var pageData = {};
+
+    try {
+      var slugs = SECTIONS.map(function(s){ return s.page; });
+      var results = await Promise.all(slugs.map(function(slug){ return fetchPage(slug); }));
+      slugs.forEach(function(slug, i){ if (results[i] && results[i].page) pageData[slug] = results[i].page; });
+    } catch(e) {}
+
+    // Set patient name and header
+    var aboutPage = pageData['about-me'];
+    if (aboutPage && aboutPage.story) {
+      var aboutItem = aboutPage.story.find(function(i){ return i.type === 'scp-about' && i.committed; });
+      if (aboutItem) patientName = aboutItem.preferred_name || aboutItem.legal_name || patientName;
+    }
+
+    $pLabel.textContent = patientName + (PROBLEM ? ' — ' + PROBLEM : '');
+    document.title = 'My Health Choices' + (PROBLEM ? ' — ' + PROBLEM : '');
+
+    systemPrompt = buildSystemPrompt(pageData);
+    buildIdleOptionBox(pageData);
+
+    $loading.style.display = 'none';
+
+    // Show starter chips immediately before AI responds
+    var starters = PROBLEM
+      ? ['What are my options for managing this?',
+         'What do lifestyle changes actually do?',
+         'Tell me about medications for this',
+         'What questions should I ask my doctor?']
+      : ['What health concern should we explore?',
+         'Walk me through my active diagnoses',
+         'What are my biggest health priorities?'];
+    showSuggestions(starters);
+
+    // Start conversation
+    await sendMessage('', true);
+    $sumBtn.disabled = false;
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

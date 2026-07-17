@@ -43,8 +43,10 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
   vester/     Vester chapter notes and SensiMod context
   archive/    old numbered drafts
   veramo/     SODOTO credential infrastructure (see SODOTO section below)
-  scp-coupler/ standalone PKC tool + experiment integration files
-  coupler-proxy.py  PKC proxy (port 8766)
+  scp/        Shared Care Plan: plugins/ (13 wiki-plugin-scp-* repos), pages/ (17 canonical page templates)
+  scp-coupler/ standalone My Health Picture tool + experiment integration files (data/people.json = patient registry with wiki_site)
+  scp-optionbox/ My Health Choices decision support (port 8770)
+  coupler-proxy.py  My Health Picture AI proxy (port 8766) — per-patient wiki routing
   database.rules.json   Firebase Realtime DB security rules (scoped to sessions/ and topics/ paths)
   SODOTO-CLAUDE-CODE-CONTEXT.md   full SODOTO onboarding doc (authoritative)
 
@@ -244,10 +246,82 @@ Kept outside ~/rcn/ because of node_modules size.
 | Neo4j | Relational/temporal truth, point types, H3 arrays |
 | FedWiki | `localfedwiki.relocalizecreativity.net`, launchd auto-start, port 3000 |
 | sofi-proxy | `~/rcn/sofi-proxy.py`, port 8765 — Anthropic API relay + FedWiki filesystem write API + static file server for `~/rcn/` |
-| coupler-proxy | `~/rcn/coupler-proxy.py`, port 8766 — PKC AI proxy + FedWiki write API; serves `~/rcn/scp-coupler/` |
+| coupler-proxy | `~/rcn/coupler-proxy.py`, port 8766 — My Health Picture AI proxy + FedWiki write API; serves `~/rcn/scp-coupler/`; resolves per-patient wiki site from `people.json` (`get_wiki_host`) |
 
 Spatial architecture: PostGIS (precise polygon operations) + Neo4j (point types, H3 arrays)
 linked via shared `place_id` UUID.
+
+---
+
+## Presentation and demo capture pipeline
+
+Slides and documentation for My Personal Health Supporter live in `docs/`.
+
+### Deliverables
+
+| File | What |
+|------|------|
+| `docs/my-phs-stack-overview.html` | Concise single-page reference for the full tool suite — quick-ref table, data flows, per-tool detail, infrastructure table |
+| `docs/my-phs-intro.pptx` | 13-slide intro deck with embedded live screenshots and videos |
+| `docs/whatcom-coop-slides-berwick.pptx` | 13-slide deck for Don Berwick — "Where Health Actually Lives" |
+| `docs/whatcom-coop-overview.html` | Whatcom Wealth and Health cooperative overview |
+| `docs/my-phs-intro.html` | My PHS introduction for health partners |
+
+### Screenshot capture
+
+`docs/capture_screenshots.py` — uses **Playwright** to automate a headless Chromium browser, navigate to each live tool, and take PNG screenshots.
+
+```bash
+# Requires coupler-proxy.py running on port 8766 and FedWiki on port 3000
+python3 docs/capture_screenshots.py
+# → docs/screenshots/{my-health-picture,my-health-choices,my-support-network,sodoto-issuer,my-shared-care-plan,scp-diagnoses}.png
+```
+
+Why Playwright and not just `screencapture`: static tools (Support Network, SODOTO, FedWiki pages) can be captured with Chrome headless alone. The Health Picture requires interaction — select patient from dropdown, click a problem, wait for the AI frame to render — which Playwright scripts as code.
+
+### Video recording
+
+`docs/record_videos.py` — records interactive demos as video, converts to MP4, ready to embed in PowerPoint.
+
+```bash
+python3 docs/record_videos.py
+# → docs/videos/{my-health-picture,my-health-choices}.mp4
+```
+
+**Pipeline:**
+
+1. **Playwright** launches headless Chromium with `record_video_dir` set. It performs the scripted interaction (select Alex Rivera → click hypertension → wait for Claude frame → slow scroll) while recording everything to a `.webm` file. `slow_mo=400` adds 400ms between actions so the demo reads clearly.
+
+2. **ffmpeg** converts `.webm` → `.mp4` with H.264 + `yuv420p`. Required because:
+   - Playwright only outputs WebM (VP8 codec)
+   - PowerPoint on Mac requires MP4/H.264 — it will not play WebM
+   - macOS's built-in `avconvert` cannot read WebM (AVFoundation gap)
+   - Install once: `brew install ffmpeg`
+
+3. **python-pptx** `shapes.add_movie()` embeds the `.mp4` directly inside the `.pptx` file. The screenshot for that slide becomes the `poster_frame_image` — shown before the presenter clicks play. Videos travel with the deck; no external files needed.
+
+### Regenerating the deck
+
+```bash
+# 1. Capture fresh screenshots (proxy must be running)
+python3 docs/capture_screenshots.py
+
+# 2. Record fresh videos (proxy must be running)
+python3 docs/record_videos.py
+
+# 3. Rebuild the PPTX
+python3 docs/make_phs_intro_pptx.py
+```
+
+The Berwick deck has its own script: `python3 docs/make_berwick_pptx.py`
+
+### Dependencies
+
+| Tool | Install | Purpose |
+|------|---------|---------|
+| `playwright` | `pip3 install playwright --break-system-packages` then `python3 -m playwright install chromium` | Browser automation + headless screenshots + video recording |
+| `ffmpeg` | `brew install ffmpeg` | WebM → MP4 conversion |
+| `python-pptx` | `pip3 install python-pptx` | PPTX generation + image/video embedding |
 
 ---
 
@@ -263,7 +337,9 @@ linked via shared `place_id` UUID.
 
 - **SCP + Groove**: Shared Care Plan as native FedWiki plugins + Groove workspace (port 3001). 12 typed item plugins built and working on localhost (June 2026). Pilot: Superior AZ NDC (Leo's). See `scp-groove-handoff.md` and the FedWiki SCP Plugins section below.
 
-- **SCP + PKC Integration Experiment**: Three-way integration between the Problem-Knowledge Coupler (port 8766), the Shared Care Plan FedWiki plugins, and a local experimental wiki site (`scp-experiment.localhost`). PKC reads from and writes to the SCP wiki. Coupler frames push as collapsible FedWiki pages. Narratives push to pre-visit-summary. Experiment site isolated from WikiCafe production. See `scp-coupler/experiment-intro.html` and `scp-coupler/experiment-manual.html`.
+- **SCP + My Health Picture Integration Experiment (My PHS)**: Three-way integration between My Health Picture (port 8766), the Shared Care Plan FedWiki plugins, and **per-patient wiki sites** (`{slug}.localhost` — e.g. `rosa-delgado.localhost`, `alex-rivera.localhost`). Each patient in `scp-coupler/data/people.json` carries `wiki_slug`/`wiki_site`; coupler-proxy resolves the wiki host per-request via `get_wiki_host(person_id)` (fallback: `scp-experiment.localhost`). My Health Picture reads from and writes to the patient's SCP wiki. Coupler frames push as collapsible FedWiki pages. Narratives push to pre-visit-summary. New patient sites are provisioned via sofi-proxy's `/api/provision-patient`, which seeds all 17 canonical templates from `~/rcn/scp/pages/` (personalizing welcome-visitors and about-me) and registers the site in `~/.wiki/config.json` wikiDomains. See `scp-coupler/experiment-intro.html` and `scp-coupler/experiment-manual.html`.
+
+- **My Health Choices** (`scp-optionbox/`): Shared decision support tool served at port 8770. Presents treatment options as icon arrays of 1,000 dots (NNT/NNH visualization). Drug safety data pipeline: openFDA label + FAERS adverse event counts + MedlinePlus plain-language term definitions. Three fact boxes: AF anticoagulation, statin primary prevention, hypertension medication vs. lifestyle. When the coupler detects a keyword match between a problem and the library, a purple **My Health Choices ↗** button appears in the toolbar. Opening the My Health Choices from the coupler passes person/problem context; a **Document this choice** button on each option card writes a structured `shared-decision` record entry back to the coupler via `POST /api/record-entry`. Shared decisions surface at the top of the coupler's Plan section (purple card), are incorporated into Narrate output, and appear in the FedWiki wiki push. Clinical curators: see `scp-optionbox/authoring-guide.html` for the JSON schema and 8-step evidence pipeline.
 
 - **SODOTO Mac Mini deployment**: issuer tool and FedWiki running on shared Mac Mini. Each issuer accesses sodoto-issuer.html through their own browser; keys never leave the signer's machine. Next steps: launchd plists for auto-start, network config, private key storage (out of plain JSON), people registry portability (localStorage → SEED_PEOPLE or server-side file), PROXY constant in sodoto-issuer.html updated from localhost to Mac Mini hostname.
 
@@ -335,29 +411,34 @@ wiki-plugin-{name}/
 
 ### SCP plugins (Shared Care Plan health record)
 
-12 typed item plugins for the Shared Care Plan. All route through one JS file (`wiki-plugin-scp-medication/client/scp-medication.js`) via `server/server.js` alias routes.
+Plugin repos live at `~/rcn/scp/plugins/wiki-plugin-scp-*/`. 13 typed item plugins for the Shared Care Plan. All route through one JS file (`wiki-plugin-scp-medication/client/scp-medication.js`) via `server/server.js` alias routes.
 
 **Design principles:**
 - Uses FedWiki's native factory system — items created via the factory menu, not pre-loaded JSON
+- Pages carry an `scp-factory` item (`types` array + `position: "top"`) that renders the green "Add entry" button
 - All saves via `wiki.pageHandler.put()` — the correct FedWiki API
 - `item.text` populated on every save so FedWiki's built-in search indexes all SCP content
 - Log-style items (vitals, symptoms, visits, history, access) use a commit button → one journal entry per completed card, reverse chronological ordering via `move` action
 - Record-style items (medications, diagnoses, providers, etc.) save on focusout or commit
+- **Example/dismiss pattern:** template items carry `"example": true` — rendered with an amber banner ("Example — this is not your data") and a ✕ Dismiss button that removes the item via a journal `remove` action. Example items are excluded from reports and data analysis. Wired into **all 13 plugin types** (July 2026).
 
 | Plugin type | SCP page | Notes |
 |---|---|---|
 | `scp-medication` | Medications | Focusout saves; persistent record |
-| `scp-vital` | Health Log | Commit + fold; thumb events for chart data flow |
-| `scp-symptom` | Health Log | Commit + fold |
-| `scp-visit` | Health Log | Commit + fold |
+| `scp-vital` | Vitals / Health Log | Commit + fold; thumb events for chart data flow |
+| `scp-symptom` | Symptoms / Health Log | Commit + fold |
+| `scp-visit` | Visits / Health Log | Commit + fold |
+| `scp-lab` | Lab Results | FHIR Observation-aligned: LOINC code, valueQuantity, interpretation H/L/N/A/B/P |
 | `scp-about` | About Me | Commit + fold |
-| `scp-provider` | Care Team | Commit + fold |
+| `scp-provider` | My Care Team | Commit + fold |
 | `scp-diagnosis` | Diagnoses | Commit + fold |
-| `scp-reaction` | Reactions | Commit + fold |
-| `scp-history` | History | Commit + fold + reverse chron |
+| `scp-reaction` | Allergies & Reactions | Commit + fold |
+| `scp-history` | Medical History | Commit + fold + reverse chron |
 | `scp-next-step` | Next Steps | Commit + fold |
-| `scp-directive` | Advanced Directives | Commit + fold |
+| `scp-directive` | Health Directives | Commit + fold |
 | `scp-access` | Who's Accessed My Plan | Commit + fold + reverse chron |
+
+**Canonical page templates:** `~/rcn/scp/pages/*.json` — 17 pages with example items, the master set for provisioning new patient sites. The `/api/provision-patient` endpoint in sofi-proxy seeds all 17 templates into a new patient site (personalizing `welcome-visitors` and `about-me`) and reports the `seeded` list in its response. Live patient data lives at `~/.wiki/{site}.localhost/pages/`; changes to canonical templates do **not** auto-deploy to existing sites.
 
 **Remaining before pilot:** backend-driven access log, federation, Wiki Café deployment.
 

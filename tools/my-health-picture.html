@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>My Health Picture</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:    #1e3a5f;
+  --navy-lt: #2a4f7c;
+  --teal:    #0f766e;
+  --bg:      #f8f9fa;
+  --surface: #ffffff;
+  --border:  #e5e7eb;
+  --text:    #1a1a2e;
+  --muted:   #6b7280;
+  --c-confirmed:   #22c55e; --c-confirmed-bg:   #f0fdf4;
+  --c-probable:    #3b82f6; --c-probable-bg:    #eff6ff;
+  --c-possible:    #f59e0b; --c-possible-bg:    #fffbeb;
+  --c-unconfirmed: #ef4444; --c-unconfirmed-bg: #fef2f2;
+  --c-notpursuing: #9ca3af; --c-notpursuing-bg: #f3f4f6;
+  --ac1: #dc2626; --ac2: #ea580c; --ac3: #d97706; --ac4: #2563eb; --ac5: #9ca3af;
+}
+body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5; }
+button { cursor: pointer; font: inherit; }
+
+/* ── Loading ── */
+#loading { position: fixed; inset: 0; background: var(--navy); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 999; }
+#loading p { color: rgba(255,255,255,0.7); font-size: 14px; }
+.spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Person selector ── */
+#person-selector { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 20px; background: var(--navy); }
+#person-selector h1 { font-size: 22px; color: white; margin-bottom: 6px; }
+#person-selector p { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 28px; }
+#person-selector input { width: 100%; max-width: 380px; padding: 12px 14px; border-radius: 8px; border: none; font-size: 15px; margin-bottom: 10px; }
+#person-selector button { width: 100%; max-width: 380px; padding: 12px; background: var(--teal); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; }
+#ps-error { color: #fca5a5; font-size: 13px; margin-top: 8px; min-height: 18px; }
+
+/* ── Main layout ── */
+#app { display: none; flex-direction: column; min-height: 100vh; max-width: 640px; margin: 0 auto; }
+
+/* ── Header ── */
+#header { background: var(--navy); color: white; padding: 10px 14px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 10; flex-shrink: 0; }
+#header-back { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 18px; padding: 4px 6px; margin-right: 2px; display: none; }
+#header-title { flex: 1; min-width: 0; }
+#header-title h1 { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#header-sub { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 1px; }
+.hbtn { background: rgba(255,255,255,0.13); color: white; border: 1px solid rgba(255,255,255,0.28); border-radius: 5px; padding: 5px 10px; font-size: 12px; white-space: nowrap; }
+.hbtn:hover { background: rgba(255,255,255,0.24); }
+.hbtn.teal { background: var(--teal); border-color: var(--teal); }
+
+/* ── Sync bar ── */
+#sync-bar { background: #fef3c7; border-bottom: 1px solid #fcd34d; padding: 6px 14px; font-size: 12px; color: #78350f; display: none; justify-content: space-between; align-items: center; }
+#sync-bar button { background: none; border: none; color: var(--teal); font-size: 12px; font-weight: 600; padding: 0; }
+
+/* ── Views ── */
+.view { flex: 1; overflow-y: auto; padding: 12px 14px 80px; display: none; }
+.view.active { display: block; }
+
+/* ── Problem list ── */
+.section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 16px 0 8px; }
+.section-label:first-child { margin-top: 4px; }
+.empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+.empty-state p { font-size: 14px; line-height: 1.6; }
+
+/* ── Problem card ── */
+.prob-card { background: var(--surface); border: 1.5px solid var(--border); border-left-width: 4px; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; transition: box-shadow 0.15s; }
+.prob-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.prob-card.confirmed   { border-left-color: var(--c-confirmed); }
+.prob-card.probable    { border-left-color: var(--c-probable); }
+.prob-card.possible    { border-left-color: var(--c-possible); }
+.prob-card.unconfirmed { border-left-color: var(--c-unconfirmed); }
+.prob-card.not_pursuing { border-left-color: var(--c-notpursuing); opacity: 0.7; }
+.prob-card-top { display: flex; align-items: flex-start; gap: 8px; }
+.prob-card-title { flex: 1; font-weight: 600; font-size: 15px; color: var(--text); line-height: 1.3; }
+.ac-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.ac-1 { background: var(--ac1); }
+.ac-2 { background: var(--ac2); }
+.ac-3 { background: var(--ac3); }
+.ac-4 { background: var(--ac4); }
+.ac-5 { background: var(--ac5); }
+.prob-card-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; }
+.badge.confirmed   { background: var(--c-confirmed-bg);   color: #166534; }
+.badge.probable    { background: var(--c-probable-bg);    color: #1e40af; }
+.badge.possible    { background: var(--c-possible-bg);    color: #92400e; }
+.badge.unconfirmed { background: var(--c-unconfirmed-bg); color: #991b1b; }
+.badge.not_pursuing { background: var(--c-notpursuing-bg); color: #374151; }
+.badge.flagged { background: #fce7f3; color: #9d174d; }
+.prob-card-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* ── Problem detail ── */
+#view-detail h2 { font-size: 19px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+.detail-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.detail-section { margin-bottom: 20px; }
+.detail-section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; }
+.detail-statement { font-size: 14px; color: #444; line-height: 1.65; background: #f8f9fa; padding: 10px 12px; border-radius: 6px; }
+.evidence-list, .gap-list { list-style: none; padding: 0; }
+.evidence-list li, .gap-list li { padding: 7px 0; border-bottom: 1px solid #f0f0ec; font-size: 13px; color: var(--text); display: flex; gap: 8px; align-items: flex-start; }
+.evidence-list li:last-child, .gap-list li:last-child { border-bottom: none; }
+.evidence-list li::before { content: "✓"; color: var(--c-confirmed); flex-shrink: 0; font-weight: 700; }
+.gap-list li::before { content: "◯"; color: var(--c-unconfirmed); flex-shrink: 0; }
+.obs-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
+.obs-meta { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-family: monospace; }
+.obs-text { font-size: 13px; color: var(--text); line-height: 1.55; }
+.add-inline-btn { background: none; border: 1.5px dashed var(--border); border-radius: 6px; padding: 8px 12px; width: 100%; text-align: left; font-size: 13px; color: var(--muted); margin-top: 4px; }
+.add-inline-btn:hover { border-color: var(--teal); color: var(--teal); }
+.obs-input-area { margin-top: 8px; display: none; }
+.obs-input-area textarea { width: 100%; border: 1.5px solid var(--border); border-radius: 6px; padding: 8px 10px; font: inherit; font-size: 13px; resize: vertical; min-height: 80px; }
+.obs-input-area textarea:focus { outline: none; border-color: var(--teal); }
+.obs-input-area .obs-actions { display: flex; gap: 8px; margin-top: 6px; }
+.obs-input-area button { padding: 7px 14px; border-radius: 5px; font-size: 13px; border: none; }
+.btn-save-obs { background: var(--teal); color: white; }
+.btn-cancel-obs { background: var(--bg); border: 1px solid var(--border) !important; color: var(--muted); }
+.detail-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.btn-action { padding: 10px 14px; border-radius: 7px; font-size: 14px; font-weight: 500; border: none; text-align: center; }
+.btn-flag { background: #fce7f3; color: #9d174d; }
+.btn-flag.active { background: #9d174d; color: white; }
+.btn-np { background: var(--c-notpursuing-bg); color: #374151; }
+.btn-np.active { background: #374151; color: white; }
+.btn-edit { background: #eff6ff; color: #1e40af; }
+.btn-delete { background: #fef2f2; color: #991b1b; }
+.flag-question { margin-top: 8px; display: none; }
+.flag-question textarea { width: 100%; border: 1.5px solid #f9a8d4; border-radius: 6px; padding: 8px 10px; font: inherit; font-size: 13px; resize: vertical; min-height: 64px; }
+.flag-question textarea:focus { outline: none; border-color: #9d174d; }
+.flag-question .fq-label { font-size: 11px; color: #9d174d; font-weight: 600; margin-bottom: 4px; }
+.np-reason { margin-top: 8px; display: none; }
+.np-reason input { width: 100%; border: 1.5px solid var(--border); border-radius: 6px; padding: 8px 10px; font: inherit; font-size: 13px; }
+.np-reason input:focus { outline: none; border-color: var(--teal); }
+
+/* ── Add/Edit form ── */
+#view-form h2 { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 20px; }
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 5px; display: block; }
+.form-input { width: 100%; border: 1.5px solid var(--border); border-radius: 7px; padding: 10px 12px; font: inherit; font-size: 14px; color: var(--text); background: var(--surface); }
+.form-input:focus { outline: none; border-color: var(--teal); }
+select.form-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+textarea.form-input { resize: vertical; min-height: 80px; }
+.dynamic-list { margin-top: 4px; }
+.dynamic-item { display: flex; gap: 6px; margin-bottom: 6px; }
+.dynamic-item input { flex: 1; border: 1.5px solid var(--border); border-radius: 6px; padding: 8px 10px; font: inherit; font-size: 13px; }
+.dynamic-item input:focus { outline: none; border-color: var(--teal); }
+.dynamic-item button { background: #fef2f2; color: #991b1b; border: none; border-radius: 5px; padding: 0 10px; font-size: 16px; }
+.add-item-btn { background: none; border: 1.5px dashed var(--border); border-radius: 6px; padding: 7px 12px; width: 100%; text-align: left; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.add-item-btn:hover { border-color: var(--teal); color: var(--teal); }
+.form-actions { display: flex; gap: 10px; margin-top: 24px; }
+.btn-primary { flex: 1; background: var(--navy); color: white; border: none; border-radius: 8px; padding: 12px; font-size: 15px; font-weight: 600; }
+.btn-secondary { flex: 1; background: var(--bg); color: var(--text); border: 1.5px solid var(--border); border-radius: 8px; padding: 12px; font-size: 15px; }
+
+/* ── Package view ── */
+#view-package h2 { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+#view-package .pkg-meta { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.pkg-problem { background: var(--surface); border: 1.5px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
+.pkg-prob-title { font-size: 16px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+.pkg-section { margin-bottom: 10px; }
+.pkg-section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); margin-bottom: 4px; }
+.pkg-section p, .pkg-section li { font-size: 13px; color: #333; line-height: 1.6; }
+.pkg-section ul { padding-left: 18px; }
+.pkg-question { background: #f0fdf4; border: 1.5px solid #22c55e; border-radius: 6px; padding: 10px 12px; font-size: 14px; font-weight: 500; color: #166534; }
+.pkg-no-flags { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 14px; }
+.pkg-print-btn { width: 100%; background: var(--navy); color: white; border: none; border-radius: 8px; padding: 12px; font-size: 15px; font-weight: 600; margin-top: 8px; }
+
+/* ── FAB ── */
+#fab { position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; background: var(--navy); color: white; border: none; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); z-index: 50; display: none; }
+#fab:hover { background: var(--navy-lt); }
+
+/* ── Certainty help text ── */
+.certainty-help { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+/* ── Toast ── */
+#toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: white; padding: 9px 18px; border-radius: 20px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; white-space: nowrap; }
+#toast.show { opacity: 1; }
+
+/* ── Band badge ── */
+.band-badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; padding: 3px 8px; border-radius: 10px; text-transform: uppercase; white-space: nowrap; cursor: pointer; }
+.band-b1 { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+.band-b2 { background: #fff7ed; color: #92400e; border: 1px solid #fdba74; }
+.band-b3 { background: #eff6ff; color: #1e40af; border: 1px solid #93c5fd; }
+.band-b4 { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+
+/* ── NBQ chip ── */
+.nbq-chip { display: block; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 5px; padding: 4px 8px; font-size: 11px; color: #78350f; margin-top: 6px; line-height: 1.4; }
+.nbq-chip::before { content: "◯ Next: "; font-weight: 700; }
+
+/* ── Band filter bar ── */
+.band-filter-bar { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 7px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; color: #78350f; display: flex; align-items: center; gap: 10px; }
+.band-filter-bar button { background: none; border: none; color: #0f766e; font-size: 12px; font-weight: 700; padding: 0; cursor: pointer; white-space: nowrap; }
+
+/* ── FHIR zone ── */
+.fhir-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; text-align: center; font-size: 13px; color: var(--muted); transition: border-color 0.2s, background 0.2s; cursor: pointer; }
+.fhir-zone:hover, .fhir-zone.drag-over { border-color: var(--teal); background: #f0fdfa; color: var(--teal); }
+.fhir-zone.imported { border-color: #22c55e; background: #f0fdf4; color: #166534; }
+#fhir-input { display: none; }
+.fhir-toggle { background: none; border: none; font-size: 12px; color: var(--muted); cursor: pointer; padding: 0 0 6px; display: block; }
+.fhir-toggle:hover { color: var(--teal); }
+
+/* ── PANAS overlay ── */
+#panas-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 300; align-items: center; justify-content: center; padding: 16px; }
+#panas-overlay.open { display: flex; }
+.panas-card { background: var(--surface); border-radius: 12px; max-width: 420px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 22px 20px; }
+.panas-card h3 { font-size: 17px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+.panas-card .panas-intro { font-size: 13px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+.panas-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f3f4f6; }
+.panas-item:last-child { border-bottom: none; }
+.panas-word { font-size: 14px; font-weight: 600; text-transform: capitalize; width: 110px; flex-shrink: 0; }
+.panas-btns { display: flex; gap: 5px; }
+.panas-btn { width: 34px; height: 34px; border: 1.5px solid var(--border); border-radius: 6px; background: var(--bg); font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.panas-btn:hover { border-color: var(--teal); color: var(--teal); }
+.panas-btn.selected { background: var(--navy); border-color: var(--navy); color: white; }
+.panas-scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 10px; padding: 0 2px; }
+.panas-score-row { margin-top: 14px; padding: 10px 12px; background: #f8f9fa; border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--navy); text-align: center; }
+.panas-actions { display: flex; gap: 10px; margin-top: 16px; }
+.panas-actions button { flex: 1; padding: 10px; border-radius: 7px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; }
+.panas-submit { background: var(--navy); color: white; }
+.panas-cancel { background: var(--bg); color: var(--text); border: 1.5px solid var(--border) !important; }
+
+@media print {
+  #header, #sync-bar, #fab, #toast, #view-list, #view-detail, #view-form { display: none !important; }
+  #view-package { display: block !important; padding: 0; }
+  #app { display: block !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="spinner"></div>
+  <p id="loading-msg">Loading My Health Picture…</p>
+</div>
+
+<!-- Person selector -->
+<div id="person-selector" style="display:none">
+  <h1>My Health Picture</h1>
+  <p>Enter the person's name or record identifier</p>
+  <input type="text" id="ps-name" placeholder="Full name (e.g. Rosa Gonzalez)" autocomplete="off">
+  <input type="text" id="ps-slug" placeholder="Record ID (e.g. rosa-gonzalez)" autocomplete="off" style="margin-top:8px">
+  <button onclick="loadPerson()">Open Health Picture</button>
+  <div id="ps-error"></div>
+  <p style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:24px">My Personal Health Supporter · Open Source CC 4.0</p>
+</div>
+
+<!-- Main app -->
+<div id="app">
+  <div id="header">
+    <button id="header-back" onclick="navBack()">‹</button>
+    <div id="header-title">
+      <h1 id="header-name">My Health Picture</h1>
+      <div id="header-sub"></div>
+    </div>
+    <button class="hbtn" id="btn-package" onclick="showView('package')" style="display:none">Package</button>
+    <span id="band-badge" onclick="openPanas()" title="Tap to update PANAS score" style="display:none"></span>
+    <button class="hbtn" onclick="openPanas()" title="Activation check-in">PANAS</button>
+    <button class="hbtn" onclick="openSCP()" title="Open Shared Care Plan">SCP</button>
+    <button class="hbtn teal" id="btn-sync" onclick="syncToWiki()">Sync</button>
+  </div>
+
+  <div id="sync-bar">
+    <span id="sync-msg">Unsaved changes</span>
+    <button onclick="syncToWiki()">Save to SCP now</button>
+  </div>
+
+  <!-- View: Problem list -->
+  <div id="view-list" class="view active">
+    <button class="fhir-toggle" id="fhir-toggle-btn" onclick="toggleFhirZone()">↓ Import from medical record (FHIR)</button>
+    <div id="fhir-zone" class="fhir-zone" style="display:none"
+         ondragover="event.preventDefault();this.classList.add('drag-over')"
+         ondragleave="this.classList.remove('drag-over')"
+         ondrop="handleFhirDrop(event)"
+         onclick="document.getElementById('fhir-input').click()">
+      Drop a FHIR Bundle JSON here, or click to choose file
+    </div>
+    <input type="file" id="fhir-input" accept=".json,application/json" onchange="handleFhirFile(event)">
+    <div id="band-filter-bar" class="band-filter-bar" style="display:none">
+      <span id="band-filter-msg"></span>
+      <button onclick="toggleShowAll()">Show all</button>
+    </div>
+    <div id="problem-list-body"></div>
+  </div>
+
+  <!-- View: Problem detail -->
+  <div id="view-detail" class="view">
+    <div id="detail-body"></div>
+  </div>
+
+  <!-- View: Add / Edit form -->
+  <div id="view-form" class="view">
+    <h2 id="form-title">Add Problem</h2>
+    <div class="form-group">
+      <label class="form-label">Problem name *</label>
+      <input id="f-title" class="form-input" type="text" placeholder="e.g. Hypertension">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Plain-language statement</label>
+      <textarea id="f-statement" class="form-input" placeholder="Describe the problem in plain language at its level of certainty…"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Certainty level *</label>
+      <select id="f-certainty" class="form-input" onchange="updateCertaintyHelp()">
+        <option value="confirmed">Confirmed — well-supported by evidence</option>
+        <option value="probable" selected>Probable — evidence strongly suggests this</option>
+        <option value="possible">Possible — some evidence, significant uncertainty</option>
+        <option value="unconfirmed">Unconfirmed — listed in records, no evidence found</option>
+        <option value="not_pursuing">Not Pursuing — person has chosen to set this aside</option>
+      </select>
+      <div id="certainty-help" class="certainty-help"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Attention code</label>
+      <select id="f-ac" class="form-input">
+        <option value="5">5 — Routine monitoring</option>
+        <option value="4">4 — Monitor, no immediate action</option>
+        <option value="3" selected>3 — Review at next visit</option>
+        <option value="2">2 — Move fast, action needed soon</option>
+        <option value="1">1 — Act now, cannot wait</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Source</label>
+      <select id="f-source" class="form-input">
+        <option value="chw">CHW / Health partner observation</option>
+        <option value="self">Person self-report</option>
+        <option value="physician">Physician / clinician entry</option>
+        <option value="scp">Imported from Shared Care Plan</option>
+        <option value="fhir">Imported from medical record (FHIR)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Evidence — what supports this</label>
+      <div id="evidence-list" class="dynamic-list"></div>
+      <button class="add-item-btn" onclick="addEvidenceField()">+ Add evidence item</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Evidence gaps — what is missing or unconfirmed</label>
+      <div id="gap-list" class="dynamic-list"></div>
+      <button class="add-item-btn" onclick="addGapField()">+ Add gap</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Added by</label>
+      <input id="f-addedby" class="form-input" type="text" placeholder="Your name">
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="cancelForm()">Cancel</button>
+      <button class="btn-primary" onclick="saveForm()">Save Problem</button>
+    </div>
+  </div>
+
+  <!-- View: Physician package -->
+  <div id="view-package" class="view">
+    <h2>Physician Package</h2>
+    <div class="pkg-meta" id="pkg-meta"></div>
+    <div id="package-body"></div>
+    <button class="pkg-print-btn" onclick="window.print()">Print / Save as PDF</button>
+  </div>
+</div>
+
+<!-- PANAS overlay -->
+<div id="panas-overlay">
+  <div class="panas-card">
+    <h3>Activation Check-in — PANAS PA-10</h3>
+    <p class="panas-intro">Rate how much you feel each word describes you <em>right now</em>, from 1 (very slightly or not at all) to 5 (extremely).</p>
+    <div class="panas-scale-labels"><span>1 — not at all</span><span>5 — extremely</span></div>
+    <div id="panas-items"></div>
+    <div class="panas-score-row" id="panas-score-display">0/10 words rated</div>
+    <div class="panas-actions">
+      <button class="panas-cancel" onclick="closePanas()">Cancel</button>
+      <button class="panas-submit" onclick="submitPanas()">Save Score</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAB: Add problem -->
+<button id="fab" onclick="showAdd()" title="Add problem">＋</button>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+var PROXY = window.location.origin;
+var PROXY_SECRET = '';
+var WIKI_SITE = 'localhost';
+
+fetch('/config').then(function(r){ return r.json(); }).then(function(cfg){
+  if (cfg.proxySecret) PROXY_SECRET = cfg.proxySecret;
+  if (cfg.wikiSite)    WIKI_SITE    = cfg.wikiSite;
+}).catch(function(){});
+
+// ── State ───────────────────────────────────────────────────────────────────
+var person   = { name: '', slug: '', site: '', activation: null };
+function personSite() { return person.site || (person.slug ? person.slug + '.localhost' : WIKI_SITE); }
+var problems = [];
+var dirty    = false;
+var editId   = null;  // problem being edited
+var navStack = ['list'];  // view history
+var showAllProblems = false;
+
+// ── PANAS constants ──────────────────────────────────────────────────────────
+var PA10_WORDS = ['active','alert','attentive','determined','enthusiastic','excited','inspired','interested','proud','strong'];
+var ACT_BAND_LABELS = {1:'Learning the basics', 2:'Building awareness', 3:'Taking action', 4:'Staying the course'};
+var ACT_BAND_CLASSES = {1:'band-b1', 2:'band-b2', 3:'band-b3', 4:'band-b4'};
+var panasScores = {};
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function uuid() {
+  return 'p-' + Math.random().toString(36).slice(2,10) + '-' + Date.now().toString(36);
+}
+function today() {
+  return new Date().toISOString().slice(0,10);
+}
+function fmtDate(s) {
+  if (!s) return '';
+  var d = new Date(s + 'T12:00:00');
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function authHeaders() {
+  var h = { 'Content-Type': 'application/json' };
+  if (PROXY_SECRET) h['Authorization'] = 'Bearer ' + PROXY_SECRET;
+  return h;
+}
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2500);
+}
+function lsKey() { return 'mhp-' + person.slug; }
+function openSCP() {
+  window.open(window.location.origin + '/tools/scp-chat.html?site=' + encodeURIComponent(personSite()), '_blank');
+}
+
+function openHealthChoices(problem) {
+  window.open(window.location.origin + '/tools/my-health-choices.html?site=' + encodeURIComponent(personSite()) + '&problem=' + encodeURIComponent(problem), '_blank');
+}
+
+// ── LocalStorage ─────────────────────────────────────────────────────────────
+function saveLocal() {
+  var data = { person: person, problems: problems, savedAt: new Date().toISOString() };
+  localStorage.setItem(lsKey(), JSON.stringify(data));
+}
+function loadLocal() {
+  var raw = localStorage.getItem(lsKey());
+  if (!raw) return false;
+  try {
+    var data = JSON.parse(raw);
+    person   = data.person   || person;
+    problems = data.problems || [];
+    return true;
+  } catch(e) { return false; }
+}
+
+// ── FedWiki ──────────────────────────────────────────────────────────────────
+function wikiGet(slug, site) {
+  site = site || personSite();
+  return fetch(PROXY + '/api/wiki-read-page?site=' + encodeURIComponent(site) + '&slug=' + encodeURIComponent(slug))
+    .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+}
+function wikiPost(path, body) {
+  return fetch(PROXY + path, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) })
+    .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+}
+
+function probToHtml(p) {
+  var json = JSON.stringify(p).replace(/"/g, '&quot;');
+  var ev   = (p.evidence||[]).map(function(e){ return '<li>' + e.text + (e.date?' ('+e.date+')':'') + '</li>'; }).join('');
+  var gaps = (p.gaps||[]).map(function(g){ return '<li>' + g + '</li>'; }).join('');
+  var obs  = (p.observations||[]).map(function(o){ return '<p><em>'+o.date+' · '+o.author+':</em> '+o.text+'</p>'; }).join('');
+  var encTitle = encodeURIComponent(p.title);
+  return '<div class="hp-problem" data-hp="' + json + '">'
+    + '<h3>' + p.title + '</h3>'
+    + '<p><strong>Certainty:</strong> ' + p.certainty + ' · <strong>Attention:</strong> ' + p.attentionCode + '</p>'
+    + '<p><strong>Statement:</strong> ' + (p.statement||'') + '</p>'
+    + (ev   ? '<p><strong>Evidence:</strong></p><ul>' + ev + '</ul>' : '')
+    + (gaps ? '<p><strong>Gaps:</strong></p><ul>' + gaps + '</ul>' : '')
+    + (obs  ? '<p><strong>Observations:</strong></p>' + obs : '')
+    + '<div style="margin-top:10px">'
+    + '<button onclick="openHealthChoices(' + "'" + p.title.replace(/'/g,"\\'") + "'" + ')" style="background:#4c1d95;color:white;border:none;border-radius:7px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer">Explore choices →</button>'
+    + '</div>'
+    + '</div>';
+}
+
+function parseWikiPage(page) {
+  var out = [];
+  if (!page || !page.story) return out;
+  page.story.forEach(function(item) {
+    if (item.type !== 'html') return;
+    var m = item.text && item.text.match(/data-hp="([^"]+)"/);
+    if (!m) return;
+    try {
+      var p = JSON.parse(m[1].replace(/&quot;/g,'"'));
+      out.push(p);
+    } catch(e) {}
+  });
+  return out;
+}
+
+function buildWikiPage() {
+  var story = [
+    { type: 'paragraph', id: 'hp-meta',
+      text: 'My Health Picture · ' + person.name + ' · Updated ' + today() }
+  ];
+  problems.forEach(function(p) {
+    story.push({ type: 'html', id: 'hp-prob-' + p.id, text: probToHtml(p) });
+  });
+  return { title: 'Health Picture — ' + person.name, story: story };
+}
+
+async function syncToWiki() {
+  var btn = document.getElementById('btn-sync');
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+  saveLocal();
+  try {
+    await wikiPost('/api/wiki-write-page', {
+      site: personSite(),
+      slug: 'health-picture',
+      page: buildWikiPage()
+    });
+    dirty = false;
+    hideSyncBar();
+    toast('Saved to Shared Care Plan');
+  } catch(e) {
+    toast('Sync failed — saved locally');
+  }
+  btn.textContent = 'Sync';
+  btn.disabled = false;
+}
+
+async function loadFromWiki(slug) {
+  try {
+    var page = await wikiGet('health-picture', personSite());
+    var loaded = parseWikiPage(page);
+    if (loaded.length > 0) problems = loaded;
+  } catch(e) { /* no page yet — start fresh */ }
+}
+
+// ── Person loading ───────────────────────────────────────────────────────────
+async function loadPerson() {
+  var name = document.getElementById('ps-name').value.trim();
+  var slug = document.getElementById('ps-slug').value.trim();
+  var err  = document.getElementById('ps-error');
+  err.textContent = '';
+
+  if (!name && !slug) { err.textContent = 'Please enter a name or record ID.'; return; }
+  if (!slug && name)  { slug = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+  if (!name && slug)  { name = slug.replace(/-/g,' ').replace(/\b\w/g,function(c){ return c.toUpperCase(); }); }
+
+  person = { name: name, slug: slug, site: '' };
+
+  // Try FedWiki about-me first
+  try {
+    var about = await wikiGet('about-me', personSite());
+    if (about && about.story) {
+      var item = about.story.find(function(i){ return i.type === 'scp-about' && i.committed; });
+      if (item) person.name = item.preferred_name || item.legal_name || name;
+    }
+  } catch(e) {}
+
+  await loadFromWiki(slug);
+  if (!problems.length) loadLocal();
+
+  startApp();
+}
+
+async function initFromUrl() {
+  var params = new URLSearchParams(window.location.search);
+  var slug   = params.get('person');
+  if (!slug) return false;
+
+  person = { name: slug.replace(/-/g,' ').replace(/\b\w/g,function(c){ return c.toUpperCase(); }), slug: slug, site: '' };
+
+  try {
+    var about = await wikiGet('about-me', personSite());
+    if (about && about.story) {
+      var item = about.story.find(function(i){ return i.type === 'scp-about' && i.committed; });
+      if (item) person.name = item.preferred_name || item.legal_name || person.name;
+    }
+  } catch(e) {}
+
+  await loadFromWiki(slug);
+  if (!problems.length) loadLocal();
+  return true;
+}
+
+// ── Views ────────────────────────────────────────────────────────────────────
+function showView(name) {
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.getElementById('view-' + name).classList.add('active');
+  if (navStack[navStack.length-1] !== name) navStack.push(name);
+  updateHeader(name);
+  if (name === 'list')    renderList();
+  if (name === 'package') renderPackage();
+  window.scrollTo(0,0);
+}
+function navBack() {
+  navStack.pop();
+  var prev = navStack[navStack.length-1] || 'list';
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.getElementById('view-' + prev).classList.add('active');
+  updateHeader(prev);
+  if (prev === 'list') renderList();
+  window.scrollTo(0,0);
+}
+function updateHeader(view) {
+  var back = document.getElementById('header-back');
+  var fab  = document.getElementById('fab');
+  var pkgBtn = document.getElementById('btn-package');
+  back.style.display    = (view !== 'list') ? 'block' : 'none';
+  fab.style.display     = (view === 'list') ? 'flex' : 'none';
+  pkgBtn.style.display  = (view === 'list' && problems.some(function(p){ return p.flaggedForPhysician && p.active !== false; })) ? 'block' : 'none';
+  document.getElementById('header-name').textContent = {
+    list:    'My Health Picture',
+    detail:  'Problem Detail',
+    form:    editId ? 'Edit Problem' : 'Add Problem',
+    package: 'Physician Package'
+  }[view] || 'My Health Picture';
+}
+function showSyncBar(msg) {
+  var bar = document.getElementById('sync-bar');
+  document.getElementById('sync-msg').textContent = msg || 'Unsaved changes';
+  bar.style.display = 'flex';
+  dirty = true;
+}
+function hideSyncBar() {
+  document.getElementById('sync-bar').style.display = 'none';
+}
+
+// ── Render problem list ───────────────────────────────────────────────────────
+var CERTAINTY_ORDER = ['confirmed','probable','possible','unconfirmed','not_pursuing'];
+var CERTAINTY_LABEL = { confirmed:'Confirmed', probable:'Probable', possible:'Possible', unconfirmed:'Unconfirmed', not_pursuing:'Not Pursuing' };
+var AC_LABEL = { 1:'Act Now', 2:'Move Fast', 3:'Review', 4:'Monitor', 5:'Routine' };
+
+function renderList() {
+  var body = document.getElementById('problem-list-body');
+  var filterBar = document.getElementById('band-filter-bar');
+  var active = problems.filter(function(p){ return p.active !== false; });
+  var inactive = problems.filter(function(p){ return p.active === false; });
+
+  if (!active.length && !inactive.length) {
+    body.innerHTML = '<div class="empty-state"><p>No health problems recorded yet.<br>Tap ＋ to add the first problem.</p></div>';
+    filterBar.style.display = 'none';
+    return;
+  }
+
+  // Sort active: by attention code (1=highest), then certainty
+  active.sort(function(a,b){
+    if (a.attentionCode !== b.attentionCode) return a.attentionCode - b.attentionCode;
+    return CERTAINTY_ORDER.indexOf(a.certainty) - CERTAINTY_ORDER.indexOf(b.certainty);
+  });
+
+  // Band filtering: bands 1 & 2 → show only AC1/AC2 problems unless showAll
+  var act = person.activation;
+  var band = act && act.band ? act.band : 0;
+  var filtered = active;
+  if (band <= 2 && band > 0 && !showAllProblems) {
+    filtered = active.filter(function(p){ return p.attentionCode <= 2; });
+    var hiddenCount = active.length - filtered.length;
+    if (hiddenCount > 0) {
+      filterBar.style.display = 'flex';
+      document.getElementById('band-filter-msg').textContent =
+        'Band ' + band + ' (' + ACT_BAND_LABELS[band] + ') — showing ' + filtered.length + ' priority problem' + (filtered.length !== 1 ? 's' : '') + ', ' + hiddenCount + ' filtered';
+    } else {
+      filterBar.style.display = 'none';
+    }
+  } else {
+    filterBar.style.display = 'none';
+  }
+
+  var html = '';
+  if (filtered.length) {
+    html += '<div class="section-label">Active Problems</div>';
+    filtered.forEach(function(p){ html += renderCard(p); });
+  }
+  if (inactive.length) {
+    html += '<div class="section-label" style="margin-top:24px">Removed</div>';
+    inactive.forEach(function(p){ html += renderCard(p); });
+  }
+  body.innerHTML = html;
+
+  body.querySelectorAll('.prob-card').forEach(function(card) {
+    card.addEventListener('click', function(){ showDetail(card.dataset.id); });
+  });
+}
+
+function renderCard(p) {
+  var badges = '<span class="badge ' + p.certainty + '">' + CERTAINTY_LABEL[p.certainty] + '</span>';
+  if (p.flaggedForPhysician) badges += ' <span class="badge flagged">⚑ Physician Review</span>';
+  var obsCount = (p.observations||[]).length;
+  var meta = 'Added ' + fmtDate(p.dateAdded) + ' · ' + (p.addedBy||'') +
+    (obsCount ? ' · ' + obsCount + ' observation' + (obsCount>1?'s':'') : '') +
+    ((p.evidence||[]).length ? ' · ' + p.evidence.length + ' evidence item' + (p.evidence.length>1?'s':'') : '');
+  var nbq = (p.gaps && p.gaps.length) ? '<span class="nbq-chip">' + p.gaps[0] + '</span>' : '';
+  return '<div class="prob-card ' + p.certainty + '" data-id="' + p.id + '">'
+    + '<div class="prob-card-top">'
+    + '<div class="prob-card-title">' + p.title + '</div>'
+    + '<div class="ac-dot ac-' + p.attentionCode + '" title="Attention Code ' + p.attentionCode + ': ' + (AC_LABEL[p.attentionCode]||'') + '"></div>'
+    + '</div>'
+    + '<div class="prob-card-badges">' + badges + '</div>'
+    + nbq
+    + '<div class="prob-card-meta">' + meta + '</div>'
+    + '</div>';
+}
+
+// ── Render problem detail ─────────────────────────────────────────────────────
+function showDetail(id) {
+  var p = problems.find(function(x){ return x.id === id; });
+  if (!p) return;
+  renderDetail(p);
+  showView('detail');
+}
+
+function renderDetail(p) {
+  var badges = '<span class="badge ' + p.certainty + '">' + CERTAINTY_LABEL[p.certainty] + '</span>'
+    + ' <span class="badge ac-badge" style="background:#f1f5f9;color:#334155">Code ' + p.attentionCode + ': ' + (AC_LABEL[p.attentionCode]||'') + '</span>';
+  if (p.flaggedForPhysician) badges += ' <span class="badge flagged">⚑ Physician Review</span>';
+
+  var evHtml = (p.evidence||[]).length
+    ? '<ul class="evidence-list">' + (p.evidence||[]).map(function(e){
+        return '<li>' + e.text + (e.date ? ' <span style="color:#9ca3af">(' + fmtDate(e.date) + ')</span>' : '') + '</li>';
+      }).join('') + '</ul>'
+    : '<p style="font-size:13px;color:#9ca3af">No evidence recorded yet.</p>';
+
+  var gapHtml = (p.gaps||[]).length
+    ? '<ul class="gap-list">' + (p.gaps||[]).map(function(g){ return '<li>' + g + '</li>'; }).join('') + '</ul>'
+    : '<p style="font-size:13px;color:#9ca3af">No gaps identified yet.</p>';
+
+  var obsHtml = (p.observations||[]).map(function(o){
+    return '<div class="obs-card">'
+      + '<div class="obs-meta">' + fmtDate(o.date) + ' · ' + (o.author||'') + '</div>'
+      + '<div class="obs-text">' + o.text + '</div>'
+      + '</div>';
+  }).join('') || '<p style="font-size:13px;color:#9ca3af;margin-bottom:8px">No observations yet.</p>';
+
+  var sourceMap = { chw:'CHW / Health partner', self:'Person self-report', physician:'Physician / clinician', scp:'Shared Care Plan', fhir:'Medical record (FHIR)' };
+
+  var npActive   = p.certainty === 'not_pursuing';
+  var flagActive = p.flaggedForPhysician;
+
+  var nbqHtml = '';
+  if (p.gaps && p.gaps.length) {
+    nbqHtml = '<div class="detail-section" style="background:#fef3c7;border:1.5px solid #fcd34d;border-radius:8px;padding:10px 14px;margin-bottom:16px">'
+      + '<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#92400e;margin-bottom:4px">Next Best Question</div>'
+      + '<div style="font-size:14px;color:#78350f;font-weight:500">' + p.gaps[0] + '</div>'
+      + '</div>';
+  }
+
+  document.getElementById('detail-body').innerHTML =
+    '<h2>' + p.title + '</h2>'
+    + '<div class="detail-badges">' + badges + '</div>'
+    + nbqHtml
+
+    + (p.statement ? '<div class="detail-section"><div class="detail-section-label">Statement</div><div class="detail-statement">' + p.statement + '</div></div>' : '')
+
+    + '<div class="detail-section"><div class="detail-section-label">Evidence</div>' + evHtml + '</div>'
+    + '<div class="detail-section"><div class="detail-section-label">Evidence Gaps</div>' + gapHtml + '</div>'
+
+    + '<div class="detail-section">'
+    + '<div class="detail-section-label">Health Partner Observations</div>'
+    + obsHtml
+    + '<button class="add-inline-btn" id="obs-add-btn" onclick="toggleObsInput()">+ Add observation</button>'
+    + '<div class="obs-input-area" id="obs-input-area">'
+    + '<textarea id="obs-text" placeholder="What you observed, measured, or discussed…"></textarea>'
+    + '<div class="obs-actions">'
+    + '<button class="btn-save-obs" onclick="saveObservation(\'' + p.id + '\')">Save</button>'
+    + '<button class="btn-cancel-obs" onclick="toggleObsInput()">Cancel</button>'
+    + '</div></div></div>'
+
+    + '<div class="detail-section"><div class="detail-section-label">Source</div><p style="font-size:13px;color:#444">' + (sourceMap[p.source]||p.source||'—') + '</p></div>'
+
+    + '<div class="detail-section">'
+    + '<button onclick="openHealthChoices(\'' + p.title.replace(/'/g,"\\'") + '\')" style="width:100%;background:#4c1d95;color:white;border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;text-align:center">Explore choices in My Health Choices →</button>'
+    + '</div>'
+
+    + '<div class="detail-section detail-actions">'
+    + '<button class="btn-action btn-flag' + (flagActive?' active':'') + '" id="btn-flag-toggle" onclick="toggleFlag(\'' + p.id + '\')">'
+    + (flagActive ? '⚑ Flagged for physician review' : '⚑ Flag for physician review') + '</button>'
+    + '<div class="flag-question" id="flag-question-area"' + (flagActive?' style="display:block"':'') + '>'
+    + '<div class="fq-label">What is your question for the physician?</div>'
+    + '<textarea id="physician-question" placeholder="Specific question for the physician…">' + (p.physicianQuestion||'') + '</textarea>'
+    + '<button style="background:var(--teal);color:white;border:none;border-radius:5px;padding:6px 12px;font-size:13px;margin-top:4px" onclick="savePhysicianQuestion(\'' + p.id + '\')">Save question</button>'
+    + '</div>'
+    + '<button class="btn-action btn-np' + (npActive?' active':'') + '" onclick="toggleNotPursuing(\'' + p.id + '\')">'
+    + (npActive ? '✕ Currently: Not Pursuing' : 'Set as Not Pursuing') + '</button>'
+    + '<div class="np-reason" id="np-reason-area"' + (npActive?' style="display:block"':'') + '>'
+    + '<input id="np-reason-text" type="text" placeholder="Person\'s reason (optional)…" value="' + (p.notPursuingReason||'') + '">'
+    + '<button style="background:var(--teal);color:white;border:none;border-radius:5px;padding:6px 12px;font-size:13px;margin-top:6px" onclick="saveNotPursuingReason(\'' + p.id + '\')">Save</button>'
+    + '</div>'
+    + '<button class="btn-action btn-edit" onclick="showEdit(\'' + p.id + '\')">Edit problem</button>'
+    + (p.active !== false
+        ? '<button class="btn-action btn-delete" onclick="removeProblem(\'' + p.id + '\')">Remove from active list</button>'
+        : '<button class="btn-action btn-edit" onclick="restoreProblem(\'' + p.id + '\')">Restore to active list</button>')
+    + '</div>';
+}
+
+// ── Observations ──────────────────────────────────────────────────────────────
+function toggleObsInput() {
+  var area = document.getElementById('obs-input-area');
+  var btn  = document.getElementById('obs-add-btn');
+  var open = area.style.display === 'block';
+  area.style.display = open ? 'none' : 'block';
+  btn.style.display  = open ? 'block' : 'none';
+  if (!open) document.getElementById('obs-text').focus();
+}
+function saveObservation(probId) {
+  var text = document.getElementById('obs-text').value.trim();
+  if (!text) return;
+  var p = problems.find(function(x){ return x.id === probId; });
+  if (!p) return;
+  if (!p.observations) p.observations = [];
+  var author = document.getElementById('f-addedby') ? document.getElementById('f-addedby').value.trim() : '';
+  p.observations.push({ id: uuid(), text: text, date: today(), author: author || 'Health Partner' });
+  saveLocal();
+  showSyncBar('Unsaved changes');
+  toast('Observation saved');
+  renderDetail(p);
+}
+
+// ── Flags and Not Pursuing ────────────────────────────────────────────────────
+function toggleFlag(id) {
+  var p = problems.find(function(x){ return x.id === id; });
+  if (!p) return;
+  p.flaggedForPhysician = !p.flaggedForPhysician;
+  var area = document.getElementById('flag-question-area');
+  var btn  = document.getElementById('btn-flag-toggle');
+  if (area) area.style.display = p.flaggedForPhysician ? 'block' : 'none';
+  if (btn)  { btn.className = 'btn-action btn-flag' + (p.flaggedForPhysician?' active':''); btn.textContent = p.flaggedForPhysician ? '⚑ Flagged for physician review' : '⚑ Flag for physician review'; }
+  saveLocal(); showSyncBar('Unsaved changes');
+  updateHeader('detail');
+}
+function savePhysicianQuestion(id) {
+  var p = problems.find(function(x){ return x.id === id; });
+  if (!p) return;
+  p.physicianQuestion = document.getElementById('physician-question').value.trim();
+  saveLocal(); showSyncBar('Unsaved changes');
+  toast('Question saved');
+}
+function toggleNotPursuing(id) {
+  var p = problems.find(function(x){ return x.id === id; });
+  if (!p) return;
+  if (p.certainty === 'not_pursuing') {
+    p.certainty = p._prevCertainty || 'possible';
+    delete p._prevCertainty;
+  } else {
+    p._prevCertainty = p.certainty;
+    p.certainty = 'not_pursuing';
+  }
+  var area = document.getElementById('np-reason-area');
+  if (area) area.style.display = (p.certainty === 'not_pursuing') ? 'block' : 'none';
+  saveLocal(); showSyncBar('Unsaved changes');
+  renderDetail(p);
+}
+function saveNotPursuingReason(id) {
+  var p = problems.find(function(x){ return x.id === id; });
+  if (!p) return;
+  p.notPursuingReason = document.getElementById('np-reason-text').value.trim();
+  saveLocal(); showSyncBar('Unsaved changes');
+  toast('Reason saved');
+}
+function removeProblem(id) {
+  var p = problems.find(function(x){ return x.id === id; });
+  if (!p) return;
+  if (!confirm('Remove "' + p.title + '" from the active list?')) return;
+  p.active = false;
+  saveLocal(); showSyncBar('Unsaved changes');
+  navBack();
+}
+function restoreProblem(id) {
+  var p = problems.find(function(x){ return x.id === id; });
+  if (!p) return;
+  p.active = true;
+  saveLocal(); showSyncBar('Unsaved changes');
+  navBack();
+}
+
+// ── Add / Edit form ───────────────────────────────────────────────────────────
+var CERTAINTY_HINTS = {
+  confirmed:   'Supported by clear, specific evidence reviewed and accepted by a physician.',
+  probable:    'Evidence strongly suggests this, but full confirmation is pending or incomplete.',
+  possible:    'Some evidence or symptoms point to this, but significant uncertainty remains.',
+  unconfirmed: 'Listed in prior records but no supporting evidence found — needs review.',
+  not_pursuing:'The person has decided, for their own reasons, not to actively address this.'
+};
+function updateCertaintyHelp() {
+  var v = document.getElementById('f-certainty').value;
+  document.getElementById('certainty-help').textContent = CERTAINTY_HINTS[v] || '';
+}
+
+function showAdd() {
+  editId = null;
+  clearForm();
+  document.getElementById('form-title').textContent = 'Add Problem';
+  showView('form');
+  updateCertaintyHelp();
+}
+function showEdit(id) {
+  editId = id;
+  var p = problems.find(function(x){ return x.id === id; });
+  if (!p) return;
+  clearForm();
+  document.getElementById('form-title').textContent = 'Edit Problem';
+  document.getElementById('f-title').value     = p.title || '';
+  document.getElementById('f-statement').value = p.statement || '';
+  document.getElementById('f-certainty').value = p.certainty || 'probable';
+  document.getElementById('f-ac').value        = p.attentionCode || 3;
+  document.getElementById('f-source').value    = p.source || 'chw';
+  document.getElementById('f-addedby').value   = p.addedBy || '';
+  (p.evidence||[]).forEach(function(e){ addEvidenceField(e.text + (e.date ? ' (' + e.date + ')' : '')); });
+  (p.gaps||[]).forEach(function(g){ addGapField(g); });
+  updateCertaintyHelp();
+  showView('form');
+}
+function clearForm() {
+  document.getElementById('f-title').value = '';
+  document.getElementById('f-statement').value = '';
+  document.getElementById('f-certainty').value = 'probable';
+  document.getElementById('f-ac').value = '3';
+  document.getElementById('f-source').value = 'chw';
+  document.getElementById('f-addedby').value = '';
+  document.getElementById('evidence-list').innerHTML = '';
+  document.getElementById('gap-list').innerHTML = '';
+}
+function addEvidenceField(val) {
+  var id = 'ev-' + Date.now() + Math.random().toString(36).slice(2,5);
+  var div = document.createElement('div');
+  div.className = 'dynamic-item';
+  div.innerHTML = '<input type="text" placeholder="e.g. BP 162/96 on 2026-07-06" value="' + (val||'') + '">'
+    + '<button onclick="this.parentElement.remove()" title="Remove">✕</button>';
+  document.getElementById('evidence-list').appendChild(div);
+}
+function addGapField(val) {
+  var div = document.createElement('div');
+  div.className = 'dynamic-item';
+  div.innerHTML = '<input type="text" placeholder="e.g. No HbA1c in record" value="' + (val||'') + '">'
+    + '<button onclick="this.parentElement.remove()" title="Remove">✕</button>';
+  document.getElementById('gap-list').appendChild(div);
+}
+function cancelForm() { navBack(); }
+function saveForm() {
+  var title = document.getElementById('f-title').value.trim();
+  if (!title) { alert('Problem name is required.'); return; }
+
+  var evItems = Array.from(document.querySelectorAll('#evidence-list input'))
+    .map(function(i){ return i.value.trim(); }).filter(Boolean)
+    .map(function(t){ return { id: uuid(), text: t, date: '' }; });
+  var gapItems = Array.from(document.querySelectorAll('#gap-list input'))
+    .map(function(i){ return i.value.trim(); }).filter(Boolean);
+
+  if (editId) {
+    var p = problems.find(function(x){ return x.id === editId; });
+    if (p) {
+      p.title          = title;
+      p.statement      = document.getElementById('f-statement').value.trim();
+      p.certainty      = document.getElementById('f-certainty').value;
+      p.attentionCode  = parseInt(document.getElementById('f-ac').value);
+      p.source         = document.getElementById('f-source').value;
+      p.addedBy        = document.getElementById('f-addedby').value.trim() || p.addedBy;
+      p.evidence       = evItems;
+      p.gaps           = gapItems;
+    }
+    editId = null;
+  } else {
+    problems.push({
+      id:                uuid(),
+      title:             title,
+      statement:         document.getElementById('f-statement').value.trim(),
+      certainty:         document.getElementById('f-certainty').value,
+      attentionCode:     parseInt(document.getElementById('f-ac').value),
+      source:            document.getElementById('f-source').value,
+      dateAdded:         today(),
+      addedBy:           document.getElementById('f-addedby').value.trim() || 'Health Partner',
+      evidence:          evItems,
+      gaps:              gapItems,
+      observations:      [],
+      flaggedForPhysician: false,
+      physicianQuestion: '',
+      notPursuingReason: '',
+      active:            true
+    });
+  }
+
+  saveLocal();
+  showSyncBar('Unsaved changes');
+  toast('Problem saved');
+  navStack = ['list'];
+  showView('list');
+}
+
+// ── Physician package ─────────────────────────────────────────────────────────
+function renderPackage() {
+  var flagged = problems.filter(function(p){ return p.flaggedForPhysician && p.active !== false; });
+  document.getElementById('pkg-meta').textContent = person.name + ' · Generated ' + fmtDate(today());
+
+  if (!flagged.length) {
+    document.getElementById('package-body').innerHTML = '<div class="pkg-no-flags">No problems are currently flagged for physician review.<br>Open a problem and tap "Flag for physician review".</div>';
+    return;
+  }
+
+  var html = flagged.map(function(p) {
+    var evList = (p.evidence||[]).map(function(e){ return '<li>' + e.text + (e.date?' ('+fmtDate(e.date)+')':'') + '</li>'; }).join('');
+    var gapList = (p.gaps||[]).map(function(g){ return '<li>' + g + '</li>'; }).join('');
+    var obsLatest = (p.observations||[]).slice(-3).map(function(o){
+      return '<li><em>' + fmtDate(o.date) + ' · ' + (o.author||'HP') + ':</em> ' + o.text + '</li>';
+    }).join('');
+    return '<div class="pkg-problem">'
+      + '<div class="pkg-prob-title">' + p.title + '</div>'
+      + '<div class="pkg-section"><div class="pkg-section-label">Problem statement</div>'
+      + '<p>' + (p.statement || CERTAINTY_LABEL[p.certainty] + ' — ' + p.title) + '</p></div>'
+      + (evList ? '<div class="pkg-section"><div class="pkg-section-label">Supporting evidence on file</div><ul>' + evList + '</ul></div>' : '')
+      + (gapList ? '<div class="pkg-section"><div class="pkg-section-label">Evidence gaps</div><ul>' + gapList + '</ul></div>' : '')
+      + (obsLatest ? '<div class="pkg-section"><div class="pkg-section-label">Health partner observations (recent)</div><ul>' + obsLatest + '</ul></div>' : '')
+      + '<div class="pkg-section"><div class="pkg-section-label">Question for physician</div>'
+      + '<div class="pkg-question">' + (p.physicianQuestion || 'Please review this problem and advise on next steps.') + '</div></div>'
+      + '</div>';
+  }).join('');
+
+  document.getElementById('package-body').innerHTML = html;
+}
+
+// ── PANAS ────────────────────────────────────────────────────────────────────
+function openPanas() {
+  panasScores = {};
+  var act = person.activation;
+  var itemsEl = document.getElementById('panas-items');
+  itemsEl.innerHTML = PA10_WORDS.map(function(word, i) {
+    var btns = [1,2,3,4,5].map(function(v) {
+      return '<button class="panas-btn" onclick="setPanas(' + i + ',' + v + ')">' + v + '</button>';
+    }).join('');
+    return '<div class="panas-item"><span class="panas-word">' + word.charAt(0).toUpperCase() + word.slice(1) + '</span><div class="panas-btns" id="pb-' + i + '">' + btns + '</div></div>';
+  }).join('');
+  // Pre-fill if re-taking
+  if (act && act.items && act.items.length === 10) {
+    act.items.forEach(function(v, i) { panasScores[i] = v; updatePanasBtn(i, v); });
+  }
+  updatePanasScore();
+  document.getElementById('panas-overlay').classList.add('open');
+}
+function closePanas() { document.getElementById('panas-overlay').classList.remove('open'); }
+function setPanas(idx, val) {
+  panasScores[idx] = val;
+  updatePanasBtn(idx, val);
+  updatePanasScore();
+}
+function updatePanasBtn(idx, val) {
+  var group = document.getElementById('pb-' + idx);
+  if (!group) return;
+  group.querySelectorAll('.panas-btn').forEach(function(b) {
+    b.classList.toggle('selected', parseInt(b.textContent) === val);
+  });
+}
+function updatePanasScore() {
+  var vals = Object.values(panasScores);
+  var display = document.getElementById('panas-score-display');
+  if (vals.length < 10) { display.textContent = vals.length + '/10 words rated'; return; }
+  var raw = vals.reduce(function(a,b){ return a+b; }, 0);
+  var band = raw <= 24 ? 1 : raw <= 31 ? 2 : raw <= 38 ? 3 : 4;
+  display.textContent = 'Score: ' + raw + '/50 · Band ' + band + ' — ' + (ACT_BAND_LABELS[band] || '');
+}
+function submitPanas() {
+  var vals = Object.values(panasScores);
+  if (vals.length < 10) { alert('Please rate all 10 words (' + (10 - vals.length) + ' remaining).'); return; }
+  var items = PA10_WORDS.map(function(_, i) { return panasScores[i] || 1; });
+  var raw = items.reduce(function(a,b){ return a+b; }, 0);
+  var band = raw <= 24 ? 1 : raw <= 31 ? 2 : raw <= 38 ? 3 : 4;
+  var prev = person.activation;
+  var history = (prev && prev.history) ? prev.history.slice() : [];
+  if (prev && prev.raw_score != null) history.push({ band: prev.band, raw_score: prev.raw_score, as_of: prev.as_of });
+  person.activation = { band: band, raw_score: raw, items: items, as_of: today(), history: history };
+  saveLocal();
+  showSyncBar('Unsaved changes');
+  closePanas();
+  renderBandBadge();
+  showAllProblems = false;
+  renderList();
+  toast('Band ' + band + ' — ' + ACT_BAND_LABELS[band]);
+}
+function renderBandBadge() {
+  var badge = document.getElementById('band-badge');
+  var act = person.activation;
+  if (!act || act.band == null) { badge.style.display = 'none'; return; }
+  badge.className = 'band-badge ' + (ACT_BAND_CLASSES[act.band] || '');
+  badge.textContent = 'Band ' + act.band;
+  badge.title = 'PANAS PA-10 · raw score ' + act.raw_score + '/50 · ' + act.as_of + '. Tap to update.';
+  badge.style.display = 'inline-block';
+}
+function toggleShowAll() {
+  showAllProblems = !showAllProblems;
+  var btn = document.querySelector('#band-filter-bar button');
+  if (btn) btn.textContent = showAllProblems ? 'Filter by band' : 'Show all';
+  renderList();
+}
+
+// ── FHIR import ──────────────────────────────────────────────────────────────
+var fhirZoneVisible = false;
+function toggleFhirZone() {
+  fhirZoneVisible = !fhirZoneVisible;
+  document.getElementById('fhir-zone').style.display = fhirZoneVisible ? 'block' : 'none';
+  document.getElementById('fhir-toggle-btn').textContent = fhirZoneVisible
+    ? '↑ Hide FHIR import'
+    : (person.activation && person.activation.fhirImported ? '↓ FHIR imported ✓' : '↓ Import from medical record (FHIR)');
+}
+function handleFhirDrop(e) {
+  e.preventDefault();
+  var zone = document.getElementById('fhir-zone');
+  zone.classList.remove('drag-over');
+  var file = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (file) readFhirFile(file);
+}
+function handleFhirFile(e) {
+  var file = e.target.files && e.target.files[0];
+  if (file) readFhirFile(file);
+}
+function readFhirFile(file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var bundle = JSON.parse(e.target.result);
+      parseFhirBundle(bundle);
+    } catch(err) {
+      toast('Invalid JSON — could not parse FHIR bundle');
+    }
+  };
+  reader.readAsText(file);
+}
+function parseFhirBundle(bundle) {
+  var entries = bundle.entry || (bundle.resourceType ? [{ resource: bundle }] : []);
+  var added = 0;
+
+  // Extract patient name if not already set
+  entries.forEach(function(entry) {
+    var r = entry.resource;
+    if (!r) return;
+    if (r.resourceType === 'Patient' && r.name && r.name.length) {
+      var n = r.name[0];
+      var fullName = n.text || ((n.given||[]).join(' ') + ' ' + (n.family||'')).trim();
+      if (fullName && !person.name) person.name = fullName;
+    }
+  });
+
+  // Extract conditions as problems
+  entries.forEach(function(entry) {
+    var r = entry.resource;
+    if (!r || r.resourceType !== 'Condition') return;
+    var title = (r.code && (r.code.text || (r.code.coding && r.code.coding[0] && r.code.coding[0].display))) || 'Unknown condition';
+    var statusCode = r.verificationStatus && r.verificationStatus.coding && r.verificationStatus.coding[0] && r.verificationStatus.coding[0].code;
+    var certaintyMap = { confirmed: 'confirmed', unconfirmed: 'unconfirmed', provisional: 'possible', refuted: 'not_pursuing' };
+    var certainty = certaintyMap[statusCode] || 'probable';
+    var clinStatus = r.clinicalStatus && r.clinicalStatus.coding && r.clinicalStatus.coding[0] && r.clinicalStatus.coding[0].code;
+    var isActive = !clinStatus || clinStatus === 'active' || clinStatus === 'recurrence' || clinStatus === 'relapse';
+    var dateAdded = (r.onsetDateTime || r.recordedDate || today()).slice(0, 10);
+    // Avoid duplicates
+    var dup = problems.some(function(p) { return p.title.toLowerCase() === title.toLowerCase(); });
+    if (!dup) {
+      problems.push({
+        id: uuid(), title: title, statement: '', certainty: certainty,
+        attentionCode: 3, source: 'fhir', dateAdded: dateAdded,
+        addedBy: 'FHIR import', evidence: [], gaps: [], observations: [],
+        flaggedForPhysician: false, physicianQuestion: '', notPursuingReason: '',
+        active: isActive
+      });
+      added++;
+    }
+  });
+
+  // Store raw bundle separately (can be large) for future AI analysis
+  try { localStorage.setItem('mhp-fhir-' + person.slug, JSON.stringify(bundle)); } catch(e) {}
+  if (!person.activation) person.activation = {};
+  person.activation.fhirImported = today();
+
+  saveLocal();
+  showSyncBar('FHIR imported — sync to save');
+  var zone = document.getElementById('fhir-zone');
+  zone.classList.add('imported');
+  zone.textContent = 'Imported ' + added + ' condition' + (added !== 1 ? 's' : '') + ' from FHIR bundle. ' + (added === 0 ? 'No new conditions found.' : '');
+  document.getElementById('fhir-toggle-btn').textContent = '↓ FHIR imported ✓';
+  renderList();
+  toast('Imported ' + added + ' problem' + (added !== 1 ? 's' : '') + ' from FHIR');
+}
+
+// ── App start ────────────────────────────────────────────────────────────────
+function startApp() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('person-selector').style.display = 'none';
+  var app = document.getElementById('app');
+  app.style.display = 'flex';
+  document.getElementById('header-sub').textContent = person.name;
+  document.getElementById('fab').style.display = 'flex';
+  renderBandBadge();
+  renderList();
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+(async function init() {
+  var fromUrl = await initFromUrl();
+  if (fromUrl) {
+    startApp();
+  } else {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('person-selector').style.display = 'flex';
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Personal Health Supporter — Stack Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; background: #fafaf8; }
+.page { max-width: 860px; margin: 0 auto; padding: 48px 32px 80px; }
+nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 48px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+nav a { color: #0f766e; text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+nav .current { color: #1a1a1a; font-weight: 500; }
+.doc-header { margin-bottom: 48px; }
+.doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 32px; font-weight: 600; line-height: 1.2; color: #1e3a5f; margin-bottom: 12px; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 640px; line-height: 1.65; }
+h2 { font-size: 19px; font-weight: 600; color: #1e3a5f; margin: 44px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
+h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: #0f766e; }
+p { margin-bottom: 14px; }
+ul, ol { padding-left: 22px; margin-bottom: 14px; }
+li { margin-bottom: 6px; }
+strong { font-weight: 600; }
+a { color: #0f766e; }
+
+.note { background: #f0fdf4; border-left: 3px solid #0f766e; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0 24px; line-height: 1.6; }
+.note strong { color: #065f46; }
+.open-source { background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; padding: 18px 22px; margin: 24px 0; font-size: 14px; line-height: 1.65; }
+.open-source .os-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #166534; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+
+.ref-table { width: 100%; border-collapse: collapse; margin: 16px 0 28px; font-size: 13px; }
+.ref-table th { text-align: left; padding: 8px 12px; background: #eef2f7; color: #1e3a5f; font-weight: 600; font-size: 12px; border: 1px solid #d0d8e4; }
+.ref-table td { padding: 9px 12px; border: 1px solid #e0e0da; vertical-align: top; line-height: 1.5; }
+.ref-table tr:nth-child(even) td { background: #f5f5f2; }
+.ref-table td:first-child { font-weight: 600; color: #1e3a5f; white-space: nowrap; }
+.status-active { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #0f766e; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 4px; padding: 2px 7px; white-space: nowrap; }
+
+.infra-table { width: 100%; border-collapse: collapse; margin: 16px 0 28px; font-size: 13px; }
+.infra-table th { text-align: left; padding: 8px 12px; background: #f0f0ec; font-weight: 600; font-size: 12px; border: 1px solid #ddd; }
+.infra-table td { padding: 9px 12px; border: 1px solid #e0e0da; vertical-align: top; line-height: 1.5; }
+.infra-table tr:nth-child(even) td { background: #fafaf7; }
+.infra-table td:first-child { font-weight: 600; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #1e3a5f; white-space: nowrap; }
+.infra-table td:last-child { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #555; }
+
+.flow-row { display: flex; align-items: stretch; gap: 4px; margin: 20px 0 8px; flex-wrap: wrap; }
+.flow-box { border-radius: 6px; padding: 9px 11px; font-size: 12px; font-weight: 500; color: #1e3a5f; text-align: center; flex: 1; min-width: 90px; line-height: 1.4; }
+.flow-box.blue  { background: #eff6ff; border: 1.5px solid #3b82f6; }
+.flow-box.teal  { background: #f0fdfa; border: 1.5px solid #14b8a6; }
+.flow-box.purple{ background: #faf5ff; border: 1.5px solid #a855f7; }
+.flow-box.amber { background: #fffbeb; border: 1.5px solid #f59e0b; }
+.flow-box.green { background: #f0fdf4; border: 1.5px solid #22c55e; }
+.flow-box.navy  { background: #eff3fa; border: 1.5px solid #6b83b0; }
+.flow-arrow { font-size: 14px; color: #0f766e; display: flex; align-items: center; padding: 0 2px; flex-shrink: 0; font-weight: 600; }
+
+.tool-anchor { color: #1e3a5f; text-decoration: none; }
+.tool-anchor:hover { text-decoration: underline; }
+
+@media (max-width: 620px) { .flow-row { flex-direction: column; } .flow-arrow { transform: rotate(90deg); } }
+@media print { nav { display: none; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav>
+  <a href="my-phs-intro.html">My PHS Introduction</a>
+  <a href="my-health-picture-intro.html">My Health Picture</a>
+  <a href="my-health-choices-manual.html">My Health Choices</a>
+  <a href="my-shared-care-plan-manual.html">My Shared Care Plan</a>
+  <a href="sodoto-intro.html">SODOTO</a>
+  <a href="whatcom-coop-overview.html">Whatcom Coop</a>
+  <span class="current">Stack Overview</span>
+</nav>
+
+<div class="doc-header">
+  <div class="suite">My Personal Health Supporter · RCN Tool Stack</div>
+  <h1>My Personal Health Supporter — Stack Overview</h1>
+  <p class="lead">Neighborhoods are the actual health system. My Personal Health Supporter is a suite of six open-source tools — a person-owned clinical record, an active problem view shaped by positive affect, an AI-assisted option explorer, a support network completeness view, and a portable skill credentialing system — built for health partners, cooperative organizers, and the communities they work in. No tool is for sale. The cooperative is the sustainability model.</p>
+</div>
+
+
+<h2>Quick Reference</h2>
+
+<table class="ref-table">
+  <thead>
+    <tr>
+      <th>Tool</th>
+      <th>Role in the suite</th>
+      <th>Primary user</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>My Shared Care Plan</td>
+      <td>Person-owned clinical record — 12 typed FedWiki plugins</td>
+      <td>Person + health partner + physician</td>
+      <td><span class="status-active">Active</span></td>
+    </tr>
+    <tr>
+      <td>My Health Picture</td>
+      <td>Active problem view (SOAP + certainty + urgency + next best question)</td>
+      <td>Health partner + person</td>
+      <td><span class="status-active">Active</span></td>
+    </tr>
+    <tr>
+      <td>PANAS PA-10</td>
+      <td>Positive affect activation score — shapes which problems to surface</td>
+      <td>Person (at every visit)</td>
+      <td><span class="status-active">Active</span></td>
+    </tr>
+    <tr>
+      <td>My Health Choices</td>
+      <td>AI-assisted option exploration + 1,000-dot Option Box (NNT/NNH)</td>
+      <td>Health partner + person</td>
+      <td><span class="status-active">Active</span></td>
+    </tr>
+    <tr>
+      <td>My Support Network</td>
+      <td>27-role completeness view + network graph</td>
+      <td>Health partner</td>
+      <td><span class="status-active">Active</span></td>
+    </tr>
+    <tr>
+      <td>SODOTO</td>
+      <td>See One Do One Teach One — portable digital skill credentials</td>
+      <td>Health partner</td>
+      <td><span class="status-active">Active</span></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2>How the Tools Connect</h2>
+
+<div class="flow-row">
+  <div class="flow-box purple">Shared Care Plan<br><small>source of truth</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box blue">My Health Picture<br><small>draws from SCP</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box amber">PANAS score<br><small>shapes view</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box teal">My Health Choices<br><small>SCP context pre-loaded</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box purple">Save Summary<br><small>writes back to SCP</small></div>
+</div>
+<div class="flow-row">
+  <div class="flow-box green">My Support Network<br><small>parallel view of care team</small></div>
+  <div class="flow-arrow" style="transform: none;">+</div>
+  <div class="flow-box navy">SODOTO<br><small>credentials for the health partner</small></div>
+</div>
+
+<p>My Shared Care Plan is the source of truth for both My Health Picture and My Health Choices. Health Choices writes structured shared-decision records back to SCP via the record API. PANAS scores are stored raw in SCP and version-tracked; the band mapping is a named crosswalk table separate from stored scores. My Support Network reads care team data from SCP. SODOTO credentials are independent — verifiable digital badges not stored in SCP and not owned by any institution.</p>
+
+
+<h2>My Shared Care Plan</h2>
+
+<p>My Shared Care Plan is the clinical ground truth that every other tool draws from. It is implemented as 13 typed FedWiki plugins: <strong>scp-medication, scp-vital, scp-symptom, scp-visit, scp-lab, scp-about, scp-provider, scp-diagnosis, scp-reaction, scp-history, scp-next-step, scp-directive, scp-access</strong>. Each plugin type enforces a schema while remaining a first-class FedWiki page item — editable, forkable, federated.</p>
+
+<p>The record is person-owned and decentralized. No institution holds it. The commit+fold pattern is used on every save: the item is updated in place and the previous version folded into history. Every item populates <code>item.text</code> on save so FedWiki's full-text search indexes all clinical content.</p>
+
+<ul>
+  <li>Pilot: per-patient FedWiki sites (<strong>rosa-delgado.localhost</strong>, <strong>alex-rivera.localhost</strong>) — isolated instances seeded from canonical templates in <code>~/rcn/scp/pages/</code></li>
+  <li>Target production: WikiCafé (ndcgroup.relocalizecreativity.net)</li>
+  <li>FedWiki plugins follow the naming convention <code>wiki-plugin-scp-*</code>; published to npm; symlinked for localhost dev</li>
+</ul>
+
+<p><a href="my-shared-care-plan-manual.html">Read the My Shared Care Plan Manual →</a></p>
+
+
+<h2>My Health Picture</h2>
+
+<p>My Health Picture is the active problem list layer over the Shared Care Plan. It structures every active problem using SOAP — Subjective, Objective, Assessment, Plan — and attaches three flags per problem: <strong>certainty</strong> (Confirmed / Probable / Possible / Unconfirmed / Not Pursuing), <strong>urgency</strong> (attention codes 1–5: Act Now through Routine), and the <strong>next best question</strong> — the single most important missing evidence for that problem.</p>
+
+<p>The PANAS PA-10 activation score (see below) shapes which problems are shown. Bands 1–2 filter to urgent and critical problems only; bands 3–4 open the full list. "Show full frame" always overrides. The view is served by <strong>coupler-proxy.py on port 8766</strong>, which also handles FedWiki write-back.</p>
+
+<h3>Physician package</h3>
+<p>When escalation is needed, My Health Picture generates a structured package: the specific problem at its level of certainty, gathered evidence, health partner observations, and one clear question for the physician. The physician's written response goes back into the Shared Care Plan — timestamped, attributed, indexed.</p>
+
+<p><a href="my-health-picture-intro.html">Read the My Health Picture Introduction →</a></p>
+
+
+<h2>PANAS PA-10</h2>
+
+<p>The Positive and Negative Affect Schedule positive-affect subscale is a 10-item score taken at every visit. The person rates 10 words for the past week on a 1–5 scale: <em>active, alert, attentive, determined, enthusiastic, excited, inspired, interested, proud, strong</em>. Total score runs 10–50.</p>
+
+<table class="ref-table" style="margin-top: 12px;">
+  <thead>
+    <tr><th>Score</th><th>Band</th><th>Effect on Health Picture view</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>10–24</td><td>Learning the basics</td><td>Filter to urgency codes 1–2 only</td></tr>
+    <tr><td>25–31</td><td>Building awareness</td><td>Filter to urgency codes 1–2 only</td></tr>
+    <tr><td>32–38</td><td>Taking action</td><td>Full problem list shown</td></tr>
+    <tr><td>39–50</td><td>Staying the course</td><td>Full problem list shown</td></tr>
+  </tbody>
+</table>
+
+<p>Scores are stored raw in SCP. The band is derived at runtime from a named crosswalk table — updating the table never touches stored scores. The measurable hypothesis: activation scores should rise over time as a person engages with the tools. The trajectory is auditable because every score is version-tracked.</p>
+
+
+<h2>My Health Choices</h2>
+
+<p>My Health Choices is an AI-assisted conversation about a specific active problem. It opens pre-loaded with the person's full SCP context, passed in from My Health Picture for a specific problem. The health partner and person explore options together in plain language. When quantified evidence is available, the tool renders an <strong>Option Box</strong>: a 1,000-dot SVG on a 40×25 grid — teal dots are people helped, red are people harmed, grey are unaffected. This makes NNT and NNH visible at a glance rather than as fractions.</p>
+
+<h3>Drug safety pipeline</h3>
+<p>Behind the AI conversation, the tool pulls openFDA drug labels, FAERS adverse event counts, and MedlinePlus plain-language terms. Three built fact boxes are in the library: AF anticoagulation, statin primary prevention, and hypertension medication vs. lifestyle. The keyword match system detects when an active problem aligns with a library entry and surfaces the "My Health Choices ↗" button directly in My Health Picture.</p>
+
+<ul>
+  <li>"Document this choice" writes a structured shared-decision record back to SCP via POST /api/record-entry</li>
+  <li>Served at port 8770; source directory: <code>scp-optionbox/</code></li>
+</ul>
+
+<p><a href="my-health-choices-manual.html">Read the My Health Choices Manual →</a></p>
+
+
+<h2>My Support Network</h2>
+
+<p>My Support Network displays a person's care team against a maximal list of 27 roles across five categories: Medical, Therapy and Rehab, Community and Navigation, Informal Support, and Practical Support. The design principle is that <strong>absence is as visible as presence</strong> — unfilled roles appear as ghost nodes rather than being omitted.</p>
+
+<ul>
+  <li><strong>Completeness ring</strong>: SVG circle showing how many of 27 roles are filled</li>
+  <li><strong>Network graph</strong>: patient at center, current members in inner ring, empty categories as ghost nodes in outer ring</li>
+  <li>Many health problems are support problems, not clinical ones. This view makes that visible so the health partner can act on it.</li>
+</ul>
+
+<p>Source: <code>tools/my-support-network.html</code></p>
+
+
+<h2>SODOTO</h2>
+
+<p>See One, Do One, Teach One is the classic medical apprenticeship model formalized as a digital credentialing system. Three levels: <strong>Observer</strong> (watched a skilled partner complete a task) → <strong>Practitioner</strong> (completed it under witnessed conditions) → <strong>Teacher</strong> (guided a peer to their Practitioner credential). Teacher credential unlocks a higher pay tier. The network teaches itself — no training department required.</p>
+
+<ul>
+  <li>Credentials are verifiable digital badges: portable, not owned by any institution</li>
+  <li>In-browser Web Crypto verification — signing is the user's responsibility in the browser, never programmatic</li>
+  <li>Badge upsert pattern: issuer writes to FedWiki portfolio page; Verify button checks signature in-browser</li>
+  <li>Infrastructure: <code>sodoto-issuer.html</code> + <code>sofi-proxy.py</code> + FedWiki portfolio pages + <code>sodoto-badge</code> plugin</li>
+</ul>
+
+<p><a href="sodoto-intro.html">Read the SODOTO Introduction →</a></p>
+
+
+<h2>Infrastructure and Deployment</h2>
+
+<table class="infra-table">
+  <thead>
+    <tr>
+      <th>Component</th>
+      <th>What</th>
+      <th>Port / Location</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>coupler-proxy.py</td>
+      <td>My Health Picture AI proxy + FedWiki write API</td>
+      <td>port 8766</td>
+    </tr>
+    <tr>
+      <td>scp-optionbox/</td>
+      <td>My Health Choices tool (Option Box + AI chat)</td>
+      <td>port 8770</td>
+    </tr>
+    <tr>
+      <td>sofi-proxy.py</td>
+      <td>SODOTO credential issuer proxy</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td>FedWiki (localhost)</td>
+      <td>SCP plugins + SODOTO portfolio pages</td>
+      <td>port 3000</td>
+    </tr>
+    <tr>
+      <td>Per-patient wiki sites ({slug}.localhost)</td>
+      <td>Isolated pilot wikis per patient (rosa-delgado, alex-rivera); resolved via people.json wiki_site</td>
+      <td>localhost</td>
+    </tr>
+    <tr>
+      <td>Firebase Realtime DB</td>
+      <td>Session + topic storage for coupler (DB only, not hosting)</td>
+      <td>cloud</td>
+    </tr>
+    <tr>
+      <td>WikiCafé</td>
+      <td>Production FedWiki host</td>
+      <td>ndcgroup.relocalizecreativity.net</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2>Open Source</h2>
+
+<div class="open-source">
+  <div class="os-label">Permanent commitment</div>
+  <p>Every tool in My Personal Health Supporter is open source CC Attribution 4.0. None are for sale. None ever will be. The cooperative is the financial sustainability model. The tools belong to the commons.</p>
+</div>
+
+
+<footer style="margin-top: 64px; padding-top: 16px; border-top: 1px solid #e8e8e4; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.04em;">
+  My Personal Health Supporter · RCN · Open Source CC 4.0 · 2026
+</footer>
+
+</div><!-- /page -->
+</body>
+</html>

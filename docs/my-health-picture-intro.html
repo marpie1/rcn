@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Health Picture — Introduction and Health Partner Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; background: #fafaf8; }
+.page { max-width: 860px; margin: 0 auto; padding: 48px 32px 80px; }
+nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 48px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+nav a { color: #0f766e; text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+nav .current { color: #1a1a1a; font-weight: 500; }
+.doc-header { margin-bottom: 48px; }
+.doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 640px; line-height: 1.65; }
+h2 { font-size: 19px; font-weight: 600; margin: 44px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
+h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: #1d4ed8; }
+p { margin-bottom: 14px; }
+ul, ol { padding-left: 22px; margin-bottom: 14px; }
+li { margin-bottom: 6px; }
+strong { font-weight: 600; }
+
+.note { background: #f0fdf4; border-left: 3px solid #0f766e; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0 24px; line-height: 1.6; }
+.note strong { color: #065f46; }
+.callout { background: #eff6ff; border-left: 3px solid #3b82f6; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0 24px; line-height: 1.6; }
+.callout strong { color: #1d4ed8; }
+.warn { background: #fffbeb; border-left: 3px solid #d97706; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0 24px; line-height: 1.6; }
+.warn strong { color: #92400e; }
+.urgent { background: #fef2f2; border-left: 3px solid #dc2626; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0 24px; line-height: 1.6; }
+.urgent strong { color: #991b1b; }
+
+.step-list { list-style: none; padding: 0; counter-reset: steps; margin: 16px 0 28px; }
+.step-list li { counter-increment: steps; padding: 12px 0 12px 52px; position: relative; border-bottom: 1px solid #f0f0ec; font-size: 14px; line-height: 1.6; }
+.step-list li:last-child { border-bottom: none; }
+.step-list li::before { content: counter(steps); position: absolute; left: 0; top: 13px; width: 30px; height: 30px; background: #1d4ed8; color: white; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; line-height: 30px; text-align: center; }
+.step-list li strong { color: #1e3a5f; }
+
+.certainty-table { width: 100%; border-collapse: collapse; margin: 16px 0 28px; font-size: 13px; }
+.certainty-table th { text-align: left; padding: 8px 12px; background: #f0f0ec; font-weight: 600; font-size: 12px; border: 1px solid #ddd; }
+.certainty-table td { padding: 10px 12px; border: 1px solid #e0e0da; vertical-align: top; line-height: 1.5; }
+.certainty-table tr:nth-child(even) td { background: #fafaf7; }
+.cert-badge { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+.cert-badge.confirmed { background: #dcfce7; color: #166534; }
+.cert-badge.probable { background: #dbeafe; color: #1e40af; }
+.cert-badge.possible { background: #fef9c3; color: #854d0e; }
+.cert-badge.unconfirmed { background: #fee2e2; color: #991b1b; }
+.cert-badge.notpursuing { background: #f3f4f6; color: #6b7280; }
+
+.section-card { background: white; border: 1.5px solid #dde3ed; border-radius: 10px; padding: 18px 20px; margin: 10px 0; }
+.section-card .sc-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #1d4ed8; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.section-card h4 { font-size: 14px; font-weight: 600; color: #1e3a5f; margin-bottom: 6px; }
+.section-card p { font-size: 13px; color: #444; line-height: 1.55; margin: 0; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0 24px; }
+
+.pkg-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0ec; font-size: 14px; }
+.pkg-row:last-child { border-bottom: none; }
+.pkg-num { width: 26px; height: 26px; background: #1e3a5f; color: white; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 11px; line-height: 26px; text-align: center; flex-shrink: 0; margin-top: 2px; }
+.pkg-row .pkg-label { font-weight: 600; color: #1e3a5f; display: block; margin-bottom: 2px; }
+.pkg-row .pkg-desc { color: #555; font-size: 13px; }
+
+@media (max-width: 620px) { .two-col { grid-template-columns: 1fr; } }
+@media print { nav { display: none; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav>
+  <a href="my-phs-intro.html">My PHS Introduction</a>
+  <span class="current">My Health Picture</span>
+  <a href="my-health-choices-manual.html">My Health Choices</a>
+  <a href="my-shared-care-plan-manual.html">My Shared Care Plan</a>
+  <a href="sodoto-intro.html">SODOTO</a>
+</nav>
+
+<div class="doc-header">
+  <div class="suite">My Personal Health Supporter · Tool 1</div>
+  <h1>My Health Picture</h1>
+  <p class="lead">The active problem view — organized by Subjective, Objective, Assessment, and Plan. Draws from the Shared Care Plan to show every active problem with three flags: certainty, urgency, and what is still missing. The working layer the health partner and person use together at every visit.</p>
+</div>
+
+<h2>What My Health Picture Is</h2>
+
+<p>My Health Picture is the view layer on top of My Shared Care Plan. The SCP is the actual clinical record — the ground truth, person-owned, decentralized, untethered from any institution. My Health Picture draws from the SCP and organizes it as an active problem list using a SOAP structure: Subjective, Objective, Assessment, and Plan.</p>
+
+<p>This distinction matters. The SCP is the record. My Health Picture is how you work with it — a structured, focused view designed for the health partner and person to use together at every visit, before every medical encounter, and whenever a decision is approaching.</p>
+
+<h3>What makes it different from a medical record</h3>
+
+<p>A medical record is a record of encounters. It documents what happened during visits — what was said, what was ordered, what was billed. My Health Picture is organized around the person's active problems — not their visits.</p>
+
+<ul>
+  <li>Problems are stated at their <em>actual level of certainty</em> — not as facts when they are really guesses</li>
+  <li>Every diagnosis has its supporting evidence listed — and the gaps in that evidence named</li>
+  <li>Old diagnoses that were assumed and never confirmed are visible and marked as such</li>
+  <li>The person has a voice in the record — they can note what they are actively pursuing and what they have chosen to set aside</li>
+  <li>A community health partner can use it in the person's home — no physician required to operate it</li>
+</ul>
+
+<div class="callout">
+<strong>The problem with floating diagnoses.</strong> In most medical records, a diagnosis made in 2009 — perhaps based on one reading, one assumption, one hurried entry — travels forward as fact through every subsequent encounter. Medications are prescribed for it. Referrals are made based on it. No one ever confirmed it. My Health Picture makes this visible and asks: what is the actual evidence for this? Is it still active? Does it still apply?
+</div>
+
+<h2>The Structure of a Health Picture</h2>
+
+<p>A Health Picture is organized into sections. Each section answers a specific question about the person's health. When you do a Health Picture review with a person, you walk through these sections together.</p>
+
+<div class="section-card">
+  <div class="sc-label">Section 1</div>
+  <h4>Active Problems</h4>
+  <p>Every health problem the person is currently dealing with, each stated at its level of certainty. This is the core of the Health Picture — the list you return to at every visit.</p>
+</div>
+<div class="section-card">
+  <div class="sc-label">Section 2</div>
+  <h4>Evidence</h4>
+  <p>For each active problem: the specific findings that support it (lab results, readings, imaging, clinical findings), when they were gathered, and what is still missing or unconfirmed.</p>
+</div>
+<div class="section-card">
+  <div class="sc-label">Section 3</div>
+  <h4>Medications and Treatments</h4>
+  <p>Current medications and treatments, each linked to the problem it addresses. Includes the evidence that the medication is still needed and any gaps in that evidence.</p>
+</div>
+<div class="section-card">
+  <div class="sc-label">Section 4</div>
+  <h4>Health Partner Observations</h4>
+  <p>Your direct observations from home visits — what you saw, what the person told you, what has changed since the last review. This section belongs to you and is a required part of every physician package.</p>
+</div>
+<div class="section-card">
+  <div class="sc-label">Section 5</div>
+  <h4>Choices and Preferences</h4>
+  <p>The person's stated decisions about their care: what they are actively pursuing, what they have decided to set aside, what their priorities are. These are their choices, made by them, recorded here.</p>
+</div>
+<div class="section-card" style="margin-bottom:24px">
+  <div class="sc-label">Section 6</div>
+  <h4>Care Team</h4>
+  <p>Everyone involved in this person's care — health partner, physician partners, specialists, family members they have chosen to include — and how to reach them.</p>
+</div>
+
+<h2>Levels of Certainty</h2>
+
+<p>The most important concept in My Health Picture is <strong>level of certainty</strong>. Every problem in the record is labeled with how well-established it is. This is not a judgment — it is an honest description of what the evidence actually supports.</p>
+
+<table class="certainty-table">
+  <tr>
+    <th>Level</th>
+    <th>What it means</th>
+    <th>Example</th>
+  </tr>
+  <tr>
+    <td><span class="cert-badge confirmed">Confirmed</span></td>
+    <td>Supported by clear, specific evidence that has been reviewed and accepted by a physician</td>
+    <td>Type 2 diabetes confirmed by two fasting glucose readings above 126 mg/dL on separate days, confirmed by Dr. Reyes 2024</td>
+  </tr>
+  <tr>
+    <td><span class="cert-badge probable">Probable</span></td>
+    <td>Evidence strongly suggests this, but full confirmation is pending or incomplete</td>
+    <td>Hypertension probable — three readings above 140/90 over six months; formal diagnosis not yet documented</td>
+  </tr>
+  <tr>
+    <td><span class="cert-badge possible">Possible</span></td>
+    <td>Some evidence or symptoms point to this, but significant uncertainty remains</td>
+    <td>Sleep apnea possible — reported snoring and daytime fatigue; no sleep study done</td>
+  </tr>
+  <tr>
+    <td><span class="cert-badge unconfirmed">Unconfirmed</span></td>
+    <td>Listed in prior records but with no supporting evidence found; needs review</td>
+    <td>Hypothyroidism — listed since 2011, source unknown, no lab results on file; needs verification</td>
+  </tr>
+  <tr>
+    <td><span class="cert-badge notpursuing">Not Pursuing</span></td>
+    <td>The person has decided, for their own reasons, not to actively address this problem at this time</td>
+    <td>Borderline cholesterol — person aware, has decided to manage through diet; will revisit in one year</td>
+  </tr>
+</table>
+
+<div class="note">
+<strong>Your role with certainty levels.</strong> You do not assign certainty levels — that is the physician's responsibility when a formal diagnosis is involved. Your job is to flag problems where the certainty level looks wrong: where a problem is marked Confirmed but you cannot find any supporting evidence in the record, or where a new symptom suggests the certainty level should be higher or lower. Bring these flags to the physician package.
+</div>
+
+<h2>The Three Flags — Certainty, Urgency, and the Next Best Question</h2>
+
+<p>Every problem in the Health Picture carries three flags. Together they tell you how well-established the problem is, how much attention it needs right now, and what information is most needed to move it forward.</p>
+
+<h3>Flag 1 — Degree of certainty</h3>
+<p>The certainty levels (Confirmed, Probable, Possible, Unconfirmed, Not Pursuing) are described in the table above. This flag answers: how solid is the ground beneath this diagnosis?</p>
+
+<h3>Flag 2 — Attention code (urgency)</h3>
+<p>A numeric code from 1 to 5 shows how much attention this problem needs right now:</p>
+<ul>
+  <li><strong>1 — Act Now:</strong> This problem needs immediate attention. Something has changed or worsened that cannot wait for a routine review.</li>
+  <li><strong>2 — Watch Closely:</strong> This problem is stable but requires close monitoring. Check it at every visit.</li>
+  <li><strong>3 — Active:</strong> An active problem that is being managed. Follow the current plan and note any changes.</li>
+  <li><strong>4 — Monitor:</strong> A known problem that is stable and under control. Review periodically.</li>
+  <li><strong>5 — Routine:</strong> Background context — known history, managed conditions. No current action needed.</li>
+</ul>
+
+<h3>Flag 3 — Evidence gap / Next Best Question</h3>
+<p>Each problem has an evidence gaps list — the specific information that is still missing to fully understand or confirm the problem. The top item from that list becomes the "Next Best Question" — shown prominently at the top of the problem's detail view. It is the single most important thing to find out about this problem. When you are preparing a physician package, the Next Best Question is often the core of the question you are asking.</p>
+
+<h2>PANAS Activation Score</h2>
+
+<p>My Health Picture includes a PANAS activation score — a quick, validated measure of positive affect that helps calibrate how the session should go. Health partners take this with the person at each visit using the PANAS button in the header.</p>
+
+<p>The person rates 10 positive affect words on a 1 to 5 scale (1 = very slightly or not at all, 5 = extremely): <em>active, alert, attentive, determined, enthusiastic, excited, inspired, interested, proud, strong.</em> The total score runs from 10 to 50 and maps to four bands:</p>
+<ul>
+  <li><strong>Band 1 — "Learning the basics" (score ≤24):</strong> Low activation. Filter the problem list to show only the most urgent and critical problems. Focus the session on stabilizing, not overwhelming.</li>
+  <li><strong>Band 2 — "Building awareness" (score ≤31):</strong> Moderate-low activation. Still filtered — priority problems only.</li>
+  <li><strong>Band 3 — "Taking action" (score ≤38):</strong> Moderate-high activation. The full problem list opens. This person has energy to engage across all active problems.</li>
+  <li><strong>Band 4 — "Staying the course" (score &gt;38):</strong> High activation. Full list, full engagement. This person is in a good place to work through complexity.</li>
+</ul>
+
+<p>The PANAS score is not a clinical assessment — it is a tool for you and the person together. Taking it at each visit also shows trends over time: whether activation is improving as problems are resolved, or whether low activation is a persistent signal worth surfacing to the physician.</p>
+
+<h2>Exploring Choices</h2>
+
+<p>Every active problem in the Health Picture has an "Explore choices in My Health Choices" button. Tapping it opens My Health Choices pre-loaded with the person's full SCP context and focused on that specific problem. The AI conversation picks up immediately — no setup required, no need to re-enter any clinical information.</p>
+
+<p>Use this when a real decision is approaching — when the person is weighing whether to start or stop a treatment, when there are genuinely different options with meaningfully different tradeoffs, or when they simply want to understand what they are actually dealing with. The exploration saves back to the Shared Care Plan automatically when you use the Save Summary button.</p>
+
+<h2>FHIR Import</h2>
+
+<p>My Health Picture accepts a FHIR Bundle JSON dropped directly into the import zone. Conditions import automatically and appear in the problem list. The raw bundle is stored for future AI analysis. This allows the Health Picture to receive clinical data from health systems that support FHIR export — which includes most major hospital systems and patient portals today.</p>
+
+<h2>Doing a Health Picture Review</h2>
+
+<p>A Health Picture review is a structured conversation you have with the person in their home. It is not a medical exam. You are not diagnosing — you are reading the record together, checking what has changed, noting what you observe, and making sure the picture is current before any medical encounter or decision.</p>
+
+<p>Plan for 30 to 45 minutes for a thorough review. You will get faster with practice.</p>
+
+<ol class="step-list">
+  <li><strong>Open the Health Picture together.</strong> Sit side by side so the person can see the screen. This is their record — you are reading it with them, not for them.</li>
+  <li><strong>Start with Active Problems.</strong> Read each problem aloud. Ask: "Is this still accurate? Has anything changed with this since we last looked?" Note any changes.</li>
+  <li><strong>Check the evidence for each problem.</strong> For Confirmed and Probable problems, scan the evidence listed. Ask: "Do you remember when they tested you for this? Do you have any results at home?" Note gaps you find.</li>
+  <li><strong>Look for Unconfirmed problems.</strong> These are the ones most worth examining carefully. Ask: "Do you know where this came from? Has anyone ever explained this to you?" Flag any that have no supporting evidence.</li>
+  <li><strong>Review medications and treatments.</strong> For each medication: "Are you still taking this? Do you know what it is for?" Note anything that has changed or seems disconnected from the current problem list.</li>
+  <li><strong>Add your observations.</strong> Write what you saw and heard during this visit in the Health Partner Observations section. Be specific and factual (see below).</li>
+  <li><strong>Review Choices and Preferences.</strong> Are these still accurate? Has the person changed their mind about anything? Update with their input.</li>
+  <li><strong>Close with a summary.</strong> Tell the person what you found — any flags, any gaps, anything that needs follow-up. Make sure they understand what happens next.</li>
+</ol>
+
+<h3>How often to do a review</h3>
+<ul>
+  <li><strong>Full review:</strong> At least once every three months, and before any significant medical encounter</li>
+  <li><strong>Quick check:</strong> At every home visit — scan the problem list for anything that has changed, add your observations</li>
+  <li><strong>After any medical encounter:</strong> Update the record with anything new — new diagnoses, changed medications, physician recommendations</li>
+</ul>
+
+<h2>Writing Your Observations</h2>
+
+<p>Your observations are one of the most important parts of the Health Picture. A physician can read a lab result anywhere. They cannot read what you saw in the person's home — the medications left untouched on the counter, the refrigerator with almost no food, the person who says they are fine but has not gotten out of bed in three days. Your observations carry information no other part of the record holds.</p>
+
+<h3>What to write</h3>
+<ul>
+  <li><strong>What you directly observed</strong> — "Blood pressure reading 158/94 taken at home at 2pm. Person reports headache this morning."</li>
+  <li><strong>What the person told you</strong> — "States she has not taken her metformin for the past two weeks because it was causing stomach upset."</li>
+  <li><strong>Functional observations</strong> — "Mobility noticeably slower than last visit. Had difficulty rising from chair without assistance."</li>
+  <li><strong>Home and social context</strong> — "Running low on groceries. Son who usually shops has been out of town for two weeks."</li>
+  <li><strong>Changes from last visit</strong> — "Improved mood compared to last visit. Reports sleeping better."</li>
+</ul>
+
+<h3>What not to write</h3>
+<ul>
+  <li>Diagnoses or clinical conclusions — "She seems depressed" — instead write what you observed: "Reported not leaving the house in ten days; tearful at several points during the visit"</li>
+  <li>Judgments about behavior — write what you saw, not what you think it means</li>
+  <li>Information the person has not agreed to share — confirm with the person before writing anything sensitive</li>
+</ul>
+
+<div class="note">
+<strong>Date and sign every entry.</strong> Every observation entry should include the date of the visit and your name. This is part of the permanent record.
+</div>
+
+<h2>Identifying and Flagging Gaps</h2>
+
+<p>One of your most valuable contributions as a health partner is identifying gaps — places where the Health Picture shows a problem but the evidence does not actually support it, or where new evidence is needed but has not been gathered.</p>
+
+<h3>Signs of a gap worth flagging</h3>
+<ul>
+  <li>A problem is marked Confirmed but no supporting evidence appears in the record</li>
+  <li>A diagnosis listed since before 2015 with no evidence attached</li>
+  <li>A medication prescribed for a problem that is marked Unconfirmed</li>
+  <li>A Probable problem that has been Probable for more than a year with no movement toward confirmation</li>
+  <li>A new symptom the person mentions that does not connect to any existing problem</li>
+  <li>A problem the person says they were told about but have no memory of being tested for</li>
+</ul>
+
+<h3>How to flag a gap</h3>
+<p>Add a note in the Health Partner Observations section: <em>"Gap identified: [problem name] is listed as Confirmed but no supporting evidence found in record. Recommend physician review."</em> This note will appear in the physician package you prepare.</p>
+
+<div class="warn">
+<strong>You are not correcting the physician.</strong> When you flag a gap, you are raising a question — not declaring an error. The physician may have evidence that is not in the record, or context you are not aware of. Your job is to surface what looks incomplete so that it can be examined. The physician decides what it means.
+</div>
+
+<h2>When a Problem Needs Physician Input</h2>
+
+<p>Not every change in the Health Picture requires a physician. Many observations, updates, and routine reviews are things you handle as the health partner. But some situations do require physician input — and when they do, you prepare a <strong>structured physician package</strong>.</p>
+
+<h3>When to prepare a physician package</h3>
+<ul>
+  <li>A problem has worsened significantly since the last physician review</li>
+  <li>You have flagged a gap that needs a clinical judgment to resolve</li>
+  <li>The person has a new symptom that does not fit any existing problem</li>
+  <li>A medication appears to be causing problems or is no longer being taken</li>
+  <li>A Probable or Possible problem has been unchanged for a long time and needs a decision</li>
+  <li>The person is approaching a significant medical decision and needs physician input first</li>
+</ul>
+
+<div class="urgent">
+<strong>Urgent situations.</strong> If you observe anything that suggests an immediate threat to health or safety — chest pain, difficulty breathing, sudden confusion, signs of stroke, uncontrolled bleeding, or any situation where you would consider calling emergency services — do not prepare a package. Call emergency services or get the person to emergency care immediately. The physician package is for non-urgent clinical questions, not for emergencies.
+</div>
+
+<h3>What goes in a physician package</h3>
+
+<p>A physician package is a focused, structured document — not a printout of the entire Health Picture. It gives the physician exactly what they need to answer one specific question. Keep it to one problem per package whenever possible.</p>
+
+<div class="pkg-row">
+  <div class="pkg-num">1</div>
+  <div>
+    <span class="pkg-label">The specific problem</span>
+    <span class="pkg-desc">Name the problem and its current certainty level. If it is Unconfirmed or the certainty level seems wrong, say so.</span>
+  </div>
+</div>
+<div class="pkg-row">
+  <div class="pkg-num">2</div>
+  <div>
+    <span class="pkg-label">The evidence on file</span>
+    <span class="pkg-desc">List what supporting evidence exists in the Health Picture. Be specific: dates, values, findings.</span>
+  </div>
+</div>
+<div class="pkg-row">
+  <div class="pkg-num">3</div>
+  <div>
+    <span class="pkg-label">The gaps</span>
+    <span class="pkg-desc">Name what evidence is missing or unconfirmed. This is what triggered the package.</span>
+  </div>
+</div>
+<div class="pkg-row">
+  <div class="pkg-num">4</div>
+  <div>
+    <span class="pkg-label">Your observations</span>
+    <span class="pkg-desc">What you saw at the home visit that is relevant to this problem. Be specific and factual.</span>
+  </div>
+</div>
+<div class="pkg-row" style="margin-bottom:24px">
+  <div class="pkg-num">5</div>
+  <div>
+    <span class="pkg-label">One clear question</span>
+    <span class="pkg-desc">What do you need the physician to decide or recommend? Ask one question. The clearer the question, the faster and better the answer.</span>
+  </div>
+</div>
+
+<p>The physician's response goes into the Shared Care Plan and is then used to update the Health Picture — the certainty level, the evidence, the treatment, as appropriate.</p>
+
+<h2>When the Person Wants to Set a Problem Aside</h2>
+
+<p>People have the right to decide not to pursue a health problem — for any reason. They may have tried treatments that did not help. They may have weighed the tradeoffs and decided the burden of treatment outweighs the benefit. They may simply have other priorities right now. This is their decision to make.</p>
+
+<p>When a person tells you they do not want to pursue a problem, you record it as <span class="cert-badge notpursuing">Not Pursuing</span> in the Health Picture, with a brief note about what they said and when the decision was made. You do not argue. You do not try to change their mind. You make sure they understand what the problem is and what setting it aside means — and then you honor their choice.</p>
+
+<div class="note">
+<strong>Not Pursuing is not the same as resolved.</strong> A Not Pursuing problem stays visible in the Health Picture. It does not disappear. At future reviews, you can ask: "Is this still how you feel about this?" The person may change their mind — or they may not. Either way, the decision remains theirs.
+</div>
+
+<h3>What you do say</h3>
+<p>If a person is setting aside a problem that carries significant risk, you can say, once, clearly and calmly: <em>"I want to make sure you understand what this means — [brief plain-language explanation]. You have every right to make this decision. I just want to make sure you have the full picture."</em> Then write down what they decided.</p>
+
+<h2>Keeping the Health Picture Current</h2>
+
+<p>A Health Picture that is six months out of date is still better than no Health Picture. But a current Health Picture is far more useful — for the person, for you, and for every physician who receives a package from you.</p>
+
+<h3>Update triggers</h3>
+<ul>
+  <li>After every home visit: add your observations, note any changes in problems or medications</li>
+  <li>After every medical encounter: add new diagnoses, changed or added medications, physician recommendations</li>
+  <li>After a Health Choices conversation: record the decision and add it to the Choices section</li>
+  <li>After a physician responds to a package: update the certainty level, evidence, and treatment as appropriate</li>
+  <li>Whenever the person tells you something has changed: changes in symptoms, side effects, life circumstances that affect health</li>
+</ul>
+
+<p>The Health Picture is a living document. Your job is to keep it alive.</p>
+
+<h2>Related Documentation</h2>
+<ul>
+  <li><a href="my-phs-intro.html">My Personal Health Supporter — Suite Introduction</a></li>
+  <li><a href="my-health-choices-manual.html">My Health Choices — Health Partner Manual</a></li>
+  <li><a href="my-shared-care-plan-manual.html">My Shared Care Plan — Health Partner Manual</a></li>
+  <li><a href="sodoto-intro.html">SODOTO — Credentialing Guide</a></li>
+</ul>
+
+</div><!-- /page -->
+</body>
+</html>

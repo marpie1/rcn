@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Personal Health Supporter — Introduction</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; background: #fafaf8; }
+.page { max-width: 860px; margin: 0 auto; padding: 48px 32px 80px; }
+nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 48px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+nav a { color: #0f766e; text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+nav .current { color: #1a1a1a; font-weight: 500; }
+.doc-header { margin-bottom: 48px; }
+.doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 640px; line-height: 1.65; }
+h2 { font-size: 19px; font-weight: 600; margin: 44px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
+h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: #0f766e; }
+p { margin-bottom: 14px; }
+ul, ol { padding-left: 22px; margin-bottom: 14px; }
+li { margin-bottom: 6px; }
+strong { font-weight: 600; }
+
+.note { background: #f0fdf4; border-left: 3px solid #0f766e; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0 24px; line-height: 1.6; }
+.note strong { color: #065f46; }
+.callout { background: #eff6ff; border-left: 3px solid #3b82f6; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0 24px; line-height: 1.6; }
+.callout strong { color: #1d4ed8; }
+.open-source { background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; padding: 18px 22px; margin: 24px 0; font-size: 14px; line-height: 1.65; }
+.open-source .os-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #166534; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+
+.tool-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0 32px; }
+.tool-card { border-radius: 10px; padding: 20px 18px; }
+.tool-card.blue { background: #eff6ff; border: 1.5px solid #93c5fd; }
+.tool-card.teal { background: #f0fdfa; border: 1.5px solid #99f6e4; }
+.tool-card.purple { background: #faf5ff; border: 1.5px solid #c4b5fd; }
+.tool-card.green { background: #f0fdf4; border: 1.5px solid #86efac; }
+.tool-card .tc-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.tool-card.blue .tc-label { color: #1d4ed8; }
+.tool-card.teal .tc-label { color: #0f766e; }
+.tool-card.purple .tc-label { color: #7c3aed; }
+.tool-card.green .tc-label { color: #166534; }
+.tool-card h3 { font-size: 15px; color: #1e3a5f; margin: 0 0 8px; }
+.tool-card p { font-size: 13px; color: #444; line-height: 1.55; margin: 0; }
+
+.flow-row { display: flex; align-items: center; gap: 0; margin: 16px 0 24px; flex-wrap: wrap; gap: 4px; }
+.flow-box { border-radius: 6px; padding: 8px 12px; font-size: 12px; font-weight: 500; color: #1e3a5f; text-align: center; flex: 1; min-width: 100px; line-height: 1.3; }
+.flow-box.blue { background: #eff6ff; border: 1.5px solid #3b82f6; }
+.flow-box.teal { background: #f0fdfa; border: 1.5px solid #14b8a6; }
+.flow-box.purple { background: #faf5ff; border: 1.5px solid #a855f7; }
+.flow-box.amber { background: #fffbeb; border: 1.5px solid #f59e0b; }
+.flow-box.green { background: #f0fdf4; border: 1.5px solid #22c55e; }
+.flow-arrow { font-size: 14px; color: #0f766e; padding: 0 4px; flex-shrink: 0; font-weight: 600; }
+
+.role-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+.role-table th { text-align: left; padding: 8px 12px; background: #f0f0ec; font-weight: 600; font-size: 12px; border: 1px solid #ddd; }
+.role-table td { padding: 8px 12px; border: 1px solid #e0e0da; vertical-align: top; line-height: 1.5; }
+.role-table tr:nth-child(even) td { background: #fafaf7; }
+
+@media (max-width: 620px) { .tool-grid { grid-template-columns: 1fr; } .flow-row { flex-direction: column; } .flow-arrow { transform: rotate(90deg); } }
+@media print { nav { display: none; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav>
+  <a href="my-phs-slides.html">My PHS Presentation</a>
+  <span class="current">My PHS Introduction</span>
+  <a href="sodoto-intro.html">SODOTO</a>
+  <a href="whatcom-coop-overview.html">Whatcom Coop Overview</a>
+</nav>
+
+<div class="doc-header">
+  <div class="suite">My Personal Health Supporter · Community Health Partner Documentation</div>
+  <h1>My Personal Health Supporter</h1>
+  <p class="lead">Five open-source tools for neighborhood health partners — giving people and their communities everything they need to do what they were always already doing, and to do it far better.</p>
+</div>
+
+<h2>Where Health Actually Lives</h2>
+
+<p>Most of the choices and actions that create and preserve a person's health happen at home. The food they eat, the relationships they have, the knowledge they carry, the support they can count on — these determine far more of their health than any clinic visit.</p>
+
+<p>Neighborhoods are the true health system. They always have been. What has been missing is not the right clinic, the right technology, or the right policy. What has been missing is giving people and their communities the tools, the information, and the economic support to do what they already do — and to do it far better.</p>
+
+<p>My Personal Health Supporter is built on that recognition. It is a suite of five open-source tools designed for the people who work in neighborhoods and homes: community health workers, health partners, and neighborhood leaders who are already doing health work every day — and deserve real tools to do it with.</p>
+
+<div class="note">
+<strong>A note on language.</strong> In this documentation we use the term <em>health partner</em> for the person who works with individuals in their homes and neighborhoods. You may know this role as community health worker, health aide, promotora, patient navigator, or care coordinator. The tools work the same regardless of what the role is called in your community.
+</div>
+
+<h2>The Five Tools</h2>
+
+<p>My Personal Health Supporter is not a single application — it is a suite of five tools that work together. Each tool addresses a distinct need. Together they give a person and their health partner a complete picture of health, the knowledge to make real decisions, a shared record everyone can read, an understanding of who is in their corner, and a path to grow and be recognized as a skilled practitioner.</p>
+
+<div class="tool-grid">
+  <div class="tool-card blue">
+    <div class="tc-label">Tool 1</div>
+    <h3>My Health Picture</h3>
+    <p>The active problem view — organized by Subjective, Objective, Assessment, and Plan. Draws from the Shared Care Plan to show every active problem with three flags: degree of certainty, urgency, and what evidence is missing. Includes a PANAS activation score that helps focus the person's energy where it matters most.</p>
+  </div>
+  <div class="tool-card teal">
+    <div class="tc-label">Tool 2</div>
+    <h3>My Health Choices</h3>
+    <p>A guided exploration of options for a specific health situation. What the evidence says, what the tradeoffs are, what the uncertainties are — in plain language. Designed to support real informed decision-making at home, not just at the moment of a clinical encounter.</p>
+  </div>
+  <div class="tool-card purple">
+    <div class="tc-label">Tool 3</div>
+    <h3>My Shared Care Plan</h3>
+    <p>The actual clinical record — the ground truth that every other tool draws from. Person-owned, decentralized, and readable by the full care team. Holds diagnoses, medications, vitals, visits, directives, lab results, history, and providers. No institution holds it. It follows the person.</p>
+  </div>
+  <div class="tool-card blue">
+    <div class="tc-label">Tool 4</div>
+    <h3>My Support Network</h3>
+    <p>Shows the person's care team against a maximal list of 27 possible roles across 5 categories. A completeness ring shows how much of the network is filled. A network graph puts the patient at the center with care members in the inner ring and empty categories as ghost nodes in the outer ring.</p>
+  </div>
+  <div class="tool-card green">
+    <div class="tc-label">Tool 5</div>
+    <h3>SODOTO</h3>
+    <p>See One, Do One, Teach One. A credentialing system that recognizes and rewards the skills health partners develop. Every skill demonstrated earns a credential. Every skill taught earns a higher credential and a higher pay tier. The network gets smarter every time someone teaches.</p>
+  </div>
+</div>
+
+<h2>My Health Picture — The Active Problem View</h2>
+
+<p>My Health Picture is the view layer on top of My Shared Care Plan. The SCP is the actual clinical record — the ground truth. My Health Picture organizes that record as an active problem list using a SOAP structure: Subjective, Objective, Assessment, and Plan. It is the tool the health partner and person work through together at every visit.</p>
+
+<p>Each problem in the Health Picture carries three flags: how certain the diagnosis is (Confirmed / Probable / Possible / Unconfirmed / Not Pursuing), how urgent it is (attention codes 1 through 5, where 1 is Act Now and 5 is Routine), and what evidence is still missing — the "Next Best Question" that surfaces the most important gap in what is known about that problem.</p>
+
+<p>The Health Picture also includes a PANAS activation score — a quick measure of positive affect taken at each visit. The person rates 10 positive affect words (active, alert, attentive, determined, enthusiastic, excited, inspired, interested, proud, strong) on a 1–5 scale. The total score maps to one of four bands. Bands 1 and 2 (lower activation) filter the problem list to show only the most urgent and critical problems — because when someone is depleted, the work is to stabilize, not to overwhelm. Bands 3 and 4 open the full problem list.</p>
+
+<p>From any problem in the Health Picture, the health partner can tap "Explore choices in My Health Choices" — which opens My Health Choices with the full SCP context pre-loaded for that specific problem.</p>
+
+<h3>What the health partner does with it</h3>
+<ul>
+  <li>Take the PANAS score at each visit — it shapes which problems to focus on</li>
+  <li>Walk through the active problem list together — certainty, urgency, next best question</li>
+  <li>Add observations from each visit — what you saw, what they told you, what has changed</li>
+  <li>Flag problems that look urgent, have worsened, or have new evidence</li>
+  <li>Tap "Explore choices" when a decision is approaching — opens My Health Choices in context</li>
+  <li>Prepare a structured package when physician input is needed</li>
+</ul>
+
+<div class="callout">
+<strong>The coupler connection.</strong> My Health Choices is similar in intent to Larry Weed's Problem Knowledge Coupler — connecting each active problem to the relevant medical knowledge, options, and evidence. My Health Picture is the structured problem list that Weed envisioned: every problem at its actual level of certainty, with evidence and gaps made explicit. Together they realize what Weed was pointing toward, in open-source, CHW-accessible form.
+</div>
+
+<h2>My Health Choices — AI-Assisted Option Exploration</h2>
+
+<p>My Health Choices is an AI-assisted conversation about a specific active problem. It opens pre-loaded with the person's full clinical record — drawn automatically from My Shared Care Plan — and focuses the conversation on a specific problem passed in from My Health Picture. The person and health partner ask questions together in plain language. The AI responds based on the medical literature.</p>
+
+<p>When the AI discusses specific options with quantified evidence, it triggers an Option Box: a 1,000-dot SVG display on a 40x25 grid where teal dots represent people for whom this option prevented a bad outcome, red dots represent people harmed by the treatment, and grey dots represent people unaffected. The conversation and Option Box appear side by side — the health partner and person can see what the evidence actually looks like for people in a similar situation.</p>
+
+<p>The AI offers suggestion chips after each response — good follow-up questions the person can tap to keep the conversation moving. At the end, a "Save Summary" button generates a structured record of the exploration: the problem, the options discussed, the key evidence, the person's questions, and their tentative thinking. This saves back to the Shared Care Plan.</p>
+
+<h3>What the health partner does with it</h3>
+<ul>
+  <li>Open it from the "Explore choices" button on a specific problem in My Health Picture</li>
+  <li>Let the person ask questions in their own words — the AI responds in plain language</li>
+  <li>Walk through the Option Box together when it appears — teal, red, and grey at a glance</li>
+  <li>Use suggestion chips to keep the conversation moving toward what matters most</li>
+  <li>Press "Save Summary" at the end — it captures the exploration and saves it to the record</li>
+  <li>Save key decisions back to My Health Picture</li>
+</ul>
+
+<p>You do not need clinical training to use My Health Choices. Your role is to be present, to give time, and to help the person understand what they are looking at. The AI carries the knowledge. You carry the relationship.</p>
+
+<h2>My Shared Care Plan — One Record Everyone Reads</h2>
+
+<p>My Shared Care Plan is a living document — updated after every significant interaction, readable by every member of a person's care team. Health partner notes, physician recommendations, family observations: all in one place, all current, all visible to everyone the person has chosen to include.</p>
+
+<p>Most care coordination fails not because people do not care, but because information exists only in someone's memory, in a phone call that was never written down, or in a system one care team member cannot access. My Shared Care Plan eliminates those gaps.</p>
+
+<h3>What the health partner does with it</h3>
+<ul>
+  <li>Write a brief note after every home visit or phone check-in — what you observed, what was discussed, what was decided</li>
+  <li>Read it before every visit — know where things stand before you arrive</li>
+  <li>Share it with the physician when escalating — they receive the full context, not just your verbal summary</li>
+  <li>Record physician responses — their recommendation goes into the Plan, not into a phone message that disappears</li>
+</ul>
+
+<div class="note">
+<strong>The rule of the Shared Care Plan:</strong> If it is not in the Plan, it did not happen. Every observation, every conversation, every decision that matters — write it down. The Plan is only as useful as its last entry.
+</div>
+
+<h2>My Support Network — Who Is Around the Person</h2>
+
+<p>My Support Network shows a person's care team against a maximal list of 27 possible roles across five categories: Medical, Therapy and Rehab, Community and Navigation, Informal Support, and Practical Support. It is not just a contacts list — it is a completeness view that makes visible who is present and who is missing from the person's network.</p>
+
+<p>A completeness ring (an SVG circle) shows how many of the 27 roles are currently filled. A network graph puts the patient at the center, with current care members in an inner ring and empty categories shown as ghost nodes in an outer ring — so the absence of a role is as visible as its presence.</p>
+
+<p>This matters because many health problems are not clinical — they are support problems. Someone without a practical support person to help with transportation, or with no informal support at all, faces different risks than someone whose network is full. My Support Network makes this visible so the health partner can see it and act on it.</p>
+
+<h2>SODOTO — Skills Recognized and Rewarded</h2>
+
+<p>SODOTO stands for See One, Do One, Teach One — the classic medical apprenticeship model, now formalized as a digital credentialing system. Every skill you demonstrate is witnessed and verified by a credentialed partner or physician. Every credential you earn is verifiable, portable, and tied to your compensation tier. Every skill you teach earns a higher-level credential.</p>
+
+<p>There is no training department. The network teaches itself. When you earn a credential by teaching a peer, you are paid more — and so is the cooperative, because the network is now more capable. The economics and the learning reinforce each other.</p>
+
+<h3>Credential levels</h3>
+<table class="role-table">
+  <tr>
+    <th>Level</th>
+    <th>What you did</th>
+    <th>What you earn</th>
+  </tr>
+  <tr>
+    <td><strong>Observer</strong></td>
+    <td>Watched a skilled partner complete a task</td>
+    <td>Foundation credential — eligible to attempt the task</td>
+  </tr>
+  <tr>
+    <td><strong>Practitioner</strong></td>
+    <td>Completed the task under witnessed conditions</td>
+    <td>Practitioner credential — can perform independently, higher pay tier</td>
+  </tr>
+  <tr>
+    <td><strong>Teacher</strong></td>
+    <td>Guided a peer through the task to their Practitioner credential</td>
+    <td>Master credential for that skill — highest pay tier, recognized expertise</td>
+  </tr>
+</table>
+
+<p>SODOTO credentials are verifiable digital badges — they can be shared with any employer, any cooperative, or any care organization. They are not owned by any institution. They belong to you.</p>
+
+<h2>How the Five Tools Work Together</h2>
+
+<p>The five tools are designed as a system. Each one is useful on its own, but their real power comes from how they connect in a single care relationship over time.</p>
+
+<div class="flow-row">
+  <div class="flow-box purple">Shared Care Plan<br><small>the clinical record</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box blue">My Health Picture<br><small>active problem view</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box teal">My Health Choices<br><small>AI option exploration</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box green">Support Network<br><small>who is around them</small></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box amber">SODOTO<br><small>skill recognized</small></div>
+</div>
+
+<p>A person's health partner opens My Health Picture with them at home — drawn from the Shared Care Plan, showing every active problem with certainty, urgency, and the next best question. When a decision is approaching, they open My Health Choices together with that problem pre-loaded; the AI conversation and Option Box let them explore the evidence together. After every visit, the health partner writes a note in the Shared Care Plan. My Support Network surfaces who is around the person and who is missing from their network. At each step, the health partner's skill is recognized through SODOTO.</p>
+
+<h3>The physician relationship</h3>
+
+<p>The health partner is not a physician's assistant. They are a neighborhood figure with real tools, deep relationships, and the ability to get a person ready to receive physician expertise at the moment it is most needed.</p>
+
+<p>When you escalate to a physician, you are not asking for an appointment. You are sending a structured question — the specific problem at its level of certainty, the evidence gathered, your own observations from the home visit, and one clear question: <em>What do you recommend?</em></p>
+
+<p>The physician's response goes into the Shared Care Plan — written, dated, readable by the whole care team. It does not disappear into a phone message. It becomes part of the person's permanent record.</p>
+
+<h2>The Cooperative Connection</h2>
+
+<p>My Personal Health Supporter tools are designed to work inside the Whatcom Wealth and Health Association — a community cooperative that pays health partner microenterprises for problems resolved and health maintained, not for visits logged or procedures performed.</p>
+
+<p>This matters because it means the tools and the economics point toward the same thing. When a health partner uses My Health Picture to catch a gap in evidence, or uses My Health Choices to support a decision that avoids an unnecessary procedure, or maintains a Shared Care Plan that prevents a hospitalization — the cooperative earns more. And the health partner earns more. For the first time, good health work is also good business.</p>
+
+<p>The cooperative structure is described in more detail in the <a href="whatcom-coop-overview.html">Whatcom Wealth and Health overview</a>.</p>
+
+<h2>Open Source — What It Means for You</h2>
+
+<div class="open-source">
+  <div class="os-label">Permanent commitment</div>
+  <p>Every tool in My Personal Health Supporter is open source, licensed Creative Commons Attribution 4.0 International. None of the tools are for sale. None ever will be. Anyone can use them, adapt them, or deploy them — in Whatcom County, in rural Alaska, in a neighborhood anywhere — without asking anyone's permission.</p>
+</div>
+
+<p>This is not a temporary policy. It is the founding architecture. The tools belong to the commons. No institution can buy them, restrict them, or take them away from the communities that use them. The cooperative is the financial sustainability model — not the tools themselves.</p>
+
+<p>What this means in practice: if you learn to use these tools, your skills are yours. If your cooperative changes, if your employer changes, if you move — your SODOTO credentials travel with you, and the tools you know how to use are available anywhere they are needed.</p>
+
+<h2>Getting Started</h2>
+
+<p>If you are a health partner beginning to use My Personal Health Supporter, the recommended starting point is My Health Picture. It is the foundation of the suite — the tool you will use most often, and the one that makes the others more effective.</p>
+
+<ol>
+  <li><strong>Learn to read a Health Picture</strong> — start with a completed example before working with a real person. Understand what each section means and what level of certainty looks like in practice.</li>
+  <li><strong>Do your first Health Picture review with a person you know well</strong> — someone who trusts you, in their home, with no time pressure.</li>
+  <li><strong>Write your first Shared Care Plan note</strong> — right after the visit, while the details are fresh. Keep it brief: what you observed, what was discussed, what was decided.</li>
+  <li><strong>Complete your first SODOTO foundation credential</strong> — have your Health Picture review witnessed by a credentialed partner.</li>
+  <li><strong>Then move to Health Choices</strong> — once you are comfortable with the Health Picture, add Health Choices when a decision is approaching for one of your enrolled people.</li>
+</ol>
+
+<p>Detailed step-by-step guides are available for each tool. See the links below.</p>
+
+<h2>Documentation for Each Tool</h2>
+
+<ul>
+  <li><a href="my-health-picture-intro.html">My Health Picture — Introduction and Guide</a></li>
+  <li><a href="my-health-choices-manual.html">My Health Choices — Health Partner Manual</a></li>
+  <li><a href="my-shared-care-plan-manual.html">My Shared Care Plan — Health Partner Manual</a></li>
+  <li><a href="my-support-network-intro.html">My Support Network — Introduction and Guide</a></li>
+  <li><a href="sodoto-intro.html">SODOTO — Introduction and Credentialing Guide</a></li>
+</ul>
+
+</div><!-- /page -->
+</body>
+</html>

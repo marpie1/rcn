@@ -216,16 +216,17 @@ pre {
 <h3>FedWiki installed</h3>
 <p>FedWiki must be installed globally via npm and runnable with the <code>wiki</code> command. The experiment uses farm mode, which requires FedWiki 0.18 or later.</p>
 
-<h3>scp-experiment.localhost in /etc/hosts</h3>
-<p>The experiment site runs on a subdomain of localhost. Add this line to <code>/etc/hosts</code> if it is not already there:</p>
-<pre>127.0.0.1  scp-experiment.localhost</pre>
-<p>You will need administrator access (<kbd>sudo</kbd>) to edit that file. The line only needs to be added once.</p>
+<h3>Patient sites in /etc/hosts</h3>
+<p>Each patient's wiki site runs on a subdomain of localhost. Add a line to <code>/etc/hosts</code> for each patient site if it is not already there:</p>
+<pre>127.0.0.1  rosa-delgado.localhost
+127.0.0.1  alex-rivera.localhost</pre>
+<p>You will need administrator access (<kbd>sudo</kbd>) to edit that file. Each line only needs to be added once.</p>
 
 <h3>An Anthropic API key</h3>
 <p>The coupler proxy calls Claude to generate frames and narratives. Set the key as an environment variable before starting the proxy:</p>
 <pre>export ANTHROPIC_API_KEY=sk-ant-...</pre>
 
-<div class="note">The experiment site pages live at <code>~/.wiki/scp-experiment.localhost/pages/</code>. If this directory is empty or missing, copy the seed pages from the production SCP wiki before proceeding.</div>
+<div class="note">Each patient site's pages live at <code>~/.wiki/{site}.localhost/pages/</code> (e.g. <code>~/.wiki/rosa-delgado.localhost/pages/</code>). New sites are provisioned via sofi-proxy's <code>/api/provision-patient</code>, which seeds all 17 canonical page templates from <code>~/rcn/scp/pages/</code> (personalizing welcome-visitors and about-me) and registers the site in <code>~/.wiki/config.json</code> under <code>wikiDomains</code>. The coupler looks up each person's site from the <code>wiki_site</code> field in <code>scp-coupler/data/people.json</code>.</div>
 </section>
 
 <!-- 2 -->
@@ -249,8 +250,8 @@ pre {
 <section id="s3">
 <h2>3. Opening via FedWiki</h2>
 
-<p>With both processes running, open the PKC landing page in the experiment wiki:</p>
-<pre>http://scp-experiment.localhost:3000/problem-knowledge-coupler</pre>
+<p>With both processes running, open the PKC landing page in a patient's wiki:</p>
+<pre>http://rosa-delgado.localhost:3000/problem-knowledge-coupler</pre>
 
 <h3>What you see</h3>
 <p>The page loads in FedWiki's standard lineup view. A FedWiki frame plugin item embeds the coupler UI at 800px height inside the page. The coupler detects the <code>?embed</code> URL parameter (added automatically by the proxy when serving inside a frame) and switches to a compact layout.</p>
@@ -296,10 +297,10 @@ pre {
 <section id="s6">
 <h2>6. What the Coupler Reads from the SCP</h2>
 
-<p>Before generating a frame, <code>coupler-proxy.py</code> automatically fetches context from the experiment site. This happens every time a frame is generated — you do not need to trigger it manually.</p>
+<p>Before generating a frame, <code>coupler-proxy.py</code> automatically fetches context from the selected patient's wiki site. This happens every time a frame is generated — you do not need to trigger it manually.</p>
 
 <h3>What gets fetched</h3>
-<p>The proxy reads three pages from <code>scp-experiment.localhost:3000</code>:</p>
+<p>The proxy reads three pages from the patient's site (e.g. <code>rosa-delgado.localhost:3000</code>):</p>
 <ul>
   <li><strong>health-log</strong> — vitals, symptoms, and visits recorded via SCP plugins</li>
   <li><strong>visits</strong> — visit notes and encounter summaries</li>
@@ -309,10 +310,10 @@ pre {
 
 <h3>Previewing what will be injected</h3>
 <p>To see exactly what the proxy will send to Claude before generating anything, open this URL in a browser:</p>
-<pre>http://localhost:8766/api/scp-context</pre>
-<p>The response is a human-readable HTML table showing each piece of SCP content that will be included. This is useful for verifying that the experiment site has meaningful data and that the proxy is connecting to it correctly.</p>
+<pre>http://localhost:8766/api/scp-context?person_id=rosa-delgado</pre>
+<p>The response is a human-readable HTML table showing each piece of SCP content that will be included. This is useful for verifying that the patient's site has meaningful data and that the proxy is connecting to it correctly.</p>
 
-<div class="note">If <code>scp-experiment.localhost:3000</code> is not reachable, the proxy generates the frame without SCP context. The frame will still be generated; it will just start from scratch rather than from the existing record. No error is shown to the user — check the proxy terminal output for a connection warning.</div>
+<div class="note">If the patient's wiki site is not reachable, the proxy generates the frame without SCP context. The frame will still be generated; it will just start from scratch rather than from the existing record. No error is shown to the user — check the proxy terminal output for a connection warning.</div>
 </section>
 
 <!-- 7 -->
@@ -334,7 +335,7 @@ pre {
 <h2>8. Pushing the Frame to FedWiki</h2>
 
 <h3>The button</h3>
-<p>In embed mode (inside the FedWiki frame), the toolbar shows a <strong>Push to Wiki</strong> button. In full-window mode, the same function is available via the <strong>FedWiki</strong> button in the toolbar. Both buttons do the same thing: write the current frame as a new FedWiki page on <code>scp-experiment.localhost</code>.</p>
+<p>In embed mode (inside the FedWiki frame), the toolbar shows a <strong>Push to Wiki</strong> button. In full-window mode, the same function is available via the <strong>FedWiki</strong> button in the toolbar. Both buttons do the same thing: write the current frame as a new FedWiki page on the selected patient's wiki site.</p>
 
 <p>Click the button. The proxy writes the page and the coupler sends a <code>doInternalLink</code> postMessage to FedWiki, which opens the new page to the right in the lineup. The page title is derived from the problem title — for example, a problem titled "Uncontrolled hypertension" produces a page called <code>pkc-uncontrolled-hypertension</code>.</p>
 
@@ -394,7 +395,7 @@ pre {
 <section id="s10">
 <h2>10. Pushing the Narrative to Pre-Visit Summary</h2>
 
-<p>After generating (and optionally editing) the narrative paragraph, click <strong>Push to SCP</strong> below the narrate output. This writes the paragraph to the <code>pre-visit-summary</code> page on <code>scp-experiment.localhost</code>.</p>
+<p>After generating (and optionally editing) the narrative paragraph, click <strong>Push to SCP</strong> below the narrate output. This writes the paragraph to the <code>pre-visit-summary</code> page on the patient's wiki site.</p>
 
 <h3>What gets written</h3>
 <p>The narrative lands on the pre-visit-summary page as a collapsible HTML block. The block is labeled with the problem number, title, and date — for example:</p>
@@ -422,8 +423,8 @@ pre {
   <li><code>pre-visit-summary</code> — the narrative summary page</li>
 </ol>
 
-<p>All three pages are on <code>scp-experiment.localhost</code>. You can navigate to any of them directly at:</p>
-<pre>http://scp-experiment.localhost:3000/[page-title]</pre>
+<p>All three pages are on the patient's wiki site. You can navigate to any of them directly at:</p>
+<pre>http://[patient-site].localhost:3000/[page-title]</pre>
 
 <p>FedWiki's standard page history is available for all pushed pages — click the page flag to see the journal of changes. Each push appears as a journal entry with the timestamp of the write.</p>
 
