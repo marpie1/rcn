@@ -1957,6 +1957,41 @@ var SFD_NODE_TYPES=[
   {type:'aux',   label:'Auxiliary', color:'#fef9c3',fontColor:'#713f12',shape:'ellipse',borderWidth:1.5,w:90, h:40, hint:'Helper variable, constant, or parameter'},
   {type:'cloud', label:'Cloud',     color:'#e2e8f0',fontColor:'#475569',shape:'cloud',  borderWidth:1.5,w:70, h:50, hint:'Boundary — infinite source or sink'},
 ];
+// ── Vester Symbols ────────────────────────────────────────────────────────────
+// 15 semantic annotation icons for Vester Influence Analysis variables.
+// Each symbol is a 16×16 SVG fragment placed as a badge on the node top-right.
+var VESTER_SYMBOLS=[
+  {key:'vs_stock',     label:'Stock / Reservoir',
+   svg:'<rect x="1" y="5" width="14" height="7" rx="1" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.5"/>'},
+  {key:'vs_flow',      label:'Flow process',
+   svg:'<line x1="1" y1="8" x2="12" y2="8" stroke="#1d4ed8" stroke-width="2"/><polygon points="11,5.5 15.5,8 11,10.5" fill="#1d4ed8"/>'},
+  {key:'vs_valve',     label:'Regulator / Valve',
+   svg:'<circle cx="8" cy="8" r="6" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.5"/><line x1="3.7" y1="3.7" x2="12.3" y2="12.3" stroke="#1d4ed8" stroke-width="1.5"/><line x1="12.3" y1="3.7" x2="3.7" y2="12.3" stroke="#1d4ed8" stroke-width="1.5"/>'},
+  {key:'vs_gauge',     label:'Indicator / Sensor',
+   svg:'<path d="M2,13 A6,6 0 0,1 14,13" fill="none" stroke="#0d9488" stroke-width="1.5"/><line x1="8" y1="13" x2="11.5" y2="7.5" stroke="#0d9488" stroke-width="1.5"/><circle cx="8" cy="13" r="1.5" fill="#0d9488"/>'},
+  {key:'vs_decision',  label:'Decision / Switch',
+   svg:'<polygon points="8,1.5 14.5,8 8,14.5 1.5,8" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>'},
+  {key:'vs_delay',     label:'Time delay',
+   svg:'<circle cx="8" cy="8" r="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/><line x1="8" y1="4.5" x2="8" y2="8" stroke="#16a34a" stroke-width="1.5"/><line x1="8" y1="8" x2="11" y2="10" stroke="#16a34a" stroke-width="1.5"/>'},
+  {key:'vs_amplifier', label:'Amplifier',
+   svg:'<polygon points="2,2.5 14,8 2,13.5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>'},
+  {key:'vs_source',    label:'Source / Generator',
+   svg:'<circle cx="8" cy="8" r="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/><line x1="8" y1="4.5" x2="8" y2="11.5" stroke="#16a34a" stroke-width="1.5"/><line x1="4.5" y1="8" x2="11.5" y2="8" stroke="#16a34a" stroke-width="1.5"/>'},
+  {key:'vs_sink',      label:'Sink / Consumer',
+   svg:'<circle cx="8" cy="8" r="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/><line x1="4.5" y1="8" x2="11.5" y2="8" stroke="#dc2626" stroke-width="2"/>'},
+  {key:'vs_converter', label:'Converter / Transformer',
+   svg:'<rect x="4" y="4" width="8" height="8" rx="1.5" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/><line x1="1" y1="8" x2="4" y2="8" stroke="#d97706" stroke-width="1.5"/><line x1="12" y1="8" x2="15" y2="8" stroke="#d97706" stroke-width="1.5"/><polygon points="11,6.5 14,8 11,9.5" fill="#d97706"/>'},
+  {key:'vs_filter',    label:'Filter / Threshold',
+   svg:'<polygon points="1.5,2 14.5,2 10,8.5 10,14 6,14 6,8.5" fill="#e0e7ff" stroke="#4338ca" stroke-width="1.5"/>'},
+  {key:'vs_trigger',   label:'Trigger / Impulse',
+   svg:'<polyline points="1,12 4,12 4,4.5 8.5,4.5 8.5,12 12,12" fill="none" stroke="#0891b2" stroke-width="1.8"/><line x1="12" y1="12" x2="15" y2="12" stroke="#0891b2" stroke-width="1.8"/>'},
+  {key:'vs_loop_pos',  label:'Positive feedback loop',
+   svg:'<path d="M8,3 A5,5 0 1 1 4.5,13.3" fill="none" stroke="#16a34a" stroke-width="1.5"/><polygon points="3.3,14.8 4.5,11.3 6.7,13.7" fill="#16a34a"/><text x="8" y="10" text-anchor="middle" font-size="6.5" font-weight="bold" fill="#16a34a">+</text>'},
+  {key:'vs_loop_neg',  label:'Negative feedback loop',
+   svg:'<path d="M8,3 A5,5 0 1 1 4.5,13.3" fill="none" stroke="#dc2626" stroke-width="1.5"/><polygon points="3.3,14.8 4.5,11.3 6.7,13.7" fill="#dc2626"/><text x="8" y="10" text-anchor="middle" font-size="6.5" font-weight="bold" fill="#dc2626">&#8722;</text>'},
+  {key:'vs_buffer',    label:'Buffer / Absorber',
+   svg:'<rect x="1.5" y="3.5" width="13" height="9" rx="1" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/><line x1="1.5" y1="7" x2="14.5" y2="7" stroke="#64748b" stroke-width="0.8" stroke-dasharray="2 2"/><line x1="1.5" y1="10" x2="14.5" y2="10" stroke="#64748b" stroke-width="0.8" stroke-dasharray="2 2"/>'},
+];
 var sfdActiveType=null;
 var OPM_NODE_TYPES=[
   {type:'Object',  label:'Object',  color:'#bfdbfe',textColor:'#1e3a8a',shape:'rounded', hint:'Things that exist; can have states'},
@@ -3047,6 +3082,23 @@ function cldNodeOverlay(n){
   }
   return out;
 }
+// ── Vester symbol badge overlay ───────────────────────────────────────────────
+function symbolsNodeOverlay(n){
+  if(!n.symbols||!n.symbols.length)return'';
+  var out='',sz=13,gap=1,cols=3;
+  n.symbols.forEach(function(key,i){
+    var sym=null;for(var j=0;j<VESTER_SYMBOLS.length;j++){if(VESTER_SYMBOLS[j].key===key){sym=VESTER_SYMBOLS[j];break;}}
+    if(!sym)return;
+    var col=i%cols,row=Math.floor(i/cols);
+    var sx=(n.w/2-2-(col+1)*(sz+gap)).toFixed(1);
+    var sy=(-n.h/2+2+row*(sz+gap)).toFixed(1);
+    out+='<svg x="'+sx+'" y="'+sy+'" width="'+sz+'" height="'+sz+'" viewBox="0 0 16 16" pointer-events="none">'
+        +'<rect x="0" y="0" width="16" height="16" rx="2.5" fill="rgba(255,255,255,0.92)" stroke="#cbd5e1" stroke-width="1"/>'
+        +sym.svg
+        +'</svg>';
+  });
+  return out;
+}
 document.addEventListener('keydown',function(ev){var inI=document.activeElement&&['INPUT','TEXTAREA'].indexOf(document.activeElement.tagName)>=0;if((ev.ctrlKey||ev.metaKey)&&ev.key==='z'&&!ev.shiftKey){ev.preventDefault();undo();}if((ev.ctrlKey||ev.metaKey)&&(ev.key==='y'||(ev.key==='z'&&ev.shiftKey))){ev.preventDefault();redo();}if(!inI&&(ev.key==='Delete'||ev.key==='Backspace'))deleteSelected();if((ev.ctrlKey||ev.metaKey)&&ev.key==='c'&&!inI){ev.preventDefault();copySelection();}
 if(!inI&&(ev.ctrlKey||ev.metaKey)&&ev.key==='d'){ev.preventDefault();duplicateSelected();}if(!inI&&(ev.ctrlKey||ev.metaKey)&&ev.key==='a'){ev.preventDefault();selectAll();}if(!inI&&ev.key==='Escape'){var opmPk=document.getElementById('opm-picker');if(opmPk&&opmPk.style.display!=='none'){cancelOPMPicker();return;}if(mode==='cld'){clearPropagation();hidePropPopup();}else{setMode('select');clearEdgeDrag();clearSel();}}
 if(!inI&&ev.key===' '){ev.preventDefault();if(mode==='cld'&&propAnimSteps.length){propAnimPaused=!propAnimPaused;if(!propAnimPaused)runPropAnimStep();}if(mode==='trace'&&traceAnimSteps.length){traceAnimPaused=!traceAnimPaused;if(!traceAnimPaused)runTraceAnimStep();}}
@@ -3096,7 +3148,7 @@ var bColor=n.borderColor&&n.borderColor!==''?n.borderColor:darken(fill);var stro
 if(n.extraLabels&&n.extraLabels.length){var elY=startY+lines.length*llh+2;lblHTML+='<text text-anchor="middle" font-size="9" font-style="italic" fill="'+fc+'" opacity=".7" pointer-events="none">';n.extraLabels.forEach(function(el,ei){lblHTML+='<tspan x="0"'+(ei===0?' y="'+elY.toFixed(1)+'"':' dy="11"')+'>:'+escX(el)+'</tspan>';});lblHTML+='</text>';}
 // note indicator dot
 var hasNote=(n.note&&n.note.trim().length>0)||Object.keys(n.props||{}).length>0;var noteIndicator=hasNote?'<circle cx="'+(n.w/2-4)+'" cy="'+(-n.h/2+4)+'" r="4" fill="#f59e0b" stroke="#fff" stroke-width="1" pointer-events="none"/>':'';
-var g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('id','node-'+n.id);g.setAttribute('transform','translate('+n.x+','+n.y+')');g.style.cursor=mode==='edge'?'crosshair':'move';g.style.opacity=isDim?'0.22':'1';g.innerHTML=shapeHTML(n,fill,stroke,sw)+(isSel?'<ellipse cx="0" cy="0" rx="'+(n.w/2+7)+'" ry="'+(n.h/2+7)+'" fill="none" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4 3" opacity=".5"/>':'')+(isMatch?'<ellipse cx="0" cy="0" rx="'+(n.w/2+8)+'" ry="'+(n.h/2+8)+'" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity=".7"/>':'')+lblHTML+noteIndicator+traceNodeOverlay(n)+cldNodeOverlay(n);
+var g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('id','node-'+n.id);g.setAttribute('transform','translate('+n.x+','+n.y+')');g.style.cursor=mode==='edge'?'crosshair':'move';g.style.opacity=isDim?'0.22':'1';g.innerHTML=shapeHTML(n,fill,stroke,sw)+(isSel?'<ellipse cx="0" cy="0" rx="'+(n.w/2+7)+'" ry="'+(n.h/2+7)+'" fill="none" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4 3" opacity=".5"/>':'')+(isMatch?'<ellipse cx="0" cy="0" rx="'+(n.w/2+8)+'" ry="'+(n.h/2+8)+'" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity=".7"/>':'')+lblHTML+noteIndicator+traceNodeOverlay(n)+cldNodeOverlay(n)+symbolsNodeOverlay(n);
 // resize handles on single selected node
 if(isSel&&selected.nodes.length===1&&mode==='select'){
   var hw=n.w/2,hh=n.h/2,hs=6;
@@ -3989,7 +4041,21 @@ pc.innerHTML=(multi?'<div style="padding:8px 12px 4px;font-size:12px;color:#6474
 +'<div class="section-hd">Border thickness &amp; style'+(multi?' (all)':'')+'</div>'
 +'<div class="inline-row"><label>Thickness</label><input type="range" min="0.5" max="8" step="0.5" value="'+bw+'" oninput="sNBW_all(+this.value);document.getElementById(\'nbwv\').textContent=this.value"/><span id="nbwv">'+bw+'</span></div>'
 +'<div class="dash-row">'+dashBtns(bd,'sNBD_all')+'</div>'
-+'<div style="padding:6px 12px 8px;border-top:1px solid #f1f5f9"><button class="tb-btn" style="width:100%;text-align:center" onclick="copySelection()" title="Copy selection to clipboard (Ctrl+C) — paste into Word or PowerPoint">Copy selection</button></div>';
++'<div style="padding:6px 12px 8px;border-top:1px solid #f1f5f9"><button class="tb-btn" style="width:100%;text-align:center" onclick="copySelection()" title="Copy selection to clipboard (Ctrl+C) — paste into Word or PowerPoint">Copy selection</button></div>'
++(!multi?(function(){
+  var syms=n.symbols||[];
+  var btns=VESTER_SYMBOLS.map(function(sym){
+    var on=syms.indexOf(sym.key)>=0;
+    return '<button title="'+sym.label+'" onclick="toggleVesterSymbol(\''+n.id+'\',\''+sym.key+'\')" '
+      +'style="width:28px;height:28px;border-radius:4px;cursor:pointer;padding:0;'
+      +'border:1.5px solid '+(on?'#1d4ed8':'#e2e8f0')+';'
+      +'background:'+(on?'#eff6ff':'#f8fafc')+';">'
+      +'<svg width="16" height="16" viewBox="0 0 16 16" style="display:block;margin:auto">'+sym.svg+'</svg>'
+      +'</button>';
+  }).join('');
+  return '<div class="section-hd">Vester Symbols</div>'
+    +'<div style="padding:6px 12px 8px;display:flex;flex-wrap:wrap;gap:3px;border-bottom:1px solid #f1f5f9">'+btns+'</div>';
+})():'');
 setTimeout(function(){var t=pc.querySelector('textarea.note-ta');if(t){_rTA(t);}},0);
 return;}
 if(sE.length>=1){if(panelColorTarget!=='line'&&panelColorTarget!=='label')panelColorTarget='line';var multi2=sE.length>1,e=sE[0],ec=e.color||DEF_EDGE.color,ew=e.width||1.5,ef=e.fontSize||10,pol=e.polarity||'none',hasDelay=!!e.delay,ed=e.dash||'solid',traces=(e.traces||[]),hasUserCP=e.curved&&e.cpxUser!==undefined,pr2='';if(!multi2){var eKeys=Object.keys(e.props||{});eKeys.forEach(function(k,i){var v=e.props[k];pr2+='<div class="prop-kv-row"><button style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:10px;padding:0 1px;line-height:1" onclick="moveEProp(\''+e.id+'\','+i+',-1)"'+(i===0?' disabled':'')+'>↑</button><button style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:10px;padding:0 1px;line-height:1" onclick="moveEProp(\''+e.id+'\','+i+',1)"'+(i===eKeys.length-1?' disabled':'')+'>↓</button><input placeholder="key" value="'+escH(k)+'" onchange="uEPK(\''+e.id+'\',\''+escH(k)+'\',this.value)"/><input placeholder="value" value="'+escH(v)+'" onchange="uEPV(\''+e.id+'\',\''+escH(k)+'\',this.value)"/>'+(isURL(v)?'<a href="'+escH(v)+'" target="_blank" rel="noopener" style="color:#2563eb;font-size:13px;text-decoration:none;padding:0 1px;flex-shrink:0" title="Open URL">&#8599;</a>':'')+'<button style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:14px;padding:0 2px" onclick="rEP(\''+e.id+'\',\''+escH(k)+'\')">x</button></div>';});}
@@ -4044,6 +4110,7 @@ function uNL(id,v){snap();var n=nodeById(id);if(n){n.label=v;autoSize(n);renderA
 function aNEL(id){snap();var n=nodeById(id);if(n){if(!n.extraLabels)n.extraLabels=[];n.extraLabels.push('Label');autoSize(n);buildPanel();renderAll();}}
 function uNEL(id,idx,v){snap();var n=nodeById(id);if(n&&n.extraLabels){n.extraLabels[idx]=v;autoSize(n);renderAll();}}
 function rNEL(id,idx){snap();var n=nodeById(id);if(n&&n.extraLabels){n.extraLabels.splice(idx,1);autoSize(n);buildPanel();renderAll();}}
+function toggleVesterSymbol(id,key){snap();var n=nodeById(id);if(!n)return;if(!n.symbols)n.symbols=[];var i=n.symbols.indexOf(key);if(i>=0)n.symbols.splice(i,1);else n.symbols.push(key);renderAll();buildPanel();}
 function sNC_all(c){snap();selected.nodes.forEach(function(id){var n=nodeById(id);if(n)n.color=c;});renderAll();buildPanel();}
 function sNFC_all(c){snap();selected.nodes.forEach(function(id){var n=nodeById(id);if(n)n.fontColor=c;});renderAll();buildPanel();}
 function sNS_all(s){snap();selected.nodes.forEach(function(id){var n=nodeById(id);if(n){n.shape=s;autoSize(n);}});renderAll();buildPanel();}
