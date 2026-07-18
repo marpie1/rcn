@@ -582,6 +582,7 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
     <button class="tb-btn" onclick="forceLayout()">Force</button>
     <button class="tb-btn" onclick="gridLayout()">Grid</button>
     <button class="tb-btn" id="btn-dagre" onclick="applyDagreLayout()">Dagre LR</button>
+    <button class="tb-btn" onclick="minimizeCrossings()" title="Reduce edge crossings by swapping node positions (Undo restores)">Untangle</button>
     <button class="tb-btn" onclick="zoomFit()">Fit</button>
   </div>
 </div>
@@ -3884,6 +3885,58 @@ function applyDagreLayout(){
   s.onload=function(){runDagre();};
   s.onerror=function(){toast('Dagre failed to load — requires internet');};
   document.head.appendChild(s);
+}
+// ── UNTANGLE — reduce edge crossings by swapping node positions ──────
+// Local-search heuristic (crossing minimization is NP-hard). Nodes only
+// trade existing slots, so spacing is preserved and no new overlaps are
+// introduced. Works on cyclic graphs. Touches only n.x/n.y after one
+// snap(), so a single Undo restores every position.
+function minimizeCrossings(){
+  if(mode==='wardley'){toast('Untangle disabled in Wardley mode — positions encode meaning');return;}
+  if(!nodes.length)return;
+  var E=edges.filter(function(e){return e.src!==e.tgt&&nodeById(e.src)&&nodeById(e.tgt);});
+  if(nodes.length<3||E.length<2){toast('Need at least 3 nodes and 2 edges to untangle');return;}
+  function ccw(p,q,r){return (r.y-p.y)*(q.x-p.x)-(q.y-p.y)*(r.x-p.x);}
+  function cross(e1,e2){
+    if(e1.src===e2.src||e1.src===e2.tgt||e1.tgt===e2.src||e1.tgt===e2.tgt)return false;
+    var a=nodeById(e1.src),b=nodeById(e1.tgt),c=nodeById(e2.src),d=nodeById(e2.tgt);
+    var d1=ccw(c,d,a),d2=ccw(c,d,b),d3=ccw(a,b,c),d4=ccw(a,b,d);
+    return ((d1>0)!==(d2>0))&&((d3>0)!==(d4>0));
+  }
+  function totalCrossings(){var c=0;for(var i=0;i<E.length;i++)for(var j=i+1;j<E.length;j++)if(cross(E[i],E[j]))c++;return c;}
+  // adjacency: edges incident to each node id
+  var inc={};
+  E.forEach(function(e){(inc[e.src]=inc[e.src]||[]).push(e);(inc[e.tgt]=inc[e.tgt]||[]).push(e);});
+  // crossings that can change when nodes a,b swap = pairs with >=1 edge on a or b
+  function localCost(aId,bId){
+    var s={};(inc[aId]||[]).forEach(function(e){s[e.id]=1;});(inc[bId]||[]).forEach(function(e){s[e.id]=1;});
+    var c=0;
+    for(var i=0;i<E.length;i++)for(var j=i+1;j<E.length;j++){
+      if(!s[E[i].id]&&!s[E[j].id])continue;
+      if(cross(E[i],E[j]))c++;
+    }
+    return c;
+  }
+  var initial=totalCrossings();
+  if(initial===0){toast('No edge crossings to untangle');return;}
+  snap();
+  var ids=nodes.map(function(n){return n.id;}),improved=true,passes=0,t0=Date.now(),budget=2000;
+  while(improved&&passes<10&&Date.now()-t0<budget){
+    improved=false;passes++;
+    for(var i=0;i<ids.length&&Date.now()-t0<budget;i++){
+      for(var j=i+1;j<ids.length;j++){
+        var A=nodeById(ids[i]),B=nodeById(ids[j]);if(!A||!B)continue;
+        var before=localCost(A.id,B.id);if(before===0)continue;
+        var Ax=A.x,Ay=A.y,Bx=B.x,By=B.y;
+        A.x=Bx;A.y=By;B.x=Ax;B.y=Ay;
+        if(localCost(A.id,B.id)<before){improved=true;}
+        else{A.x=Ax;A.y=Ay;B.x=Bx;B.y=By;}
+      }
+    }
+  }
+  var final=totalCrossings();
+  renderAll();
+  toast(final<initial?('Untangled: '+initial+' → '+final+' crossings'):('No improvement found — '+initial+' crossings'));
 }
 function setBgColor(c){canvasBg=c;document.getElementById('canvas-wrap').style.background=c;var p=document.getElementById('canvas-bg-picker');if(p&&p.value!==c)p.value=c;}
 function gridLayout(){if(!nodes.length)return;snap();var W=svgEl.clientWidth||600,H=svgEl.clientHeight||480,cols=Math.ceil(Math.sqrt(nodes.length)),padX=80,padY=70,cellW=(W-padX*2)/Math.max(cols-1,1),cellH=(H-padY*2)/Math.max(Math.ceil(nodes.length/cols)-1,1);nodes.forEach(function(n,i){n.x=(padX+(i%cols)*cellW-pan.x)/zoom;n.y=(padY+Math.floor(i/cols)*cellH-pan.y)/zoom;});renderAll();}
