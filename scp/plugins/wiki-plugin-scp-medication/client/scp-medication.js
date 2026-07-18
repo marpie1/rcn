@@ -257,6 +257,31 @@
         add('Phone:', item.phone ? item.phone + '.' : null);
         add('',       item.notes);
         break;
+      case 'scp-goal':
+        if (item.goal) p.push('Goal: ' + item.goal + (item.status ? ' (' + item.status + ').' : '.'));
+        add('By:',    item.target_date ? item.target_date + '.' : null);
+        add('Set by:', item.set_by ? item.set_by + '.' : null);
+        add('',       item.notes);
+        break;
+      case 'scp-polst':
+        add('POLST — CPR:', item.cpr_preference ? item.cpr_preference + '.' : null);
+        add('Interventions:', item.medical_interventions ? item.medical_interventions + '.' : null);
+        add('Signed by:', item.signed_by ? item.signed_by + '.' : null);
+        add('Date signed:', item.date_signed ? item.date_signed + '.' : null);
+        add('',            item.notes);
+        break;
+      case 'scp-agent':
+        if (item.name) p.push('Healthcare agent: ' + item.name + (item.relationship ? ' (' + item.relationship + ').' : '.'));
+        add('Phone:', item.phone ? item.phone + '.' : null);
+        add('Authorized to:', item.authorized);
+        add('',       item.notes);
+        break;
+      case 'scp-wishes':
+        add('Where I want to be:', item.where_i_want_to_be);
+        add('What matters most:', item.what_matters_most);
+        add('',                   item.religious_spiritual);
+        add('',                   item.other_wishes);
+        break;
     }
     return p.join(' ');
   }
@@ -2613,6 +2638,328 @@
   };
 
   // ══════════════════════════════════════════════════════════════════════════
+  // scp-goal  — Health Goal
+  // ══════════════════════════════════════════════════════════════════════════
+
+  var GOAL_STATUS = ['Active', 'Achieved', 'Paused', 'Dropped'];
+
+  function goalDetailHtml(item) {
+    return '<div class="scp-row"><span class="scp-lbl">Goal</span><div class="scp-val">'        + esc(item.goal || '')        + '</div></div>' +
+      (item.target_date ? '<div class="scp-row"><span class="scp-lbl">Target Date</span><div class="scp-val">' + esc(item.target_date) + '</div></div>' : '') +
+      (item.set_by      ? '<div class="scp-row"><span class="scp-lbl">Set By</span><div class="scp-val">'      + esc(item.set_by)      + '</div></div>' : '') +
+      '<div class="scp-row"><span class="scp-lbl">Status</span><div class="scp-val">'           + esc(item.status || '')       + '</div></div>' +
+      (item.notes ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">' + renderLinks(item.notes) + '</div></div>' : '');
+  }
+
+  function emitGoal($item, item) {
+    injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + goalDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
+    if (item.committed) {
+      var summary = esc(item.goal || 'Goal') + (item.status ? ' (' + esc(item.status) + ')' : '');
+      $item.append(
+        '<div class="scp scp-done">' +
+        '<div class="scp-head">Goal<button class="scp-fold-btn">▲</button><button class="scp-edit-btn">✎ Edit</button></div>' +
+        '<div class="scp-detail">' + goalDetailHtml(item) + '</div>' +
+        '<div class="scp-summary" style="display:none">' + summary + '</div>' +
+        '</div>'
+      );
+      return;
+    }
+    $item.append(
+      '<div class="scp">' +
+      '<div class="scp-head">' + esc(item.goal || 'New Goal') + '</div>' +
+      row('Goal',        ta('scp-goal-text',   item.goal)) +
+      row('Target Date', inp('scp-goal-date',  item.target_date, 'YYYY-MM-DD or description')) +
+      row('Set By',      inp('scp-goal-setby', item.set_by)) +
+      row('Status',      sel('scp-goal-status', GOAL_STATUS, item.status || 'Active')) +
+      row('Notes',       ta('scp-goal-notes',  item.notes)) +
+      '<button class="scp-commit-btn">Save Entry</button>' +
+      '</div>'
+    );
+  }
+
+  function bindGoal($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
+    if (item.committed) { addEditButton($item, item, emitGoal, bindGoal); return; }
+    $item.find('.scp-goal-text, .scp-goal-notes').each(function () { grow(this); });
+    $item.find('.scp-goal-text').on('input', function () {
+      grow(this); item.goal = this.value;
+      $item.find('.scp-head').text(this.value || 'New Goal');
+    });
+    $item.find('.scp-goal-date').on('input',   function () { item.target_date = this.value; });
+    $item.find('.scp-goal-setby').on('input',  function () { item.set_by      = this.value; });
+    $item.find('.scp-goal-status').on('change',function () { item.status      = this.value; });
+    $item.find('.scp-goal-notes').on('input',  function () { grow(this); item.notes = this.value; });
+    $item.find('.scp-commit-btn').on('click', function () {
+      item.committed = true;
+      save($item, item);
+      $item.empty(); emitGoal($item, item); bindGoal($item, item);
+    });
+  }
+
+  window.plugins['scp-goal'] = {
+    emit: emitGoal,
+    bind: bindGoal,
+    editor: function ($item, item) {
+      item.status = item.status || 'Active';
+      $item.empty();
+      emitGoal($item, item);
+      bindGoal($item, item);
+      save($item, item);
+    }
+  };
+
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // scp-polst  — POLST form (Physician Orders for Life-Sustaining Treatment)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  var POLST_CPR     = ['Attempt CPR', 'Do Not Attempt CPR (DNR)'];
+  var POLST_MEDICAL = ['Full Treatment', 'Limited Interventions', 'Comfort Measures Only'];
+
+  function polstDetailHtml(item) {
+    return '<div class="scp-row"><span class="scp-lbl">CPR</span><div class="scp-val">'                + esc(item.cpr_preference || '')        + '</div></div>' +
+      '<div class="scp-row"><span class="scp-lbl">Interventions</span><div class="scp-val">'           + esc(item.medical_interventions || '') + '</div></div>' +
+      (item.signed_by        ? '<div class="scp-row"><span class="scp-lbl">Signed By</span><div class="scp-val">'        + esc(item.signed_by)        + '</div></div>' : '') +
+      (item.date_signed      ? '<div class="scp-row"><span class="scp-lbl">Date Signed</span><div class="scp-val">'      + esc(item.date_signed)      + '</div></div>' : '') +
+      (item.document_location ? '<div class="scp-row"><span class="scp-lbl">Document Location</span><div class="scp-val">' + esc(item.document_location) + '</div></div>' : '') +
+      (item.notes            ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">'            + renderLinks(item.notes)    + '</div></div>' : '');
+  }
+
+  function emitPolst($item, item) {
+    injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + polstDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
+    if (item.committed) {
+      $item.append(
+        '<div class="scp scp-done">' +
+        '<div class="scp-head">POLST<button class="scp-fold-btn">▲</button><button class="scp-edit-btn">✎ Edit</button></div>' +
+        '<div class="scp-detail">' + polstDetailHtml(item) + '</div>' +
+        '<div class="scp-summary" style="display:none">POLST — ' + esc(item.cpr_preference || '') + '</div>' +
+        '</div>'
+      );
+      return;
+    }
+    $item.append(
+      '<div class="scp">' +
+      '<div class="scp-head">POLST</div>' +
+      row('CPR Preference',        sel('scp-polst-cpr',   POLST_CPR,     item.cpr_preference)) +
+      row('Medical Interventions', sel('scp-polst-med',   POLST_MEDICAL, item.medical_interventions)) +
+      row('Signed By',             inp('scp-polst-signer', item.signed_by)) +
+      row('Date Signed',           dateInp('scp-polst-date', item.date_signed)) +
+      row('Document Location',     inp('scp-polst-loc',   item.document_location)) +
+      row('Notes',                 ta('scp-polst-notes',  item.notes)) +
+      '<button class="scp-commit-btn">Save Entry</button>' +
+      '</div>'
+    );
+  }
+
+  function bindPolst($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
+    if (item.committed) { addEditButton($item, item, emitPolst, bindPolst); return; }
+    $item.find('.scp-polst-notes').each(function () { grow(this); });
+    $item.find('.scp-polst-cpr').on('change',   function () { item.cpr_preference        = this.value; });
+    $item.find('.scp-polst-med').on('change',   function () { item.medical_interventions = this.value; });
+    $item.find('.scp-polst-signer').on('input', function () { item.signed_by             = this.value; });
+    $item.find('.scp-polst-date').on('input change', function () { item.date_signed      = this.value; });
+    $item.find('.scp-polst-loc').on('input',    function () { item.document_location     = this.value; });
+    $item.find('.scp-polst-notes').on('input',  function () { grow(this); item.notes     = this.value; });
+    $item.find('.scp-commit-btn').on('click', function () {
+      item.committed = true;
+      save($item, item);
+      $item.empty(); emitPolst($item, item); bindPolst($item, item);
+    });
+  }
+
+  window.plugins['scp-polst'] = {
+    emit: emitPolst,
+    bind: bindPolst,
+    editor: function ($item, item) {
+      item.cpr_preference        = item.cpr_preference        || 'Attempt CPR';
+      item.medical_interventions = item.medical_interventions || 'Full Treatment';
+      $item.empty();
+      emitPolst($item, item);
+      bindPolst($item, item);
+      save($item, item);
+    }
+  };
+
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // scp-agent  — Healthcare Agent / Proxy
+  // ══════════════════════════════════════════════════════════════════════════
+
+  function agentDetailHtml(item) {
+    return '<div class="scp-row"><span class="scp-lbl">Name</span><div class="scp-val">'             + esc(item.name || '')         + '</div></div>' +
+      (item.relationship  ? '<div class="scp-row"><span class="scp-lbl">Relationship</span><div class="scp-val">'  + esc(item.relationship)  + '</div></div>' : '') +
+      (item.phone         ? '<div class="scp-row"><span class="scp-lbl">Phone</span><div class="scp-val">'         + esc(item.phone)         + '</div></div>' : '') +
+      (item.phone_alt     ? '<div class="scp-row"><span class="scp-lbl">Alt. Phone</span><div class="scp-val">'    + esc(item.phone_alt)     + '</div></div>' : '') +
+      (item.authorized    ? '<div class="scp-row"><span class="scp-lbl">Authorized To</span><div class="scp-val">' + renderLinks(item.authorized)    + '</div></div>' : '') +
+      (item.limitations   ? '<div class="scp-row"><span class="scp-lbl">Limitations</span><div class="scp-val">'  + renderLinks(item.limitations)   + '</div></div>' : '') +
+      (item.date_of_document ? '<div class="scp-row"><span class="scp-lbl">Document Date</span><div class="scp-val">' + esc(item.date_of_document) + '</div></div>' : '') +
+      (item.notes         ? '<div class="scp-row"><span class="scp-lbl">Notes</span><div class="scp-val">'         + renderLinks(item.notes)         + '</div></div>' : '');
+  }
+
+  function emitAgent($item, item) {
+    injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + agentDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
+    if (item.committed) {
+      var summary = esc(item.name || 'Agent') + (item.relationship ? ' — ' + esc(item.relationship) : '');
+      $item.append(
+        '<div class="scp scp-done">' +
+        '<div class="scp-head">Healthcare Agent<button class="scp-fold-btn">▲</button><button class="scp-edit-btn">✎ Edit</button></div>' +
+        '<div class="scp-detail">' + agentDetailHtml(item) + '</div>' +
+        '<div class="scp-summary" style="display:none">' + summary + '</div>' +
+        '</div>'
+      );
+      return;
+    }
+    $item.append(
+      '<div class="scp">' +
+      '<div class="scp-head">' + esc(item.name || 'Healthcare Agent') + '</div>' +
+      row('Name',          inp('scp-agent-name',     item.name)) +
+      row('Relationship',  inp('scp-agent-rel',      item.relationship)) +
+      row('Phone',         inp('scp-agent-phone',    item.phone)) +
+      row('Alt. Phone',    inp('scp-agent-phone2',   item.phone_alt)) +
+      row('Authorized To', ta('scp-agent-auth',      item.authorized)) +
+      row('Limitations',   ta('scp-agent-limits',    item.limitations)) +
+      row('Document Date', dateInp('scp-agent-date', item.date_of_document)) +
+      row('Notes',         ta('scp-agent-notes',     item.notes)) +
+      '<button class="scp-commit-btn">Save Entry</button>' +
+      '</div>'
+    );
+  }
+
+  function bindAgent($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
+    if (item.committed) { addEditButton($item, item, emitAgent, bindAgent); return; }
+    $item.find('.scp-agent-auth, .scp-agent-limits, .scp-agent-notes').each(function () { grow(this); });
+    $item.find('.scp-agent-name').on('input', function () {
+      item.name = this.value;
+      $item.find('.scp-head').text(this.value || 'Healthcare Agent');
+    });
+    $item.find('.scp-agent-rel').on('input',    function () { item.relationship   = this.value; });
+    $item.find('.scp-agent-phone').on('input',  function () { item.phone          = this.value; });
+    $item.find('.scp-agent-phone2').on('input', function () { item.phone_alt      = this.value; });
+    $item.find('.scp-agent-auth').on('input',   function () { grow(this); item.authorized  = this.value; });
+    $item.find('.scp-agent-limits').on('input', function () { grow(this); item.limitations = this.value; });
+    $item.find('.scp-agent-date').on('input change', function () { item.date_of_document = this.value; });
+    $item.find('.scp-agent-notes').on('input',  function () { grow(this); item.notes      = this.value; });
+    $item.find('.scp-commit-btn').on('click', function () {
+      item.committed = true;
+      save($item, item);
+      $item.empty(); emitAgent($item, item); bindAgent($item, item);
+    });
+  }
+
+  window.plugins['scp-agent'] = {
+    emit: emitAgent,
+    bind: bindAgent,
+    editor: function ($item, item) {
+      $item.empty();
+      emitAgent($item, item);
+      bindAgent($item, item);
+      save($item, item);
+    }
+  };
+
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // scp-wishes  — Goals of Care / Personal Wishes
+  // ══════════════════════════════════════════════════════════════════════════
+
+  function wishesDetailHtml(item) {
+    return (item.where_i_want_to_be  ? '<div class="scp-row"><span class="scp-lbl">Where I want to be</span><div class="scp-val">' + renderLinks(item.where_i_want_to_be)  + '</div></div>' : '') +
+      (item.what_matters_most  ? '<div class="scp-row"><span class="scp-lbl">What matters most</span><div class="scp-val">'  + renderLinks(item.what_matters_most)  + '</div></div>' : '') +
+      (item.religious_spiritual ? '<div class="scp-row"><span class="scp-lbl">Religious / Spiritual</span><div class="scp-val">' + renderLinks(item.religious_spiritual) + '</div></div>' : '') +
+      (item.other_wishes        ? '<div class="scp-row"><span class="scp-lbl">Other Wishes</span><div class="scp-val">'        + renderLinks(item.other_wishes)        + '</div></div>' : '');
+  }
+
+  function emitWishes($item, item) {
+    injectStyles();
+    if (item.example) {
+      $item.append(
+        '<div class="scp scp-done scp-example">' +
+        exampleBannerHtml() +
+        '<div class="scp-detail">' + wishesDetailHtml(item) + '</div>' +
+        '</div>'
+      );
+      return;
+    }
+    if (item.committed) {
+      $item.append(
+        '<div class="scp scp-done">' +
+        '<div class="scp-head">My Wishes<button class="scp-fold-btn">▲</button><button class="scp-edit-btn">✎ Edit</button></div>' +
+        '<div class="scp-detail">' + wishesDetailHtml(item) + '</div>' +
+        '<div class="scp-summary" style="display:none">My Wishes</div>' +
+        '</div>'
+      );
+      return;
+    }
+    $item.append(
+      '<div class="scp">' +
+      '<div class="scp-head">My Wishes</div>' +
+      row('Where I want to be',    ta('scp-wishes-where',    item.where_i_want_to_be,  'e.g. at home, not in a hospital')) +
+      row('What matters most',     ta('scp-wishes-matters',  item.what_matters_most)) +
+      row('Religious / Spiritual', ta('scp-wishes-religion', item.religious_spiritual)) +
+      row('Other Wishes',          ta('scp-wishes-other',    item.other_wishes)) +
+      '<button class="scp-commit-btn">Save Entry</button>' +
+      '</div>'
+    );
+  }
+
+  function bindWishes($item, item) {
+    if (item.example)   { bindDismiss($item, item); return; }
+    if (item.committed) { addEditButton($item, item, emitWishes, bindWishes); return; }
+    $item.find('.scp-wishes-where, .scp-wishes-matters, .scp-wishes-religion, .scp-wishes-other')
+      .each(function () { grow(this); });
+    $item.find('.scp-wishes-where').on('input',    function () { grow(this); item.where_i_want_to_be  = this.value; });
+    $item.find('.scp-wishes-matters').on('input',  function () { grow(this); item.what_matters_most   = this.value; });
+    $item.find('.scp-wishes-religion').on('input', function () { grow(this); item.religious_spiritual = this.value; });
+    $item.find('.scp-wishes-other').on('input',    function () { grow(this); item.other_wishes        = this.value; });
+    $item.find('.scp-commit-btn').on('click', function () {
+      item.committed = true;
+      save($item, item);
+      $item.empty(); emitWishes($item, item); bindWishes($item, item);
+    });
+  }
+
+  window.plugins['scp-wishes'] = {
+    emit: emitWishes,
+    bind: bindWishes,
+    editor: function ($item, item) {
+      $item.empty();
+      emitWishes($item, item);
+      bindWishes($item, item);
+      save($item, item);
+    }
+  };
+
+
+  // ══════════════════════════════════════════════════════════════════════════
   // scp-factory — Page-specific persistent add-entry widget
   //
   // item.types  — array of SCP type names to offer as buttons
@@ -2637,9 +2984,13 @@
     'scp-reaction':    'Reaction / Allergy',
     'scp-history':     'History entry',
     'scp-next-step':   'Next Step',
+    'scp-goal':        'Goal',
     'scp-directive':   'Directive',
+    'scp-polst':       'POLST',
+    'scp-agent':       'Healthcare Agent',
+    'scp-wishes':      'My Wishes',
     'scp-access':      'Access entry',
-    'scp-field':       'Lab Result',
+    'scp-lab':         'Lab Result',
   };
 
   function emitScpFactory($item, item) {

@@ -4,7 +4,7 @@
     {
       "type": "paragraph",
       "id": "d0e1f2a3b4c50001",
-      "text": "Advanced Directives. These are legal documents that tell your care team and loved ones what medical treatment you want — or don't want — if you are ever unable to speak for yourself."
+      "text": "Advanced Directives. These are legal documents that tell your care team and loved ones what medical treatment you want \u2014 or don't want \u2014 if you are ever unable to speak for yourself."
     },
     {
       "type": "scp-field",
@@ -31,18 +31,26 @@
       "text": "POLST. A POLST translates your wishes into medical orders that follow you across care settings. It must be signed by a physician."
     },
     {
-      "type": "scp-field",
+      "type": "scp-factory",
+      "id": "d0e1f2a3b4c50000",
+      "types": [
+        "scp-polst",
+        "scp-agent",
+        "scp-wishes"
+      ],
+      "position": "top"
+    },
+    {
+      "type": "scp-polst",
       "id": "d0e1f2a3b4c50004",
-      "field": "polst",
-      "label": "POLST on File",
-      "widget": "polst-card",
-      "date_signed": "2005-03-15",
-      "signed_by": "Dr. Clearly",
-      "cpr_preference": "Do Not Attempt CPR (DNAR)",
+      "cpr_preference": "Do Not Attempt CPR (DNR)",
       "medical_interventions": "Limited Interventions",
-      "comments": "Limited interventions — no ventilator unless reversible condition.",
+      "signed_by": "Dr. Clearly",
+      "date_signed": "2005-03-15",
       "document_location": "Bedside table drawer and Dr. Clearly's office.",
-      "private": false
+      "notes": "No ventilator unless reversible condition.",
+      "committed": true,
+      "example": true
     },
     {
       "type": "paragraph",
@@ -50,45 +58,127 @@
       "text": "Health Care Agent. This is the person you have chosen to make health care decisions on your behalf if you are unable to do so."
     },
     {
-      "type": "scp-field",
+      "type": "scp-agent",
       "id": "d0e1f2a3b4c50006",
-      "field": "hca",
-      "label": "Health Care Agent: Maria Wardin",
-      "widget": "agent-card",
       "name": "Maria Wardin",
       "relationship": "Daughter",
       "phone": "555-234-5678",
       "phone_alt": "",
-      "email": "",
       "authorized": "Full health care decisions",
       "limitations": "",
       "date_of_document": "2005-03-15",
-      "private": false
+      "notes": "",
+      "committed": true,
+      "example": true
     },
     {
       "type": "paragraph",
       "id": "d0e1f2a3b4c50007",
-      "text": "My Wishes. Use this section to record what matters most to you — quality of life, where you want to be cared for, and anything else you want your care team to know."
+      "text": "My Wishes. Use this section to record what matters most to you \u2014 quality of life, where you want to be cared for, and anything else you want your care team to know."
     },
     {
-      "type": "scp-field",
+      "type": "scp-wishes",
       "id": "d0e1f2a3b4c50008",
-      "field": "wishes",
-      "label": "My Wishes",
-      "widget": "wishes-card",
       "where_i_want_to_be": "Home, if possible. Not a nursing facility.",
       "what_matters_most": "Being able to recognize my family and communicate with them.",
       "religious_spiritual": "I want a chaplain present. I pray daily and find it comforting.",
       "other_wishes": "I do not want to be kept alive by machines if there is no hope of recovery.",
-      "private": false
+      "committed": true,
+      "example": true
     }
   ],
   "journal": [
     {
       "type": "create",
       "item": {
-        "title": "Advanced Directives",
-        "story": []
+        "title": "Health Directives",
+        "story": [
+          {
+            "type": "paragraph",
+            "id": "d0e1f2a3b4c50001",
+            "text": "Advanced Directives. These are legal documents that tell your care team and loved ones what medical treatment you want \u2014 or don't want \u2014 if you are ever unable to speak for yourself."
+          },
+          {
+            "type": "scp-field",
+            "id": "d0e1f2a3b4c50002",
+            "field": "directive_documents",
+            "label": "Documents on File",
+            "widget": "multiselect",
+            "options": [
+              "Living Will",
+              "POLST (Physician Orders for Life-Sustaining Treatment)",
+              "Durable Power of Attorney for Health Care",
+              "Do Not Resuscitate (DNR) Order",
+              "Mental Health Advance Directive"
+            ],
+            "value": [
+              "POLST (Physician Orders for Life-Sustaining Treatment)",
+              "Durable Power of Attorney for Health Care"
+            ],
+            "comments": "Copies are with Dr. Clearly and with my daughter Maria."
+          },
+          {
+            "type": "paragraph",
+            "id": "d0e1f2a3b4c50003",
+            "text": "POLST. A POLST translates your wishes into medical orders that follow you across care settings. It must be signed by a physician."
+          },
+          {
+            "type": "scp-factory",
+            "id": "d0e1f2a3b4c50000",
+            "types": [
+              "scp-polst",
+              "scp-agent",
+              "scp-wishes"
+            ],
+            "position": "top"
+          },
+          {
+            "type": "scp-polst",
+            "id": "d0e1f2a3b4c50004",
+            "cpr_preference": "Do Not Attempt CPR (DNR)",
+            "medical_interventions": "Limited Interventions",
+            "signed_by": "Dr. Clearly",
+            "date_signed": "2005-03-15",
+            "document_location": "Bedside table drawer and Dr. Clearly's office.",
+            "notes": "No ventilator unless reversible condition.",
+            "committed": true,
+            "example": true
+          },
+          {
+            "type": "paragraph",
+            "id": "d0e1f2a3b4c50005",
+            "text": "Health Care Agent. This is the person you have chosen to make health care decisions on your behalf if you are unable to do so."
+          },
+          {
+            "type": "scp-agent",
+            "id": "d0e1f2a3b4c50006",
+            "name": "Maria Wardin",
+            "relationship": "Daughter",
+            "phone": "555-234-5678",
+            "phone_alt": "",
+            "authorized": "Full health care decisions",
+            "limitations": "",
+            "date_of_document": "2005-03-15",
+            "notes": "",
+            "committed": true,
+            "example": true
+          },
+          {
+            "type": "paragraph",
+            "id": "d0e1f2a3b4c50007",
+            "text": "My Wishes. Use this section to record what matters most to you \u2014 quality of life, where you want to be cared for, and anything else you want your care team to know."
+          },
+          {
+            "type": "scp-wishes",
+            "id": "d0e1f2a3b4c50008",
+            "where_i_want_to_be": "Home, if possible. Not a nursing facility.",
+            "what_matters_most": "Being able to recognize my family and communicate with them.",
+            "religious_spiritual": "I want a chaplain present. I pray daily and find it comforting.",
+            "other_wishes": "I do not want to be kept alive by machines if there is no hope of recovery.",
+            "committed": true,
+            "example": true
+          }
+        ]
       },
       "date": 1744574400000
     },
@@ -96,6 +186,21 @@
       "type": "edit",
       "id": "d0e1f2a3b4c50002",
       "date": 1780854000000
+    },
+    {
+      "type": "add",
+      "id": "d0e1f2a3b4c50000",
+      "item": {
+        "type": "scp-factory",
+        "id": "d0e1f2a3b4c50000",
+        "types": [
+          "scp-polst",
+          "scp-agent",
+          "scp-wishes"
+        ],
+        "position": "top"
+      },
+      "date": 1752883200000
     }
   ]
 }

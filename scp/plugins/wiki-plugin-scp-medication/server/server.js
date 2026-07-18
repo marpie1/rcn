@@ -10,7 +10,8 @@ var aliasTypes = [
   'scp-about', 'scp-provider', 'scp-diagnosis', 'scp-reaction',
   'scp-history', 'scp-next-step', 'scp-directive', 'scp-access',
   'scp-controls', 'scp-previsit', 'scp-log-entry', 'scp-care-member', 'scp-vital-chart',
-  'scp-factory', 'scp-lab'
+  'scp-factory', 'scp-lab',
+  'scp-goal', 'scp-polst', 'scp-agent', 'scp-wishes'
 ];
 
 module.exports = {

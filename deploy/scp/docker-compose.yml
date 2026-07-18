@@ -2,27 +2,21 @@ services:
 
   # FedWiki — hosts Shared Care Plan pages
   fedwiki:
-    build:
-      context: ../..
-      dockerfile: deploy/scp/Dockerfile.fedwiki
+    image: ghcr.io/marpie1/rcn-scp-wiki:latest
     volumes:
       - wiki-data:/root/.wiki
     restart: unless-stopped
 
   # Groove — collaborative care plan workspace
   groove:
-    build:
-      context: ../..
-      dockerfile: deploy/scp/Dockerfile.groove
+    image: ghcr.io/marpie1/rcn-scp-groove:latest
     volumes:
       - groove-data:/app/server/data
     restart: unless-stopped
 
   # sofi-proxy — serves browser tools and proxies API calls
   sofi-proxy:
-    build:
-      context: ../..
-      dockerfile: deploy/scp/Dockerfile.sofi-proxy
+    image: ghcr.io/marpie1/rcn-scp-proxy:latest
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - SODOTO_PROXY_SECRET=${SODOTO_PROXY_SECRET}
