@@ -290,6 +290,35 @@ BGTE test file: tools/bgte-12-triples.json — 4 nodes, 12 triple-edges,
 Double-tap a triple dot → openTripleLabelEditor() opens inplace editor for tripleLabel.
 commitIpe() handles type='triple'.
 
+── VESTER CUSTOM SYMBOLS (Jul 2026) ─────────────────────────────────
+
+Beyond the 15 built-in Vester symbols, users can add their own badges.
+customSymbols[] global holds {key, label, emoji}; keys are 'cs_'+Date.now().
+getSymbolDef(key) resolves both built-in and custom. Panel gains an add
+form (startAddVs / confirmAddVs / cancelAddVs) and removeCustomSymbol(key),
+which also strips the key from every node's symbols[]. customSymbols is
+persisted in buildState() and restored by loadGraphJSON(). Symbol-button
+labels are run through escH() to avoid breaking markup on quotes/brackets.
+
+── UNTANGLE — EDGE-CROSSING REDUCTION (Jul 2026) ────────────────────
+
+Layout button "Untangle" → minimizeCrossings(). Crossing minimization is
+NP-hard, so this is a local-search heuristic: it swaps the POSITIONS of two
+nodes and keeps the swap only if the crossing count drops. Because nodes only
+trade existing slots, spacing is preserved and no new overlaps appear — it
+tidies the current layout instead of recomputing one, so it works on cyclic
+graphs (CLDs) where Dagre struggles.
+
+cross(e1,e2) uses a proper CCW segment-intersection test and skips edge pairs
+that share an endpoint. Straight segments only — curved edges are approximated,
+which is fine for a heuristic. localCost(a,b) counts just the crossings that
+CAN change when a,b swap (pairs with >=1 edge incident to a or b), giving a
+valid delta without a full recount. Loop caps: 10 passes or a 2000ms budget.
+
+UNDO: calls snap() exactly once (after the guard checks, so a no-op run pushes
+nothing) and mutates only n.x/n.y. One Undo restores every position. Disabled
+in Wardley mode (positions encode evolution/visibility there), matching Dagre.
+
 ── DECISIONS LOG MAINTENANCE ────────────────────────────────────────
 
 This block lives at the top of the HTML file as an HTML comment (invisible to browser).
