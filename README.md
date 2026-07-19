@@ -39,11 +39,12 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
   tools/      standalone HTML tools (see below)
   maps/       rcn_map.html — NDC map; rcn-map-intro.html, rcn-map-manual.html — docs
   data/       PostGIS Python load scripts
-  docs/       tool documentation (nrm-tripod-beta.md, graph-tool-intro.html, graph-tool-manual.html)
+  docs/       tool documentation (nrm-tripod-beta.md, sensimod-manual.html, sodoto-manual.html)
+  deploy/     deployment artifacts — docker/ (SODOTO Docker package, handed to Wiki Café), scp/ (SCP+Groove Docker package, ready for hand-off), launchd plists, handoff-sodoto.md
   vester/     Vester chapter notes and SensiMod context
   archive/    old numbered drafts
   veramo/     SODOTO credential infrastructure (see SODOTO section below)
-  scp/        Shared Care Plan: plugins/ (13 wiki-plugin-scp-* repos), pages/ (17 canonical page templates)
+  scp/        Shared Care Plan: plugins/ (19 wiki-plugin-scp-* repos), pages/ (17 canonical page templates)
   scp-coupler/ standalone My Health Picture tool + experiment integration files (data/people.json = patient registry with wiki_site)
   scp-optionbox/ My Health Choices decision support (port 8770)
   coupler-proxy.py  My Health Picture AI proxy (port 8766) — per-patient wiki routing
@@ -59,14 +60,14 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 
 | File | Purpose | Status |
 |------|---------|--------|
-| `graph-tool-v22.html` | CLD/EIP/NRM/OPM/Trace/Wardley/Triples graph diagramming, MDL/.dot/XMILE/Cypher/Wardley JSON I/O, multi-trace edges, reifiable triples with meta-edges, canvas legend, node+edge layers, Print; SVG download injects `<title>` into each node/edge group so browsers show note + props on hover (no JS required); **→ Wiki** button sends enriched SVG ghost page to FedWiki lineup (node labels become clickable internal links) | **Active** |
+| `graph-tool-v22.html` | CLD/EIP/NRM/OPM/Trace/Wardley/Triples graph diagramming, MDL/.dot/XMILE/Cypher/Wardley JSON I/O, multi-trace edges, reifiable triples with meta-edges, canvas legend, node+edge layers, Force/Grid/Dagre/Untangle layouts (Untangle = swap-based edge-crossing reduction, cyclic-safe, one-Undo), Vester custom symbols, Print; SVG download injects `<title>` into each node/edge group so browsers show note + props on hover (no JS required); **→ Wiki** button sends enriched SVG ghost page to FedWiki lineup (node labels become clickable internal links — multi-line labels get correct space-separated titles) | **Active** |
 | `nrm-tripod-beta.html` | Standalone Tripod Beta / NRM incident analysis tool — full canvas, barriers, save/load | **Active** |
 | `evsm-aggregator.html` | eVSM 11-sphere visualizer, multi-respondent synthesis, Claude API streaming (direct browser→Anthropic, user's own key); Synthesize All (sequential Claude across all spheres/edges), Full Report (standalone HTML with diagram + syntheses), Export/restore session as JSON bundle | Active |
 | `evsm-svg-v3.html` | eVSM directed edge assessment (Agree/Disagree/Unknown); Snapshot button bakes config into a single distributable HTML file; Print My Report generates blob-based individual report | Active |
 | `evsm-report.html` | eVSM individual respondent report — one person's assessment data; opened via blob URL from Survey Tool or by drag-drop; for aggregate reports across all respondents use Aggregator's Full Report | Active |
 | `ibis-map-rcn.html` | IBIS argument mapping (post-hoc mode preferred) | Active |
-| `rcn_map.html` (in maps/) | Leaflet NDC map — 7 NDCs, 7 base layers, geographic context layers, issue overlay, shift+click legend, custom location pins, NDC location correction, user boundary layer builder (OSM search + Claude bridge); all user data in localStorage | Active |
-| `issue-polygon-map.html` | Polycentric governance / Issue Polygon viewer — data-driven via `?issue=` URL param; loads `issue-data/*.json`; parcel stances, layer toggles, draw polygon, GeoJSON export | Active |
+| `rcn_map.html` (in maps/) | Leaflet NDC map — 7 NDCs, 7 base layers, geographic context layers, issue overlay, shift+click legend, custom location pins, NDC location correction, user boundary layer builder (OSM search + Claude bridge); all user data in localStorage; **deep links**: `?highlight=NAME` zooms to any named polygon/NDC, `?openissue=KEY` loads an issue overlay, `?lat=&lng=&zoom=` flies to coordinates; every polygon popup has **🔗 Copy link**; floating **🔗 Copy view link** button captures current view | Active |
+| `issue-polygon-map.html` | Polycentric governance / Issue Polygon viewer — data-driven via `?issue=` URL param; loads `issue-data/*.json`; parcel stances, layer toggles, draw polygon, GeoJSON export; **deep links**: `?parcel=ID` flies to a parcel and opens its popup, `?lat=&lng=&zoom=` flies to a view; every parcel and issue polygon popup has **↗ Copy link**; toolbar **↗ Copy view link** button | Active |
 | `more-outliner.html` | Outliner with autosave, MD/HTML/FedWiki export, Hoist; **→ Wiki Ghost** button sends outline as ghost page to FedWiki lineup | Active |
 | `graphjson_to_vensim_cld.html` | Canonical MDL format reference — read before fixing MDL bugs | Reference |
 | `wardley-map-generator.html` | Wardley mapping tool | Active |
@@ -139,7 +140,8 @@ Porthmadog town boundary, Gwynedd county boundary
 - **7 base layers:** Topo (default), Light, OpenStreetMap Voyager, Satellite, CyclOSM, Transport, Dark
 - **5 data layer types:** admin_boundary (blue), ecological_zone (purple), ndc_zone (red), mineral_deposit (bronze), church (purple #7B5EA7 — radius 11, high-visibility)
 - **Legend:** named features grouped by NDC/state, click to highlight + zoom, Shift+click to multi-select; custom user layers appear with U or + badge
-- **Popups:** name, type, area in mi², data source; copper deposits show individual name + dev status; churches show denomination
+- **Popups:** name, type, area in mi², data source; copper deposits show individual name + dev status; churches show denomination; all polygon and marker popups include **🔗 Copy link** button
+- **Deep links:** `?highlight=NAME` zooms to any registered polygon/NDC by name; `?openissue=KEY` loads an issue overlay; `?lat=&lng=&zoom=` flies to coordinates. Floating **🔗 Copy view link** button (bottom-right) captures the current center + zoom as a shareable URL.
 - **Render order:** largest polygons drawn first so smaller ones (e.g. Porthmadog inside Gwynedd) stay clickable
 - **Areas:** displayed in mi²
 
@@ -335,7 +337,7 @@ The Berwick deck has its own script: `python3 docs/make_berwick_pptx.py`
 
 - **eVSM survey tool**: Port to Wiki Café.
 
-- **SCP + Groove**: Shared Care Plan as native FedWiki plugins + Groove workspace (port 3001). 12 typed item plugins built and working on localhost (June 2026). Pilot: Superior AZ NDC (Leo's). See `scp-groove-handoff.md` and the FedWiki SCP Plugins section below.
+- **SCP + Groove**: Shared Care Plan as native FedWiki plugins + Groove workspace (port 3001). 19 typed item plugins built and working on localhost. Pilot: Superior AZ NDC (Leo's), first tester Mary Martha (CHW). Docker hand-off package at `deploy/scp/` — four containers (fedwiki, groove, sofi-proxy, caddy), data volumes separate from software, sysops README included. See `scp-groove-handoff.md` and the FedWiki SCP Plugins section below.
 
 - **SCP + My Health Picture Integration Experiment (My PHS)**: Three-way integration between My Health Picture (port 8766), the Shared Care Plan FedWiki plugins, and **per-patient wiki sites** (`{slug}.localhost` — e.g. `rosa-delgado.localhost`, `alex-rivera.localhost`). Each patient in `scp-coupler/data/people.json` carries `wiki_slug`/`wiki_site`; coupler-proxy resolves the wiki host per-request via `get_wiki_host(person_id)` (fallback: `scp-experiment.localhost`). My Health Picture reads from and writes to the patient's SCP wiki. Coupler frames push as collapsible FedWiki pages. Narratives push to pre-visit-summary. New patient sites are provisioned via sofi-proxy's `/api/provision-patient`, which seeds all 17 canonical templates from `~/rcn/scp/pages/` (personalizing welcome-visitors and about-me) and registers the site in `~/.wiki/config.json` wikiDomains. See `scp-coupler/experiment-intro.html` and `scp-coupler/experiment-manual.html`.
 
@@ -351,7 +353,7 @@ The Berwick deck has its own script: `python3 docs/make_berwick_pptx.py`
 
 - **My Health Choices** (`scp-optionbox/`): Shared decision support tool served at port 8770. Presents treatment options as icon arrays of 1,000 dots (NNT/NNH visualization). Drug safety data pipeline: openFDA label + FAERS adverse event counts + MedlinePlus plain-language term definitions. Three fact boxes: AF anticoagulation, statin primary prevention, hypertension medication vs. lifestyle. When the coupler detects a keyword match between a problem and the library, a purple **My Health Choices ↗** button appears in the toolbar. Opening the My Health Choices from the coupler passes person/problem context; a **Document this choice** button on each option card writes a structured `shared-decision` record entry back to the coupler via `POST /api/record-entry`. Shared decisions surface at the top of the coupler's Plan section (purple card), are incorporated into Narrate output, and appear in the FedWiki wiki push. Clinical curators: see `scp-optionbox/authoring-guide.html` for the JSON schema and 8-step evidence pipeline.
 
-- **SODOTO Mac Mini deployment**: issuer tool and FedWiki running on shared Mac Mini. Each issuer accesses sodoto-issuer.html through their own browser; keys never leave the signer's machine. Next steps: launchd plists for auto-start, network config, private key storage (out of plain JSON), people registry portability (localStorage → SEED_PEOPLE or server-side file), PROXY constant in sodoto-issuer.html updated from localhost to Mac Mini hostname.
+- **SODOTO → Wiki Café deployment**: Docker Compose packaging complete (`deploy/docker/`). Three containers: sofi-proxy (Python/8765), fedwiki (Node/3000), caddy (HTTPS). Shared `wiki-data` volume. Handoff doc at `deploy/handoff-sodoto.md`. Coordination step before first build: Wiki Café generates `SODOTO_PROXY_SECRET`, shares with Marc; Marc bakes it + their domain into `sodoto-issuer.html` three-line config block, then they build. Keys never on server — each issuer enters 64-char hex seed in their own browser.
 
 ---
 
@@ -370,11 +372,12 @@ Each plugin repo is symlinked directly into the wiki's node_modules. Edits to th
 ln -sf ~/rcn/wiki-plugin-{name} /usr/local/lib/node_modules/wiki/node_modules/wiki-plugin-{name}
 ```
 
-Current symlinks (both point to same repo dir `~/rcn/wiki-plugin-rcn-graph`):
+Current symlinks:
 ```
-wiki-plugin-rcngraph  → ~/rcn/wiki-plugin-rcn-graph
-wiki-plugin-rcn-graph → ~/rcn/wiki-plugin-rcn-graph   (backward compat for old items)
-wiki-plugin-rcn-outliner → ~/rcn/wiki-plugin-rcn-outliner
+wiki-plugin-rcngraph     → ~/rcn/wiki-plugin-rcn-graph      (graph tool)
+wiki-plugin-rcn-graph    → ~/rcn/wiki-plugin-rcn-graph      (backward compat for old items)
+wiki-plugin-rcnoutliner  → ~/rcn/wiki-plugin-rcn-outliner   (outliner)
+wiki-plugin-rcn-outliner → ~/rcn/wiki-plugin-rcn-outliner   (backward compat for old items)
 ```
 
 ### WikiCafe farm deployment (npm)
@@ -406,10 +409,10 @@ wiki-plugin-{name}/
 
 ### Published plugins
 
-| npm package | Item type | Tool opened | GitHub | Notes |
-|------------|-----------|------------|--------|-------|
-| `wiki-plugin-rcngraph` | `rcngraph` | `graph-tool-v22.html` (popup) | [marpie1/wiki-plugin-rcngraph](https://github.com/marpie1/wiki-plugin-rcngraph) | Also handles legacy `rcn-graph` items via `client/rcn-graph.js` shim |
-| `wiki-plugin-rcnoutliner` | `rcnoutliner` | `more-outliner.html` (popup) | [marpie1/wiki-plugin-rcnoutliner](https://github.com/marpie1/wiki-plugin-rcnoutliner) | localhost only for now |
+| npm package | Version | Item type | Tool opened | GitHub | Notes |
+|------------|---------|-----------|------------|--------|-------|
+| `wiki-plugin-rcngraph` | 0.1.8 | `rcngraph` | `graph-tool-v22.html` (popup) | [marpie1/wiki-plugin-rcngraph](https://github.com/marpie1/wiki-plugin-rcngraph) | Also handles legacy `rcn-graph` items via `client/rcn-graph.js` shim. Tool URL: `marc.relocalizecreativity.net/assets/Drag/graph-tool-v22.html` — deploy updated HTML there to push fixes to remote wikis. |
+| `wiki-plugin-rcnoutliner` | 0.2.0 | `rcnoutliner` | `more-outliner.html` (popup) | [marpie1/wiki-plugin-rcnoutliner](https://github.com/marpie1/wiki-plugin-rcnoutliner) | Also handles legacy `rcn-outliner` items. Inline outliner works on any wiki via native `wiki.pageHandler.put` — no proxy required. MORE popup: localhost uses `localhost:8765/tools/more-outliner.html`; remote uses `marc.relocalizecreativity.net/assets/Drag/more-outliner.html` — deploy `more-outliner.html` there to enable MORE popup on remote wikis. |
 
 ### Solo popup pattern (graph tool, outliner)
 
@@ -421,7 +424,7 @@ wiki-plugin-{name}/
 
 ### SCP plugins (Shared Care Plan health record)
 
-Plugin repos live at `~/rcn/scp/plugins/wiki-plugin-scp-*/`. 13 typed item plugins for the Shared Care Plan. All route through one JS file (`wiki-plugin-scp-medication/client/scp-medication.js`) via `server/server.js` alias routes.
+Plugin repos live at `~/rcn/scp/plugins/wiki-plugin-scp-*/`. 19 typed item plugins for the Shared Care Plan. All route through one JS file (`wiki-plugin-scp-medication/client/scp-medication.js`) via `server/server.js` alias routes.
 
 **Design principles:**
 - Uses FedWiki's native factory system — items created via the factory menu, not pre-loaded JSON
@@ -430,7 +433,8 @@ Plugin repos live at `~/rcn/scp/plugins/wiki-plugin-scp-*/`. 13 typed item plugi
 - `item.text` populated on every save so FedWiki's built-in search indexes all SCP content
 - Log-style items (vitals, symptoms, visits, history, access) use a commit button → one journal entry per completed card, reverse chronological ordering via `move` action
 - Record-style items (medications, diagnoses, providers, etc.) save on focusout or commit
-- **Example/dismiss pattern:** template items carry `"example": true` — rendered with an amber banner ("Example — this is not your data") and a ✕ Dismiss button that removes the item via a journal `remove` action. Example items are excluded from reports and data analysis. Wired into **all 13 plugin types** (July 2026).
+- **Example/dismiss pattern:** template items carry `"example": true` — rendered with an amber banner ("Example — this is not your data") and a ✕ Dismiss button that removes the item via a journal `remove` action. Example items are excluded from reports and data analysis. Wired into all 19 plugin types.
+- **Journal baseline:** all canonical page templates carry a `create` journal entry with the full story as baseline, enabling FedWiki's revert function to restore to the original seeded state.
 
 | Plugin type | SCP page | Notes |
 |---|---|---|
@@ -447,10 +451,18 @@ Plugin repos live at `~/rcn/scp/plugins/wiki-plugin-scp-*/`. 13 typed item plugi
 | `scp-next-step` | Next Steps | Commit + fold |
 | `scp-directive` | Health Directives | Commit + fold |
 | `scp-access` | Who's Accessed My Plan | Commit + fold + reverse chron |
+| `scp-care-member` | My Care Team | Commit + fold; roles: Family, Friend, Primary Care, Other |
+| `scp-goal` | Next Steps | Commit + fold; status: Active / Achieved / Paused / Dropped |
+| `scp-next-step` | Next Steps | Commit + fold; status: Planned / In Progress / Done |
+| `scp-polst` | Health Directives | Commit + fold; CPR preference + medical interventions |
+| `scp-agent` | Health Directives | Commit + fold; healthcare agent name, relationship, authorization |
+| `scp-wishes` | Health Directives | Commit + fold; where to be cared for, what matters most |
+| `scp-factory` | All pages | Persistent "Add entry" widget; `types` array scopes choices to that page |
+| `scp-field` | Various | Fixed questionnaire fields (multiselect, snapshot-card); not a list type |
 
 **Canonical page templates:** `~/rcn/scp/pages/*.json` — 17 pages with example items, the master set for provisioning new patient sites. The `/api/provision-patient` endpoint in sofi-proxy seeds all 17 templates into a new patient site (personalizing `welcome-visitors` and `about-me`) and reports the `seeded` list in its response. Live patient data lives at `~/.wiki/{site}.localhost/pages/`; changes to canonical templates do **not** auto-deploy to existing sites.
 
-**Remaining before pilot:** backend-driven access log, federation, Wiki Café deployment.
+**Remaining before pilot:** backend-driven access log, federation. Docker hand-off package ready at `deploy/scp/` — sysops extracts archive, fills in `.env`, runs one command.
 
 ---
 

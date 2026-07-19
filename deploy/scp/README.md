@@ -71,10 +71,10 @@ Save the file. Keep the `SODOTO_PROXY_SECRET` value — you'll need to send it t
 ## Step 4 — Start the server
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
-This builds the container images and starts all four services. The first build takes several minutes (downloading software). Subsequent starts are fast.
+This pulls the pre-built container images from GitHub Container Registry and starts all four services. The first pull takes a minute or two (downloading images). Subsequent starts are fast.
 
 Watch the logs to confirm everything started cleanly:
 
@@ -100,21 +100,13 @@ All four containers should show status `running`. Then open your wiki domain in 
 
 ## Updating software
 
-When Marc Pierson sends a new archive:
+When Marc Pierson notifies you of an update:
 
 ```bash
-# Stop the server
-docker compose down
-
-# Extract the new archive over the old one
-tar -xzf rcn-new.tar.gz
-
-# Rebuild and restart
-cd rcn/deploy/scp
-docker compose up -d --build
+docker compose pull && docker compose up -d
 ```
 
-Patient data in Docker volumes is **not affected** by updates. Only the software is replaced.
+This pulls the latest pre-built images and restarts the containers. Patient data in Docker volumes is **not affected** by updates. Only the software is replaced.
 
 ---
 
