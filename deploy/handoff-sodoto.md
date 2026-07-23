@@ -31,17 +31,16 @@ Save the output. This is `SODOTO_PROXY_SECRET`. You will need to share it with M
 
 ---
 
-## Step 2 — Marc: update the issuer tool
+## Step 2 — no longer needed
 
-Edit the three lines at the top of `tools/sodoto-issuer.html`:
+The issuer tool used to have the domain and secret hardcoded at the top of
+`tools/sodoto-issuer.html`. It no longer does, and the secret must never be put
+there — anything in that file is served to every visitor.
 
-```js
-const PROXY        = 'https://sodoto.YOUR-CAFE-DOMAIN.net'   // ← Wiki Café's sodoto domain
-const WIKI_SITE    = 'localhost'                               // ← leave as-is
-const PROXY_SECRET = 'SECRET-FROM-STEP-1'                     // ← the secret Wiki Café generated
-```
-
-Commit and push. Wiki Café should pull this before building.
+The tool now reads `PROXY` and `WIKI_SITE` at runtime from the proxy's `/config`
+endpoint, and prompts the operator for the passphrase, which is kept in that
+browser's local storage. Both come from the server's `.env`, so there is nothing
+for Marc to edit between Step 1 and Step 3.
 
 ---
 

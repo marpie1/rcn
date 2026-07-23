@@ -1,7 +1,16 @@
 FROM node:lts-slim
 
-# Install FedWiki and the SODOTO badge plugin globally
-RUN npm install -g wiki wiki-plugin-sodoto-badge
+# Pinned to match the SCP wiki image and the version the badge plugin was
+# developed against. wiki 0.27.0 discovers plugins by scanning node_modules for
+# wiki-plugin-* directories; wiki 0.40.x changed that to reading wiki's own
+# package.json dependencies, which silently ignores plugins installed this way.
+RUN npm install -g wiki@0.27.0
+
+# The sodoto-badge plugin is not published to npm — it is vendored in this repo
+# and copied into wiki's node_modules, the same way the SCP plugins are.
+# Build context is the rcn repo root.
+COPY sodoto/plugins/wiki-plugin-sodoto-badge/ \
+     /usr/local/lib/node_modules/wiki/node_modules/wiki-plugin-sodoto-badge/
 
 EXPOSE 3000
 

@@ -20,6 +20,7 @@ services:
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - SODOTO_PROXY_SECRET=${SODOTO_PROXY_SECRET}
+      - PROXY_URL=https://${PROXY_DOMAIN}
     volumes:
       - wiki-data:/root/.wiki
       - sodoto-data:/root/.sodoto
@@ -28,6 +29,11 @@ services:
   # Caddy — reverse proxy with automatic TLS via Let's Encrypt
   caddy:
     image: caddy:latest
+    environment:                              # Caddyfile reads these as {env.*}
+      - ACME_EMAIL=${ACME_EMAIL}
+      - WIKI_DOMAIN=${WIKI_DOMAIN}
+      - GROOVE_DOMAIN=${GROOVE_DOMAIN}
+      - PROXY_DOMAIN=${PROXY_DOMAIN}
     ports:
       - "80:80"
       - "443:443"

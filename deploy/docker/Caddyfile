@@ -1,12 +1,15 @@
-# SODOTO reverse proxy — Caddy 2
-# Uses Docker service names instead of localhost.
-# Replace the two domain names with your actual domains.
+# RCN SODOTO — Caddy reverse proxy
+# Domain names are read from the .env file, so this file needs no hand-editing.
 # Caddy handles TLS automatically via Let's Encrypt.
 
-sodoto.example.com {
+{
+    email {env.ACME_EMAIL}
+}
+
+{env.SODOTO_DOMAIN} {
     reverse_proxy sofi-proxy:8765
 }
 
-wiki.example.com {
+{env.WIKI_DOMAIN} {
     reverse_proxy fedwiki:3000
 }

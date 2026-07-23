@@ -1,8 +1,14 @@
 FROM node:lts-slim
 
-# Install FedWiki globally.
-# Build context is the rcn repo root so SCP plugins can be copied in.
-RUN npm install -g wiki
+# Pinned deliberately. wiki 0.27.0 (wiki-server 0.20.1) is the version the SCP
+# plugins were developed and tested against, and it discovers plugins by
+# scanning node_modules for wiki-plugin-* directories.
+#
+# Do not float this to latest. wiki-server 0.27.0 (in wiki 0.40.x) changed
+# discovery to read wiki's own package.json dependencies instead, which silently
+# ignores every plugin here — they stay on disk and are never served, with no
+# error at boot. Upgrading means reworking how the plugins are installed.
+RUN npm install -g wiki@0.27.0
 
 # Install all 19 SCP plugins into wiki's node_modules directory.
 COPY scp/plugins/ /tmp/scp-plugins/
