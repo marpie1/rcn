@@ -305,6 +305,21 @@ FedWiki with no SCP components. See its README.
   Basic auth is scoped per origin, so a browser asks once per address
   (`localhost:8766`, `localhost:8770`, `<person>.localhost:3000`) and remembers
   for the session.
+- **Encrypted backups** — `./backup.sh` writes one encrypted file per run
+  (AES-256, PBKDF2 600k rounds); `./restore.sh --verify <file>` opens it and
+  reports what is inside without touching the live record; `./restore.sh
+  <file>` replaces the record, saving the current one first. Because the file
+  is unreadable without the passphrase, `BACKUP_DIR` can point at a Dropbox or
+  iCloud folder — that is the point. Retention keeps `BACKUP_KEEP` (default 8),
+  because overwriting the only good copy with a corrupted one is a real way to
+  lose everything. Losing a backup passphrase costs the backup, not the record.
+- **Encryption at rest beyond FileVault is not available on Docker Desktop.**
+  An encrypted disk image under the data volumes was built and abandoned: the
+  Mac's folder sharing into Docker's Linux VM is established when Docker starts,
+  and a filesystem mounted afterwards never propagates (`Operation not
+  permitted` from inside the VM). It works once, then fails after every
+  lock/unlock. On a Linux host — WikiCafe — the same pattern works normally.
+  Rely on FileVault plus the gate plus encrypted backups instead.
 - Every port is bound `127.0.0.1`. `coupler-proxy.py` binds `0.0.0.0` *inside*
   the container by design — the publish spec is the boundary, not the bind
   address. Do not "fix" it.
