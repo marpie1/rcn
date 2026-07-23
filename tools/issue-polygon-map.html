@@ -872,6 +872,27 @@ function startAddParcel() {
 
 let drawingPolygon = false, drawnPoints = [], drawnPolyline = null, drawnPolygonLayer = null;
 let drawnVertexMarkers = [];
+let drawnPolygonName = 'Custom Issue Polygon';
+
+// Popup HTML for the drawn polygon, including its current name + a rename control.
+function drawnPolygonPopup(subtitle) {
+  const name = drawnPolygonName || 'Custom Issue Polygon';
+  const esc = name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return '<div class="popup-title">' + esc + '</div>' +
+    '<div style="font-size:11px;color:#6b7394;margin-bottom:8px">' + subtitle + '</div>' +
+    '<button onclick="renamePolygon()" style="width:100%;padding:4px;margin-bottom:5px;background:rgba(40,120,180,0.08);border:1px solid #2c6fa3;color:#2c6fa3;font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">✎ Rename</button>' +
+    '<button onclick="deletePolygon(\'drawn\')" style="width:100%;padding:4px;background:rgba(180,40,40,0.08);border:1px solid #c0392b;color:#c0392b;font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">✕ Delete polygon</button>';
+}
+
+function renamePolygon() {
+  if (!drawnPolygonLayer) return;
+  const next = prompt('Name this polygon:', drawnPolygonName);
+  if (next === null) return;
+  drawnPolygonName = next.trim() || 'Custom Issue Polygon';
+  drawnPolygonLayer.setPopupContent(drawnPolygonPopup('Custom-drawn boundary. Export GeoJSON to save.'));
+  map.closePopup();
+  drawnPolygonLayer.openPopup();
+}
 
 function clearVertexDots() {
   drawnVertexMarkers.forEach(d => map.removeLayer(d));
@@ -894,10 +915,13 @@ function startDrawPolygon() {
     clearVertexDots();
     if (drawnPoints.length >= 3) {
       if (drawnPolygonLayer) map.removeLayer(drawnPolygonLayer);
+      const named = prompt('Name this polygon:', 'Custom Issue Polygon');
+      drawnPolygonName = (named && named.trim()) || 'Custom Issue Polygon';
       drawnPolygonLayer = L.polygon(drawnPoints, {
         color: '#e8c84a', weight: 2, dashArray: '8 4', fillColor: '#e8c84a', fillOpacity: 0.1
-      }).addTo(map).bindPopup('<div class="popup-title">Custom Issue Polygon</div><div style="font-size:11px;color:#6b7394;margin-bottom:8px">Custom-drawn boundary. Export GeoJSON to save.</div><button onclick="deletePolygon(\'drawn\')" style="width:100%;padding:4px;background:rgba(180,40,40,0.08);border:1px solid #c0392b;color:#c0392b;font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">✕ Delete polygon</button>');
+      }).addTo(map).bindPopup(drawnPolygonPopup('Custom-drawn boundary. Export GeoJSON to save.'));
       addClickThrough(drawnPolygonLayer);
+      drawnPolygonLayer.openPopup();
     }
     if (drawnPolyline) { map.removeLayer(drawnPolyline); drawnPolyline = null; }
     drawnPoints = [];
@@ -950,7 +974,7 @@ function exportData() {
     const lls = drawnPolygonLayer.getLatLngs()[0];
     features.push({ type: 'Feature',
       geometry: { type: 'Polygon', coordinates: [lls.map(ll => [ll.lng, ll.lat])] },
-      properties: { type: 'CustomIssuePolygon', drawn: new Date().toISOString() }
+      properties: { type: 'CustomIssuePolygon', label: drawnPolygonName, drawn: new Date().toISOString() }
     });
   }
   const blob = new Blob([JSON.stringify({ type: 'FeatureCollection', features }, null, 2)], { type: 'application/json' });
@@ -1039,13 +1063,10 @@ function loadFromGeoJSON(geojson) {
     } else if (props.type === 'CustomIssuePolygon' && f.geometry && f.geometry.type === 'Polygon') {
       if (drawnPolygonLayer) { map.removeLayer(drawnPolygonLayer); drawnPolygonLayer = null; }
       const coords = f.geometry.coordinates[0].map(c => [c[1], c[0]]); // GeoJSON [lng,lat] → Leaflet [lat,lng]
+      drawnPolygonName = (props.label && String(props.label).trim()) || 'Custom Issue Polygon';
       drawnPolygonLayer = L.polygon(coords, {
         color: '#e8c84a', weight: 2, dashArray: '8 4', fillColor: '#e8c84a', fillOpacity: 0.1
-      }).addTo(map).bindPopup(
-        '<div class="popup-title">Custom Issue Polygon</div>' +
-        '<div style="font-size:11px;color:#6b7394;margin-bottom:8px">Restored from export. Export GeoJSON to save again.</div>' +
-        '<button onclick="deletePolygon(\'drawn\')" style="width:100%;padding:4px;background:rgba(180,40,40,0.08);border:1px solid #c0392b;color:#c0392b;font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">✕ Delete polygon</button>'
-      );
+      }).addTo(map).bindPopup(drawnPolygonPopup('Restored from export. Export GeoJSON to save again.'));
       addClickThrough(drawnPolygonLayer);
       hadPolygon = true;
     }
