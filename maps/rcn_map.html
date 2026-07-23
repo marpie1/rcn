@@ -592,6 +592,7 @@ function clearLayers() {
   // Re-register user polygons and locations into layersById so highlight works after view change
   reregisterUserPolyLayers();
   reregisterUserLocLayers();
+  reregisterFederatedLayers();
 }
 
 function registerLayer(id, type, layer) {
@@ -766,6 +767,8 @@ function buildLegend(ndcMeta, featuresByState, depositCounts, churchCounts = {},
     });
   }
 
+  html += buildFederatedLegendHTML();
+
   document.getElementById(targetId).innerHTML = html;
 }
 
@@ -866,6 +869,7 @@ async function showOverview() {
   buildLegend(ndcsData.features.map(f => f.properties), featuresByState, depositCounts, churchCounts);
   renderUserPolygons();
   renderUserLocations();
+  renderFederatedRegions();
 
   const ndcLatLngs = ndcsData.features.map(f => {
     const c = corrections[f.properties.name];
@@ -1865,6 +1869,132 @@ function removeUserPolygon(idx) {
 }
 
 // Rebuild just the legend without reloading the whole view
+// ════════════════════════════════════════════════════════════════════════
+// ── FEDERATED REGIONS ────────────────────────────────────────────────
+// Pull regional bundles that stewards publish to their own FedWiki (or any
+// host) via a small manifest, and merge them as READ-ONLY overlay layers,
+// namespaced by region. Degrades gracefully — an unreachable region is
+// skipped, never breaking the map. See maps/rcn-region-federation-spec.md.
+// ════════════════════════════════════════════════════════════════════════
+
+// Manifest URL: default 'regions.json' beside the map; override with ?regions=URL
+const REGIONS_URL = new URLSearchParams(location.search).get('regions') || 'regions.json';
+let   federatedRegions      = [];   // [{ region, steward, url, bundle }]
+const federatedGroup        = L.layerGroup().addTo(map);  // persistent, like userPolyGroup
+const federatedLeafletLayers = {};  // namespaced id → Leaflet layer
+const federatedLayerTypes    = {};  // namespaced id → type (for highlight color)
+
+async function loadRegions() {
+  let manifest;
+  try {
+    const res = await fetch(REGIONS_URL);
+    if (!res.ok) return;                 // no manifest → simply no federated regions
+    manifest = await res.json();
+  } catch (e) {
+    console.warn('Regions manifest not available — no federated regions.', e);
+    return;
+  }
+  if (!Array.isArray(manifest)) return;
+  for (const entry of manifest) {
+    if (!entry || !entry.url) continue;
+    try {
+      const r = await fetch(entry.url);
+      if (!r.ok) { console.warn('Federated region skipped (fetch failed):', entry.region, r.status); continue; }
+      const bundle = await r.json();
+      federatedRegions.push({ region: entry.region || '?', steward: entry.steward || '', url: entry.url, bundle });
+    } catch (e) {
+      console.warn('Federated region skipped (error):', entry.region, e);
+    }
+  }
+  if (federatedRegions.length) {
+    renderFederatedRegions();
+    rebuildLegendInPlace();
+  }
+}
+
+function fedAttrib(fr) {
+  return `<br><small>Region ${fr.region}${fr.steward ? ' · ' + fr.steward : ''} · read-only</small>`;
+}
+
+// Clear + rebuild federatedGroup from federatedRegions; register namespaced layers.
+function renderFederatedRegions() {
+  federatedGroup.clearLayers();
+  Object.keys(federatedLeafletLayers).forEach(k => delete federatedLeafletLayers[k]);
+  Object.keys(federatedLayerTypes).forEach(k => delete federatedLayerTypes[k]);
+
+  federatedRegions.forEach(fr => {
+    const b = fr.bundle || {};
+    (b.polygons || []).forEach((p, i) => {
+      if (!p || !p.geojson) return;
+      const type  = p.type || 'admin_boundary';
+      const color = colors[type] || '#888';
+      const id    = `fed:${fr.region}:poly:${i}`;
+      const layer = L.geoJSON(p.geojson, {
+        style: { color, fillColor: color, weight: 2, opacity: 1, fillOpacity: 0.12 },
+        onEachFeature: (feat, lyr) => {
+          lyr.bindPopup(`<b>${p.name || 'Boundary'}</b><br>${type.replace(/_/g,' ')}` +
+            `<br><button class="popup-btn" onclick="copyLink(layerLink('${id}'))">🔗 Copy link</button>` +
+            fedAttrib(fr));
+        }
+      }).addTo(federatedGroup);
+      federatedLeafletLayers[id] = layer;
+      federatedLayerTypes[id]    = type;
+      registerLayer(id, type, layer);
+    });
+    (b.locations || []).forEach((loc, i) => {
+      if (!loc || loc.lat == null) return;
+      const id = `fed:${fr.region}:loc:${i}`;
+      const marker = L.circleMarker([loc.lat, loc.lng], {
+        radius: 8, fillColor: '#0ea5e9', color: 'white', weight: 2, fillOpacity: 1
+      }).bindPopup(`<b>${loc.name || 'Location'}</b>` +
+        `<br><button class="popup-btn" onclick="copyLink(layerLink('${id}'))">🔗 Copy link</button>` +
+        fedAttrib(fr)).addTo(federatedGroup);
+      federatedLeafletLayers[id] = marker;
+      federatedLayerTypes[id]    = 'custom_location';
+      registerLayer(id, 'custom_location', marker);
+    });
+    (b.ndcs || []).forEach(n => {
+      if (!n || n.lat == null) return;
+      const id = `fed:${fr.region}:ndc:${n.name}`;
+      const marker = L.circleMarker([n.lat, n.lng], {
+        radius: 8, fillColor: '#E8593C', color: 'white', weight: 2, fillOpacity: 1
+      }).bindPopup(`<b>${n.name || 'NDC'}</b>${n.location ? '<br>' + n.location : ''}` +
+        `<br><button class="popup-btn" onclick="copyLink(layerLink('${id}'))">🔗 Copy link</button>` +
+        fedAttrib(fr)).addTo(federatedGroup);
+      federatedLeafletLayers[id] = marker;
+      federatedLayerTypes[id]    = 'ndc_zone';
+      registerLayer(id, 'ndc_zone', marker);
+    });
+  });
+}
+
+// Re-register federated layers into layersById after a clearLayers() (like user layers).
+function reregisterFederatedLayers() {
+  Object.entries(federatedLeafletLayers).forEach(([id, layer]) => {
+    registerLayer(id, federatedLayerTypes[id] || 'admin_boundary', layer);
+  });
+}
+
+// Legend section for federated regions — appended by buildLegend().
+function fedLegendItem(id, color, circle, label) {
+  const esc = String(id).replace(/'/g,"\\'");
+  return `<div class="legend-item" data-id="${id}" onclick="highlightById('${esc}',event)">` +
+    `<div class="legend-swatch${circle ? ' circle' : ''}" style="background:${color}"></div>${label}</div>`;
+}
+function buildFederatedLegendHTML() {
+  if (!federatedRegions.length) return '';
+  let html = `<div class="legend-group-header">Federated regions (read-only)</div>`;
+  federatedRegions.forEach(fr => {
+    html += `<div class="legend-group-header" style="font-size:11px;color:#64748b">` +
+      `${fr.region}${fr.steward ? ' — ' + fr.steward : ''}</div>`;
+    const b = fr.bundle || {};
+    (b.ndcs || []).forEach(n => html += fedLegendItem(`fed:${fr.region}:ndc:${n.name}`, '#E8593C', true, n.name));
+    (b.polygons || []).forEach((p, i) => html += fedLegendItem(`fed:${fr.region}:poly:${i}`, colors[p.type] || '#888', false, p.name || 'Boundary'));
+    (b.locations || []).forEach((loc, i) => html += fedLegendItem(`fed:${fr.region}:loc:${i}`, '#0ea5e9', true, loc.name || 'Location'));
+  });
+  return html;
+}
+
 function rebuildLegendInPlace() {
   const ndcsData = RCN_NDCS;
   if (expandedNDCKey) {
@@ -2200,6 +2330,7 @@ document.getElementById('add-loc-name-input').addEventListener('keydown', functi
   await loadIssueIndex();
   buildNDCList();
   showOverview();
+  loadRegions();   // fetch + merge federated regional bundles (non-blocking, graceful)
 
   // ── Deep-link handling ───────────────────────────────────────────
   const dlp       = new URLSearchParams(location.search);
