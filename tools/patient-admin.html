@@ -107,6 +107,70 @@ input.derived { color: var(--muted); background: #f9fafb; }
 var PROXY = window.location.origin;
 var slugEdited = false;
 
+// ─── Operator passphrase ─────────────────────────────────────────────────────
+// This is an admin tool; the proxy requires the passphrase for these endpoints.
+// It is held on this machine only — the proxy never serves it.
+var LS_SECRET = 'sodoto-proxy-secret';
+var PROXY_SECRET = localStorage.getItem(LS_SECRET) || '';
+
+function authHeaders(extra) {
+  var h = extra || {};
+  if (PROXY_SECRET) h['Authorization'] = 'Bearer ' + PROXY_SECRET;
+  return h;
+}
+
+function askForSecret(message) {
+  return new Promise(function (resolve) {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;' +
+                         'align-items:center;justify-content:center;z-index:9999';
+    wrap.innerHTML =
+      '<form style="background:#fff;padding:24px;border-radius:8px;max-width:420px;width:90%;' +
+      'box-shadow:0 4px 24px rgba(0,0,0,.3)">' +
+      '<h3 style="margin:0 0 8px">Patient admin</h3>' +
+      '<p style="margin:0 0 12px;font-size:14px">' + message + '</p>' +
+      '<input type="password" autocomplete="off" placeholder="Proxy passphrase" ' +
+      'style="width:100%;padding:8px;box-sizing:border-box">' +
+      '<label style="display:block;margin:10px 0;font-size:13px">' +
+      '<input type="checkbox" checked> Remember on this computer</label>' +
+      '<button type="submit" style="padding:8px 16px">Continue</button></form>';
+    var input = wrap.querySelector('input[type=password]');
+    var save  = wrap.querySelector('input[type=checkbox]');
+    wrap.querySelector('form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var value = input.value.trim();
+      if (!value) return input.focus();
+      if (save.checked) localStorage.setItem(LS_SECRET, value);
+      else              localStorage.removeItem(LS_SECRET);
+      wrap.remove();
+      resolve(value);
+    });
+    document.body.appendChild(wrap);
+    input.focus();
+  });
+}
+
+// Send a request, asking for the passphrase if the proxy rejects it.
+async function authFetch(url, options) {
+  options = options || {};
+  if (!PROXY_SECRET) {
+    PROXY_SECRET = await askForSecret('Enter the proxy passphrase to manage patient records.');
+  }
+  var send = function () {
+    var o = { method: options.method, body: options.body };
+    o.headers = authHeaders(Object.assign({}, options.headers));
+    return fetch(url, o);
+  };
+  var resp = await send();
+  if (resp.status === 401) {
+    localStorage.removeItem(LS_SECRET);
+    PROXY_SECRET = await askForSecret('That passphrase was rejected. Try again.');
+    resp = await send();
+  }
+  return resp;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function deriveSlug() {
   if (slugEdited) return;
   var name = document.getElementById('f-name').value;
@@ -136,7 +200,7 @@ async function provision() {
   btn.textContent = 'Creating…';
 
   try {
-    var resp = await fetch(PROXY + '/api/provision-patient', {
+    var resp = await authFetch(PROXY + '/api/provision-patient', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: name, slug: slug })
@@ -181,7 +245,7 @@ async function loadPatients() {
   var err  = document.getElementById('list-error');
   err.textContent = '';
   try {
-    var resp = await fetch(PROXY + '/api/list-patients');
+    var resp = await authFetch(PROXY + '/api/list-patients');
     var data = await resp.json();
     if (data.error) throw new Error(data.error);
     var patients = data.patients || [];

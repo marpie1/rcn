@@ -263,14 +263,68 @@
 <!-- ═══════════════════════════════════════════════════════════ SCRIPT -->
 <script>
 // ─── Deployment config — loaded at runtime from /config endpoint ─────────────
+// /config is unauthenticated, so it carries only non-secret values. The
+// passphrase is supplied by the operator and kept in localStorage on this
+// machine; it is never served by the proxy.
 let PROXY        = window.location.origin   // fallback until /config responds
 let WIKI_SITE    = 'localhost'
 let PROXY_SECRET = ''
-fetch('/config').then(r => r.json()).then(cfg => {
-  if (cfg.proxyUrl)    PROXY        = cfg.proxyUrl;
-  if (cfg.wikiSite)    WIKI_SITE    = cfg.wikiSite;
-  if (cfg.proxySecret) PROXY_SECRET = cfg.proxySecret;
-}).catch(() => { /* use fallback values above */ });
+
+async function loadConfig() {
+  let authRequired = true
+  try {
+    const cfg = await (await fetch('/config')).json()
+    if (cfg.proxyUrl) PROXY     = cfg.proxyUrl
+    if (cfg.wikiSite) WIKI_SITE = cfg.wikiSite
+    authRequired = cfg.authRequired !== false
+  } catch { /* keep fallback values above */ }
+
+  if (!authRequired) { PROXY_SECRET = ''; return }
+  PROXY_SECRET = localStorage.getItem(LS_SECRET) || ''
+  if (!PROXY_SECRET) PROXY_SECRET = await askForSecret()
+}
+
+// Ask the operator for the passphrase. Uses an inline overlay rather than
+// window.prompt so a dismissed dialog can't wedge the page.
+function askForSecret(message = 'This server requires a passphrase.') {
+  return new Promise(resolve => {
+    const wrap = document.createElement('div')
+    wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;' +
+                         'align-items:center;justify-content:center;z-index:9999'
+    wrap.innerHTML = `
+      <form style="background:#fff;padding:24px;border-radius:8px;max-width:420px;width:90%;
+                   box-shadow:0 4px 24px rgba(0,0,0,.3)">
+        <h3 style="margin:0 0 8px">SODOTO issuer</h3>
+        <p style="margin:0 0 12px;font-size:14px">${message}</p>
+        <input type="password" autocomplete="off" style="width:100%;padding:8px;box-sizing:border-box"
+               placeholder="Proxy passphrase">
+        <label style="display:block;margin:10px 0;font-size:13px">
+          <input type="checkbox" checked> Remember on this computer
+        </label>
+        <button type="submit" style="padding:8px 16px">Continue</button>
+      </form>`
+    const form  = wrap.querySelector('form')
+    const input = wrap.querySelector('input[type=password]')
+    const save  = wrap.querySelector('input[type=checkbox]')
+    form.addEventListener('submit', e => {
+      e.preventDefault()
+      const value = input.value.trim()
+      if (!value) return input.focus()
+      if (save.checked) localStorage.setItem(LS_SECRET, value)
+      else              localStorage.removeItem(LS_SECRET)
+      wrap.remove()
+      resolve(value)
+    })
+    document.body.appendChild(wrap)
+    input.focus()
+  })
+}
+
+// Called when the proxy rejects the stored passphrase.
+async function reauth() {
+  localStorage.removeItem(LS_SECRET)
+  PROXY_SECRET = await askForSecret('That passphrase was rejected. Try again.')
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -314,6 +368,7 @@ const SEED_PEOPLE = [
 const LS_PEOPLE    = 'sodoto-people'
 const LS_CONTRACTS = 'sodoto-contracts'
 const LS_ACTIVE    = 'sodoto-active'
+const LS_SECRET    = 'sodoto-proxy-secret'
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -533,17 +588,21 @@ function authHeaders(extra = {}) {
 }
 
 async function wikiPost(path, body) {
-  const r = await fetch(PROXY + path, {
+  const send = () => fetch(PROXY + path, {
     method: 'POST', headers: authHeaders(),
     body: JSON.stringify(body)
   })
+  let r = await send()
+  if (r.status === 401) { await reauth(); r = await send() }
   if (!r.ok) throw new Error(`${path} → HTTP ${r.status}: ${await r.text()}`)
   return r.json()
 }
 
 async function wikiRead(site, slug) {
-  const headers = PROXY_SECRET ? { Authorization: `Bearer ${PROXY_SECRET}` } : {}
-  const r = await fetch(`${PROXY}/api/wiki-read-page?site=${encodeURIComponent(site)}&slug=${encodeURIComponent(slug)}`, { headers })
+  const url  = `${PROXY}/api/wiki-read-page?site=${encodeURIComponent(site)}&slug=${encodeURIComponent(slug)}`
+  const send = () => fetch(url, { headers: PROXY_SECRET ? { Authorization: `Bearer ${PROXY_SECRET}` } : {} })
+  let r = await send()
+  if (r.status === 401) { await reauth(); r = await send() }
   if (r.status === 404) return null
   if (!r.ok) throw new Error(`wiki-read-page → HTTP ${r.status}: ${await r.text()}`)
   return r.json()
@@ -1166,6 +1225,7 @@ function showPanel(name) {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
+  await loadConfig()          // must finish before any authenticated call
   await loadState()
   el('add-site').value = WIKI_SITE
   renderPeople()

@@ -7,12 +7,25 @@ Usage:
 
 Then open evsm-aggregator.html via http://localhost:8765
 """
-import os, json, urllib.request, urllib.error
+import os, json, hmac, urllib.request, urllib.error
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
-PORT = 8765
+PORT = int(os.environ.get("PORT", 8765))
 API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 PROXY_SECRET = os.environ.get('SODOTO_PROXY_SECRET', '')
+
+# Operator-only endpoints — these require the proxy passphrase. Everything else
+# is reached by patient-facing tools whose users don't hold that passphrase.
+ADMIN_PATHS = {
+    '/api/people-registry',
+    '/api/list-patients',
+    '/api/provision-patient',
+    '/api/wiki-write',
+    '/api/finalize-contract',
+    '/api/wiki-write-badge',
+    '/api/wiki-update-item',
+    '/api/wiki-add-items',
+}
 eVSM_DIR = os.path.dirname(os.path.abspath(__file__))
 WIKI_PAGES_DIR = os.path.expanduser('~/.wiki/localhost/pages')
 PEOPLE_REGISTRY_FILE = os.path.expanduser('~/.sodoto/people-registry.json')
@@ -26,7 +39,26 @@ class Handler(BaseHTTPRequestHandler):
         if not PROXY_SECRET:
             return True
         auth = self.headers.get('Authorization', '')
-        return auth == f'Bearer {PROXY_SECRET}'
+        return hmac.compare_digest(auth, f'Bearer {PROXY_SECRET}')
+
+    def _admin_gate(self):
+        """Block unauthenticated access to operator-only endpoints.
+
+        Patient-facing endpoints are deliberately absent from ADMIN_PATHS — the
+        people using them have no reason to hold the operator passphrase.
+        Returns True when the request has been denied and handling should stop.
+        """
+        if self.path.split('?')[0] not in ADMIN_PATHS:
+            return False
+        if self._auth_ok():
+            return False
+        print(f"  DENIED {self.command} {self.path}")
+        self.send_response(401)
+        self._cors()
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps({'error': 'Unauthorized'}).encode())
+        return True
 
     def do_OPTIONS(self):
         self.send_response(200)
@@ -34,11 +66,17 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        if self._admin_gate():
+            return
+
         if self.path == '/config':
+            # Deliberately does NOT include the proxy secret. This endpoint is
+            # unauthenticated and CORS-open, so anything returned here is public.
+            # The issuer tool asks the operator for the passphrase instead.
             cfg = {
                 'proxyUrl':     os.environ.get('PROXY_URL', 'http://localhost:8765'),
                 'wikiSite':     os.environ.get('WIKI_SITE', 'localhost'),
-                'proxySecret':  PROXY_SECRET,
+                'authRequired': bool(PROXY_SECRET),
             }
             body = json.dumps(cfg).encode()
             self.send_response(200)
@@ -135,6 +173,9 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(b'Not found')
 
     def do_POST(self):
+        if self._admin_gate():
+            return
+
         if self.path == '/api/write-issue':
             length = int(self.headers.get('Content-Length', 0))
             body   = self.rfile.read(length)
@@ -319,14 +360,6 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 self.send_response(400); self._cors(); self.end_headers()
                 self.wfile.write(json.dumps({'error': str(e)}).encode())
-            return
-
-        if not self._auth_ok():
-            self.send_response(401)
-            self._cors()
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(b'{"error":"Unauthorized"}')
             return
 
         if self.path == '/api/people-registry':
