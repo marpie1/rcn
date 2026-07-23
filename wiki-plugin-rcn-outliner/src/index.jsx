@@ -226,7 +226,9 @@ function Node({ node, depth, expanded, onToggle, onSelect, onEdit, selectedId, e
 
 // ─── Main plugin component ───────────────────────────────────────────────────
 
-const MORE_URL = window.location.origin + '/plugins/rcnoutliner/more-outliner.html'
+const MORE_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:8765/tools/more-outliner.html'
+  : 'https://marc.relocalizecreativity.net/assets/Drag/more-outliner.html'
 const WINDOW_NAME = 'rcn-outliner'
 
 // Ensure all nodes have cloneId: null so MORE doesn't flag them as clones
@@ -478,7 +480,7 @@ function OutlinerPlugin({ item, $item }) {
     if (popup) popup.focus()
     // MORE will fire outlinerReady; the global listener in the old plugin handled this.
     // We expose pendingItem on the window so the global listener can find it.
-    window._rcnOutlinerPending = { item, $item: null }
+    window._rcnOutlinerPending = { item, $item: $itemRef.current }
   }, [item])
 
   const isEmpty = !outline || outline.length === 0
