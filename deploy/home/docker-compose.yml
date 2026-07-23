@@ -1,16 +1,39 @@
 # My PHS — home install.
 #
 # One person, one computer, no TLS, no domain, no shared registry.
-# Everything is published on 127.0.0.1 only: nothing on this stack is
-# reachable from the home LAN, let alone the internet.
 #
-#   cp .env.example .env     # add your own Anthropic API key
+# Everything sits behind one gate. Caddy is the only container that publishes
+# a port, it publishes on 127.0.0.1 only, and it asks for the passphrase before
+# anything reaches the wiki, My Health Picture, or My Health Choices.
+#
+#   cp .env.example .env          # your own Anthropic key
+#   ./set-passphrase.sh           # choose the passphrase
 #   docker compose up -d --build
 #   open http://localhost:8766
 #
-# The key in .env is the person's own. Nothing routes through RCN.
+# The Anthropic key in .env is the person's own. Nothing routes through RCN.
 
 services:
+
+  # The gate. The only way in.
+  gate:
+    image: caddy:latest
+    ports:
+      # Same ports the tools already use, so no URL changes anywhere.
+      # 127.0.0.1 means this computer only — not the wifi, not the internet.
+      - "127.0.0.1:8766:8766"
+      - "127.0.0.1:8770:8770"
+      - "127.0.0.1:3000:3000"
+    environment:
+      - GATE_USER=${GATE_USER:-me}
+      - GATE_PASSWORD_HASH=${GATE_PASSWORD_HASH:?run ./set-passphrase.sh first}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - coupler
+      - optionbox
+      - fedwiki
+    restart: unless-stopped
 
   # My Health Picture — the coupler UI and API.
   coupler:
@@ -18,8 +41,8 @@ services:
     build:
       context: ../..                          # repo root (coupler-proxy.py is there)
       dockerfile: deploy/home/Dockerfile.coupler
-    ports:
-      - "127.0.0.1:8766:8766"                 # localhost only — never 0.0.0.0
+    expose:
+      - "8766"                                # reachable from the gate only
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - WIKI_URL=http://fedwiki:3000          # pages go through the wiki's API
@@ -37,8 +60,8 @@ services:
     image: rcn-home-coupler:latest
     working_dir: /app/scp-optionbox
     command: ["python3", "-m", "http.server", "8770"]
-    ports:
-      - "127.0.0.1:8770:8770"                 # hardcoded in scp-coupler/index.html:1393
+    expose:
+      - "8770"
     depends_on:
       - coupler                               # ensures the shared image is built
     restart: unless-stopped
@@ -53,12 +76,11 @@ services:
     #   --farm            per-person sites at <person>.localhost
     #   --security_legacy unclaimed sites writable over HTTP; without it every
     #                     page write 403s and nothing reaches the search index.
-    # security_legacy is safe ONLY because 3000 is bound to 127.0.0.1 on a
-    # single-person machine. Do not carry it to a LAN-reachable box (a Pi)
-    # without claiming the site first.
+    # security_legacy is why the gate matters: it makes the wiki editable by
+    # anyone who can reach it, and the gate is what decides who can.
     command: ["wiki", "--port", "3000", "--farm", "--security_legacy"]
-    ports:
-      - "127.0.0.1:3000:3000"                 # browser opens <person>.localhost:3000
+    expose:
+      - "3000"
     volumes:
       - wiki-data:/root/.wiki                 # same volume the coupler writes to
     restart: unless-stopped

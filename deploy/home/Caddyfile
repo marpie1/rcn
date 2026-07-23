@@ -1,0 +1,40 @@
+# One gate in front of everything.
+#
+# The three services no longer publish ports of their own. Caddy is the only
+# way in, it listens on the same ports the tools already expect, and nothing
+# reaches any of them without the passphrase.
+#
+# Ports are unchanged on purpose: the browser still uses localhost:8766,
+# localhost:8770 and <person>.localhost:3000, so no tool URLs change.
+
+{
+	admin off
+	auto_https off        # loopback only; no certificates, no Let's Encrypt
+}
+
+# My Health Picture
+:8766 {
+	basic_auth {
+		{$GATE_USER} {$GATE_PASSWORD_HASH}
+	}
+	reverse_proxy coupler:8766
+}
+
+# My Health Choices
+:8770 {
+	basic_auth {
+		{$GATE_USER} {$GATE_PASSWORD_HASH}
+	}
+	reverse_proxy optionbox:8770
+}
+
+# The person's wiki — the record itself.
+# A bare port address matches every hostname, which is what farm mode needs:
+# rosa.localhost and alex.localhost both land here and Caddy passes the
+# original Host through, so FedWiki still picks the right site.
+:3000 {
+	basic_auth {
+		{$GATE_USER} {$GATE_PASSWORD_HASH}
+	}
+	reverse_proxy fedwiki:3000
+}

@@ -291,6 +291,20 @@ FedWiki with no SCP components. See its README.
 
 ### Personal stack notes (`deploy/home/`)
 
+- **One gate in front of all three services.** Caddy is the only container that
+  publishes ports; the wiki, coupler and optionbox are `expose:` only and
+  unreachable except through it. It listens on the ports the tools already use
+  (8766, 8770, 3000) so no tool URLs change. Set the passphrase with
+  `./set-passphrase.sh` — never by editing `.env` by hand: bcrypt hashes are
+  full of `$`, docker compose reads `$` as a variable reference, and it will
+  silently eat part of the hash so the passphrase never matches. The script
+  escapes them.
+  A gate over all three is necessary rather than tidy: the record lives in the
+  wiki, and `--security_legacy` makes the wiki editable by anyone who can reach
+  it, so protecting only the coupler would leave the record open on `:3000`.
+  Basic auth is scoped per origin, so a browser asks once per address
+  (`localhost:8766`, `localhost:8770`, `<person>.localhost:3000`) and remembers
+  for the session.
 - Every port is bound `127.0.0.1`. `coupler-proxy.py` binds `0.0.0.0` *inside*
   the container by design — the publish spec is the boundary, not the bind
   address. Do not "fix" it.
