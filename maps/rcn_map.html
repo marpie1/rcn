@@ -279,10 +279,27 @@
     font-size: 9px; background: #e0f2fe; color: #0369a1; border-radius: 3px;
     padding: 0 4px; font-weight: 700; flex-shrink: 0; line-height: 16px;
   }
+
+  /* ── Deep-link copy ─────────────────────────────────────────────────── */
+  #copy-view-btn {
+    position: fixed; bottom: 32px; right: 12px; z-index: 1000;
+    background: white; border: 1px solid #ccc; border-radius: 4px;
+    padding: 6px 11px; font-size: 11px; cursor: pointer; color: #378ADD;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15); white-space: nowrap; line-height: 1;
+  }
+  #copy-view-btn:hover { background: #f0f7ff; border-color: #378ADD; }
+  #link-toast {
+    position: fixed; bottom: 66px; right: 12px; z-index: 3000;
+    background: #1a2a3a; color: #fff; padding: 6px 13px; border-radius: 4px;
+    font-size: 12px; pointer-events: none; opacity: 0; transition: opacity 0.2s;
+  }
+  #link-toast.show { opacity: 1; }
 </style>
 </head>
 <body>
 <div id="map"></div>
+<button id="copy-view-btn" onclick="copyMapViewLink()">🔗 Copy view link</button>
+<div id="link-toast">Link copied!</div>
 
 <!-- Add-location form: plain fixed div, no Leaflet popup machinery -->
 <div id="add-loc-form" style="display:none;position:fixed;z-index:2000;background:white;border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,0.2);padding:12px 14px;width:218px;">
@@ -751,6 +768,7 @@ function ndcPopupHTML(name, address) {
   const esc = name.replace(/'/g,"\\'");
   return `<b>${name}</b><br>${address}` +
     `<br><button class="popup-btn" onclick="enterCorrectionMode('${esc}')">📍 Correct location</button>` +
+    `<br><button class="popup-btn" onclick="copyLink(layerLink('ndc:${esc}'))">🔗 Copy link</button>` +
     (corrected
       ? `<span class="popup-corrected">✓ Location corrected — <span class="popup-reset" onclick="clearCorrection('${esc}')">reset</span></span>`
       : '');
@@ -810,7 +828,8 @@ async function showOverview() {
           const fp = feat.properties;
           lyr.bindPopup(`<b>${fp.name}</b><br>${fp.place_type.replace(/_/g,' ')}` +
             (fp.area_mi2 ? `<br>${Number(fp.area_mi2).toLocaleString('en-US')}\u202fmi²` : '') +
-            `<br><small>${fp.boundary_source}</small>`);
+            `<br><small>${fp.boundary_source}</small>` +
+            `<br><button class="popup-btn" onclick="copyLink(layerLink('${eid(fp.name)}'))">🔗 Copy link</button>`);
         }
       }).addTo(map);
       registerLayer(p.name, type, layer);
@@ -903,7 +922,8 @@ async function showNDC(name, state, k = null) {
           const fp = feat.properties;
           lyr.bindPopup(`<b>${fp.name}</b><br>${fp.place_type.replace(/_/g,' ')}` +
             (fp.area_mi2 ? `<br>${Number(fp.area_mi2).toLocaleString('en-US')}\u202fmi²` : '') +
-            `<br><small>${fp.boundary_source}</small>`);
+            `<br><small>${fp.boundary_source}</small>` +
+            `<br><button class="popup-btn" onclick="copyLink(layerLink('${eid(fp.name)}'))">🔗 Copy link</button>`);
           if (lyr.getBounds) polyBounds.push(lyr.getBounds());
         }
       }).addTo(map);
@@ -1238,6 +1258,17 @@ function applyPickNDCLocation(latlng) {
   // Ensure the panel stays open
   document.getElementById('add-ndc-body').style.display = 'block';
   document.getElementById('add-ndc-arrow').textContent = '▼';
+  // If name and code are already filled, add the NDC immediately.
+  // Otherwise scroll the Add NDC button into view so the user knows what to do next.
+  const name = document.getElementById('an-name').value.trim();
+  const code = document.getElementById('an-code').value.trim();
+  if (name && code) {
+    confirmAddNDC();
+  } else {
+    document.getElementById('an-status').textContent = 'Location set — fill in name/code and click Add NDC.';
+    document.getElementById('an-status').style.color = '#f59e0b';
+    document.querySelector('[onclick="confirmAddNDC()"]').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 function confirmAddNDC() {
@@ -1282,7 +1313,8 @@ function confirmAddNDC() {
   });
   const st = document.getElementById('an-status');
   st.textContent = `${name} added ✓`;
-  setTimeout(() => { st.textContent = ''; }, 3000);
+  st.style.color = '#22c55e';
+  setTimeout(() => { st.textContent = ''; st.style.color = ''; }, 3000);
 }
 
 function removeUserNDC(name) {
@@ -1423,7 +1455,8 @@ async function toggleIssue(key) {
     if (data.issue && data.issue.polygon) {
       L.polygon(data.issue.polygon, {
         color: '#e8c84a', weight: 2, dashArray: '8 4', fillColor: '#e8c84a', fillOpacity: 0.1
-      }).bindPopup(`<b>${data.meta.title}</b><br>${data.meta.community}`).addTo(issueLayerGroup);
+      }).bindPopup(`<b>${data.meta.title}</b><br>${data.meta.community}` +
+        `<br><button class="popup-btn" onclick="copyLink(issueLink('${key}'))">🔗 Copy link</button>`).addTo(issueLayerGroup);
     }
     (data.parcels || []).forEach(p => {
       const c = STANCE_COLOR[p.stance] || STANCE_COLOR.unknown;
@@ -1698,6 +1731,7 @@ function renderUserLocations() {
       radius: 8, fillColor: '#0ea5e9', color: 'white', weight: 2, fillOpacity: 1
     }).bindPopup(`<b>${loc.name}</b><br><small>Custom location</small>` +
       `<br><button class="popup-btn" onclick="correctUserLocation(${i})">📍 Correct location</button>` +
+      `<br><button class="popup-btn" onclick="copyLink(layerLink('loc:${i}'))">🔗 Copy link</button>` +
       `<br><span class="popup-reset" onclick="removeUserLocation(${i})">Remove</span>`);
     marker.addTo(userLocGroup);
     userLocLeafletLayers[i] = marker;
@@ -1794,7 +1828,9 @@ function renderUserPolygons() {
     const layer = L.geoJSON(p.geojson, {
       style: { color, fillColor: color, weight: 2, opacity: 1, fillOpacity: 0.12 },
       onEachFeature: (feat, lyr) => {
-        lyr.bindPopup(`<b>${p.name}</b><br>${p.type.replace(/_/g,' ')}<br><small>User-added · ${p.state}</small>`);
+        lyr.bindPopup(`<b>${p.name}</b><br>${p.type.replace(/_/g,' ')}<br><small>User-added · ${p.state}</small>` +
+          `<br><button class="popup-btn" onclick="copyLink(layerLink('user:${i}'))">🔗 Copy link</button>` +
+          `<br><span class="popup-reset" onclick="map.closePopup();removeUserPolygon(${i})">Remove</span>`);
       }
     }).addTo(userPolyGroup);
     userPolyLeafletLayers[i] = layer;
@@ -2071,6 +2107,41 @@ function importClaudeResponse() {
   switchPolyTab('saved');
 }
 
+// ── Deep-link helpers ─────────────────────────────────────────────────
+
+function eid(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+
+function copyLink(url) {
+  navigator.clipboard.writeText(url)
+    .then(() => showLinkToast('Link copied!'))
+    .catch(() => prompt('Copy this link:', url));
+}
+
+function showLinkToast(msg) {
+  const el = document.getElementById('link-toast');
+  if (!el) return;
+  el.textContent = msg || 'Link copied!';
+  el.classList.add('show');
+  clearTimeout(showLinkToast._t);
+  showLinkToast._t = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+function layerLink(layerId) {
+  const base = location.href.split('?')[0];
+  return base + '?highlight=' + encodeURIComponent(layerId);
+}
+
+function issueLink(key) {
+  const base = location.href.split('?')[0];
+  return base + '?openissue=' + encodeURIComponent(key);
+}
+
+function copyMapViewLink() {
+  const c = map.getCenter();
+  const base = location.href.split('?')[0];
+  copyLink(base + '?lat=' + c.lat.toFixed(6) + '&lng=' + c.lng.toFixed(6) + '&zoom=' + map.getZoom());
+}
+
 // ── Shared download helper ────────────────────────────────────────────
 function downloadJSON(obj, filename) {
   const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
@@ -2094,6 +2165,23 @@ document.getElementById('add-loc-name-input').addEventListener('keydown', functi
   await loadIssueIndex();
   buildNDCList();
   showOverview();
+
+  // ── Deep-link handling ───────────────────────────────────────────
+  const dlp       = new URLSearchParams(location.search);
+  const hlId      = dlp.get('highlight');
+  const dlLat     = parseFloat(dlp.get('lat'));
+  const dlLng     = parseFloat(dlp.get('lng'));
+  const dlZoom    = parseInt(dlp.get('zoom'), 10);
+  const openIssue = dlp.get('openissue');
+
+  if (hlId) {
+    highlightById(hlId, {});
+  } else if (!isNaN(dlLat) && !isNaN(dlLng)) {
+    map.setView([dlLat, dlLng], isNaN(dlZoom) ? 12 : dlZoom);
+  }
+  if (openIssue) {
+    await toggleIssue(openIssue);
+  }
 })();
 
 function injectDefaultPolygons() {
