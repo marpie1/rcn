@@ -149,7 +149,7 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       <p class="doc-sub">Complete reference for all features</p>
       <!-- UPDATE: date when tool changes significantly -->
       <div class="doc-meta">
-        Updated June 2026 &nbsp;·&nbsp;
+        Updated July 2026 &nbsp;·&nbsp;
         <a href="rcn-map-intro.html">Introduction →</a>
       </div>
     </div>
@@ -799,7 +799,11 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       <p>
         The issue-polygon-map.html tool is the editing environment for issues: it lets you draw
         and edit parcel polygons, record stances and notes, import and export GeoJSON, and switch
-        basemaps. The NDC map is read-only — all editing happens in the issue-polygon-map.
+        basemaps. Custom boundaries drawn there can now be <strong>named and renamed</strong> —
+        finishing a draw prompts for a name, each polygon's popup carries a Rename button, and the
+        name round-trips through GeoJSON export/import. The NDC map lets you add locations,
+        boundaries, NDCs, and issues, but it does not edit an issue's parcels — that editing
+        happens in the issue-polygon-map.
       </p>
       <p>
         The link is only active if a <code>map</code> URL is configured in the issue's
@@ -903,7 +907,7 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       <p>Click the sky-blue marker to open its popup. <strong>📍 Correct location</strong> lets you reposition it (same crosshair flow as NDC corrections). <strong>Remove</strong> deletes it.</p>
 
       <h3>Persisting your pins</h3>
-      <p>Custom pins are saved to localStorage. To export them as JSON (for permanent backup or sharing), open <strong>Add boundary layer → Saved</strong> and click <strong>Export locations</strong>.</p>
+      <p>Custom pins are saved to localStorage. The quickest way to back them up is the top-level <strong>⬇ Export my data (JSON)</strong> button near the top of the sidebar (just under <strong>+ Add location</strong>), which downloads everything you have added — NDCs, locations, boundaries, and corrections — as one file. To export just the pins, open <strong>Add boundary layer → Saved</strong> and click <strong>Export locations</strong>.</p>
 
       <div class="note">Custom pins are per-browser. Opening the map in a different browser will not show your pins unless you re-import from an exported JSON.</div>
 
@@ -1027,7 +1031,7 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       <h3>Resetting a correction</h3>
       <p>Open the corrected marker's popup — it shows "✓ Location corrected — <u>reset</u>". Click <strong>reset</strong> to remove the correction and restore the original position. You can also find all corrections in the <strong>Add boundary layer → Saved</strong> tab and remove them there.</p>
       <h3>Saving corrections permanently</h3>
-      <p>Corrections live in your browser's localStorage. To commit them permanently to the repository, open <strong>Add boundary layer → Saved</strong> and click <strong>Export corrections</strong>. This downloads a JSON file you can give to whoever maintains <code>rcn_static_data.js</code> so the fix goes into the source data.</p>
+      <p>Corrections live in your browser's localStorage. To back them up, use the top-level <strong>⬇ Export my data (JSON)</strong> button (which includes corrections along with everything else), or open <strong>Add boundary layer → Saved</strong> and click <strong>Export corrections</strong> for just the corrections. Either downloads a JSON file you can give to whoever maintains <code>rcn_static_data.js</code> so the fix goes into the source data.</p>
       <div class="note">Corrections are per-browser. If you open the map in a different browser or on a different machine, the correction won't be there until the source data is updated or the correction is applied again.</div>
     </section>
 
@@ -1164,7 +1168,8 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       <div class="note">Claude generates approximate polygon coordinates — good for visual reference and orientation on the map. For precise legal or regulatory boundaries, use the OSM search or import an authoritative GeoJSON file.</div>
 
       <h3>Saved tab</h3>
-      <p>Lists all user-added polygons and location corrections. Click <strong>×</strong> next to any entry to remove it. Use <strong>Export JSON</strong> to download your polygons as a file, and <strong>Export corrections</strong> to download location corrections — both can be committed to the repository.</p>
+      <p>Lists all user-added polygons and location corrections. Click <strong>×</strong> next to any entry to remove it. The tab has four granular export buttons — <strong>Export locations</strong>, <strong>Export polygons</strong>, <strong>Export NDCs</strong>, and <strong>Export corrections</strong> — each downloading just that dataset as JSON.</p>
+      <div class="note">For a one-file backup of <em>everything</em> you have added (NDCs, locations, boundaries, and corrections together), use the top-level <strong>⬇ Export my data (JSON)</strong> button near the top of the sidebar instead. It writes a single <code>rcn-map-data.json</code> bundle.</div>
     </section>
 
     <!-- §14: ADDING AN NDC -->

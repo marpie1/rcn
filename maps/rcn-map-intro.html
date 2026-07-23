@@ -89,7 +89,7 @@ p:last-child{margin-bottom:0}
     <h1 class="doc-title">RCN NDC Map</h1>
     <p class="doc-sub">Introduction — what it is, what it does, and why it exists</p>
     <!-- UPDATE: date when tool changes significantly -->
-    <div class="doc-meta">Document updated: June 2026</div>
+    <div class="doc-meta">Document updated: July 2026</div>
   </div>
 
   <!-- ── NAV ─────────────────────────────────────────────────── -->
@@ -159,7 +159,7 @@ p:last-child{margin-bottom:0}
     </div>
     <div class="hl-card">
       <h4>Issue detail link</h4>
-      <p>Each active issue shows a link to its full Issue Map — the dedicated issue-polygon-map.html tool for that issue, where parcels can be edited, annotated, and exported.</p>
+      <p>Each active issue shows a link to its full Issue Map — the dedicated issue-polygon-map.html tool for that issue, where parcels can be edited, annotated, and exported, and custom boundaries can be drawn, named, and renamed.</p>
     </div>
     <div class="hl-card">
       <h4>OSM geocoder search</h4>
@@ -184,6 +184,10 @@ p:last-child{margin-bottom:0}
     <div class="hl-card">
       <h4>"New issue" panel</h4>
       <p>Describe a community issue, pick the NDC, and click Build Claude prompt. Paste the prompt into Claude, paste the JSON response back, and click Import. The issue appears on the map immediately with no file editing.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Export my data</h4>
+      <p>A top-level ⬇ Export my data (JSON) button bundles everything you've added — NDCs, locations, boundary layers, and corrections — into one file for backup or sharing. Per-dataset export buttons remain in the boundary panel's Saved tab.</p>
     </div>
   </div>
 
@@ -241,11 +245,14 @@ p:last-child{margin-bottom:0}
     </div>
     <p>
       The issue-polygon-map.html tool focuses on a single issue in a single community: editing
-      parcel polygons, recording stances, adding notes, importing and exporting GeoJSON. It is
-      the editing environment. The RCN NDC Map is the read-only viewer: it shows all issues
-      across all NDCs in context, links out to the issue-polygon-map for editing, and loads
-      issue JSON from a hosted URL. The two tools are designed to be used together — build in
-      the issue-polygon-map, publish to the NDC map.
+      parcel polygons, drawing and naming custom boundary polygons, recording stances, adding
+      notes, importing and exporting GeoJSON. It is the deep editing environment for a single
+      issue's parcels. The RCN NDC Map is the interactive hub: you add locations, boundary layers,
+      NDCs, corrections, and new issues there, and everything you add is saved in your browser and
+      exportable to JSON. The one thing it does not do is edit an issue's parcels — for that it
+      shows all issues across all NDCs in context and links out to the issue-polygon-map. The two
+      tools are designed to be used together — edit an issue's parcels in the issue-polygon-map,
+      publish to the NDC map.
     </p>
   </div>
 
@@ -290,7 +297,7 @@ p:last-child{margin-bottom:0}
     <li>
       <span class="badge">Unique</span>
       <div>
-        <strong>User-owned spatial data, stored locally.</strong> Custom location pins, corrected NDC positions, and added boundary polygons are all saved in your browser's localStorage. Nothing is sent to a server. Export buttons download JSON for permanent backup.
+        <strong>User-owned spatial data, stored locally.</strong> Custom location pins, corrected NDC positions, added NDCs, and added boundary polygons are all saved in your browser's localStorage. Nothing is sent to a server. One top-level "Export my data" button downloads all of it as a single JSON file for permanent backup.
       </div>
     </li>
   </ul>
@@ -308,12 +315,8 @@ p:last-child{margin-bottom:0}
         <td>Issue data is fetched from a URL at runtime — it is not bundled in the static data file. Someone must host the issue JSON (e.g., a FedWiki asset or any static server) before the issue layer can appear on the map.</td>
       </tr>
       <tr>
-        <td>Adding NDCs or issues requires editing the HTML</td>
-        <td>Adding issues is now fully UI-driven via the New issue panel — fill in the form, build a Claude prompt, paste the JSON response, and the issue is written to disk and appears on the map immediately. Adding a new NDC still requires an HTML edit to NDC_LIST.</td>
-      </tr>
-      <tr>
-        <td>Adding NDCs requires editing the HTML</td>
-        <td>New NDC locations are added by editing the NDC_LIST array in rcn_map.html. There is no UI for this. The same applies to adding new issues to ISSUE_INDEX.</td>
+        <td>Shared baseline data still lives in the source files</td>
+        <td>You can add your own NDCs, locations, boundary layers, and issues directly through the UI — they save to your browser (localStorage) and export to JSON. What still requires editing the source is baking something into the shared baseline that ships to everyone: a permanent NDC goes in the NDC_LIST array (plus a static-data regeneration), and a permanent issue needs its JSON hosted (see above).</td>
       </tr>
       <tr>
         <td>Mobile layout</td>

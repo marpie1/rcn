@@ -37,7 +37,7 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 ```
 ~/rcn/
   tools/      standalone HTML tools (see below)
-  maps/       rcn_map.html — NDC map; rcn-map-intro.html, rcn-map-manual.html — docs
+  maps/       rcn_map.html — NDC map; rcn_static_data.js — bundled data; rcn-map-intro.html, rcn-map-manual.html — docs; rcn-ndc-map.pptx — deck; rcn-map-components.graph.json — component graph
   data/       PostGIS Python load scripts
   docs/       tool documentation (nrm-tripod-beta.md, sensimod-manual.html, sodoto-manual.html)
   deploy/     deployment artifacts — docker/ (SODOTO Docker package, handed to Wiki Café), scp/ (SCP+Groove Docker package, hosted/WikiCafe track), home/ (SCP 3.0 personal-computer stack), fedwiki-personal/ (bare personal FedWiki, no SCP parts), launchd plists, handoff-sodoto.md
@@ -66,8 +66,8 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 | `evsm-svg-v3.html` | eVSM directed edge assessment (Agree/Disagree/Unknown); Snapshot button bakes config into a single distributable HTML file; Print My Report generates blob-based individual report | Active |
 | `evsm-report.html` | eVSM individual respondent report — one person's assessment data; opened via blob URL from Survey Tool or by drag-drop; for aggregate reports across all respondents use Aggregator's Full Report | Active |
 | `ibis-map-rcn.html` | IBIS argument mapping (post-hoc mode preferred) | Active |
-| `rcn_map.html` (in maps/) | Leaflet NDC map — 7 NDCs, 7 base layers, geographic context layers, issue overlay, shift+click legend, custom location pins, NDC location correction, user boundary layer builder (OSM search + Claude bridge); all user data in localStorage; **deep links**: `?highlight=NAME` zooms to any named polygon/NDC, `?openissue=KEY` loads an issue overlay, `?lat=&lng=&zoom=` flies to coordinates; every polygon popup has **🔗 Copy link**; floating **🔗 Copy view link** button captures current view | Active |
-| `issue-polygon-map.html` | Polycentric governance / Issue Polygon viewer — data-driven via `?issue=` URL param; loads `issue-data/*.json`; parcel stances, layer toggles, draw polygon, GeoJSON export; **deep links**: `?parcel=ID` flies to a parcel and opens its popup, `?lat=&lng=&zoom=` flies to a view; every parcel and issue polygon popup has **↗ Copy link**; toolbar **↗ Copy view link** button | Active |
+| `rcn_map.html` (in maps/) | Leaflet NDC map — 7 NDCs, 7 base layers, geographic context layers, issue overlay, shift+click legend, custom location pins, add-NDC, NDC location correction, user boundary layer builder (OSM search + Claude bridge); runs from bundled `rcn_static_data.js` (no API server, works offline); all user data in localStorage with top-level **⬇ Export my data (JSON)** one-file backup (+ per-dataset exports in Saved tab); **deep links**: `?highlight=NAME` zooms to any named polygon/NDC, `?openissue=KEY` loads an issue overlay, `?lat=&lng=&zoom=` flies to coordinates; every polygon popup has **🔗 Copy link**; floating **🔗 Copy view link** button captures current view | Active |
+| `issue-polygon-map.html` | Polycentric governance / Issue Polygon viewer — data-driven via `?issue=` URL param; loads `issue-data/*.json`; parcel stances, layer toggles, draw/name/rename custom polygons, GeoJSON export; **deep links**: `?parcel=ID` flies to a parcel and opens its popup, `?lat=&lng=&zoom=` flies to a view; every parcel and issue polygon popup has **↗ Copy link**; toolbar **↗ Copy view link** button | Active |
 | `more-outliner.html` | Outliner with autosave, MD/HTML/FedWiki export, Hoist; **→ Wiki Ghost** button sends outline as ghost page to FedWiki lineup | Active |
 | `graphjson_to_vensim_cld.html` | Canonical MDL format reference — read before fixing MDL bugs | Reference |
 | `wardley-map-generator.html` | Wardley mapping tool | Active |
@@ -85,15 +85,29 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 
 ## Map (`~/rcn/maps/rcn_map.html`)
 
-Leaflet map served from a live FastAPI/PostGIS backend. Requires the API server running.
+Leaflet map that runs entirely from bundled static data — **no API server required**. All NDCs and
+geographic context layers live in `rcn_static_data.js` (loaded via `<script src>`), so the map works
+offline once loaded. Just open `~/rcn/maps/rcn_map.html` in a browser (file://) or serve the `maps/`
+folder statically. The only network calls are the OSM tiles/geocoder, the optional Claude bridge
+(`api.anthropic.com`, for generating boundary layers and issues), and the optional issue-write proxy
+(`localhost:8765`, for saving a new issue to disk).
 
-**Start API server:**
+**User data & export:** custom locations, added NDCs, boundary layers, and NDC corrections are all
+saved in the browser's `localStorage`. The top-level **⬇ Export my data (JSON)** button downloads all
+of it as one `rcn-map-data.json` bundle; per-dataset export buttons (locations / polygons / NDCs /
+corrections) live in the **Add boundary layer → Saved** tab.
+
+**Docs:** `rcn-map-intro.html` (overview), `rcn-map-manual.html` (user manual), `rcn-ndc-map.pptx`
+(deck), `rcn-map-components.graph.json` (component graph for the RCN graph tool).
+
+**Regenerating the static data:** `rcn_static_data.js` is rebuilt by `generate_static_data.py` from
+the geo database — only needed when NDC boundaries or context layers change at the source.
+
 ```bash
+# Only for regenerating rcn_static_data.js (not for running the map):
 cd ~/Desktop && source ~/rcn-venv/bin/activate
-uvicorn rcn_api:app --reload --port 8000
+uvicorn rcn_api:app --reload --port 8000   # FastAPI/PostGIS backend, then run generate_static_data.py
 ```
-Open `~/rcn/maps/rcn_map.html` directly in browser (file://). The map fetches from `http://127.0.0.1:8000`.
-
 **PostGIS:** localhost:5432, db `rcn_geo`, table `place_geo`
 **API canonical source:** `~/rcn/data/rcn_api.py` (repo copy is authoritative — Desktop copy may be stale)
 **Virtual env:** `~/rcn-venv/` (python3.14 also has required packages installed system-wide)
