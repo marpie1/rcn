@@ -9,7 +9,7 @@ Usage:
 
 Then open: http://localhost:8766
 """
-import os, json, time, datetime, uuid, urllib.request, urllib.error
+import os, json, time, datetime, uuid, urllib.request, urllib.error, urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
@@ -25,6 +25,82 @@ DATA_DIR  = os.path.join(BASE_DIR, 'scp-coupler', 'data')
 UI_DIR    = os.path.join(BASE_DIR, 'scp-coupler')
 WIKI_HOST_FALLBACK = 'scp-experiment.localhost'
 
+# Base URL used to reach the wiki server from this process. The site is selected
+# by the Host header, so this is the transport address only. Natively the wiki
+# is on localhost; in the home Docker stack it is another container.
+WIKI_URL = os.environ.get('WIKI_URL', 'http://localhost:3000').rstrip('/')
+
+# Which web pages may call this API. Health records are not behind a password,
+# so this list is what stands between them and any other page the person has
+# open in a browser tab.
+#
+# Unset (the personal-computer default): this proxy (8766), My Health Choices
+# (8770), and the person's wiki (3000), on this machine only.
+#
+# Set ALLOWED_ORIGINS to a comma-separated list to replace that default with
+# real addresses — for a hosted deployment. A leading *. matches subdomains:
+#
+#   ALLOWED_ORIGINS=https://wiki.example.net,https://*.wiki.example.net
+#
+# 'null' (sandboxed iframes) is never allowed: any page anywhere can present
+# it, so honouring it would reopen the hole this list exists to close.
+DEFAULT_PORTS = {'http': 80, 'https': 443}
+LOCAL_ORIGIN_PORTS = {8766, 8770, 3000}
+
+def parse_origin(origin):
+    """('https', 'wiki.example.net', 443), filling in the implied port. None if unusable."""
+    try:
+        u = urllib.parse.urlparse(origin)
+        if u.scheme not in DEFAULT_PORTS:
+            return None
+        host = (u.hostname or '').lower()
+        if not host:
+            return None
+        return (u.scheme, host, u.port or DEFAULT_PORTS[u.scheme])
+    except (ValueError, AttributeError):
+        return None
+
+def _load_allowed_origins():
+    allowed, bad = [], []
+    for raw in os.environ.get('ALLOWED_ORIGINS', '').split(','):
+        raw = raw.strip()
+        if not raw:
+            continue
+        # urlparse cannot read the wildcard, so set it aside and put it back.
+        probe = raw.replace('*.', '', 1) if '*.' in raw else raw
+        parsed = parse_origin(probe)
+        if parsed:
+            scheme, host, port = parsed
+            allowed.append((scheme, ('*.' + host) if '*.' in raw else host, port))
+        else:
+            bad.append(raw)
+    return allowed, bad
+
+ALLOWED_ORIGINS, BAD_ORIGINS = _load_allowed_origins()
+
+def origin_allowed(origin):
+    parsed = parse_origin(origin)
+    if not parsed:
+        return False
+    scheme, host, port = parsed
+
+    if ALLOWED_ORIGINS:
+        for a_scheme, a_host, a_port in ALLOWED_ORIGINS:
+            if scheme != a_scheme or port != a_port:
+                continue
+            if a_host.startswith('*.'):
+                bare = a_host[2:]
+                if host == bare or host.endswith('.' + bare):
+                    return True
+            elif host == a_host:
+                return True
+        return False
+
+    # Default: this machine only.
+    return (port in LOCAL_ORIGIN_PORTS
+            and (host in ('localhost', '127.0.0.1', '::1')
+                 or host.endswith('.localhost')))
+
 def get_wiki_host(person_id):
     """Return the wiki_site for person_id, falling back to scp-experiment.localhost."""
     if not person_id:
@@ -35,6 +111,75 @@ def get_wiki_host(person_id):
 
 def wiki_pages_dir(wiki_host):
     return os.path.expanduser(f'~/.wiki/{wiki_host}/pages')
+
+def wiki_get_page(wiki_host, slug):
+    """GET a page from the wiki over HTTP. Returns the page dict, or None if absent."""
+    req = urllib.request.Request(f'{WIKI_URL}/{slug}.json', headers={'Host': wiki_host})
+    try:
+        with urllib.request.urlopen(req, timeout=8) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return None
+        raise
+
+def wiki_put_page(wiki_host, slug, page):
+    """
+    Write a whole page through the wiki's action API rather than straight to
+    ~/.wiki/<site>/pages. Only writes that go through the server update
+    status/site-index.json — a page dropped in as a file is viewable by direct
+    link but invisible to wiki search, and on a fresh site the status directory
+    is never created at all.
+
+    'create' is rejected with 409 once the page exists, so an existing page is
+    replaced with a 'fork' push, which saves the old copy to the recycler first.
+    The server appends the journal entry either way.
+    """
+    existing = wiki_get_page(wiki_host, slug)
+    now_ms = int(time.time() * 1000)
+    if existing is not None:
+        # A fork push replaces the page wholesale, journal included, so carry
+        # the old journal forward — it is the page's edit history.
+        page = dict(page, journal=existing.get('journal', []))
+        action = {'type': 'fork', 'forkPage': page, 'date': now_ms}
+    else:
+        action = {'type': 'create', 'item': page, 'date': now_ms}
+
+    body = urllib.parse.urlencode({'action': json.dumps(action)}).encode()
+    req = urllib.request.Request(
+        f'{WIKI_URL}/page/{slug}/action', data=body, method='PUT',
+        headers={'Host': wiki_host,
+                 'Content-Type': 'application/x-www-form-urlencoded'})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            if r.status >= 300:
+                raise RuntimeError(f'wiki PUT {slug} -> {r.status}')
+    except urllib.error.HTTPError as e:
+        if e.code != 403:
+            raise
+        # The wiki refuses server-side writes — a claimed site, or the default
+        # security module without --security_legacy. Fall back to writing the
+        # file. The page will be viewable but absent from the search index
+        # until the wiki rebuilds it.
+        print(f'  WIKI 403    {slug} on {wiki_host} — writing file, not indexed')
+        _wiki_write_file(wiki_host, slug, page, existing)
+        return 'updated (file)' if existing is not None else 'created (file)'
+    return 'updated' if existing is not None else 'created'
+
+def _wiki_write_file(wiki_host, slug, page, existing):
+    """Legacy write path: straight into ~/.wiki/<site>/pages. Skips indexing."""
+    wpdir = wiki_pages_dir(wiki_host)
+    os.makedirs(wpdir, exist_ok=True)
+    page = dict(page)
+    journal = (existing or {}).get('journal', [])
+    page['journal'] = journal + [{
+        'type': 'edit' if existing else 'create',
+        'id': _uid(),
+        'date': int(time.time() * 1000),
+        'item': {'title': page.get('title', '')},
+    }]
+    with open(os.path.join(wpdir, slug), 'w', encoding='utf-8') as f:
+        json.dump(page, f, ensure_ascii=False)
 
 FHIR_IMPORT        = os.path.join(BASE_DIR, 'scp-fhir', 'data', 'scp-import.json')
 OPTIONBOX_INDEX    = os.path.join(BASE_DIR, 'scp-optionbox', 'data', 'nnt-library', 'index.json')
@@ -407,13 +552,32 @@ class Handler(BaseHTTPRequestHandler):
         print(f'  {args[0]} {args[1]}')
 
     def _cors(self):
-        # Reflect Origin to handle sandboxed iframes (null origin) and normal callers
-        origin = self.headers.get('Origin', '*')
-        self.send_header('Access-Control-Allow-Origin', origin)
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.send_header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-        if origin != '*':
-            self.send_header('Vary', 'Origin')
+        # Only the tools that make up this install may talk to the API. Any
+        # other page the person happens to have open gets no CORS header, so
+        # the browser refuses to hand it the response.
+        origin = self.headers.get('Origin')
+        self.send_header('Vary', 'Origin')
+        if origin and origin_allowed(origin):
+            self.send_header('Access-Control-Allow-Origin', origin)
+            self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+            self.send_header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+
+    def _origin_ok(self):
+        """
+        Guard for /api/ requests. A browser always sends Origin on POST and on
+        cross-origin GET, so an Origin we don't recognise means some other web
+        page is calling us — refuse outright rather than relying on the browser
+        to discard the response, which would still let a write through.
+
+        A missing Origin means a same-origin navigation or a non-browser client
+        (curl, a local script); those are not the threat this guards against.
+        """
+        origin = self.headers.get('Origin')
+        if origin is None or origin_allowed(origin):
+            return True
+        print(f'  BLOCKED     {self.command} {self.path.split("?")[0]} from origin {origin}')
+        self._json(403, {'error': 'Origin not allowed'})
+        return False
 
     def _json(self, code, data):
         body = json.dumps(data, ensure_ascii=False).encode()
@@ -451,6 +615,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = self.path.split('?')[0]
+
+        if path.startswith('/api/') and not self._origin_ok():
+            return
 
         # People list
         if path == '/api/people':
@@ -729,6 +896,9 @@ Source: <strong>{_ctx_host}</strong></p>
     def do_POST(self):
         path = self.path.split('?')[0]
 
+        if not self._origin_ok():
+            return
+
         # Audit run — score all active problems for a person
         if path.startswith('/api/audit-run/'):
             person_id = path.split('/')[3]
@@ -942,24 +1112,10 @@ Source: <strong>{_ctx_host}</strong></p>
                 wiki_page = build_fedwiki_page(frame, decisions)
                 slug = wiki_slug(wiki_page['title'])
                 wiki_host = get_wiki_host(person_id)
-                wpdir = wiki_pages_dir(wiki_host)
-                dest = os.path.join(wpdir, slug)
-
-                # Preserve existing journal if page already exists
-                existing = safe_read(dest)
-                if existing and existing.get('journal'):
-                    now_ms = int(time.time() * 1000)
-                    wiki_page['journal'] = existing['journal'] + [{
-                        'type': 'edit',
-                        'id': _uid(),
-                        'date': now_ms,
-                        'item': {'title': wiki_page['title']},
-                    }]
-
-                os.makedirs(wpdir, exist_ok=True)
-                with open(dest, 'w', encoding='utf-8') as f:
-                    json.dump(wiki_page, f, ensure_ascii=False)
-                print(f'  WIKI PUSH   {slug} → {wiki_host}')
+                # The server owns the journal — it appends the create/fork entry.
+                wiki_page.pop('journal', None)
+                how = wiki_put_page(wiki_host, slug, wiki_page)
+                print(f'  WIKI PUSH   {slug} → {wiki_host} ({how})')
                 self._json(200, {
                     'ok': True,
                     'slug': slug,
@@ -1111,12 +1267,10 @@ Write the plain-language paragraph."""
                     self._err(400, 'No narrative text'); return
 
                 wiki_host = get_wiki_host(person_id)
-                dest = os.path.join(wiki_pages_dir(wiki_host), 'pre-visit-summary')
-                page = safe_read(dest)
+                page = wiki_get_page(wiki_host, 'pre-visit-summary')
                 if page is None:
                     self._err(404, 'pre-visit-summary not found in wiki'); return
 
-                now_ms  = int(time.time() * 1000)
                 today   = datetime.date.today().isoformat()
                 pnum    = int(problem_n)
                 heading = f"PROBLEM {pnum}: {problem.get('statement_vernacular', '').upper()} — {today}"
@@ -1144,13 +1298,8 @@ Write the plain-language paragraph."""
                     action = 'add'
 
                 page['story'] = story
-                page['journal'] = page.get('journal', []) + [{
-                    'type': action, 'id': _uid(), 'date': now_ms,
-                    'item': {'title': page['title']},
-                }]
-
-                with open(dest, 'w', encoding='utf-8') as f:
-                    json.dump(page, f, ensure_ascii=False)
+                page.pop('journal', None)   # server appends its own entry
+                wiki_put_page(wiki_host, 'pre-visit-summary', page)
 
                 print(f'  NARRATIVE   {action} problem {pnum} → pre-visit-summary')
                 self._json(200, {
@@ -1170,8 +1319,8 @@ Write the plain-language paragraph."""
 def fetch_wiki_page(slug, wiki_host):
     """Fetch a page from the patient's wiki site. Returns story list or []."""
     try:
-        url = f'http://{wiki_host}:3000/{slug}.json'
-        req = urllib.request.Request(url)
+        req = urllib.request.Request(f'{WIKI_URL}/{slug}.json',
+                                     headers={'Host': wiki_host})
         with urllib.request.urlopen(req, timeout=4) as r:
             return json.loads(r.read())['story']
     except Exception:
@@ -1398,5 +1547,12 @@ if __name__ == '__main__':
     print(f'SCP Coupler Proxy running at http://localhost:{PORT}')
     print(f'Serving files from: {UI_DIR}')
     print(f'Data directory:     {DATA_DIR}')
+    if ALLOWED_ORIGINS:
+        for scheme, host, port in ALLOWED_ORIGINS:
+            print(f'Allowed origin:     {scheme}://{host}:{port}')
+    else:
+        print('Allowed origins:    this machine only (localhost, ports 8766/8770/3000)')
+    for raw in BAD_ORIGINS:
+        print(f'  ⚠  ALLOWED_ORIGINS entry not understood, ignored: {raw}')
     print('Ctrl+C to stop.\n')
     ThreadingHTTPServer(('0.0.0.0', PORT), Handler).serve_forever()

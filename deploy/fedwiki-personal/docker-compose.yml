@@ -1,0 +1,24 @@
+# A personal FedWiki, on your own computer.
+#
+#   docker compose up -d
+#   open http://localhost:3000
+#
+# To stop:            docker compose stop
+# To start again:     docker compose start
+# To back up:         see README.md — the whole wiki is one volume.
+
+services:
+
+  wiki:
+    build: .
+    ports:
+      # 127.0.0.1 means: reachable from this computer only. Not from other
+      # machines on your wifi, not from the internet. Change this to
+      # "3000:3000" and your wiki becomes editable by anyone on your network.
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - wiki-data:/root/.wiki
+    restart: unless-stopped
+
+volumes:
+  wiki-data:   # your pages live here — this is the thing to back up

@@ -1,0 +1,68 @@
+# My PHS — home install.
+#
+# One person, one computer, no TLS, no domain, no shared registry.
+# Everything is published on 127.0.0.1 only: nothing on this stack is
+# reachable from the home LAN, let alone the internet.
+#
+#   cp .env.example .env     # add your own Anthropic API key
+#   docker compose up -d --build
+#   open http://localhost:8766
+#
+# The key in .env is the person's own. Nothing routes through RCN.
+
+services:
+
+  # My Health Picture — the coupler UI and API.
+  coupler:
+    image: rcn-home-coupler:latest
+    build:
+      context: ../..                          # repo root (coupler-proxy.py is there)
+      dockerfile: deploy/home/Dockerfile.coupler
+    ports:
+      - "127.0.0.1:8766:8766"                 # localhost only — never 0.0.0.0
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - WIKI_URL=http://fedwiki:3000          # pages go through the wiki's API
+    volumes:
+      - coupler-data:/app/scp-coupler/data    # people.json, frames, records
+      - wiki-data:/root/.wiki                 # read-side page scans
+    depends_on:
+      - fedwiki
+    restart: unless-stopped
+
+  # My Health Choices — static NNT/NNH library.
+  # Same image as the coupler (it already carries scp-optionbox/), so this
+  # is a command override rather than a second Dockerfile.
+  optionbox:
+    image: rcn-home-coupler:latest
+    working_dir: /app/scp-optionbox
+    command: ["python3", "-m", "http.server", "8770"]
+    ports:
+      - "127.0.0.1:8770:8770"                 # hardcoded in scp-coupler/index.html:1393
+    depends_on:
+      - coupler                               # ensures the shared image is built
+    restart: unless-stopped
+
+  # FedWiki — the person's own health record, 19 SCP plugins installed.
+  fedwiki:
+    build:
+      context: ../..                          # repo root (scp/plugins/ is there)
+      dockerfile: deploy/scp/Dockerfile.fedwiki
+    # A fresh volume has no ~/.wiki/config.json, so both of these must be
+    # explicit — otherwise the wiki runs single-site and read-only.
+    #   --farm            per-person sites at <person>.localhost
+    #   --security_legacy unclaimed sites writable over HTTP; without it every
+    #                     page write 403s and nothing reaches the search index.
+    # security_legacy is safe ONLY because 3000 is bound to 127.0.0.1 on a
+    # single-person machine. Do not carry it to a LAN-reachable box (a Pi)
+    # without claiming the site first.
+    command: ["wiki", "--port", "3000", "--farm", "--security_legacy"]
+    ports:
+      - "127.0.0.1:3000:3000"                 # browser opens <person>.localhost:3000
+    volumes:
+      - wiki-data:/root/.wiki                 # same volume the coupler writes to
+    restart: unless-stopped
+
+volumes:
+  coupler-data:   # health records — back this up; it is the only copy
+  wiki-data:      # FedWiki pages — back this up too

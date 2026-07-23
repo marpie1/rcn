@@ -40,7 +40,7 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
   maps/       rcn_map.html — NDC map; rcn-map-intro.html, rcn-map-manual.html — docs
   data/       PostGIS Python load scripts
   docs/       tool documentation (nrm-tripod-beta.md, sensimod-manual.html, sodoto-manual.html)
-  deploy/     deployment artifacts — docker/ (SODOTO Docker package, handed to Wiki Café), scp/ (SCP+Groove Docker package, ready for hand-off), launchd plists, handoff-sodoto.md
+  deploy/     deployment artifacts — docker/ (SODOTO Docker package, handed to Wiki Café), scp/ (SCP+Groove Docker package, hosted/WikiCafe track), home/ (SCP 3.0 personal-computer stack), fedwiki-personal/ (bare personal FedWiki, no SCP parts), launchd plists, handoff-sodoto.md
   vester/     Vester chapter notes and SensiMod context
   archive/    old numbered drafts
   veramo/     SODOTO credential infrastructure (see SODOTO section below)
@@ -250,6 +250,67 @@ Kept outside ~/rcn/ because of node_modules size.
 | sofi-proxy | `~/rcn/sofi-proxy.py`, port 8765 — Anthropic API relay + FedWiki filesystem write API + static file server for `~/rcn/` |
 | coupler-proxy | `~/rcn/coupler-proxy.py`, port 8766 — My Health Picture AI proxy + FedWiki write API; serves `~/rcn/scp-coupler/`; resolves per-patient wiki site from `people.json` (`get_wiki_host`) |
 
+### coupler-proxy environment variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `ANTHROPIC_API_KEY` | — | AI endpoints fail without it |
+| `WIKI_URL` | `http://localhost:3000` | How the proxy reaches the wiki server. The site is chosen by the `Host` header, so this is the transport address only — set to `http://fedwiki:3000` inside Docker. |
+| `ALLOWED_ORIGINS` | unset | Comma-separated origins allowed to call the API. **Unset = this machine only** (localhost / `*.localhost` on ports 8766, 8770, 3000), which is correct for a personal install. Set it to real addresses for a hosted deployment; a leading `*.` matches subdomains. Implied ports are filled in, so `https://x.net` and `https://x.net:443` are the same address. |
+
+Origins not on the list are refused with 403 and logged as `BLOCKED`. `null`
+(sandboxed frames) is never allowed — any page can claim it. Before this
+allowlist existed the proxy echoed back whatever origin asked, which meant any
+website the person visited could read and write the health record.
+
+**Page writes go through the wiki's action API** (`wiki_put_page`), not the
+filesystem — `create` for a new page, `fork` push to replace one, journal
+preserved. Only writes that go through the server update the search index; a
+page written as a file is viewable by direct link but invisible to search, and
+on a fresh site is never indexed at all. If the wiki refuses the write (403 —
+a claimed site, or the default read-only security module) the proxy falls back
+to writing the file, which is what keeps the native dev setup working.
+
+---
+
+## Deployment tracks
+
+Two deployments, one codebase. Differences live in compose files and
+environment variables — **never in `if` branches inside the Python.**
+
+| | Personal computer | WikiCafe (hosted) |
+|---|---|---|
+| Directory | `deploy/home/` | `deploy/scp/` |
+| Containers | FedWiki + coupler + optionbox | FedWiki + Groove + sofi-proxy + Caddy |
+| Reachable from | `127.0.0.1` only | internet, TLS, Keycloak |
+| Users | one person, own Anthropic key | many |
+| Wiki writes | wiki HTTP API | direct filesystem writes |
+
+`deploy/fedwiki-personal/` is a third, standalone thing: a bare personal
+FedWiki with no SCP components. See its README.
+
+### Personal stack notes (`deploy/home/`)
+
+- Every port is bound `127.0.0.1`. `coupler-proxy.py` binds `0.0.0.0` *inside*
+  the container by design — the publish spec is the boundary, not the bind
+  address. Do not "fix" it.
+- FedWiki runs `--farm --security_legacy`. Both are required on a fresh volume:
+  farm mode normally comes from `~/.wiki/config.json`, which does not exist yet,
+  and without it every person's pages collapse into one shared site. Without
+  `security_legacy` the wiki is read-only over HTTP and page writes 403.
+  `security_legacy` is safe **only** while the port stays on `127.0.0.1`.
+- `Dockerfile.coupler` deletes `scp-coupler/data` and `scp-fhir/data`. Docker
+  seeds a new named volume from whatever the image holds at the mount path, so
+  without this every install would start out containing the pilot records.
+  The root `.dockerignore` does not cover these: its `data/` pattern matches
+  only the top-level directory.
+- `PYTHONUNBUFFERED=1` — without it Python block-buffers stdout when not on a
+  terminal and nothing reaches `docker compose logs`, including `BLOCKED` lines.
+
+See `docs/scp3-work-list.docx` for outstanding work on both tracks and
+`docs/scp3-deployment-findings.docx` for the findings behind these notes,
+including open security items on the WikiCafe deployment.
+
 Spatial architecture: PostGIS (precise polygon operations) + Neo4j (point types, H3 arrays)
 linked via shared `place_id` UUID.
 
@@ -328,6 +389,10 @@ The Berwick deck has its own script: `python3 docs/make_berwick_pptx.py`
 ---
 
 ## Active threads (as of June 2026)
+
+- **SCP 3.0 on a personal computer** (July 2026): running the whole stack on the person's own machine, so the person — not RCN — is the data controller. Every person uses their own Anthropic API key; this is what keeps it outside HIPAA and must not be centralised. Stack built and tested (`deploy/home/`); browser hole closed. Outstanding: proxy passphrase, disk-encryption check, encrypted backup, local AI audit log, consent text. Raspberry Pi variant considered and parked. See `docs/scp3-work-list.docx`.
+
+- **WikiCafe SCP hardening**: open security items before real patient data — Keycloak in front of the proxy subdomain, per-user authorization on the `site` parameter, `/config` no longer returning the shared secret. Keycloak protects the wiki but not sofi-proxy, which reads the same files directly. See `docs/scp3-deployment-findings.docx`.
 
 - **Foothills Outlook automation**: Convert monthly local newspaper (PDF) into FedWiki newspaper pages, going back 2 years. Goal: put the tool in the hands of the writers and editor by end of Summer 2026.
 

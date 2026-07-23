@@ -1,0 +1,26 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Without this Python block-buffers stdout when it is not a terminal, and the
+# proxy's output — including the record of refused origins — never reaches
+# `docker compose logs` until the buffer fills or the process exits.
+ENV PYTHONUNBUFFERED=1
+
+# Copy the rcn tree so the coupler can serve scp-coupler/ (port 8766) and
+# scp-optionbox/ (port 8770) as static files.
+# Build context is the rcn repo root; .dockerignore there excludes secrets.
+COPY . .
+
+# Never bake one person's records into an image that ships to other homes.
+# Docker seeds a fresh named volume from whatever sits at the mount path, so
+# leaving pilot data here would copy it into every install on first run.
+RUN rm -rf scp-coupler/data scp-fhir/data \
+ && mkdir -p scp-coupler/data scp-fhir/data
+
+EXPOSE 8766
+
+# Binds 0.0.0.0 inside the container by design (coupler-proxy.py:1402).
+# The network boundary is the 127.0.0.1 publish spec in docker-compose.yml,
+# not the bind address here.
+CMD ["python3", "coupler-proxy.py"]
