@@ -202,8 +202,11 @@ CSS classes: .cld-nlp-* (floating popup), .cld-nl-* (right panel sidebar).
 
 CACHING LESSON: When CLD click events appeared broken (no toast, no popup,
   hard-reload failed), the real cause was the browser serving a stale
-  file:// cached version. ALWAYS open via http://localhost:8766/graph-tool-v22.html
-  (launchd com.rcn.tools, port 8766, auto-starts on boot). Never open as file://.
+  file:// cached version. ALWAYS open via http://localhost:8099/graph-tool-v22.html
+  (launchd com.rcn.tools, port 8099, auto-starts on boot). Never open as file://.
+  Moved off 8766 on 2026-07-22: that port belongs to coupler-proxy.py, and
+  whenever both ran, whichever won the port decided what the browser showed.
+  The server is bound to 127.0.0.1 — it serves this computer only.
   The title "v22 [Apr25]" is the version signal — check it on reload.
 
 ── FREE LINES (April 24 2026) ───────────────────────────────────────
