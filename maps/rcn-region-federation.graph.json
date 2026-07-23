@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "modelName": "RCN Region Federation — FedWiki flow",
+  "modelNote": "How regional stewards (Jerry/MI, Chris/AZ, Marc/WA) publish their polygons + issues to their own FedWiki, and the master RCN NDC Map aggregates them via manifests. Generated 2026-07-23.",
+  "canvasBg": "#ffffff",
+  "lines": [],
+  "metaEdges": [],
+  "nodes": [
+    { "id": "n1", "label": "Regional steward (MI · AZ · WA)", "extraLabels": [], "x": 140, "y": 90, "w": 200, "h": 52, "shape": "rounded", "color": "#1e293b", "fontColor": "#ffffff", "borderColor": "#0f172a", "borderWidth": 2, "borderDash": "solid", "note": "Each steward owns one region.", "props": {}, "fontSize": 12 },
+    { "id": "n2", "label": "Edit in RCN Map + Issue Editor", "extraLabels": [], "x": 140, "y": 210, "w": 200, "h": 52, "shape": "rounded", "color": "#eff6ff", "fontColor": "#1e3a8a", "borderColor": "#93c5fd", "borderWidth": 1.5, "borderDash": "solid", "note": "Add NDCs, boundaries, locations; edit issue parcels.", "props": {}, "fontSize": 12 },
+    { "id": "n3", "label": "Export region bundle + issue JSON", "extraLabels": [], "x": 140, "y": 330, "w": 200, "h": 52, "shape": "rounded", "color": "#f1f5f9", "fontColor": "#334155", "borderColor": "#cbd5e1", "borderWidth": 1.5, "borderDash": "solid", "note": "rcn-map-data.json + issue-data/*.json.", "props": {}, "fontSize": 12 },
+    { "id": "n4", "label": "Publish to steward's FedWiki (human step)", "extraLabels": [], "x": 140, "y": 450, "w": 200, "h": 56, "shape": "rounded", "color": "#fffbeb", "fontColor": "#92400e", "borderColor": "#fcd34d", "borderWidth": 1.5, "borderDash": "solid", "note": "Paste/upload as asset or data item. Marc's rule: signing/publishing is the human's action.", "props": {}, "fontSize": 12 },
+
+    { "id": "n5", "label": "Region page/asset (FedWiki)", "extraLabels": [], "x": 500, "y": 210, "w": 190, "h": 52, "shape": "rounded", "color": "#faf5ff", "fontColor": "#6b21a8", "borderColor": "#c4b5fd", "borderWidth": 1.5, "borderDash": "solid", "note": "CORS-open by federation. One per steward.", "props": {}, "fontSize": 12 },
+    { "id": "n6", "label": "Regions manifest (FedWiki page/roster)", "extraLabels": [], "x": 500, "y": 340, "w": 190, "h": 56, "shape": "rounded", "color": "#e0f2fe", "fontColor": "#075985", "borderColor": "#7dd3fc", "borderWidth": 1.5, "borderDash": "solid", "note": "Lists each region's data URL + steward.", "props": {}, "fontSize": 12 },
+    { "id": "n7", "label": "Issue index (FedWiki)", "extraLabels": [], "x": 500, "y": 470, "w": 190, "h": 48, "shape": "rounded", "color": "#e0f2fe", "fontColor": "#075985", "borderColor": "#7dd3fc", "borderWidth": 1.5, "borderDash": "solid", "note": "Reuses today's issue-index.json pattern, hosted on FedWiki.", "props": {}, "fontSize": 12 },
+
+    { "id": "n8", "label": "Master RCN NDC Map (aggregator)", "extraLabels": [], "x": 880, "y": 300, "w": 200, "h": 60, "shape": "rounded", "color": "#2563eb", "fontColor": "#ffffff", "borderColor": "#1d4ed8", "borderWidth": 2, "borderDash": "solid", "note": "Fetches both manifests at load; merges all regions + issues as read-only, namespaced overlay layers; skips unreachable regions.", "props": {}, "fontSize": 13 },
+    { "id": "n9", "label": "Future: drag a FedWiki page → personal RCN Map", "extraLabels": [], "x": 880, "y": 470, "w": 220, "h": 60, "shape": "rounded", "color": "#f0fdf4", "fontColor": "#166534", "borderColor": "#86efac", "borderWidth": 1.5, "borderDash": "dashed", "note": "Marc's vision (2026-07-23): drop a region/issue wiki page onto your own map to pull it in on demand.", "props": {}, "fontSize": 12 }
+  ],
+  "edges": [
+    { "id": "e1", "src": "n1", "tgt": "n2", "label": "does", "color": "#64748b", "width": 1.5, "fontSize": 10, "curved": false, "polarity": "none", "arrowDir": "end", "delay": false, "dash": "solid", "note": "", "traces": [], "layer": "", "props": {} },
+    { "id": "e2", "src": "n2", "tgt": "n3", "label": "export", "color": "#64748b", "width": 1.5, "fontSize": 10, "curved": false, "polarity": "none", "arrowDir": "end", "delay": false, "dash": "solid", "note": "", "traces": [], "layer": "", "props": {} },
+    { "id": "e3", "src": "n3", "tgt": "n4", "label": "hand off", "color": "#64748b", "width": 1.5, "fontSize": 10, "curved": false, "polarity": "none", "arrowDir": "end", "delay": false, "dash": "solid", "note": "", "traces": [], "layer": "", "props": {} },
+    { "id": "e4", "src": "n4", "tgt": "n5", "label": "publishes", "color": "#d97706", "width": 2, "fontSize": 10, "curved": false, "polarity": "none", "arrowDir": "end", "delay": false, "dash": "solid", "note": "", "traces": [], "layer": "", "props": {} },
+
+    { "id": "e5", "src": "n5", "tgt": "n6", "label": "listed in", "color": "#0ea5e9", "width": 1.5, "fontSize": 10, "curved": false, "polarity": "none", "arrowDir": "end", "delay": false, "dash": "solid", "note": "", "traces": [], "layer": "", "props": {} },
+    { "id": "e6", "src": "n5", "tgt": "n7", "label": "issues listed in", "color": "#0ea5e9", "width": 1.5, "fontSize": 10, "curved": true, "polarity": "none", "arrowDir": "end", "delay": false, "dash": "solid", "note": "", "traces": [], "layer": "", "props": {} },
+
+    { "id": "e7", "src": "n6", "tgt": "n8", "label": "fetched at load", "color": "#16a34a", "width": 2.2, "fontSize": 11, "curved": false, "polarity": "none", "arrowDir": "end", "delay": false, "dash": "solid", "note": "", "traces": [], "layer": "", "props": {} },
+    { "id": "e8", "src": "n7", "tgt": "n8", "label": "fetched at load", "color": "#16a34a", "width": 2.2, "fontSize": 11, "curved": true, "polarity": "none", "arrowDir": "end", "delay": false, "dash": "solid", "note": "", "traces": [], "layer": "", "props": {} },
+    { "id": "e9", "src": "n5", "tgt": "n8", "label": "region data (CORS-open)", "color": "#2563eb", "width": 2, "fontSize": 10, "curved": true, "polarity": "none", "arrowDir": "end", "delay": false, "dash": "solid", "note": "", "traces": [], "layer": "", "props": {} },
+
+    { "id": "e10", "src": "n5", "tgt": "n9", "label": "drag onto map", "color": "#16a34a", "width": 1.8, "fontSize": 10, "curved": true, "polarity": "none", "arrowDir": "end", "delay": false, "dash": "dashed", "note": "", "traces": [], "layer": "", "props": {} }
+  ]
+}

@@ -37,7 +37,7 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 ```
 ~/rcn/
   tools/      standalone HTML tools (see below)
-  maps/       rcn_map.html — NDC map; rcn_static_data.js — bundled data; rcn-map-intro.html, rcn-map-manual.html — docs; rcn-ndc-map.pptx — deck; rcn-map-components.graph.json — component graph
+  maps/       rcn_map.html — NDC map; rcn_static_data.js — bundled data; rcn-map-intro.html, rcn-map-manual.html — docs; rcn-ndc-map.pptx — deck; rcn-map-components.graph.json — component graph; rcn-region-federation-spec.md (+ .graph.json/.svg) — region federation
   data/       PostGIS Python load scripts
   docs/       tool documentation (nrm-tripod-beta.md, sensimod-manual.html, sodoto-manual.html)
   deploy/     deployment artifacts — docker/ (SODOTO Docker package, handed to Wiki Café), scp/ (SCP+Groove Docker package, hosted/WikiCafe track), home/ (SCP 3.0 personal-computer stack), fedwiki-personal/ (bare personal FedWiki, no SCP parts), launchd plists, handoff-sodoto.md
@@ -66,7 +66,7 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 | `evsm-svg-v3.html` | eVSM directed edge assessment (Agree/Disagree/Unknown); Snapshot button bakes config into a single distributable HTML file; Print My Report generates blob-based individual report | Active |
 | `evsm-report.html` | eVSM individual respondent report — one person's assessment data; opened via blob URL from Survey Tool or by drag-drop; for aggregate reports across all respondents use Aggregator's Full Report | Active |
 | `ibis-map-rcn.html` | IBIS argument mapping (post-hoc mode preferred) | Active |
-| `rcn_map.html` (in maps/) | Leaflet NDC map — 7 NDCs, 7 base layers, geographic context layers, issue overlay, shift+click legend, custom location pins, add-NDC, NDC location correction, user boundary layer builder (OSM search + Claude bridge); runs from bundled `rcn_static_data.js` (no API server, works offline); all user data in localStorage with top-level **⬇ Export my data (JSON)** one-file backup (+ per-dataset exports in Saved tab); **deep links**: `?highlight=NAME` zooms to any named polygon/NDC, `?openissue=KEY` loads an issue overlay, `?lat=&lng=&zoom=` flies to coordinates; every polygon popup has **🔗 Copy link**; floating **🔗 Copy view link** button captures current view | Active |
+| `rcn_map.html` (in maps/) | Leaflet NDC map — 7 NDCs, 7 base layers, geographic context layers, issue overlay, shift+click legend, custom location pins, add-NDC, NDC location correction, user boundary layer builder (OSM search + Claude bridge); runs from bundled `rcn_static_data.js` (no API server, works offline); all user data in localStorage with top-level **⬇ Export my data (JSON)** one-file backup (+ per-dataset exports in Saved tab); **region federation** — `loadRegions()` merges steward-published region bundles from a `regions.json` manifest (or `?regions=URL`) as read-only namespaced overlay layers; **deep links**: `?highlight=NAME` zooms to any named polygon/NDC, `?openissue=KEY` loads an issue overlay, `?lat=&lng=&zoom=` flies to coordinates; every polygon popup has **🔗 Copy link**; floating **🔗 Copy view link** button captures current view | Active |
 | `issue-polygon-map.html` | Polycentric governance / Issue Polygon viewer — data-driven via `?issue=` URL param; loads `issue-data/*.json`; parcel stances, layer toggles, draw/name/rename custom polygons, GeoJSON export; **deep links**: `?parcel=ID` flies to a parcel and opens its popup, `?lat=&lng=&zoom=` flies to a view; every parcel and issue polygon popup has **↗ Copy link**; toolbar **↗ Copy view link** button | Active |
 | `more-outliner.html` | Outliner with autosave, MD/HTML/FedWiki export, Hoist; **→ Wiki Ghost** button sends outline as ghost page to FedWiki lineup | Active |
 | `graphjson_to_vensim_cld.html` | Canonical MDL format reference — read before fixing MDL bugs | Reference |
@@ -96,6 +96,14 @@ folder statically. The only network calls are the OSM tiles/geocoder, the option
 saved in the browser's `localStorage`. The top-level **⬇ Export my data (JSON)** button downloads all
 of it as one `rcn-map-data.json` bundle; per-dataset export buttons (locations / polygons / NDCs /
 corrections) live in the **Add boundary layer → Saved** tab.
+
+**Region federation:** the map merges regional data published by stewards (e.g. Jerry/MI, Chris/AZ,
+Marc/WA) to their own FedWiki (or any host). `loadRegions()` fetches a manifest (`regions.json`
+beside the map, or `?regions=<URL>`), pulls each region bundle (the same file the **⬇ Export my
+data** button writes), and merges its NDCs/boundaries/locations as **read-only, region-namespaced**
+overlay layers under a "Federated regions (read-only)" legend section — skipping any unreachable
+region gracefully. Design + flow: `rcn-region-federation-spec.md`, `rcn-region-federation.graph.json`
+(RCN Graph Tool source), `rcn-region-federation.svg` (exported diagram).
 
 **Docs:** `rcn-map-intro.html` (overview), `rcn-map-manual.html` (user manual), `rcn-ndc-map.pptx`
 (deck), `rcn-map-components.graph.json` (component graph for the RCN graph tool).
