@@ -259,6 +259,12 @@
   }
   .add-location-btn:hover { background: #f0f9ff; }
   .add-location-btn.active { background: #e0f2fe; font-weight: 600; }
+  .export-all-btn {
+    display: block; width: 100%; margin: 4px 0 6px; padding: 7px 8px;
+    background: white; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px;
+    cursor: pointer; font-size: 12px; text-align: left;
+  }
+  .export-all-btn:hover { background: #f8fafc; border-color: #94a3b8; }
   .add-loc-popup { min-width: 190px; }
   .add-loc-popup p { margin: 0 0 4px; font-size: 12px; font-weight: 600; }
   .add-loc-popup input {
@@ -339,6 +345,7 @@
   </div>
   <button class="overview-btn" onclick="showOverview()">Overview — all NDCs</button>
   <button class="add-location-btn" id="add-location-mode-btn" onclick="enterAddLocationMode()">+ Add location</button>
+  <button class="export-all-btn" onclick="exportAll()" title="Download everything you've added — NDCs, locations, boundaries, corrections — as one JSON file">⬇ Export my data (JSON)</button>
   <div id="ndc-list"></div>
   <div id="legend"></div>
   <p class="legend-hint">Click to highlight · Shift+click to multi-select</p>
@@ -426,6 +433,7 @@
         <div class="export-row">
           <button class="poly-btn secondary" onclick="exportUserLocations()" style="font-size:10px">Export locations</button>
           <button class="poly-btn secondary" onclick="exportUserPolygons()" style="font-size:10px">Export polygons</button>
+          <button class="poly-btn secondary" onclick="exportUserNDCs()" style="font-size:10px">Export NDCs</button>
           <button class="poly-btn secondary" onclick="exportCorrections()" style="font-size:10px">Export corrections</button>
         </div>
       </div>
@@ -2150,6 +2158,33 @@ function downloadJSON(obj, filename) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(a.href);
+}
+
+// Export just the user-added NDCs (the "Saved NDCs" you create in the Add NDC panel).
+function exportUserNDCs() {
+  const data = loadUserNDCsFromStorage();
+  if (!data.length) { alert('No custom NDCs saved yet.'); return; }
+  downloadJSON(data, 'rcn-user-ndcs.json');
+}
+
+// Export everything you've added — NDCs, locations, boundary polygons, and NDC
+// corrections — as one JSON file. This is the "save my work" action.
+function exportAll() {
+  const bundle = {
+    type:        'RCNMapUserData',
+    exported:    new Date().toISOString(),
+    ndcs:        loadUserNDCsFromStorage(),
+    locations:   loadUserLocations(),
+    polygons:    loadUserPolygons(),
+    corrections: loadCorrections()
+  };
+  const isEmpty = !bundle.ndcs.length && !bundle.locations.length &&
+                  !bundle.polygons.length && !Object.keys(bundle.corrections).length;
+  if (isEmpty) {
+    alert('Nothing to export yet — add a location, boundary, NDC, or correction first.');
+    return;
+  }
+  downloadJSON(bundle, 'rcn-map-data.json');
 }
 
 // Wire add-location form buttons (addEventListener is reliable; avoids inline onclick issues)
