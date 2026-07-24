@@ -372,8 +372,8 @@
         <input id="draw-form-name" class="poly-form-input" type="text" placeholder="e.g. Proposed park boundary">
       </div>
       <div class="poly-form-row">
-        <label title="How this boundary is categorised and coloured on the map.">Type</label>
-        <select id="draw-form-type" class="poly-form-input">
+        <label title="How this boundary is categorised. Sets a default colour, which you can change below.">Type</label>
+        <select id="draw-form-type" class="poly-form-input" onchange="syncFormColor('draw')">
           <option value="admin_boundary">Admin boundary</option>
           <option value="ecological_zone">Ecological zone</option>
           <option value="ndc_zone">NDC zone</option>
@@ -393,6 +393,14 @@
           <option value="GA">GA — Atlanta</option>
           <option value="WLS">WLS — Wales</option>
         </datalist>
+      </div>
+      <div class="poly-form-row">
+        <label title="Fill and outline colour of this overlay (also its legend swatch).">Colour</label>
+        <input id="draw-form-color" class="poly-form-input" type="color" value="#e8593c" style="height:32px;padding:2px;cursor:pointer">
+      </div>
+      <div class="poly-form-row">
+        <label title="How see-through the fill is: left = fully transparent (outline only), right = solid.">Fill opacity <span style="font-weight:400;color:#94a3b8">(clear ↔ solid)</span></label>
+        <input id="draw-form-opacity" type="range" min="0" max="0.9" step="0.05" value="0.15" style="width:100%">
       </div>
       <div class="poly-form-actions">
         <button class="poly-btn" onclick="confirmDrawnPolygon()">Save polygon</button>
@@ -462,8 +470,8 @@
             <input id="poly-form-name" class="poly-form-input" type="text">
           </div>
           <div class="poly-form-row">
-            <label>Type</label>
-            <select id="poly-form-type" class="poly-form-input">
+            <label title="How this boundary is categorised. Sets a default colour, which you can change below.">Type</label>
+            <select id="poly-form-type" class="poly-form-input" onchange="syncFormColor('poly')">
               <option value="admin_boundary">Admin boundary</option>
               <option value="ecological_zone">Ecological zone</option>
               <option value="ndc_zone">NDC zone</option>
@@ -475,6 +483,14 @@
               value="AZ" placeholder="Pick or type a code — e.g. AZ, ON, ES" maxlength="8"
               style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"
               title="State / province / country code used to group this boundary in the legend. Pick a suggested code or type a NEW one (e.g. ON, BC, ES).">
+          </div>
+          <div class="poly-form-row">
+            <label title="Fill and outline colour of this overlay (also its legend swatch).">Colour</label>
+            <input id="poly-form-color" class="poly-form-input" type="color" value="#378add" style="height:32px;padding:2px;cursor:pointer">
+          </div>
+          <div class="poly-form-row">
+            <label title="How see-through the fill is: left = fully transparent (outline only), right = solid.">Fill opacity <span style="font-weight:400;color:#94a3b8">(clear ↔ solid)</span></label>
+            <input id="poly-form-opacity" type="range" min="0" max="0.9" step="0.05" value="0.15" style="width:100%">
           </div>
           <div class="poly-form-actions">
             <button class="poly-btn" onclick="confirmAddPolygon()">Add to map</button>
@@ -708,8 +724,9 @@ function clearLayers() {
   reregisterFederatedLayers();
 }
 
-function registerLayer(id, type, layer) {
-  if (!layersById[id]) layersById[id] = { type, layers: [] };
+function registerLayer(id, type, layer, style) {
+  if (!layersById[id]) layersById[id] = { type, layers: [], style: style || null };
+  else if (style) layersById[id].style = style;
   layersById[id].layers.push(layer);
 }
 
@@ -747,8 +764,8 @@ function applyHighlights() {
 
   if (activeHighlights.size === 0) {
     items.forEach(el => el.classList.remove('active','dimmed'));
-    Object.values(layersById).forEach(({type, layers}) =>
-      layers.forEach(l => { if (l.setStyle) l.setStyle(baseStyle(type, false)); })
+    Object.values(layersById).forEach(({type, layers, style}) =>
+      layers.forEach(l => { if (l.setStyle) l.setStyle(style || baseStyle(type, false)); })
     );
     return;
   }
@@ -759,9 +776,9 @@ function applyHighlights() {
     el.classList.toggle('dimmed', !on);
   });
 
-  Object.entries(layersById).forEach(([lid, {type, layers}]) => {
+  Object.entries(layersById).forEach(([lid, {type, layers, style}]) => {
     const on = activeHighlights.has(lid);
-    const c  = colors[type] || '#888';
+    const c  = (style && style.color) || colors[type] || '#888';
     layers.forEach(l => {
       if (!l.setStyle) return;
       l.setStyle(on
@@ -857,7 +874,7 @@ function buildLegend(ndcMeta, featuresByState, depositCounts, churchCounts = {},
 
     // User-added polygons for this state
     uPolys.forEach(p => {
-      const c  = colors[p.type] || '#888';
+      const c  = p.color || colors[p.type] || '#888';
       const id = `user:${p.idx}`;
       const esc = p.name.replace(/'/g,"\\'");
       html += `<div class="legend-item" data-id="${id}" onclick="highlightById('${id}',event)">` +
@@ -1152,10 +1169,16 @@ function injectExtraNDCs() {
 }
 
 // ── Issue index ───────────────────────────────────────────────────────
-// Loaded at startup from issue-index.json via sofi-proxy.
-// To add a new issue: drop its JSON into tools/issue-data/ and add one
-// entry to tools/issue-data/issue-index.json — no HTML editing needed.
-const ISSUE_INDEX_URL = 'http://localhost:8765/tools/issue-data/issue-index.json';
+// Issue index source, in priority order:
+//   1. ?issues=<URL>            — explicit override (e.g. a FedWiki-hosted index)
+//   2. on localhost/127.0.0.1   — the local sofi-proxy (dev default, unchanged)
+//   3. on any deployed host     — "issue-data/issue-index.json" relative to the map
+// To add a new issue: add one entry to that issue-index.json — no HTML editing needed.
+const ISSUE_INDEX_URL = new URLSearchParams(location.search).get('issues') || (
+  /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
+    ? 'http://localhost:8765/tools/issue-data/issue-index.json'
+    : 'issue-data/issue-index.json'
+);
 let ISSUE_INDEX = [];
 
 async function loadIssueIndex() {
@@ -1875,9 +1898,16 @@ function finishDrawMode() {
   exitDrawInteraction();
   clearDrawVertices();          // drop the corner dots but KEEP the shape visible while naming
   showDrawStage('name');        // same top panel switches to the naming form
+  syncFormColor('draw');        // default the colour to the current type
   const nm = document.getElementById('draw-form-name');
   nm.value = '';
   setTimeout(() => nm.focus(), 100);
+}
+
+// Set a form's colour picker to its selected type's default colour.
+function syncFormColor(which) {
+  const type = document.getElementById(which + '-form-type').value;
+  document.getElementById(which + '-form-color').value = colors[type] || '#2563eb';
 }
 
 function confirmDrawnPolygon() {
@@ -1885,8 +1915,10 @@ function confirmDrawnPolygon() {
   const name  = document.getElementById('draw-form-name').value.trim();
   const type  = document.getElementById('draw-form-type').value;
   const state = document.getElementById('draw-form-state').value.trim().toUpperCase() || 'OTHER';
+  const color   = document.getElementById('draw-form-color').value;
+  const opacity = parseFloat(document.getElementById('draw-form-opacity').value);
   if (!name) { document.getElementById('draw-form-name').focus(); return; }
-  addUserPolygon(drawnPendingGeoJSON, name, type, state);   // saves, renders, legends, exportable
+  addUserPolygon(drawnPendingGeoJSON, name, type, state, color, opacity);   // saves, renders, legends, exportable
   discardDrawnPolygon();
 }
 
@@ -2068,11 +2100,18 @@ function saveUserPolygons(arr) {
 }
 
 // Called after clearLayers() to put user poly layers back into layersById
+// The style a user polygon renders with — its chosen colour/opacity, or the type default.
+function userPolyStyle(p) {
+  const color = p.color || colors[p.type] || '#888';
+  const fillOpacity = (p.fillOpacity != null) ? p.fillOpacity : 0.12;
+  return { color, fillColor: color, weight: 2, opacity: 1, fillOpacity };
+}
+
 function reregisterUserPolyLayers() {
   Object.entries(userPolyLeafletLayers).forEach(([idx, layer]) => {
     const polys = loadUserPolygons();
     const p = polys[+idx];
-    if (p) registerLayer(`user:${idx}`, p.type, layer);
+    if (p) registerLayer(`user:${idx}`, p.type, layer, userPolyStyle(p));
   });
 }
 
@@ -2084,9 +2123,9 @@ function renderUserPolygons() {
 
   const polys = loadUserPolygons();
   polys.forEach((p, i) => {
-    const color = colors[p.type] || '#888';
+    const style = userPolyStyle(p);
     const layer = L.geoJSON(p.geojson, {
-      style: { color, fillColor: color, weight: 2, opacity: 1, fillOpacity: 0.12 },
+      style,
       onEachFeature: (feat, lyr) => {
         lyr.bindPopup(`<b>${p.name}</b><br>${p.type.replace(/_/g,' ')}<br><small>User-added · ${p.state}</small>` +
           `<br><button class="popup-btn" onclick="copyLink(layerLink('user:${i}'))">🔗 Copy link</button>` +
@@ -2094,13 +2133,16 @@ function renderUserPolygons() {
       }
     }).addTo(userPolyGroup);
     userPolyLeafletLayers[i] = layer;
-    registerLayer(`user:${i}`, p.type, layer);
+    registerLayer(`user:${i}`, p.type, layer, style);
   });
 }
 
-function addUserPolygon(geojson, name, type, state) {
+function addUserPolygon(geojson, name, type, state, color, fillOpacity) {
   const polys = loadUserPolygons();
-  polys.push({ name, type, state, geojson, addedAt: new Date().toISOString() });
+  const entry = { name, type, state, geojson, addedAt: new Date().toISOString() };
+  if (color) entry.color = color;
+  if (fillOpacity != null && !isNaN(fillOpacity)) entry.fillOpacity = fillOpacity;
+  polys.push(entry);
   saveUserPolygons(polys);
   renderUserPolygons();
   rebuildLegendInPlace();
@@ -2175,10 +2217,10 @@ function renderFederatedRegions() {
     (b.polygons || []).forEach((p, i) => {
       if (!p || !p.geojson) return;
       const type  = p.type || 'admin_boundary';
-      const color = colors[type] || '#888';
+      const style = userPolyStyle(p);   // honours the steward's chosen colour/opacity, else type default
       const id    = `fed:${fr.region}:poly:${i}`;
       const layer = L.geoJSON(p.geojson, {
-        style: { color, fillColor: color, weight: 2, opacity: 1, fillOpacity: 0.12 },
+        style,
         onEachFeature: (feat, lyr) => {
           lyr.bindPopup(`<b>${p.name || 'Boundary'}</b><br>${type.replace(/_/g,' ')}` +
             `<br><button class="popup-btn" onclick="copyLink(layerLink('${id}'))">🔗 Copy link</button>` +
@@ -2187,7 +2229,7 @@ function renderFederatedRegions() {
       }).addTo(federatedGroup);
       federatedLeafletLayers[id] = layer;
       federatedLayerTypes[id]    = type;
-      registerLayer(id, type, layer);
+      registerLayer(id, type, layer, style);
     });
     (b.locations || []).forEach((loc, i) => {
       if (!loc || loc.lat == null) return;
@@ -2397,6 +2439,7 @@ function selectOSMResult(i) {
   };
   const guessedType = typeMap[r.type] || 'admin_boundary';
   document.getElementById('poly-form-type').value = guessedType;
+  syncFormColor('poly');   // default the colour to the guessed type
   document.getElementById('poly-add-form').style.display = 'block';
 }
 
@@ -2416,8 +2459,10 @@ function confirmAddPolygon() {
   const name  = document.getElementById('poly-form-name').value.trim();
   const type  = document.getElementById('poly-form-type').value;
   const state = document.getElementById('poly-form-state').value.trim().toUpperCase() || 'OTHER';
+  const color   = document.getElementById('poly-form-color').value;
+  const opacity = parseFloat(document.getElementById('poly-form-opacity').value);
   if (!name) { document.getElementById('poly-form-name').focus(); return; }
-  addUserPolygon(pendingPolygon, name, type, state);
+  addUserPolygon(pendingPolygon, name, type, state, color, opacity);
   cancelPendingPolygon();
   document.getElementById('poly-osm-results').innerHTML = '';
   document.getElementById('poly-osm-input').value = '';
