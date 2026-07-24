@@ -2581,28 +2581,46 @@ function importMyData(text) {
   try { data = JSON.parse(text); }
   catch (e) { alert('That file is not valid JSON.'); return; }
 
-  if (!data || data.type !== 'RCNMapUserData') {
-    alert('Unrecognised file. Import the "rcn-map-data.json" bundle written by "Export my data" ' +
-          '(the per-dataset exports — locations/polygons/NDCs/corrections — cannot be auto-detected).');
+  // Accept the full "rcn-map-data.json" bundle OR any single-dataset export
+  // (Export locations / polygons / NDCs / corrections). Detect by shape.
+  let ndcs = null, locations = null, polygons = null, corrections = null, kind = '';
+
+  if (data && data.type === 'RCNMapUserData') {
+    ndcs        = Array.isArray(data.ndcs)      ? data.ndcs      : [];
+    locations   = Array.isArray(data.locations) ? data.locations : [];
+    polygons    = Array.isArray(data.polygons)  ? data.polygons  : [];
+    corrections = (data.corrections && typeof data.corrections === 'object') ? data.corrections : {};
+    kind = 'the full bundle';
+  } else if (Array.isArray(data)) {
+    if (data.some(x => x && x.geojson))                                       { polygons  = data; kind = 'boundaries'; }
+    else if (data.some(x => x && x.code !== undefined))                       { ndcs      = data; kind = 'NDCs'; }
+    else if (data.some(x => x && x.lat !== undefined && x.lng !== undefined)) { locations = data; kind = 'locations'; }
+  } else if (data && typeof data === 'object') {
+    const vals = Object.values(data);
+    if (vals.length && vals.every(v => Array.isArray(v) && v.length === 2)) { corrections = data; kind = 'corrections'; }
+  }
+
+  if (!kind) {
+    alert('Unrecognised file. Import a JSON file written by this map\'s Export buttons — ' +
+          'the full "rcn-map-data.json", or a locations / boundaries / NDCs / corrections export.');
     return;
   }
 
-  const ndcs        = Array.isArray(data.ndcs)      ? data.ndcs      : [];
-  const locations   = Array.isArray(data.locations) ? data.locations : [];
-  const polygons    = Array.isArray(data.polygons)  ? data.polygons  : [];
-  const corrections = (data.corrections && typeof data.corrections === 'object') ? data.corrections : {};
-
-  const counts = ndcs.length + ' NDCs, ' + locations.length + ' locations, ' +
-                 polygons.length + ' boundaries, ' + Object.keys(corrections).length + ' corrections';
-  if (!confirm('Replace ALL of your current map data with this file?\n\n' +
-               'This file contains: ' + counts + '.\n' +
-               'Your current NDCs, locations, boundaries, and corrections will be overwritten. ' +
+  const parts = [];
+  if (ndcs)        parts.push(ndcs.length + ' NDCs');
+  if (locations)   parts.push(locations.length + ' locations');
+  if (polygons)    parts.push(polygons.length + ' boundaries');
+  if (corrections) parts.push(Object.keys(corrections).length + ' corrections');
+  const scope = kind === 'the full bundle'
+    ? 'Replace ALL of your current NDCs, locations, boundaries, and corrections'
+    : 'Replace your current ' + kind;
+  if (!confirm(scope + ' with this file?\n\nContains: ' + parts.join(', ') + '.\n' +
                '(Built-in NDCs and federated regions are not affected.)')) return;
 
-  localStorage.setItem(USER_NDCS_KEY,      JSON.stringify(ndcs));
-  localStorage.setItem(LS_USER_LOCATIONS,  JSON.stringify(locations));
-  localStorage.setItem(LS_USER_POLYS,      JSON.stringify(polygons));
-  localStorage.setItem(LS_CORRECTIONS,     JSON.stringify(corrections));
+  if (ndcs)        localStorage.setItem(USER_NDCS_KEY,     JSON.stringify(ndcs));
+  if (locations)   localStorage.setItem(LS_USER_LOCATIONS, JSON.stringify(locations));
+  if (polygons)    localStorage.setItem(LS_USER_POLYS,     JSON.stringify(polygons));
+  if (corrections) localStorage.setItem(LS_CORRECTIONS,    JSON.stringify(corrections));
 
   // Reload so the imported NDCs, corrections, and layers rebuild cleanly from a fresh init.
   location.reload();
