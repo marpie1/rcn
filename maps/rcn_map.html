@@ -43,6 +43,8 @@
   }
   .legend-swatch.circle { border-radius: 50%; }
   .legend-hint { font-size: 10px; color: #aaa; margin-top: 6px; text-align: center; }
+  .freeze-toggle { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px; color: #475569; margin-top: 4px; cursor: pointer; user-select: none; }
+  .freeze-toggle input { cursor: pointer; }
 
   /* Search */
   .search-box { position: relative; margin-bottom: 8px; }
@@ -265,6 +267,26 @@
     cursor: pointer; font-size: 12px; text-align: left;
   }
   .export-all-btn:hover { background: #f8fafc; border-color: #94a3b8; }
+  .doc-links { display: flex; gap: 10px; margin: 2px 0 8px; font-size: 11px; }
+  .doc-links a { color: #2563eb; text-decoration: none; }
+  .doc-links a:hover { text-decoration: underline; }
+  .req { color: #c0392b; font-weight: 700; cursor: help; }
+  .search-label { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #94a3b8; margin-bottom: 3px; }
+  .basemap-legend-ctl { background: rgba(255,255,255,0.92); border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 9px; font-size: 11px; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+  .basemap-legend-ctl a { color: #2563eb; text-decoration: none; }
+  .basemap-legend-ctl a:hover { text-decoration: underline; }
+  /* Unified draw panel floats over the map (top-centered) so the whole flow is in one place */
+  #draw-panel {
+    position: fixed; top: 14px; left: 45%; transform: translateX(-50%);
+    z-index: 1200; width: 320px; max-width: 80vw;
+    background: #ffffff; border: 1px solid #93c5fd; border-radius: 8px;
+    padding: 10px 12px; font-size: 12px; color: #1e293b; line-height: 1.4;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.28);
+  }
+  #draw-stage-draw { text-align: center; }
+  #draw-stage-name > b { display: block; text-align: center; color: #2563eb; }
+  #draw-panel .add-location-cancel { margin: 6px 3px 0; }
+  #draw-panel .poly-form-actions { margin-top: 8px; }
   .add-loc-popup { min-width: 190px; }
   .add-loc-popup p { margin: 0 0 4px; font-size: 12px; font-weight: 600; }
   .add-loc-popup input {
@@ -332,36 +354,95 @@
     <br><button class="add-location-cancel" onclick="cancelAddLocationMode()">Cancel</button>
   </div>
 
-  <h2>RCN NDC Map</h2>
+  <!-- Draw boundary — unified floating panel over the map (whole flow, top-centered) -->
+  <div id="draw-panel" style="display:none">
+    <!-- Stage 1: drawing -->
+    <div id="draw-stage-draw">
+      <b>Draw a boundary</b>
+      <div id="draw-count" style="margin:4px 0 2px">Click the map to drop corner points (need at least 3).</div>
+      <button class="add-location-cancel" onclick="finishDrawMode()" title="Close the shape and name it">✓ Finish &amp; name</button>
+      <button class="add-location-cancel" onclick="undoDrawPoint()" title="Remove the last point (Backspace / Ctrl+Z)">↩ Undo</button>
+      <button class="add-location-cancel" onclick="cancelDrawMode()" title="Discard and exit">✕ Cancel</button>
+    </div>
+    <!-- Stage 2: naming -->
+    <div id="draw-stage-name" style="display:none">
+      <b>✓ Shape closed — name &amp; save it</b>
+      <div class="poly-form-row" style="margin-top:6px">
+        <label title="Required. Name for this boundary — shown in its popup and the legend.">Name <span class="req" title="Required field">*</span></label>
+        <input id="draw-form-name" class="poly-form-input" type="text" placeholder="e.g. Proposed park boundary">
+      </div>
+      <div class="poly-form-row">
+        <label title="How this boundary is categorised and coloured on the map.">Type</label>
+        <select id="draw-form-type" class="poly-form-input">
+          <option value="admin_boundary">Admin boundary</option>
+          <option value="ecological_zone">Ecological zone</option>
+          <option value="ndc_zone">NDC zone</option>
+        </select>
+      </div>
+      <div class="poly-form-row">
+        <label title="State / province / country code used to group this boundary in the legend. Pick a suggested code or type a NEW one (e.g. ON, BC, ES).">State / group</label>
+        <input id="draw-form-state" class="poly-form-input" type="text" list="state-group-options"
+          value="AZ" placeholder="Pick or type a code — e.g. AZ, ON, ES" maxlength="8"
+          style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"
+          title="State / province / country code used to group this boundary in the legend. Pick a suggested code or type a NEW one (e.g. ON, BC, ES).">
+        <datalist id="state-group-options">
+          <option value="AZ">AZ — Superior</option>
+          <option value="MI">MI — Lansing</option>
+          <option value="WA">WA — Maple Falls</option>
+          <option value="TX">TX — Austin / Bastrop</option>
+          <option value="GA">GA — Atlanta</option>
+          <option value="WLS">WLS — Wales</option>
+        </datalist>
+      </div>
+      <div class="poly-form-actions">
+        <button class="poly-btn" onclick="confirmDrawnPolygon()">Save polygon</button>
+        <button class="poly-btn secondary" onclick="discardDrawnPolygon()">Discard</button>
+      </div>
+    </div>
+  </div>
+
+  <h2 title="Interactive map of all RCN Neighborhood Development Centers, their geographic context, and community issues. Everything you add is saved in your browser.">RCN NDC Map</h2>
   <p id="sidebar-desc">Neighborhood development centers</p>
+  <div class="doc-links">
+    <a href="rcn-map-intro.html" target="_blank" rel="noopener" title="Introduction — what the map is, who it's for, and how it differs from other tools">Intro</a>
+    <a href="rcn-map-manual.html" target="_blank" rel="noopener" title="User manual — step-by-step guide to every feature">Manual</a>
+    <a href="rcn-ndc-map.pptx" title="Overview slide deck (PowerPoint download)">Slides</a>
+  </div>
   <div class="search-box">
+    <div class="search-label" title="Full OpenStreetMap place search — any address, town, landmark, or business worldwide, not just RCN data. Click a result to fly there and drop a marker.">Search any place (OpenStreetMap)</div>
     <div class="search-row">
-      <input id="search-input" class="search-input" type="text" placeholder="Search OpenStreetMap…"
+      <input id="search-input" class="search-input" type="text" placeholder="Address, town, landmark, business…"
+        title="Full OpenStreetMap place search — any address, town, landmark, or business worldwide, not just RCN data. Click a result to fly there and drop a marker."
         onkeydown="if(event.key==='Enter')doSearch()"
         oninput="if(!this.value)document.getElementById('search-results').style.display='none'">
-      <button class="search-btn" onclick="doSearch()">Go</button>
+      <button class="search-btn" onclick="doSearch()" title="Search OpenStreetMap for this place.">Go</button>
     </div>
     <div id="search-results" class="search-results"></div>
   </div>
-  <button class="overview-btn" onclick="showOverview()">Overview — all NDCs</button>
-  <button class="add-location-btn" id="add-location-mode-btn" onclick="enterAddLocationMode()">+ Add location</button>
+  <button class="overview-btn" onclick="showOverview()" title="Zoom back out to show all NDCs at once, with the full legend.">Overview — all NDCs</button>
+  <button class="add-location-btn" id="add-location-mode-btn" onclick="enterAddLocationMode()" title="Drop a named pin anywhere on the map. Saved in your browser and shown in the legend.">+ Add location</button>
+  <button class="add-location-btn" id="draw-boundary-btn" onclick="startDrawMode()" title="Draw a boundary freehand by clicking points on the map, then name and save it. A control panel appears at the top of the map.">✎ Draw a boundary</button>
   <button class="export-all-btn" onclick="exportAll()" title="Download everything you've added — NDCs, locations, boundaries, corrections — as one JSON file">⬇ Export my data (JSON)</button>
   <div id="ndc-list"></div>
   <div id="legend"></div>
   <p class="legend-hint">Click to highlight · Shift+click to multi-select</p>
+  <label class="freeze-toggle" title="When on, highlighting a polygon or NDC no longer auto-zooms the map — the view stays put so you can click through many features without the map jumping around.">
+    <input type="checkbox" id="freeze-view-chk" onchange="freezeView=this.checked">
+    🔒 Freeze view (no auto-zoom)
+  </label>
 
   <!-- ── Add boundary layer panel ────────────────────────────── -->
   <div id="add-poly-panel">
-    <div class="add-poly-header" onclick="togglePolyPanel()">
+    <div class="add-poly-header" onclick="togglePolyPanel()" title="Add a boundary polygon to the map — search OpenStreetMap, generate one with Claude, or review and export what you've saved.">
       <span class="ndc-arrow" id="poly-panel-arrow">▶</span>
       <span>Add boundary layer</span>
     </div>
     <div id="add-poly-body" style="display:none">
 
       <div class="poly-tab-row">
-        <button class="poly-tab active" id="tab-osm" onclick="switchPolyTab('osm')">Search OSM</button>
-        <button class="poly-tab" id="tab-claude" onclick="switchPolyTab('claude')">Ask Claude</button>
-        <button class="poly-tab" id="tab-saved" onclick="switchPolyTab('saved')">Saved</button>
+        <button class="poly-tab active" id="tab-osm" onclick="switchPolyTab('osm')" title="Find a real jurisdiction boundary (county, city, watershed) from OpenStreetMap.">Search OSM</button>
+        <button class="poly-tab" id="tab-claude" onclick="switchPolyTab('claude')" title="Describe a boundary in words and get GeoJSON from Claude to paste back in.">Ask Claude</button>
+        <button class="poly-tab" id="tab-saved" onclick="switchPolyTab('saved')" title="Your saved boundaries, locations, and corrections — with per-dataset export buttons.">Saved</button>
       </div>
 
       <!-- OSM tab -->
@@ -387,15 +468,11 @@
             </select>
           </div>
           <div class="poly-form-row">
-            <label>State / group</label>
-            <select id="poly-form-state" class="poly-form-input">
-              <option value="AZ">AZ — Superior</option>
-              <option value="MI">MI — Lansing</option>
-              <option value="WA">WA — Maple Falls</option>
-              <option value="TX">TX — Austin / Bastrop</option>
-              <option value="GA">GA — Atlanta</option>
-              <option value="WLS">WLS — Wales</option>
-            </select>
+            <label title="State / province / country code used to group this boundary in the legend. Pick a suggested code or type a NEW one (e.g. ON, BC, ES).">State / group</label>
+            <input id="poly-form-state" class="poly-form-input" type="text" list="state-group-options"
+              value="AZ" placeholder="Pick or type a code — e.g. AZ, ON, ES" maxlength="8"
+              style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"
+              title="State / province / country code used to group this boundary in the legend. Pick a suggested code or type a NEW one (e.g. ON, BC, ES).">
           </div>
           <div class="poly-form-actions">
             <button class="poly-btn" onclick="confirmAddPolygon()">Add to map</button>
@@ -444,7 +521,7 @@
 
   <!-- ── New issue panel ───────────────────────────────────────── -->
   <div id="new-issue-panel">
-    <div class="add-poly-header" onclick="toggleNewIssuePanel()">
+    <div class="add-poly-header" onclick="toggleNewIssuePanel()" title="Create a community-issue overlay (affected area + parcel stances) from a plain description, using Claude.">
       <span class="ndc-arrow" id="new-issue-arrow">▶</span>
       <span>New issue</span>
     </div>
@@ -484,32 +561,33 @@
 
   <!-- ── Add NDC panel ─────────────────────────────────────────── -->
   <div id="add-ndc-panel">
-    <div class="add-poly-header" onclick="toggleAddNDCPanel()">
+    <div class="add-poly-header" onclick="toggleAddNDCPanel()" title="Add your own Neighborhood Development Center to the map. Saved in your browser; export with 'Export my data' to share or publish.">
       <span class="ndc-arrow" id="add-ndc-arrow">▶</span>
       <span>Add NDC</span>
     </div>
     <div id="add-ndc-body" style="display:none">
 
       <div class="poly-form-row">
-        <label>Name</label>
+        <label title="Required. The NDC's name, shown on its map marker and in the legend.">Name <span class="req" title="Required field">*</span></label>
         <input id="an-name" class="poly-form-input" type="text" placeholder="e.g. Alpujarra NDC">
       </div>
       <div class="poly-form-row">
-        <label>Location</label>
+        <label title="Optional. The place name or address shown in the marker popup.">Location</label>
         <input id="an-location" class="poly-form-input" type="text" placeholder="e.g. Alpujarras, Spain">
       </div>
       <div class="poly-form-row">
-        <label>Code <span style="font-size:9px;color:#aaa;font-weight:400">(state or country)</span></label>
+        <label title="Required. A short state or country code used to GROUP this NDC in the legend — e.g. AZ (Arizona), WLS (Wales), ES (Spain). Not the NDC's name; the region bucket it belongs to.">Code <span class="req" title="Required field">*</span> <span style="font-size:9px;color:#aaa;font-weight:400">(state or country)</span></label>
         <input id="an-code" class="poly-form-input" type="text" placeholder="e.g. ES, AZ, WLS" maxlength="5"
+          title="Required. A short state or country code used to group this NDC in the legend — e.g. AZ (Arizona), WLS (Wales), ES (Spain)."
           style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
       </div>
       <div style="display:flex;gap:6px;margin-bottom:4px">
         <div class="poly-form-row" style="flex:1;margin:0">
-          <label>Latitude</label>
+          <label title="Required. Decimal degrees. Tip: use 'Pick location on map' below to fill this in automatically.">Latitude <span class="req" title="Required field">*</span></label>
           <input id="an-lat" class="poly-form-input" type="number" step="any" placeholder="36.884">
         </div>
         <div class="poly-form-row" style="flex:1;margin:0">
-          <label>Longitude</label>
+          <label title="Required. Decimal degrees. Tip: use 'Pick location on map' below to fill this in automatically.">Longitude <span class="req" title="Required field">*</span></label>
           <input id="an-lng" class="poly-form-input" type="number" step="any" placeholder="-3.434">
         </div>
       </div>
@@ -519,7 +597,7 @@
       <div id="an-status" style="font-size:11px;color:#22c55e;min-height:14px;text-align:center"></div>
 
       <div style="margin-top:8px;border-top:1px solid #f0f0f0;padding-top:6px">
-        <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">Saved NDCs</div>
+        <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px" title="NDCs you've added, stored in this browser. Remove any with its × button; back them up with 'Export my data'.">Saved NDCs</div>
         <div id="an-saved-list"></div>
       </div>
     </div>
@@ -567,6 +645,38 @@ baseLayers['Topo'].addTo(map);
 L.control.zoom({ position: 'topleft' }).addTo(map);
 L.control.layers(baseLayers, null, { position: 'topleft', collapsed: true }).addTo(map);
 
+// ── Basemap legend link ───────────────────────────────────────────────
+// The thematic OSM basemaps publish their own cartographic legend. Show a link
+// to the appropriate one, only while that basemap is active. (These providers
+// use multi-part HTML legends, so we link out rather than embed an image.)
+const BASEMAP_LEGENDS = {
+  'Topo':      { label: 'OpenTopoMap legend',           url: 'https://opentopomap.org/about' },
+  'CyclOSM':   { label: 'CyclOSM legend',               url: 'https://www.cyclosm.org/legend.html' },
+  'Transport': { label: 'ÖPNVKarte (transport) legend', url: 'https://wiki.openstreetmap.org/wiki/%C3%96PNVKarte' }
+};
+
+const basemapLegendControl = L.control({ position: 'bottomleft' });
+basemapLegendControl.onAdd = function() {
+  const div = L.DomUtil.create('div', 'basemap-legend-ctl');
+  div.style.display = 'none';
+  L.DomEvent.disableClickPropagation(div);
+  return div;
+};
+basemapLegendControl.addTo(map);
+
+function updateBasemapLegend(name) {
+  const el = document.querySelector('.basemap-legend-ctl');
+  if (!el) return;
+  const info = BASEMAP_LEGENDS[name];
+  if (!info) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = '';
+  el.innerHTML = '🗺 <a href="' + info.url + '" target="_blank" rel="noopener" ' +
+    'title="Open the official ' + info.label + ' in a new tab — the key to this basemap\'s symbols and colours.">' +
+    info.label + ' ↗</a>';
+}
+map.on('baselayerchange', e => updateBasemapLegend(e.name));
+updateBasemapLegend('Topo');   // Topo is the default basemap on load
+
 const colors = {
   admin_boundary:   '#378ADD',
   ecological_zone:  '#9333EA',
@@ -579,6 +689,7 @@ const colors = {
 // layersById: id → { type, layers: [Leaflet layer, ...] }
 let layersById   = {};
 let activeHighlights = new Set();
+let freezeView       = false;   // when true, highlighting does not auto-zoom the map
 let currentLayers  = [];
 
 // Persistent layer group for user-added polygons (never cleared)
@@ -675,7 +786,7 @@ function applyHighlights() {
       } catch(e) {}
     });
   });
-  if (bounds && bounds.isValid()) map.fitBounds(bounds, {padding:[60,60]});
+  if (!freezeView && bounds && bounds.isValid()) map.fitBounds(bounds, {padding:[60,60]});
 }
 
 // ── Legend builder ────────────────────────────────────────────────────
@@ -708,7 +819,7 @@ function buildLegend(ndcMeta, featuresByState, depositCounts, churchCounts = {},
     const header = ndcNames.length
       ? ndcNames.join(' / ') + ` <span style="font-weight:400;color:#888">(${state})</span>`
       : state;
-    html += `<div class="legend-group-header">${header}</div>`;
+    html += `<div class="legend-group-header" title="NDC(s) and geographic context layers for this state/region. Click any item to highlight it and zoom in; Shift+click to compare several.">${header}</div>`;
 
     const sorted = [...feats].sort((a,b) => {
       const order = {admin_boundary:0, ecological_zone:1, mineral_deposit:2, ndc_zone:3};
@@ -757,7 +868,7 @@ function buildLegend(ndcMeta, featuresByState, depositCounts, churchCounts = {},
   // Custom locations (flat list, not state-grouped)
   const userLocs = loadUserLocations();
   if (userLocs.length) {
-    html += `<div class="legend-group-header">Custom locations</div>`;
+    html += `<div class="legend-group-header" title="Named pins you've dropped with '+ Add location'. Saved in this browser; back them up with 'Export my data'.">Custom locations</div>`;
     userLocs.forEach((loc, i) => {
       const id = `loc:${i}`;
       html += `<div class="legend-item" data-id="${id}" onclick="highlightById('${id}',event)">` +
@@ -1663,6 +1774,141 @@ addLocOverlay.addEventListener('click', function(e) {
 });
 map.getContainer().appendChild(addLocOverlay);
 
+// ── Draw polygon mode ─────────────────────────────────────────────────
+let drawModeActive     = false;
+let drawPoints         = [];
+let drawPreview        = null;
+let drawVertexMarkers  = [];
+let drawnPendingGeoJSON = null;
+
+// Transparent click-capture overlay for draw mode (stays visible across clicks).
+const drawOverlay = document.createElement('div');
+drawOverlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:681;display:none;cursor:crosshair';
+drawOverlay.addEventListener('click', function(e) {
+  addDrawPoint(map.mouseEventToLatLng(e));
+});
+map.getContainer().appendChild(drawOverlay);
+
+function showDrawStage(stage) {   // 'draw' or 'name'
+  document.getElementById('draw-panel').style.display = '';
+  document.getElementById('draw-stage-draw').style.display = stage === 'draw' ? '' : 'none';
+  document.getElementById('draw-stage-name').style.display = stage === 'name' ? '' : 'none';
+}
+function hideDrawPanel() {
+  document.getElementById('draw-panel').style.display = 'none';
+}
+
+function startDrawMode() {
+  if (addLocationModeActive) cancelAddLocationMode();
+  drawModeActive = true;
+  drawPoints = [];
+  clearDrawPreview();
+  showDrawStage('draw');
+  document.getElementById('map').classList.add('crosshair-cursor');
+  drawOverlay.style.display = 'block';
+  updateDrawCount();
+}
+
+function renderDrawPreview() {
+  if (drawPreview) { map.removeLayer(drawPreview); drawPreview = null; }
+  if (!drawPoints.length) return;
+  const latlngs = drawPoints.map(p => [p.lat, p.lng]);
+  drawPreview = drawPoints.length >= 3
+    ? L.polygon(latlngs,  { color: '#2563eb', weight: 2, dashArray: '6 4', fillColor: '#2563eb', fillOpacity: 0.1 }).addTo(map)
+    : L.polyline(latlngs, { color: '#2563eb', weight: 2, dashArray: '6 4' }).addTo(map);
+}
+
+function addDrawPoint(latlng) {
+  drawPoints.push(latlng);
+  const dot = L.circleMarker(latlng, { radius: 4, color: '#2563eb', fillColor: '#fff', weight: 2, fillOpacity: 1 }).addTo(map);
+  drawVertexMarkers.push(dot);
+  renderDrawPreview();
+  updateDrawCount();
+}
+
+// Undo the last placed vertex (button in the draw banner, or Backspace / Ctrl+Z).
+function undoDrawPoint() {
+  if (!drawModeActive || !drawPoints.length) return;
+  drawPoints.pop();
+  const dot = drawVertexMarkers.pop();
+  if (dot) map.removeLayer(dot);
+  renderDrawPreview();
+  updateDrawCount();
+}
+
+function updateDrawCount() {
+  const n = drawPoints.length;
+  document.getElementById('draw-count').textContent = n >= 3
+    ? n + ' points placed — click “✓ Finish & name” to close and name it.'
+    : 'Click the map to drop corner points (' + n + ' of 3 minimum).';
+}
+
+function clearDrawVertices() {
+  drawVertexMarkers.forEach(m => map.removeLayer(m));
+  drawVertexMarkers = [];
+}
+function clearDrawPreview() {
+  clearDrawVertices();
+  if (drawPreview) { map.removeLayer(drawPreview); drawPreview = null; }
+}
+
+function exitDrawInteraction() {
+  drawModeActive = false;
+  drawOverlay.style.display = 'none';
+  document.getElementById('map').classList.remove('crosshair-cursor');
+}
+
+function cancelDrawMode() {
+  exitDrawInteraction();
+  clearDrawPreview();
+  drawPoints = [];
+  hideDrawPanel();
+}
+
+function finishDrawMode() {
+  if (drawPoints.length < 3) { alert('Add at least 3 points on the map before finishing.'); return; }
+  const ring = drawPoints.map(p => [p.lng, p.lat]);
+  ring.push(ring[0]);   // close the ring
+  drawnPendingGeoJSON = { type: 'Feature', geometry: { type: 'Polygon', coordinates: [ring] }, properties: {} };
+  exitDrawInteraction();
+  clearDrawVertices();          // drop the corner dots but KEEP the shape visible while naming
+  showDrawStage('name');        // same top panel switches to the naming form
+  const nm = document.getElementById('draw-form-name');
+  nm.value = '';
+  setTimeout(() => nm.focus(), 100);
+}
+
+function confirmDrawnPolygon() {
+  if (!drawnPendingGeoJSON) return;
+  const name  = document.getElementById('draw-form-name').value.trim();
+  const type  = document.getElementById('draw-form-type').value;
+  const state = document.getElementById('draw-form-state').value.trim().toUpperCase() || 'OTHER';
+  if (!name) { document.getElementById('draw-form-name').focus(); return; }
+  addUserPolygon(drawnPendingGeoJSON, name, type, state);   // saves, renders, legends, exportable
+  discardDrawnPolygon();
+}
+
+function discardDrawnPolygon() {
+  clearDrawPreview();          // remove the temporary shape (saved polygons re-render separately)
+  drawnPendingGeoJSON = null;
+  drawPoints = [];
+  hideDrawPanel();
+}
+
+// Keyboard shortcuts while drawing: Backspace / Ctrl+Z undo, Enter finish, Esc cancel.
+document.addEventListener('keydown', function(e) {
+  if (!drawModeActive) return;
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+  if (e.key === 'Backspace' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z')) {
+    e.preventDefault(); undoDrawPoint();
+  } else if (e.key === 'Enter') {
+    e.preventDefault(); finishDrawMode();
+  } else if (e.key === 'Escape') {
+    e.preventDefault(); cancelDrawMode();
+  }
+});
+
 function loadUserLocations() {
   try { return JSON.parse(localStorage.getItem(LS_USER_LOCATIONS) || '[]'); }
   catch(e) { return []; }
@@ -1983,7 +2229,7 @@ function fedLegendItem(id, color, circle, label) {
 }
 function buildFederatedLegendHTML() {
   if (!federatedRegions.length) return '';
-  let html = `<div class="legend-group-header">Federated regions (read-only)</div>`;
+  let html = `<div class="legend-group-header" title="Read-only regional data published by other stewards and pulled in from a manifest (regions.json). You can view and highlight these, but not edit them here.">Federated regions (read-only)</div>`;
   federatedRegions.forEach(fr => {
     html += `<div class="legend-group-header" style="font-size:11px;color:#64748b">` +
       `${fr.region}${fr.steward ? ' — ' + fr.steward : ''}</div>`;
@@ -2167,7 +2413,7 @@ function confirmAddPolygon() {
   if (!pendingPolygon) return;
   const name  = document.getElementById('poly-form-name').value.trim();
   const type  = document.getElementById('poly-form-type').value;
-  const state = document.getElementById('poly-form-state').value;
+  const state = document.getElementById('poly-form-state').value.trim().toUpperCase() || 'OTHER';
   if (!name) { document.getElementById('poly-form-name').focus(); return; }
   addUserPolygon(pendingPolygon, name, type, state);
   cancelPendingPolygon();
