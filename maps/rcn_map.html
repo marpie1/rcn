@@ -334,6 +334,10 @@
   <div style="font-size:12px;font-weight:600;color:#333;margin-bottom:6px">New location</div>
   <input id="add-loc-name-input" type="text" placeholder="Name this place…"
     style="width:100%;padding:5px 7px;border:1px solid #ddd;border-radius:4px;font-size:12px;margin-bottom:8px;outline:none;box-sizing:border-box;">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+    <label style="font-size:11px;color:#555" title="Colour of this pin on the map and in the legend.">Colour</label>
+    <input id="add-loc-color-input" type="color" value="#0ea5e9" style="flex:1;height:26px;padding:1px;border:1px solid #ddd;border-radius:4px;cursor:pointer;">
+  </div>
   <div style="display:flex;gap:6px;">
     <button id="add-loc-confirm-btn" style="flex:1;padding:5px 0;font-size:11px;border-radius:4px;cursor:pointer;border:none;background:#0ea5e9;color:white;font-weight:600;">Add</button>
     <button id="add-loc-cancel-btn" style="flex:1;padding:5px 0;font-size:11px;border-radius:4px;cursor:pointer;border:1px solid #ddd;background:white;color:#555;">Cancel</button>
@@ -778,7 +782,7 @@ function applyHighlights() {
 
   Object.entries(layersById).forEach(([lid, {type, layers, style}]) => {
     const on = activeHighlights.has(lid);
-    const c  = (style && style.color) || colors[type] || '#888';
+    const c  = (style && (style.fillColor || style.color)) || colors[type] || '#888';
     layers.forEach(l => {
       if (!l.setStyle) return;
       l.setStyle(on
@@ -891,7 +895,7 @@ function buildLegend(ndcMeta, featuresByState, depositCounts, churchCounts = {},
     userLocs.forEach((loc, i) => {
       const id = `loc:${i}`;
       html += `<div class="legend-item" data-id="${id}" onclick="highlightById('${id}',event)">` +
-        `<div class="legend-swatch circle" style="background:#0ea5e9"></div>` +
+        `<div class="legend-swatch circle" style="background:${loc.color || '#0ea5e9'}"></div>` +
         `${loc.name} <span class="legend-loc-badge">+</span>` +
         `<span class="legend-remove" title="Remove" onclick="event.stopPropagation();removeUserLocation(${i})">×</span></div>`;
     });
@@ -1170,14 +1174,16 @@ function injectExtraNDCs() {
 
 // ── Issue index ───────────────────────────────────────────────────────
 // Issue index source, in priority order:
-//   1. ?issues=<URL>            — explicit override (e.g. a FedWiki-hosted index)
+//   1. ?issues=<URL>            — explicit override (e.g. a full FedWiki asset URL)
 //   2. on localhost/127.0.0.1   — the local sofi-proxy (dev default, unchanged)
-//   3. on any deployed host     — "issue-data/issue-index.json" relative to the map
-// To add a new issue: add one entry to that issue-index.json — no HTML editing needed.
+//   3. on any deployed host     — a FLAT "issue-index.json" beside the map
+// FedWiki asset folders can't hold sub-folders, so the deployed default is a flat
+// file next to rcn_map.html (its per-issue "url" fields then point at flat files
+// or full URLs you host). To add an issue: add one entry to that index — no HTML edit.
 const ISSUE_INDEX_URL = new URLSearchParams(location.search).get('issues') || (
   /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
     ? 'http://localhost:8765/tools/issue-data/issue-index.json'
-    : 'issue-data/issue-index.json'
+    : 'issue-index.json'
 );
 let ISSUE_INDEX = [];
 
@@ -1968,7 +1974,7 @@ function onAddLocationClick(e) {
   const rect = map.getContainer().getBoundingClientRect();
   const pt   = map.latLngToContainerPoint(e.latlng);
   const formEl = document.getElementById('add-loc-form');
-  const formW = 218, formH = 105;
+  const formW = 218, formH = 150;
   const vw = window.innerWidth, vh = window.innerHeight;
   let left = rect.left + pt.x + 14;
   let top  = rect.top  + pt.y - 22;
@@ -1988,8 +1994,9 @@ function confirmAddLocation() {
   const name = inp ? inp.value.trim() : '';
   if (!name) { if (inp) inp.focus(); return; }
   if (!pendingAddLatLng) return;
+  const color = (document.getElementById('add-loc-color-input') || {}).value || '#0ea5e9';
   const locs = loadUserLocations();
-  locs.push({ name, lat: pendingAddLatLng.lat, lng: pendingAddLatLng.lng, addedAt: new Date().toISOString() });
+  locs.push({ name, lat: pendingAddLatLng.lat, lng: pendingAddLatLng.lng, color, addedAt: new Date().toISOString() });
   saveUserLocations(locs);
   document.getElementById('add-loc-form').style.display = 'none';
   exitAddLocationMode();
@@ -2018,24 +2025,28 @@ function renderUserLocations() {
   Object.keys(userLocLeafletLayers).forEach(k => delete userLocLeafletLayers[k]);
   const locs = loadUserLocations();
   locs.forEach((loc, i) => {
-    const esc    = loc.name.replace(/'/g,"\\'");
-    const marker = L.circleMarker([loc.lat, loc.lng], {
-      radius: 8, fillColor: '#0ea5e9', color: 'white', weight: 2, fillOpacity: 1
-    }).bindPopup(`<b>${loc.name}</b><br><small>Custom location</small>` +
+    const style  = userLocStyle(loc);
+    const marker = L.circleMarker([loc.lat, loc.lng], style)
+      .bindPopup(`<b>${loc.name}</b><br><small>Custom location</small>` +
       `<br><button class="popup-btn" onclick="correctUserLocation(${i})">📍 Correct location</button>` +
       `<br><button class="popup-btn" onclick="copyLink(layerLink('loc:${i}'))">🔗 Copy link</button>` +
       `<br><span class="popup-reset" onclick="removeUserLocation(${i})">Remove</span>`);
     marker.addTo(userLocGroup);
     userLocLeafletLayers[i] = marker;
-    registerLayer(`loc:${i}`, 'custom_location', marker);
+    registerLayer(`loc:${i}`, 'custom_location', marker, style);
   });
+}
+
+// A custom pin's marker style — its chosen colour, or the sky-blue default.
+function userLocStyle(loc) {
+  return { radius: 8, fillColor: (loc.color || '#0ea5e9'), color: 'white', weight: 2, fillOpacity: 1 };
 }
 
 function reregisterUserLocLayers() {
   const locs = loadUserLocations();
   Object.entries(userLocLeafletLayers).forEach(([idx, layer]) => {
     const loc = locs[+idx];
-    if (loc) registerLayer(`loc:${idx}`, 'custom_location', layer);
+    if (loc) registerLayer(`loc:${idx}`, 'custom_location', layer, userLocStyle(loc));
   });
 }
 
@@ -2235,13 +2246,13 @@ function renderFederatedRegions() {
       if (!loc || loc.lat == null) return;
       const id = `fed:${fr.region}:loc:${i}`;
       const marker = L.circleMarker([loc.lat, loc.lng], {
-        radius: 8, fillColor: '#0ea5e9', color: 'white', weight: 2, fillOpacity: 1
+        radius: 8, fillColor: (loc.color || '#0ea5e9'), color: 'white', weight: 2, fillOpacity: 1
       }).bindPopup(`<b>${loc.name || 'Location'}</b>` +
         `<br><button class="popup-btn" onclick="copyLink(layerLink('${id}'))">🔗 Copy link</button>` +
         fedAttrib(fr)).addTo(federatedGroup);
       federatedLeafletLayers[id] = marker;
       federatedLayerTypes[id]    = 'custom_location';
-      registerLayer(id, 'custom_location', marker);
+      registerLayer(id, 'custom_location', marker, userLocStyle(loc));
     });
     (b.ndcs || []).forEach(n => {
       if (!n || n.lat == null) return;
