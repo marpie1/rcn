@@ -423,6 +423,8 @@
   <button class="add-location-btn" id="add-location-mode-btn" onclick="enterAddLocationMode()" title="Drop a named pin anywhere on the map. Saved in your browser and shown in the legend.">+ Add location</button>
   <button class="add-location-btn" id="draw-boundary-btn" onclick="startDrawMode()" title="Draw a boundary freehand by clicking points on the map, then name and save it. A control panel appears at the top of the map.">✎ Draw a boundary</button>
   <button class="export-all-btn" onclick="exportAll()" title="Download everything you've added — NDCs, locations, boundaries, corrections — as one JSON file">⬇ Export my data (JSON)</button>
+  <button class="export-all-btn" onclick="document.getElementById('import-data-file').click()" title="Load a previously exported rcn-map-data.json — REPLACES your current NDCs, locations, boundaries, and corrections (built-in NDCs and federated regions are untouched).">⬆ Import my data (JSON)</button>
+  <input type="file" id="import-data-file" accept=".json,application/json" style="display:none" onchange="importMyDataFile(this)">
   <div id="ndc-list"></div>
   <div id="legend"></div>
   <p class="legend-hint">Click to highlight · Shift+click to multi-select</p>
@@ -2561,6 +2563,49 @@ function exportAll() {
     return;
   }
   downloadJSON(bundle, 'rcn-map-data.json');
+}
+
+// Import a previously exported rcn-map-data.json and REPLACE the user's current
+// data with it. Built-in NDCs (static data) and federated regions are untouched.
+function importMyDataFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { importMyData(reader.result); input.value = ''; };
+  reader.onerror = () => { alert('Could not read that file.'); input.value = ''; };
+  reader.readAsText(file);
+}
+
+function importMyData(text) {
+  let data;
+  try { data = JSON.parse(text); }
+  catch (e) { alert('That file is not valid JSON.'); return; }
+
+  if (!data || data.type !== 'RCNMapUserData') {
+    alert('Unrecognised file. Import the "rcn-map-data.json" bundle written by "Export my data" ' +
+          '(the per-dataset exports — locations/polygons/NDCs/corrections — cannot be auto-detected).');
+    return;
+  }
+
+  const ndcs        = Array.isArray(data.ndcs)      ? data.ndcs      : [];
+  const locations   = Array.isArray(data.locations) ? data.locations : [];
+  const polygons    = Array.isArray(data.polygons)  ? data.polygons  : [];
+  const corrections = (data.corrections && typeof data.corrections === 'object') ? data.corrections : {};
+
+  const counts = ndcs.length + ' NDCs, ' + locations.length + ' locations, ' +
+                 polygons.length + ' boundaries, ' + Object.keys(corrections).length + ' corrections';
+  if (!confirm('Replace ALL of your current map data with this file?\n\n' +
+               'This file contains: ' + counts + '.\n' +
+               'Your current NDCs, locations, boundaries, and corrections will be overwritten. ' +
+               '(Built-in NDCs and federated regions are not affected.)')) return;
+
+  localStorage.setItem(USER_NDCS_KEY,      JSON.stringify(ndcs));
+  localStorage.setItem(LS_USER_LOCATIONS,  JSON.stringify(locations));
+  localStorage.setItem(LS_USER_POLYS,      JSON.stringify(polygons));
+  localStorage.setItem(LS_CORRECTIONS,     JSON.stringify(corrections));
+
+  // Reload so the imported NDCs, corrections, and layers rebuild cleanly from a fresh init.
+  location.reload();
 }
 
 // Wire add-location form buttons (addEventListener is reliable; avoids inline onclick issues)
