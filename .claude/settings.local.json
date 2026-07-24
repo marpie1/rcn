@@ -273,7 +273,14 @@
       "Bash(awk -F'\"' '{print $2}')",
       "Bash(pkill -f \"http.server 8795\")",
       "Bash(xargs -I{} gh api \"repos/fedwiki/wiki-client/git/trees/{}\" --jq '.tree[].path')",
-      "Bash(xargs -I{} gh api \"repos/fedwiki/wiki-server/git/trees/{}\" --jq '.tree[].path')"
+      "Bash(xargs -I{} gh api \"repos/fedwiki/wiki-server/git/trees/{}\" --jq '.tree[].path')",
+      "WebFetch(domain:opentopomap.org)",
+      "WebFetch(domain:www.cyclosm.org)",
+      "Bash(pkill -f \"http.server 8800\")",
+      "Bash(pkill -f \"http.server 8802\")",
+      "Bash(awk '/<style/{f=1} f{print NR\": \"$0} /<\\\\/style>/{if\\(f\\){exit}}' tools/graph-tool-v22.html)",
+      "Bash(pbpaste)",
+      "Bash(awk '{print $5\"\\\\t\"$NF}')"
     ]
   }
 }
