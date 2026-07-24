@@ -1,0 +1,85 @@
+/* ===========================================================================
+ * RCN FedWiki — mobile theme override
+ * ---------------------------------------------------------------------------
+ * Served by wiki-server at /theme/style.css from <data>/status/theme/style.css
+ * (in the container: /root/.wiki/status/theme/style.css). It loads AFTER the
+ * built-in /style/style.css, so plain (non-!important) rules here win by
+ * source order; we use !important only where the built-in rule is itself
+ * inside a media query of equal specificity.
+ *
+ * Strategy: keep FedWiki's horizontal "lineup" (JS scrolls it by scrollLeft),
+ * but make each page fill the phone screen so you swipe one full page at a
+ * time — a card feel — instead of the built-in max-width:490px rule that
+ * collapses pages to a 1% sliver. Desktop is untouched (all rules are inside
+ * the phone-width media query).
+ * =========================================================================== */
+
+@media all and (max-width: 640px) {
+
+  /* --- Each page fills the viewport --------------------------------------- */
+  /* Built-in mobile rule sets .page { width: 1% } — override to full screen. */
+  .page {
+    width: 100vw !important;
+    margin: 0 !important;
+    box-shadow: none !important;        /* edge-to-edge; drop the desktop card shadow */
+    border-right: 1px solid #d8d8d8;    /* faint seam between swipeable pages */
+  }
+
+  /* Reclaim the fat desktop padding so text isn't squeezed into the middle. */
+  .paper {
+    padding: 16px 18px 96px 18px;       /* extra bottom padding clears the footer bar */
+  }
+
+  /* --- Readability -------------------------------------------------------- */
+  body {
+    font-size: 17px;                    /* built-in inherits the ~16px default */
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;     /* stop iOS auto-inflating some text */
+  }
+
+  .paper p,
+  .paper li {
+    font-size: 1rem;
+  }
+
+  /* Media and code must never force horizontal page overflow. */
+  .paper img,
+  .paper svg,
+  .paper iframe,
+  .paper table {
+    max-width: 100% !important;
+    height: auto;
+  }
+
+  .paper pre {
+    overflow-x: auto;                   /* long code lines scroll inside the block */
+    white-space: pre;
+  }
+
+  /* --- Touch targets ------------------------------------------------------ */
+  /* The page-fold handle (top strip you tap to fold/unfold) — make it tappable. */
+  .page-handle {
+    min-height: 24px;
+  }
+
+  /* Footer action bar: taller and easier to hit; keep it out of the way. */
+  footer {
+    height: 28px;
+    padding: 12px 10px;
+    font-size: 90%;
+  }
+
+  /* Editor: comfortable minimum height and no zoom-on-focus (needs >=16px). */
+  .factory,
+  textarea,
+  input[type="text"] {
+    font-size: 16px !important;
+    min-height: 160px;
+  }
+  input[type="text"] { min-height: 0; }
+
+  /* Links and fold controls get a little more room to tap without misfires. */
+  .paper a {
+    padding: 1px 0;
+  }
+}
