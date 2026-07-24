@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<!-- RCN Timeline — Introduction & Positioning
+     Update this file when new major features land (EDTF dates, branching,
+     forecaster calibration, Graph/Map bridges) or comparator tools change. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN Timeline — Introduction</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+.page{max-width:820px;margin:0 auto;padding:40px 24px 80px}
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:32px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:32px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569;line-height:1.5}
+.doc-meta{margin-top:14px;font-size:12px;color:#94a3b8}
+.doc-nav{display:flex;gap:12px;margin-bottom:40px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff;transition:background .15s}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+h2{font-size:20px;font-weight:700;color:#0f172a;margin:48px 0 14px;padding-top:8px;border-top:1px solid #e2e8f0}
+h3{font-size:15px;font-weight:600;color:#1e293b;margin:28px 0 8px}
+p{margin-bottom:14px;color:#334155}
+p:last-child{margin-bottom:0}
+.lead{font-size:17px;line-height:1.7;color:#1e293b;margin-bottom:28px;padding:20px 24px;background:#f0f9ff;border-left:4px solid #3b82f6;border-radius:0 8px 8px 0}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0 30px}
+.trio-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 16px 18px;text-align:center}
+.trio-card .ic{font-size:26px;margin-bottom:8px}
+.trio-card h4{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:5px}
+.trio-card p{font-size:12px;color:#475569;margin:0;line-height:1.5}
+.trio-card.time{border-color:#93c5fd;background:#eff6ff;box-shadow:0 2px 10px rgba(59,130,246,.12)}
+.highlight-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin:20px 0 28px}
+.hl-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px}
+.hl-card h4{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:6px}
+.hl-card p{font-size:12px;color:#475569;margin:0;line-height:1.55}
+.unique-list{list-style:none;margin:12px 0 24px}
+.unique-list li{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:#334155;line-height:1.55}
+.unique-list li:last-child{border-bottom:none}
+.unique-list .badge{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#dbeafe;color:#1d4ed8;border-radius:6px;padding:2px 7px;flex-shrink:0;align-self:flex-start;margin-top:2px}
+.unique-list .badge.orig{background:#f3e8ff;color:#6b21a8}
+.comparator{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-bottom:12px}
+.comparator-header{display:flex;align-items:baseline;gap:10px;margin-bottom:7px}
+.comparator-name{font-size:14px;font-weight:700;color:#0f172a}
+.comparator-verdict{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.verdict-good{background:#dcfce7;color:#166534}
+.verdict-partial{background:#fef9c3;color:#854d0e}
+.verdict-diff{background:#fee2e2;color:#991b1b}
+.comparator p{font-size:13px;color:#334155;line-height:1.6;margin:0}
+.callout{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;margin:18px 0;font-size:13px;color:#713f12}
+.positioning{background:#0f172a;color:#f1f5f9;border-radius:12px;padding:26px 30px;margin-top:40px}
+.positioning h3{color:#fff;margin-top:0}
+.positioning p{color:#cbd5e1;font-size:14px}
+.cta{display:inline-block;margin-top:8px;font-size:13px;font-weight:600;background:#3b82f6;color:#fff;padding:9px 18px;border-radius:8px}
+.cta:hover{background:#2563eb;text-decoration:none}
+.foot{margin-top:48px;padding-top:18px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8}
+code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;font-size:12px;color:#0f172a}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-tag">RCN Toolset · Temporal Layer</div>
+    <div class="doc-title">⏳ RCN Timeline</div>
+    <div class="doc-sub">A computable, reusable way to put things in time — spans, durations, and place on a timeline — that a group can make more accurate together.</div>
+    <div class="doc-meta">Prototype v0 · part of the RCN family alongside the Graph Tool and the Issue Polygon Map</div>
+  </div>
+
+  <nav class="doc-nav">
+    <a href="rcn-timeline-intro.html" class="current">Introduction</a>
+    <a href="rcn-timeline-manual.html">User Manual</a>
+    <a href="rcn-timeline.html">Open the Tool ↗</a>
+  </nav>
+
+  <p class="lead">We already have good ways to draw <strong>cause</strong> (the Graph Tool) and <strong>space</strong> (the Map). Time was the dimension left. RCN Timeline treats a moment in time the same way those tools treat a node or a parcel: as a first-class object you can place, relate, share, and reason over — not a decoration on a chart.</p>
+
+  <h2>The third member of the family</h2>
+  <p>Each RCN tool is the same shape underneath: <strong>regions plus typed relations</strong>. Time turns out to be exactly that kind of object — an interval on a line, with a small, closed vocabulary of relations between intervals.</p>
+  <div class="trio">
+    <div class="trio-card"><div class="ic">🔗</div><h4>Causality</h4><p>Nodes + causal edges<br>(the Graph Tool)</p></div>
+    <div class="trio-card"><div class="ic">🗺️</div><h4>Space</h4><p>Geometry + topology<br>(the Map)</p></div>
+    <div class="trio-card time"><div class="ic">⏳</div><h4>Time</h4><p>Intervals + Allen relations<br>(this tool)</p></div>
+  </div>
+
+  <h2>What makes it different</h2>
+  <p>It isn't a Gantt chart and it isn't a slideshow timeline. Four ideas set it apart:</p>
+  <ul class="unique-list">
+    <li><span class="badge orig">Fuzzy</span><div><strong>Time is allowed to be uncertain.</strong> Every span has a soft, fading edge — an event you're sure happened in 2018 but whose exact start you're guessing shows a widening band, not a fake-crisp bar. History is fuzzy; the tool says so.</div></li>
+    <li><span class="badge orig">Relational</span><div><strong>You don't have to know the dates.</strong> Say "the pilot was <em>before</em> the grant" and "the grant <em>meets</em> the scale-up," and a solver places everything from the relations. Group knowledge composes into something tighter than any one person knew.</div></li>
+    <li><span class="badge">Movable</span><div><strong>Drag to plan and forecast.</strong> Floating events slide within their constraints; rigid links haul their neighbors along; slack is visible. Push a task past a hard deadline and it lights up red — the timeline polices itself.</div></li>
+    <li><span class="badge">Dual&nbsp;face</span><div><strong>Say it or drag it — same assertion.</strong> Typing "<code>Report = Jan 2026 .. Jun 2026</code>" and dragging a bar's edge are two views of one underlying fact.</div></li>
+  </ul>
+
+  <div class="callout"><strong>Accuracy is a group activity.</strong> Nobody asserts <em>the</em> date; everyone contributes <em>bounds</em> they can defend, each carrying who said it and on what evidence. Contributions only narrow the uncertainty — so refining a timeline is a barn-raising, not a turf war. When two claims genuinely conflict, the tool points at the exact disagreement instead of averaging it away.</div>
+
+  <h2>What it looks like</h2>
+  <div class="highlight-grid">
+    <div class="hl-card"><h4>Fuzzy interval bars</h4><p>A solid "certain" core with soft shoulders that fade in and out. Instants show as a point.</p></div>
+    <div class="hl-card"><h4>Pinned vs. floating</h4><p>📌 Pinned facts are locked to real dates; floating events are placed by the solver and nudged by hand.</p></div>
+    <div class="hl-card"><h4>Real calendar dates</h4><p>Everything reads as <em>Mon D, YYYY</em> — never a decimal — with an axis that shifts from years to months to days as you zoom.</p></div>
+    <div class="hl-card"><h4>Before &amp; meets links</h4><p>Loose "before" links show slack; rigid "meets" links weld end-to-start and move as a block.</p></div>
+    <div class="hl-card"><h4>Contradiction flags</h4><p>Push something past a pinned deadline and the link, the object, and an issues list turn red.</p></div>
+    <div class="hl-card"><h4>Provenance on everything</h4><p>Who asserted it, the evidence, and a confidence level — shown on hover, tinting how solid the bar looks.</p></div>
+  </div>
+
+  <h2>How it compares</h2>
+  <div class="comparator"><div class="comparator-header"><span class="comparator-name">Gantt / project tools (MS Project, Asana)</span><span class="comparator-verdict verdict-partial">Overlaps</span></div><p>They have dependencies and slack, but every task needs a crisp start date and there's no notion of <em>uncertainty</em> or <em>evidence</em>. Built for a manager's plan, not for a group reconstructing what's true.</p></div>
+  <div class="comparator"><div class="comparator-header"><span class="comparator-name">TimelineJS / Sutori (story timelines)</span><span class="comparator-verdict verdict-diff">Different</span></div><p>Beautiful for presenting a fixed sequence of dated events. But they're display-only — nothing is movable, relational, uncertain, or collaboratively refined.</p></div>
+  <div class="comparator"><div class="comparator-header"><span class="comparator-name">Spreadsheets &amp; hand-drawn timelines</span><span class="comparator-verdict verdict-diff">Different</span></div><p>Infinitely flexible and completely un-computable. No solver, no contradiction checking, no shared object you can link to.</p></div>
+  <div class="comparator"><div class="comparator-header"><span class="comparator-name">RCN Timeline</span><span class="comparator-verdict verdict-good">The gap it fills</span></div><p>Fuzzy + relational + movable + provenanced + linkable — a computable time object that both plans the future and reconstructs the past, and that a group sharpens together.</p></div>
+
+  <h2>Share what you make</h2>
+  <p>Every object can produce a <strong>self-contained link</strong> that reopens the exact timeline and highlights the object you were looking at — paste it into a document, a chat, or a FedWiki page. You can also export the picture as <strong>SVG</strong> or <strong>PNG</strong>, and the whole model as <strong>JSON</strong>.</p>
+
+  <div class="positioning">
+    <h3>Where this is going</h3>
+    <p>v0 is a working prototype meant for play. Next comes richer historical dating (“circa 1200,” “the 1830s,” “unknown”), branching scenarios for “what-if” planning, forecaster calibration that turns good predictions into earned standing, and bridges so a causal node in the Graph Tool or a parcel on the Map can carry its own interval — one timeline layer beneath all three tools.</p>
+    <a class="cta" href="rcn-timeline.html">Open RCN Timeline →</a>
+  </div>
+
+  <div class="foot">RCN Timeline · Introduction · Prototype v0. See the <a href="rcn-timeline-manual.html">User Manual</a> for how every feature works.</div>
+</div>
+</body>
+</html>

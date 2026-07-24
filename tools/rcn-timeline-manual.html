@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<!-- RCN Timeline — User Manual
+     Update when features change. Sections are numbered; keep the nav + TOC in sync. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN Timeline — User Manual</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+.page{max-width:840px;margin:0 auto;padding:40px 24px 90px}
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:28px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:30px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569}
+.doc-nav{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+.toc{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-bottom:36px;columns:2;column-gap:28px}
+.toc a{display:block;font-size:12.5px;padding:3px 0;color:#475569;break-inside:avoid}
+.toc a:hover{color:#1d4ed8;text-decoration:none}
+h2{font-size:19px;font-weight:700;color:#0f172a;margin:44px 0 12px;padding-top:10px;border-top:1px solid #e2e8f0;scroll-margin-top:16px}
+h3{font-size:14.5px;font-weight:600;color:#1e293b;margin:24px 0 7px}
+p{margin-bottom:13px;color:#334155;font-size:14px}
+ul,ol{margin:0 0 14px 22px;color:#334155;font-size:14px}
+li{margin-bottom:6px;line-height:1.55}
+code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;font-size:12.5px;color:#0f172a;white-space:nowrap}
+kbd{background:#fff;border:1px solid #cbd5e1;border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:11px;font-family:system-ui,sans-serif;color:#0f172a}
+.tip{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#14532d}
+.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#1e3a8a}
+.warn{background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#713f12}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0 22px}
+th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+td{padding:8px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+td:first-child code{font-weight:600}
+.foot{margin-top:52px;padding-top:18px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-tag">RCN Toolset · Temporal Layer</div>
+    <div class="doc-title">⏳ RCN Timeline — User Manual</div>
+    <div class="doc-sub">Every control, gesture, and sentence — how to build, refine, and share a timeline.</div>
+  </div>
+
+  <nav class="doc-nav">
+    <a href="rcn-timeline-intro.html">Introduction</a>
+    <a href="rcn-timeline-manual.html" class="current">User Manual</a>
+    <a href="rcn-timeline.html">Open the Tool ↗</a>
+  </nav>
+
+  <div class="toc">
+    <a href="#s1">1 · Core ideas in one minute</a>
+    <a href="#s2">2 · The interface</a>
+    <a href="#s3">3 · Starting &amp; navigating</a>
+    <a href="#s4">4 · Creating intervals</a>
+    <a href="#s5">5 · The interval — extent &amp; the four handles</a>
+    <a href="#s6">6 · Pinned vs. floating</a>
+    <a href="#s7">7 · Dates &amp; durations</a>
+    <a href="#s8">8 · Links — before &amp; meets</a>
+    <a href="#s9">9 · The solver &amp; contradictions</a>
+    <a href="#s10">10 · Saying it — the sentence box</a>
+    <a href="#s11">11 · Provenance</a>
+    <a href="#s12">12 · Selecting, editing, deleting</a>
+    <a href="#s13">13 · Deep links (Copy link)</a>
+    <a href="#s14">14 · Exporting (JSON · SVG · PNG)</a>
+    <a href="#s15">15 · Keyboard &amp; mouse reference</a>
+    <a href="#s16">16 · Working patterns</a>
+    <a href="#s17">17 · What's not here yet</a>
+  </div>
+
+  <h2 id="s1">1 · Core ideas in one minute</h2>
+  <p>A timeline is made of <strong>intervals</strong> (spans of time, drawn as bars) and <strong>links</strong> (typed relations between them). Three things are worth knowing before you start:</p>
+  <ul>
+    <li><strong>Time can be fuzzy.</strong> A bar has a solid <em>core</em> (the part you're sure of) and soft <em>shoulders</em> that fade out (the uncertainty).</li>
+    <li><strong>Events are pinned or floating.</strong> 📌 Pinned = locked to a real date (a fact, a deadline). Floating = the tool positions it from its links, and you can nudge it.</li>
+    <li><strong>You can say it or drag it.</strong> Typing a sentence and dragging a bar make the same underlying fact — use whichever is faster.</li>
+  </ul>
+
+  <h2 id="s2">2 · The interface</h2>
+  <p>Three regions:</p>
+  <ul>
+    <li><strong>Toolbar</strong> (top) — document actions, creating intervals and links, the sentence box, zoom, and export. Hover any button for a one-line explanation.</li>
+    <li><strong>Canvas</strong> (center) — a horizontal date axis with interval bars stacked in rows and links drawn between them. An <strong>issues</strong> panel appears at the bottom-right of the properties column when something contradicts.</li>
+    <li><strong>Properties panel</strong> (right) — everything about whatever you've selected: label, dates, pinned/floating, fuzz, confidence, colour, provenance, a copy-link button, and delete.</li>
+  </ul>
+
+  <h2 id="s3">3 · Starting &amp; navigating</h2>
+  <h3>Start a timeline</h3>
+  <ul>
+    <li><strong>New</strong> (top-left) clears everything to a blank canvas centred on the current year. This is how you begin from scratch.</li>
+    <li><strong>Demo</strong> loads the sample "founding → first report" timeline — handy for exploring, and to bring the sample back after pressing New.</li>
+    <li>Give your timeline a name in the field next to the New button.</li>
+  </ul>
+  <h3>Move around</h3>
+  <ul>
+    <li><strong>Pan:</strong> drag an empty part of the canvas left/right.</li>
+    <li><strong>Zoom:</strong> scroll the mouse wheel over the canvas (zooms around the cursor), or use <kbd>＋</kbd> / <kbd>－</kbd>.</li>
+    <li><strong>Fit:</strong> the <strong>Fit</strong> button frames every interval.</li>
+  </ul>
+  <div class="note">The date axis is <strong>adaptive</strong>: zoomed out you see years (<code>2024</code>), zoom in and it becomes months (<code>Jul 2024</code>), zoom further and it becomes days (<code>Jul 15</code>). Dates are never shown as decimals.</div>
+
+  <h2 id="s4">4 · Creating intervals</h2>
+  <p>Three ways, all equivalent:</p>
+  <ul>
+    <li><strong>Double-click</strong> an empty spot on the canvas — makes an interval starting at that date, on the row under your cursor.</li>
+    <li><strong>+ Interval</strong> button — makes one at the centre of the current view.</li>
+    <li><strong>Sentence box</strong> — type <code>new Groundbreaking</code> and press <kbd>Enter</kbd>. Naming a not-yet-existing interval in any sentence also creates it.</li>
+  </ul>
+  <p>A new interval is <em>floating</em> by default. Select it (click it) and edit it in the properties panel.</p>
+
+  <h2 id="s5">5 · The interval — extent &amp; the four handles</h2>
+  <p>An interval bar has a solid <strong>core</strong> from its <em>start</em> to its <em>end</em> (the time you're certain about), and soft <strong>fuzz shoulders</strong> extending outward that fade to nothing (the uncertainty). A bar whose start and end are the same date is an <strong>instant</strong>, drawn as a dot.</p>
+  <p>Select an interval and four drag handles appear — this is the "grab-target decides" rule, so there are no modes to switch:</p>
+  <table>
+    <tr><th>Handle</th><th>Grab</th><th>Does</th></tr>
+    <tr><td>Body</td><td>the middle of the bar</td><td>Moves the whole interval in time (keeps its length and fuzz). <em>Floating only.</em></td></tr>
+    <tr><td>Inner edge</td><td>the blue handle at the core start/end</td><td>Changes the <strong>start</strong> or <strong>end</strong> date — i.e. the duration. <em>Hidden when pinned.</em></td></tr>
+    <tr><td>Outer edge</td><td>the grey handle past the shoulder</td><td>Widens or narrows the <strong>fuzz</strong> (how uncertain that end is). Works even when pinned.</td></tr>
+  </table>
+  <div class="tip">The split is deliberate: you can always become <em>less sure</em> about a pinned fact (widen its band), but you can't silently slide the fact to a new date. The record can't be falsified by a stray mouse gesture.</div>
+  <p>You can also set start, end, and fuzz precisely in the properties panel (fuzz has sliders; start/end are date fields — see §7).</p>
+
+  <h2 id="s6">6 · Pinned vs. floating</h2>
+  <p>Toggle it in the panel (the <strong>📌 Pinned / Floating</strong> buttons) or press <kbd>P</kbd> with the interval selected.</p>
+  <ul>
+    <li><strong>📌 Pinned</strong> — anchored to the calendar. Shown with a solid core outline, a pin, and a drop-line to the axis. It will not move when neighbours shift. Use it for facts and hard deadlines.</li>
+    <li><strong>Floating</strong> — shown with a dashed core outline. The solver positions it from its links; you can nudge its body within what the links allow. Use it for anything planned, forecast, or not yet firmly dated.</li>
+  </ul>
+
+  <h2 id="s7">7 · Dates &amp; durations</h2>
+  <p>Dates always <em>display</em> as <code>Mon D, YYYY</code> (e.g. <code>Mar 15, 2021</code>). When you <em>type</em> a date — in the sentence box or a Start/End field — several forms are accepted:</p>
+  <table>
+    <tr><th>Type this</th><th>Means</th></tr>
+    <tr><td><code>Mar 15, 2021</code></td><td>15 March 2021</td></tr>
+    <tr><td><code>March 15 2021</code></td><td>same (comma optional, full or short month)</td></tr>
+    <tr><td><code>2021-03-15</code></td><td>same (ISO)</td></tr>
+    <tr><td><code>Jan 2018</code></td><td>1 January 2018</td></tr>
+    <tr><td><code>2018</code></td><td>1 January 2018</td></tr>
+  </table>
+  <p><strong>Durations</strong> (a length, not a date — used for fuzz, slack, and "lasts") display as spans like <code>6 mo</code> or <code>3 yr 2 mo</code>, never decimals. When typing a duration you can write <code>6 months</code>, <code>2 weeks</code>, <code>90 days</code>, or a bare number for years (<code>3</code>).</p>
+
+  <h2 id="s8">8 · Links — before &amp; meets</h2>
+  <p>Links are the typed relations between intervals. v0 has the two that do the most work:</p>
+  <ul>
+    <li><strong>before</strong> (loose) — A ends no later than B starts, but a gap is allowed. The gap is <strong>slack</strong>, labelled on the link. Drawn as a dashed arrow. Drag A later and it eventually pushes B; drag B earlier and it stops at A's wall.</li>
+    <li><strong>meets</strong> (rigid) — B starts exactly when A ends, welded. Drawn as a solid connector with a weld mark. Move one and the other follows as a block.</li>
+  </ul>
+  <h3>Creating a link</h3>
+  <ol>
+    <li>Click <strong>+ before →</strong> or <strong>+ meets ⊣⊢</strong>.</li>
+    <li>Click the <strong>source</strong> interval, then the <strong>target</strong>. Done.</li>
+  </ol>
+  <p>Or type it: <code>Pilot before Grant</code>, <code>Grant meets Scale-up</code>. Select a link to change its type, confidence, or provenance in the panel.</p>
+
+  <h2 id="s9">9 · The solver &amp; contradictions</h2>
+  <p>After every edit the tool re-solves: it propagates the links forward in time, moving floating intervals so the relations hold. Slack and "critical path" behaviour fall out of this automatically — you don't set them.</p>
+  <p>Two things it can't satisfy become <strong>contradictions</strong>, flagged in red (the link, the affected interval, and an issues list at the bottom of the panel):</p>
+  <ul>
+    <li>A link would need to move a <strong>pinned</strong> interval — e.g. a task pushed past a hard deadline.</li>
+    <li>A <strong>cycle</strong> of links that can never all be true (A before B before A).</li>
+  </ul>
+  <div class="tip">Click any issue in the list to jump to the object involved. Contradictions are a feature: the tool is showing you exactly where the plan breaks or where two accounts disagree, instead of hiding it.</div>
+
+  <h2 id="s10">10 · Saying it — the sentence box</h2>
+  <p>The sentence box (top toolbar) is a fast, keyboard-only way to assert things. Type and press <kbd>Enter</kbd>. Every sentence makes the same kind of object a gesture would.</p>
+  <table>
+    <tr><th>Sentence</th><th>Effect</th></tr>
+    <tr><td><code>new Kickoff</code></td><td>Create an interval named "Kickoff".</td></tr>
+    <tr><td><code>Pilot before Grant</code></td><td>Add a loose <em>before</em> link (creating either interval if needed).</td></tr>
+    <tr><td><code>Grant meets Scale-up</code></td><td>Add a rigid <em>meets</em> link.</td></tr>
+    <tr><td><code>Report = Jan 2026 .. Jun 2026</code></td><td>Set an interval's start and end.</td></tr>
+    <tr><td><code>Scale-up lasts 18 months</code></td><td>Set its end to start + that duration.</td></tr>
+    <tr><td><code>Founding ~ 2016</code></td><td>Make it an instant around that date (with a little fuzz).</td></tr>
+    <tr><td><code>pin Report</code> / <code>unpin Report</code></td><td>Pin or unpin by name.</td></tr>
+  </table>
+  <p>Names are matched case-insensitively. If a sentence doesn't parse, a hint shows the accepted forms.</p>
+
+  <h2 id="s11">11 · Provenance</h2>
+  <p>Every interval and every link carries provenance, editable in the panel:</p>
+  <ul>
+    <li><strong>Asserted by</strong> — who is making this claim.</li>
+    <li><strong>Evidence / note</strong> — the source or reasoning.</li>
+    <li><strong>Confidence</strong> — a slider; lower confidence makes the bar's core render fainter, so shaky claims look shaky.</li>
+  </ul>
+  <p>Hover any interval or link to see its provenance in a frosted tooltip. This is what makes a timeline something a <em>group</em> can refine: each contribution says who, why, and how sure.</p>
+
+  <h2 id="s12">12 · Selecting, editing, deleting</h2>
+  <ul>
+    <li><strong>Select:</strong> click an interval or a link. Its handles appear and the panel fills in. Click empty canvas to deselect.</li>
+    <li><strong>Rename / recolour:</strong> in the panel. Eight colours are available.</li>
+    <li><strong>Delete:</strong> the red button in the panel, or press <kbd>Delete</kbd> / <kbd>Backspace</kbd> with something selected. Deleting an interval also removes its links.</li>
+  </ul>
+
+  <h2 id="s13">13 · Deep links (Copy link)</h2>
+  <p>Any object can produce a link that reopens <em>this exact timeline</em> and highlights that object.</p>
+  <ul>
+    <li><strong>🔗 Link</strong> (toolbar) copies a link to the whole timeline — highlighting the current selection, if any.</li>
+    <li><strong>🔗 Copy link to this interval / relation</strong> (panel) copies a link focused on the selected object; opening it centres and selects it.</li>
+  </ul>
+  <div class="warn">Because the tool has no server, the link is <strong>self-contained</strong> — it carries the whole timeline inside the URL. That means links can get long and won't auto-update if you change the timeline later. It's perfect for "here's the state I'm looking at" sharing into a document, chat, or FedWiki page. (If timelines are later hosted under names, links can become short pointers instead.)</div>
+
+  <h2 id="s14">14 · Exporting (JSON · SVG · PNG)</h2>
+  <ul>
+    <li><strong>JSON…</strong> opens a box to copy the model out or paste one in and <em>Load</em> it. Dates are stored as readable strings; each object keeps a stable <code>id</code> (so a future bridge can match an interval to a Graph node or a Map parcel).</li>
+    <li><strong>SVG</strong> downloads a crisp vector image of the whole timeline (fit to content, white background).</li>
+    <li><strong>PNG</strong> downloads a high-resolution raster image.</li>
+  </ul>
+  <p>SVG and PNG are the same exports the Graph Tool offers; format types that only make sense for graphs (MDL, Cypher) are intentionally left out.</p>
+
+  <h2 id="s15">15 · Keyboard &amp; mouse reference</h2>
+  <table>
+    <tr><th>Input</th><th>Action</th></tr>
+    <tr><td>Drag empty canvas</td><td>Pan</td></tr>
+    <tr><td>Scroll wheel</td><td>Zoom around cursor</td></tr>
+    <tr><td>Double-click canvas</td><td>New interval here</td></tr>
+    <tr><td>Click object</td><td>Select</td></tr>
+    <tr><td>Drag body / edges</td><td>Move / resize / re-fuzz (see §5)</td></tr>
+    <tr><td><kbd>P</kbd></td><td>Toggle pinned on the selected interval</td></tr>
+    <tr><td><kbd>Delete</kbd> / <kbd>Backspace</kbd></td><td>Delete selection</td></tr>
+    <tr><td><kbd>Enter</kbd> (in sentence box)</td><td>Run the sentence</td></tr>
+  </table>
+
+  <h2 id="s16">16 · Working patterns</h2>
+  <h3>Reconstructing history with a group</h3>
+  <p>Pin the facts you're certain of (dated records). For everything hazy, make a floating interval with a wide fuzz band and set its provenance to who remembers it. Add <code>before</code> links for known orderings. As people contribute more bounds, the bands narrow — you're watching accuracy improve.</p>
+  <h3>Planning &amp; forecasting</h3>
+  <p>Pin the fixed dates (a grant date, a report deadline). Chain the work with <code>meets</code> (must be back-to-back) and <code>before</code> (must precede, slack allowed). Drag a milestone and watch the ripple; if a slip turns a link red, you've found the thing the schedule can't absorb. Widen the end-fuzz of a forecast to show it's a guess, not a promise.</p>
+
+  <h2 id="s17">17 · What's not here yet</h2>
+  <p>v0 is a prototype for play. Planned next: richer historical dating ("circa 1200," decades, "unknown"); branching scenarios for what-if comparison; forecaster calibration (predictions scored as they come true); and bridges linking intervals to Graph Tool nodes and Map parcels so one temporal layer sits beneath all three tools.</p>
+
+  <div class="foot">RCN Timeline · User Manual · Prototype v0. New to it? Start with the <a href="rcn-timeline-intro.html">Introduction</a>, then <a href="rcn-timeline.html">open the tool</a>.</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<!--
+═══════════════════════════════════════════════════════════════════
+  RCN TIMELINE TOOL — v0  (temporal layer, sibling of graph + map)
+  Single HTML file, no dependencies. Plain SVG + DOM.
+═══════════════════════════════════════════════════════════════════
+
+CORE MODEL
+  A timeline is INTERVALS + typed ALLEN LINKS over a numeric time axis.
+  This is the temporal analog of the graph tool (nodes+edges) and the
+  map tool (geometry+relations).
+
+INTERVAL EXTENT  (fuzzy, trapezoidal)
+  s  = core start   (the "certain" plateau begins)
+  e  = core end     (the certain plateau ends)
+  sf = start fuzz   (soft shoulder extends LEFT of s, fades in)
+  ef = end   fuzz   (soft shoulder extends RIGHT of e, fades out)
+  instant  => s == e.   duration => e - s.
+  Drawn as one gradient bar: (s-sf) faint → s solid … e solid → (e+ef) faint.
+
+PINNED vs FLOATING
+  pinned  = s,e locked to the calendar (a fact / hard deadline).
+            body will not move; only fuzz handles work. Can get LESS sure,
+            never silently relocated.
+  floating= solver places it from its links; user may nudge the body.
+
+FOUR HANDLES  (grab-target decides — no modes)
+  left-fuzz  (outer left)  → change sf
+  left-core  (inner left)  → change s   (start / duration)   [locked if pinned]
+  right-core (inner right) → change e   (end / duration)     [locked if pinned]
+  right-fuzz (outer right) → change ef
+  body drag  → translate s,e together (time only)            [floating only]
+
+ALLEN LINKS (v0 subset)
+  before(A,B): A.e ≤ B.s   — LOOSE. gap = slack. Drag A later ⇒ ripples B.
+                              Drag B earlier ⇒ stops at the wall (A.e).
+  meets (A,B): A.e = B.s    — RIGID. welded; A and B move as a block.
+
+SOLVER  (forward propagation)
+  On any edit: relax constraints forward in time. A push that would move a
+  PINNED interval, or a cycle, is a CONTRADICTION → flagged red. This is how
+  the timeline polices causality: an effect can't precede its cause.
+
+DUAL FACE (same assertion, two views)
+  A gesture (drag a handle) and a sentence ("Pilot before Grant", "Scale-up
+  lasts 4", "pin Report") create the SAME underlying assertion.
+
+PROVENANCE
+  Every interval + link carries who / note / confidence. Confidence tints the
+  core opacity. Hover = frosted-glass tooltip.
+
+JSON  {name, intervals:[...], links:[...]}  — family idiom. interval.id is
+  meant to be able to EQUAL a graph node id / map parcel id later (the bridge).
+
+DEFERRED to later passes: branching scenarios, forecaster calibration,
+  EDTF calendar parsing, Graph/Map bridges, SVG/PNG/Wiki export.
+═══════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RCN Timeline</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f1f5f9;color:#1e293b}
+#app{display:flex;flex-direction:column;height:100vh}
+#toolbar{display:flex;align-items:center;gap:4px;padding:6px 10px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;min-height:42px}
+.tb-sep{width:1px;height:20px;background:#e2e8f0;margin:0 2px;flex-shrink:0}
+.tb-btn{font-size:11px;padding:3px 8px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#1e293b;cursor:pointer;white-space:nowrap;line-height:1.4}
+.tb-btn:hover{background:#f1f5f9}
+.tb-btn.active{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+a.tb-btn{text-decoration:none;display:inline-flex;align-items:center}
+a.tb-btn.help{color:#1d4ed8;border-color:#bfdbfe;background:#eff6ff}
+a.tb-btn.help:hover{background:#dbeafe}
+.tb-title{font-size:13px;font-weight:600;color:#1e293b;margin-right:6px}
+#sentence{font-size:12px;padding:4px 9px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#1e293b;width:290px}
+#sentence:focus{outline:none;border-color:#93c5fd}
+#main{display:flex;flex:1;overflow:hidden}
+#canvas-wrap{flex:1;position:relative;overflow:auto;background:#fff;touch-action:none}
+#svg{display:block}
+#panel{width:248px;border-left:1px solid #e2e8f0;background:#fff;display:flex;flex-direction:column;overflow-y:auto;font-size:12px;flex-shrink:0}
+#panel-header{padding:9px 12px 6px;font-size:11px;font-weight:500;color:#64748b;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e2e8f0}
+.prop-row{display:flex;flex-direction:column;gap:3px;padding:7px 12px;border-bottom:1px solid #f1f5f9}
+.prop-row.two{flex-direction:row;gap:8px}
+.prop-row.two>div{flex:1;display:flex;flex-direction:column;gap:3px}
+.prop-label{font-size:11px;color:#64748b}
+.prop-input{font-size:12px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:5px;background:#fff;color:#1e293b;width:100%}
+.prop-input:focus{outline:none;border-color:#93c5fd}
+textarea.prop-input{resize:vertical;min-height:44px;font-family:inherit}
+.color-row{display:flex;flex-wrap:wrap;gap:4px;padding:7px 12px;border-bottom:1px solid #f1f5f9}
+.cs{width:18px;height:18px;border-radius:4px;cursor:pointer;border:2px solid transparent;flex-shrink:0;transition:transform .1s}
+.cs:hover{transform:scale(1.18)}
+.cs.selected{border-color:#1e293b}
+.toggle-row{display:flex;gap:6px;padding:7px 12px;border-bottom:1px solid #f1f5f9;align-items:center}
+.toggle-btn{font-size:12px;font-weight:600;padding:4px 12px;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;background:#fff;color:#64748b;flex:1;text-align:center}
+.toggle-btn.on-pin{background:#e0e7ff;color:#3730a3;border-color:#a5b4fc}
+.toggle-btn.on-float{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+.range-row{display:flex;gap:8px;padding:7px 12px;border-bottom:1px solid #f1f5f9;align-items:center}
+.range-row label{font-size:11px;color:#64748b;flex-shrink:0;min-width:64px}
+.range-row input[type=range]{flex:1;min-width:0}
+.range-row span{font-size:11px;min-width:62px;text-align:right;color:#334155;white-space:nowrap}
+.empty-note{padding:16px 14px;font-size:12px;color:#94a3b8;line-height:1.6}
+.del-btn{font-size:11px;margin:9px 12px 4px;padding:5px 8px;border:1px solid #fecaca;border-radius:6px;cursor:pointer;background:#fff;color:#b91c1c;width:calc(100% - 24px)}
+.del-btn:hover{background:#fef2f2}
+.link-btn{font-size:11px;margin:9px 12px 0;padding:5px 8px;border:1px solid #bfdbfe;border-radius:6px;cursor:pointer;background:#fff;color:#1d4ed8;width:calc(100% - 24px)}
+.link-btn:hover{background:#eff6ff}
+#issues{border-top:1px solid #e2e8f0;background:#fef2f2;padding:8px 12px;display:none}
+#issues.show{display:block}
+#issues h4{font-size:11px;font-weight:600;color:#b91c1c;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.issue-item{font-size:11px;color:#7f1d1d;line-height:1.5;padding:1px 0;cursor:pointer}
+.issue-item:hover{text-decoration:underline}
+#toast{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;font-size:12px;padding:5px 14px;border-radius:20px;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;z-index:30}
+#toast.show{opacity:1}
+#hint{position:absolute;bottom:12px;right:14px;font-size:11px;color:#64748b;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;pointer-events:none}
+#tip{position:fixed;display:none;z-index:600;background:rgba(255,255,255,.55);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);border:1px solid rgba(226,232,240,.8);border-radius:8px;padding:6px 10px;font-size:11px;color:#1e293b;line-height:1.5;max-width:240px;box-shadow:0 4px 16px rgba(0,0,0,.12);pointer-events:none}
+#tip b{font-weight:600}
+#modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;display:none;align-items:center;justify-content:center}
+#modal-bg.show{display:flex}
+#modal{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px;width:560px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;gap:10px}
+#modal h3{font-size:14px;font-weight:500}
+#modal textarea{width:100%;height:280px;font-size:12px;font-family:monospace;padding:8px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;color:#1e293b;resize:vertical}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+.modal-btns button{font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#1e293b}
+.modal-btns button.primary{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+.iv-label{font-size:12px;font-weight:600;fill:#1e293b;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+.axis-tick{stroke:#e2e8f0;stroke-width:1}
+.axis-text{font-size:10px;fill:#94a3b8}
+.handle{fill:#fff;stroke:#3b82f6;stroke-width:1.5}
+.handle.fuzz{stroke:#94a3b8}
+.handle:hover{fill:#dbeafe}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="toolbar">
+    <span class="tb-title">⏳ RCN Timeline</span>
+    <button class="tb-btn" id="btn-newmodel" title="Start a new, blank timeline (clears the canvas — press Demo to bring the sample back)">New</button>
+    <input id="model-name" class="prop-input" style="width:120px" value="Untitled timeline" title="Name of this timeline">
+    <span class="tb-sep"></span>
+    <button class="tb-btn" id="btn-new" title="Add a new interval at the center of the current view">+ Interval</button>
+    <button class="tb-btn" id="btn-before" title="Draw a 'before' link (loose — leaves slack): click the source interval, then the target">+ before →</button>
+    <button class="tb-btn" id="btn-meets" title="Draw a 'meets' link (rigid weld — end locked to start): click the source interval, then the target">+ meets ⊣⊢</button>
+    <span class="tb-sep"></span>
+    <input id="sentence" title="Type an assertion and press Enter — e.g. &quot;Pilot before Grant&quot;, &quot;Report = Jan 2026 .. Jun 2026&quot;, &quot;Scale-up lasts 6 months&quot;, &quot;pin Report&quot;" placeholder='say it:  "Pilot before Grant"   ·   "Report = Jan 2026 .. Jun 2026"   ·   "pin Report"'>
+    <span class="tb-sep"></span>
+    <button class="tb-btn" id="btn-fit" title="Zoom and pan to fit all intervals in view">Fit</button>
+    <button class="tb-btn" id="btn-zin" title="Zoom in (or scroll up over the canvas)">＋</button>
+    <button class="tb-btn" id="btn-zout" title="Zoom out (or scroll down over the canvas)">－</button>
+    <span class="tb-sep"></span>
+    <button class="tb-btn" id="btn-demo" title="Load the sample timeline (founding → first report)">Demo</button>
+    <span class="tb-sep"></span>
+    <button class="tb-btn" id="btn-export" title="View, copy, or paste-and-load the timeline as JSON">JSON…</button>
+    <button class="tb-btn" id="btn-svg" title="Download the timeline as an SVG vector image">SVG</button>
+    <button class="tb-btn" id="btn-png" title="Download the timeline as a PNG image">PNG</button>
+    <button class="tb-btn" id="btn-link" title="Copy a shareable link that reopens this exact timeline (and highlights the selected object)">🔗 Link</button>
+    <span class="tb-sep"></span>
+    <a class="tb-btn help" href="rcn-timeline-intro.html" target="_blank" rel="noopener" title="Open the Introduction — what RCN Timeline is and why (new tab)">Intro</a>
+    <a class="tb-btn help" href="rcn-timeline-manual.html" target="_blank" rel="noopener" title="Open the User Manual — every control and gesture (new tab)">Manual</a>
+    <a class="tb-btn help" href="rcn-timeline-intro.pptx" target="_blank" rel="noopener" title="Download the intro slide deck (PowerPoint)">Deck ↓</a>
+  </div>
+  <div id="main">
+    <div id="canvas-wrap">
+      <svg id="svg"></svg>
+      <div id="toast"></div>
+      <div id="hint">drag background = pan · scroll = zoom · double-click = new · Del = remove · P = pin</div>
+    </div>
+    <div id="panel">
+      <div id="panel-header">Properties</div>
+      <div id="panel-body"><div class="empty-note">Nothing selected.<br><br>Double-click the canvas to add an interval, or type a sentence above. Select an interval or link to edit it here.</div></div>
+      <div id="issues"></div>
+    </div>
+  </div>
+</div>
+<div id="tip"></div>
+<div id="modal-bg"><div id="modal">
+  <h3 id="modal-title">JSON</h3>
+  <textarea id="modal-text" spellcheck="false"></textarea>
+  <div class="modal-btns">
+    <button id="modal-copy">Copy</button>
+    <button id="modal-load" class="primary">Load from text</button>
+    <button id="modal-close">Close</button>
+  </div>
+</div></div>
+
+<script>
+"use strict";
+/* ── palette ─────────────────────────────────────────────── */
+var COLORS=["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#64748b","#14b8a6","#ec4899"];
+var SVGNS="http://www.w3.org/2000/svg";
+
+/* ── layout constants ────────────────────────────────────── */
+var PAD_L=14, AXIS_Y=34, ROW_TOP=58, ROW_H=54, BAR_H=26;
+var HANDLE_R=5;
+
+/* ── state ───────────────────────────────────────────────── */
+var M={name:"Untitled timeline",intervals:[],links:[]};
+var view={t0:0,pxPerUnit:60};     // t0 = time at x=PAD_L
+var sel={type:null,id:null};      // 'iv' | 'link'
+var mode="select";                // 'select' | 'before' | 'meets'
+var linkStart=null;
+var drag=null;
+var issues=[];                    // list of {msg, ids:[...]}
+var uid=1; function nid(p){return p+(uid++);}
+
+/* ── time <-> x ──────────────────────────────────────────── */
+function tx(t){return PAD_L+(t-view.t0)*view.pxPerUnit;}
+function xt(x){return view.t0+(x-PAD_L)/view.pxPerUnit;}
+function rowY(r){return ROW_TOP+r*ROW_H+BAR_H/2;}
+
+/* ── model helpers ───────────────────────────────────────── */
+function ivById(id){for(var i=0;i<M.intervals.length;i++)if(M.intervals[i].id===id)return M.intervals[i];return null;}
+function linkById(id){for(var i=0;i<M.links.length;i++)if(M.links[i].id===id)return M.links[i];return null;}
+function ivByLabel(name){name=name.trim().toLowerCase();for(var i=0;i<M.intervals.length;i++)if((M.intervals[i].label||"").trim().toLowerCase()===name)return M.intervals[i];return null;}
+function nextRow(){var r=0;for(var i=0;i<M.intervals.length;i++)r=Math.max(r,M.intervals[i].row+1);return r;}
+function moveIv(iv,newS){var d=newS-iv.s;iv.s+=d;iv.e+=d;}
+
+function newInterval(label,s,e){
+  var iv={id:nid("iv"),label:label||("Event "+(M.intervals.length+1)),
+    s:(s==null?Math.round(view.t0+ (svgW()-PAD_L)/view.pxPerUnit/2):s),
+    e:0,sf:0,ef:0,pinned:false,color:COLORS[M.intervals.length%COLORS.length],
+    row:nextRow(),who:"",note:"",conf:0.8};
+  iv.e=(e==null?iv.s+1:e);
+  M.intervals.push(iv);
+  return iv;
+}
+function addLink(fromId,toId,rel){
+  if(fromId===toId)return null;
+  for(var i=0;i<M.links.length;i++){var L=M.links[i];if(L.from===fromId&&L.to===toId){L.rel=rel;return L;}}
+  var lk={id:nid("lk"),from:fromId,to:toId,rel:rel,who:"",note:"",conf:0.8};
+  M.links.push(lk);return lk;
+}
+function deleteSelected(){
+  if(sel.type==="iv"){
+    M.links=M.links.filter(function(L){return L.from!==sel.id&&L.to!==sel.id;});
+    M.intervals=M.intervals.filter(function(v){return v.id!==sel.id;});
+  }else if(sel.type==="link"){
+    M.links=M.links.filter(function(L){return L.id!==sel.id;});
+  }
+  sel={type:null,id:null};solve();render();renderPanel();
+}
+
+/* ── SOLVER: forward propagation of before/meets ─────────── */
+var EPS=1e-6;
+function solve(){
+  issues=[];
+  var pinBroken={}, MAXIT=200, it, changed=true;
+  for(it=0;it<MAXIT&&changed;it++){
+    changed=false;
+    for(var i=0;i<M.links.length;i++){
+      var L=M.links[i], A=ivById(L.from), B=ivById(L.to);
+      if(!A||!B)continue;
+      var need;
+      if(L.rel==="meets"){ need=A.e; if(Math.abs(B.s-need)>EPS){
+        if(B.pinned){pinBroken[L.id]=1;} else {moveIv(B,need);changed=true;}
+      }}
+      else { // before: B.s must be >= A.e (min gap 0)
+        need=A.e;
+        if(B.s<need-EPS){
+          if(B.pinned){pinBroken[L.id]=1;} else {moveIv(B,need);changed=true;}
+        }
+      }
+    }
+  }
+  // record contradictions where a push hit a pinned interval
+  for(var i2=0;i2<M.links.length;i2++){
+    var L2=M.links[i2],A2=ivById(L2.from),B2=ivById(L2.to);
+    if(!A2||!B2)continue;
+    var viol=(L2.rel==="meets")?(Math.abs(B2.s-A2.e)>1e-3):(B2.s<A2.e-1e-3);
+    if(viol){
+      L2.bad=true;
+      issues.push({msg:"“"+A2.label+"” "+L2.rel+" “"+B2.label+"” is violated — "+
+        (B2.pinned?"“"+B2.label+"” is pinned and can’t move.":"unresolved."),ids:[A2.id,B2.id,L2.id]});
+    } else L2.bad=false;
+  }
+  if(it>=MAXIT) issues.push({msg:"Constraints didn’t settle — there may be a cycle (A before B before A).",ids:[]});
+}
+
+/* ── rendering ───────────────────────────────────────────── */
+var svg=document.getElementById("svg"), wrap=document.getElementById("canvas-wrap");
+function svgW(){return wrap.clientWidth;}
+function el(tag,attrs){var e=document.createElementNS(SVGNS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);return e;}
+
+function niceStep(){
+  var target=100/view.pxPerUnit; // ~100px between ticks, in time units (years)
+  var pow=Math.pow(10,Math.floor(Math.log(target)/Math.LN10));
+  var cands=[1,2,5,10].map(function(m){return m*pow;});
+  for(var i=0;i<cands.length;i++)if(cands[i]>=target)return cands[i];
+  return cands[cands.length-1];
+}
+
+/* Adaptive calendar ticks: year → month → day as you zoom. Never decimal. */
+function calTicks(W){
+  var out=[], ppu=view.pxPerUnit, pxMonth=ppu/12, pxDay=ppu/365.25, TARGET=82, x,v,cur;
+  if(pxMonth<11){ // YEAR regime
+    var yc=[1,2,5,10,20,25,50,100,200,500,1000], step=yc[yc.length-1];
+    for(var i=0;i<yc.length;i++){if(yc[i]*ppu>=TARGET){step=yc[i];break;}}
+    var y0=Math.ceil(view.t0/step)*step;
+    for(var y=y0;tx(y)<=W+1;y+=step){x=tx(y);if(x>=-40)out.push({x:x,label:String(Math.round(y))});}
+  } else if(pxMonth<170){ // MONTH regime
+    var mc=[1,2,3,6], ms=6;for(var j=0;j<mc.length;j++){if(mc[j]*pxMonth>=TARGET){ms=mc[j];break;}}
+    var d0=yearToDate(view.t0), mm=Math.floor(d0.getUTCMonth()/ms)*ms;
+    cur=new Date(Date.UTC(d0.getUTCFullYear(),mm,1));
+    while(true){v=dateToYear(cur);x=tx(v);if(x>W+1)break;if(x>=-60)out.push({x:x,label:MON[cur.getUTCMonth()]+" "+cur.getUTCFullYear()});cur=new Date(Date.UTC(cur.getUTCFullYear(),cur.getUTCMonth()+ms,1));}
+  } else { // DAY regime
+    var dc=[1,2,5,10,15], ds=15;for(var k=0;k<dc.length;k++){if(dc[k]*pxDay>=TARGET){ds=dc[k];break;}}
+    var s0=yearToDate(view.t0);cur=new Date(Date.UTC(s0.getUTCFullYear(),s0.getUTCMonth(),1));
+    while(true){v=dateToYear(cur);x=tx(v);if(x>W+1)break;if(x>=-60)out.push({x:x,label:MON[cur.getUTCMonth()]+" "+cur.getUTCDate()});cur=new Date(cur.getTime()+ds*86400000);}
+  }
+  return out;
+}
+
+function render(){
+  var W=Math.max(svgW(), PAD_L+40), H=Math.max(wrap.clientHeight, ROW_TOP+M.intervals.length*ROW_H+40);
+  svg.setAttribute("width",W); svg.setAttribute("height",H);
+  while(svg.firstChild)svg.removeChild(svg.firstChild);
+  var defs=el("defs",{}); svg.appendChild(defs);
+
+  // axis (adaptive calendar ticks)
+  var axis=el("line",{x1:0,y1:AXIS_Y,x2:W,y2:AXIS_Y,stroke:"#e2e8f0","stroke-width":1});
+  svg.appendChild(axis);
+  var tks=calTicks(W);
+  for(var ti=0;ti<tks.length;ti++){
+    var x=tks[ti].x;
+    svg.appendChild(el("line",{x1:x,y1:AXIS_Y,x2:x,y2:H,"class":"axis-tick"}));
+    var tk=el("text",{x:x+3,y:AXIS_Y-6,"class":"axis-text"});
+    tk.textContent=tks[ti].label;
+    svg.appendChild(tk);
+  }
+
+  // links (drawn under bars' handles, over bars body)
+  for(var i=0;i<M.links.length;i++)renderLink(M.links[i],defs);
+  // bars
+  for(var j=0;j<M.intervals.length;j++)renderIv(M.intervals[j],defs);
+
+  // link-in-progress guide
+  if(mode!=="select"&&linkStart){
+    var a=ivById(linkStart);
+    if(a){var g=el("line",{x1:tx(a.e),y1:rowY(a.row),x2:lastMouse.x,y2:lastMouse.y,
+      stroke:"#94a3b8","stroke-width":1.5,"stroke-dasharray":"4 3"});svg.appendChild(g);}
+  }
+  document.getElementById("issues").className=issues.length?"show":"";
+  renderIssues();
+}
+
+function renderLink(L,defs){
+  var A=ivById(L.from),B=ivById(L.to);if(!A||!B)return;
+  var x1=tx(A.e),y1=rowY(A.row),x2=tx(B.s),y2=rowY(B.row);
+  var bad=L.bad, selq=(sel.type==="link"&&sel.id===L.id);
+  var col=bad?"#ef4444":(L.rel==="meets"?"#334155":"#94a3b8");
+  var mx=(x1+x2)/2;
+  var path=el("path",{d:"M "+x1+" "+y1+" C "+mx+" "+y1+" "+mx+" "+y2+" "+x2+" "+y2,
+    fill:"none",stroke:col,"stroke-width":(selq?3:(bad?2.5:1.8)),
+    "stroke-dasharray":(L.rel==="before"?"6 4":"0"),"stroke-linecap":"round",
+    cursor:"pointer","data-lk":L.id});
+  path.addEventListener("mousedown",function(e){e.stopPropagation();selectLink(L.id);});
+  path.addEventListener("mouseenter",function(e){showTip(e,linkTip(L,A,B));});
+  path.addEventListener("mousemove",moveTip);
+  path.addEventListener("mouseleave",hideTip);
+  svg.appendChild(path);
+  // arrow / weld glyph at target
+  if(L.rel==="before"){
+    var ang=Math.atan2(y2-y1,0.001+x2-mx), ah=6;
+    var ax=x2, ay=y2;
+    var p=el("path",{d:"M "+ax+" "+ay+" L "+(ax-ah)+" "+(ay-ah*0.7)+" L "+(ax-ah)+" "+(ay+ah*0.7)+" Z",fill:col});
+    svg.appendChild(p);
+    // slack label
+    var slack=B.s-A.e;
+    if(slack>EPS){var st=el("text",{x:mx,y:(y1+y2)/2-4,"class":"axis-text","text-anchor":"middle"});
+      st.textContent="slack "+fmtDur(slack); svg.appendChild(st);}
+  }else{
+    svg.appendChild(el("rect",{x:x2-3,y:y2-7,width:6,height:14,fill:col,rx:1}));
+  }
+}
+
+function renderIv(iv,defs){
+  var y=rowY(iv.row), top=y-BAR_H/2;
+  var xa=tx(iv.s-iv.sf), xs=tx(iv.s), xe=tx(iv.e), xd=tx(iv.e+iv.ef);
+  var selq=(sel.type==="iv"&&sel.id===iv.id);
+  var isBad=issues.some(function(I){return I.ids.indexOf(iv.id)>=0;});
+  var core=Math.max(0.25,Math.min(1,iv.conf))*0.5+0.4; // 0.4..0.9
+
+  // gradient across full fuzzy extent
+  var gid="grad-"+iv.id, full=Math.max(1,xd-xa);
+  var grad=el("linearGradient",{id:gid,x1:"0",y1:"0",x2:"1",y2:"0"});
+  function stop(x,o){var s=el("stop",{offset:(Math.max(0,Math.min(1,(x-xa)/full))*100)+"%","stop-color":iv.color,"stop-opacity":o});grad.appendChild(s);}
+  stop(xa,0.06); stop(xs,core); stop(xe,core); stop(xd,0.06);
+  defs.appendChild(grad);
+
+  var g=el("g",{"data-iv":iv.id,cursor:(mode!=="select"?"crosshair":(iv.pinned?"default":"move"))});
+
+  // fuzzy bar
+  g.appendChild(el("rect",{x:xa,y:top,width:Math.max(2,xd-xa),height:BAR_H,rx:5,fill:"url(#"+gid+")"}));
+  // core outline
+  g.appendChild(el("rect",{x:xs,y:top,width:Math.max(2,xe-xs),height:BAR_H,rx:4,fill:"none",
+    stroke:(isBad?"#ef4444":(selq?"#1e293b":iv.color)),
+    "stroke-width":(selq||isBad?2:1.4),
+    "stroke-dasharray":(iv.pinned?"0":"5 3"),opacity:iv.pinned?1:0.9}));
+  // instant marker
+  if(Math.abs(iv.e-iv.s)<EPS){g.appendChild(el("circle",{cx:xs,cy:y,r:4,fill:iv.color}));}
+
+  // pinned: anchor tick + drop line to axis
+  if(iv.pinned){
+    g.appendChild(el("line",{x1:xs,y1:AXIS_Y,x2:xs,y2:top,stroke:iv.color,"stroke-width":1,"stroke-dasharray":"2 3",opacity:0.6}));
+    var pin=el("text",{x:xs-1,y:top-3,"font-size":12});pin.textContent="📌";g.appendChild(pin);
+  }
+
+  // label
+  var lb=el("text",{x:xs+6,y:y+4,"class":"iv-label"});lb.textContent=iv.label;g.appendChild(lb);
+
+  // events
+  g.addEventListener("mousedown",function(e){onIvDown(e,iv);});
+  g.addEventListener("mouseenter",function(e){showTip(e,ivTip(iv));});
+  g.addEventListener("mousemove",moveTip);
+  g.addEventListener("mouseleave",hideTip);
+  svg.appendChild(g);
+
+  // handles when selected & select-mode
+  if(selq&&mode==="select"){
+    mkHandle(iv,"sf",xa,y,true);
+    if(!iv.pinned)mkHandle(iv,"s",xs,y,false);
+    if(!iv.pinned)mkHandle(iv,"e",xe,y,false);
+    mkHandle(iv,"ef",xd,y,true);
+  }
+}
+function mkHandle(iv,kind,x,y,fuzz){
+  var h=el("rect",{x:x-HANDLE_R,y:y-HANDLE_R,width:HANDLE_R*2,height:HANDLE_R*2,rx:2,
+    "class":"handle"+(fuzz?" fuzz":""),cursor:"ew-resize"});
+  h.addEventListener("mousedown",function(e){e.stopPropagation();startHandle(e,iv,kind);});
+  h.addEventListener("mouseenter",function(e){showTip(e,"<b>"+({sf:"start fuzz",s:"start (duration)",e:"end (duration)",ef:"end fuzz"})[kind]+"</b><br>drag ⇄");});
+  h.addEventListener("mousemove",moveTip); h.addEventListener("mouseleave",hideTip);
+  svg.appendChild(h);
+}
+
+/* ── tooltips (frosted glass) ────────────────────────────── */
+var tip=document.getElementById("tip");
+function ivTip(iv){
+  var dur=iv.e-iv.s;
+  return "<b>"+esc(iv.label)+"</b><br>"+
+    (dur<EPS?("~ "+fmtDate(iv.s)):(fmtDate(iv.s)+" → "+fmtDate(iv.e)+"  ("+fmtDur(dur)+")"))+
+    "<br>fuzz −"+fmtDur(iv.sf)+" / +"+fmtDur(iv.ef)+
+    "<br>"+(iv.pinned?"📌 pinned":"floating")+" · conf "+Math.round(iv.conf*100)+"%"+
+    (iv.who?"<br>— "+esc(iv.who):"")+(iv.note?"<br><i>"+esc(iv.note)+"</i>":"");
+}
+function linkTip(L,A,B){
+  return "<b>"+esc(A.label)+" "+L.rel+" "+esc(B.label)+"</b><br>"+
+    (L.rel==="meets"?"rigid — welded end-to-start":"loose — min gap 0, slack floats")+
+    (L.who?"<br>— "+esc(L.who):"")+(L.note?"<br><i>"+esc(L.note)+"</i>":"");
+}
+function showTip(e,html){tip.innerHTML=html;tip.style.display="block";moveTip(e);}
+function moveTip(e){tip.style.left=(e.clientX+14)+"px";tip.style.top=(e.clientY+14)+"px";}
+function hideTip(){tip.style.display="none";}
+function esc(s){return(s||"").replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
+function r2(n){return Math.round(n*100)/100;}
+
+/* ── dates & durations ───────────────────────────────────────
+   Internally time is a numeric fractional year (computable, the
+   solver's substrate). These map it to real calendar dates for
+   DISPLAY — never shown as a decimal. Durations render as spans. */
+var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var MONF={jan:0,january:0,feb:1,february:1,mar:2,march:2,apr:3,april:3,may:4,jun:5,june:5,
+  jul:6,july:6,aug:7,august:7,sep:8,sept:8,september:8,oct:9,october:9,nov:10,november:10,dec:11,december:11};
+function yearToDate(v){var y=Math.floor(v);var b=Date.UTC(y,0,1),n=Date.UTC(y+1,0,1);return new Date(b+(v-y)*(n-b));}
+function dateToYear(d){var y=d.getUTCFullYear();var b=Date.UTC(y,0,1),n=Date.UTC(y+1,0,1);return y+(d.getTime()-b)/(n-b);}
+function fmtDate(v){if(v==null||isNaN(v))return "—";var d=yearToDate(v);return MON[d.getUTCMonth()]+" "+d.getUTCDate()+", "+d.getUTCFullYear();}
+function fmtDur(years){years=Math.abs(years);if(years<EPS)return "0 days";
+  var days=years*365.25;if(days<45)return Math.round(days)+" day"+(Math.round(days)===1?"":"s");
+  var mos=years*12;if(mos<18)return Math.round(mos)+" mo";
+  var y=Math.floor(years+1e-9),mo=Math.round((years-y)*12);if(mo>=12){y++;mo-=12;}
+  return y+" yr"+(mo?" "+mo+" mo":"");}
+function parseDate(str){
+  if(str==null)return null;
+  if(typeof str==="number")return str;
+  str=(""+str).trim();if(!str)return null;var m;
+  if(m=str.match(/^([A-Za-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(-?\d{1,5})$/)){var mo=MONF[m[1].toLowerCase()];if(mo!=null)return dateToYear(new Date(Date.UTC(+m[3],mo,+m[2])));}
+  if(m=str.match(/^([A-Za-z]+)\.?\s+(-?\d{1,5})$/)){var mo2=MONF[m[1].toLowerCase()];if(mo2!=null)return dateToYear(new Date(Date.UTC(+m[2],mo2,1)));}
+  if(m=str.match(/^(-?\d{1,5})[-\/](\d{1,2})(?:[-\/](\d{1,2}))?$/)){return dateToYear(new Date(Date.UTC(+m[1],(+m[2])-1,+(m[3]||1))));}
+  if(m=str.match(/^-?\d{1,5}(\.\d+)?$/)){return parseFloat(str);}
+  var t=Date.parse(str);if(!isNaN(t)){var d=new Date(t);return dateToYear(new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())));}
+  return null;
+}
+function parseDur(str){str=(""+str).trim();var m;
+  if(m=str.match(/^([\d.]+)\s*(mo|mos|month|months)$/i))return parseFloat(m[1])/12;
+  if(m=str.match(/^([\d.]+)\s*(w|wk|wks|week|weeks)$/i))return parseFloat(m[1])*7/365.25;
+  if(m=str.match(/^([\d.]+)\s*(d|day|days)$/i))return parseFloat(m[1])/365.25;
+  if(m=str.match(/^([\d.]+)\s*(y|yr|yrs|year|years)?$/i))return parseFloat(m[1]);
+  var n=parseFloat(str);return isNaN(n)?null:n;}
+
+/* ── interaction ─────────────────────────────────────────── */
+var lastMouse={x:0,y:0};
+function svgPt(e){var r=svg.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+
+function onIvDown(e,iv){
+  e.stopPropagation();
+  if(mode==="before"||mode==="meets"){
+    if(!linkStart){linkStart=iv.id;toast("click the target of “"+iv.label+" "+mode+" …”");}
+    else{addLink(linkStart,iv.id,mode);linkStart=null;mode="select";syncModeBtns();solve();render();renderPanel();toast("link added");}
+    return;
+  }
+  selectIv(iv.id);
+  if(iv.pinned){drag=null;return;} // pinned body doesn't move
+  var p=svgPt(e);
+  drag={kind:"body",iv:iv,grabT:xt(p.x),s0:iv.s,e0:iv.e};
+}
+function startHandle(e,iv,kind){
+  selectIv(iv.id);
+  var p=svgPt(e);
+  drag={kind:"handle",which:kind,iv:iv,t:xt(p.x),
+    s0:iv.s,e0:iv.e,sf0:iv.sf,ef0:iv.ef};
+}
+
+svg.addEventListener("mousedown",function(e){
+  var p=svgPt(e);
+  if(mode!=="select"){linkStart=null;mode="select";syncModeBtns();render();return;}
+  // background → pan or deselect
+  select(null,null);
+  drag={kind:"pan",x0:e.clientX,t0:view.t0};
+});
+svg.addEventListener("dblclick",function(e){
+  var p=svgPt(e);
+  var iv=newInterval(null, r2(xt(p.x)), r2(xt(p.x)+niceStep()));
+  // drop it onto the row under the cursor if empty-ish
+  iv.row=Math.max(0,Math.round((p.y-ROW_TOP)/ROW_H));
+  if(iv.row>nextRow())iv.row=nextRow();
+  selectIv(iv.id);solve();render();renderPanel();
+});
+
+window.addEventListener("mousemove",function(e){
+  var p=svgPt(e); lastMouse=p;
+  if(mode!=="select"&&linkStart){render();}
+  if(!drag)return;
+  if(drag.kind==="pan"){
+    view.t0=drag.t0-(e.clientX-drag.x0)/view.pxPerUnit; render(); return;
+  }
+  if(drag.kind==="body"){
+    var nt=xt(p.x), d=nt-drag.grabT;
+    drag.iv.s=drag.s0+d; drag.iv.e=drag.e0+d;
+    solve(); render(); renderPanel(); return;
+  }
+  if(drag.kind==="handle"){
+    var t=xt(p.x), iv=drag.iv;
+    if(drag.which==="s"){ iv.s=Math.min(t, iv.e-EPS); if(iv.s<0){} }
+    else if(drag.which==="e"){ iv.e=Math.max(t, iv.s+EPS); }
+    else if(drag.which==="sf"){ iv.sf=Math.max(0, iv.s-t); }
+    else if(drag.which==="ef"){ iv.ef=Math.max(0, t-iv.e); }
+    solve(); render(); renderPanel(); return;
+  }
+});
+window.addEventListener("mouseup",function(){drag=null;});
+
+wrap.addEventListener("wheel",function(e){
+  e.preventDefault();
+  var p=svgPt(e), tAt=xt(p.x);
+  var f=e.deltaY<0?1.12:1/1.12;
+  view.pxPerUnit=Math.max(2,Math.min(4000,view.pxPerUnit*f));
+  view.t0=tAt-(p.x-PAD_L)/view.pxPerUnit; // keep cursor time fixed
+  render();
+},{passive:false});
+
+window.addEventListener("keydown",function(e){
+  if(/INPUT|TEXTAREA/.test((e.target.tagName||"")))return;
+  if(e.key==="Delete"||e.key==="Backspace"){if(sel.type){e.preventDefault();deleteSelected();}}
+  if(e.key==="p"||e.key==="P"){if(sel.type==="iv"){var iv=ivById(sel.id);iv.pinned=!iv.pinned;solve();render();renderPanel();}}
+});
+
+/* ── selection ───────────────────────────────────────────── */
+function select(type,id){sel={type:type,id:id};render();renderPanel();}
+function selectIv(id){select("iv",id);}
+function selectLink(id){select("link",id);}
+
+/* ── panel ───────────────────────────────────────────────── */
+function renderPanel(){
+  var b=document.getElementById("panel-body");
+  if(sel.type==="iv"){b.innerHTML=""; b.appendChild(ivPanel(ivById(sel.id)));}
+  else if(sel.type==="link"){b.innerHTML=""; b.appendChild(linkPanel(linkById(sel.id)));}
+  else b.innerHTML='<div class="empty-note">Nothing selected.<br><br>Double-click the canvas to add an interval, or type a sentence above. Select an interval or link to edit it here.</div>';
+}
+function row(label,input){var d=document.createElement("div");d.className="prop-row";
+  var l=document.createElement("div");l.className="prop-label";l.textContent=label;d.appendChild(l);d.appendChild(input);return d;}
+function inp(val,on){var i=document.createElement("input");i.className="prop-input";i.value=val;i.addEventListener("input",function(){on(i.value);});return i;}
+function numInp(val,on){var i=inp(val,function(v){var n=parseFloat(v);if(!isNaN(n))on(n);});i.type="text";return i;}
+
+function ivPanel(iv){
+  var f=document.createDocumentFragment();
+  f.appendChild(row("Label",inp(iv.label,function(v){iv.label=v;render();})));
+  // start/end (as dates)
+  var two=document.createElement("div");two.className="prop-row two";
+  var d1=document.createElement("div");var l1=document.createElement("div");l1.className="prop-label";l1.textContent="Start";
+  var si=document.createElement("input");si.className="prop-input";si.value=fmtDate(iv.s);si.title="e.g. Mar 15, 2021 · 2021-03-15 · 2021";
+  si.addEventListener("change",function(){if(!iv.pinned){var n=parseDate(si.value);if(n!=null)iv.s=Math.min(n,iv.e-EPS);}solve();render();renderPanel();});
+  d1.appendChild(l1);d1.appendChild(si);
+  var d2=document.createElement("div");var l2=document.createElement("div");l2.className="prop-label";l2.textContent="End";
+  var ei=document.createElement("input");ei.className="prop-input";ei.value=fmtDate(iv.e);ei.title="e.g. Dec 31, 2025 · 2025-12-31 · 2025";
+  ei.addEventListener("change",function(){if(!iv.pinned){var n=parseDate(ei.value);if(n!=null)iv.e=Math.max(n,iv.s+EPS);}solve();render();renderPanel();});
+  d2.appendChild(l2);d2.appendChild(ei);
+  two.appendChild(d1);two.appendChild(d2);f.appendChild(two);
+
+  // pin / float toggle
+  var tr=document.createElement("div");tr.className="toggle-row";
+  var bp=document.createElement("div");bp.className="toggle-btn"+(iv.pinned?" on-pin":"");bp.textContent="📌 Pinned";
+  var bf=document.createElement("div");bf.className="toggle-btn"+(!iv.pinned?" on-float":"");bf.textContent="Floating";
+  bp.onclick=function(){iv.pinned=true;solve();render();renderPanel();};
+  bf.onclick=function(){iv.pinned=false;solve();render();renderPanel();};
+  tr.appendChild(bp);tr.appendChild(bf);f.appendChild(tr);
+
+  // fuzz sliders (durations)
+  f.appendChild(rangeRow("Start fuzz",iv.sf,function(v){iv.sf=v;render();},0,10,0.05,false,true));
+  f.appendChild(rangeRow("End fuzz",iv.ef,function(v){iv.ef=v;render();},0,10,0.05,false,true));
+  // confidence
+  f.appendChild(rangeRow("Confidence",iv.conf,function(v){iv.conf=v;render();},0,1,0.05,true));
+
+  // color
+  var cr=document.createElement("div");cr.className="color-row";
+  COLORS.forEach(function(c){var s=document.createElement("div");s.className="cs"+(iv.color===c?" selected":"");s.style.background=c;s.onclick=function(){iv.color=c;render();renderPanel();};cr.appendChild(s);});
+  f.appendChild(cr);
+
+  // provenance
+  var ph=document.createElement("div");ph.className="prop-label";ph.style.padding="7px 12px 0";ph.textContent="PROVENANCE";f.appendChild(ph);
+  f.appendChild(row("Asserted by",inp(iv.who,function(v){iv.who=v;})));
+  var na=document.createElement("textarea");na.className="prop-input";na.value=iv.note;na.placeholder="evidence / source";na.addEventListener("input",function(){iv.note=na.value;});
+  f.appendChild(row("Evidence / note",na));
+
+  var lnk=document.createElement("button");lnk.className="link-btn";lnk.textContent="🔗 Copy link to this interval";lnk.onclick=function(){copyLink(iv.id);};f.appendChild(lnk);
+  var del=document.createElement("button");del.className="del-btn";del.textContent="Delete interval";del.onclick=deleteSelected;f.appendChild(del);
+  return f;
+}
+function linkPanel(L){
+  var f=document.createDocumentFragment();
+  var A=ivById(L.from),B=ivById(L.to);
+  var h=document.createElement("div");h.className="prop-row";
+  var hl=document.createElement("div");hl.className="prop-label";hl.textContent="Relation";h.appendChild(hl);
+  var hv=document.createElement("div");hv.style.cssText="font-size:13px;font-weight:600";hv.textContent=(A?A.label:"?")+"  "+L.rel+"  "+(B?B.label:"?");h.appendChild(hv);f.appendChild(h);
+  // rel toggle
+  var tr=document.createElement("div");tr.className="toggle-row";
+  var bb=document.createElement("div");bb.className="toggle-btn"+(L.rel==="before"?" on-float":"");bb.textContent="before → (loose)";
+  var bm=document.createElement("div");bm.className="toggle-btn"+(L.rel==="meets"?" on-pin":"");bm.textContent="meets ⊣⊢ (rigid)";
+  bb.onclick=function(){L.rel="before";solve();render();renderPanel();};
+  bm.onclick=function(){L.rel="meets";solve();render();renderPanel();};
+  tr.appendChild(bb);tr.appendChild(bm);f.appendChild(tr);
+  f.appendChild(rangeRow("Confidence",L.conf,function(v){L.conf=v;},0,1,0.05,true));
+  f.appendChild(row("Asserted by",inp(L.who,function(v){L.who=v;})));
+  var na=document.createElement("textarea");na.className="prop-input";na.value=L.note;na.placeholder="why / source";na.addEventListener("input",function(){L.note=na.value;});
+  f.appendChild(row("Note",na));
+  var lnk=document.createElement("button");lnk.className="link-btn";lnk.textContent="🔗 Copy link to this relation";lnk.onclick=function(){copyLink(L.id);};f.appendChild(lnk);
+  var del=document.createElement("button");del.className="del-btn";del.textContent="Delete link";del.onclick=deleteSelected;f.appendChild(del);
+  return f;
+}
+function rangeRow(label,val,on,mn,mx,st,pct,dur){
+  function fmt(v){return pct?Math.round(v*100)+"%":(dur?fmtDur(v):r2(v));}
+  var d=document.createElement("div");d.className="range-row";
+  var l=document.createElement("label");l.textContent=label;
+  var i=document.createElement("input");i.type="range";i.min=(mn==null?0:mn);i.max=(mx==null?10:mx);i.step=(st==null?0.05:st);i.value=val;
+  var s=document.createElement("span");s.textContent=fmt(val);
+  i.addEventListener("input",function(){var v=parseFloat(i.value);s.textContent=fmt(v);on(v);});
+  d.appendChild(l);d.appendChild(i);d.appendChild(s);return d;
+}
+
+/* ── issues panel ────────────────────────────────────────── */
+function renderIssues(){
+  var box=document.getElementById("issues");
+  if(!issues.length){box.className="";box.innerHTML="";return;}
+  box.className="show";
+  var html="<h4>⚠︎ "+issues.length+" contradiction"+(issues.length>1?"s":"")+"</h4>";
+  issues.forEach(function(I,k){html+='<div class="issue-item" data-k="'+k+'">• '+esc(I.msg)+"</div>";});
+  box.innerHTML=html;
+  Array.prototype.forEach.call(box.querySelectorAll(".issue-item"),function(n){
+    n.onclick=function(){var I=issues[+n.getAttribute("data-k")];if(I.ids[0]){selectIv(I.ids[0]);}};
+  });
+}
+
+/* ── sentence parser (dual face) ─────────────────────────── */
+function resolveOrMake(name){var iv=ivByLabel(name);if(!iv)iv=newInterval(name.trim());return iv;}
+function runSentence(str){
+  str=str.trim(); if(!str)return; var m;
+  if(m=str.match(/^new\s+(.+)$/i)){newInterval(m[1].trim());}
+  else if(m=str.match(/^pin\s+(.+)$/i)){var a=ivByLabel(m[1]);if(a){a.pinned=true;}else{toast("no interval “"+m[1].trim()+"”");}}
+  else if(m=str.match(/^unpin\s+(.+)$/i)){var a2=ivByLabel(m[1]);if(a2){a2.pinned=false;}else{toast("no interval “"+m[1].trim()+"”");}}
+  else if(m=str.match(/^(.+?)\s+before\s+(.+)$/i)){addLink(resolveOrMake(m[1]).id,resolveOrMake(m[2]).id,"before");}
+  else if(m=str.match(/^(.+?)\s+meets\s+(.+)$/i)){addLink(resolveOrMake(m[1]).id,resolveOrMake(m[2]).id,"meets");}
+  else if(m=str.match(/^(.+?)\s*=\s*(.+?)\s*\.\.\s*(.+)$/)){var iv=resolveOrMake(m[1]);var a=parseDate(m[2]),b=parseDate(m[3]);if(a!=null)iv.s=a;if(b!=null)iv.e=Math.max(b,iv.s+EPS);}
+  else if(m=str.match(/^(.+?)\s+lasts?\s+(.+)$/i)){var iv2=resolveOrMake(m[1]);var du=parseDur(m[2]);if(du!=null)iv2.e=iv2.s+du;}
+  else if(m=str.match(/^(.+?)\s*~=?\s*(.+)$/)){var iv3=resolveOrMake(m[1]);var c=parseDate(m[2]);if(c!=null){iv3.s=iv3.e=c;iv3.sf=iv3.ef=niceStep()/2;}}
+  else {toast("didn’t parse — try “A before B”, “A = Jan 2018 .. Dec 2020”, “A lasts 6 months”, “pin A”"); return;}
+  solve();render();renderPanel();
+}
+document.getElementById("sentence").addEventListener("keydown",function(e){
+  if(e.key==="Enter"){runSentence(e.target.value);e.target.value="";}
+});
+
+/* ── toolbar ─────────────────────────────────────────────── */
+function toast(msg){var t=document.getElementById("toast");t.textContent=msg;t.className="show";clearTimeout(toast._t);toast._t=setTimeout(function(){t.className="";},1800);}
+function syncModeBtns(){document.getElementById("btn-before").className="tb-btn"+(mode==="before"?" active":"");document.getElementById("btn-meets").className="tb-btn"+(mode==="meets"?" active":"");}
+document.getElementById("btn-new").onclick=function(){var iv=newInterval(null);selectIv(iv.id);solve();render();renderPanel();};
+document.getElementById("btn-before").onclick=function(){mode=(mode==="before"?"select":"before");linkStart=null;syncModeBtns();toast(mode==="before"?"click source interval, then target":"");render();};
+document.getElementById("btn-meets").onclick=function(){mode=(mode==="meets"?"select":"meets");linkStart=null;syncModeBtns();toast(mode==="meets"?"click source interval, then target":"");render();};
+document.getElementById("btn-zin").onclick=function(){view.pxPerUnit*=1.25;render();};
+document.getElementById("btn-zout").onclick=function(){view.pxPerUnit/=1.25;render();};
+document.getElementById("btn-fit").onclick=fit;
+document.getElementById("model-name").addEventListener("input",function(e){M.name=e.target.value;});
+document.getElementById("btn-demo").onclick=function(){loadDemo();};
+document.getElementById("btn-newmodel").onclick=function(){newModel();};
+function newModel(){
+  var y=new Date().getUTCFullYear();
+  M={name:"Untitled timeline",intervals:[],links:[]};uid=1;sel={type:null,id:null};mode="select";linkStart=null;issues=[];
+  view={t0:y-2,pxPerUnit:60};
+  document.getElementById("model-name").value=M.name;
+  if(location.hash)history.replaceState(null,"",location.pathname+location.search);
+  syncModeBtns();render();renderPanel();toast("new blank timeline");
+}
+
+function fit(){
+  if(!M.intervals.length){view.t0=0;view.pxPerUnit=60;render();return;}
+  var lo=Infinity,hi=-Infinity;
+  M.intervals.forEach(function(v){lo=Math.min(lo,v.s-v.sf);hi=Math.max(hi,v.e+v.ef);});
+  if(lo===hi){lo-=1;hi+=1;}
+  var span=hi-lo, w=svgW()-PAD_L*2-40;
+  view.pxPerUnit=Math.max(2,w/span);
+  view.t0=lo-span*0.05;
+  render();
+}
+
+/* ── JSON modal ──────────────────────────────────────────── */
+var mbg=document.getElementById("modal-bg");
+document.getElementById("btn-export").onclick=function(){
+  document.getElementById("modal-text").value=JSON.stringify(exportModel(),null,2);
+  mbg.className="show";
+};
+document.getElementById("modal-close").onclick=function(){mbg.className="";};
+document.getElementById("modal-copy").onclick=function(){var t=document.getElementById("modal-text");t.select();document.execCommand("copy");toast("copied");};
+document.getElementById("modal-load").onclick=function(){
+  try{importModel(JSON.parse(document.getElementById("modal-text").value));mbg.className="";toast("loaded");}
+  catch(err){toast("invalid JSON");}
+};
+function exportModel(){
+  return {name:M.name,
+    intervals:M.intervals.map(function(v){return{id:v.id,label:v.label,start:fmtDate(v.s),end:fmtDate(v.e),startFuzz:r2(v.sf),endFuzz:r2(v.ef),pinned:v.pinned,color:v.color,row:v.row,who:v.who,note:v.note,conf:v.conf};}),
+    links:M.links.map(function(L){return{id:L.id,from:L.from,to:L.to,rel:L.rel,who:L.who,note:L.note,conf:L.conf};})};
+}
+function importModel(o){
+  M.name=o.name||"Untitled timeline";
+  M.intervals=(o.intervals||[]).map(function(v,i){
+    var s=parseDate(v.start!=null?v.start:v.s); if(s==null)s=0;
+    var e=(v.end!=null?parseDate(v.end):(v.e!=null?parseDate(v.e):null)); if(e==null)e=s+1;
+    return{id:v.id||nid("iv"),label:v.label||("Event "+(i+1)),s:s,e:e,
+      sf:+(v.startFuzz!=null?v.startFuzz:v.sf)||0,ef:+(v.endFuzz!=null?v.endFuzz:v.ef)||0,
+      pinned:!!v.pinned,color:v.color||COLORS[i%COLORS.length],row:(v.row==null?i:v.row),
+      who:v.who||"",note:v.note||"",conf:(v.conf==null?0.8:v.conf)};});
+  M.links=(o.links||[]).map(function(L){return{id:L.id||nid("lk"),from:L.from,to:L.to,rel:L.rel||"before",who:L.who||"",note:L.note||"",conf:(L.conf==null?0.8:L.conf)};});
+  document.getElementById("model-name").value=M.name;
+  sel={type:null,id:null};solve();fit();renderPanel();
+}
+
+/* ── image export (SVG / PNG) — the graph-tool exports that make sense here ── */
+function saveView(){return {t0:view.t0,ppu:view.pxPerUnit};}
+function restoreView(v){view.t0=v.t0;view.pxPerUnit=v.ppu;render();}
+function slug(){return (M.name||"timeline").replace(/[^\w.-]+/g,"_").replace(/^_+|_+$/g,"")||"timeline";}
+function buildExportSVG(){
+  var W=+svg.getAttribute("width")||svgW(), H=+svg.getAttribute("height")||wrap.clientHeight;
+  var clone=svg.cloneNode(true);
+  Array.prototype.slice.call(clone.querySelectorAll(".handle")).forEach(function(n){n.parentNode.removeChild(n);});
+  clone.setAttribute("xmlns",SVGNS);clone.setAttribute("width",W);clone.setAttribute("height",H);
+  var style=document.createElementNS(SVGNS,"style");
+  style.textContent="text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}"+
+    ".iv-label{font-size:12px;font-weight:600;fill:#1e293b;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}"+
+    ".axis-text{font-size:10px;fill:#94a3b8}";
+  clone.insertBefore(style,clone.firstChild);
+  var bg=document.createElementNS(SVGNS,"rect");bg.setAttribute("x",0);bg.setAttribute("y",0);bg.setAttribute("width",W);bg.setAttribute("height",H);bg.setAttribute("fill","#ffffff");
+  clone.insertBefore(bg,style.nextSibling);
+  return {str:'<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(clone),w:W,h:H};
+}
+function dl(name,blob){var u=URL.createObjectURL(blob);var a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(u);},1000);}
+function exportSVG(){var sv=saveView();fit();var s=buildExportSVG();restoreView(sv);dl(slug()+".svg",new Blob([s.str],{type:"image/svg+xml;charset=utf-8"}));toast("SVG downloaded");}
+function exportPNG(){var sv=saveView();fit();var s=buildExportSVG();restoreView(sv);
+  var scale=2,img=new Image();
+  img.onload=function(){var cv=document.createElement("canvas");cv.width=s.w*scale;cv.height=s.h*scale;var cx=cv.getContext("2d");cx.scale(scale,scale);cx.drawImage(img,0,0);cv.toBlob(function(b){dl(slug()+".png",b);toast("PNG downloaded");},"image/png");};
+  img.onerror=function(){toast("PNG export failed");};
+  img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(s.str);
+}
+
+/* ── deep links (self-contained: the link carries the timeline) ──
+   #tl=<base64 json>&sel=<object id> — opens the tool, rebuilds this
+   exact timeline, centers + highlights the selected object. Works from
+   file://, a web host, or embedded in FedWiki. (If timelines get hosted
+   under names later, this can shrink to #timeline=NAME&sel=ID.) */
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s)));}
+function linkFor(selId){
+  var base=location.href.replace(/[#?].*$/,"");
+  var h="#tl="+b64enc(JSON.stringify(exportModel()));
+  if(selId)h+="&sel="+encodeURIComponent(selId);
+  return base+h;
+}
+function fallbackCopy(txt,ok){var t=document.createElement("textarea");t.value=txt;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.select();try{document.execCommand("copy");toast(ok);}catch(e){toast("copy failed");}document.body.removeChild(t);}
+function copyText(txt,ok){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){toast(ok);},function(){fallbackCopy(txt,ok);});}else fallbackCopy(txt,ok);}
+function copyLink(selId){copyText(linkFor(selId),"link copied");}
+function centerOn(t){view.t0=t-(svgW()/2-PAD_L)/view.pxPerUnit;}
+function applyHash(){
+  var h=location.hash;if(!h||h.length<2)return false;
+  var mp={};h.slice(1).split("&").forEach(function(kv){var p=kv.split("=");mp[p[0]]=p.slice(1).join("=");});
+  if(!mp.tl)return false;
+  try{importModel(JSON.parse(b64dec(mp.tl)));}catch(e){toast("bad link data");return false;}
+  if(mp.sel){var id=decodeURIComponent(mp.sel),iv=ivById(id),lk=linkById(id);
+    if(iv){select("iv",id);centerOn((iv.s+iv.e)/2);render();renderPanel();}
+    else if(lk){select("link",id);var A=ivById(lk.from),B=ivById(lk.to);if(A&&B)centerOn((A.e+B.s)/2);render();renderPanel();}
+  }
+  return true;
+}
+document.getElementById("btn-svg").onclick=exportSVG;
+document.getElementById("btn-png").onclick=exportPNG;
+document.getElementById("btn-link").onclick=function(){copyLink(sel.type?sel.id:null);};
+
+/* ── demo seed (history + plan; drag Scale-up right into Report to see red) ── */
+function loadDemo(){
+  importModel({name:"NDC — founding to first report",
+   intervals:[
+    {id:"founding",label:"Founding",s:2016,e:2016,sf:0,ef:0,pinned:true,color:"#64748b",row:0,who:"incorporation record",note:"filed articles",conf:1},
+    {id:"pilot",label:"Pilot phase",s:2018,e:2020,sf:0.3,ef:0.5,pinned:false,color:"#3b82f6",row:1,who:"steward memory",note:"start date approximate",conf:0.6},
+    {id:"grant",label:"Grant awarded",s:2021,e:2021,sf:0,ef:0,pinned:true,color:"#10b981",row:2,who:"award letter",conf:1},
+    {id:"scaleup",label:"Scale-up",s:2021.2,e:2025,sf:0.2,ef:1.0,pinned:false,color:"#f59e0b",row:3,who:"plan / forecast",note:"end is a forecast — wide band",conf:0.5},
+    {id:"report",label:"Report due",s:2026,e:2026,sf:0,ef:0,pinned:true,color:"#ef4444",row:4,who:"grant terms",note:"hard deadline",conf:1}
+   ],
+   links:[
+    {from:"founding",to:"pilot",rel:"before"},
+    {from:"pilot",to:"grant",rel:"before"},
+    {from:"grant",to:"scaleup",rel:"meets"},
+    {from:"scaleup",to:"report",rel:"before"}
+   ]});
+}
+
+/* ── boot ────────────────────────────────────────────────── */
+window.addEventListener("resize",render);
+if(!applyHash())loadDemo();
+</script>
+</body>
+</html>
