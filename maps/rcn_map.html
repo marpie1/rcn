@@ -438,12 +438,20 @@
   <button class="export-all-btn" onclick="document.getElementById('import-data-file').click()" title="Load a previously exported rcn-map-data.json — REPLACES your current NDCs, locations, boundaries, and corrections (built-in NDCs and federated regions are untouched).">⬆ Import my data (JSON)</button>
   <input type="file" id="import-data-file" accept=".json,application/json" style="display:none" onchange="importMyDataFile(this)">
   <div id="ndc-list"></div>
-  <div id="legend"></div>
-  <p class="legend-hint">Click to highlight · Shift+click to multi-select</p>
+  <p class="legend-hint">Expand an NDC for its layers · click an item to highlight · Shift+click to compare</p>
   <label class="freeze-toggle" title="When on, highlighting a polygon or NDC no longer auto-zooms the map — the view stays put so you can click through many features without the map jumping around.">
     <input type="checkbox" id="freeze-view-chk" onchange="freezeView=this.checked">
     🔒 Freeze view (no auto-zoom)
   </label>
+
+  <!-- ── My additions & layers (boundaries, pins, federated regions) — collapsed on load ── -->
+  <div id="additions-panel" style="display:none">
+    <div class="add-poly-header" onclick="toggleAdditions()" title="Boundaries, pins, and federated regions you (or other stewards) have added. Saved in your browser; back up with Export my data.">
+      <span class="ndc-arrow" id="additions-arrow">▶</span>
+      <span>My additions &amp; layers</span>
+    </div>
+    <div id="additions-body" style="display:none"></div>
+  </div>
 
   <!-- ── Add boundary layer panel ────────────────────────────── -->
   <div id="add-poly-panel">
@@ -826,23 +834,11 @@ function buildLegend(ndcMeta, featuresByState, depositCounts, churchCounts = {},
     ndcsByState[n.state].push(n.name);
   });
 
-  // Bucket user polygons by state
-  const userPolys = loadUserPolygons();
-  const userByState = {};
-  userPolys.forEach((p, i) => {
-    if (!userByState[p.state]) userByState[p.state] = [];
-    userByState[p.state].push({...p, idx: i});
-  });
-
   let html = '';
-  // Include any states that have user polygons but no static data
-  const allStates = [...new Set([...stateOrder, ...Object.keys(userByState)])];
-
-  for (const state of allStates) {
+  for (const state of stateOrder) {
     const ndcNames = ndcsByState[state] || [];
     const feats    = featuresByState[state] || [];
-    const uPolys   = userByState[state] || [];
-    if (!ndcNames.length && !feats.length && !uPolys.length) continue;
+    if (!ndcNames.length && !feats.length && !depositCounts[state] && !churchCounts[state]) continue;
 
     const header = ndcNames.length
       ? ndcNames.join(' / ') + ` <span style="font-weight:400;color:#888">(${state})</span>`
@@ -880,35 +876,55 @@ function buildLegend(ndcMeta, featuresByState, depositCounts, churchCounts = {},
       html += `<div class="legend-item" data-id="${id}" onclick="highlightById('${id.replace(/'/g,"\\'")}',event)">` +
         `<div class="legend-swatch circle" style="background:#E8593C"></div>${name}</div>`;
     });
+  }
 
-    // User-added polygons for this state
-    uPolys.forEach(p => {
-      const c  = p.color || colors[p.type] || '#888';
-      const id = `user:${p.idx}`;
-      const esc = p.name.replace(/'/g,"\\'");
-      html += `<div class="legend-item" data-id="${id}" onclick="highlightById('${id}',event)">` +
-        `<div class="legend-swatch" style="background:${c}"></div>` +
-        `${p.name} <span class="legend-user-badge">U</span>` +
-        `<span class="legend-remove" title="Remove" onclick="event.stopPropagation();removeUserPolygon(${p.idx})">×</span></div>`;
+  const el = document.getElementById(targetId);
+  if (el) el.innerHTML = html;   // built-in NDC layers only; user/federated go in renderAdditions()
+}
+
+// "My additions & layers": everything you (or federation) added — shown ONCE
+// in its own collapsible section, never repeated under each NDC.
+function renderAdditions() {
+  const body = document.getElementById('additions-body');
+  if (!body) return;
+  let html = '';
+
+  const userPolys = loadUserPolygons();
+  if (userPolys.length) {
+    html += `<div class="legend-group-header">Custom boundaries</div>`;
+    userPolys.forEach((p, i) => {
+      const c = p.color || colors[p.type] || '#888';
+      html += `<div class="legend-item" data-id="user:${i}" onclick="highlightById('user:${i}',event)">` +
+        `<div class="legend-swatch" style="background:${c}"></div>${p.name} ` +
+        (p.state ? `<span class="legend-user-badge">${p.state}</span>` : '') +
+        `<span class="legend-remove" title="Remove" onclick="event.stopPropagation();removeUserPolygon(${i})">×</span></div>`;
     });
   }
 
-  // Custom locations (flat list, not state-grouped)
   const userLocs = loadUserLocations();
   if (userLocs.length) {
-    html += `<div class="legend-group-header" title="Named pins you've dropped with '+ Add location'. Saved in this browser; back them up with 'Export my data'.">Custom locations</div>`;
+    html += `<div class="legend-group-header">Custom locations</div>`;
     userLocs.forEach((loc, i) => {
-      const id = `loc:${i}`;
-      html += `<div class="legend-item" data-id="${id}" onclick="highlightById('${id}',event)">` +
-        `<div class="legend-swatch circle" style="background:${loc.color || '#0ea5e9'}"></div>` +
-        `${loc.name} <span class="legend-loc-badge">+</span>` +
+      html += `<div class="legend-item" data-id="loc:${i}" onclick="highlightById('loc:${i}',event)">` +
+        `<div class="legend-swatch circle" style="background:${loc.color || '#0ea5e9'}"></div>${loc.name} ` +
+        `<span class="legend-loc-badge">+</span>` +
         `<span class="legend-remove" title="Remove" onclick="event.stopPropagation();removeUserLocation(${i})">×</span></div>`;
     });
   }
 
   html += buildFederatedLegendHTML();
 
-  document.getElementById(targetId).innerHTML = html;
+  body.innerHTML = html;
+  const panel = document.getElementById('additions-panel');
+  if (panel) panel.style.display = html.trim() ? '' : 'none';   // hide the whole panel when empty
+}
+
+function toggleAdditions() {
+  const body   = document.getElementById('additions-body');
+  const arrow  = document.getElementById('additions-arrow');
+  const isOpen = body.style.display === 'block';
+  body.style.display = isOpen ? 'none' : 'block';
+  arrow.textContent  = isOpen ? '▶' : '▼';
 }
 
 // ── Popup helper ──────────────────────────────────────────────────────
@@ -935,8 +951,7 @@ async function showOverview() {
     expandedNDCKey = null;
   }
   clearIssueLayer();
-  document.getElementById('legend').style.display = '';
-  document.getElementById('sidebar-desc').textContent = 'All NDCs — click legend items to highlight';
+  document.getElementById('sidebar-desc').textContent = 'All NDCs — expand one for its layers';
 
   const placesData = RCN_PLACES;
   const ndcsData   = RCN_NDCS;
@@ -1005,10 +1020,12 @@ async function showOverview() {
     registerLayer(`ndc:${name}`, 'ndc_zone', marker);
   });
 
-  buildLegend(ndcsData.features.map(f => f.properties), featuresByState, depositCounts, churchCounts);
+  // No flat legend in Overview — the NDC accordion is the layer key. Draw user
+  // + federated overlays, and list them once in the "My additions" section.
   renderUserPolygons();
   renderUserLocations();
   renderFederatedRegions();
+  renderAdditions();
 
   const ndcLatLngs = ndcsData.features.map(f => {
     const c = corrections[f.properties.name];
@@ -1120,6 +1137,8 @@ async function showNDC(name, state, k = null) {
   buildLegend(ndcMeta, featuresByState, depositCounts, churchCounts, legendTarget);
   renderUserPolygons();
   renderUserLocations();
+  renderFederatedRegions();
+  renderAdditions();
 }
 
 // ── NDC list ──────────────────────────────────────────────────────────
@@ -1637,7 +1656,6 @@ function toggleNDC(name, state, k) {
     expandedNDCKey = null;
     clearLayers();
     clearIssueLayer();
-    document.getElementById('legend').style.display = '';
     showOverview();
   } else {
     if (expandedNDCKey) {
@@ -1650,7 +1668,6 @@ function toggleNDC(name, state, k) {
     body.style.display = 'block';
     arrow.textContent  = '▼';
     header.classList.add('expanded');
-    document.getElementById('legend').style.display = 'none';
     showNDC(name, state, k);
   }
 }
