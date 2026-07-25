@@ -1192,6 +1192,19 @@ const ISSUE_INDEX_URL = new URLSearchParams(location.search).get('issues') || (
 );
 let ISSUE_INDEX = [];
 const sessionIssues = {};   // issues created this session (key → issue data), rendered in-memory
+var BUNDLED_ISSUES = null;  // sentinel — build_standalone_map.py replaces this to bake issues into the file
+
+// If issues were bundled into this file, load them so they show with no host.
+function loadBundledIssues() {
+  if (!BUNDLED_ISSUES || !Array.isArray(BUNDLED_ISSUES.index)) return;
+  BUNDLED_ISSUES.index.forEach(e => {
+    if (!e || !e.key) return;
+    if (!ISSUE_INDEX.find(i => i.key === e.key)) {
+      ISSUE_INDEX.push({ key: e.key, label: e.label, ndc: e.ndc, url: null, map: e.map || null });
+    }
+    if (BUNDLED_ISSUES.data && BUNDLED_ISSUES.data[e.key]) sessionIssues[e.key] = BUNDLED_ISSUES.data[e.key];
+  });
+}
 
 async function loadIssueIndex() {
   try {
@@ -2772,6 +2785,7 @@ document.getElementById('add-loc-name-input').addEventListener('keydown', functi
   injectExtraNDCs();
   injectDefaultPolygons();
   await loadIssueIndex();
+  loadBundledIssues();   // add any issues baked into this file (standalone build)
   buildNDCList();
   showOverview();
   loadRegions();   // fetch + merge federated regional bundles (non-blocking, graceful)
