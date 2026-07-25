@@ -391,9 +391,8 @@
       <div class="poly-form-row">
         <label title="State / province / country code used to group this boundary in the legend. Pick a suggested code or type a NEW one (e.g. ON, BC, ES).">State / group</label>
         <input id="draw-form-state" class="poly-form-input" type="text" list="state-group-options"
-          value="AZ" placeholder="Pick or type a code — e.g. AZ, ON, ES" maxlength="8"
-          style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"
-          title="State / province / country code used to group this boundary in the legend. Pick a suggested code or type a NEW one (e.g. ON, BC, ES).">
+          value="AZ" placeholder="Pick or type a bucket — e.g. AZ, Whatcom, Nooksack" maxlength="32"
+          title="Group bucket used to file this boundary in the legend. Pick a suggested code or type any label you like (a state, a country, a watershed name). Items sharing the exact same bucket are grouped together.">
         <datalist id="state-group-options">
           <option value="AZ">AZ — Superior</option>
           <option value="MI">MI — Lansing</option>
@@ -504,9 +503,8 @@
           <div class="poly-form-row">
             <label title="State / province / country code used to group this boundary in the legend. Pick a suggested code or type a NEW one (e.g. ON, BC, ES).">State / group</label>
             <input id="poly-form-state" class="poly-form-input" type="text" list="state-group-options"
-              value="AZ" placeholder="Pick or type a code — e.g. AZ, ON, ES" maxlength="8"
-              style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"
-              title="State / province / country code used to group this boundary in the legend. Pick a suggested code or type a NEW one (e.g. ON, BC, ES).">
+              value="AZ" placeholder="Pick or type a bucket — e.g. AZ, Whatcom, Nooksack" maxlength="32"
+              title="Group bucket used to file this boundary in the legend. Pick a suggested code or type any label you like (a state, a country, a watershed name). Items sharing the exact same bucket are grouped together.">
           </div>
           <div class="poly-form-row">
             <label title="Fill and outline colour of this overlay (also its legend swatch).">Colour</label>
@@ -623,10 +621,9 @@
         <input id="an-location" class="poly-form-input" type="text" placeholder="e.g. Alpujarras, Spain">
       </div>
       <div class="poly-form-row">
-        <label title="Required. A short state or country code used to GROUP this NDC in the legend — e.g. AZ (Arizona), WLS (Wales), ES (Spain). Not the NDC's name; the region bucket it belongs to.">Code <span class="req" title="Required field">*</span> <span style="font-size:9px;color:#aaa;font-weight:400">(state or country)</span></label>
-        <input id="an-code" class="poly-form-input" type="text" placeholder="e.g. ES, AZ, WLS" maxlength="5"
-          title="Required. A short state or country code used to group this NDC in the legend — e.g. AZ (Arizona), WLS (Wales), ES (Spain)."
-          style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+        <label title="Required. The group bucket this NDC is filed under in the legend — a state, a country, or any label you choose (e.g. AZ, Wales, Whatcom). Not the NDC's name; the region bucket it belongs to. NDCs and boundaries sharing the EXACT same bucket are grouped together.">Code <span class="req" title="Required field">*</span> <span style="font-size:9px;color:#aaa;font-weight:400">(group bucket)</span></label>
+        <input id="an-code" class="poly-form-input" type="text" placeholder="e.g. AZ, Wales, Whatcom" maxlength="32"
+          title="Required. The group bucket this NDC is filed under — a state, a country, or any label you choose (e.g. AZ, Wales, Whatcom). NDCs and boundaries sharing the EXACT same bucket are grouped together.">
       </div>
       <div style="display:flex;gap:6px;margin-bottom:4px">
         <div class="poly-form-row" style="flex:1;margin:0">
@@ -1168,6 +1165,9 @@ const NDC_LIST = [
     lat: 52.9279, lng: -4.1304, address: "Porthmadog, Gwynedd, Wales" },
   { name: "Alpujarra NDC", state: 'ES',  label: "Alpujarra NDC — Alpujarras, Spain",
     lat: 36.8840, lng: -3.4340, address: "Órgiva, Alpujarras, Spain" },
+  { name: "Main Street Neighborhood Bellingham", state: 'WA',
+    label: "Main Street Neighborhood Bellingham — Bellingham, WA",
+    lat: 48.74911, lng: -122.47815, address: "Bellingham, WA" },
 ];
 
 // Inject NDCs that have lat/lng but are absent from rcn_static_data.js,
@@ -1542,7 +1542,7 @@ function applyPickNDCLocation(latlng) {
 function confirmAddNDC() {
   const name     = document.getElementById('an-name').value.trim();
   const location = document.getElementById('an-location').value.trim();
-  const code     = document.getElementById('an-code').value.trim().toUpperCase();
+  const code     = document.getElementById('an-code').value.trim();
   const lat      = parseFloat(document.getElementById('an-lat').value);
   const lng      = parseFloat(document.getElementById('an-lng').value);
 
@@ -2072,7 +2072,7 @@ function confirmDrawnPolygon() {
   if (!drawnPendingGeoJSON) return;
   const name  = document.getElementById('draw-form-name').value.trim();
   const type  = document.getElementById('draw-form-type').value;
-  const state = document.getElementById('draw-form-state').value.trim().toUpperCase() || 'OTHER';
+  const state = document.getElementById('draw-form-state').value.trim() || 'OTHER';
   const color   = document.getElementById('draw-form-color').value;
   const opacity = parseFloat(document.getElementById('draw-form-opacity').value);
   if (!name) { document.getElementById('draw-form-name').focus(); return; }
@@ -2621,7 +2621,7 @@ function confirmAddPolygon() {
   if (!pendingPolygon) return;
   const name  = document.getElementById('poly-form-name').value.trim();
   const type  = document.getElementById('poly-form-type').value;
-  const state = document.getElementById('poly-form-state').value.trim().toUpperCase() || 'OTHER';
+  const state = document.getElementById('poly-form-state').value.trim() || 'OTHER';
   const color   = document.getElementById('poly-form-color').value;
   const opacity = parseFloat(document.getElementById('poly-form-opacity').value);
   if (!name) { document.getElementById('poly-form-name').focus(); return; }
