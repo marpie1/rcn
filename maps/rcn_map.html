@@ -225,8 +225,13 @@
     font-size: 9px; background: #dcfce7; color: #166534; border-radius: 3px;
     padding: 0 4px; font-weight: 700; flex-shrink: 0; line-height: 16px;
   }
+  .legend-edit {
+    margin-left: auto; font-size: 10px; line-height: 1; color: #2563eb;
+    cursor: pointer; flex-shrink: 0; padding: 0 4px; font-weight: 600;
+  }
+  .legend-edit:hover { text-decoration: underline; }
   .legend-remove {
-    margin-left: auto; font-size: 13px; line-height: 1; color: #ccc;
+    font-size: 13px; line-height: 1; color: #ccc;
     cursor: pointer; flex-shrink: 0; padding: 0 2px;
   }
   .legend-remove:hover { color: #c0392b; }
@@ -939,19 +944,81 @@ function populateNDCSelects() {
   });
 }
 
-// One legend row for a user polygon, optionally with an "assign to NDC" select.
-function userPolyLegendItem(p, i, showAssign) {
+// Which user polygon (index) is currently open in its inline editor, or null.
+let editingPolyIndex = null;
+
+// One legend row for a user polygon: the normal row (✎ Edit · ×), or — when this
+// index is being edited — a full metadata editor (name, type, bucket, colour,
+// opacity, and which NDC it's filed under).
+function userPolyLegendItem(p, i) {
+  if (i === editingPolyIndex) return userPolyEditorHTML(p, i);
   const c = p.color || colors[p.type] || '#888';
-  let h = `<div class="legend-item" data-id="user:${i}" onclick="highlightById('user:${i}',event)">` +
+  return `<div class="legend-item" data-id="user:${i}" onclick="highlightById('user:${i}',event)">` +
     `<div class="legend-swatch" style="background:${c}"></div>${p.name} ` +
     (p.state ? `<span class="legend-user-badge">${p.state}</span>` : '') +
+    `<span class="legend-edit" title="Edit this boundary's name, type, bucket, colour, opacity, and which NDC it's under" ` +
+    `onclick="event.stopPropagation();editUserPolygon(${i})">✎ Edit</span>` +
     `<span class="legend-remove" title="Remove" onclick="event.stopPropagation();removeUserPolygon(${i})">×</span></div>`;
-  if (showAssign) {
-    h += `<div style="padding:1px 0 5px 22px"><select title="File this boundary under an NDC (or none)" ` +
-      `onclick="event.stopPropagation()" onchange="assignPolygonNDC(${i}, this.value)" ` +
-      `style="font-size:11px;max-width:100%">${ndcOptionsHTML(p.ndc || '')}</select></div>`;
+}
+
+// The inline editor for one boundary's metadata.
+function userPolyEditorHTML(p, i) {
+  const color   = p.color || colors[p.type] || '#888';
+  const opacity = (p.fillOpacity != null) ? p.fillOpacity : 0.12;
+  const typeOpt = (v, lbl) => `<option value="${v}"${p.type === v ? ' selected' : ''}>${lbl}</option>`;
+  return `<div class="poly-editor" onclick="event.stopPropagation()" ` +
+    `style="border:1px solid #cbd5e1;border-radius:6px;padding:7px;margin:2px 0 6px">` +
+    `<div class="poly-form-row" style="margin:0 0 4px"><label>Name</label>` +
+      `<input id="ep-name-${i}" class="poly-form-input" type="text" value="${(p.name||'').replace(/"/g,'&quot;')}"></div>` +
+    `<div class="poly-form-row" style="margin:0 0 4px"><label>Type</label>` +
+      `<select id="ep-type-${i}" class="poly-form-input">` +
+        typeOpt('admin_boundary','Admin boundary') + typeOpt('ecological_zone','Ecological zone') + typeOpt('ndc_zone','NDC zone') +
+      `</select></div>` +
+    `<div class="poly-form-row" style="margin:0 0 4px"><label title="Group bucket — a state, country, or any label. Boundaries and NDCs sharing the exact same bucket group together.">Bucket</label>` +
+      `<input id="ep-bucket-${i}" class="poly-form-input" type="text" maxlength="32" value="${(p.state||'').replace(/"/g,'&quot;')}"></div>` +
+    `<div style="display:flex;gap:6px;margin-bottom:4px">` +
+      `<div class="poly-form-row" style="flex:1;margin:0"><label>Colour</label>` +
+        `<input id="ep-color-${i}" class="poly-form-input" type="color" value="${color}" style="padding:1px;height:24px"></div>` +
+      `<div class="poly-form-row" style="flex:1;margin:0"><label title="Fill opacity 0–1">Opacity</label>` +
+        `<input id="ep-opacity-${i}" class="poly-form-input" type="number" min="0" max="1" step="0.05" value="${opacity}"></div>` +
+    `</div>` +
+    `<div class="poly-form-row" style="margin:0 0 6px"><label title="File this boundary inside an NDC's legend section, or leave in My additions.">Under NDC</label>` +
+      `<select id="ep-ndc-${i}" class="poly-form-input">${ndcOptionsHTML(p.ndc || '')}</select></div>` +
+    `<div style="display:flex;gap:6px">` +
+      `<button class="poly-btn" style="flex:1" onclick="saveEditPolygon(${i})">Save</button>` +
+      `<button class="poly-btn secondary" style="flex:1" onclick="cancelEditPolygon()">Cancel</button>` +
+    `</div></div>`;
+}
+
+// Re-render both places a polygon row can appear (My additions + any open NDC).
+function refreshPolyViews() {
+  renderUserPolygons();
+  renderAdditions();
+  if (expandedNDCKey) {
+    const entry = NDC_LIST.find(n => ndcKey(n.name) === expandedNDCKey);
+    if (entry) showNDC(entry.name, entry.state, expandedNDCKey);
   }
-  return h;
+}
+
+function editUserPolygon(i)  { editingPolyIndex = i;    refreshPolyViews(); }
+function cancelEditPolygon() { editingPolyIndex = null; refreshPolyViews(); }
+
+function saveEditPolygon(i) {
+  const polys = loadUserPolygons();
+  if (!polys[i]) { editingPolyIndex = null; refreshPolyViews(); return; }
+  const g = id => document.getElementById(id + '-' + i);
+  const name = g('ep-name').value.trim();
+  polys[i].name  = name || polys[i].name;
+  polys[i].type  = g('ep-type').value;
+  polys[i].state = g('ep-bucket').value.trim() || 'OTHER';
+  polys[i].color = g('ep-color').value;
+  const op = parseFloat(g('ep-opacity').value);
+  if (!isNaN(op)) polys[i].fillOpacity = Math.max(0, Math.min(1, op));
+  const ndc = g('ep-ndc').value;
+  if (ndc) polys[i].ndc = ndc; else delete polys[i].ndc;
+  saveUserPolygons(polys);
+  editingPolyIndex = null;
+  refreshPolyViews();
 }
 
 // Move a user polygon under an NDC (or back to "My additions" when name is empty).
@@ -960,12 +1027,7 @@ function assignPolygonNDC(i, ndcName) {
   if (!polys[i]) return;
   if (ndcName) polys[i].ndc = ndcName; else delete polys[i].ndc;
   saveUserPolygons(polys);
-  renderUserPolygons();
-  renderAdditions();
-  if (expandedNDCKey) {
-    const entry = NDC_LIST.find(n => ndcKey(n.name) === expandedNDCKey);
-    if (entry) showNDC(entry.name, entry.state, expandedNDCKey);
-  }
+  refreshPolyViews();
 }
 
 // "My additions & layers": everything you (or federation) added — shown ONCE
@@ -981,7 +1043,7 @@ function renderAdditions() {
     .filter(({ p }) => !p.ndc || !NDC_LIST.find(n => n.name === p.ndc));
   if (loose.length) {
     html += `<div class="legend-group-header">Custom boundaries</div>`;
-    loose.forEach(({ p, i }) => { html += userPolyLegendItem(p, i, true); });
+    loose.forEach(({ p, i }) => { html += userPolyLegendItem(p, i); });
   }
 
   const userLocs = loadUserLocations();
@@ -1230,7 +1292,7 @@ async function showNDC(name, state, k = null) {
   const el = document.getElementById(legendTarget);
   if (el && assigned.length) {
     let extra = `<div class="legend-group-header">Custom boundaries</div>`;
-    assigned.forEach(({ p, i }) => { extra += userPolyLegendItem(p, i, true); });
+    assigned.forEach(({ p, i }) => { extra += userPolyLegendItem(p, i); });
     el.insertAdjacentHTML('beforeend', extra);
   }
 }
