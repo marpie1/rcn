@@ -389,6 +389,10 @@
         </select>
       </div>
       <div class="poly-form-row">
+        <label title="Optional. File this boundary INSIDE an NDC's section in the legend. Leave as 'none' to keep it in 'My additions & layers'. You can also change this later from the legend.">Under NDC</label>
+        <select id="draw-form-ndc" class="poly-form-input"><option value="">— none (My additions) —</option></select>
+      </div>
+      <div class="poly-form-row">
         <label title="State / province / country code used to group this boundary in the legend. Pick a suggested code or type a NEW one (e.g. ON, BC, ES).">State / group</label>
         <input id="draw-form-state" class="poly-form-input" type="text" list="state-group-options"
           value="AZ" placeholder="Pick or type a bucket — e.g. AZ, Whatcom, Nooksack" maxlength="32"
@@ -499,6 +503,10 @@
               <option value="ecological_zone">Ecological zone</option>
               <option value="ndc_zone">NDC zone</option>
             </select>
+          </div>
+          <div class="poly-form-row">
+            <label title="Optional. File this boundary INSIDE an NDC's section in the legend. Leave as 'none' to keep it in 'My additions & layers'. You can also change this later from the legend.">Under NDC</label>
+            <select id="poly-form-ndc" class="poly-form-input"><option value="">— none (My additions) —</option></select>
           </div>
           <div class="poly-form-row">
             <label title="State / province / country code used to group this boundary in the legend. Pick a suggested code or type a NEW one (e.g. ON, BC, ES).">State / group</label>
@@ -891,23 +899,67 @@ function buildLegend(ndcMeta, featuresByState, depositCounts, churchCounts = {},
   if (el) el.innerHTML = html;   // built-in NDC layers only; user/federated go in renderAdditions()
 }
 
+// <option> list of every NDC, for the "Under NDC" assignment dropdowns.
+function ndcOptionsHTML(selected) {
+  let o = `<option value="">— none (My additions) —</option>`;
+  NDC_LIST.forEach(n => {
+    const v = n.name.replace(/"/g, '&quot;');
+    o += `<option value="${v}"${n.name === selected ? ' selected' : ''}>${n.name}</option>`;
+  });
+  return o;
+}
+
+// Fill the "Under NDC" selects in the draw + paste forms with the current NDCs.
+function populateNDCSelects() {
+  ['draw-form-ndc', 'poly-form-ndc'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = ndcOptionsHTML(el.value || '');
+  });
+}
+
+// One legend row for a user polygon, optionally with an "assign to NDC" select.
+function userPolyLegendItem(p, i, showAssign) {
+  const c = p.color || colors[p.type] || '#888';
+  let h = `<div class="legend-item" data-id="user:${i}" onclick="highlightById('user:${i}',event)">` +
+    `<div class="legend-swatch" style="background:${c}"></div>${p.name} ` +
+    (p.state ? `<span class="legend-user-badge">${p.state}</span>` : '') +
+    `<span class="legend-remove" title="Remove" onclick="event.stopPropagation();removeUserPolygon(${i})">×</span></div>`;
+  if (showAssign) {
+    h += `<div style="padding:1px 0 5px 22px"><select title="File this boundary under an NDC (or none)" ` +
+      `onclick="event.stopPropagation()" onchange="assignPolygonNDC(${i}, this.value)" ` +
+      `style="font-size:11px;max-width:100%">${ndcOptionsHTML(p.ndc || '')}</select></div>`;
+  }
+  return h;
+}
+
+// Move a user polygon under an NDC (or back to "My additions" when name is empty).
+function assignPolygonNDC(i, ndcName) {
+  const polys = loadUserPolygons();
+  if (!polys[i]) return;
+  if (ndcName) polys[i].ndc = ndcName; else delete polys[i].ndc;
+  saveUserPolygons(polys);
+  renderUserPolygons();
+  renderAdditions();
+  if (expandedNDCKey) {
+    const entry = NDC_LIST.find(n => ndcKey(n.name) === expandedNDCKey);
+    if (entry) showNDC(entry.name, entry.state, expandedNDCKey);
+  }
+}
+
 // "My additions & layers": everything you (or federation) added — shown ONCE
-// in its own collapsible section, never repeated under each NDC.
+// in its own collapsible section, never repeated under each NDC. Polygons
+// assigned to an NDC live inside that NDC instead, not here.
 function renderAdditions() {
   const body = document.getElementById('additions-body');
   if (!body) return;
   let html = '';
 
-  const userPolys = loadUserPolygons();
-  if (userPolys.length) {
+  const loose = loadUserPolygons()
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => !p.ndc || !NDC_LIST.find(n => n.name === p.ndc));
+  if (loose.length) {
     html += `<div class="legend-group-header">Custom boundaries</div>`;
-    userPolys.forEach((p, i) => {
-      const c = p.color || colors[p.type] || '#888';
-      html += `<div class="legend-item" data-id="user:${i}" onclick="highlightById('user:${i}',event)">` +
-        `<div class="legend-swatch" style="background:${c}"></div>${p.name} ` +
-        (p.state ? `<span class="legend-user-badge">${p.state}</span>` : '') +
-        `<span class="legend-remove" title="Remove" onclick="event.stopPropagation();removeUserPolygon(${i})">×</span></div>`;
-    });
+    loose.forEach(({ p, i }) => { html += userPolyLegendItem(p, i, true); });
   }
 
   const userLocs = loadUserLocations();
@@ -1148,6 +1200,17 @@ async function showNDC(name, state, k = null) {
   renderUserLocations();
   renderFederatedRegions();
   renderAdditions();
+
+  // Boundaries assigned to THIS NDC nest inside its section.
+  const assigned = loadUserPolygons()
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => p.ndc === name);
+  const el = document.getElementById(legendTarget);
+  if (el && assigned.length) {
+    let extra = `<div class="legend-group-header">Custom boundaries</div>`;
+    assigned.forEach(({ p, i }) => { extra += userPolyLegendItem(p, i, true); });
+    el.insertAdjacentHTML('beforeend', extra);
+  }
 }
 
 // ── NDC list ──────────────────────────────────────────────────────────
@@ -1685,6 +1748,7 @@ function buildNDCList() {
       </div>`;
   });
   document.getElementById('ndc-list').innerHTML = html;
+  populateNDCSelects();
 }
 
 function toggleNDC(name, state, k) {
@@ -2075,8 +2139,9 @@ function confirmDrawnPolygon() {
   const state = document.getElementById('draw-form-state').value.trim() || 'OTHER';
   const color   = document.getElementById('draw-form-color').value;
   const opacity = parseFloat(document.getElementById('draw-form-opacity').value);
+  const ndc     = document.getElementById('draw-form-ndc').value;
   if (!name) { document.getElementById('draw-form-name').focus(); return; }
-  addUserPolygon(drawnPendingGeoJSON, name, type, state, color, opacity);   // saves, renders, legends, exportable
+  addUserPolygon(drawnPendingGeoJSON, name, type, state, color, opacity, ndc);   // saves, renders, legends, exportable
   discardDrawnPolygon();
 }
 
@@ -2300,11 +2365,12 @@ function renderUserPolygons() {
   });
 }
 
-function addUserPolygon(geojson, name, type, state, color, fillOpacity) {
+function addUserPolygon(geojson, name, type, state, color, fillOpacity, ndc) {
   const polys = loadUserPolygons();
   const entry = { name, type, state, geojson, addedAt: new Date().toISOString() };
   if (color) entry.color = color;
   if (fillOpacity != null && !isNaN(fillOpacity)) entry.fillOpacity = fillOpacity;
+  if (ndc) entry.ndc = ndc;
   polys.push(entry);
   saveUserPolygons(polys);
   renderUserPolygons();
@@ -2624,8 +2690,9 @@ function confirmAddPolygon() {
   const state = document.getElementById('poly-form-state').value.trim() || 'OTHER';
   const color   = document.getElementById('poly-form-color').value;
   const opacity = parseFloat(document.getElementById('poly-form-opacity').value);
+  const ndc     = document.getElementById('poly-form-ndc').value;
   if (!name) { document.getElementById('poly-form-name').focus(); return; }
-  addUserPolygon(pendingPolygon, name, type, state, color, opacity);
+  addUserPolygon(pendingPolygon, name, type, state, color, opacity, ndc);
   cancelPendingPolygon();
   document.getElementById('poly-osm-results').innerHTML = '';
   document.getElementById('poly-osm-input').value = '';
