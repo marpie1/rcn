@@ -125,15 +125,52 @@ OK: renders in RCN Graph Tool (23 nodes, 23 edges). 0 warning(s).
    identify *where* it was wrong. Argues for running the validator on every
    pre-populated artifact regardless of how confident the self-check was.
 
-5. **The validator lives outside the repo.** It is the ground truth for the
+5. **VISUAL LOAD TEST PASSED — and found a bug the validator cannot see.**
+   Served ~/rcn over `python3 -m http.server` and loaded the file into
+   graph-tool-v22.html (the Chrome extension refuses `file://` URLs — use a
+   local server for any future visual test). All 23 nodes and 23 edges paint;
+   `props.basis` survives the full import→`buildState` round-trip on all 23
+   edges. But: **the entire `meta` block is silently dropped on export.**
+   `buildState` (line 4330) emits exactly
+   `version, modelName, modelNote, canvasBg, graphAttrs, cldLoopNames,
+   legendEntries, legendVisible, customSymbols, nodes, edges, lines, metaEdges`
+   — no `meta`. Title, description, schema version, created date, and author
+   all vanish the first time anyone exports from the tool. Confirmed live:
+   `metaSurvivesExport: false`, and the Model Name field read "Untitled".
+
+   Fixed the same way as `basis` — by using the field the tool already has,
+   not by proposing a schema change: added top-level `modelName` (from
+   `meta.title`) and `modelNote` (description + schema version + created +
+   author), both of which `buildState` preserves. `meta` is kept as well, since
+   it is still useful in the source-of-truth file. Verified: reloading now
+   populates Model Name and Note/Source, and both survive re-export.
+
+   **This generalises the Session 1 provenance rule.** It is not just that
+   provenance belongs in `props` — it is that *the tool's round-trip, not the
+   validator, defines what is real*. The validator passed this file with 0
+   warnings while five fields of authorship metadata were set to evaporate.
+   Pre-flight for LLM-populated artifacts needs both: validator for structure,
+   `buildState` round-trip for survival.
+
+6. **The validator lives outside the repo.** It is the ground truth for the
    chat-Claude → Claude Code handoff (Session 1 LEARNED #7) but currently
    survives only as duplicate downloads. Should move into ~/rcn/tools and be
    committed before the `rcn-tools` skill is drafted around it.
 
 ### OPEN
 - [x] Validator verdict on the v22 JSON — PASSES, 0 warnings, after fixes above
-- [ ] Visual load test in graph-tool-v22.html (validator says renders; not yet
-      confirmed by eye — layout/overlap unverified)
+- [x] Visual load test in graph-tool-v22.html — PASSED, 23/23 nodes and edges
+      paint; surfaced the dropped-`meta` bug (LEARNED #5)
+- [ ] **Layout is the weak point, not the data.** Edge labels overlap each other
+      and run across node boxes; several are clipped off the top of the canvas
+      (the Crowley cluster's "downtown revitalization" and "public-private
+      partnership"). The four town clusters read clearly, but the inter-cluster
+      edges do not. Try Dagre LR or Force from the LAYOUT row, or shorten the
+      edge labels and move the detail into `props`. Deliberately left as-is —
+      re-laying out is a design decision, not a fix.
+- [ ] Extend the validator to check round-trip survival, not just structure:
+      warn on any top-level key `buildState` does not emit (`meta` being the
+      live example)
 - [x] Move `validate-rcn-graph.js` into ~/rcn/tools and commit it — now
       `tools/validate-rcn-graph.js` (md5 `26077f17…`). The three byte-identical
       ~/Downloads copies were deleted afterwards — the repo is now the single
