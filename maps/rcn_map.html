@@ -656,6 +656,28 @@
   </div>
   <!-- ─────────────────────────────────────────────────────────── -->
 
+  <!-- ── Publish regions (federation manifest builder) ─────────── -->
+  <div id="publish-panel">
+    <div class="add-poly-header" onclick="togglePublishPanel()" title="Build a regions.json manifest — the little roster that tells the map where each steward's published region file lives. This ONLY writes the manifest file to your downloads; you still upload it (and the region files themselves) into the assets folder.">
+      <span class="ndc-arrow" id="publish-arrow">▶</span>
+      <span>Publish regions (federation)</span>
+    </div>
+    <div id="publish-body" style="display:none">
+      <p style="font-size:11px;color:#666;margin:2px 0 8px;line-height:1.4">
+        List each steward's region file (yours + any Jerry/Chris hand you). This builds the
+        <code>regions.json</code> roster. <b>You still upload</b> <code>regions.json</code> and every
+        region file into the assets folder — a web page can't write to the server itself.
+      </p>
+      <div id="region-rows"></div>
+      <button class="poly-btn secondary" onclick="addRegionRow()" style="width:100%;margin-bottom:6px"
+        title="Add another steward's region file to the roster.">+ Add a region</button>
+      <button class="poly-btn" onclick="downloadRegionsManifest()" style="width:100%;margin-bottom:4px"
+        title="Download the assembled regions.json. Then upload it into the same assets folder as rcn_map.html — the map reads it automatically on load.">⬇ Generate regions.json</button>
+      <div id="publish-status" style="font-size:11px;color:#22c55e;min-height:14px;text-align:center"></div>
+    </div>
+  </div>
+  <!-- ─────────────────────────────────────────────────────────── -->
+
 </div>
 
 <script>
@@ -1697,11 +1719,65 @@ function editUserNDC(oldName) {
 // My Additions → (hint/freeze) → NDC accordion.
 function reorderSidebar() {
   let anchor = document.getElementById('export-row');
-  ['add-ndc-panel','add-poly-panel','new-issue-panel','additions-panel','ndc-controls','ndc-list']
+  ['add-ndc-panel','add-poly-panel','new-issue-panel','additions-panel','publish-panel','ndc-controls','ndc-list']
     .forEach(id => {
       const el = document.getElementById(id);
       if (el && anchor && anchor.after) { anchor.after(el); anchor = el; }
     });
+}
+
+// ── Publish regions: build a regions.json manifest for download ────────
+// The map can generate the manifest CONTENT, but cannot place it on the
+// server — a browser page has no write access to the assets folder. So this
+// downloads regions.json; the human uploads it (and the region files).
+function togglePublishPanel() {
+  const body  = document.getElementById('publish-body');
+  const arrow = document.getElementById('publish-arrow');
+  const open  = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  arrow.textContent  = open ? '▶' : '▼';
+  // Seed one empty row the first time it opens.
+  if (!open && !document.querySelector('#region-rows .region-row')) addRegionRow();
+}
+
+function addRegionRow(region, steward, url) {
+  const wrap = document.getElementById('region-rows');
+  const row  = document.createElement('div');
+  row.className = 'region-row';
+  row.style.cssText = 'border:1px solid #eee;border-radius:6px;padding:6px;margin-bottom:6px';
+  row.innerHTML =
+    `<div class="poly-form-row" style="margin:0 0 4px"><label title="Short label for this steward's region — becomes the legend heading and the layer namespace (e.g. Whatcom, Michigan, Arizona).">Region</label>` +
+    `<input class="poly-form-input rr-region" type="text" placeholder="e.g. Whatcom" maxlength="32"></div>` +
+    `<div class="poly-form-row" style="margin:0 0 4px"><label title="Optional. Who maintains this region — shown in the popups of its features.">Steward</label>` +
+    `<input class="poly-form-input rr-steward" type="text" placeholder="e.g. Marc"></div>` +
+    `<div class="poly-form-row" style="margin:0 0 4px"><label title="Where this region's file lives. If it sits in THIS assets folder, just the filename (e.g. whatcom-region.json). If a steward hosts it on their own site, paste the full https:// URL.">File / URL</label>` +
+    `<input class="poly-form-input rr-url" type="text" placeholder="whatcom-region.json  or  https://…"></div>` +
+    `<button class="poly-btn secondary" onclick="this.closest('.region-row').remove()" style="width:100%;font-size:11px;padding:3px" title="Remove this region from the roster.">× Remove this region</button>`;
+  wrap.appendChild(row);
+  if (region  != null) row.querySelector('.rr-region').value  = region;
+  if (steward != null) row.querySelector('.rr-steward').value = steward;
+  if (url     != null) row.querySelector('.rr-url').value     = url;
+}
+
+function downloadRegionsManifest() {
+  const rows = [...document.querySelectorAll('#region-rows .region-row')];
+  const manifest = [];
+  rows.forEach(r => {
+    const region  = r.querySelector('.rr-region').value.trim();
+    const steward = r.querySelector('.rr-steward').value.trim();
+    const url     = r.querySelector('.rr-url').value.trim();
+    if (!url) return;                       // URL is the only required field
+    const entry = { region: region || 'Region', url };
+    if (steward) entry.steward = steward;
+    manifest.push(entry);
+  });
+  const status = document.getElementById('publish-status');
+  if (!manifest.length) {
+    if (status) status.textContent = 'Add at least one region with a file / URL.';
+    return;
+  }
+  downloadJSON(manifest, 'regions.json');
+  if (status) status.textContent = 'Downloaded regions.json — now upload it into the assets folder.';
 }
 
 function buildNDCList() {
