@@ -442,17 +442,19 @@
   <button class="export-all-btn" onclick="exportAll()" title="Download everything you've added — NDCs, locations, boundaries, corrections — as one JSON file">⬇ Export my data (JSON)</button>
   <button class="export-all-btn" onclick="document.getElementById('import-data-file').click()" title="Load a previously exported rcn-map-data.json — REPLACES your current NDCs, locations, boundaries, and corrections (built-in NDCs and federated regions are untouched).">⬆ Import my data (JSON)</button>
   <input type="file" id="import-data-file" accept=".json,application/json" style="display:none" onchange="importMyDataFile(this)">
-  <div style="display:flex;gap:4px;margin-bottom:6px">
+  <div id="export-row" style="display:flex;gap:4px;margin-bottom:6px">
     <button class="export-all-btn" style="flex:1;font-size:11px;text-align:center" onclick="exportMapImage('svg')" title="Download the current view's overlays (boundaries, NDCs, pins, issue areas) as an editable SVG. Basemap tiles are not included.">↧ SVG</button>
     <button class="export-all-btn" style="flex:1;font-size:11px;text-align:center" onclick="exportMapImage('png')" title="Download the current view's overlays as a PNG image. Basemap tiles are not included.">↧ PNG</button>
     <button class="export-all-btn" style="flex:1;font-size:11px;text-align:center" onclick="window.print()" title="Print the full map WITH the basemap via your browser — choose 'Save as PDF' for a file.">🖨 Print</button>
   </div>
+  <div id="ndc-controls">
+    <p class="legend-hint">Expand an NDC for its layers · click an item to highlight · Shift+click to compare</p>
+    <label class="freeze-toggle" title="When on, highlighting a polygon or NDC no longer auto-zooms the map — the view stays put so you can click through many features without the map jumping around.">
+      <input type="checkbox" id="freeze-view-chk" onchange="freezeView=this.checked">
+      🔒 Freeze view (no auto-zoom)
+    </label>
+  </div>
   <div id="ndc-list"></div>
-  <p class="legend-hint">Expand an NDC for its layers · click an item to highlight · Shift+click to compare</p>
-  <label class="freeze-toggle" title="When on, highlighting a polygon or NDC no longer auto-zooms the map — the view stays put so you can click through many features without the map jumping around.">
-    <input type="checkbox" id="freeze-view-chk" onchange="freezeView=this.checked">
-    🔒 Freeze view (no auto-zoom)
-  </label>
 
   <!-- ── My additions & layers (boundaries, pins, federated regions) — collapsed on load ── -->
   <div id="additions-panel" style="display:none">
@@ -1600,12 +1602,43 @@ function renderSavedNDCs() {
   const list = loadUserNDCsFromStorage();
   const el   = document.getElementById('an-saved-list');
   if (!list.length) { el.innerHTML = '<div style="font-size:11px;color:#aaa">None saved yet.</div>'; return; }
-  el.innerHTML = list.map(n =>
-    `<div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid #f0f0f0">
+  el.innerHTML = list.map(n => {
+    const esc = n.name.replace(/'/g,"\\'");
+    return `<div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid #f0f0f0">
       <span>${n.name}</span>
-      <span style="color:#c00;cursor:pointer;font-size:10px" onclick="removeUserNDC('${n.name.replace(/'/g,"\\'")}')">Remove</span>
-    </div>`
-  ).join('');
+      <span style="white-space:nowrap">
+        <span style="color:#2563eb;cursor:pointer;font-size:10px;margin-right:8px" onclick="editUserNDC('${esc}')">Edit</span>
+        <span style="color:#c00;cursor:pointer;font-size:10px" onclick="removeUserNDC('${esc}')">Remove</span>
+      </span>
+    </div>`;
+  }).join('');
+}
+
+// Rename a user-added NDC's name / location (fixes a stray URL pasted into the
+// location, etc.). Reloads so NDC_LIST and the map rebuild cleanly.
+function editUserNDC(oldName) {
+  const list = loadUserNDCsFromStorage();
+  const n = list.find(x => x.name === oldName);
+  if (!n) return;
+  const newName = prompt('NDC name:', n.name);
+  if (newName === null) return;
+  const newLoc = prompt('Location / description (shown after the name):', n.location || '');
+  if (newLoc === null) return;
+  n.name     = newName.trim() || n.name;
+  n.location = newLoc.trim();
+  saveUserNDCsToStorage(list);
+  location.reload();
+}
+
+// Order the sidebar: export row → Add NDC → Add Boundary Layer → New Issue →
+// My Additions → (hint/freeze) → NDC accordion.
+function reorderSidebar() {
+  let anchor = document.getElementById('export-row');
+  ['add-ndc-panel','add-poly-panel','new-issue-panel','additions-panel','ndc-controls','ndc-list']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el && anchor && anchor.after) { anchor.after(el); anchor = el; }
+    });
 }
 
 function buildNDCList() {
@@ -2874,6 +2907,7 @@ document.getElementById('add-loc-name-input').addEventListener('keydown', functi
 });
 
 (async () => {
+  reorderSidebar();
   injectExtraNDCs();
   injectDefaultPolygons();
   await loadIssueIndex();
