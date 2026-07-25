@@ -75,6 +75,14 @@ FAIL: 23 error(s), 23 warning(s)
 OK: renders in RCN Graph Tool (23 nodes, 23 edges). 0 warning(s).
 ```
 
+- Wrote `tools/schemas/` — authoritative schema references for the three tools
+  chat-Claude is actually asked to pre-populate (Graph Tool, Timeline, Issue
+  Polygon Map), each derived from that tool's own load/save functions and
+  stamped with the commit it was verified against.
+- Upgraded `validate-rcn-graph.js`: round-trip survival check on top-level keys,
+  a specific diagnostic for numeric `shape`, and `--fix` now migrates a `meta`
+  block into `modelName`/`modelNote`.
+
 ### LEARNED
 1. **Closes Session 1 OPEN #5 — there is no shape-code mapping.** `shape` is a
    STRING, not a numeric code. Authoritative list, `tools/graph-tool-v22.html:875`:
@@ -152,7 +160,49 @@ OK: renders in RCN Graph Tool (23 nodes, 23 edges). 0 warning(s).
    Pre-flight for LLM-populated artifacts needs both: validator for structure,
    `buildState` round-trip for survival.
 
-6. **The validator lives outside the repo.** It is the ground truth for the
+6. **A validator per tool is the wrong shape for the fix — schemas are.**
+   Marc's question: shouldn't every tool get a validator, so chat makes fewer
+   mistakes? Three things argue for schema references first.
+   - **Validators encode yesterday's failures.** Ours passed this file with 0
+     warnings while `meta` evaporated (LEARNED #5). It can only catch what
+     someone already got wrong.
+   - **They drift silently.** The June validator knew 34 node/edge fields; the
+     tool had since added `opmType`, `tripleId`, `opmMarker`, `graphAttrs`,
+     `legendEntries`, `customSymbols`, `modelName`, `modelNote`. Twelve
+     hand-written validators would be twelve artifacts each quietly wrong
+     within a month — and chat would trust all of them.
+   - **A schema prevents; a validator only detects.** If chat has the schema,
+     most of what a validator catches never gets generated.
+   Also correcting a premise: chat-Claude is not *barred* from the tool code.
+   It has no live filesystem access, but the code can be uploaded, put in a
+   Project's knowledge, or wrapped in a Skill. The gap was never a hard
+   limitation — nobody had handed it the reference.
+   So: `tools/schemas/*.md` first, one *generic* validator driven by them
+   later, and a round-trip diff as the check that catches the `meta` class.
+
+7. **Writing the schemas found two more silent-loss bugs**, both the same shape
+   as the `meta` drop — structurally valid, no error, data gone:
+   - **Issue Polygon Map: the issue polygon does not survive its own export.**
+     `exportData` writes `type:"IssuePolygon"` (line 1021); `loadFromGeoJSON`
+     handles only `Parcel` and `CustomIssuePolygon` (line 1126), and
+     `ISSUE.polygon` is never assigned on import. Export, re-import, and the
+     boundary that *defines the issue* is gone. Parcels come back, so it looks
+     like it worked.
+   - **Timeline: `rel` supports two relations, not thirteen.** `solve()` tests
+     `rel==="meets"` and treats everything else as `before`. `"overlaps"`,
+     `"during"`, `"equals"` are accepted silently and behave as `before`. Any
+     Claude reaching for "Allen relations" from memory — as this log's own
+     earlier notes did — will emit relations the tool misreads without
+     complaint.
+   Both are now documented in the schema files. Neither is fixed.
+
+8. **Three for three.** Every tool examined closely this session had a silent
+   round-trip loss. That is no longer a coincidence to note — it is the
+   expected defect for this family of single-file HTML tools, where export is
+   hand-written per tool and nothing tests that import is its inverse. Assume
+   it is present in any tool not yet checked.
+
+9. **The validator lives outside the repo.** It is the ground truth for the
    chat-Claude → Claude Code handoff (Session 1 LEARNED #7) but currently
    survives only as duplicate downloads. Should move into ~/rcn/tools and be
    committed before the `rcn-tools` skill is drafted around it.
@@ -168,9 +218,19 @@ OK: renders in RCN Graph Tool (23 nodes, 23 edges). 0 warning(s).
       edges do not. Try Dagre LR or Force from the LAYOUT row, or shorten the
       edge labels and move the detail into `props`. Deliberately left as-is —
       re-laying out is a design decision, not a fix.
-- [ ] Extend the validator to check round-trip survival, not just structure:
-      warn on any top-level key `buildState` does not emit (`meta` being the
-      live example)
+- [x] Extend the validator to check round-trip survival, not just structure —
+      done: warns on any top-level key `buildState` does not emit, names the
+      `meta` fix, flags numeric `shape`, and `--fix` migrates meta
+- [ ] Fix the Issue Polygon Map import gap (LEARNED #7) — `loadFromGeoJSON`
+      should handle `type:"IssuePolygon"`, or export should stop writing a
+      feature nothing reads
+- [ ] Decide whether the Timeline should support more Allen relations or
+      whether two is the honest answer; either way stop calling it "Allen
+      relations" in notes and memory
+- [ ] Check the remaining JSON-consuming tools for the same round-trip loss
+      (LEARNED #8): NRM, IBIS, Wardley, e-VSM, MORE Outliner
+- [ ] Generic schema-driven validator to replace per-tool scripts; wrap
+      `tools/schemas/` in the `rcn-tools` skill
 - [x] Move `validate-rcn-graph.js` into ~/rcn/tools and commit it — now
       `tools/validate-rcn-graph.js` (md5 `26077f17…`). The three byte-identical
       ~/Downloads copies were deleted afterwards — the repo is now the single

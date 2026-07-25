@@ -22,6 +22,16 @@ var SHAPES   = ['rect', 'rounded', 'ellipse', 'diamond', 'hexagon', 'cylinder', 
 var POLARITY = ['+', '-', 'none'];
 var DASH     = ['solid', 'dashed', 'dotted'];
 
+// Exactly what buildState() emits (graph-tool-v22.html:~4330). Unknown NODE and
+// EDGE fields survive a round-trip, because import and export both Object.assign
+// over the whole object — but unknown TOP-LEVEL keys are dropped on export with
+// no error. That asymmetry cost us a whole `meta` block (title, description,
+// author, created, schema version) on 2026-07-25. Keep this list in step with
+// buildState.
+var TOP_LEVEL = ['version', 'modelName', 'modelNote', 'canvasBg', 'graphAttrs',
+                 'cldLoopNames', 'legendEntries', 'legendVisible', 'customSymbols',
+                 'nodes', 'edges', 'lines', 'metaEdges'];
+
 function num(v) { return typeof v === 'number' && isFinite(v); }
 
 function validate(doc) {
@@ -31,6 +41,21 @@ function validate(doc) {
   if (!Array.isArray(doc.edges)) errors.push('Missing or non-array "edges" (use [] for none)');
   var nodes = Array.isArray(doc.nodes) ? doc.nodes : [];
   var edges = Array.isArray(doc.edges) ? doc.edges : [];
+
+  // round-trip survival: anything buildState() does not emit is lost on export
+  Object.keys(doc).forEach(function (k) {
+    if (TOP_LEVEL.indexOf(k) >= 0) return;
+    // a meta block already mirrored into modelName/modelNote is fine — it is a
+    // source-of-truth copy, not the only copy. Say so rather than crying wolf.
+    if (k === 'meta' && doc.modelName && doc.modelNote) {
+      warnings.push('top-level "meta": dropped on export, but "modelName" and "modelNote" are set, so nothing is lost. Keeping meta in the source file is fine');
+      return;
+    }
+    var extra = '';
+    if (k === 'meta') extra = ' — put the title in "modelName" and the description/author/date in "modelNote", which the tool does keep';
+    warnings.push('top-level "' + k + '": the tool does not persist this key. It loads fine, then vanishes the first time anyone exports' + extra);
+  });
+  if (!doc.modelName) warnings.push('no "modelName": the Model Name field will read "Untitled" and the title is not stored anywhere');
 
   var ids = {};
   nodes.forEach(function (n, i) {
@@ -42,7 +67,10 @@ function validate(doc) {
     if (!num(n.x) || !num(n.y)) errors.push(at + ': x and y must be finite numbers');
     if (!num(n.w) || n.w <= 0) errors.push(at + ': w must be a positive number — missing w gives NaN radius, node renders as a bare label');
     if (!num(n.h) || n.h <= 0) errors.push(at + ': h must be a positive number — missing h gives NaN radius, node renders as a bare label');
-    if (n.shape !== undefined && SHAPES.indexOf(n.shape) < 0) warnings.push(at + ': shape "' + n.shape + '" unknown, falls back to ellipse');
+    if (n.shape !== undefined && SHAPES.indexOf(n.shape) < 0) {
+      if (typeof n.shape === 'number') warnings.push(at + ': shape is the number ' + n.shape + ' — shape is a STRING enum, not a numeric code. Use one of ' + SHAPES.join('|') + ' (default "rounded"). The node still renders, as an ellipse, so this fails silently');
+      else warnings.push(at + ': shape "' + n.shape + '" unknown, falls back to ellipse. Use one of ' + SHAPES.join('|'));
+    }
   });
 
   edges.forEach(function (e, i) {
@@ -65,6 +93,15 @@ function validate(doc) {
 
 function fix(doc) {
   if (doc.version === undefined) doc.version = '1.0';
+  // migrate a meta block into the fields the tool actually persists
+  if (doc.meta && typeof doc.meta === 'object') {
+    if (!doc.modelName && doc.meta.title) doc.modelName = doc.meta.title;
+    if (!doc.modelNote) {
+      var bits = [doc.meta.description, [doc.meta.version && 'Schema ' + doc.meta.version,
+        doc.meta.created && 'created ' + doc.meta.created, doc.meta.author].filter(Boolean).join(' | ')];
+      doc.modelNote = bits.filter(Boolean).join('\n\n');
+    }
+  }
   if (doc.canvasBg === undefined) doc.canvasBg = '#f9f9f7';
   if (!Array.isArray(doc.nodes)) doc.nodes = [];
   if (!Array.isArray(doc.edges)) doc.edges = [];
