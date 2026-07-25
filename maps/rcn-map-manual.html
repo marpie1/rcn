@@ -622,10 +622,18 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
     <section id="s7">
       <h2>7. Legend &amp; highlighting</h2>
       <p>
-        The legend lists all geographic features currently shown on the map, grouped by NDC state.
-        In overview mode it appears below the NDC list. In per-NDC mode it appears inside the
-        expanded accordion.
+        Each NDC's geographic layers are its own key: <strong>expand an NDC</strong> in the sidebar
+        accordion to see and highlight them. (There is no separate always-on flat legend — that was
+        removed as redundant.) Everything <em>you</em> add — custom boundaries, pins, and federated
+        regions — is listed once in a collapsible <strong>My additions &amp; layers</strong> section,
+        never repeated under each NDC. All panels start collapsed.
       </p>
+      <div class="note"><strong>Export a picture of the map.</strong> The small <strong>↧ SVG</strong>,
+        <strong>↧ PNG</strong>, and <strong>🖨 Print</strong> buttons near the top of the sidebar save
+        the current view. SVG/PNG capture the overlays (boundaries, NDCs, pins, issue areas) on a plain
+        background — basemap tiles can't be exported. <strong>Print</strong> uses your browser to print
+        the full map <em>with</em> the basemap (choose "Save as PDF" for a file). The full Issue Map has
+        the same three buttons in its toolbar.</div>
 
       <h3>Single highlight</h3>
       <ol>
@@ -1224,32 +1232,38 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       <div class="section-pill">Maintenance</div>
       <h2>15. Adding an issue</h2>
       <p>
-        Issues are community questions mapped to specific parcels — zoning decisions, land-use
-        campaigns, access gaps. The <strong>New issue</strong> panel lets you create one using
-        Claude as a research assistant, with no file editing required as long as sofi-proxy is running.
+        Issues are community questions mapped to a place — zoning decisions, land-use campaigns,
+        access gaps. The <strong>New issue</strong> panel now has two independent actions, so
+        creating an issue never depends on AI or a network connection.
       </p>
 
-      <h3>Prerequisites</h3>
-      <p>
-        sofi-proxy must be running (<code>python3 sofi-proxy.py</code> from <code>~/rcn/</code>).
-        The map must be opened via <code>http://localhost:8765/maps/rcn_map.html</code>, not
-        <code>file://</code>.
-      </p>
-
-      <h3>How to add an issue (UI workflow)</h3>
+      <h3>Create issue — no API key, works anywhere</h3>
       <ol>
-        <li>Scroll to the bottom of the sidebar and expand <strong>New issue</strong>.</li>
-        <li>Fill in the issue title, select the NDC from the dropdown, and describe the issue — what ordinance, land-use question, or access gap is involved. Optionally list known addresses and their stances.</li>
-        <li>Click <strong>Build Claude prompt</strong>. A formatted prompt appears in the text area.</li>
-        <li>Click <strong>Copy prompt</strong>. Open <a href="https://claude.ai" target="_blank">claude.ai</a> in another tab, paste the prompt, and send it.</li>
-        <li>Claude returns a JSON object. Copy the entire JSON response.</li>
-        <li>Back in the map, paste the JSON into the response box and click <strong>Import issue</strong>.</li>
-        <li>The issue is written to disk and the issue index is updated. The NDC accordion updates immediately — expand the selected NDC to see the new issue listed.</li>
-        <li>Click the issue name to load its polygon and parcel markers on the map.</li>
-        <li>Click <strong>→ Open full Issue Map</strong> to open issue-polygon-map.html for refining parcel boundaries and stances.</li>
+        <li>Expand <strong>New issue</strong> in the sidebar.</li>
+        <li>Type a <strong>title</strong>, pick the <strong>NDC</strong>, and (optionally) paste addresses one per line as <code>52 N Pinal Ave — pro</code> (<code>pro</code> / <code>con</code> / <code>unknown</code>).</li>
+        <li>Click <strong>Create issue</strong>. The issue appears on the map immediately — a default affected area drawn around the NDC, with a coloured pin per address. It's listed under that NDC's <strong>Issues</strong>.</li>
+        <li>Refine the shape and parcel positions later in the full Issue Map (<code>issue-polygon-map.html</code>).</li>
       </ol>
 
-      <div class="note">sofi-proxy must be running for the Import button to work. If you get an error, paste the JSON response into a Claude Code session and ask Claude to write the file — it will write directly to <code>tools/issue-data/</code> and update <code>issue-index.json</code> without needing the proxy.</div>
+      <h3>Draw area with Claude — optional</h3>
+      <p>
+        Below Create issue is an optional <strong>✨ Draw area with Claude</strong> step. Paste your
+        Anthropic API key (stored locally in your browser) and click <strong>Generate area + stances
+        with Claude</strong>; Claude draws the real affected-area polygon and infers stances for
+        addresses you didn't classify. The result shows on the map the same way.
+      </p>
+
+      <h3>Where the issue is saved</h3>
+      <p>
+        On a <strong>local</strong> setup with sofi-proxy running, a created/generated issue is written
+        to disk (<code>tools/issue-data/</code>) and persists across reloads. On a <strong>deployed</strong>
+        site there's no write proxy, so the issue is downloaded as a JSON file for you to publish to your
+        issue host — and it shows in the current session immediately regardless.
+      </p>
+
+      <div class="note">Prior issues (e.g. Backyard Chickens) load from the <em>issue index</em>. On a
+        deployed single-file map they are <strong>bundled into the file</strong> at build time
+        (<code>build_standalone_map.py</code>), so they appear with no hosting.</div>
 
       <figure class="ui-fig">
         <svg viewBox="0 0 560 200" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
