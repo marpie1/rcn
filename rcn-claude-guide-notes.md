@@ -190,10 +190,12 @@ OK: renders in RCN Graph Tool (23 nodes, 23 edges). 0 warning(s).
      like it worked.
    - **Timeline: `rel` supports two relations, not thirteen.** `solve()` tests
      `rel==="meets"` and treats everything else as `before`. `"overlaps"`,
-     `"during"`, `"equals"` are accepted silently and behave as `before`. Any
-     Claude reaching for "Allen relations" from memory — as this log's own
-     earlier notes did — will emit relations the tool misreads without
-     complaint.
+     `"during"`, `"equals"` are accepted silently and behave as `before`. The
+     trap is the *label*: notes and memory describe the tool as using "Allen
+     relations", which is true of its design intent and false of its
+     implementation. A Claude that reads the phrase and reaches for the
+     canonical thirteen will emit relations the tool misreads without
+     complaint. Fixed the memory entry to name the two.
    Both are now documented in the schema files. Neither is fixed.
 
 8. **Three for three.** Every tool examined closely this session had a silent
