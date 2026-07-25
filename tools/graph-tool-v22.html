@@ -116,7 +116,9 @@ commitIpe() must NOT be called from onCanvasDown — it triggers renderAll()
 
 ── DEFAULT STYLES ───────────────────────────────────────────────────
 
-New nodes: shape='rounded', fontColor='#0f172a' (near-black)
+New nodes: fill='#ffffff' (pure white), fontColor/borderColor='#000000' (pure black)
+DEF_EDGE.color='#000000' (pure black); new lines and arrows likewise
+Every Custom colour row also carries typed Hex + R/G/B fields (rgbRowHTML)
 DEF_EDGE: curved=false (straight edges by default)
 Toolbar: Straight checkbox pre-checked, Curved unchecked
 MDL import also defaults to straight edges (Vensim CLD edges are usually straight).
@@ -386,6 +388,10 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
 .color-custom-row{display:flex;align-items:center;gap:6px;padding:4px 12px 6px;border-bottom:1px solid #f1f5f9}
 .color-custom-row label{font-size:11px;color:#64748b;flex-shrink:0}
 .color-custom-row input[type=color]{width:28px;height:22px;border:1px solid #e2e8f0;border-radius:4px;padding:1px;cursor:pointer}
+.rgb-row{display:flex;align-items:center;gap:4px;padding:0 12px 6px;border-bottom:1px solid #f1f5f9}
+.rgb-row label{font-size:10px;color:#64748b;flex-shrink:0}
+.rgb-in{font-size:11px;padding:2px 4px;border:1px solid #e2e8f0;border-radius:4px;background:#fff;color:#1e293b;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;min-width:0}
+.rgb-in:focus{outline:none;border-color:#93c5fd;box-shadow:0 0 0 2px rgba(59,130,246,.15)}
 #modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;display:none;align-items:center;justify-content:center}
 #modal-bg.show{display:flex}
 #modal{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px;width:540px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
@@ -870,12 +876,12 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script>
-var PALETTE=['#f8fafc','#fef2f2','#fff7ed','#fefce8','#f0fdf4','#f0fdfa','#eff6ff','#eef2ff','#faf5ff','#fdf2f8','#f1f5f9','#fee2e2','#ffedd5','#fef9c3','#dcfce7','#ccfbf1','#dbeafe','#e0e7ff','#f3e8ff','#fce7f3','#e2e8f0','#fecaca','#fed7aa','#fef08a','#bbf7d0','#99f6e4','#bfdbfe','#c7d2fe','#e9d5ff','#fbcfe8','#cbd5e1','#fca5a5','#fdba74','#fde047','#86efac','#5eead4','#93c5fd','#a5b4fc','#d8b4fe','#f9a8d4','#94a3b8','#f87171','#fb923c','#facc15','#4ade80','#2dd4bf','#60a5fa','#818cf8','#c084fc','#f472b6','#64748b','#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#3b82f6','#6366f1','#a855f7','#ec4899','#475569','#dc2626','#ea580c','#ca8a04','#16a34a','#0d9488','#2563eb','#4f46e5','#9333ea','#db2777','#1e293b','#991b1b','#9a3412','#854d0e','#166534','#115e59','#1d4ed8','#3730a3','#7e22ce','#be185d'];
+var PALETTE=['#ffffff','#000000','#f8fafc','#fef2f2','#fff7ed','#fefce8','#f0fdf4','#f0fdfa','#eff6ff','#eef2ff','#faf5ff','#fdf2f8','#f1f5f9','#fee2e2','#ffedd5','#fef9c3','#dcfce7','#ccfbf1','#dbeafe','#e0e7ff','#f3e8ff','#fce7f3','#e2e8f0','#fecaca','#fed7aa','#fef08a','#bbf7d0','#99f6e4','#bfdbfe','#c7d2fe','#e9d5ff','#fbcfe8','#cbd5e1','#fca5a5','#fdba74','#fde047','#86efac','#5eead4','#93c5fd','#a5b4fc','#d8b4fe','#f9a8d4','#94a3b8','#f87171','#fb923c','#facc15','#4ade80','#2dd4bf','#60a5fa','#818cf8','#c084fc','#f472b6','#64748b','#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#3b82f6','#6366f1','#a855f7','#ec4899','#475569','#dc2626','#ea580c','#ca8a04','#16a34a','#0d9488','#2563eb','#4f46e5','#9333ea','#db2777','#1e293b','#991b1b','#9a3412','#854d0e','#166534','#115e59','#1d4ed8','#3730a3','#7e22ce','#be185d'];
 var FONT_COLORS=['#ffffff','#f1f5f9','#cbd5e1','#94a3b8','#64748b','#1e293b','#0f172a','#000000','#991b1b','#166534','#1d4ed8','#7e22ce','#9a3412','#854d0e','#115e59','#3730a3'];
 var SHAPES=['ellipse','rect','rounded','diamond','hexagon','cylinder','barrel'];
-var EDGE_COLORS=['#444444','#c53030','#c05621','#b7791f','#276749','#2b4c7e','#553c9a','#97266d','#234e52','#1a202c'];
-var EDGE_COLOR_LABELS=['Charcoal','Red','Orange','Gold','Green','Blue','Purple','Pink','Teal','Navy'];
-var DEF_EDGE={color:'#444444',width:1.5,fontSize:10,curved:false,polarity:'none',delay:false,dash:'solid',note:'',traces:[],layer:''};
+var EDGE_COLORS=['#000000','#c53030','#c05621','#b7791f','#276749','#2b4c7e','#553c9a','#97266d','#234e52','#1a202c'];
+var EDGE_COLOR_LABELS=['Black','Red','Orange','Gold','Green','Blue','Purple','Pink','Teal','Navy'];
+var DEF_EDGE={color:'#000000',width:1.5,fontSize:10,curved:false,polarity:'none',delay:false,dash:'solid',note:'',traces:[],layer:''};
 var DEF_NFS=12;
 var panelColorTarget='fill';
 var EMBEDDED_DIAGRAM = null; // sentinel — exportSnapshot() replaces this with live JSON
@@ -936,7 +942,7 @@ function lineEndpointHit(l,x,y){var r=8;if(Math.sqrt((x-l.x1)*(x-l.x1)+(y-l.y1)*
 function selectLineId(id,add){if(!add)selected={nodes:[],edges:[],lines:[id],triples:[]};else if(selected.lines.indexOf(id)<0)selected.lines.push(id);renderAll();buildPanel();}
 function renderLine(l){
   var isSel=(selected.lines||[]).indexOf(l.id)>=0;
-  var col=l.color||'#444444';
+  var col=l.color||'#000000';
   var sw=l.width||1.5;
   var dash=l.dash||'solid';
   var g=document.createElementNS('http://www.w3.org/2000/svg','g');
@@ -3658,7 +3664,7 @@ function onCanvasUp(ev){
   if(lineMarkDrag){lineMarkDrag=null;return;}
   if(lineBodyDrag){lineBodyDrag=null;renderAll();buildPanel();return;}
   if(curveDrag){curveDrag=null;document.getElementById('curve-hint').style.display='none';svgEl.style.cursor='default';renderAll();return;}if(dragging){dragging=null;renderAll();return;}if(panStart){panStart=null;return;}if(rubberBand){var rx=Math.min(rubberBand.sx,rubberBand.ex),ry=Math.min(rubberBand.sy,rubberBand.ey),rw=Math.abs(rubberBand.ex-rubberBand.sx),rh=Math.abs(rubberBand.ey-rubberBand.sy);while(rubberLayer.firstChild)rubberLayer.removeChild(rubberLayer.firstChild);if(rw>5||rh>5){var sel=nodes.filter(function(n){return n.x>=rx&&n.x<=rx+rw&&n.y>=ry&&n.y<=ry+rh;}).map(function(n){return n.id;});if(sel.length){selected.nodes=selected.nodes.concat(sel.filter(function(id){return selected.nodes.indexOf(id)<0;}));renderAll();buildPanel();}}rubberBand=null;return;}
-  if((mode==='freeline'||mode==='arrow')&&freeDraw&&freeDraw.active){while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);var pt2=svgPt(ev.clientX,ev.clientY);if(ev.shiftKey){var _sa=snapAngle(freeDraw.x1,freeDraw.y1,pt2.x,pt2.y);pt2.x=_sa.x;pt2.y=_sa.y;}var dx2=pt2.x-freeDraw.x1,dy2=pt2.y-freeDraw.y1;if(Math.sqrt(dx2*dx2+dy2*dy2)>5){snap();var newL={id:'l'+nextId++,x1:freeDraw.x1,y1:freeDraw.y1,x2:pt2.x,y2:pt2.y,color:'#444444',width:1.5,dash:'solid',arrowhead:freeDraw.arrowhead,label:''};lines.push(newL);selectLineId(newL.id,false);}freeDraw=null;setMode('select');return;}
+  if((mode==='freeline'||mode==='arrow')&&freeDraw&&freeDraw.active){while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);var pt2=svgPt(ev.clientX,ev.clientY);if(ev.shiftKey){var _sa=snapAngle(freeDraw.x1,freeDraw.y1,pt2.x,pt2.y);pt2.x=_sa.x;pt2.y=_sa.y;}var dx2=pt2.x-freeDraw.x1,dy2=pt2.y-freeDraw.y1;if(Math.sqrt(dx2*dx2+dy2*dy2)>5){snap();var newL={id:'l'+nextId++,x1:freeDraw.x1,y1:freeDraw.y1,x2:pt2.x,y2:pt2.y,color:'#000000',width:1.5,dash:'solid',arrowhead:freeDraw.arrowhead,label:''};lines.push(newL);selectLineId(newL.id,false);}freeDraw=null;setMode('select');return;}
   if(mode==='edge'&&edgeDrag.active){while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);var pt=svgPt(ev.clientX,ev.clientY),done=false;var wasOPM=prevGraphMode==='opm';var wasSFD=prevGraphMode==='sfd';var savedSrcId=edgeDrag.srcId;edgeDrag={active:false,srcId:null};prevGraphMode=null;
   // check triple dots as targets first
   for(var ti=edges.length-1;ti>=0;ti--){if(edges[ti].isTriple&&tripleHit(edges[ti],pt.x,pt.y)){snap();var me={id:'m'+nextId++,src:savedSrcId,tgt:edges[ti].tripleId,label:'',type:'meta'};metaEdges.push(me);selected={nodes:[],edges:[me.id],lines:[],triples:[]};done=true;toast('Meta-edge created → '+edges[ti].tripleId);break;}}
@@ -3974,6 +3980,67 @@ function setBgColor(c){canvasBg=c;document.getElementById('canvas-wrap').style.b
 function gridLayout(){if(!nodes.length)return;snap();var W=svgEl.clientWidth||600,H=svgEl.clientHeight||480,cols=Math.ceil(Math.sqrt(nodes.length)),padX=80,padY=70,cellW=(W-padX*2)/Math.max(cols-1,1),cellH=(H-padY*2)/Math.max(Math.ceil(nodes.length/cols)-1,1);nodes.forEach(function(n,i){n.x=(padX+(i%cols)*cellW-pan.x)/zoom;n.y=(padY+Math.floor(i/cols)*cellH-pan.y)/zoom;});renderAll();}
 function zoomFit(){if(!nodes.length){pan={x:0,y:0};zoom=1;applyT();return;}function doFit(){var W=svgEl.clientWidth||500,H=svgEl.clientHeight||400;if(W<10){requestAnimationFrame(function(){requestAnimationFrame(doFit);});return;}var pad=40,minX=Math.min.apply(null,nodes.map(function(n){return n.x-(n.w||108)/2;}))-pad,maxX=Math.max.apply(null,nodes.map(function(n){return n.x+(n.w||108)/2;}))+pad,minY=Math.min.apply(null,nodes.map(function(n){return n.y-(n.h||46)/2;}))-pad,maxY=Math.max.apply(null,nodes.map(function(n){return n.y+(n.h||46)/2;}))+pad;zoom=Math.min(W/(maxX-minX||1),H/(maxY-minY||1),2.4);pan.x=W/2-((minX+maxX)/2)*zoom;pan.y=H/2-((minY+maxY)/2)*zoom;applyT();}requestAnimationFrame(function(){requestAnimationFrame(doFit);});}
 function forceLayout(){if(!nodes.length)return;if(simulation)simulation.stop();snap();var N=nodes.length,spread=Math.max(600,N*80);nodes.forEach(function(n){n.x=(Math.random()-.5)*spread;n.y=(Math.random()-.5)*spread;});var d3n=nodes.map(function(n){return{id:n.id,x:n.x,y:n.y};});var d3l=edges.map(function(e){return{source:e.src,target:e.tgt};});var linkDist=Math.max(100,Math.min(220,2800/Math.max(N,1)));var charge=-Math.max(200,Math.min(700,60000/Math.max(N,1)));if(N<=30){simulation=d3.forceSimulation(d3n).force('link',d3.forceLink(d3l).id(function(d){return d.id;}).distance(linkDist).strength(0.5)).force('charge',d3.forceManyBody().strength(charge)).force('center',d3.forceCenter(0,0)).force('collision',d3.forceCollide().radius(function(d){var n=nodeById(d.id);return n?Math.max(n.w,n.h)/2+6:55;})).on('tick',function(){d3n.forEach(function(d){var n=nodeById(d.id);if(n){n.x=d.x;n.y=d.y;}});renderAll();}).on('end',function(){zoomFit();toast('Layout complete — '+N+' nodes');});}else{toast('Running layout for '+N+' nodes...');var sim=d3.forceSimulation(d3n).force('link',d3.forceLink(d3l).id(function(d){return d.id;}).distance(linkDist).strength(0.5)).force('charge',d3.forceManyBody().strength(charge)).force('center',d3.forceCenter(0,0)).force('collision',d3.forceCollide().radius(function(d){var n=nodeById(d.id);return n?Math.max(n.w,n.h)/2+6:55;})).stop();for(var t=0;t<400;t++)sim.tick();sim.stop();d3n.forEach(function(d){var n=nodeById(d.id);if(n){n.x=d.x;n.y=d.y;}});renderAll();zoomFit();setTimeout(function(){toast('Layout complete — '+N+' nodes');},400);}}
+// ── TYPED COLOUR FIELDS (Hex + R/G/B) ────────────────────────────────
+// Every Custom colour row carries editable Hex and R/G/B inputs. They are
+// plain text inputs, not type=number, so the caret can be restored across
+// the buildPanel() rebuild that every colour setter triggers — without
+// that, focus dies on each keystroke and the fields cannot be edited one
+// after the other. A partial/invalid entry simply does not commit, so the
+// user can type freely mid-value.
+function hexToRGB(h){h=String(h==null?'':h).trim();if(/^[0-9a-fA-F]{3}$/.test(h)||/^[0-9a-fA-F]{6}$/.test(h))h='#'+h;if(/^#[0-9a-fA-F]{3}$/.test(h))h='#'+h[1]+h[1]+h[2]+h[2]+h[3]+h[3];if(!/^#[0-9a-fA-F]{6}$/.test(h))return null;return{r:parseInt(h.slice(1,3),16),g:parseInt(h.slice(3,5),16),b:parseInt(h.slice(5,7),16)};}
+function rgbToHex(r,g,b){function c(v){v=Math.round(v);if(!isFinite(v))v=0;v=Math.max(0,Math.min(255,v));return('0'+v.toString(16)).slice(-2);}return'#'+c(r)+c(g)+c(b);}
+var _panelFocus=null;
+function rgbEdit(el,setter,part){
+  _panelFocus={cid:el.getAttribute('data-cid'),start:el.selectionStart,end:el.selectionEnd,raw:el.value};
+  var row=el.parentNode,out=null;
+  // While typing, only a full 6-digit hex commits. Accepting the 3-digit
+  // shorthand here would make "#ff8" (en route to "#ff8800") briefly paint
+  // #ffff88. Shorthand is still accepted on blur/Enter — see rgbCommit.
+  if(part==='hex'){var v=el.value.trim();if(v[0]==='#')v=v.slice(1);if(!/^[0-9a-fA-F]{6}$/.test(v)){_panelFocus=null;return;}var p=hexToRGB(v);if(!p){_panelFocus=null;return;}out=rgbToHex(p.r,p.g,p.b);}
+  else{
+    var get=function(k){var f=row.querySelector('[data-part="'+k+'"]');return f?f.value.trim():'';};
+    var r=get('r'),g=get('g'),b=get('b');
+    if(!/^\d{1,3}$/.test(r)||!/^\d{1,3}$/.test(g)||!/^\d{1,3}$/.test(b)){_panelFocus=null;return;}
+    out=rgbToHex(+r,+g,+b);
+  }
+  var fn=window[setter];
+  if(typeof fn!=='function'){_panelFocus=null;return;}
+  fn(out);
+}
+// Fires on blur/Enter. This is where the lenient readings land: 3-digit hex
+// shorthand expands, out-of-range numbers clamp, and junk reverts. No focus
+// is stashed, so buildPanel() repaints the fields from the model — which is
+// what normalises what the user sees.
+function rgbCommit(el,setter,part){
+  _panelFocus=null;
+  var row=el.parentNode,fn=window[setter],out=null;
+  if(typeof fn!=='function')return;
+  if(part==='hex'){var p=hexToRGB(el.value);if(p)out=rgbToHex(p.r,p.g,p.b);}
+  else{
+    var get=function(k){var f=row.querySelector('[data-part="'+k+'"]');return f?parseInt(f.value.trim(),10):NaN;};
+    var r=get('r'),g=get('g'),b=get('b');
+    if(isFinite(r)&&isFinite(g)&&isFinite(b))out=rgbToHex(r,g,b);
+  }
+  if(out)fn(out); else buildPanel();
+}
+function restorePanelFocus(){
+  if(!_panelFocus)return;
+  var f=_panelFocus;_panelFocus=null;
+  var el=document.querySelector('#panel-content [data-cid="'+f.cid+'"]');
+  if(!el)return;
+  el.value=f.raw;el.focus();
+  try{el.setSelectionRange(f.start,f.end);}catch(err){}
+}
+function rgbRowHTML(cid,color,setter){
+  var p=hexToRGB(color)||{r:0,g:0,b:0};
+  function fld(part,val,w,tip){return'<input class="rgb-in" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" data-cid="'+cid+'-'+part+'" data-part="'+part+'" value="'+val+'" style="width:'+w+'" title="'+tip+'" oninput="rgbEdit(this,\''+setter+'\',\''+part+'\')" onchange="rgbCommit(this,\''+setter+'\',\''+part+'\')" onfocus="this.select()"/>';}
+  return'<div class="rgb-row"><label>Hex</label>'+fld('hex',rgbToHex(p.r,p.g,p.b),'64px','Hex, e.g. #ffffff (3 or 6 digits, # optional)')
+    +'<label>R</label>'+fld('r',p.r,'34px','Red 0-255')
+    +'<label>G</label>'+fld('g',p.g,'34px','Green 0-255')
+    +'<label>B</label>'+fld('b',p.b,'34px','Blue 0-255')+'</div>';
+}
+// buildPanel() replaces #panel-content wholesale; re-apply focus afterwards.
+(function(){var _bp=buildPanel;buildPanel=function(){var r=_bp.apply(this,arguments);restorePanelFocus();return r;};})();
 function paletteHTML(sel,fn){var h='<div style="display:grid;grid-template-columns:repeat(10,18px);gap:2px;padding:6px 12px 8px;border-bottom:1px solid #f1f5f9">';for(var i=0;i<PALETTE.length;i++){h+='<div class="cs'+(PALETTE[i]===sel?' selected':'')+'" style="background:'+PALETTE[i]+'" title="'+PALETTE[i]+'" onclick="'+fn+'(\''+PALETTE[i]+'\')"></div>';}return h+'</div>';}
 function fontColorPaletteHTML(sel,fn){var h='<div style="display:flex;flex-wrap:wrap;gap:3px;padding:6px 12px 8px;border-bottom:1px solid #f1f5f9">';for(var i=0;i<FONT_COLORS.length;i++){h+='<div class="cs'+(FONT_COLORS[i]===sel?' selected':'')+'" style="background:'+FONT_COLORS[i]+'" title="'+FONT_COLORS[i]+'" onclick="'+fn+'(\''+FONT_COLORS[i]+'\')"></div>';}var autoSel=(sel==='auto'||!sel);h+='<div class="cs'+(autoSel?' selected':'')+'" style="background:linear-gradient(135deg,#94a3b8 50%,#f1f5f9 50%)" title="Auto" onclick="'+fn+'(\'auto\')"></div>';return h+'</div>';}
 function dashBtns(cur,fn){return['solid','dashed','dotted'].map(function(d){return'<button class="dash-btn'+(cur===d?' active':'')+'" onclick="'+fn+'(\''+d+'\')">'+d+'</button>';}).join('');}
@@ -3986,15 +4053,16 @@ var sMe=(selected.edges||[]).map(function(id){return metaEdgeById(id);}).filter(
 if(!sN.length&&!sL.length&&!(selected.triples&&selected.triples.length)&&sMe.length){buildMetaEdgePanel(pc,sMe[0]);return;}
 // Free line selected — show line panel
 if(sL.length&&!sN.length&&!sE.length){pc.innerHTML='';var l=sL[0],multi=sL.length>1;
-var lc=l.color||'#444444',lw=l.width||1.5,ld=l.dash||'solid',la=l.arrowhead||'none',lfs=l.fontSize||11,lfc=l.fontColor||null;
+var lc=l.color||'#000000',lw=l.width||1.5,ld=l.dash||'solid',la=l.arrowhead||'none',lfs=l.fontSize||11,lfc=l.fontColor||null;
 if(linePanelColorTarget!=='line'&&linePanelColorTarget!=='label')linePanelColorTarget='line';
 var html='<div class="section-hd">Free Line'+(multi?' ('+sL.length+')':'')+'</div>';
 html+='<div class="prop-row"><div class="prop-label">Label</div><input class="prop-input" value="'+escH(l.label||'')+'" placeholder="optional label" onchange="setLineLabel(\''+l.id+'\',this.value)"/></div>';
 html+='<div style="padding:4px 12px 6px;border-bottom:1px solid #f1f5f9;display:flex;gap:16px"><label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" '+(l.labelHoriz?'checked':'')+' onchange="setLineProp(\'labelHoriz\',this.checked)"> Horiz.</label><label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" '+(l.labelWrap?'checked':'')+' onchange="setLineProp(\'labelWrap\',this.checked)"> Wrap</label>'+(l.labelT!==undefined?'<button class="ct-btn" style="font-size:10px;padding:2px 5px" onclick="resetLineLabelPos()">&#8635; Reset pos</button>':'')+'</div>';
 html+='<div class="ct-row"><span class="ct-lbl">Color'+(multi?' (all)':'')+'</span><button class="ct-btn'+(linePanelColorTarget==='line'?' active':'')+'" onclick="linePanelColorTarget=\'line\';buildPanel()">Line</button><button class="ct-btn'+(linePanelColorTarget==='label'?' active':'')+'" onclick="linePanelColorTarget=\'label\';buildPanel()">Label</button></div>';
 html+=paletteHTML(linePanelColorTarget==='line'?lc:(lfc||lc),linePanelColorTarget==='line'?'sLLC_all':'sLFC_all');
-if(linePanelColorTarget==='line'){html+='<div class="color-custom-row"><label>Custom</label><input type="color" value="'+(lc[0]==='#'?lc:'#444444')+'" oninput="sLLC_all(this.value)" onchange="sLLC_all(this.value)"/></div>';}
-else{html+='<div class="color-custom-row"><label>Custom</label><input type="color" value="'+((lfc&&lfc[0]==='#')?lfc:(lc[0]==='#'?lc:'#444444'))+'" oninput="sLFC_all(this.value)" onchange="sLFC_all(this.value)"/>'+(lfc?'<button class="ct-btn" onclick="sLFC_all(null)" style="font-size:10px;padding:2px 5px" title="Use line color">Auto</button>':'')+'</div>';}
+if(linePanelColorTarget==='line'){html+='<div class="color-custom-row"><label>Custom</label><input type="color" value="'+(lc[0]==='#'?lc:'#000000')+'" oninput="sLLC_all(this.value)" onchange="sLLC_all(this.value)"/></div>';}
+else{html+='<div class="color-custom-row"><label>Custom</label><input type="color" value="'+((lfc&&lfc[0]==='#')?lfc:(lc[0]==='#'?lc:'#000000'))+'" oninput="sLFC_all(this.value)" onchange="sLFC_all(this.value)"/>'+(lfc?'<button class="ct-btn" onclick="sLFC_all(null)" style="font-size:10px;padding:2px 5px" title="Use line color">Auto</button>':'')+'</div>';}
+if(linePanelColorTarget==='line'){html+=rgbRowHTML('lcolor',(lc[0]==='#'?lc:'#000000'),'sLLC_all');}else{html+=rgbRowHTML('lfont',((lfc&&lfc[0]==='#')?lfc:(lc[0]==='#'?lc:'#000000')),'sLFC_all');}
 html+='<div class="inline-row"><label>Thickness</label><input type="range" min="0.5" max="8" step="0.5" value="'+lw+'" oninput="setLineProp(\'width\',+this.value);document.getElementById(\'lw-v\').textContent=this.value"/><span id="lw-v">'+lw+'</span></div>';
 html+='<div class="inline-row"><label>Font</label><input type="range" min="7" max="20" step="1" value="'+lfs+'" oninput="setLineProp(\'fontSize\',+this.value);document.getElementById(\'lfs-v\').textContent=this.value"/><span id="lfs-v">'+lfs+'</span></div>';
 html+='<div class="section-hd">Line style</div><div class="dash-row">'+dashBtns(ld,'setLineDash')+'</div>';
@@ -4142,7 +4210,8 @@ pc.innerHTML=(multi?'<div style="padding:8px 12px 4px;font-size:12px;color:#6474
 +(!multi?'<div style="padding:4px 12px 6px;border-bottom:1px solid #f1f5f9"><div style="margin-bottom:3px"><span class="prop-label">Note</span></div><textarea class="prop-input note-ta" rows="1" spellcheck="true" style="resize:none;overflow:hidden" placeholder="Free-text note..." oninput="_rTA(this);uNNote(\''+n.id+'\',this.value)">'+escH(n.note||'')+'</textarea></div>':'')
 +'<div class="ct-row"><span class="ct-lbl">Color'+(multi?' (all)':'')+'</span><button class="ct-btn'+(panelColorTarget==='fill'?' active':'')+'" onclick="setPanelColorTarget(\'fill\')">Fill</button><button class="ct-btn'+(panelColorTarget==='font'?' active':'')+'" onclick="setPanelColorTarget(\'font\')">Font</button><button class="ct-btn'+(panelColorTarget==='border'?' active':'')+'" onclick="setPanelColorTarget(\'border\')">Border</button></div>'
 +paletteHTML(panelColorTarget==='fill'?(n.color||''):panelColorTarget==='font'?nfc:(bc||''),panelColorTarget==='fill'?'sNC_all':panelColorTarget==='font'?'sNFC_all':'sNBC_all')
-+(panelColorTarget==='fill'?'<div class="color-custom-row"><label>Custom</label><input type="color" value="'+(n.color&&n.color[0]==='#'?n.color:'#93c5fd')+'" oninput="sNC_all(this.value)" onchange="sNC_all(this.value)"/></div>':panelColorTarget==='font'?'<div class="color-custom-row"><label>Custom</label><input type="color" value="'+(nfc&&nfc!=='auto'&&nfc[0]==='#'?nfc:'#1e293b')+'" oninput="sNFC_all(this.value)" onchange="sNFC_all(this.value)"/><button class="ct-btn'+(nfc==='auto'?' active':'')+'" onclick="sNFC_all(\'auto\')" style="font-size:10px;padding:2px 5px">Auto</button></div>':'<div class="color-custom-row"><label>Custom</label><input type="color" value="'+(bc&&bc[0]==='#'?bc:'#6b7280')+'" oninput="sNBC_all(this.value)" onchange="sNBC_all(this.value)"/>'+(bc?'<button class="ct-btn" onclick="sNBC_all(\'\')" style="font-size:10px;padding:2px 5px">Auto</button>':'')+'</div>')
++(panelColorTarget==='fill'?'<div class="color-custom-row"><label>Custom</label><input type="color" value="'+(n.color&&n.color[0]==='#'?n.color:'#ffffff')+'" oninput="sNC_all(this.value)" onchange="sNC_all(this.value)"/></div>':panelColorTarget==='font'?'<div class="color-custom-row"><label>Custom</label><input type="color" value="'+(nfc&&nfc!=='auto'&&nfc[0]==='#'?nfc:'#000000')+'" oninput="sNFC_all(this.value)" onchange="sNFC_all(this.value)"/><button class="ct-btn'+(nfc==='auto'?' active':'')+'" onclick="sNFC_all(\'auto\')" style="font-size:10px;padding:2px 5px">Auto</button></div>':'<div class="color-custom-row"><label>Custom</label><input type="color" value="'+(bc&&bc[0]==='#'?bc:'#000000')+'" oninput="sNBC_all(this.value)" onchange="sNBC_all(this.value)"/>'+(bc?'<button class="ct-btn" onclick="sNBC_all(\'\')" style="font-size:10px;padding:2px 5px">Auto</button>':'')+'</div>')
++(panelColorTarget==='fill'?rgbRowHTML('nfill',(n.color&&n.color[0]==='#'?n.color:'#ffffff'),'sNC_all'):panelColorTarget==='font'?rgbRowHTML('nfont',(nfc&&nfc!=='auto'&&nfc[0]==='#'?nfc:'#000000'),'sNFC_all'):rgbRowHTML('nborder',(bc&&bc[0]==='#'?bc:'#000000'),'sNBC_all'))
 +'<div class="prop-label" style="padding:4px 12px 2px">Shape</div><div class="shape-row">'+SHAPES.map(function(s){return'<button class="shape-btn'+(n.shape===s?' active':'')+'" onclick="sNS_all(\''+s+'\')">'+s+'</button>';}).join('')+'</div>'
 +'<div class="inline-row"><label>Font'+(multi?' (all)':'')+'</label><input type="range" min="7" max="24" step="1" value="'+nfs+'" oninput="sNFS_all(+this.value);document.getElementById(\'nfsv\').textContent=this.value"/><span id="nfsv">'+nfs+'</span></div>'
 +'<div class="prop-row" style="flex-direction:row;gap:8px"><div style="flex:1"><div class="prop-label">W</div><input class="prop-input" type="number" value="'+n.w+'" min="40" max="400" onchange="uNSz_all(\'w\',+this.value)"/></div><div style="flex:1"><div class="prop-label">H</div><input class="prop-input" type="number" value="'+n.h+'" min="28" max="300" onchange="uNSz_all(\'h\',+this.value)"/></div></div>'
@@ -4226,7 +4295,8 @@ pc.innerHTML=(multi2?'<div style="padding:8px 12px 4px;font-size:12px;color:#647
 })()
 +'<div class="ct-row"><span class="ct-lbl">Color'+(multi2?' (all)':'')+'</span><button class="ct-btn'+(panelColorTarget==='line'?' active':'')+'" onclick="setPanelColorTarget(\'line\')">Line</button><button class="ct-btn'+(panelColorTarget==='label'?' active':'')+'" onclick="setPanelColorTarget(\'label\')">Label</button></div>'
 +paletteHTML(panelColorTarget==='line'?ec:(e.fontColor||ec),panelColorTarget==='line'?'sEC_all':'sEFC_all')
-+(panelColorTarget==='line'?'<div class="color-custom-row"><label>Custom</label><input type="color" value="'+(ec[0]==='#'?ec:'#444444')+'" oninput="sEC_all(this.value)" onchange="sEC_all(this.value)"/></div>':'<div class="color-custom-row"><label>Custom</label><input type="color" value="'+((e.fontColor&&e.fontColor[0]==='#')?e.fontColor:(ec[0]==='#'?ec:'#444444'))+'" oninput="sEFC_all(this.value)" onchange="sEFC_all(this.value)"/>'+(e.fontColor?'<button class="ct-btn" onclick="sEFC_all(null)" style="font-size:10px;padding:2px 5px" title="Use line color">Auto</button>':'')+'</div>')
++(panelColorTarget==='line'?'<div class="color-custom-row"><label>Custom</label><input type="color" value="'+(ec[0]==='#'?ec:'#000000')+'" oninput="sEC_all(this.value)" onchange="sEC_all(this.value)"/></div>':'<div class="color-custom-row"><label>Custom</label><input type="color" value="'+((e.fontColor&&e.fontColor[0]==='#')?e.fontColor:(ec[0]==='#'?ec:'#000000'))+'" oninput="sEFC_all(this.value)" onchange="sEFC_all(this.value)"/>'+(e.fontColor?'<button class="ct-btn" onclick="sEFC_all(null)" style="font-size:10px;padding:2px 5px" title="Use line color">Auto</button>':'')+'</div>')
++(panelColorTarget==='line'?rgbRowHTML('ecolor',(ec[0]==='#'?ec:'#000000'),'sEC_all'):rgbRowHTML('efont',((e.fontColor&&e.fontColor[0]==='#')?e.fontColor:(ec[0]==='#'?ec:'#000000')),'sEFC_all'))
 +'<div class="inline-row"><label>Thickness</label><input type="range" min="0.5" max="8" step="0.5" value="'+ew+'" oninput="sEW_all(+this.value);document.getElementById(\'ewv\').textContent=this.value"/><span id="ewv">'+ew+'</span></div>'
 +'<div class="inline-row"><label>Font</label><input type="range" min="7" max="20" step="1" value="'+ef+'" oninput="sEF_all(+this.value);document.getElementById(\'efv\').textContent=this.value"/><span id="efv">'+ef+'</span></div>'
 +'<div class="section-hd">Line style'+(multi2?' (all)':'')+'</div><div class="dash-row">'+dashBtns(ed,'sED_all')+'</div>'
@@ -4402,7 +4472,7 @@ function loadMDL(text){
       var cpx=cpMatch?parseFloat(cpMatch[1]):undefined;
       var cpy=cpMatch?parseFloat(cpMatch[2]):undefined;
       var e=Object.assign({},DEF_EDGE,{id:'e'+nextId++,src:null,tgt:null,
-        polarity:neg?'-':'+',color:neg?'#ef4444':'#444444',
+        polarity:neg?'-':'+',color:neg?'#ef4444':'#000000',
         curved:curved,delay:hasDelay,props:{},note:''});
       if(cpx!==undefined&&!(cpx===0&&cpy===0)){e.cpxUser=cpx;e.cpyUser=cpy;}
       e._sid=sid;e._tid=tid;
@@ -4594,7 +4664,7 @@ if(wardleyData&&wardleyData.components){
   toast('Wardley import: '+nodes.length+' nodes, '+edges.length+' edges');
   return;
 }
-var isArrows=raw.relationships!==undefined||(raw.nodes&&raw.nodes[0]&&raw.nodes[0].position!==undefined);var isNative=raw.nodes&&raw.edges!==undefined;if(!isArrows&&!isNative){toast('Unrecognised JSON');return;}snap();if(isArrows){var conv=translateArrows(raw);nodes=conv.nodes;edges=conv.edges;toast('Arrows import: '+nodes.length+' nodes');}else{nodes=raw.nodes.map(function(n){return Object.assign({fontSize:DEF_NFS,fontColor:'auto',borderColor:'',borderWidth:1.5,borderDash:'solid',note:'',extraLabels:[]},n,{props:n.props||{},extraLabels:n.extraLabels||[]});});edges=raw.edges.map(function(e){var out=Object.assign({dash:'solid',note:''},e,{props:e.props||{},polarity:e.polarity||'none',delay:!!e.delay});if(out.trace&&!out.traces){out.traces=[out.trace];}if(!out.traces)out.traces=[];delete out.trace;return out;});if(raw.modelName)document.getElementById('model-name').value=raw.modelName;if(raw.canvasBg)setBgColor(raw.canvasBg);if(raw.graphAttrs)graphAttrs=raw.graphAttrs;nodes.forEach(autoSize);toast('Loaded '+nodes.length+' nodes');}lines=(raw.lines||[]).map(function(l){return Object.assign({color:'#444444',width:1.5,dash:'solid',arrowhead:'none',label:''},l);});var ids=nodes.map(function(n){return+String(n.id).replace(/\D/g,'')||0;}).concat(edges.map(function(e){return+String(e.id).replace(/\D/g,'')||0;})).concat(lines.map(function(l){return+String(l.id).replace(/\D/g,'')||0;}));nextId=(ids.length?Math.max.apply(null,ids):0)+1;selected={nodes:[],edges:[],lines:[],triples:[]};edges.forEach(function(e){if(e.color)getMarkerId(e.color);if(e.opmMarker&&e.color)getOPMMarkerId(e.opmMarker,e.color);});metaEdges=(raw.metaEdges||[]).map(function(me){return Object.assign({},me);});if(raw.cldLoopNames)cldLoopNames=raw.cldLoopNames;if(raw.legendEntries){legendEntries=raw.legendEntries;legendVisible=!!raw.legendVisible;buildLegendSection();renderLegendOverlay();}var _mn=document.getElementById('model-note');_mn.value=raw.modelNote||'';renderModelNote();// update nextTripleNum based on loaded triples
+var isArrows=raw.relationships!==undefined||(raw.nodes&&raw.nodes[0]&&raw.nodes[0].position!==undefined);var isNative=raw.nodes&&raw.edges!==undefined;if(!isArrows&&!isNative){toast('Unrecognised JSON');return;}snap();if(isArrows){var conv=translateArrows(raw);nodes=conv.nodes;edges=conv.edges;toast('Arrows import: '+nodes.length+' nodes');}else{nodes=raw.nodes.map(function(n){return Object.assign({fontSize:DEF_NFS,fontColor:'auto',borderColor:'',borderWidth:1.5,borderDash:'solid',note:'',extraLabels:[]},n,{props:n.props||{},extraLabels:n.extraLabels||[]});});edges=raw.edges.map(function(e){var out=Object.assign({dash:'solid',note:''},e,{props:e.props||{},polarity:e.polarity||'none',delay:!!e.delay});if(out.trace&&!out.traces){out.traces=[out.trace];}if(!out.traces)out.traces=[];delete out.trace;return out;});if(raw.modelName)document.getElementById('model-name').value=raw.modelName;if(raw.canvasBg)setBgColor(raw.canvasBg);if(raw.graphAttrs)graphAttrs=raw.graphAttrs;nodes.forEach(autoSize);toast('Loaded '+nodes.length+' nodes');}lines=(raw.lines||[]).map(function(l){return Object.assign({color:'#000000',width:1.5,dash:'solid',arrowhead:'none',label:''},l);});var ids=nodes.map(function(n){return+String(n.id).replace(/\D/g,'')||0;}).concat(edges.map(function(e){return+String(e.id).replace(/\D/g,'')||0;})).concat(lines.map(function(l){return+String(l.id).replace(/\D/g,'')||0;}));nextId=(ids.length?Math.max.apply(null,ids):0)+1;selected={nodes:[],edges:[],lines:[],triples:[]};edges.forEach(function(e){if(e.color)getMarkerId(e.color);if(e.opmMarker&&e.color)getOPMMarkerId(e.opmMarker,e.color);});metaEdges=(raw.metaEdges||[]).map(function(me){return Object.assign({},me);});if(raw.cldLoopNames)cldLoopNames=raw.cldLoopNames;if(raw.legendEntries){legendEntries=raw.legendEntries;legendVisible=!!raw.legendVisible;buildLegendSection();renderLegendOverlay();}var _mn=document.getElementById('model-note');_mn.value=raw.modelNote||'';renderModelNote();// update nextTripleNum based on loaded triples
 var tNums=edges.filter(function(e){return e.tripleId;}).map(function(e){return parseInt(e.tripleId.slice(1))||0;});nextTripleNum=(tNums.length?Math.max.apply(null,tNums):0)+1;
 customSymbols=(raw.customSymbols||[]).map(function(s){return Object.assign({},s);});_vsAddMode=false;
 syncCC();renderAll();zoomFit();}
