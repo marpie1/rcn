@@ -122,8 +122,9 @@ p:last-child{margin-bottom:0}
   <!-- ── NDC LOCATIONS ───────────────────────────────────────── -->
   <h2>NDC locations</h2>
   <p>
-    Seven Neighborhood Development Centers are currently in the map. Each has its own geographic
+    Nine Neighborhood Development Centers are built in to the map. Each has its own geographic
     context layer including administrative boundaries, ecological zones, and points of interest.
+    You can also add your own NDCs (saved in your browser) — they behave the same as the built-ins.
   </p>
   <!-- UPDATE: add new NDC cards here when new locations are added to NDC_LIST -->
   <div class="ndc-grid">
@@ -134,6 +135,8 @@ p:last-child{margin-bottom:0}
     <div class="ndc-card"><div class="name">Green Gate Farms Bastrop</div><div class="loc">Bastrop, TX</div></div>
     <div class="ndc-card"><div class="name">Carter Center Library</div><div class="loc">Atlanta, GA</div></div>
     <div class="ndc-card"><div class="name">Porthmadog</div><div class="loc">Gwynedd, Wales</div></div>
+    <div class="ndc-card"><div class="name">Alpujarra NDC</div><div class="loc">Alpujarras, Spain</div></div>
+    <div class="ndc-card"><div class="name">Main Street Neighborhood Bellingham</div><div class="loc">Bellingham, WA</div></div>
   </div>
 
   <!-- ── WHAT IT DOES ─────────────────────────────────────────── -->
@@ -143,7 +146,7 @@ p:last-child{margin-bottom:0}
   <div class="highlight-grid">
     <div class="hl-card">
       <h4>Network overview</h4>
-      <p>All 7 NDCs shown simultaneously as red circle markers. Click any marker for address and name. Legend organized by state. One-click return to overview from any NDC view.</p>
+      <p>All 9 built-in NDCs (plus any you add) shown simultaneously as red circle markers. Click any marker for address and name. Legend organized by group bucket. One-click return to overview from any NDC view.</p>
     </div>
     <div class="hl-card">
       <h4>Per-NDC geographic context</h4>
@@ -171,7 +174,7 @@ p:last-child{margin-bottom:0}
     </div>
     <div class="hl-card">
       <h4>Static data, no server</h4>
-      <p>All geographic data is bundled in rcn_static_data.js — generated once from the geo database and served alongside the HTML file. No API calls for NDC or place data. The map works fully offline after load.</p>
+      <p>All geographic data lives in rcn_static_data.js — generated once from the geo database and served <em>alongside</em> the HTML in the same folder (a two-file deploy). No API calls for NDC or place data. (A single-file "standalone" build inlines the data for handouts.)</p>
     </div>
     <div class="hl-card">
       <h4>Custom location pins</h4>
@@ -179,7 +182,19 @@ p:last-child{margin-bottom:0}
     </div>
     <div class="hl-card">
       <h4>Boundary layer builder</h4>
-      <p>Search OpenStreetMap for any jurisdiction polygon (county, watershed, city limit) or use the Claude prompt bridge to generate one. Added layers get a U badge in the legend and persist in localStorage.</p>
+      <p>Search OpenStreetMap for any jurisdiction polygon (county, watershed, city limit), draw one freehand, or use the Claude prompt bridge to generate one. Added layers persist in localStorage.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Nest boundaries under an NDC</h4>
+      <p>When you draw or paste a boundary, an <b>Under NDC</b> dropdown files it <em>inside</em> that NDC's section of the legend. Every boundary row also carries an assign dropdown, so you can move one under an NDC — or back out to "My additions" — at any time, without redrawing.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Editable NDCs</h4>
+      <p>NDCs you add appear under <b>Saved NDCs</b> in the Add NDC panel with an <b>Edit</b> link — rename the name or fix its location text (handy if a stray URL lands in a field). Built-in NDCs stay fixed.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Group buckets, your labels</h4>
+      <p>The old two-letter "code" is now a free-text <b>group bucket</b> (up to 32 characters, any case) — use a state, a country, or your own label like <em>Whatcom</em> or <em>Nooksack</em>. NDCs and boundaries that share the exact same bucket group together in the legend.</p>
     </div>
     <div class="hl-card">
       <h4>New issue panel</h4>

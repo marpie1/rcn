@@ -374,8 +374,8 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       </p>
       <p>
         In overview mode, all geographic context layers (admin boundaries, ecological zones, NDC zone
-        polygons, mineral deposits, churches) are drawn for all NDC states at once. The legend in the
-        sidebar lists all features grouped by state.
+        polygons, mineral deposits, churches) are drawn for all NDC buckets at once. The legend in the
+        sidebar lists all features grouped by bucket (state, country, or custom label).
       </p>
       <p>
         Click any red NDC circle marker on the map to open a popup with the NDC's name and address.
@@ -441,7 +441,7 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
           <!-- Hint -->
           <text x="160" y="380" text-anchor="middle" font-size="9" fill="#94a3b8">Click to highlight · Shift+click to multi-select</text>
         </svg>
-        <figcaption>Overview mode shows all 7 NDCs. The legend groups features by state. Click any legend item to zoom to that feature and highlight it.</figcaption>
+        <figcaption>Overview mode shows all built-in NDCs. The legend groups features by bucket. Click any legend item to zoom to that feature and highlight it.</figcaption>
       </figure>
     </section>
 
@@ -1047,8 +1047,10 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
     <section id="s13">
       <div class="section-pill">Editing</div>
       <h2>13. Adding boundary layers</h2>
-      <p>The <strong>Add boundary layer</strong> panel at the bottom of the sidebar lets you add any polygon boundary to the map — a county, city limit, watershed, national forest, or any custom area. Added layers appear in the legend with a green <strong>U</strong> badge, support highlighting, and persist across page reloads.</p>
-      <p>Click <strong>Add boundary layer ▶</strong> at the bottom of the sidebar to expand the panel. Three tabs are available.</p>
+      <p>The <strong>Add boundary layer</strong> panel lets you add any polygon boundary to the map — a county, city limit, watershed, national forest, or any custom area. Added layers appear in the legend with a group-bucket badge, support highlighting, and persist across page reloads. You can draw one freehand, or use the two tabs below.</p>
+      <p>Click <strong>Add boundary layer ▶</strong> in the sidebar to expand the panel.</p>
+
+      <div class="tip"><strong>File a boundary under an NDC.</strong> Both the draw and paste forms carry an <strong>Under NDC</strong> dropdown. Pick an NDC and the boundary is listed <em>inside</em> that NDC's section of the legend instead of the flat "My additions &amp; layers" list. Every boundary row also has its own assign dropdown, so you can move one under an NDC — or set it back to "none" — at any time without redrawing. The choice is saved with the boundary (an <code>ndc</code> field).</div>
 
       <h3>Search OSM tab</h3>
       <p>Finds real boundary polygons directly from OpenStreetMap for any named jurisdiction.</p>
@@ -1184,23 +1186,49 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
     <section id="s14">
       <div class="section-pill">Maintenance</div>
       <h2>14. Adding an NDC</h2>
-      <p>
-        New NDC locations are added by editing the <code>NDC_LIST</code> array near the bottom of
-        <code>rcn_map.html</code>. Each entry takes three fields:
-      </p>
-      <pre>{ name: "NDC Name",   state: 'XX',  label: "NDC Name — City, State" }</pre>
+      <p>There are two ways to add an NDC: the <strong>Add NDC panel</strong> in the sidebar (for a
+        personal NDC saved in your browser) and editing <code>NDC_LIST</code> in the source (for a
+        built-in NDC everyone sees).</p>
+
+      <h3>In the app — Add NDC panel (no coding)</h3>
+      <ol>
+        <li>Expand <strong>Add NDC</strong> in the sidebar.</li>
+        <li>Enter a <strong>name</strong>, a <strong>location</strong> (shown after the name), a
+          <strong>code</strong> (the group bucket — see below), and set the pin (type coordinates or
+          click <strong>Set from map</strong>).</li>
+        <li>Click <strong>Add NDC</strong>. It appears in the accordion and on the map, and is saved in
+          your browser (<code>rcn_user_ndcs</code>).</li>
+      </ol>
+      <p><strong>Editing a saved NDC.</strong> Expand <strong>Saved NDCs</strong> inside the Add NDC
+        panel. Each NDC you added has an <strong>Edit</strong> link (rename the name or fix the location
+        text — useful if a stray URL lands in a field) and a <strong>×</strong> to remove it. Built-in
+        NDCs are fixed and have no Edit link.</p>
+
+      <div class="tip"><strong>Code = group bucket.</strong> The code is a free-text grouping label, not
+        a validated geography — up to 32 characters, in any case. Use a US state (<code>WA</code>), a
+        country (<code>ES</code>), or your own label (<code>Whatcom</code>, <code>Nooksack</code>). NDCs
+        and boundaries that share the <em>exact same</em> bucket string are grouped together in the
+        legend.</div>
+
+      <h3>In the source — built-in NDC</h3>
+      <p>Built-in NDCs are entries in the <code>NDC_LIST</code> array near the bottom of
+        <code>rcn_map.html</code>. A minimal entry is three fields; add <code>lat/lng/address</code> to
+        place the pin without touching the geo database:</p>
+      <pre>{ name: "NDC Name", state: 'XX', label: "NDC Name — City, State",
+  lat: 48.749, lng: -122.478, address: "City, State" }</pre>
       <table class="feat-table">
         <thead><tr><th>Field</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td><code>name</code></td><td>Exact name as it appears in the geographic data. Must match the <code>name</code> property of the NDC's entry in <code>RCN_NDCS</code> (the static data file).</td></tr>
-          <tr><td><code>state</code></td><td>Two-letter state/country code used to group features. Must match the <code>state</code> field in the geographic data.</td></tr>
-          <tr><td><code>label</code></td><td>Display text in the sidebar accordion — typically "NDC Name — City, State".</td></tr>
+          <tr><td><code>name</code></td><td>Display name. If the NDC's point comes from the static data, must match the <code>name</code> in <code>RCN_NDCS</code>.</td></tr>
+          <tr><td><code>state</code></td><td>The group bucket (see the tip above). Boundaries/layers sharing this exact string group with this NDC.</td></tr>
+          <tr><td><code>label</code></td><td>Text in the sidebar accordion — typically "NDC Name — City, State".</td></tr>
+          <tr><td><code>lat</code>/<code>lng</code>/<code>address</code></td><td>Optional. If present, <code>injectExtraNDCs()</code> adds the map pin at startup — no geo-database entry needed (this is how Porthmadog, Alpujarra, and Main Street Bellingham are placed).</td></tr>
         </tbody>
       </table>
       <div class="warn">
-        Adding an NDC to <code>NDC_LIST</code> only affects the sidebar. For the NDC to appear on the
-        map, its point location and geographic context layers must also be added to the geo database
-        and <code>rcn_static_data.js</code> must be regenerated. See section 16.
+        A built-in NDC with no <code>lat/lng</code> only affects the sidebar until its point and context
+        layers are added to the geo database and <code>rcn_static_data.js</code> is regenerated
+        (section 16). NDCs with <code>lat/lng</code> in <code>NDC_LIST</code> place their own pin.
       </div>
 
       <figure class="ui-fig">
