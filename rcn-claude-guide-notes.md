@@ -135,9 +135,9 @@ OK: renders in RCN Graph Tool (23 nodes, 23 edges). 0 warning(s).
 - [ ] Visual load test in graph-tool-v22.html (validator says renders; not yet
       confirmed by eye — layout/overlap unverified)
 - [x] Move `validate-rcn-graph.js` into ~/rcn/tools and commit it — now
-      `tools/validate-rcn-graph.js` (md5 `26077f17…`, identical to the Downloads
-      copies, which were left in place). The repo is now the reference copy;
-      treat the Downloads versions as stale.
+      `tools/validate-rcn-graph.js` (md5 `26077f17…`). The three byte-identical
+      ~/Downloads copies were deleted afterwards — the repo is now the single
+      reference copy.
 - [ ] Extend the validator: flag `basis`/provenance sitting at top level on an
       edge, and warn on shape values that are numbers (the `shape: 0` case
       currently only warns as "unknown")
