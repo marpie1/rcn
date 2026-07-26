@@ -564,6 +564,34 @@ function addClickThrough(layer) {
   });
 }
 
+// Builds (or rebuilds) the issue polygon layer from ISSUE.polygon + META.
+// Split out of initMap so that importing a GeoJSON can restore it — the
+// exporter has always written a type:"IssuePolygon" feature, but nothing read
+// it back, so the boundary that defines the issue died on its own round-trip.
+// The popup reports PARCELS.length, so call this after parcels are loaded.
+function renderIssuePolygon() {
+  if (layers.issuePolygon) {
+    map.removeLayer(layers.issuePolygon);
+    layers.issuePolygon = null;
+  }
+  if (!ISSUE || !Array.isArray(ISSUE.polygon) || ISSUE.polygon.length < 3) return;
+  layers.issuePolygon = L.polygon(ISSUE.polygon, {
+    color: '#e8c84a', weight: 2, dashArray: '8 4', fillColor: '#e8c84a', fillOpacity: 0.08
+  }).addTo(map).bindPopup(`
+    <div class="popup-title">Issue Polygon — ${META.title}</div>
+    <div class="popup-row"><span class="popup-key">ID</span><span style="font-family:monospace;font-size:10px">${META.id}</span></div>
+    <div class="popup-row"><span class="popup-key">Status</span><span class="tag tag-active">Active</span></div>
+    <div class="popup-row"><span class="popup-key">Parcels</span><span>${PARCELS.length} homesteads</span></div>
+    <div class="popup-row"><span class="popup-key">Scale</span><span>Neighborhood → Municipality → County → State</span></div>
+    <div style="margin-top:8px;display:flex;gap:4px">
+      <button onclick="copyLink(issuePolygonLink())" style="flex:1;padding:4px;background:rgba(184,134,11,0.08);border:1px solid var(--accent);color:var(--accent);font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">↗ Copy link</button>
+      <button onclick="deletePolygon('issuePolygon')" style="flex:1;padding:4px;background:rgba(180,40,40,0.08);border:1px solid #c0392b;color:#c0392b;font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">✕ Delete polygon</button>
+    </div>
+  `);
+  addClickThrough(layers.issuePolygon);
+  return layers.issuePolygon;
+}
+
 function initMap(data) {
   META      = data.meta;
   ISSUE     = data.issue;
@@ -612,19 +640,7 @@ function initMap(data) {
   }
 
   // Issue polygon
-  layers.issuePolygon = L.polygon(ISSUE.polygon, {
-    color: '#e8c84a', weight: 2, dashArray: '8 4', fillColor: '#e8c84a', fillOpacity: 0.08
-  }).addTo(map).bindPopup(`
-    <div class="popup-title">Issue Polygon — ${META.title}</div>
-    <div class="popup-row"><span class="popup-key">ID</span><span style="font-family:monospace;font-size:10px">${META.id}</span></div>
-    <div class="popup-row"><span class="popup-key">Status</span><span class="tag tag-active">Active</span></div>
-    <div class="popup-row"><span class="popup-key">Parcels</span><span>${PARCELS.length} homesteads</span></div>
-    <div class="popup-row"><span class="popup-key">Scale</span><span>Neighborhood → Municipality → County → State</span></div>
-    <div style="margin-top:8px;display:flex;gap:4px">
-      <button onclick="copyLink(issuePolygonLink())" style="flex:1;padding:4px;background:rgba(184,134,11,0.08);border:1px solid var(--accent);color:var(--accent);font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">↗ Copy link</button>
-      <button onclick="deletePolygon('issuePolygon')" style="flex:1;padding:4px;background:rgba(180,40,40,0.08);border:1px solid #c0392b;color:#c0392b;font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">✕ Delete polygon</button>
-    </div>
-  `);
+  renderIssuePolygon();
 
   // Parcel markers
   const parcelGroup = L.layerGroup().addTo(map);
@@ -661,7 +677,7 @@ function initMap(data) {
   map.on('click', function(e) { handleMapClick(e.latlng); });
 
   // Polygons consume clicks by default — pass through to handleMapClick when in add/draw mode
-  addClickThrough(layers.issuePolygon);
+  // (issuePolygon gets its click-through inside renderIssuePolygon)
   if (layers.county)       addClickThrough(layers.county);
   if (layers.municipality) addClickThrough(layers.municipality);
 
@@ -1100,6 +1116,10 @@ function loadFromGeoJSON(geojson) {
   PARCELS.length = 0;
 
   let parcelCount = 0, hadPolygon = false;
+  // Held until after the loop: the popup reports PARCELS.length, and features
+  // arrive in whatever order the file lists them (the exporter writes the issue
+  // polygon first, before any parcel exists).
+  let pendingIssue = null;
 
   geojson.features.forEach(f => {
     const props = f.properties || {};
@@ -1132,12 +1152,38 @@ function loadFromGeoJSON(geojson) {
       }).addTo(map).bindPopup(drawnPolygonPopup('Restored from export. Export GeoJSON to save again.'));
       addClickThrough(drawnPolygonLayer);
       hadPolygon = true;
+
+    } else if (props.type === 'IssuePolygon' && f.geometry && f.geometry.type === 'Polygon') {
+      const ring = f.geometry.coordinates && f.geometry.coordinates[0];
+      if (Array.isArray(ring) && ring.length >= 3) {
+        pendingIssue = {
+          polygon: ring.map(c => [c[1], c[0]]),   // GeoJSON [lng,lat] → Leaflet [lat,lng]
+          title:   props.issue,
+          id:      props.id
+        };
+      }
     }
   });
 
+  let hadIssue = false;
+  if (pendingIssue) {
+    ISSUE.polygon = pendingIssue.polygon;
+    if (pendingIssue.title) META.title = pendingIssue.title;
+    if (pendingIssue.id)    META.id    = pendingIssue.id;
+    renderIssuePolygon();
+    // the toggle reflects reality again even if the polygon had been deleted
+    const tgl = document.querySelector('.layer-toggle[data-layer="issuePolygon"]');
+    if (tgl) { const cb = tgl.querySelector('input'); if (cb) cb.checked = true; tgl.classList.add('active'); }
+    hadIssue = true;
+  }
+
   updateTally();
-  const msg = `Loaded ${parcelCount} parcel${parcelCount !== 1 ? 's' : ''}${hadPolygon ? ' + custom polygon' : ''}`;
+  const extras = [hadIssue ? 'issue polygon' : null, hadPolygon ? 'custom polygon' : null].filter(Boolean);
+  const msg = `Loaded ${parcelCount} parcel${parcelCount !== 1 ? 's' : ''}${extras.length ? ' + ' + extras.join(' + ') : ''}`;
   showStatus(msg);
+  // A restored issue polygon can sit anywhere; without this the map stays put
+  // and an import from another area looks like it failed.
+  if (hadIssue) fitToVisiblePolygons();
 }
 
 function showStatus(msg, isError) {
