@@ -166,6 +166,24 @@ claim in `props.basis`.
   "props": { "basis": "LLA audit report FY23, p.4" } }
 ```
 
+## Known gap: display text vs. Neo4j properties
+
+There is currently **no channel for display-only text.** `exportCypher()` turns
+both `props` *and* `note` into Neo4j properties:
+
+```
+CREATE (n0:PROBLEM:Problem {severity: "?", note: "hover text lands here too"} )
+```
+
+So anything written for a human reading the diagram — hover copy, a gloss, a
+"what this means" line — pollutes the graph database if put in `note`, and
+equally if put in `props`.
+
+Until that is resolved, keep `props` to real data that belongs in Neo4j, and
+treat `note` as data too. If richer on-hover content is added later it needs its
+own home — a reserved key prefix excluded from the Cypher exporter, or a
+separate display block — decided **before** authoring files that depend on it.
+
 ## Top-level keys
 
 `buildState()` (line ~4330) emits **exactly** these, and nothing else:
