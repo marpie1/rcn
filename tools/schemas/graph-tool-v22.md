@@ -166,6 +166,45 @@ claim in `props.basis`.
   "props": { "basis": "LLA audit report FY23, p.4" } }
 ```
 
+## `schemaLabel` — what a node IS
+
+Three different things get confused as "the name of a node". Keep them apart:
+
+| Field | Question it answers | Free to change? |
+|---|---|---|
+| `label` | What do we CALL it on this drawing? | yes — it is for people |
+| `schemaLabel` | What IS it, in the neighborhood schema? | no — it is the identity |
+| `extraLabels` | What else is it called? Aliases, secondary types. | yes |
+| `props.name` | WHICH one, when there are several? | it names an instance |
+
+`schemaLabel` is a single string. `extraLabels` is a list, and a list cannot be
+an identity — any rule for picking an element is arbitrary and order-dependent.
+Some nodes legitimately carry several: Commitment is also Agreement, Promise and
+Contract. Those are aliases worth keeping and worth exporting to Neo4j; they are
+not what the node IS.
+
+**The composition key is `schemaLabel` + `props.name`.** In
+`tools/graph-composer.html`, two nodes from different subgraphs become one node
+when both match.
+
+`props.name` is the instance. `"?"`, `""` and absent are all normalised to the
+same UNNAMED value, meaning "the type itself":
+
+- Drawing the *schema* — one Person, one Org. Names are blank, so `schemaLabel`
+  alone is the whole identity.
+- Drawing an *actual neighborhood* — many Orgs. `schemaLabel` says `Org`,
+  `props.name` says which one.
+
+The display label is deliberately NOT part of identity. A node can be renamed
+`HOUSING` or `Housing` or `the housing we have` for legibility without changing
+what it merges with. Before this, the composer identified nodes by display label
+and fell back to it for the instance name, which is how one file omitting
+`props.name` silently split five entities into ten.
+
+The composer reports `typed: 75/75` — how many source nodes carried a
+`schemaLabel`. Anything short of full is amber: those nodes fall back to their
+display label and will quietly fail to merge with a renamed sibling.
+
 ## Display-only data: the `_` prefix
 
 Precedent: Neo4j's own Arrows tool gives a node a `caption` that displays

@@ -493,6 +493,7 @@
         <div>edges: <span class="val" id="stat-edges">—</span></div>
         <div>merged: <span class="val" id="stat-merged">—</span></div>
         <div>sources: <span class="val" id="stat-sources">—</span></div>
+        <div>typed: <span class="val" id="stat-typed">—</span></div>
       </div>
     </div>
 
@@ -588,7 +589,9 @@ class Graph {
       const nmap = {}
       obj.nodes.forEach((n, i) => {
         const id = n.id || i
-        const type = n.label || n.type || 'Node'
+        // Identity is the SCHEMA LABEL, not the display label. A drawing may
+        // call a node anything that reads well; what it IS lives in schemaLabel.
+        const type = n.schemaLabel || n.label || n.type || 'Node'
         const visual = {
           shape: n.shape,
           color: n.color,
@@ -596,7 +599,12 @@ class Graph {
           borderColor: n.borderColor,
           borderWidth: n.borderWidth
         }
-        nmap[id] = g.addNode(type, { ...(n.props || {}), ...visual, name: n.props?.name || n.label || n.type })
+        // "?", "" and absent all mean UNNAMED — "the type itself". Falling back
+        // to the label here is what once split five entities into ten.
+        const _schemaLabel = n.schemaLabel || ''
+        const raw = n.props?.name
+        const name = (raw === undefined || raw === null || raw === '' || raw === '?') ? '' : String(raw)
+        nmap[id] = g.addNode(type, { ...(n.props || {}), ...visual, name, _schemaLabel })
       })
       const links = obj.edges || obj.rels
       links.forEach(e => {
@@ -1082,6 +1090,20 @@ function updateStats(complex, sources) {
   document.getElementById('stat-edges').textContent = complex ? complex.graph.rels.length : '—'
   document.getElementById('stat-merged').textContent = complex ? complex.merged.nids.length : '—'
   document.getElementById('stat-sources').textContent = sources ? sources.length : '—'
+  // How many of the SOURCE nodes carried a schemaLabel? A node without one
+  // identifies by its display label and will silently fail to merge with a
+  // sibling that was renamed — so surface it rather than let it pass.
+  const el = document.getElementById('stat-typed')
+  if (el) {
+    if (!sources) { el.textContent = '—'; el.style.color = ''; return }
+    let typed = 0, total = 0
+    sources.forEach(s => (s.graph.nodes || []).forEach(n => {
+      total++
+      if (n.props && n.props._schemaLabel !== '') typed++
+    }))
+    el.textContent = typed + '/' + total
+    el.style.color = (typed === total) ? '' : '#b45309'
+  }
 }
 
 function updateTally(graph) {
