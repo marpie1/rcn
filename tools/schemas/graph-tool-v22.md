@@ -309,7 +309,28 @@ That is precisely what `tools/rcn-timeline.html` adds. The pairing:
 | Wave depth | ordinal position | an actual date |
 | Uncertainty | not represented | `startFuzz`/`endFuzz`, `conf`, `who` |
 
-Translating a trace by hand:
+**`sendTraceToTimeline(n)`** does this — Trace mode's panel has a
+"Send trace to Timeline" row of T1–T4 buttons beside the animate row. It reuses
+`traceWaves()`, which is `startTraceAnim()`'s root-finding and BFS factored out,
+so the thing you send is the thing you watched. Handoff is
+`rcn-timeline.html#tl=<base64>`.
+
+What it emits, and why:
+
+| Choice | Reason |
+|---|---|
+| node → interval, **interval id = graph node id** | the bridge back; a future tool can match them |
+| trace edge → **`before`, never `meets`** | a trace edge asserts sequence, not adjacency. `meets` would claim "no gap", which the graph never said — and two `meets` into one node would contradict on arrival |
+| one placeholder year per wave depth | the order is real; the durations are not |
+| interval `conf` 0.3, `who` empty | the DATES are unattributed — nobody has dated them |
+| link `who` = "T*n* trace, *model*", `conf` 0.8 | the ORDER **is** attributed: the graph said so |
+
+That split is the point. The converter hands over what the graph actually knows
+and is conspicuously silent about the rest, because filling in the durations is
+the step where a group discovers which of its confident causal arrows nobody can
+date.
+
+Doing it by hand instead:
 
 1. Each **node** on the trace path becomes an **interval**. Give it a duration —
    this is the step where you find out whether you know one.
@@ -327,8 +348,8 @@ thing, or drop the link and let the dates speak.
 
 Worked example: `tools/eip-schema-cld.json` T1 → `tools/t1-trace-timeline-demo.json`.
 
-There is no automatic converter yet. If this becomes routine, that is the thing
-to build.
+Worked example: `tools/eip-schema-cld.json` carries the T1 trace on six edges
+(PERSON→ACTION→RESULT→{SOLUTION, SIDE EFFECT}→PROBLEM). Press ⏳ T1.
 
 ## Receiving a graph from the Composer
 

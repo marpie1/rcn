@@ -66,10 +66,13 @@ then this*, at a fixed millisecond speed that makes a week and four years look
 identical. Carrying the same trace into the Timeline gives it dates, durations,
 gaps, and confidence. Two edges drawn identically on the graph turn out to be
 one welded to its cause and one trailing it by `slack 2 yr 2 mo`, which is a
-different claim entirely. Node → interval, trace edge → `meets`/`before` link.
-Translation is by hand today; see `schemas/graph-tool-v22.md` §"A trace is a
-partial order" and the worked pair `eip-schema-cld.json` T1 →
-`t1-trace-timeline-demo.json`.
+different claim entirely. **Trace mode has a "Send trace to Timeline" row (⏳ T1–T4)** that does the
+conversion and opens it: node → interval (keeping the graph's node id), trace
+edge → `before` link. Intervals arrive as one-year placeholders at `conf` 0.3
+with an empty `who` — the dates are nobody's yet; the links carry a real `who`
+and `conf` 0.8, because the order *is* attributed. See
+`schemas/graph-tool-v22.md` §"A trace is a partial order" and the worked pair
+`eip-schema-cld.json` T1 → `t1-trace-timeline-demo.json`.
 
 | File | Purpose | Status |
 |------|---------|--------|

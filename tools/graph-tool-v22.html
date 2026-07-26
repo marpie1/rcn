@@ -745,7 +745,14 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
           <button id="btn-run-t3" class="tb-btn" onclick="startTraceAnim(3)" style="flex:1;font-size:10px;color:#0e7490;border-color:#22d3ee">▶ T3</button>
           <button id="btn-run-t4" class="tb-btn" onclick="startTraceAnim(4)" style="flex:1;font-size:10px;color:#9f1239;border-color:#fb7185">▶ T4</button>
         </div>
-        <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
+        <div style="font-size:10px;color:#64748b;margin:6px 0 3px;padding:0 2px" title="A trace gives order but no timing. The Timeline adds dates, durations, gaps and confidence.">Send trace to Timeline &#8599;</div>
+        <div style="display:flex;gap:3px">
+          <button id="btn-tl-t1" class="tb-btn" onclick="sendTraceToTimeline(1)" style="flex:1;font-size:10px;color:#c2410c;border-color:#fb923c" title="Open T1 in the RCN Timeline as intervals + before-links">&#8987; T1</button>
+          <button id="btn-tl-t2" class="tb-btn" onclick="sendTraceToTimeline(2)" style="flex:1;font-size:10px;color:#6b21a8;border-color:#a855f7" title="Open T2 in the RCN Timeline">&#8987; T2</button>
+          <button id="btn-tl-t3" class="tb-btn" onclick="sendTraceToTimeline(3)" style="flex:1;font-size:10px;color:#0e7490;border-color:#22d3ee" title="Open T3 in the RCN Timeline">&#8987; T3</button>
+          <button id="btn-tl-t4" class="tb-btn" onclick="sendTraceToTimeline(4)" style="flex:1;font-size:10px;color:#9f1239;border-color:#fb7185" title="Open T4 in the RCN Timeline">&#8987; T4</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;margin-top:6px">
           <span style="font-size:10px;color:#64748b;flex-shrink:0">Speed</span>
           <input type="range" id="trace-speed" min="100" max="1200" step="100" value="400" style="flex:1;min-width:0" oninput="propAnimSpeed=+this.value"/>
           <button onclick="stopTraceAnim(true)" style="font-size:10px;padding:1px 6px;border-radius:4px;border:1px solid #e2e8f0;background:#f1f5f9;cursor:pointer;color:#64748b" title="Stop">■</button>
@@ -3080,6 +3087,103 @@ function updateTraceBtns(){
     b.style.borderColor=running?TRACE_COLORS[i-1]:'';
   }
 }
+// ── TRACE → TIMELINE ──────────────────────────────────────────────────
+// A trace is already a partial order: startTraceAnim() finds the roots and
+// BFS's outward in waves. What it cannot say is WHEN, FOR HOW LONG, or HOW BIG
+// THE GAP IS — it animates at a fixed millisecond speed, so a step that took a
+// week and one that took four years look identical. The Timeline is that
+// missing dimension.
+//
+// Same root-finding and same BFS as startTraceAnim, deliberately — the thing
+// you send is the thing you watched.
+function traceWaves(traceNum){
+  var tEdges=edges.filter(function(e){return (e.traces||[]).indexOf(traceNum)>=0;});
+  if(!tEdges.length)return null;
+  var tgtSet={};tEdges.forEach(function(e){tgtSet[e.tgt]=true;});
+  var roots=[],srcSeen={};
+  tEdges.forEach(function(e){if(!tgtSet[e.src]&&!srcSeen[e.src]){roots.push(e.src);srcSeen[e.src]=true;}});
+  if(!roots.length)roots=[tEdges[0].src];
+  var depth={},visited={},order=[];
+  roots.forEach(function(id){visited[id]=true;depth[id]=0;order.push(id);});
+  var frontier=roots.slice();
+  while(frontier.length){
+    var next=[];
+    frontier.forEach(function(srcId){
+      tEdges.forEach(function(e){
+        if(e.src!==srcId)return;
+        if(!visited[e.tgt]){visited[e.tgt]=true;depth[e.tgt]=depth[srcId]+1;order.push(e.tgt);next.push(e.tgt);}
+      });
+    });
+    frontier=next;
+  }
+  return {edges:tEdges,depth:depth,order:order};
+}
+
+// Every step gets one placeholder year, laid out by wave depth. These dates are
+// NOT a finding — they are a shape to argue with. conf 0.3 and empty `who` say
+// so, and filling them in is the point: it is the step where a group discovers
+// which of its confident causal arrows nobody can actually date.
+function traceToTimelineModel(traceNum){
+  var w=traceWaves(traceNum);
+  if(!w)return null;
+  var base=new Date().getUTCFullYear();
+  var intervals=w.order.map(function(id,i){
+    var n=nodeById(id);
+    var d=w.depth[id]||0;
+    var lbl=(n&&n.label?String(n.label).replace(/\s+/g,' ').trim():id);
+    var bits=[];
+    if(n&&n.schemaLabel)bits.push('Graph node type: '+n.schemaLabel);
+    if(n&&n.note)bits.push(n.note);
+    bits.push('Placeholder duration — nobody has dated this yet. Set the real start/end, then raise the confidence.');
+    return {
+      id:id,                       // keep the graph's node id: the bridge back
+      label:lbl,
+      start:base+d, end:base+d+1,
+      startFuzz:0.25, endFuzz:0.25,
+      pinned:false,
+      color:(n&&n.color)||'#94a3b8',
+      row:i,
+      who:'',                      // deliberately empty: the DATES are unattributed
+      conf:0.3,
+      note:bits.join('\n')
+    };
+  });
+  // Every trace edge becomes `before`, never `meets`. A trace edge asserts
+  // sequence, not adjacency — `meets` would claim "no gap", which the graph
+  // never said. It also keeps a node with two predecessors from contradicting
+  // itself on arrival. Change any of them to `meets` in the Timeline once you
+  // know there is genuinely no gap.
+  var links=w.edges.map(function(e,i){
+    return {
+      id:e.id,
+      from:e.src, to:e.tgt,
+      rel:'before',
+      who:'T'+traceNum+' trace, '+modelName(),   // the ORDER is attributed
+      conf:0.8,
+      note:(e.label?'Graph edge: '+e.label+'. ':'')+'The graph asserts this order. The gap is unknown — the slack shown is a placeholder.'
+    };
+  });
+  return {
+    name:modelName()+' — T'+traceNum+' trace',
+    note:'Converted from the T'+traceNum+' trace. The ORDER comes from the graph and is attributed. '
+        +'The DATES do not — every interval is a one-year placeholder at confidence 0.3 with an empty "who". '
+        +'Replace them with what you actually know, pin the things with a document behind them, and let the rest float.',
+    intervals:intervals,links:links};
+}
+
+function sendTraceToTimeline(traceNum){
+  var m=traceToTimelineModel(traceNum);
+  if(!m){toast('No edges assigned to T'+traceNum);return;}
+  var payload=btoa(unescape(encodeURIComponent(JSON.stringify(m))));
+  if(payload.length>1500000){
+    download('t'+traceNum+'-trace-timeline.json','application/json',JSON.stringify(m,null,2));
+    toast('Too big for a link — downloaded; open it with the Timeline\'s Import button');
+    return;
+  }
+  window.open('rcn-timeline.html#tl='+payload,'_blank','noopener');
+  toast('T'+traceNum+' → Timeline: '+m.intervals.length+' intervals, '+m.links.length+' links');
+}
+
 function startTraceAnim(traceNum){
   if(activeTraceNum===traceNum){stopTraceAnim(true);return;}
   stopTraceAnim(false);

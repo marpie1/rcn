@@ -274,7 +274,26 @@ td:first-child code{font-weight:600}
   </ol>
   <p>What you get is an argument the graph cannot make. On the graph, two edges out of the same node are drawn identically. On the timeline, one of them may be welded to its cause and the other trailing it by <strong>slack 2 yr 2 mo</strong> — long enough that everyone had declared the work finished and stopped looking. A causal edge with years of slack is a fundamentally different claim from one with a week of slack, and only the timeline shows the difference.</p>
   <div class="tip">Worked example, shipped in the repo: the EIP schema's <strong>T1 trace</strong> as a graph, and the same trace as <code>t1-trace-timeline-demo.json</code>. Open both and compare.</div>
-  <p>There is no automatic converter yet — the translation is by hand. If you find yourself doing it often, that is the thing to ask for.</p>
+  <p>
+    The Graph Tool does this for you. In <strong>Trace mode</strong>, under
+    "Send trace to Timeline", press <strong>&#8987; T1</strong> (or T2–T4) and the
+    trace opens here as intervals and links.
+  </p>
+  <p>
+    What arrives is deliberately half-finished. Every interval is a
+    <strong>one-year placeholder</strong> at confidence <strong>0.3</strong> with an
+    empty <code>who</code> — because nobody has dated it yet. The
+    <em>links</em>, by contrast, carry a real <code>who</code> ("T1 trace, &lt;model&gt;")
+    and confidence 0.8, because the order genuinely is attributed: the graph
+    said so. Every link comes in as <code>before</code>, never <code>meets</code> — a
+    trace edge asserts sequence, not adjacency.
+  </p>
+  <p>
+    So your job on arrival is exactly the useful one: replace the placeholder
+    durations with what you actually know, pin the things that have a document
+    behind them, raise the confidence as you go, and change a link to
+    <code>meets</code> where you establish there is genuinely no gap.
+  </p>
 
   <h2 id="s17">17 · What's not here yet</h2>
   <p>v0 is a prototype for play. Planned next: richer historical dating ("circa 1200," decades, "unknown"); branching scenarios for what-if comparison; forecaster calibration (predictions scored as they come true); and bridges linking intervals to Graph Tool nodes and Map parcels so one temporal layer sits beneath all three tools.</p>
