@@ -289,6 +289,47 @@ Other modes (`EIP`, `NRM`, `OPM`, `SFD`, `Wardley`, `Trace`) carry their own
 node typing and semantic colour palettes. Do not hand-write colours for those —
 set the mode and let the tool assign them.
 
+## A trace is a partial order — hand it to the Timeline
+
+Trace mode tags edges with `traces: [1..4]`. `startTraceAnim()` finds the roots
+(trace-edge sources that no trace edge targets), then BFS's outward in **waves**,
+each wave lighting one step later than the last.
+
+Those waves are a partial order. They say *this, then this, then this*. What they
+cannot say is **when**, **for how long**, or **how big the gap is** — the
+animation runs at a fixed `trace-speed` in milliseconds, so a step that took a
+week and a step that took four years look identical.
+
+That is precisely what `tools/rcn-timeline.html` adds. The pairing:
+
+| | Graph Tool, Trace mode | Timeline |
+|---|---|---|
+| Answers | what causes what | when, how long, how far apart |
+| Trace edge `A → B` | one animation step | a `before` or `meets` link |
+| Wave depth | ordinal position | an actual date |
+| Uncertainty | not represented | `startFuzz`/`endFuzz`, `conf`, `who` |
+
+Translating a trace by hand:
+
+1. Each **node** on the trace path becomes an **interval**. Give it a duration —
+   this is the step where you find out whether you know one.
+2. Each **trace edge** becomes a link: `meets` if the next thing begins as this
+   one ends, `before` if there is a gap.
+3. Keep the node's display label as the interval label so the two diagrams can
+   be read side by side.
+4. Colour the intervals by the node's legend family, so the palette carries over.
+
+**The trap:** a graph node that names an ongoing *state* ("building in community
+ownership") becomes an interval with no end, and you cannot link out of it —
+see "Both relations require the intervals to be disjoint" in
+`schemas/rcn-timeline.md`. Bound it to the event that actually causes the next
+thing, or drop the link and let the dates speak.
+
+Worked example: `tools/eip-schema-cld.json` T1 → `tools/t1-trace-timeline-demo.json`.
+
+There is no automatic converter yet. If this becomes routine, that is the thing
+to build.
+
 ## Pre-flight
 
 ```

@@ -58,6 +58,19 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 
 ## Tools (`~/rcn/tools/`)
 
+**Trace → Timeline.** The Graph Tool and the Timeline are meant to be used in
+sequence, and this is expected to be the common path: **see and discuss the
+logic, then see and discuss the effects across time.** A trace in the Graph Tool
+(edges tagged `T1`–`T4`) is already a partial order — its animation says *this,
+then this*, at a fixed millisecond speed that makes a week and four years look
+identical. Carrying the same trace into the Timeline gives it dates, durations,
+gaps, and confidence. Two edges drawn identically on the graph turn out to be
+one welded to its cause and one trailing it by `slack 2 yr 2 mo`, which is a
+different claim entirely. Node → interval, trace edge → `meets`/`before` link.
+Translation is by hand today; see `schemas/graph-tool-v22.md` §"A trace is a
+partial order" and the worked pair `eip-schema-cld.json` T1 →
+`t1-trace-timeline-demo.json`.
+
 | File | Purpose | Status |
 |------|---------|--------|
 | `graph-tool-v22.html` | CLD/EIP/NRM/OPM/Trace/Wardley/Triples graph diagramming, MDL/.dot/XMILE/Cypher/Wardley JSON I/O, multi-trace edges, reifiable triples with meta-edges, canvas legend, node+edge layers, Force/Grid/Dagre/Untangle layouts (Untangle = swap-based edge-crossing reduction, cyclic-safe, one-Undo), Vester custom symbols, Print; SVG download injects `<title>` into each node/edge group so browsers show note + props on hover (no JS required); **→ Wiki** button sends enriched SVG ghost page to FedWiki lineup (node labels become clickable internal links — multi-line labels get correct space-separated titles); **legend-as-registry** — legend rows DEFINE styles and nodes/edges point at them via `node.legend`/`edge.type` with per-element `ovr` overrides, legend renders inside the SVG so it survives PNG/SVG export (it used to be an HTML div and vanished); **icon nodes** — `node.icon` draws a glyph from the `rcn-icons.js` house library, caption below, white fill + coloured border (the Vera-chart pattern); **`_`-prefixed props are display-only** — shown on hover, never exported to Cypher, following Arrows' throwaway caption; `note` is display-only too; Arrows import now puts labels in `extraLabels` instead of a junk `props._labels` string; unknown node/edge fields (e.g. `schemaLabel`, used by the Composer) survive a load/save round trip untouched | **Active** |
@@ -72,6 +85,7 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 | `neighborhood-cave-drawing.json` | Worked example of legend-as-registry + icon nodes — a resident and the two systems around them | Reference |
 | `rcn-timeline.html` | **RCN Timeline** — the temporal sibling of the Graph Tool (structure) and the Map (place). Intervals with fuzzy ends (`startFuzz`/`endFuzz` render as gradients), `pinned` anchors, `conf` and `who` on every interval *and* every link, natural-language entry ("say it"), whole model encoded in a shareable URL hash. **Import and export are separate doors** — `Import` takes a drop, a file picker, or pasted text (a `.json` dropped anywhere on the window works too) and shows a **validity report before anything loads**: red blocks the load (unparseable JSON, links pointing at ids that don't exist, duplicate ids), amber warns (unknown `rel`, missing `end`, unreadable date, or a link across an overlap that will make the solver move things); `JSON`/`SVG`/`PNG` download files. Only **two** relations — `meets` and `before` — not the 13 Allen relations; both require disjoint intervals, and `before` links are labelled with their slack. See `schemas/rcn-timeline.md` | **Active** |
 | `t1-trace-timeline-demo.json` | Timeline worked example — the EIP schema's **T1 TRACE** in time. Same causal chain the Graph Tool draws, but the side effect visibly arrives 2 yr 2 mo after the result that caused it. One pinned interval (the deed), everything else floating with fuzz and `conf` 0.45–1. Illustrative, not a record of actual events | Reference |
+| `timeline-during-broken.json` / `-fixed.json` | Teaching pair for the one trap in the Timeline: neither `meets` nor `before` can say **during**, so a link out of a long-running state pushes everything downstream past its end (2023 → 2031) and your dates vanish. `-broken` shows the damage; `-fixed` bounds the interval to the causing event. Load them back to back | Reference |
 | `rcn-timeline-intro.html` / `-manual.html` / `-intro.pptx` | Timeline — introduction, user manual, deck | Docs |
 | `nrm-tripod-beta.html` | Standalone Tripod Beta / NRM incident analysis tool — full canvas, barriers, save/load | **Active** |
 | `evsm-aggregator.html` | eVSM 11-sphere visualizer, multi-respondent synthesis, Claude API streaming (direct browser→Anthropic, user's own key); Synthesize All (sequential Claude across all spheres/edges), Full Report (standalone HTML with diagram + syntheses), Export/restore session as JSON bundle | Active |

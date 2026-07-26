@@ -120,6 +120,24 @@ list of dates: it is built for **uncertain, attributed** history, which is what
 research on a town's institutional record actually produces. Use them. A
 timeline where every `conf` is 1 and every `who` is empty is not using the tool.
 
+## Coming from a Graph Tool trace
+
+The expected upstream. A trace in `graph-tool-v22.html` (edges tagged
+`traces: [1..4]`) is already a partial order — its animation waves say *this,
+then this*, at a fixed millisecond speed that makes a week and four years look
+the same. The timeline is where that ordering gets dates, durations, gaps, and
+confidence.
+
+Node → interval, trace edge → link (`meets` for no gap, `before` for a gap),
+node label → interval label, legend family → interval colour. See
+"A trace is a partial order" in `schemas/graph-tool-v22.md` for the full
+translation and the trap that comes with it.
+
+The two diagrams are meant to be read together: the graph is the argument about
+*what causes what*, the timeline is the argument about *whether the timing
+supports it*. A causal edge whose timeline slack is measured in years is a
+different claim from one whose slack is a week, and only the timeline shows it.
+
 ## Pre-flight
 
 The **Import** button now runs these checks for you and shows a report before

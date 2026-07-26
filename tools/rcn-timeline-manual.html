@@ -262,6 +262,20 @@ td:first-child code{font-weight:600}
   <h3>Planning &amp; forecasting</h3>
   <p>Pin the fixed dates (a grant date, a report deadline). Chain the work with <code>meets</code> (must be back-to-back) and <code>before</code> (must precede, slack allowed). Drag a milestone and watch the ripple; if a slip turns a link red, you've found the thing the schedule can't absorb. Widen the end-fuzz of a forecast to show it's a guess, not a promise.</p>
 
+  <h3>From a Graph Tool trace to a timeline</h3>
+  <p>This is the pattern the two tools were built for, and it is likely to become the common one: <strong>see and discuss the logic, then see and discuss the effects across time.</strong></p>
+  <p>In the Graph Tool, <strong>Trace mode</strong> tags edges as T1–T4 and animates them outward from their roots in waves. That animation is a <em>partial order</em> — it says <em>this, then this, then this</em>. What it cannot say is <strong>when</strong>, <strong>for how long</strong>, or <strong>how big the gap is</strong>: it runs at a fixed speed in milliseconds, so a step that took a week and a step that took four years look exactly alike.</p>
+  <p>Bring the same trace here and the sequence acquires dates:</p>
+  <ol>
+    <li>Each <strong>node</strong> on the trace path becomes an <strong>interval</strong>. Giving it a duration is the step where you discover whether anyone actually knows one — that discovery is half the value.</li>
+    <li>Each <strong>trace edge</strong> becomes a link: <code>meets</code> if the next thing starts as this one ends, <code>before</code> if there is a gap.</li>
+    <li>Keep the node's label as the interval label, and colour intervals by their legend family, so the two pictures can be read side by side.</li>
+    <li>Fill in <code>who</code> and <code>conf</code> as you go. The graph has no place to record that a causal claim is contested; here it is a field.</li>
+  </ol>
+  <p>What you get is an argument the graph cannot make. On the graph, two edges out of the same node are drawn identically. On the timeline, one of them may be welded to its cause and the other trailing it by <strong>slack 2 yr 2 mo</strong> — long enough that everyone had declared the work finished and stopped looking. A causal edge with years of slack is a fundamentally different claim from one with a week of slack, and only the timeline shows the difference.</p>
+  <div class="tip">Worked example, shipped in the repo: the EIP schema's <strong>T1 trace</strong> as a graph, and the same trace as <code>t1-trace-timeline-demo.json</code>. Open both and compare.</div>
+  <p>There is no automatic converter yet — the translation is by hand. If you find yourself doing it often, that is the thing to ask for.</p>
+
   <h2 id="s17">17 · What's not here yet</h2>
   <p>v0 is a prototype for play. Planned next: richer historical dating ("circa 1200," decades, "unknown"); branching scenarios for what-if comparison; forecaster calibration (predictions scored as they come true); and bridges linking intervals to Graph Tool nodes and Map parcels so one temporal layer sits beneath all three tools.</p>
 
