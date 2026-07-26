@@ -1,0 +1,58 @@
+{
+  "version": "1.0",
+  "modelName": "A Resident and the Two Systems Around Them",
+  "modelNote": "Demonstration of legend-as-registry: every node and edge points at a legend row (node.type / edge.type) and takes its look from it. Change a row and every follower changes. Icons come from the RCN house library (tools/rcn-icons.js). Built 2026-07-25 as the test case for icon nodes + SVG legend.",
+  "canvasBg": "#ffffff",
+  "legendVisible": true,
+  "legendEntries": [
+    { "id": "lg_person", "kind": "node", "label": "Resident",
+      "icon": "rcn_person", "color": "#ffffff", "borderColor": "#1e293b", "borderWidth": 3 },
+    { "id": "lg_support", "kind": "node", "label": "Supportive commons",
+      "icon": "", "color": "#ffffff", "borderColor": "#16a34a", "borderWidth": 3 },
+    { "id": "lg_harm", "kind": "node", "label": "Coercive machinery",
+      "icon": "", "color": "#ffffff", "borderColor": "#dc2626", "borderWidth": 3 },
+    { "id": "lg_e_support", "kind": "edge", "label": "holds them up",
+      "color": "#16a34a", "width": 2, "dash": "solid" },
+    { "id": "lg_e_harm", "kind": "edge", "label": "acts on them",
+      "color": "#dc2626", "width": 3.5, "dash": "dashed" }
+  ],
+  "nodes": [
+    { "id": "resident", "type": "lg_person", "label": "RESIDENT",
+      "x": 450, "y": 300, "w": 78, "h": 78, "shape": "rect", "fontSize": 10 },
+
+    { "id": "housing", "type": "lg_support", "ovr": { "icon": "rcn_dwelling" }, "label": "HOUSING",
+      "x": 165, "y": 145, "w": 72, "h": 72, "shape": "rect", "fontSize": 10 },
+    { "id": "jobs", "type": "lg_support", "ovr": { "icon": "rcn_work" }, "label": "JOBS",
+      "x": 130, "y": 305, "w": 72, "h": 72, "shape": "rect", "fontSize": 10 },
+    { "id": "clinic", "type": "lg_support", "ovr": { "icon": "rcn_clinic" }, "label": "CLINIC",
+      "x": 175, "y": 465, "w": 72, "h": 72, "shape": "rect", "fontSize": 10 },
+    { "id": "network", "type": "lg_support", "ovr": { "icon": "rcn_support_network" }, "label": "SUPPORT NETWORK",
+      "x": 355, "y": 545, "w": 72, "h": 72, "shape": "rect", "fontSize": 10 },
+    { "id": "garden", "type": "lg_support", "ovr": { "icon": "rcn_garden" }, "label": "FOOD",
+      "x": 300, "y": 120, "w": 72, "h": 72, "shape": "rect", "fontSize": 10 },
+
+    { "id": "fines", "type": "lg_harm", "ovr": { "icon": "rcn_money" }, "label": "BAIL & FINES",
+      "x": 700, "y": 165, "w": 72, "h": 72, "shape": "rect", "fontSize": 10 },
+    { "id": "jail", "type": "lg_harm", "ovr": { "icon": "rcn_incarceration" }, "label": "JAIL",
+      "x": 790, "y": 330, "w": 72, "h": 72, "shape": "rect", "fontSize": 10 },
+    { "id": "trauma", "type": "lg_harm", "ovr": { "icon": "rcn_trauma" }, "label": "TRAUMA & ACEs",
+      "x": 655, "y": 490, "w": 72, "h": 72, "shape": "rect", "fontSize": 10 },
+    { "id": "displaced", "type": "lg_harm", "ovr": { "icon": "rcn_displacement" }, "label": "DISPLACEMENT",
+      "x": 470, "y": 105, "w": 72, "h": 72, "shape": "rect", "fontSize": 10 }
+  ],
+  "edges": [
+    { "id": "s1", "type": "lg_e_support", "src": "housing",  "tgt": "resident", "label": "", "polarity": "none", "curved": true },
+    { "id": "s2", "type": "lg_e_support", "src": "jobs",     "tgt": "resident", "label": "", "polarity": "none", "curved": true },
+    { "id": "s3", "type": "lg_e_support", "src": "clinic",   "tgt": "resident", "label": "", "polarity": "none", "curved": true },
+    { "id": "s4", "type": "lg_e_support", "src": "network",  "tgt": "resident", "label": "", "polarity": "none", "curved": true },
+    { "id": "s5", "type": "lg_e_support", "src": "garden",   "tgt": "resident", "label": "", "polarity": "none", "curved": true },
+
+    { "id": "h1", "type": "lg_e_harm", "src": "fines",  "tgt": "resident", "label": "", "polarity": "none", "curved": true },
+    { "id": "h2", "type": "lg_e_harm", "src": "fines",  "tgt": "jail",     "label": "unpaid", "polarity": "none", "curved": true },
+    { "id": "h3", "type": "lg_e_harm", "src": "jail",   "tgt": "trauma",   "label": "", "polarity": "none", "curved": true },
+    { "id": "h4", "type": "lg_e_harm", "src": "trauma", "tgt": "resident", "label": "", "polarity": "none", "curved": true },
+    { "id": "h5", "type": "lg_e_harm", "src": "jail",   "tgt": "displaced","label": "job & home lost", "polarity": "none", "curved": true },
+    { "id": "h6", "type": "lg_e_harm", "src": "displaced","tgt": "housing","label": "", "polarity": "none", "curved": true }
+  ],
+  "lines": []
+}

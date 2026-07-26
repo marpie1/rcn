@@ -1,6 +1,7 @@
 # Graph Tool v22 — native JSON schema
 
-Verified against `tools/graph-tool-v22.html` at commit `5d1c70c`, 2026-07-25.
+Verified against `tools/graph-tool-v22.html`, 2026-07-25 (post legend-as-registry
+and icon-node work; earlier baseline was commit `5d1c70c`).
 Derived from `loadGraphJSON()` (import), `buildState()` (export), `makeNode()`
 (defaults), and `shapeHTML()` (rendering).
 
@@ -75,6 +76,72 @@ fails silently and looks deliberate.
 Note the naming trap: graph edges use **`src`/`tgt`**, but timeline links use
 **`from`/`to`**. They are different tools; do not carry the habit across.
 
+## The legend IS the registry (icons, node kinds, relationship kinds)
+
+A legend row defines a style. Nodes and edges point at a row via `type` and take
+their look from it. Change the row, every follower changes. This is the primary
+way to style an RCN drawing — do not hand-set colours on 26 nodes.
+
+```json
+"legendVisible": true,
+"legendEntries": [
+  { "id": "lg_support", "kind": "node", "label": "Supportive commons",
+    "icon": "rcn_dwelling", "color": "#ffffff",
+    "borderColor": "#16a34a", "borderWidth": 3 },
+  { "id": "lg_harm", "kind": "edge", "label": "acts on them",
+    "color": "#dc2626", "width": 3.5, "dash": "dashed" }
+],
+"nodes": [
+  { "id": "housing", "type": "lg_support", "ovr": {"icon":"rcn_dwelling"},
+    "label": "HOUSING", "x":165, "y":145, "w":72, "h":72, "shape":"rect" }
+],
+"edges": [
+  { "id": "h1", "type": "lg_harm", "src":"fines", "tgt":"housing" }
+]
+```
+
+| Row field | Applies to | Notes |
+|---|---|---|
+| `id` | both | **Required.** What `type` points at. |
+| `kind` | both | `node` or `edge`. Missing = `node` (legacy rows). |
+| `label` | both | The word people say out loud when pointing. |
+| `icon` | node rows | Key from the house library. See below. |
+| `color` | both | Node rows: **fill**. Edge rows: **stroke**. |
+| `borderColor`, `borderWidth` | node rows | |
+| `width`, `dash` | edge rows | `dash` is `solid`\|`dashed`\|`dotted`. |
+
+**Resolution order** is `element.ovr[field]` → `legendRow[field]` → `element[field]`.
+So an element with no `type` behaves exactly as it always did — this is fully
+backwards compatible.
+
+**`ovr` is the override bag.** Put a field there to diverge from the row for one
+element (e.g. every node follows `lg_support` but each carries its own `icon`).
+Editing a styled property of a typed element in the UI writes to `ovr`
+automatically; "Clear overrides" in the legend panel empties it.
+
+The legend renders **inside the SVG** (`#legend-layer`, not pan/zoom transformed),
+so it survives PNG and SVG export. Before July 2026 it was an HTML div and
+silently vanished from every export.
+
+Budget: the panel warns above 8 rows and reports how many elements follow no row.
+A drawing a group can read has roughly 6–8 kinds in it.
+
+## Icons — `tools/rcn-icons.js`
+
+`node.icon` (or the row's `icon`) takes a key from the RCN house icon library, a
+**sidecar file loaded next to the tool**. If it is missing the tool degrades to
+shapes-only; nothing breaks.
+
+Icon nodes render the glyph centred, tinted with the border colour, and move the
+caption **below** the box. The intended look is the Vera chart: one shape
+(`rect`), white fill, meaning in the picture, a two-colour border code. Give icon
+nodes a squarish `w`/`h` (72×72 works) and a short ALL-CAPS label.
+
+49 starter icons across People, Place, Institution, Resource, Care, Harm,
+Process, System. Browse them in `tools/rcn-icon-sheet.html`. Prefer an icon over
+inventing a new shape — see `tools/neighborhood-cave-drawing.json` for a worked
+example.
+
 ## `props` — where your own data goes
 
 `props` is a flat `{string: string}` map on any node or edge. It is the only
@@ -107,6 +174,8 @@ claim in `props.basis`.
 version  modelName  modelNote  canvasBg  graphAttrs  cldLoopNames
 legendEntries  legendVisible  customSymbols  nodes  edges  lines  metaEdges
 ```
+
+(`legendEntries` now carries the registry — see "The legend IS the registry".)
 
 **Any other top-level key is silently discarded on export.** Unknown *node* and
 *edge* fields survive; unknown *top-level* keys do not. This asymmetry is the
