@@ -166,7 +166,11 @@
     transition: background 0.1s;
   }
   .beam-item:hover { background: var(--bg3); }
-  .beam-item.highlighted label { color: var(--accent); }
+  /* Two orthogonal channels in the beam, so they never mean the same thing:
+       TEXT COLOUR  = matches your search
+       BACKGROUND + LEFT STRIPE + badge = shares nodes with your selection
+     A row can be both, and stays readable: blue text on a tan stripe. */
+  .beam-item.highlighted label { color: var(--info); font-weight: 600; }
 
   /* Shared-node highlighting. Intensity grows with how many of the CURRENT
      selection a subgraph overlaps, so overlap accumulates visibly as you
@@ -174,9 +178,8 @@
   .beam-item.share-1 { background: #faf4e6; box-shadow: inset 3px 0 0 #d9c48e; }
   .beam-item.share-2 { background: #f6ecd2; box-shadow: inset 3px 0 0 #bfa055; }
   .beam-item.share-3 { background: #f1e3bb; box-shadow: inset 3px 0 0 var(--accent); }
-  .beam-item.share-1 label { color: #7a6636; }
-  .beam-item.share-2 label,
-  .beam-item.share-3 label { color: var(--accent); font-weight: 600; }
+  /* deliberately no label colour or weight here — that channel belongs to
+     search. Overlap speaks through background, stripe and badge only. */
   .share-badge {
     font-family: var(--mono);
     font-size: 9px;
@@ -530,6 +533,17 @@
         <option value="twopi">twopi (radial)</option>
         <option value="sfdp">sfdp (large graph)</option>
       </select>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="ctrl-label">Beam colors</div>
+      <div style="font-size:9px;font-family:var(--mono);color:var(--text3);line-height:1.8;">
+        <div><span style="display:inline-block;width:9px;height:9px;background:#faf4e6;box-shadow:inset 2px 0 0 #d9c48e;vertical-align:-1px"></span> &#9679; shares nodes with 1 selected</div>
+        <div><span style="display:inline-block;width:9px;height:9px;background:#f6ecd2;box-shadow:inset 2px 0 0 #bfa055;vertical-align:-1px"></span> &#9679;&#9679; &hellip; with 2</div>
+        <div><span style="display:inline-block;width:9px;height:9px;background:#f1e3bb;box-shadow:inset 2px 0 0 #8a6a2e;vertical-align:-1px"></span> &#9679;&#9679;&#9679; &hellip; with 3 or more</div>
+        <div><span style="color:var(--info);font-weight:600">blue text</span> = matches search</div>
+        <div style="opacity:.75">hover a badge to see which nodes</div>
+      </div>
     </div>
 
     <div class="ctrl-section">
