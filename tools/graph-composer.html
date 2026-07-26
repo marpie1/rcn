@@ -167,6 +167,24 @@
   }
   .beam-item:hover { background: var(--bg3); }
   .beam-item.highlighted label { color: var(--accent); }
+
+  /* Shared-node highlighting. Intensity grows with how many of the CURRENT
+     selection a subgraph overlaps, so overlap accumulates visibly as you
+     check more boxes. Left stripe + warmth, so it reads at a glance. */
+  .beam-item.share-1 { background: #faf4e6; box-shadow: inset 3px 0 0 #d9c48e; }
+  .beam-item.share-2 { background: #f6ecd2; box-shadow: inset 3px 0 0 #bfa055; }
+  .beam-item.share-3 { background: #f1e3bb; box-shadow: inset 3px 0 0 var(--accent); }
+  .beam-item.share-1 label { color: #7a6636; }
+  .beam-item.share-2 label,
+  .beam-item.share-3 label { color: var(--accent); font-weight: 600; }
+  .share-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--accent);
+    flex-shrink: 0;
+    min-width: 16px;
+    text-align: right;
+  }
   .beam-item input[type=checkbox] {
     appearance: none;
     width: 12px;
@@ -694,16 +712,19 @@ function refreshBeam() {
       <div class="beam-item${matchesSearch ? ' highlighted' : ''}" data-index="${i}">
         <input type="checkbox" id="bc${i}" value="${i}" ${isChecked ? 'checked' : ''} onchange="onBeamCheck(${i}, this.checked)">
         <label for="bc${i}" title="${b.name}">${b.name}</label>
+        <span class="share-badge"></span>
         <span class="node-count">${nc}n/${rc}e</span>
         <button class="del-btn" onclick="event.stopPropagation();removeFromBeam(${i})" title="Remove">×</button>
       </div>`
   })
   list.innerHTML = html
+  sharedHighlight()
 }
 
 function onBeamCheck(i, isChecked) {
   if (isChecked) { checked.add(i) } else { checked.delete(i) }
   if (bridgeMode) { doBridge() } else { doComposite() }
+  sharedHighlight()
 }
 
 function checkedItems() {
@@ -825,6 +846,56 @@ function partitions(graph) {
 // ═══════════════════════════════════════════════════════
 // Bridge (highlight beam items bridging selection)
 // ═══════════════════════════════════════════════════════
+
+// ── Shared-node highlighting ─────────────────────────────────────────────
+// As subgraphs are selected, every OTHER subgraph that shares a node with any
+// of them lights up, and the more of the selection it touches the stronger it
+// glows — so overlap accumulates as you check more boxes.
+//
+// The key is the MERGE key (schemaLabel + instance name), so a highlight is a
+// promise: compositing that subgraph really will fuse those nodes rather than
+// add them alongside.
+//
+// bridge() is the stricter sibling — it wants a subgraph touching TWO or more
+// selected ones, i.e. something that would close a loop between them.
+function nodeKeys(graph) {
+  const s = new Set()
+  for (const n of graph.nodes) s.add(`${n.type}:${n.props?.name || ''}`)
+  return s
+}
+
+function sharedHighlight() {
+  const items = document.querySelectorAll('#beam-list .beam-item')
+  if (!items.length) return
+  const keysets = beam.map(b => nodeKeys(b.graph))
+  const sel = [...checked].filter(i => i >= 0 && i < beam.length)
+
+  items.forEach(item => {
+    const idx = +item.dataset.index
+    const badge = item.querySelector('.share-badge')
+    item.classList.remove('share-1', 'share-2', 'share-3')
+    if (badge) { badge.textContent = ''; badge.title = '' }
+    if (!sel.length || checked.has(idx) || !keysets[idx]) return
+
+    const mine = keysets[idx]
+    let hits = 0                 // how many selected subgraphs it touches
+    const shared = new Set()     // which nodes are shared, across all of them
+    for (const si of sel) {
+      let touched = false
+      for (const k of keysets[si]) if (mine.has(k)) { shared.add(k); touched = true }
+      if (touched) hits++
+    }
+    if (!hits) return
+
+    item.classList.add(hits >= 3 ? 'share-3' : hits === 2 ? 'share-2' : 'share-1')
+    if (badge) {
+      badge.textContent = '\u25cf'.repeat(Math.min(hits, 3))
+      badge.title = `shares ${shared.size} node${shared.size === 1 ? '' : 's'} `
+                  + `with ${hits} selected subgraph${hits === 1 ? '' : 's'}: `
+                  + [...shared].map(k => k.replace(/:$/, '')).sort().join(', ')
+    }
+  })
+}
 
 function bridge(selected) {
   const hash = n => `${n.type}:${n.props?.name || ''}`
