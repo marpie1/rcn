@@ -488,11 +488,18 @@ function landingShowError(msg) {
 if (!issueKey) {
   showLanding();
 } else {
-  fetch(`http://127.0.0.1:8000/issue-data/${issueKey}`)
+  // Same-origin and relative: sofi-proxy serves this file and issue-data/ as
+  // siblings under /tools/, and so does any plain static host or file:// copy.
+  // Was hardcoded to http://127.0.0.1:8000/issue-data/<key> — wrong port (the
+  // proxy is on 8765), wrong path (no /tools/), and no .json, so ?issue= never
+  // loaded and always fell through to the landing page. ?data= overrides the
+  // base for a deployed map pointing at a published issue folder.
+  const ISSUE_DATA_BASE = params.get('data') || 'issue-data/';
+  fetch(`${ISSUE_DATA_BASE}${encodeURIComponent(issueKey)}.json`)
     .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(data => { showMap(); initMap(data); })
     .catch(err => {
-      showLanding(`Could not load "${issueKey}" from API: ${err}. You can open the JSON file directly below.`);
+      showLanding(`Could not load "${issueKey}" from ${ISSUE_DATA_BASE}: ${err}. You can open the JSON file directly below.`);
     });
 }
 
