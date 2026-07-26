@@ -166,23 +166,43 @@ claim in `props.basis`.
   "props": { "basis": "LLA audit report FY23, p.4" } }
 ```
 
-## Known gap: display text vs. Neo4j properties
+## Display-only data: the `_` prefix
 
-There is currently **no channel for display-only text.** `exportCypher()` turns
-both `props` *and* `note` into Neo4j properties:
+Precedent: Neo4j's own Arrows tool gives a node a `caption` that displays
+preferentially and does **not** import into Cypher. This tool generalises that:
+
+> **A `props` key beginning with `_` is display-only.** It shows on hover, it is
+> searchable, it is editable in the Properties panel — and it never reaches Neo4j.
+
+```json
+{ "id": "housing", "label": "HOUSING", "extraLabels": ["Dwelling"],
+  "props": {
+    "units": "42",
+    "_why": "rent burden is the pressure point here",
+    "_source": "2026 resident survey"
+  } }
+```
+
+`units` is data and becomes a Neo4j property. `_why` and `_source` are glosses
+for whoever is reading the drawing and stay on the drawing. That exports as:
 
 ```
-CREATE (n0:PROBLEM:Problem {severity: "?", note: "hover text lands here too"} )
+CREATE (n0:HOUSING:Dwelling {units: "42"} )
 ```
 
-So anything written for a human reading the diagram — hover copy, a gloss, a
-"what this means" line — pollutes the graph database if put in `note`, and
-equally if put in `props`.
+Works on edges too.
 
-Until that is resolved, keep `props` to real data that belongs in Neo4j, and
-treat `note` as data too. If richer on-hover content is added later it needs its
-own home — a reserved key prefix excluded from the Cypher exporter, or a
-separate display block — decided **before** authoring files that depend on it.
+`note` is display-only for the same reason — a pin is an annotation for a
+reader, not a property of the thing. It no longer exports as a Cypher property.
+(It did until July 2026.)
+
+Display-only entries render italic and slightly dimmed in the hover tooltip, so
+gloss is visually distinct from data.
+
+**Arrows import:** an Arrows node's `labels` now land in `extraLabels`, where
+they belong. They previously became a joined string in `props._labels`, so an
+Arrows to Cypher round trip lost the labels *as labels* and emitted a junk
+property in their place.
 
 ## Top-level keys
 
