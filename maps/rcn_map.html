@@ -1030,6 +1030,56 @@ function assignPolygonNDC(i, ndcName) {
   refreshPolyViews();
 }
 
+// ── Custom location pins: rename / recolour ────────────────────────────
+// Which custom location (index) is open in its inline editor, or null.
+let editingLocIndex = null;
+
+// One legend row for a custom pin: normal (✎ Edit · ×), or its inline editor.
+function userLocLegendItem(loc, i) {
+  if (i === editingLocIndex) return userLocEditorHTML(loc, i);
+  return `<div class="legend-item" data-id="loc:${i}" onclick="highlightById('loc:${i}',event)">` +
+    `<div class="legend-swatch circle" style="background:${loc.color || '#0ea5e9'}"></div>${loc.name} ` +
+    `<span class="legend-loc-badge">+</span>` +
+    `<span class="legend-edit" title="Rename or recolour this pin (use the map popup's 'Correct location' to move it)" ` +
+    `onclick="event.stopPropagation();editUserLocation(${i})">✎ Edit</span>` +
+    `<span class="legend-remove" title="Remove" onclick="event.stopPropagation();removeUserLocation(${i})">×</span></div>`;
+}
+
+function userLocEditorHTML(loc, i) {
+  const color = loc.color || '#0ea5e9';
+  return `<div class="poly-editor" onclick="event.stopPropagation()" ` +
+    `style="border:1px solid #cbd5e1;border-radius:6px;padding:7px;margin:2px 0 6px">` +
+    `<div class="poly-form-row" style="margin:0 0 4px"><label>Name</label>` +
+      `<input id="el-name-${i}" class="poly-form-input" type="text" value="${(loc.name||'').replace(/"/g,'&quot;')}"></div>` +
+    `<div class="poly-form-row" style="margin:0 0 6px"><label>Colour</label>` +
+      `<input id="el-color-${i}" class="poly-form-input" type="color" value="${color}" style="padding:1px;height:24px"></div>` +
+    `<div style="font-size:10px;color:#94a3b8;margin-bottom:6px">To move the pin, use “📍 Correct location” in its map popup.</div>` +
+    `<div style="display:flex;gap:6px">` +
+      `<button class="poly-btn" style="flex:1" onclick="saveEditLocation(${i})">Save</button>` +
+      `<button class="poly-btn secondary" style="flex:1" onclick="cancelEditLocation()">Cancel</button>` +
+    `</div></div>`;
+}
+
+function refreshLocViews() {
+  renderUserLocations();
+  renderAdditions();
+}
+
+function editUserLocation(i)  { editingLocIndex = i;    refreshLocViews(); }
+function cancelEditLocation() { editingLocIndex = null; refreshLocViews(); }
+
+function saveEditLocation(i) {
+  const locs = loadUserLocations();
+  if (!locs[i]) { editingLocIndex = null; refreshLocViews(); return; }
+  const name  = document.getElementById('el-name-' + i).value.trim();
+  const color = document.getElementById('el-color-' + i).value;
+  locs[i].name  = name || locs[i].name;
+  locs[i].color = color;
+  saveUserLocations(locs);
+  editingLocIndex = null;
+  refreshLocViews();
+}
+
 // "My additions & layers": everything you (or federation) added — shown ONCE
 // in its own collapsible section, never repeated under each NDC. Polygons
 // assigned to an NDC live inside that NDC instead, not here.
@@ -1049,12 +1099,7 @@ function renderAdditions() {
   const userLocs = loadUserLocations();
   if (userLocs.length) {
     html += `<div class="legend-group-header">Custom locations</div>`;
-    userLocs.forEach((loc, i) => {
-      html += `<div class="legend-item" data-id="loc:${i}" onclick="highlightById('loc:${i}',event)">` +
-        `<div class="legend-swatch circle" style="background:${loc.color || '#0ea5e9'}"></div>${loc.name} ` +
-        `<span class="legend-loc-badge">+</span>` +
-        `<span class="legend-remove" title="Remove" onclick="event.stopPropagation();removeUserLocation(${i})">×</span></div>`;
-    });
+    userLocs.forEach((loc, i) => { html += userLocLegendItem(loc, i); });
   }
 
   html += buildFederatedLegendHTML();
