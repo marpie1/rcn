@@ -661,19 +661,25 @@ class Graph {
         // Identity is the SCHEMA LABEL, not the display label. A drawing may
         // call a node anything that reads well; what it IS lives in schemaLabel.
         const type = n.schemaLabel || n.label || n.type || 'Node'
+        // `_composerFill` marks a fill/border this tool synthesised on export to
+        // show merge state. It described that composite, not this node — take it
+        // back in and a node keeps its gold in a composite where it no longer
+        // merges. Drop it and let the colour be decided fresh.
+        const synth = !!(n.props && n.props._composerFill)
         const visual = {
           shape: n.shape,
-          color: n.color,
           fontColor: n.fontColor,
-          borderColor: n.borderColor,
-          borderWidth: n.borderWidth
+          borderColor: n.borderColor
         }
+        if (!synth) { visual.color = n.color; visual.borderWidth = n.borderWidth }
         // "?", "" and absent all mean UNNAMED — "the type itself". Falling back
         // to the label here is what once split five entities into ten.
         const _schemaLabel = n.schemaLabel || ''
         const raw = n.props?.name
         const name = (raw === undefined || raw === null || raw === '' || raw === '?') ? '' : String(raw)
-        nmap[id] = g.addNode(type, { ...(n.props || {}), ...visual, name, _schemaLabel })
+        const inProps = { ...(n.props || {}) }
+        delete inProps._composerFill
+        nmap[id] = g.addNode(type, { ...inProps, ...visual, name, _schemaLabel })
       })
       const links = obj.edges || obj.rels
       links.forEach(e => {
@@ -1483,10 +1489,17 @@ function toGraphToolState(complex) {
     const shape = p.shape || 'rounded'
     // Same rule dotify uses, so the drawing carries its meaning across:
     // gold = this node arrived from more than one subgraph.
-    const color = p.color || (mergedSet.has(i) ? '#f5c842' : '#b8e0b8')
+    // But merge colour is a fact about THIS composite, not about the node. If
+    // we bake it in and the file comes back, it would read as an authored
+    // colour and the node would stay gold in a composite where it no longer
+    // merges. Flag it so the loader knows to drop it. `_` prefix = display-only
+    // by the house convention, so the Graph Tool won't export it to Cypher.
+    const synthFill = p.color === undefined || p.color === ''
+    const color = synthFill ? (mergedSet.has(i) ? '#f5c842' : '#b8e0b8') : p.color
     const fontColor = p.fontColor || '#000000'
     const borderColor = p.borderColor || '#000000'
-    const borderWidth = p.borderWidth != null ? p.borderWidth : (mergedSet.has(i) ? 2 : 1.5)
+    const synthBorder = p.borderWidth == null
+    const borderWidth = synthBorder ? (mergedSet.has(i) ? 2 : 1.5) : p.borderWidth
 
     const schemaLabel = p._schemaLabel || n.type || ''
     const name = p.name || ''
@@ -1496,6 +1509,7 @@ function toGraphToolState(complex) {
 
     VISUAL_KEYS.forEach(k => delete p[k])
     delete p._schemaLabel
+    if (synthFill || synthBorder) p._composerFill = '1'
 
     return {
       id: 'n' + i,
