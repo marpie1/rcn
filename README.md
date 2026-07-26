@@ -60,7 +60,7 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 
 | File | Purpose | Status |
 |------|---------|--------|
-| `graph-tool-v22.html` | CLD/EIP/NRM/OPM/Trace/Wardley/Triples graph diagramming, MDL/.dot/XMILE/Cypher/Wardley JSON I/O, multi-trace edges, reifiable triples with meta-edges, canvas legend, node+edge layers, Force/Grid/Dagre/Untangle layouts (Untangle = swap-based edge-crossing reduction, cyclic-safe, one-Undo), Vester custom symbols, Print; SVG download injects `<title>` into each node/edge group so browsers show note + props on hover (no JS required); **→ Wiki** button sends enriched SVG ghost page to FedWiki lineup (node labels become clickable internal links — multi-line labels get correct space-separated titles); **legend-as-registry** — legend rows DEFINE styles and nodes/edges point at them via `node.legend`/`edge.type` with per-element `ovr` overrides, legend renders inside the SVG so it survives PNG/SVG export (it used to be an HTML div and vanished); **icon nodes** — `node.icon` draws a glyph from the `rcn-icons.js` house library, caption below, white fill + coloured border (the Vera-chart pattern); **`_`-prefixed props are display-only** — shown on hover, never exported to Cypher, following Arrows' throwaway caption; `note` is display-only too; Arrows import now puts labels in `extraLabels` instead of a junk `props._labels` string; `schemaLabel` names what a node IS for composition | **Active** |
+| `graph-tool-v22.html` | CLD/EIP/NRM/OPM/Trace/Wardley/Triples graph diagramming, MDL/.dot/XMILE/Cypher/Wardley JSON I/O, multi-trace edges, reifiable triples with meta-edges, canvas legend, node+edge layers, Force/Grid/Dagre/Untangle layouts (Untangle = swap-based edge-crossing reduction, cyclic-safe, one-Undo), Vester custom symbols, Print; SVG download injects `<title>` into each node/edge group so browsers show note + props on hover (no JS required); **→ Wiki** button sends enriched SVG ghost page to FedWiki lineup (node labels become clickable internal links — multi-line labels get correct space-separated titles); **legend-as-registry** — legend rows DEFINE styles and nodes/edges point at them via `node.legend`/`edge.type` with per-element `ovr` overrides, legend renders inside the SVG so it survives PNG/SVG export (it used to be an HTML div and vanished); **icon nodes** — `node.icon` draws a glyph from the `rcn-icons.js` house library, caption below, white fill + coloured border (the Vera-chart pattern); **`_`-prefixed props are display-only** — shown on hover, never exported to Cypher, following Arrows' throwaway caption; `note` is display-only too; Arrows import now puts labels in `extraLabels` instead of a junk `props._labels` string; unknown node/edge fields (e.g. `schemaLabel`, used by the Composer) survive a load/save round trip untouched | **Active** |
 | `graph-composer.html` | **RCN Graph Composer** — assembles many small subgraphs into one graph, merging nodes that appear in more than one. Beam (checkbox list of loaded subgraphs), Composite, Bridge (which unselected piece would *connect* two selected), Partition (split into connected components), graded shared-node highlighting that accumulates as you tick, Graphviz render with gold = merged, export composite JSON / DOT. Merge key is `schemaLabel` + `props.name`; `"?"`/`""`/absent all mean UNNAMED. Reimplements Ward Cunningham's Solo Super Collaborator — see `schemas/ward-graph.md` | **Active** |
 | `graph-composer-intro.html` | Graph Composer — Introduction & positioning | Docs |
 | `graph-composer-manual.html` | Graph Composer — User Manual | Docs |
@@ -670,7 +670,7 @@ Pi is the long-term neighborhood distribution target.
 
 **Known apps not yet fully in repo** (some built in Claude.ai Chat, not Claude Code):
 - All tools in `rcn/tools/` are here
-- `graph-tool-v22UPDATE.html` on Desktop — not yet merged
+- ~~`graph-tool-v22UPDATE.html` on Desktop~~ — **nothing to merge.** Despite the name it is titled "Graph Diagramming Tool **v20**", 1,228 lines against the repo's 5,596, with zero function or `const` definitions the repo lacks and none of Wardley/OPM/SFD/Trace/NRM/triples/Untangle/Dagre/legend/icons. Strictly a subset — safe to archive (verified 2026-07-25)
 - Unknown number of Chat-built apps not yet inventoried
 - `~/sensimod/` — React/Vite app, kept separate
 
@@ -701,7 +701,7 @@ In Claude Chat, produce for every app built there:
 4. Latest version location
 
 Bring that list to Claude Code. Then:
-- [ ] Merge `graph-tool-v22UPDATE.html` from Desktop into repo
+- [x] ~~Merge `graph-tool-v22UPDATE.html` from Desktop~~ — checked 2026-07-25, it is an older v20 and a strict subset. Nothing to merge; archive or delete it
 - [ ] Consolidate `rcn_api.py` from Desktop into `rcn/api/`
 - [ ] All Chat-built tools into `rcn/tools/`
 - [ ] Audit evsm-proxy.py — port, what it accepts, key handling
