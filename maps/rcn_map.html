@@ -1408,9 +1408,12 @@ function injectExtraNDCs() {
 // FedWiki asset folders can't hold sub-folders, so the deployed default is a flat
 // file next to rcn_map.html (its per-issue "url" fields then point at flat files
 // or full URLs you host). To add an issue: add one entry to that index — no HTML edit.
+// The dev path is root-relative, not http://localhost:8765/... — sofi-proxy
+// serves this map, tools/ and /api from one origin, so a leading "/" is
+// same-origin (no CORS) and survives the proxy moving to another port.
 const ISSUE_INDEX_URL = new URLSearchParams(location.search).get('issues') || (
   /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
-    ? 'http://localhost:8765/tools/issue-data/issue-index.json'
+    ? '/tools/issue-data/issue-index.json'
     : 'issue-index.json'
 );
 let ISSUE_INDEX = [];
@@ -1528,7 +1531,7 @@ function importIssueData(key, label, ndc, data, persist) {
     const onLocalhost = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
     if (onLocalhost) {
       // Best-effort persist to disk; the in-memory copy already displays it.
-      fetch('http://localhost:8765/api/write-issue', {
+      fetch('/api/write-issue', {   // same origin as the proxy serving this map
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ key, label, ndc, issueData: data })
