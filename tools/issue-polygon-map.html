@@ -952,6 +952,10 @@ function startAddParcel() {
 let drawingPolygon = false, drawnPoints = [], drawnPolyline = null, drawnPolygonLayer = null;
 let drawnVertexMarkers = [];
 let drawnPolygonName = 'Custom Issue Polygon';
+// Shape editing: the polygon layer is the source of truth for the ring;
+// drawnPoints is kept in step with it so export/delete/undo keep working.
+let editingShape = false, editHandles = [], editMidHandles = [];
+let drawnPolygonSubtitle = 'Custom-drawn boundary. Export GeoJSON to save.';
 
 // Popup HTML for the drawn polygon, including its current name + a rename control.
 function drawnPolygonPopup(subtitle) {
@@ -960,6 +964,8 @@ function drawnPolygonPopup(subtitle) {
   return '<div class="popup-title">' + esc + '</div>' +
     '<div style="font-size:11px;color:#6b7394;margin-bottom:8px">' + subtitle + '</div>' +
     '<button onclick="renamePolygon()" style="width:100%;padding:4px;margin-bottom:5px;background:rgba(40,120,180,0.08);border:1px solid #2c6fa3;color:#2c6fa3;font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">✎ Rename</button>' +
+    '<button onclick="toggleShapeEdit()" style="width:100%;padding:4px;margin-bottom:5px;background:rgba(40,120,180,0.08);border:1px solid #2c6fa3;color:#2c6fa3;font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">' +
+      (editingShape ? '✓ Done editing shape' : '✎ Edit shape') + '</button>' +
     '<button onclick="deletePolygon(\'drawn\')" style="width:100%;padding:4px;background:rgba(180,40,40,0.08);border:1px solid #c0392b;color:#c0392b;font-size:10px;cursor:pointer;font-family:monospace;letter-spacing:0.05em">✕ Delete polygon</button>';
 }
 
@@ -968,9 +974,158 @@ function renamePolygon() {
   const next = prompt('Name this polygon:', drawnPolygonName);
   if (next === null) return;
   drawnPolygonName = next.trim() || 'Custom Issue Polygon';
-  drawnPolygonLayer.setPopupContent(drawnPolygonPopup('Custom-drawn boundary. Export GeoJSON to save.'));
+  drawnPolygonLayer.setPopupContent(drawnPolygonPopup(drawnPolygonSubtitle));
   map.closePopup();
   drawnPolygonLayer.openPopup();
+}
+
+// ── EDIT POLYGON SHAPE ───────────────────────────────────────
+// Drag a corner to move it, click a hollow dot to add one, right-click a
+// corner to remove it. Without this the only way to fix a bad corner was to
+// delete the polygon and draw it again from scratch.
+
+function refreshDrawnPopup() {
+  if (drawnPolygonLayer) drawnPolygonLayer.setPopupContent(drawnPolygonPopup(drawnPolygonSubtitle));
+}
+
+// Keep drawnPoints in step with the layer — deletePolygon's undo and any later
+// code that reads drawnPoints depend on it.
+function syncDrawnPointsFromLayer() {
+  if (!drawnPolygonLayer) return;
+  drawnPoints = drawnPolygonLayer.getLatLngs()[0].map(ll => [ll.lat, ll.lng]);
+}
+
+function ringSnapshotUndo() {
+  if (!drawnPolygonLayer) return;
+  const snap = drawnPolygonLayer.getLatLngs()[0].map(ll => [ll.lat, ll.lng]);
+  pushUndo(() => {
+    if (!drawnPolygonLayer) return;
+    drawnPolygonLayer.setLatLngs(snap);
+    syncDrawnPointsFromLayer();
+    if (editingShape) buildEditHandles();
+  });
+}
+
+function handleIcon(size, fill, border) {
+  return L.divIcon({ className: '', iconSize: [size, size],
+    html: '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:' +
+          fill + ';border:2px solid ' + border + ';box-sizing:border-box"></div>' });
+}
+
+function clearEditHandles() {
+  editHandles.forEach(h => map.removeLayer(h));      editHandles = [];
+  editMidHandles.forEach(h => map.removeLayer(h));   editMidHandles = [];
+}
+
+function buildEditHandles() {
+  clearEditHandles();
+  if (!drawnPolygonLayer) return;
+  const ring = drawnPolygonLayer.getLatLngs()[0];
+
+  ring.forEach((ll, i) => {
+    const h = L.marker(ll, {
+      icon: handleIcon(12, '#fff', '#e8c84a'), draggable: true, zIndexOffset: 1000,
+      title: 'Drag to move this corner · right-click to remove it'
+    }).addTo(map);
+    h.on('dragstart', () => ringSnapshotUndo());
+    h.on('drag', e => {
+      const r = drawnPolygonLayer.getLatLngs()[0].slice();
+      r[i] = e.target.getLatLng();
+      drawnPolygonLayer.setLatLngs(r);
+      syncDrawnPointsFromLayer();
+    });
+    h.on('dragend', () => buildEditHandles());   // midpoints move with the ring
+    h.on('contextmenu', ev => { L.DomEvent.stop(ev); removeVertexAt(i); });
+    editHandles.push(h);
+  });
+
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i], b = ring[(i + 1) % ring.length];
+    const mid = L.latLng((a.lat + b.lat) / 2, (a.lng + b.lng) / 2);
+    const m = L.marker(mid, {
+      icon: handleIcon(10, 'rgba(232,200,74,0.4)', '#e8c84a'), zIndexOffset: 900,
+      title: 'Click to add a corner here'
+    }).addTo(map);
+    m.on('click', ev => { L.DomEvent.stop(ev); insertVertexAt(i + 1, mid); });
+    editMidHandles.push(m);
+  }
+}
+
+function insertVertexAt(index, latlng) {
+  if (!drawnPolygonLayer) return;
+  ringSnapshotUndo();
+  const r = drawnPolygonLayer.getLatLngs()[0].slice();
+  r.splice(index, 0, latlng);
+  drawnPolygonLayer.setLatLngs(r);
+  syncDrawnPointsFromLayer();
+  buildEditHandles();
+}
+
+function removeVertexAt(index) {
+  if (!drawnPolygonLayer) return;
+  const r = drawnPolygonLayer.getLatLngs()[0].slice();
+  if (r.length <= 3) { setShapeEditMsg('A polygon needs at least 3 corners.'); return; }
+  ringSnapshotUndo();
+  r.splice(index, 1);
+  drawnPolygonLayer.setLatLngs(r);
+  syncDrawnPointsFromLayer();
+  buildEditHandles();
+}
+
+// Floating bar — the popup would sit on top of the shape being edited.
+function shapeEditBar() {
+  let bar = document.getElementById('shape-edit-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'shape-edit-bar';
+    bar.style.cssText = 'position:absolute;left:50%;transform:translateX(-50%);bottom:18px;' +
+      'z-index:1200;background:rgba(20,24,38,0.92);color:#e8e9f0;font-family:monospace;' +
+      'font-size:11px;letter-spacing:0.04em;padding:7px 12px;border:1px solid #e8c84a;' +
+      'border-radius:3px;display:flex;gap:12px;align-items:center;white-space:nowrap;' +
+      'box-shadow:0 2px 10px rgba(0,0,0,0.35)';
+    map.getContainer().appendChild(bar);
+    L.DomEvent.disableClickPropagation(bar);
+  }
+  return bar;
+}
+
+function setShapeEditMsg(msg) {
+  const span = document.getElementById('shape-edit-msg');
+  if (!span) return;
+  span.textContent = msg;
+  clearTimeout(setShapeEditMsg._t);
+  setShapeEditMsg._t = setTimeout(() => {
+    if (document.getElementById('shape-edit-msg')) span.textContent = SHAPE_EDIT_HINT;
+  }, 2200);
+}
+
+const SHAPE_EDIT_HINT = 'drag a corner · click a hollow dot to add · right-click to remove';
+
+function toggleShapeEdit(force) {
+  if (!drawnPolygonLayer) return;
+  const next = (force === undefined) ? !editingShape : !!force;
+  if (next === editingShape) return;
+  editingShape = next;
+
+  if (editingShape) {
+    if (drawingPolygon) startDrawPolygon();   // the two modes would fight over clicks
+    map.closePopup();
+    syncDrawnPointsFromLayer();
+    buildEditHandles();
+    const bar = shapeEditBar();
+    bar.innerHTML = '<span style="color:#e8c84a">✎ EDITING SHAPE</span>' +
+      '<span id="shape-edit-msg">' + SHAPE_EDIT_HINT + '</span>' +
+      '<button onclick="toggleShapeEdit(false)" style="background:rgba(232,200,74,0.12);' +
+      'border:1px solid #e8c84a;color:#e8c84a;font-family:monospace;font-size:11px;' +
+      'padding:3px 9px;cursor:pointer;letter-spacing:0.05em">✓ Done</button>';
+    bar.style.display = 'flex';
+  } else {
+    clearEditHandles();
+    const bar = document.getElementById('shape-edit-bar');
+    if (bar) bar.style.display = 'none';
+    syncDrawnPointsFromLayer();
+  }
+  refreshDrawnPopup();
 }
 
 function clearVertexDots() {
@@ -980,6 +1135,8 @@ function clearVertexDots() {
 
 function startDrawPolygon() {
   drawingPolygon = !drawingPolygon;
+  // Only when starting a draw — toggleShapeEdit() calls this to cancel one.
+  if (drawingPolygon && editingShape) toggleShapeEdit(false);
   const btn = document.getElementById('btn-draw-polygon');
   if (drawingPolygon) {
     btn.classList.add('active'); btn.textContent = '✕ Cancel (need 3 pts)';
@@ -996,6 +1153,7 @@ function startDrawPolygon() {
       if (drawnPolygonLayer) map.removeLayer(drawnPolygonLayer);
       const named = prompt('Name this polygon:', 'Custom Issue Polygon');
       drawnPolygonName = (named && named.trim()) || 'Custom Issue Polygon';
+      drawnPolygonSubtitle = 'Custom-drawn boundary. Export GeoJSON to save.';
       drawnPolygonLayer = L.polygon(drawnPoints, {
         color: '#e8c84a', weight: 2, dashArray: '8 4', fillColor: '#e8c84a', fillOpacity: 0.1
       }).addTo(map).bindPopup(drawnPolygonPopup('Custom-drawn boundary. Export GeoJSON to save.'));
@@ -1015,6 +1173,7 @@ function deletePolygon(which) {
     layers.issuePolygon = null;
     pushUndo(() => { saved.addTo(map); layers.issuePolygon = saved; });
   } else if (which === 'drawn') {
+    if (editingShape) toggleShapeEdit(false);
     const savedLayer    = drawnPolygonLayer;
     const savedPolyline = drawnPolyline;
     const savedPoints   = [...drawnPoints];
@@ -1144,13 +1303,16 @@ function loadFromGeoJSON(geojson) {
       parcelCount++;
 
     } else if (props.type === 'CustomIssuePolygon' && f.geometry && f.geometry.type === 'Polygon') {
+      if (editingShape) toggleShapeEdit(false);
       if (drawnPolygonLayer) { map.removeLayer(drawnPolygonLayer); drawnPolygonLayer = null; }
       const coords = f.geometry.coordinates[0].map(c => [c[1], c[0]]); // GeoJSON [lng,lat] → Leaflet [lat,lng]
       drawnPolygonName = (props.label && String(props.label).trim()) || 'Custom Issue Polygon';
+      drawnPolygonSubtitle = 'Restored from export. Export GeoJSON to save again.';
       drawnPolygonLayer = L.polygon(coords, {
         color: '#e8c84a', weight: 2, dashArray: '8 4', fillColor: '#e8c84a', fillOpacity: 0.1
-      }).addTo(map).bindPopup(drawnPolygonPopup('Restored from export. Export GeoJSON to save again.'));
+      }).addTo(map).bindPopup(drawnPolygonPopup(drawnPolygonSubtitle));
       addClickThrough(drawnPolygonLayer);
+      drawnPoints = coords.slice();
       hadPolygon = true;
 
     } else if (props.type === 'IssuePolygon' && f.geometry && f.geometry.type === 'Polygon') {
