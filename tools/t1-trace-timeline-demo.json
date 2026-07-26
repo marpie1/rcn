@@ -1,0 +1,160 @@
+{
+  "name": "T1 Trace — an action, its result, and what arrived later",
+  "note": "Illustrative demo, not a record of actual events. Walks the T1 TRACE of the EIP schema — PERSON -take-> ACTION -yield-> RESULT -yield-> SOLUTION -resolve-> PROBLEM, and RESULT -yield-> SIDE EFFECT -creates-> PROBLEM — as a timeline. The graph says a side effect exists. The timeline says when it showed up.",
+  "intervals": [
+    {
+      "id": "iv_problem1",
+      "label": "PROBLEM — displacement pressure on renters",
+      "start": "Mar 1 2019",
+      "end": "Nov 1 2022",
+      "startFuzz": 2.5,
+      "endFuzz": 0.3,
+      "pinned": false,
+      "color": "#dc2626",
+      "row": 0,
+      "who": "resident interviews, 2023",
+      "conf": 0.65,
+      "note": "Nobody agrees when this began — hence the 2.5-year start fuzz. Reconstructed after the fact from interviews, so conf is middling."
+    },
+    {
+      "id": "iv_person",
+      "label": "PERSON — residents organizing",
+      "start": "Sep 1 2021",
+      "end": "Jun 1 2022",
+      "startFuzz": 0.5,
+      "endFuzz": 0,
+      "pinned": false,
+      "color": "#1e293b",
+      "row": 1,
+      "who": "meeting notes",
+      "conf": 0.8,
+      "note": "The trace starts with a Person, not with the Action. Overlaps the Problem — which is why there is no link between them: this tool's two relations both require disjoint intervals."
+    },
+    {
+      "id": "iv_action",
+      "label": "ACTION — purchase campaign",
+      "start": "Jun 1 2022",
+      "end": "Nov 1 2022",
+      "startFuzz": 0,
+      "endFuzz": 0,
+      "pinned": false,
+      "color": "#ea580c",
+      "row": 2,
+      "who": "NDC minutes",
+      "conf": 0.9,
+      "note": "Taken by the Person, addresses the Problem, yields the Result."
+    },
+    {
+      "id": "iv_result",
+      "label": "RESULT — title transferred to community ownership",
+      "start": "Nov 1 2022",
+      "end": "Feb 1 2023",
+      "startFuzz": 0,
+      "endFuzz": 0,
+      "pinned": true,
+      "color": "#0d9488",
+      "row": 3,
+      "who": "county deed record",
+      "conf": 1,
+      "note": "PINNED — the only thing here with a document behind it. conf 1 and a hard date; everything else floats around this anchor."
+    },
+    {
+      "id": "iv_solution",
+      "label": "SOLUTION — below-market units occupied",
+      "start": "Feb 1 2023",
+      "end": "Dec 31 2030",
+      "startFuzz": 0,
+      "endFuzz": 1.5,
+      "pinned": false,
+      "color": "#0d9488",
+      "row": 4,
+      "who": "tenancy records",
+      "conf": 0.9,
+      "note": "Yielded by the Result, resolves the original Problem. This is the branch everyone celebrated, and the branch everyone kept watching."
+    },
+    {
+      "id": "iv_sideeffect",
+      "label": "SIDE EFFECT — nearby rents and assessments climb",
+      "start": "Apr 1 2025",
+      "end": "Jan 1 2026",
+      "startFuzz": 1.2,
+      "endFuzz": 0.5,
+      "pinned": false,
+      "color": "#dc2626",
+      "row": 5,
+      "who": "assessor data + block survey",
+      "conf": 0.45,
+      "note": "THE POINT OF THIS DEMO. Yielded by the same Result as the Solution — but it starts more than two years later, by which time the campaign had been declared a success and the file was closed. conf 0.45 because attributing it to the purchase is genuinely contested; the 1.2-year start fuzz because nobody was measuring when it began."
+    },
+    {
+      "id": "iv_problem2",
+      "label": "PROBLEM — displacement pressure, two blocks over",
+      "start": "Jan 1 2026",
+      "end": "Dec 31 2027",
+      "startFuzz": 0,
+      "endFuzz": 1,
+      "pinned": false,
+      "color": "#dc2626",
+      "row": 6,
+      "who": "resident interviews, 2026",
+      "conf": 0.5,
+      "note": "Created by the Side Effect. The loop closes: the same kind of Problem, a different place, seven years on. Fixes that fail."
+    }
+  ],
+  "links": [
+    {
+      "id": "lk_take",
+      "from": "iv_person",
+      "to": "iv_action",
+      "rel": "meets",
+      "who": "T1 trace",
+      "conf": 0.85,
+      "note": "PERSON -take-> ACTION. The campaign begins as the organizing ends."
+    },
+    {
+      "id": "lk_yield_result",
+      "from": "iv_action",
+      "to": "iv_result",
+      "rel": "meets",
+      "who": "T1 trace",
+      "conf": 0.95,
+      "note": "ACTION -yield/lead_to-> RESULT. Closing starts the day the campaign ends."
+    },
+    {
+      "id": "lk_yield_solution",
+      "from": "iv_result",
+      "to": "iv_solution",
+      "rel": "meets",
+      "who": "T1 trace",
+      "conf": 0.9,
+      "note": "RESULT -yield-> SOLUTION. No gap: tenants move in as the transfer completes."
+    },
+    {
+      "id": "lk_yield_sideeffect",
+      "from": "iv_result",
+      "to": "iv_sideeffect",
+      "rel": "before",
+      "who": "T1 trace",
+      "conf": 0.45,
+      "note": "RESULT -yield-> SIDE EFFECT. Same Result, other branch — but 'before', not 'meets', and the gap is over two years wide. On the graph these two yield edges are drawn identically."
+    },
+    {
+      "id": "lk_creates",
+      "from": "iv_sideeffect",
+      "to": "iv_problem2",
+      "rel": "meets",
+      "who": "T1 trace",
+      "conf": 0.5,
+      "note": "SIDE EFFECT -creates-> PROBLEM."
+    },
+    {
+      "id": "lk_resolve",
+      "from": "iv_problem1",
+      "to": "iv_solution",
+      "rel": "before",
+      "who": "T1 trace",
+      "conf": 0.8,
+      "note": "SOLUTION -resolve-> PROBLEM, read forward in time: the original Problem is over before the Solution is fully in place. Whether the Action or something else ended it is exactly the kind of claim conf is for."
+    }
+  ]
+}

@@ -62,6 +62,28 @@ meets | before
 and silently behave as `before`. If you need those semantics, they do not exist
 yet; say so rather than emitting a relation name the tool will misread.
 
+### Both relations require the intervals to be disjoint
+
+`meets` and `before` are both defined against `from.end`. Neither can express
+"B happens *during* A." If you link two intervals that overlap in the dates you
+authored, the solver will not complain — it will **move `to` and everything
+downstream of it** until the overlap is gone, and your dates are silently lost.
+
+This bites hardest with long-running states. A `RESULT` interval that runs
+2022→2030 with `RESULT before SOLUTION` does not mean "the solution follows from
+the result"; it means "the solution cannot start until 2030."
+
+Two ways out, both legitimate:
+
+- **Bound the interval** to the event that actually causes the next thing
+  (`title transferred, Nov 2022 – Feb 2023`) rather than to the state it opens.
+- **Don't link it.** Overlapping intervals just get authored dates and sit side
+  by side. Links are for sequence; the dates carry everything else.
+
+`before` links are annotated on the canvas with their **slack** (`slack 2 yr
+2 mo`). That label is usually the most argumentative thing on the diagram —
+a long slack on a causal edge is the claim that the effect took years to land.
+
 ## Dates
 
 `parseDate()` accepts:
@@ -106,3 +128,20 @@ There is no validator for this tool yet. Check by hand:
 - no `rel` value other than `meets` or `before`
 - `end` present wherever you do not want a one-year default
 - dates in `Mon D YYYY` form
+- **no linked pair overlaps** — then load it and compare every solved `s`/`e`
+  against the dates you authored. Anything that moved is a link you got wrong,
+  not a date the solver improved:
+
+  ```js
+  importModel(m); solve();
+  M.intervals.map(i => i.label+' '+i.s.toFixed(2)+'→'+i.e.toFixed(2))
+  ```
+
+## Worked example
+
+`tools/t1-trace-timeline-demo.json` — the EIP schema's **T1 TRACE**
+(`PERSON -take-> ACTION -yield-> RESULT -yield-> SOLUTION -resolve-> PROBLEM`,
+plus `RESULT -yield-> SIDE EFFECT -creates-> PROBLEM`) laid out in time. The
+graph says a side effect exists; the timeline says it arrived two years after
+everyone stopped watching. One pinned interval (the deed), fuzz on everything
+reconstructed from interviews, `conf` from 0.45 to 1.
