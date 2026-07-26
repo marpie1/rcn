@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "modelName": "EIP Schema — Entity Relations",
-  "modelNote": "The EIP ontology from the Graphviz source (EIP Graphviz Decorations, schema.relocalizecreativity.net), re-expressed so the three things Graphviz had to fuse are separated: HOW IT LOOKS is a legend row (7 families), WHAT IT IS is a Neo4j label in extraLabels (all 25 precise types kept), WHAT WE NEED TO KNOW is the field template in props. Cypher export emits CREATE (n:ACTION:Action {...}). Edge rows distinguish only what the source actually asserts: plain relations vs. the four the digraph marked dir=both. Converted 2026-07-25.",
+  "modelNote": "The EIP ontology from the Graphviz source (EIP Graphviz Decorations, schema.relocalizecreativity.net), re-expressed so the three things Graphviz had to fuse are separated: HOW IT LOOKS is a legend row (8 families, each placement traceable to an edge in the source), WHAT IT IS is a Neo4j label in extraLabels (all 25 precise types kept), WHAT WE NEED TO KNOW is the field template in props. Cypher export emits CREATE (n:ACTION:Action {...}). Edge rows distinguish only what the source actually asserts: plain relations vs. the four the digraph marked dir=both. Converted 2026-07-25.",
   "canvasBg": "#ffffff",
   "legendVisible": true,
   "legendEntries": [
@@ -15,39 +15,48 @@
       "borderWidth": 3
     },
     {
-      "id": "fam_org",
+      "id": "fam_body",
       "kind": "node",
-      "label": "Organisation",
+      "label": "Body",
       "icon": "rcn_civic",
       "color": "#ffffff",
       "borderColor": "#7c3aed",
       "borderWidth": 3
     },
     {
-      "id": "fam_place",
+      "id": "fam_setting",
       "kind": "node",
-      "label": "Place",
+      "label": "Setting",
       "icon": "rcn_land",
       "color": "#ffffff",
       "borderColor": "#16a34a",
       "borderWidth": 3
     },
     {
-      "id": "fam_intent",
+      "id": "fam_aim",
       "kind": "node",
-      "label": "Intent",
+      "label": "Aim",
       "icon": "rcn_goal",
       "color": "#ffffff",
       "borderColor": "#2563eb",
       "borderWidth": 3
     },
     {
-      "id": "fam_action",
+      "id": "fam_doing",
       "kind": "node",
-      "label": "Action",
+      "label": "Doing",
       "icon": "rcn_action",
       "color": "#ffffff",
       "borderColor": "#ea580c",
+      "borderWidth": 3
+    },
+    {
+      "id": "fam_outcome",
+      "kind": "node",
+      "label": "Outcome",
+      "icon": "rcn_stock",
+      "color": "#ffffff",
+      "borderColor": "#0d9488",
       "borderWidth": 3
     },
     {
@@ -60,10 +69,10 @@
       "borderWidth": 3
     },
     {
-      "id": "fam_capacity",
+      "id": "fam_holding",
       "kind": "node",
-      "label": "Capacity",
-      "icon": "rcn_stock",
+      "label": "Holding",
+      "icon": "rcn_money",
       "color": "#ffffff",
       "borderColor": "#b45309",
       "borderWidth": 3
@@ -89,13 +98,13 @@
     {
       "id": "ecology",
       "label": "ECOLOGY",
-      "x": 145,
-      "y": 134,
+      "x": 150,
+      "y": 130,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_place",
+      "type": "fam_setting",
       "extraLabels": [
         "Ecology"
       ],
@@ -111,13 +120,13 @@
     {
       "id": "culture",
       "label": "CULTURE",
-      "x": 436,
-      "y": 134,
+      "x": 370,
+      "y": 130,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_org",
+      "type": "fam_setting",
       "extraLabels": [
         "Culture"
       ],
@@ -133,13 +142,13 @@
     {
       "id": "ideal",
       "label": "IDEAL",
-      "x": 924,
-      "y": 134,
+      "x": 950,
+      "y": 120,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_intent",
+      "type": "fam_aim",
       "extraLabels": [
         "Ideal"
       ],
@@ -152,13 +161,13 @@
     {
       "id": "value",
       "label": "VALUE",
-      "x": 1162,
-      "y": 134,
+      "x": 1160,
+      "y": 120,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_intent",
+      "type": "fam_aim",
       "extraLabels": [
         "Value"
       ],
@@ -171,19 +180,16 @@
     {
       "id": "asset",
       "label": "ASSET",
-      "x": 1650,
-      "y": 342,
+      "x": 1580,
+      "y": 150,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_capacity",
+      "type": "fam_holding",
       "extraLabels": [
         "Asset"
       ],
-      "ovr": {
-        "icon": "rcn_money"
-      },
       "props": {
         "name": "?",
         "title": "About HTML Plugin",
@@ -193,13 +199,13 @@
     {
       "id": "government",
       "label": "GOVERNMENT",
-      "x": 436,
-      "y": 342,
+      "x": 650,
+      "y": 360,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_org",
+      "type": "fam_body",
       "extraLabels": [
         "Government"
       ],
@@ -212,13 +218,13 @@
     {
       "id": "purpose",
       "label": "PURPOSE",
-      "x": 924,
-      "y": 342,
+      "x": 950,
+      "y": 300,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_intent",
+      "type": "fam_aim",
       "extraLabels": [
         "Purpose"
       ],
@@ -231,13 +237,13 @@
     {
       "id": "org",
       "label": "ORG",
-      "x": 673,
-      "y": 342,
+      "x": 650,
+      "y": 180,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_org",
+      "type": "fam_body",
       "extraLabels": [
         "Org"
       ],
@@ -255,13 +261,13 @@
     {
       "id": "place",
       "label": "PLACE",
-      "x": 145,
-      "y": 342,
+      "x": 150,
+      "y": 310,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_place",
+      "type": "fam_setting",
       "extraLabels": [
         "Place"
       ],
@@ -276,13 +282,13 @@
     {
       "id": "objective",
       "label": "OBJECTIVE",
-      "x": 1399,
-      "y": 134,
+      "x": 1370,
+      "y": 120,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_intent",
+      "type": "fam_aim",
       "extraLabels": [
         "Objective"
       ],
@@ -295,13 +301,13 @@
     {
       "id": "role",
       "label": "ROLE",
-      "x": 436,
-      "y": 549,
+      "x": 430,
+      "y": 430,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_person",
+      "type": "fam_body",
       "extraLabels": [
         "Role"
       ],
@@ -312,18 +318,21 @@
         "constitutive institution": "?",
         "scope": "?",
         "function": "?"
+      },
+      "ovr": {
+        "icon": "rcn_group"
       }
     },
     {
       "id": "activegoal",
       "label": "ACTIVE GOAL",
-      "x": 1399,
-      "y": 342,
+      "x": 1160,
+      "y": 300,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_intent",
+      "type": "fam_aim",
       "extraLabels": [
         "ActiveGoal"
       ],
@@ -336,13 +345,13 @@
     {
       "id": "power",
       "label": "POWER",
-      "x": 1399,
-      "y": 549,
+      "x": 1370,
+      "y": 330,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_capacity",
+      "type": "fam_holding",
       "extraLabels": [
         "Power"
       ],
@@ -358,8 +367,8 @@
     {
       "id": "person",
       "label": "PERSON",
-      "x": 198,
-      "y": 549,
+      "x": 150,
+      "y": 560,
       "w": 88,
       "h": 88,
       "shape": "rect",
@@ -378,8 +387,8 @@
     {
       "id": "affect",
       "label": "AFFECT",
-      "x": 198,
-      "y": 756,
+      "x": 150,
+      "y": 740,
       "w": 88,
       "h": 88,
       "shape": "rect",
@@ -400,13 +409,13 @@
     {
       "id": "motivation",
       "label": "MOTIVATION",
-      "x": 924,
-      "y": 549,
+      "x": 370,
+      "y": 650,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_intent",
+      "type": "fam_person",
       "extraLabels": [
         "Motivation"
       ],
@@ -422,13 +431,13 @@
     {
       "id": "conversation",
       "label": "CONVERSATION",
-      "x": 436,
-      "y": 756,
+      "x": 430,
+      "y": 860,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_action",
+      "type": "fam_doing",
       "extraLabels": [
         "Conversation"
       ],
@@ -443,13 +452,13 @@
     {
       "id": "trust",
       "label": "TRUST",
-      "x": 436,
-      "y": 964,
+      "x": 200,
+      "y": 1030,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_capacity",
+      "type": "fam_doing",
       "extraLabels": [
         "Trust"
       ],
@@ -464,13 +473,13 @@
     {
       "id": "possibility",
       "label": "POSSIBILITY",
-      "x": 436,
-      "y": 1159,
+      "x": 430,
+      "y": 1050,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_capacity",
+      "type": "fam_doing",
       "extraLabels": [
         "Possibility"
       ],
@@ -485,13 +494,13 @@
     {
       "id": "commitment",
       "label": "COMMITMENT",
-      "x": 673,
-      "y": 964,
+      "x": 650,
+      "y": 940,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_action",
+      "type": "fam_doing",
       "extraLabels": [
         "Commitment"
       ],
@@ -508,13 +517,13 @@
     {
       "id": "action",
       "label": "ACTION",
-      "x": 924,
-      "y": 756,
+      "x": 900,
+      "y": 780,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_action",
+      "type": "fam_doing",
       "extraLabels": [
         "Action"
       ],
@@ -529,13 +538,13 @@
     {
       "id": "result",
       "label": "RESULT",
-      "x": 1188,
-      "y": 756,
+      "x": 1150,
+      "y": 780,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_action",
+      "type": "fam_outcome",
       "extraLabels": [
         "Result"
       ],
@@ -550,8 +559,8 @@
     {
       "id": "problem",
       "label": "PROBLEM",
-      "x": 924,
-      "y": 964,
+      "x": 900,
+      "y": 1030,
       "w": 88,
       "h": 88,
       "shape": "rect",
@@ -573,13 +582,13 @@
     {
       "id": "solution",
       "label": "SOLUTION",
-      "x": 924,
-      "y": 1159,
+      "x": 1150,
+      "y": 980,
       "w": 88,
       "h": 88,
       "shape": "rect",
       "fontSize": 13,
-      "type": "fam_capacity",
+      "type": "fam_outcome",
       "extraLabels": [
         "Solution"
       ],
@@ -587,13 +596,16 @@
         "name": "?",
         "title": "About HTML Plugin",
         "site": "schema.relocalizecreativity.net"
+      },
+      "ovr": {
+        "icon": "rcn_medicine"
       }
     },
     {
       "id": "sideeffect",
       "label": "SIDE EFFECT",
-      "x": 1399,
-      "y": 964,
+      "x": 1380,
+      "y": 980,
       "w": 88,
       "h": 88,
       "shape": "rect",
@@ -614,8 +626,8 @@
     {
       "id": "source_note",
       "label": "SOURCE",
-      "x": 145,
-      "y": 1232,
+      "x": 1580,
+      "y": 1150,
       "w": 190,
       "h": 62,
       "shape": "rect",
