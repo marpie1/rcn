@@ -328,6 +328,39 @@
   #canvas .edge path { }
   #canvas .edge text { fill: #000000 !important; font-size: 9px !important; }
 
+  /* ── Click-and-hold neighbourhood highlight ──
+     Ported from the Graph Tool's long-press ("shift+long-press to highlight
+     edges"). There, incident edges thicken by +3 and keep their own colour;
+     here we add the Graph Tool's other idiom — dimming everything that is not
+     a match, the way search dimming works — because a composite gets dense
+     enough that thickening alone does not read across a room. */
+  #canvas svg.lp-active .node,
+  #canvas svg.lp-active .edge { transition: opacity .12s ease; }
+  #canvas svg.lp-active .lp-dim { opacity: 0.10; }
+  #canvas svg.lp-active .lp-on { opacity: 1; }
+  #canvas svg.lp-active .lp-root ellipse,
+  #canvas svg.lp-active .lp-root polygon,
+  #canvas svg.lp-active .lp-root rect { stroke: #b8860b !important; stroke-width: 3 !important; }
+  #canvas svg.lp-active .lp-on text { font-weight: 700 !important; }
+
+  #canvas-hint {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
   /* ── Controls (right panel) ── */
   #controls {
     width: var(--ctrl-w);
@@ -487,6 +520,7 @@
       <p>Select subgraphs in the beam to compose</p>
     </div>
     <div id="rendering">rendering…</div>
+    <div id="canvas-hint">click a node = details &nbsp;·&nbsp; click &amp; hold = highlight its edges &nbsp;·&nbsp; Esc = clear</div>
   </div>
 
   <!-- Controls -->
@@ -1079,6 +1113,8 @@ async function render(complex) {
 
     const canvas = document.getElementById('canvas')
     const old = canvas.querySelector('svg')
+    // a highlight belongs to the SVG we are about to throw away
+    clearTimeout(lpTimer); lpTimer = null; lpOrigin = null; lpActive = false
     if (old) old.remove()
     svgEl.style.width = '100%'
     svgEl.style.height = '100%'
@@ -1086,6 +1122,7 @@ async function render(complex) {
     svgEl.style.inset = '0'
     canvas.appendChild(svgEl)
     document.getElementById('canvas-empty').style.display = 'none'
+    document.getElementById('canvas-hint').style.display = ''
 
     if (panSVG) { try { panSVG.destroy() } catch(e) {} }
     panSVG = svgPanZoom(svgEl, {
@@ -1117,6 +1154,7 @@ function clearCanvas() {
   if (old) old.remove()
   if (panSVG) { try { panSVG.destroy() } catch(e) {} panSVG = null }
   document.getElementById('canvas-empty').style.display = ''
+  document.getElementById('canvas-hint').style.display = 'none'
   updateStats(null, null)
   updateTally(null)
 }
@@ -1211,18 +1249,150 @@ function updateStatus() {
 // Node click detail panel
 // ═══════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════
+// Click-and-hold → highlight the node's edges
+//
+// The Graph Tool's long-press: mousedown starts a 600ms timer, and when it
+// fires, every edge touching that node thickens by +3 while keeping its own
+// colour. Release clears it. Same timing and same "keep the colour, change
+// the weight" rule here, plus dimming of everything else — a composite of a
+// dozen subgraphs is denser than a hand-drawn graph, and weight alone does
+// not carry across a room.
+//
+// Graphviz gives us the wiring for free: g.node > title holds the node's
+// array index, g.edge > title holds "from->to" with those same indices.
+// ═══════════════════════════════════════════════════════
+
+const LONG_PRESS_MS = 600      // same as the Graph Tool
+const LONG_PRESS_SLOP = 5      // px of movement that cancels — that's a pan
+
+let lpTimer = null
+let lpActive = false
+let lpSuppressClick = false
+let lpOrigin = null
+
+function nodeIdOf(el) {
+  const t = el.querySelector('title')
+  if (!t) return NaN
+  return parseInt(t.textContent, 10)
+}
+
+// "1->0" → [1, 0]. Bidirectional edges are emitted as a single f->t with
+// dir=both, so they still parse — and still touch both endpoints.
+function edgeEndsOf(el) {
+  const t = el.querySelector('title')
+  if (!t) return null
+  const m = t.textContent.split(/->|--/)
+  if (m.length !== 2) return null
+  const a = parseInt(m[0], 10), b = parseInt(m[1], 10)
+  return (isNaN(a) || isNaN(b)) ? null : [a, b]
+}
+
+function clearHighlight() {
+  clearTimeout(lpTimer); lpTimer = null; lpOrigin = null
+  if (!lpActive) return
+  lpActive = false
+  const svg = document.querySelector('#canvas svg')
+  if (!svg) return
+  svg.classList.remove('lp-active')
+  svg.querySelectorAll('.lp-on, .lp-dim, .lp-root').forEach(el => {
+    el.classList.remove('lp-on', 'lp-dim', 'lp-root')
+  })
+  // put every edge stroke back the way Graphviz drew it
+  svg.querySelectorAll('.edge path[data-lp-w]').forEach(p => {
+    p.style.strokeWidth = p.dataset.lpW
+    delete p.dataset.lpW
+  })
+  updateStatus()
+}
+
+function highlightNeighbourhood(nid) {
+  const svg = document.querySelector('#canvas svg')
+  if (!svg) return
+  const neighbours = new Set([nid])
+  let touching = 0
+
+  svg.querySelectorAll('g.edge').forEach(el => {
+    const ends = edgeEndsOf(el)
+    const hit = ends && (ends[0] === nid || ends[1] === nid)
+    if (hit) {
+      touching++
+      neighbours.add(ends[0]); neighbours.add(ends[1])
+      el.classList.add('lp-on')
+      // +3 on whatever width this edge already had — the Graph Tool's rule
+      el.querySelectorAll('path').forEach(p => {
+        const cur = parseFloat(getComputedStyle(p).strokeWidth) || 1.5
+        p.dataset.lpW = p.style.strokeWidth || ''
+        p.style.strokeWidth = (cur + 3) + 'px'
+      })
+    } else {
+      el.classList.add('lp-dim')
+    }
+  })
+
+  svg.querySelectorAll('g.node').forEach(el => {
+    const id = nodeIdOf(el)
+    if (neighbours.has(id)) {
+      el.classList.add('lp-on')
+      if (id === nid) el.classList.add('lp-root')
+    } else {
+      el.classList.add('lp-dim')
+    }
+  })
+
+  svg.classList.add('lp-active')
+  lpActive = true
+
+  const node = currentGraph?.graph?.nodes[nid]
+  const name = node ? (node.props?.name || node.type || `#${nid}`) : `#${nid}`
+  document.getElementById('status').textContent =
+    `${name} — ${touching} edge${touching === 1 ? '' : 's'}, ${neighbours.size - 1} neighbour${neighbours.size === 2 ? '' : 's'}`
+}
+
 function hookNodeClicks(container, graph) {
   container.querySelectorAll('.node').forEach(nodeEl => {
     nodeEl.style.cursor = 'pointer'
+
+    nodeEl.addEventListener('mousedown', e => {
+      if (e.button !== 0) return
+      const nid = nodeIdOf(nodeEl)
+      if (isNaN(nid) || !graph.nodes[nid]) return
+      clearHighlight()
+      lpOrigin = { x: e.clientX, y: e.clientY }
+      lpTimer = setTimeout(() => {
+        lpTimer = null
+        lpSuppressClick = true   // don't also open the detail panel
+        highlightNeighbourhood(nid)
+      }, LONG_PRESS_MS)
+    })
+
     nodeEl.addEventListener('click', e => {
-      const titleEl = nodeEl.querySelector('title')
-      if (!titleEl) return
-      const nid = parseInt(titleEl.textContent)
+      if (lpSuppressClick) { lpSuppressClick = false; return }
+      const nid = nodeIdOf(nodeEl)
       if (isNaN(nid) || !graph.nodes[nid]) return
       showNodeDetail(graph.nodes[nid], nid)
     })
   })
 }
+
+// Moving the pointer means the user is panning, not holding.
+document.addEventListener('mousemove', e => {
+  if (!lpTimer || !lpOrigin) return
+  if (Math.abs(e.clientX - lpOrigin.x) > LONG_PRESS_SLOP ||
+      Math.abs(e.clientY - lpOrigin.y) > LONG_PRESS_SLOP) {
+    clearTimeout(lpTimer); lpTimer = null; lpOrigin = null
+  }
+})
+
+// Hold to show, release to clear — the Graph Tool's contract.
+document.addEventListener('mouseup', () => {
+  if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; lpOrigin = null }
+  if (lpActive) clearHighlight()
+})
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && lpActive) clearHighlight()
+})
 
 function showNodeDetail(node, nid) {
   document.getElementById('nd-type').textContent = `#${nid} ${node.type || '(node)'}`

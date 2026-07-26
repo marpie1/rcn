@@ -227,7 +227,35 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
   <p>
     Gold is composition made visible — it shows you exactly where the pieces
     joined. <strong>Layout</strong> offers the Graphviz engines: dot (hierarchical),
-    neato, fdp, circo, twopi, sfdp. Click a node for its details.
+    neato, fdp, circo, twopi, sfdp.
+  </p>
+
+  <h3>Two gestures on a node</h3>
+
+  <table class="k">
+    <tr><th>Gesture</th><th>What happens</th></tr>
+    <tr><td><strong>Click</strong></td><td>Opens the node's details — its type and every property.</td></tr>
+    <tr><td><strong>Click and hold</strong> (about half a second)</td><td>Highlights that node's <strong>neighbourhood</strong>: its edges thicken and keep their colours, its neighbours stay bright, and everything else fades back. The status line reports how many edges and neighbours it found. Release to clear, or press <code>Esc</code>.</td></tr>
+  </table>
+
+  <p>
+    The hold gesture comes from the Graph Tool, where a long-press thickens the
+    edges touching a node. It matters more here. A composite of a dozen
+    subgraphs is much denser than anything drawn by hand, and the question you
+    actually have in front of a composite — <em>what does this shared node
+    connect?</em> — is the hardest one to answer by eye. Holding a merged gold
+    node shows you, in one gesture, everything the pieces joined it to.
+  </p>
+
+  <div class="callout">
+    Because the highlight lasts only while you hold, it is safe to use while
+    talking over a projected diagram: press, point, release. Nothing is
+    selected, nothing changes, and the drawing returns to normal on its own.
+  </div>
+
+  <p>
+    If you start to drag, the hold is cancelled — that is a pan, not a
+    question. Re-composing clears any highlight along with the old drawing.
   </p>
 
   <h2 id="export">7 · Getting results out</h2>
@@ -309,6 +337,14 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
     The opposite failure. If several genuinely different things share a schema
     label and none has an instance name, they are — by the rule — the same thing.
     Give them <code>props.name</code> values.
+  </p>
+
+  <h3>Click-and-hold does nothing</h3>
+  <p>
+    The hold is about half a second, and it cancels if the pointer moves more
+    than a few pixels — the tool reads movement as a pan. Press, keep still,
+    wait. If a highlight never appears on any node, check that something is
+    actually composed: the gesture works on the drawing, not on the beam.
   </p>
 
   <h3>Nothing highlights</h3>
