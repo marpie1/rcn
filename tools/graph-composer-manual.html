@@ -261,15 +261,51 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
   <h2 id="export">7 · Getting results out</h2>
 
   <ul>
-    <li><strong>Export composite</strong> — graph JSON. Open it in the Graph Tool to lay out, add icons, set the legend, and dress it for an audience.</li>
+    <li><strong>Open in Graph Tool ↗</strong> — converts the composite and opens it in the Graph Tool in a new tab, <em>already laid out exactly as you see it here</em>. Nothing to save, nothing to load. This is the one you want.</li>
+    <li><strong>Export Graph Tool JSON</strong> — the same conversion as a file, for when you want to keep it or send it. Loads with the Graph Tool's <strong>JSON</strong> import, and still re-loads into the Composer.</li>
+    <li><strong>Export Ward JSON</strong> — Ward's <code>graph.js</code> serialisation. For working against that library. <strong>This one does not open in the Graph Tool</strong> — see below.</li>
     <li><strong>Export DOT</strong> — Graphviz source, for anywhere that renders DOT.</li>
     <li><strong>Clear all</strong> — empties the beam.</li>
   </ul>
 
   <p>
     The intended round trip: <strong>draw pieces in the Graph Tool → assemble in
-    the Composer → export → dress in the Graph Tool.</strong>
+    the Composer → open back in the Graph Tool → dress it for an audience.</strong>
   </p>
+
+  <h3>Why Ward JSON doesn't open in the Graph Tool</h3>
+
+  <p>
+    These are two different formats, and always were. Until this was fixed, the
+    Composer's only JSON export was Ward's, which the Graph Tool cannot read —
+    so "export and open it in the Graph Tool" quietly did not work.
+  </p>
+
+  <table class="k">
+    <tr><th>Composer (Ward's Graph)</th><th>Graph Tool (RCN native)</th></tr>
+    <tr><td><code>nodes</code> / <code>rels</code></td><td><code>nodes</code> / <code>edges</code></td></tr>
+    <tr><td><code>rel.from</code> / <code>rel.to</code></td><td><code>edge.src</code> / <code>edge.tgt</code></td></tr>
+    <tr><td>identity is the array index</td><td><code>id</code> is an explicit string</td></tr>
+    <tr><td><code>node.type</code> is what it is</td><td><code>schemaLabel</code> is what it is; <code>label</code> is what we call it</td></tr>
+    <tr><td>no geometry at all</td><td><code>x</code>, <code>y</code>, <code>w</code>, <code>h</code> all required</td></tr>
+    <tr><td>visuals live inside <code>props</code></td><td>visuals live at the top level</td></tr>
+  </table>
+
+  <p>
+    The missing geometry is the real blocker. The Graph Tool's sizing routine
+    only ever <em>grows</em> a node's width and height — it does not create
+    them — so a node arriving without a <code>w</code> paints as a bare floating
+    label. Ward's format has no coordinates because Graphviz was always doing
+    the layout.
+  </p>
+
+  <div class="callout ok">
+    Which is also the answer. The composite on your screen has <em>already been
+    laid out</em>, so the converter reads the positions straight back out of the
+    rendered drawing. What lands in the Graph Tool is what you were looking at —
+    same arrangement, same gold merged nodes, and the source subgraph names in
+    the model title.
+  </div>
 
   <h2 id="identity">8 · Making nodes merge — the identity rules</h2>
 

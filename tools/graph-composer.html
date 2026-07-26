@@ -485,7 +485,8 @@
 <header>
   <h1>RCN Graph Composer</h1>
   <div class="sep"></div>
-  <button class="hbtn" id="btn-export" onclick="exportJSON()">Export composite</button>
+  <button class="hbtn" id="btn-open-gt" onclick="openInGraphTool()" title="Convert to Graph Tool format and open it there, laid out exactly as you see it here">Open in Graph Tool ↗</button>
+  <button class="hbtn" id="btn-export" onclick="exportJSON()" title="Download the composite as Graph Tool JSON">Export composite</button>
   <button class="hbtn" id="btn-clear-all" onclick="clearAll()">Clear all</button>
   <span id="status">no graphs loaded</span>
 </header>
@@ -593,7 +594,9 @@
 
     <div class="ctrl-section">
       <div class="ctrl-label">Export</div>
-      <button class="cbtn" onclick="exportJSON()">Export composite JSON</button>
+      <button class="cbtn" onclick="openInGraphTool()" title="Opens the Graph Tool with this composite already loaded, positioned as it is here">Open in Graph Tool &#8599;</button>
+      <button class="cbtn" onclick="exportJSON()" title="Graph Tool native JSON — nodes/edges with src/tgt and coordinates">Export Graph Tool JSON</button>
+      <button class="cbtn" onclick="exportWardJSON()" title="Ward&#39;s graph.js serialisation — nodes/rels, no geometry. Does NOT open in the Graph Tool.">Export Ward JSON</button>
       <button class="cbtn" onclick="exportDot()">Export DOT source</button>
     </div>
   </aside>
@@ -707,6 +710,7 @@ class Graph {
 const beam = []           // [{name, graph, label, source}]
 const checked = new Set() // indices of checked beam items
 let currentGraph = null   // the rendered composite
+let currentSources = null // the beam items it was built from — names the export
 let currentDot = ''
 let panSVG = null
 let panZoomState = null
@@ -794,6 +798,7 @@ function selectNone() {
 function clearAll() {
   beam.splice(0)
   currentGraph = null
+  currentSources = null
   currentDot = ''
   refreshBeam()
   clearCanvas()
@@ -1170,6 +1175,7 @@ function doComposite() {
   try {
     const complex = composite(chosen)
     currentGraph = complex
+    currentSources = chosen
     updateStats(complex, chosen)
     updateTally(complex.graph)
     render(complex)
@@ -1187,6 +1193,7 @@ function doBridge() {
   // also render composite of chosen
   const complex = composite(chosen)
   currentGraph = complex
+  currentSources = chosen
   updateStats(complex, chosen)
   updateTally(complex.graph)
   render(complex)
@@ -1411,10 +1418,165 @@ function closeNodeDetail() {
 // Export
 // ═══════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════
+// Composer → Graph Tool
+//
+// These are two different formats and always were:
+//
+//   Composer (Ward's Graph)      Graph Tool (RCN native)
+//   ──────────────────────      ───────────────────────
+//   nodes / rels                nodes / edges
+//   rel.from / rel.to           edge.src / edge.tgt
+//   identity = array index      id = an explicit string
+//   node.type = what it IS      schemaLabel = what it IS,
+//                                 label = what we call it
+//   no geometry at all          x, y, w, h all REQUIRED
+//   visuals live in props       visuals live at top level
+//
+// The missing geometry is the real blocker: the Graph Tool's autoSize() only
+// ever GROWS w/h, it does not initialise them, so a node without w paints as a
+// bare floating label. Ward's Graph has no coordinates because Graphviz was
+// always doing the layout.
+//
+// Which is also the answer. The composite on screen has already been laid out,
+// so we read the positions back out of the rendered SVG. What you hand over is
+// what you were looking at.
+// ═══════════════════════════════════════════════════════
+
+const GT_URL = 'graph-tool-v22.html'
+
+// Graphviz SVG user space is already screen-oriented (y grows downward, top
+// node most negative), so positions only need shifting into positive space —
+// no axis flip.
+function layoutFromSVG() {
+  const pos = {}
+  const svg = document.querySelector('#canvas svg')
+  if (!svg) return pos
+  svg.querySelectorAll('g.node').forEach(g => {
+    const i = nodeIdOf(g)
+    if (isNaN(i)) return
+    let b
+    try { b = g.getBBox() } catch (e) { return }
+    if (!b || !b.width) return
+    pos[i] = { x: b.x + b.width / 2, y: b.y + b.height / 2, w: b.width, h: b.height }
+  })
+  return pos
+}
+
+// props keys that Graph.load() moved INTO props on the way in; they belong at
+// the top level on the way out, and must not be left behind as duplicates.
+const VISUAL_KEYS = ['shape', 'color', 'fontColor', 'borderColor', 'borderWidth']
+
+function toGraphToolState(complex) {
+  const graph = complex.graph
+  const mergedSet = new Set(complex.merged?.nids || [])
+  const pos = layoutFromSVG()
+
+  const xs = Object.values(pos).map(p => p.x), ys = Object.values(pos).map(p => p.y)
+  const minX = xs.length ? Math.min(...xs) : 0
+  const minY = ys.length ? Math.min(...ys) : 0
+
+  const nodes = graph.nodes.map((n, i) => {
+    const p = { ...(n.props || {}) }
+    const geo = pos[i]
+
+    const shape = p.shape || 'rounded'
+    // Same rule dotify uses, so the drawing carries its meaning across:
+    // gold = this node arrived from more than one subgraph.
+    const color = p.color || (mergedSet.has(i) ? '#f5c842' : '#b8e0b8')
+    const fontColor = p.fontColor || '#000000'
+    const borderColor = p.borderColor || '#000000'
+    const borderWidth = p.borderWidth != null ? p.borderWidth : (mergedSet.has(i) ? 2 : 1.5)
+
+    const schemaLabel = p._schemaLabel || n.type || ''
+    const name = p.name || ''
+    // Graph Tool's own separation: label is what we call it, schemaLabel is
+    // what it is. An unnamed node is "the type itself", so it shows the type.
+    const label = name || n.type || `node${i}`
+
+    VISUAL_KEYS.forEach(k => delete p[k])
+    delete p._schemaLabel
+
+    return {
+      id: 'n' + i,
+      label,
+      schemaLabel,
+      x: geo ? Math.round(geo.x - minX + 80) : 100 + (i % 6) * 170,
+      y: geo ? Math.round(geo.y - minY + 80) : 100 + Math.floor(i / 6) * 120,
+      w: geo ? Math.max(80, Math.round(geo.w)) : 120,
+      h: geo ? Math.max(40, Math.round(geo.h)) : 52,
+      shape, color, fontColor, borderColor, borderWidth,
+      borderDash: 'solid',
+      fontSize: 12,
+      note: '',
+      props: p
+    }
+  })
+
+  const edges = graph.rels.map((r, i) => ({
+    id: 'e' + i,
+    src: 'n' + r.from,
+    tgt: 'n' + r.to,
+    label: r.type || '',
+    polarity: r.polarity || (r.props && r.props.polarity) || 'none',
+    color: r.color || '#000000',
+    width: r.width || 1.5,
+    fontSize: 10,
+    curved: r.curved != null ? !!r.curved : true,
+    delay: !!(r.delay ?? (r.props && r.props.delay)),
+    dash: 'solid',
+    note: '',
+    props: { ...(r.props || {}) }
+  }))
+
+  const names = (currentSources || []).map(s => s.name).join(' + ')
+  return {
+    version: '1.0',
+    modelName: names ? `Composite — ${names}` : 'Composite',
+    modelNote: `Composed in the RCN Graph Composer from ${(currentSources || []).length} subgraph(s). `
+             + `Gold nodes were merged — they arrived from more than one source.`,
+    nodes, edges
+  }
+}
+
+// The Graph Tool reads #graph=<base64 of the state>, decoding with
+// decodeURIComponent(escape(atob(x))) — so encode the mirror image of that.
+function b64state(state) {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(state))))
+}
+
+function openInGraphTool() {
+  if (!currentGraph) { document.getElementById('status').textContent = 'Nothing composed yet'; return }
+  const state = toGraphToolState(currentGraph)
+  const payload = b64state(state)
+  // Long URLs get truncated somewhere in every browser. Rather than hand over
+  // a graph that silently loses its tail, fall back to a file.
+  if (payload.length > 1500000) {
+    download(JSON.stringify(state, null, 2), `rcn-composite-${Date.now()}.json`, 'application/json')
+    document.getElementById('status').textContent =
+      'Too big for a link — downloaded instead, open it with the Graph Tool\'s Load button'
+    return
+  }
+  window.open(`${GT_URL}#graph=${payload}`, '_blank', 'noopener')
+  document.getElementById('status').textContent =
+    `Opened ${state.nodes.length} nodes / ${state.edges.length} edges in the Graph Tool`
+}
+
+// The default export is now the format the Graph Tool actually reads. It still
+// re-loads into the Composer, because Graph.load() accepts `edges` as readily
+// as `rels` — so nothing is lost by preferring the one that works in both.
 function exportJSON() {
   if (!currentGraph) return
-  const json = currentGraph.graph.stringify(2)
-  download(json, `rcn-composite-${Date.now()}.json`, 'application/json')
+  const state = toGraphToolState(currentGraph)
+  download(JSON.stringify(state, null, 2), `rcn-composite-${Date.now()}.json`, 'application/json')
+  document.getElementById('status').textContent = 'Exported as Graph Tool JSON'
+}
+
+// Ward's native serialisation, kept for anyone working against graph.js.
+function exportWardJSON() {
+  if (!currentGraph) return
+  download(currentGraph.graph.stringify(2), `rcn-composite-ward-${Date.now()}.json`, 'application/json')
+  document.getElementById('status').textContent = 'Exported as Ward Graph JSON'
 }
 
 function exportDot() {

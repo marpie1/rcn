@@ -330,6 +330,28 @@ Worked example: `tools/eip-schema-cld.json` T1 → `tools/t1-trace-timeline-demo
 There is no automatic converter yet. If this becomes routine, that is the thing
 to build.
 
+## Receiving a graph from the Composer
+
+`graph-composer.html` speaks Ward's `graph.js` format (`nodes`/`rels`, identity
+by array index, no geometry) and this tool speaks its own. The Composer's
+**Open in Graph Tool** converts and hands over via the URL hash:
+
+```
+graph-tool-v22.html#graph=<base64 of the state object>
+```
+
+`loadFromURL()` decodes with `JSON.parse(decodeURIComponent(escape(atob(raw))))`,
+so anything writing that hash must encode the mirror image —
+`btoa(unescape(encodeURIComponent(json)))` — or non-ASCII labels corrupt.
+
+The conversion worth copying if you ever write another one: **coordinates come
+out of the rendered Graphviz SVG**, not from the data. Ward's format has no
+geometry, and `autoSize()` here only grows `w`/`h` rather than initialising
+them, so a node without a width paints as a bare label. Reading `getBBox()` off
+each `g.node` gives the layout the user is already looking at. Graphviz SVG
+user space is already screen-oriented (y grows downward), so positions only
+need shifting into positive space — no axis flip.
+
 ## Pre-flight
 
 ```
