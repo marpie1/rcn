@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<!-- RCN Graph Composer — Introduction & Positioning
+     Update this file when the identity model changes (schemaLabel, instance
+     names), when beam affordances change (highlighting, bridge, partition),
+     or when the Graph Tool / Composer division of labour shifts. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN Graph Composer — Introduction</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+.page{max-width:820px;margin:0 auto;padding:40px 24px 80px}
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:32px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:32px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569;line-height:1.5}
+.doc-meta{margin-top:14px;font-size:12px;color:#94a3b8}
+.doc-nav{display:flex;gap:12px;margin-bottom:40px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff;transition:background .15s}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+h2{font-size:20px;font-weight:700;color:#0f172a;margin:48px 0 14px;padding-top:8px;border-top:1px solid #e2e8f0}
+h3{font-size:15px;font-weight:600;color:#1e293b;margin:28px 0 8px}
+p{margin-bottom:14px;color:#334155}
+p:last-child{margin-bottom:0}
+.lead{font-size:17px;line-height:1.7;color:#1e293b;margin-bottom:28px;padding:20px 24px;background:#f0f9ff;border-left:4px solid #3b82f6;border-radius:0 8px 8px 0}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0 30px}
+.trio-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 16px 18px;text-align:center}
+.trio-card .ic{font-size:26px;margin-bottom:8px}
+.trio-card h4{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:5px}
+.trio-card p{font-size:12px;color:#475569;margin:0;line-height:1.5}
+.trio-card.time{border-color:#93c5fd;background:#eff6ff;box-shadow:0 2px 10px rgba(59,130,246,.12)}
+.highlight-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin:20px 0 28px}
+.hl-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px}
+.hl-card h4{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:6px}
+.hl-card p{font-size:12px;color:#475569;margin:0;line-height:1.55}
+.unique-list{list-style:none;margin:12px 0 24px}
+.unique-list li{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:#334155;line-height:1.55}
+.unique-list li:last-child{border-bottom:none}
+.unique-list .badge{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#dbeafe;color:#1d4ed8;border-radius:6px;padding:2px 7px;flex-shrink:0;align-self:flex-start;margin-top:2px}
+.unique-list .badge.orig{background:#f3e8ff;color:#6b21a8}
+.comparator{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-bottom:12px}
+.comparator-header{display:flex;align-items:baseline;gap:10px;margin-bottom:7px}
+.comparator-name{font-size:14px;font-weight:700;color:#0f172a}
+.comparator-verdict{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.verdict-good{background:#dcfce7;color:#166534}
+.verdict-partial{background:#fef9c3;color:#854d0e}
+.verdict-diff{background:#fee2e2;color:#991b1b}
+.comparator p{font-size:13px;color:#334155;line-height:1.6;margin:0}
+.callout{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;margin:18px 0;font-size:13px;color:#713f12}
+table.k{width:100%;border-collapse:collapse;margin:16px 0 26px;font-size:13px}
+table.k th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;border-bottom:2px solid #e2e8f0;padding:6px 10px 6px 0}
+table.k td{border-bottom:1px solid #f1f5f9;padding:9px 10px 9px 0;color:#334155;vertical-align:top}
+table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
+.positioning{background:#0f172a;color:#f1f5f9;border-radius:12px;padding:26px 30px;margin-top:40px}
+.positioning h3{color:#fff;margin-top:0}
+.positioning p{color:#cbd5e1;font-size:14px}
+.cta{display:inline-block;margin-top:8px;font-size:13px;font-weight:600;background:#3b82f6;color:#fff;padding:9px 18px;border-radius:8px}
+.cta:hover{background:#2563eb;text-decoration:none}
+.foot{margin-top:48px;padding-top:18px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8}
+code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;font-size:12px;color:#0f172a}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="doc-header">
+    <div class="doc-tag">RCN Toolset · Assembly Layer</div>
+    <div class="doc-title">🧩 RCN Graph Composer</div>
+    <div class="doc-sub">Many people each draw a small graph of what they know. The Composer adds them together where they overlap — so nobody has to draw the whole thing, and nobody has to agree on wording first.</div>
+    <div class="doc-meta">Reimplements Ward Cunningham's Solo Super Collaborator · sibling to the RCN Graph Tool</div>
+  </div>
+
+  <div class="doc-nav">
+    <a class="current" href="graph-composer-intro.html">Introduction</a>
+    <a href="graph-composer-manual.html">User Manual</a>
+    <a href="graph-composer.html">Open the Composer</a>
+    <a href="graph-tool-v22.html">Graph Tool</a>
+  </div>
+
+  <div class="lead">
+    A big diagram nobody can read is easy to make. Fifty-four arrows crossing each
+    other is what you get when one person tries to draw a whole system at once.
+    The Composer takes the opposite route: keep the pieces small enough that each
+    one is legible on its own, and let the machine find where they join.
+  </div>
+
+  <h2>The problem it solves</h2>
+
+  <p>
+    Ask six people about a neighborhood and you get six partial pictures. The
+    housing person draws housing. The health person draws the clinic. Each picture
+    is small, honest, and readable. The trouble has always been putting them
+    together — that has meant one person redrawing everything by hand, and losing
+    detail every time they do.
+  </p>
+
+  <p>
+    The Composer does it mechanically. Load the pieces, tick the ones you want,
+    and it produces the combined graph — fusing any node that appears in more
+    than one piece, and closing loops that no single contributor could see.
+  </p>
+
+  <div class="trio">
+    <div class="trio-card">
+      <div class="ic">✏️</div>
+      <h4>Curate small</h4>
+      <p>Each person draws only what they know. Six nodes, not sixty.</p>
+    </div>
+    <div class="trio-card time">
+      <div class="ic">🧩</div>
+      <h4>Compose</h4>
+      <p>Tick the pieces. Shared nodes fuse; loops close across contributors.</p>
+    </div>
+    <div class="trio-card">
+      <div class="ic">🔍</div>
+      <h4>Decompose</h4>
+      <p>Split a composite back into its connected parts and keep working.</p>
+    </div>
+  </div>
+
+  <h2>Additive, not subtractive</h2>
+
+  <p>
+    There are two ways to get a drawing a group can talk about. You can build the
+    whole system and then hide parts of it, or you can build small pieces and add
+    up the ones you need. The first leaves you maintaining a monster. The second
+    means <strong>you never build the monster in the first place.</strong>
+  </p>
+
+  <p>
+    This matters for the RCN goal of Cave Drawings — images a group can read,
+    point at, and argue about without training. A reference artifact holding
+    everything is legitimate and useful, but it is not something a group talks
+    about. Composition gives you the talking version on demand, assembled from
+    parts that were each readable to begin with.
+  </p>
+
+  <h2>How two pieces know they're about the same thing</h2>
+
+  <p>
+    Everything rests on one question: when two contributors both draw something
+    called "the clinic," is that one node or two?
+  </p>
+
+  <p>
+    The Composer answers it with the <strong>schema label</strong> — the standard
+    name from the neighborhood schema, carried on the node as metadata. Two nodes
+    are the same thing when their schema labels match, plus an instance name when
+    there are several of a kind.
+  </p>
+
+  <table class="k">
+    <tr><th>Field</th><th>Question it answers</th><th>Part of identity?</th></tr>
+    <tr><td>label</td><td>What do we <em>call</em> it on this drawing?</td><td>No — free to change</td></tr>
+    <tr><td>schemaLabel</td><td>What <em>is</em> it, in the schema?</td><td><strong>Yes</strong></td></tr>
+    <tr><td>props.name</td><td><em>Which</em> one, when there are several?</td><td><strong>Yes</strong></td></tr>
+    <tr><td>extraLabels</td><td>What else is it called? Aliases.</td><td>No — data, exported to Neo4j</td></tr>
+  </table>
+
+  <p>
+    The consequence is worth stating plainly: <strong>the words on the drawing are
+    free.</strong> A node can be renamed <code>HOUSING</code> or <code>Housing</code>
+    or <code>the housing we have</code> to suit the audience without changing what
+    it merges with. Legibility and identity stop fighting each other.
+  </p>
+
+  <div class="callout">
+    <strong>No wiki required.</strong> The schema labels live in the files. A
+    FedWiki roster is one convenient way to look standard names up — it is not
+    the price of entry. A folder of JSON files works exactly as well.
+  </div>
+
+  <h2>What it does</h2>
+
+  <div class="highlight-grid">
+    <div class="hl-card">
+      <h4>Beam</h4>
+      <p>The loaded subgraphs, each with a checkbox and its node/edge count. Tick to include.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Composite</h4>
+      <p>Merge the ticked subgraphs. Nodes matching on schema label + instance name become one.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Shared-node highlighting</h4>
+      <p>Untick­ed subgraphs light up when they overlap your selection — brighter the more of it they touch.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Bridge</h4>
+      <p>The stricter question: which unselected piece would <em>connect</em> two you already have?</p>
+    </div>
+    <div class="hl-card">
+      <h4>Partition</h4>
+      <p>Split a composite into its disconnected parts and push them back into the beam.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Export</h4>
+      <p>The composite as graph JSON for the Graph Tool, or as Graphviz DOT.</p>
+    </div>
+  </div>
+
+  <h3>The highlight is a promise, not a hint</h3>
+
+  <p>
+    Because the highlight uses the same key as the merge, a lit row means
+    something specific: compositing that subgraph <em>will</em> fuse those nodes,
+    not set them alongside. Hovering the badge names which ones. The feature stays
+    quiet when there is genuinely no overlap, which is what makes it worth
+    trusting when it does light up.
+  </p>
+
+  <h2>Worked example — the EIP schema</h2>
+
+  <p>
+    The RCN EIP schema exists as sixteen curated aspect files: Action, Affect,
+    Asset, Commitment, Conversation, Culture, Function Objective, Motivation, Org,
+    Person, Place, Power, Problem, Purpose, Role, Solution. Each is small enough
+    to read — two to eight nodes.
+  </p>
+
+  <p>
+    Ticking all sixteen composites <strong>74 source nodes down to 25</strong>,
+    matching the whole-schema reference exactly, with no duplicates. Forty-nine
+    nodes were recognised as repeats of ones already present.
+  </p>
+
+  <p>
+    It also showed something the flattened version had lost. The composite carries
+    relations that the single merged diagram does not — <code>Person —experience→
+    Motivation</code>, <code>Place —support→ Person</code>, <code>Person —make→
+    Commitment</code>, <code>Conversation —for→ Action</code> — plus edge labels
+    that flattening had fused (<code>create / stimulates</code> was two separate
+    relations). <strong>The subgraphs are the better source of truth.</strong>
+  </p>
+
+  <h2>Where it came from</h2>
+
+  <p>
+    This is a reimplementation of Ward Cunningham's <em>Solo Super Collaborator</em>,
+    whose premise is the one above: individuals with specialised knowledge curate
+    small graphs that later compose into a larger community resource, closing
+    loops where the small graphs intersect at identical nodes.
+  </p>
+
+  <div class="comparator">
+    <div class="comparator-header">
+      <span class="comparator-name">wardcunningham.github.io/graph/graph.js</span>
+      <span class="comparator-verdict verdict-good">the original</span>
+    </div>
+    <p>Ward's <code>Graph</code> class. His <code>addUniqNode()</code> carries the same merge rule — reuse an existing node when type and name both match. His <code>clusters()</code> is our Partition.</p>
+  </div>
+  <div class="comparator">
+    <div class="comparator-header">
+      <span class="comparator-name">WardCunningham/assets · pages/mock-graph-data/</span>
+      <span class="comparator-verdict verdict-good">37 files</span>
+    </div>
+    <p>creator.html and composite.html are the originals of this tool. Also cypher, extract, match, navigator, schema, search, transform.</p>
+  </div>
+  <div class="comparator">
+    <div class="comparator-header">
+      <span class="comparator-name">paul90/wiki-plugin-solo</span>
+      <span class="comparator-verdict verdict-partial">wiki side</span>
+    </div>
+    <p>The <code>solo</code> item type — the full-window popup bound to the FedWiki lineup that the live pipeline posts into.</p>
+  </div>
+
+  <p>
+    One idea from Ward's version is <strong>not</strong> yet here, and is worth
+    knowing about: his converter resolves each node's name against the sitemaps of
+    every site in the page's roster, so identity binds to a real federated page
+    rather than a typed string. That is the federated answer to the same question
+    <code>schemaLabel</code> answers locally.
+  </p>
+
+  <h2>Composer or Graph Tool?</h2>
+
+  <p>They are different verbs, deliberately kept apart.</p>
+
+  <ul class="unique-list">
+    <li><span class="badge">Graph Tool</span> Authoring and drawing <em>one</em> graph. Modes, layouts, icons, legend-as-registry, CLD loops, exports. 5,300 lines.</li>
+    <li><span class="badge orig">Composer</span> Assembling <em>many</em> graphs. Beam, merge, bridge, partition. Deliberately small.</li>
+  </ul>
+
+  <p>
+    They share a file format. Draw the pieces in the Graph Tool, assemble them in
+    the Composer, export the composite, open it back in the Graph Tool to lay out
+    and dress for an audience.
+  </p>
+
+  <div class="positioning">
+    <h3>The one-line version</h3>
+    <p>
+      Keep the pieces small enough to read. Let the machine find where they join.
+      Nobody draws the whole thing, and nobody has to agree on wording first —
+      only on what things <em>are</em>.
+    </p>
+    <a class="cta" href="graph-composer-manual.html">Read the User Manual →</a>
+  </div>
+
+  <div class="foot">
+    RCN Graph Composer · <code>tools/graph-composer.html</code> · part of the RCN toolset
+    alongside the Graph Tool, Timeline, and Issue Polygon Map.
+  </div>
+
+</div>
+</body>
+</html>

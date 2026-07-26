@@ -60,7 +60,16 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 
 | File | Purpose | Status |
 |------|---------|--------|
-| `graph-tool-v22.html` | CLD/EIP/NRM/OPM/Trace/Wardley/Triples graph diagramming, MDL/.dot/XMILE/Cypher/Wardley JSON I/O, multi-trace edges, reifiable triples with meta-edges, canvas legend, node+edge layers, Force/Grid/Dagre/Untangle layouts (Untangle = swap-based edge-crossing reduction, cyclic-safe, one-Undo), Vester custom symbols, Print; SVG download injects `<title>` into each node/edge group so browsers show note + props on hover (no JS required); **→ Wiki** button sends enriched SVG ghost page to FedWiki lineup (node labels become clickable internal links — multi-line labels get correct space-separated titles) | **Active** |
+| `graph-tool-v22.html` | CLD/EIP/NRM/OPM/Trace/Wardley/Triples graph diagramming, MDL/.dot/XMILE/Cypher/Wardley JSON I/O, multi-trace edges, reifiable triples with meta-edges, canvas legend, node+edge layers, Force/Grid/Dagre/Untangle layouts (Untangle = swap-based edge-crossing reduction, cyclic-safe, one-Undo), Vester custom symbols, Print; SVG download injects `<title>` into each node/edge group so browsers show note + props on hover (no JS required); **→ Wiki** button sends enriched SVG ghost page to FedWiki lineup (node labels become clickable internal links — multi-line labels get correct space-separated titles); **legend-as-registry** — legend rows DEFINE styles and nodes/edges point at them via `node.legend`/`edge.type` with per-element `ovr` overrides, legend renders inside the SVG so it survives PNG/SVG export (it used to be an HTML div and vanished); **icon nodes** — `node.icon` draws a glyph from the `rcn-icons.js` house library, caption below, white fill + coloured border (the Vera-chart pattern); **`_`-prefixed props are display-only** — shown on hover, never exported to Cypher, following Arrows' throwaway caption; `note` is display-only too; Arrows import now puts labels in `extraLabels` instead of a junk `props._labels` string; `schemaLabel` names what a node IS for composition | **Active** |
+| `graph-composer.html` | **RCN Graph Composer** — assembles many small subgraphs into one graph, merging nodes that appear in more than one. Beam (checkbox list of loaded subgraphs), Composite, Bridge (which unselected piece would *connect* two selected), Partition (split into connected components), graded shared-node highlighting that accumulates as you tick, Graphviz render with gold = merged, export composite JSON / DOT. Merge key is `schemaLabel` + `props.name`; `"?"`/`""`/absent all mean UNNAMED. Reimplements Ward Cunningham's Solo Super Collaborator — see `schemas/ward-graph.md` | **Active** |
+| `graph-composer-intro.html` | Graph Composer — Introduction & positioning | Docs |
+| `graph-composer-manual.html` | Graph Composer — User Manual | Docs |
+| `rcn-graph-composer-intro.pptx` | Graph Composer — deck (12 slides) | Docs |
+| `eip-aspects/*.json` | The 16 curated EIP subgraphs (Action, Affect, Asset, Commitment, Conversation, Culture, Function Objective, Motivation, Org, Person, Place, Power, Problem, Purpose, Role, Solution). Compose to exactly the 25-node whole schema. The worked example for the Composer | **Active** |
+| `eip-schema-cld.json` | EIP schema as one graph — 25 typed entities in 8 families (Person, Institution, Setting, Aim, Doing, Outcome, Issue, Resource), Neo4j labels in `extraLabels`, field templates in `props`, display-only `_gloss`/`_family` on every node | **Active** |
+| `rcn-icons.js` | **RCN house icon library** — 49 neighborhood-focused icons in 8 categories (People, Place, Institution, Resource, Care, Harm, Process, System). Sidecar file loaded beside a tool, same pattern as `rcn_static_data.js`. 24×24, `currentColor`, drawing rules in the header | **Active** |
+| `rcn-icon-sheet.html` | Icon library contact sheet — Vera-style node preview, 22px cave test, category grids, click to copy key | Docs |
+| `neighborhood-cave-drawing.json` | Worked example of legend-as-registry + icon nodes — a resident and the two systems around them | Reference |
 | `nrm-tripod-beta.html` | Standalone Tripod Beta / NRM incident analysis tool — full canvas, barriers, save/load | **Active** |
 | `evsm-aggregator.html` | eVSM 11-sphere visualizer, multi-respondent synthesis, Claude API streaming (direct browser→Anthropic, user's own key); Synthesize All (sequential Claude across all spheres/edges), Full Report (standalone HTML with diagram + syntheses), Export/restore session as JSON bundle | Active |
 | `evsm-svg-v3.html` | eVSM directed edge assessment (Agree/Disagree/Unknown); Snapshot button bakes config into a single distributable HTML file; Print My Report generates blob-based individual report | Active |
@@ -660,7 +669,7 @@ Pi is the long-term neighborhood distribution target.
 | 5173 | Vite dev server | sensimod only |
 
 **Known apps not yet fully in repo** (some built in Claude.ai Chat, not Claude Code):
-- All 13 tools in `rcn/tools/` are here
+- All tools in `rcn/tools/` are here
 - `graph-tool-v22UPDATE.html` on Desktop — not yet merged
 - Unknown number of Chat-built apps not yet inventoried
 - `~/sensimod/` — React/Vite app, kept separate

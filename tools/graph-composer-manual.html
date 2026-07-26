@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<!-- RCN Graph Composer — User Manual
+     Update when: identity rules change (schemaLabel / props.name / UNNAMED),
+     beam colours or channels change, buttons are added, or the accepted input
+     formats change. Verified against graph-composer.html, July 2026. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN Graph Composer — User Manual</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+.page{max-width:860px;margin:0 auto;padding:40px 24px 80px}
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:28px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:32px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569;line-height:1.5}
+.doc-nav{display:flex;gap:12px;margin-bottom:34px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+.toc{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 22px;margin-bottom:36px}
+.toc h4{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:8px}
+.toc ol{margin-left:18px;font-size:13px;color:#334155}
+.toc li{padding:2px 0}
+h2{font-size:20px;font-weight:700;color:#0f172a;margin:44px 0 12px;padding-top:10px;border-top:1px solid #e2e8f0}
+h3{font-size:15px;font-weight:600;color:#1e293b;margin:26px 0 8px}
+p{margin-bottom:13px;color:#334155}
+ul,ol{margin:0 0 14px 22px;color:#334155;font-size:14px}
+li{margin-bottom:6px}
+code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;font-size:12px;color:#0f172a}
+pre{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:14px 18px;overflow-x:auto;font-size:12px;line-height:1.6;margin:14px 0 20px}
+pre code{background:none;border:none;color:inherit;padding:0}
+table.k{width:100%;border-collapse:collapse;margin:14px 0 24px;font-size:13px}
+table.k th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;border-bottom:2px solid #e2e8f0;padding:6px 10px 6px 0}
+table.k td{border-bottom:1px solid #f1f5f9;padding:9px 10px 9px 0;color:#334155;vertical-align:top}
+table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
+.callout{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;margin:18px 0;font-size:13px;color:#713f12}
+.callout.warn{background:#fef2f2;border-color:#fecaca;color:#7f1d1d}
+.callout.ok{background:#f0fdf4;border-color:#bbf7d0;color:#14532d}
+.swatch{display:inline-block;width:11px;height:11px;vertical-align:-1px;border-radius:2px;margin-right:3px}
+.steps{counter-reset:s;list-style:none;margin-left:0}
+.steps li{counter-increment:s;position:relative;padding-left:34px;margin-bottom:12px}
+.steps li:before{content:counter(s);position:absolute;left:0;top:1px;width:22px;height:22px;border-radius:50%;background:#dbeafe;color:#1d4ed8;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.foot{margin-top:48px;padding-top:18px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="doc-header">
+    <div class="doc-tag">RCN Toolset · Assembly Layer</div>
+    <div class="doc-title">🧩 Graph Composer — User Manual</div>
+    <div class="doc-sub">Loading subgraphs, reading the beam, compositing, and getting nodes to merge when you expect them to.</div>
+  </div>
+
+  <div class="doc-nav">
+    <a href="graph-composer-intro.html">Introduction</a>
+    <a class="current" href="graph-composer-manual.html">User Manual</a>
+    <a href="graph-composer.html">Open the Composer</a>
+    <a href="graph-tool-v22.html">Graph Tool</a>
+  </div>
+
+  <div class="toc">
+    <h4>Contents</h4>
+    <ol>
+      <li><a href="#start">Opening it and loading files</a></li>
+      <li><a href="#beam">The beam</a></li>
+      <li><a href="#colours">Reading the colours</a></li>
+      <li><a href="#compose">Composite, Bridge, Partition</a></li>
+      <li><a href="#stats">The numbers</a></li>
+      <li><a href="#canvas">The drawing</a></li>
+      <li><a href="#export">Getting results out</a></li>
+      <li><a href="#identity">Making nodes merge — the identity rules</a></li>
+      <li><a href="#trouble">When it doesn't do what you expect</a></li>
+    </ol>
+  </div>
+
+  <h2 id="start">1 · Opening it and loading files</h2>
+
+  <p>
+    <code>tools/graph-composer.html</code> is a single file. Open it in a browser —
+    no server, no install. It loads the icon library and works offline.
+  </p>
+
+  <h3>Getting subgraphs in</h3>
+  <ul>
+    <li><strong>Drag and drop</strong> one or many files anywhere on the window.</li>
+    <li><strong>+ Load</strong> at the top of the beam opens a file picker.</li>
+    <li>Demo graphs (zoning-rules, land-trust, public-hearing) load automatically so the tool is never empty on first open.</li>
+  </ul>
+
+  <h3>What it accepts</h3>
+  <table class="k">
+    <tr><th>Format</th><th>Notes</th></tr>
+    <tr><td>RCN graph JSON</td><td>The house format — what the Graph Tool saves. <code>nodes</code> + <code>edges</code>.</td></tr>
+    <tr><td>Ward's Graph JSON</td><td><code>nodes</code> + <code>rels</code>.</td></tr>
+    <tr><td>Arrows-ish</td><td>Edges may use <code>src</code>/<code>tgt</code>, <code>from</code>/<code>to</code>, or <code>source</code>/<code>target</code>.</td></tr>
+    <tr><td>JSONL</td><td>If a file won't parse as JSON, the first line is tried.</td></tr>
+  </table>
+
+  <p>
+    Shape, colour, border, width, curve, polarity and delay all survive
+    composition, so an exported composite still looks like what you drew.
+  </p>
+
+  <h2 id="beam">2 · The beam</h2>
+
+  <p>
+    The left column is the <strong>beam</strong> — every loaded subgraph, grouped
+    by where it came from (demo, loaded, partitions, or whatever label it was
+    added with). Each row shows:
+  </p>
+
+  <ul>
+    <li>a <strong>checkbox</strong> — tick to include it in the composite</li>
+    <li>its <strong>name</strong></li>
+    <li>a <strong>badge</strong> when it overlaps your selection (see below)</li>
+    <li>its size as <code>6n/7e</code> — six nodes, seven edges</li>
+    <li>a <strong>×</strong> to remove it</li>
+  </ul>
+
+  <p>
+    <strong>Search</strong> at the top filters by node content — it matches
+    against node types and instance names, not file names, so you can find which
+    subgraphs mention a particular thing.
+  </p>
+
+  <h2 id="colours">3 · Reading the colours</h2>
+
+  <p>
+    The beam uses <strong>two independent channels</strong>, so a row can carry
+    both at once without ambiguity.
+  </p>
+
+  <table class="k">
+    <tr><th>What you see</th><th>What it means</th></tr>
+    <tr><td><span class="swatch" style="background:#faf4e6;box-shadow:inset 2px 0 0 #d9c48e"></span> ●</td><td>Shares nodes with <strong>one</strong> subgraph you have ticked</td></tr>
+    <tr><td><span class="swatch" style="background:#f6ecd2;box-shadow:inset 2px 0 0 #bfa055"></span> ●●</td><td>… with <strong>two</strong></td></tr>
+    <tr><td><span class="swatch" style="background:#f1e3bb;box-shadow:inset 2px 0 0 #8a6a2e"></span> ●●●</td><td>… with <strong>three or more</strong></td></tr>
+    <tr><td style="color:#2a6898">blue text</td><td>Matches what you typed in the search box</td></tr>
+  </table>
+
+  <p>
+    Background and stripe mean overlap. Text colour means search. They never mean
+    the same thing, so blue text on a tan stripe reads cleanly as "matches my
+    search <em>and</em> shares nodes with my selection."
+  </p>
+
+  <p>
+    <strong>Hover the badge</strong> and it names the shared nodes:
+    <em>"shares 4 nodes with 2 selected subgraphs: Culture, Ideal, Org, Value."</em>
+  </p>
+
+  <div class="callout ok">
+    The highlight uses the same key as the merge, so it is a <strong>promise</strong>,
+    not a hint. If a row lights up, compositing it really will fuse those nodes
+    rather than add them alongside.
+  </div>
+
+  <h2 id="compose">4 · Composite, Bridge, Partition</h2>
+
+  <h3>Composite</h3>
+  <p>
+    Merges everything ticked. Two nodes from different subgraphs become one when
+    their schema label and instance name both match; their properties are merged.
+    Duplicate relations of the same type between the same pair collapse to one.
+  </p>
+
+  <h3>Bridge</h3>
+  <p>
+    A stricter question than the highlight. Bridge marks subgraphs that touch
+    <strong>two or more</strong> of your selection — the ones that would
+    <em>connect</em> pieces you already have, closing a loop between them. Use the
+    highlight to see all overlap; use Bridge when you're specifically hunting for
+    the piece that joins two islands.
+  </p>
+
+  <h3>Partition</h3>
+  <p>
+    Splits the current composite into its disconnected parts and adds each back to
+    the beam as a new subgraph. Useful for pulling a tangle apart, or for checking
+    whether what you composed is actually one connected system.
+  </p>
+
+  <div class="callout">
+    A fully connected graph partitions into <strong>one</strong> piece — that is
+    not a failure, it's the answer. The EIP schema does exactly this: 25 nodes,
+    all connected, so Partition returns it unchanged. Subgraphs there have to be
+    <em>curated</em>, not derived.
+  </div>
+
+  <h2 id="stats">5 · The numbers</h2>
+
+  <table class="k">
+    <tr><th>Stat</th><th>Meaning</th></tr>
+    <tr><td>nodes</td><td>Nodes in the composite, after merging</td></tr>
+    <tr><td>edges</td><td>Relations in the composite</td></tr>
+    <tr><td>merged</td><td>How many nodes were recognised as repeats and fused</td></tr>
+    <tr><td>sources</td><td>How many subgraphs went in</td></tr>
+    <tr><td>typed</td><td><strong>How many source nodes carry a <code>schemaLabel</code>.</strong> Goes amber when short of the total.</td></tr>
+  </table>
+
+  <p>
+    <em>typed</em> is the one to watch. A node without a schema label falls back
+    to its display label for identity, which means renaming it for legibility will
+    silently stop it merging with its siblings. <code>75/75</code> means nothing
+    is relying on its display text.
+  </p>
+
+  <h2 id="canvas">6 · The drawing</h2>
+
+  <p>The composite renders through Graphviz. Node colours describe provenance:</p>
+
+  <table class="k">
+    <tr><th>Colour</th><th>Meaning</th></tr>
+    <tr><td><span class="swatch" style="background:#b8d4b8"></span> pale green</td><td>Unique node — came from only one subgraph</td></tr>
+    <tr><td><span class="swatch" style="background:#b8860b"></span> gold</td><td><strong>Merged</strong> node — arrived from two or more and was fused</td></tr>
+    <tr><td>black edge</td><td>Positive relation</td></tr>
+    <tr><td>red edge</td><td>Negative relation</td></tr>
+    <tr><td>dashed edge</td><td>Delay</td></tr>
+  </table>
+
+  <p>
+    Gold is composition made visible — it shows you exactly where the pieces
+    joined. <strong>Layout</strong> offers the Graphviz engines: dot (hierarchical),
+    neato, fdp, circo, twopi, sfdp. Click a node for its details.
+  </p>
+
+  <h2 id="export">7 · Getting results out</h2>
+
+  <ul>
+    <li><strong>Export composite</strong> — graph JSON. Open it in the Graph Tool to lay out, add icons, set the legend, and dress it for an audience.</li>
+    <li><strong>Export DOT</strong> — Graphviz source, for anywhere that renders DOT.</li>
+    <li><strong>Clear all</strong> — empties the beam.</li>
+  </ul>
+
+  <p>
+    The intended round trip: <strong>draw pieces in the Graph Tool → assemble in
+    the Composer → export → dress in the Graph Tool.</strong>
+  </p>
+
+  <h2 id="identity">8 · Making nodes merge — the identity rules</h2>
+
+  <p>This is the part worth understanding properly. Four fields, four questions:</p>
+
+  <table class="k">
+    <tr><th>Field</th><th>Question</th><th>Identity?</th></tr>
+    <tr><td>label</td><td>What do we call it here?</td><td>No — free</td></tr>
+    <tr><td>schemaLabel</td><td>What is it, in the schema?</td><td><strong>Yes</strong></td></tr>
+    <tr><td>props.name</td><td>Which one, if several?</td><td><strong>Yes</strong></td></tr>
+    <tr><td>extraLabels</td><td>What else is it called?</td><td>No — aliases</td></tr>
+  </table>
+
+  <p>The merge key is <code>schemaLabel</code> + <code>props.name</code>.</p>
+
+  <h3>Unnamed means "the type itself"</h3>
+  <p>
+    <code>"?"</code>, <code>""</code> and a missing <code>props.name</code> are all
+    treated as the same UNNAMED value. So:
+  </p>
+  <ul>
+    <li><strong>Drawing a schema</strong> — one Person, one Org. Names blank. The schema label alone is the whole identity.</li>
+    <li><strong>Drawing a real neighborhood</strong> — three orgs. Schema label says <code>Org</code>; the instance name says which.</li>
+  </ul>
+
+  <h3>A minimal node</h3>
+<pre><code>{
+  "id": "n0",
+  "label": "THE CLINIC",          // what it's called here — free
+  "schemaLabel": "Org",           // what it IS — identity
+  "extraLabels": ["Org"],         // aliases, exported to Neo4j
+  "props": { "name": "Superior Community Clinic" },
+  "x": 100, "y": 100, "w": 110, "h": 60, "shape": "ellipse"
+}</code></pre>
+
+  <div class="callout">
+    <strong>Why not just use <code>extraLabels</code>?</strong> Because it's a
+    list, and a list can't be an identity — any rule for picking an element is
+    arbitrary and order-dependent. Two RCN aspect files already disagree on order
+    (<code>["Action","Active Goal"]</code> versus the reverse). Aliases are real
+    and worth keeping; they just aren't what a node <em>is</em>.
+  </div>
+
+  <h2 id="trouble">9 · When it doesn't do what you expect</h2>
+
+  <h3>Two nodes that should be one</h3>
+  <p>Check, in order:</p>
+  <ol class="steps">
+    <li>Does the <em>typed</em> stat show everything typed? If it's amber, some node is identifying by its display label.</li>
+    <li>Do both nodes have the same <code>schemaLabel</code>? Case and spacing count.</li>
+    <li>Do both have the same <code>props.name</code>? Remember blank, <code>""</code> and <code>"?"</code> are all the same, but <code>"Clinic"</code> and <code>"clinic"</code> are not.</li>
+    <li>Hover the shared badge on the unticked one. If it doesn't list the node you expect, they aren't matching.</li>
+  </ol>
+
+  <div class="callout warn">
+    This is the failure to watch for, because it is silent. Sixteen RCN aspect
+    files once composed to 30 nodes instead of 25 — five entities each split in
+    two — because <em>one</em> file omitted <code>props.name</code> where the
+    others had <code>"?"</code>. Nothing errored. The drawing just quietly
+    described a world with two Persons in it.
+  </div>
+
+  <h3>Everything collapsed into one node</h3>
+  <p>
+    The opposite failure. If several genuinely different things share a schema
+    label and none has an instance name, they are — by the rule — the same thing.
+    Give them <code>props.name</code> values.
+  </p>
+
+  <h3>Nothing highlights</h3>
+  <p>
+    Either there's genuinely no overlap, or nothing is ticked. The highlight is
+    relative to your current selection, and ticked rows never highlight themselves.
+  </p>
+
+  <h3>A subgraph won't load</h3>
+  <p>
+    Open the browser console. Failures are logged with the filename. The usual
+    causes are an empty <code>nodes</code> array or edge endpoints that don't
+    match any node id — edges referencing missing nodes are dropped silently.
+  </p>
+
+  <div class="foot">
+    RCN Graph Composer · <code>tools/graph-composer.html</code> ·
+    file format details in <code>tools/schemas/graph-tool-v22.md</code> ·
+    provenance in <code>tools/schemas/ward-graph.md</code> ·
+    example subgraphs in <code>tools/eip-aspects/</code>
+  </div>
+
+</div>
+</body>
+</html>

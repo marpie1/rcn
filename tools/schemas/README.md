@@ -15,6 +15,12 @@ provenance.
 | `tools/graph-tool-v22.html` | [graph-tool-v22.md](graph-tool-v22.md) | native graph JSON |
 | `tools/rcn-timeline.html` | [rcn-timeline.md](rcn-timeline.md) | timeline model JSON |
 | `tools/issue-polygon-map.html` | [issue-polygon-map.md](issue-polygon-map.md) | GeoJSON FeatureCollection |
+| `tools/graph-composer.html` | [graph-tool-v22.md](graph-tool-v22.md) — same file format | native graph JSON |
+
+Plus one file that is **not** a schema but explains where a tool came from:
+[ward-graph.md](ward-graph.md) — Ward Cunningham's `Graph` class, the
+`pages/mock-graph-data/` originals, and the live FedWiki pipeline the Composer
+reimplements. Read it before changing composition or node identity.
 
 Each file is written **from the tool's own load and save functions**, with line
 references, and states the commit it was verified against. When a tool changes,
