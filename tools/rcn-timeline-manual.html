@@ -32,6 +32,10 @@ code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5
 kbd{background:#fff;border:1px solid #cbd5e1;border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:11px;font-family:system-ui,sans-serif;color:#0f172a}
 .tip{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#14532d}
 .note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#1e3a8a}
+.ok-chip,.warn-chip,.bad-chip{display:inline-block;border-radius:4px;padding:0 6px;font-size:12px;font-weight:600}
+.ok-chip{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534}
+.warn-chip{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+.bad-chip{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
 .warn{background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#713f12}
 table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0 22px}
 th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
@@ -68,7 +72,7 @@ td:first-child code{font-weight:600}
     <a href="#s11">11 · Provenance</a>
     <a href="#s12">12 · Selecting, editing, deleting</a>
     <a href="#s13">13 · Deep links (Copy link)</a>
-    <a href="#s14">14 · Exporting (JSON · SVG · PNG)</a>
+    <a href="#s14">14 · Importing &amp; exporting</a>
     <a href="#s15">15 · Keyboard &amp; mouse reference</a>
     <a href="#s16">16 · Working patterns</a>
     <a href="#s17">17 · What's not here yet</a>
@@ -157,6 +161,15 @@ td:first-child code{font-weight:600}
     <li>Click the <strong>source</strong> interval, then the <strong>target</strong>. Done.</li>
   </ol>
   <p>Or type it: <code>Pilot before Grant</code>, <code>Grant meets Scale-up</code>. Select a link to change its type, confidence, or provenance in the panel.</p>
+  <h3>Neither link can say <em>during</em></h3>
+  <p>Both relations are defined against where A <strong>ends</strong>. That means <strong>you cannot link two intervals that overlap</strong> — and if you try, nothing complains. The solver simply pushes B, and everything downstream of B, until the overlap is gone. The dates you typed are quietly replaced.</p>
+  <p>This bites hardest with long-running states. An interval "Building in community ownership, 2022→2030" with <code>before</code> pointing at "Units occupied" does not mean <em>the occupancy follows from the ownership</em> — it means <em>the occupancy cannot begin until 2030</em>.</p>
+  <p>Two ways out, both legitimate:</p>
+  <ul>
+    <li><strong>Bound the interval</strong> to the event that actually causes the next thing ("title transferred, Nov 2022 – Feb 2023") rather than to the open-ended state it begins.</li>
+    <li><strong>Don't link it.</strong> Overlapping intervals can just carry their own dates and sit side by side. Links are for sequence; dates carry everything else.</li>
+  </ul>
+  <div class="warn">The <strong>Import</strong> report (§14) flags this before you load a file, and it is worth a glance whenever a bar lands somewhere you did not expect: it is almost always a link across an overlap, not a bad date.</div>
 
   <h2 id="s9">9 · The solver &amp; contradictions</h2>
   <p>After every edit the tool re-solves: it propagates the links forward in time, moving floating intervals so the relations hold. Slack and "critical path" behaviour fall out of this automatically — you don't set them.</p>
@@ -205,13 +218,30 @@ td:first-child code{font-weight:600}
   </ul>
   <div class="warn">Because the tool has no server, the link is <strong>self-contained</strong> — it carries the whole timeline inside the URL. That means links can get long and won't auto-update if you change the timeline later. It's perfect for "here's the state I'm looking at" sharing into a document, chat, or FedWiki page. (If timelines are later hosted under names, links can become short pointers instead.)</div>
 
-  <h2 id="s14">14 · Exporting (JSON · SVG · PNG)</h2>
+  <h2 id="s14">14 · Importing and exporting (JSON · SVG · PNG)</h2>
+  <p><strong>Import</strong> is one button and the three <strong>exports</strong> are another three. They used to share a single box, which showed your current model in a textarea with a <em>Load</em> button beside it — so the thing you were reading and the thing that would overwrite it were the same field. They are separate doors now.</p>
+  <h3>Getting a timeline in</h3>
   <ul>
-    <li><strong>JSON…</strong> opens a box to copy the model out or paste one in and <em>Load</em> it. Dates are stored as readable strings; each object keeps a stable <code>id</code> (so a future bridge can match an interval to a Graph node or a Map parcel).</li>
+    <li><strong>Import</strong> opens a box with three ways in: <em>drop</em> a <code>.json</code> file on it, <em>click</em> it to pick a file, or <em>paste</em> JSON into the text area below.</li>
+    <li>You can also <strong>drop a <code>.json</code> file anywhere on the window</strong> — the whole page becomes a target and the import box opens with the file already read.</li>
+    <li>Nothing loads until you press <strong>Load</strong>. Before then you get a report of what is in the file.</li>
+  </ul>
+  <h3>The import report</h3>
+  <p>Every file is checked before it can load, and the result is colour-coded:</p>
+  <ul>
+    <li><span class="ok-chip">Green</span> — interval and link counts, the model name, and "checks out."</li>
+    <li><span class="warn-chip">Amber</span> — it will load, but something is worth knowing: a link whose <code>rel</code> is not <code>meets</code> or <code>before</code> (it will silently behave as <code>before</code>), an interval with no end date (it will default to one year long), an unreadable date, or — the one that catches people — <strong>a link between two intervals that overlap</strong>. Neither relation can say <em>during</em>, so the solver will push the second interval, and everything after it, until the overlap is gone. Your dates go quietly missing. See <a href="#s8">§8</a>.</li>
+    <li><span class="bad-chip">Red</span> — it cannot load, and <em>Load</em> is disabled: JSON that will not parse, a link pointing at an interval id that does not exist, or duplicate ids.</li>
+  </ul>
+  <div class="warn">Importing <strong>replaces</strong> what is on the canvas. There is no undo. Export first if you want to keep it.</div>
+  <h3>Getting a timeline out</h3>
+  <ul>
+    <li><strong>JSON</strong> downloads the model as a <code>.json</code> file, named after the model. Dates are stored as readable strings; each object keeps a stable <code>id</code> (so a future bridge can match an interval to a Graph node or a Map parcel).</li>
     <li><strong>SVG</strong> downloads a crisp vector image of the whole timeline (fit to content, white background).</li>
     <li><strong>PNG</strong> downloads a high-resolution raster image.</li>
   </ul>
   <p>SVG and PNG are the same exports the Graph Tool offers; format types that only make sense for graphs (MDL, Cypher) are intentionally left out.</p>
+  <p>To share a timeline without a file at all, use <strong>🔗 Link</strong> (§13) — it carries the whole model in the URL.</p>
 
   <h2 id="s15">15 · Keyboard &amp; mouse reference</h2>
   <table>

@@ -122,7 +122,9 @@ timeline where every `conf` is 1 and every `who` is empty is not using the tool.
 
 ## Pre-flight
 
-There is no validator for this tool yet. Check by hand:
+The **Import** button now runs these checks for you and shows a report before
+anything loads (red = will not load, amber = loads with a caveat, green = clean).
+Authoring a file by hand outside the tool, check the same list:
 
 - every `links[].from` / `links[].to` matches an `intervals[].id`
 - no `rel` value other than `meets` or `before`

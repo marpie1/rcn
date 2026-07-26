@@ -74,7 +74,7 @@ a.tb-btn{text-decoration:none;display:inline-flex;align-items:center}
 a.tb-btn.help{color:#1d4ed8;border-color:#bfdbfe;background:#eff6ff}
 a.tb-btn.help:hover{background:#dbeafe}
 .tb-title{font-size:13px;font-weight:600;color:#1e293b;margin-right:6px}
-#sentence{font-size:12px;padding:4px 9px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#1e293b;width:290px}
+#sentence{font-size:12px;padding:4px 9px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#1e293b;flex:0 1 228px;min-width:120px}
 #sentence:focus{outline:none;border-color:#93c5fd}
 #main{display:flex;flex:1;overflow:hidden}
 #canvas-wrap{flex:1;position:relative;overflow:auto;background:#fff;touch-action:none}
@@ -123,6 +123,17 @@ textarea.prop-input{resize:vertical;min-height:44px;font-family:inherit}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end}
 .modal-btns button{font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#1e293b}
 .modal-btns button.primary{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+.modal-btns button:disabled{opacity:.45;cursor:default}
+#drop-zone{border:1px dashed #cbd5e1;border-radius:8px;padding:22px 12px;text-align:center;font-size:12px;color:#64748b;cursor:pointer;background:#f8fafc}
+#drop-zone.over{border-color:#3b82f6;background:#eff6ff;color:#1d4ed8}
+.modal-or{font-size:11px;color:#94a3b8;text-align:center}
+#modal .hint{font-size:11px;color:#64748b;line-height:1.5}
+#import-report{font-size:12px;line-height:1.6;border-radius:6px;padding:8px 10px;display:none}
+#import-report.ok{display:block;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+#import-report.warn{display:block;background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+#import-report.bad{display:block;background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+#drop-veil{position:fixed;inset:0;z-index:150;display:none;align-items:center;justify-content:center;background:rgba(59,130,246,.10);border:3px dashed #3b82f6;font-size:16px;color:#1d4ed8;font-weight:500;pointer-events:none}
+#drop-veil.show{display:flex}
 .iv-label{font-size:12px;font-weight:600;fill:#1e293b;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
 .axis-tick{stroke:#e2e8f0;stroke-width:1}
 .axis-text{font-size:10px;fill:#94a3b8}
@@ -150,7 +161,8 @@ textarea.prop-input{resize:vertical;min-height:44px;font-family:inherit}
     <span class="tb-sep"></span>
     <button class="tb-btn" id="btn-demo" title="Load the sample timeline (founding → first report)">Demo</button>
     <span class="tb-sep"></span>
-    <button class="tb-btn" id="btn-export" title="View, copy, or paste-and-load the timeline as JSON">JSON…</button>
+    <button class="tb-btn" id="btn-import" title="Load a timeline from a .json file — drop it here, choose it, or paste it. (You can also drop a .json anywhere on the canvas.)">Import</button>
+    <button class="tb-btn" id="btn-export" title="Download this timeline as a .json file">JSON</button>
     <button class="tb-btn" id="btn-svg" title="Download the timeline as an SVG vector image">SVG</button>
     <button class="tb-btn" id="btn-png" title="Download the timeline as a PNG image">PNG</button>
     <button class="tb-btn" id="btn-link" title="Copy a shareable link that reopens this exact timeline (and highlights the selected object)">🔗 Link</button>
@@ -174,14 +186,18 @@ textarea.prop-input{resize:vertical;min-height:44px;font-family:inherit}
 </div>
 <div id="tip"></div>
 <div id="modal-bg"><div id="modal">
-  <h3 id="modal-title">JSON</h3>
-  <textarea id="modal-text" spellcheck="false"></textarea>
+  <h3 id="modal-title">Import timeline JSON</h3>
+  <div class="hint">Replaces what is on the canvas. Export first if you want to keep it.</div>
+  <div id="drop-zone">Drop a <b>.json</b> file here, or click to choose one</div>
+  <div class="modal-or">— or paste JSON —</div>
+  <textarea id="modal-text" spellcheck="false" placeholder='{"name":"…", "intervals":[…], "links":[…]}'></textarea>
+  <div id="import-report"></div>
   <div class="modal-btns">
-    <button id="modal-copy">Copy</button>
-    <button id="modal-load" class="primary">Load from text</button>
-    <button id="modal-close">Close</button>
+    <button id="modal-close">Cancel</button>
+    <button id="modal-load" class="primary">Load</button>
   </div>
 </div></div>
+<div id="drop-veil">Drop a .json timeline to load it</div>
 
 <script>
 "use strict";
@@ -719,18 +735,119 @@ function fit(){
   render();
 }
 
-/* ── JSON modal ──────────────────────────────────────────── */
-var mbg=document.getElementById("modal-bg");
+/* ── JSON out ────────────────────────────────────────────── */
+/* Export writes a file, like SVG and PNG do. It used to share a modal with
+   import, which meant the textarea showed your current model and the button
+   next to it silently replaced it. Two separate doors now. */
 document.getElementById("btn-export").onclick=function(){
-  document.getElementById("modal-text").value=JSON.stringify(exportModel(),null,2);
+  dl(slug()+".json",new Blob([JSON.stringify(exportModel(),null,2)],{type:"application/json;charset=utf-8"}));
+  toast("Downloaded "+slug()+".json");
+};
+
+/* ── JSON in ─────────────────────────────────────────────── */
+var mbg=document.getElementById("modal-bg"),dz=document.getElementById("drop-zone"),
+    mtext=document.getElementById("modal-text"),mreport=document.getElementById("import-report"),
+    mload=document.getElementById("modal-load");
+
+/* The pre-flight from schemas/rcn-timeline.md, run before the file lands.
+   Nothing here blocks a load except JSON that will not parse — contradictions
+   are data. Everything else is a heads-up. */
+function checkModel(o){
+  var fatal=[],warn=[];
+  if(!o||typeof o!=="object"||Array.isArray(o))return{fatal:["Not a timeline object."],warn:[],n:0,m:0};
+  var ivs=o.intervals,lks=o.links||[];
+  if(!Array.isArray(ivs)||!ivs.length)fatal.push("No <code>intervals</code> array.");
+  if(!Array.isArray(lks))fatal.push("<code>links</code> is not an array.");
+  if(fatal.length)return{fatal:fatal,warn:warn,n:0,m:0};
+
+  var byId={},dupes=[];
+  ivs.forEach(function(v,i){
+    var id=v.id||"(no id — one will be generated)";
+    if(v.id&&byId[v.id])dupes.push(v.id); else if(v.id)byId[v.id]=v;
+    var raw=(v.start!=null?v.start:v.s);
+    if(raw==null)warn.push("<b>"+(v.label||"interval "+(i+1))+"</b> has no start date — it will land at year 0.");
+    else if(parseDate(raw)==null)warn.push("Unreadable date <code>"+raw+"</code> on <b>"+(v.label||"interval "+(i+1))+"</b>.");
+    if(v.end==null&&v.e==null)warn.push("<b>"+(v.label||"interval "+(i+1))+"</b> has no end — it will default to one year long.");
+  });
+  if(dupes.length)fatal.push("Duplicate interval ids: <code>"+dupes.join(", ")+"</code>.");
+
+  lks.forEach(function(L,i){
+    var tag="link "+(i+1)+" ("+(L.from||"?")+" → "+(L.to||"?")+")";
+    if(!byId[L.from])fatal.push(tag+" — <code>from</code> matches no interval id.");
+    if(!byId[L.to])fatal.push(tag+" — <code>to</code> matches no interval id.");
+    if(L.rel&&L.rel!=="meets"&&L.rel!=="before")
+      warn.push(tag+" uses <code>"+L.rel+"</code>. Only <code>meets</code> and <code>before</code> exist; this will behave as <code>before</code>.");
+    /* the trap: both relations need disjoint intervals, so a link across an
+       overlap makes the solver move things and quietly drop your dates */
+    var A=byId[L.from],B=byId[L.to];
+    if(A&&B){
+      var ae=A.end!=null?parseDate(A.end):(A.e!=null?parseDate(A.e):null),
+          bs=parseDate(B.start!=null?B.start:B.s);
+      if(ae!=null&&bs!=null&&bs<ae-1e-6)
+        warn.push(tag+" — the intervals overlap, and neither relation can say <i>during</i>. The solver will push <b>"+(B.label||L.to)+"</b> (and anything after it) to clear the overlap.");
+    }
+  });
+  return{fatal:fatal,warn:warn,n:ivs.length,m:lks.length};
+}
+
+var pending=null; /* parsed candidate model, or null */
+function showReport(txt,cls){mreport.className=cls;mreport.innerHTML=txt;}
+function reviewText(str,srcLabel){
+  mtext.value=str;
+  var o;
+  try{o=JSON.parse(str);}
+  catch(err){pending=null;mload.disabled=true;showReport("<b>Not valid JSON.</b><br>"+String(err.message||err),"bad");return;}
+  var r=checkModel(o);
+  if(r.fatal.length){pending=null;mload.disabled=true;
+    showReport("<b>Cannot load"+(srcLabel?" "+srcLabel:"")+".</b><ul><li>"+r.fatal.join("</li><li>")+"</li></ul>","bad");return;}
+  pending=o;mload.disabled=false;
+  var head="<b>"+(srcLabel?srcLabel+" — ":"")+r.n+" interval"+(r.n===1?"":"s")+", "+r.m+" link"+(r.m===1?"":"s")+"</b>"+(o.name?" · "+o.name:"");
+  if(r.warn.length)showReport(head+"<br>Loads fine, but worth a look:<ul><li>"+r.warn.join("</li><li>")+"</li></ul>","warn");
+  else showReport(head+"<br>Checks out.","ok");
+}
+function readFile(file){
+  if(!file)return;
+  var rd=new FileReader();
+  rd.onload=function(ev){reviewText(String(ev.target.result),file.name);};
+  rd.readAsText(file);
+}
+function openImport(){
+  mtext.value="";pending=null;mload.disabled=true;mreport.className="";mreport.innerHTML="";
   mbg.className="show";
-};
+}
+document.getElementById("btn-import").onclick=openImport;
 document.getElementById("modal-close").onclick=function(){mbg.className="";};
-document.getElementById("modal-copy").onclick=function(){var t=document.getElementById("modal-text");t.select();document.execCommand("copy");toast("copied");};
-document.getElementById("modal-load").onclick=function(){
-  try{importModel(JSON.parse(document.getElementById("modal-text").value));mbg.className="";toast("loaded");}
-  catch(err){toast("invalid JSON");}
+mload.onclick=function(){
+  if(!pending)return;
+  var n=(pending.intervals||[]).length,m=(pending.links||[]).length;
+  importModel(pending);mbg.className="";
+  toast("Loaded "+n+" interval"+(n===1?"":"s")+", "+m+" link"+(m===1?"":"s"));
 };
+mtext.addEventListener("input",function(){
+  if(!mtext.value.trim()){pending=null;mload.disabled=true;mreport.className="";return;}
+  reviewText(mtext.value,"");
+});
+dz.addEventListener("click",function(){
+  var inp=document.createElement("input");inp.type="file";inp.accept=".json,application/json";
+  inp.onchange=function(ev){readFile(ev.target.files[0]);};
+  inp.click();
+});
+dz.addEventListener("dragover",function(ev){ev.preventDefault();dz.classList.add("over");});
+dz.addEventListener("dragleave",function(){dz.classList.remove("over");});
+dz.addEventListener("drop",function(ev){ev.preventDefault();ev.stopPropagation();dz.classList.remove("over");readFile(ev.dataTransfer.files[0]);});
+
+/* drop a .json anywhere on the window — the modal opens with it already read */
+var veil=document.getElementById("drop-veil"),dragDepth=0;
+function hasFile(ev){return ev.dataTransfer&&Array.prototype.indexOf.call(ev.dataTransfer.types||[],"Files")>=0;}
+window.addEventListener("dragenter",function(ev){if(!hasFile(ev))return;dragDepth++;veil.classList.add("show");});
+window.addEventListener("dragover",function(ev){if(hasFile(ev))ev.preventDefault();});
+window.addEventListener("dragleave",function(ev){if(!hasFile(ev))return;if(--dragDepth<=0){dragDepth=0;veil.classList.remove("show");}});
+window.addEventListener("drop",function(ev){
+  if(!hasFile(ev))return;
+  ev.preventDefault();dragDepth=0;veil.classList.remove("show");
+  var f=ev.dataTransfer.files[0];if(!f)return;
+  openImport();readFile(f);
+});
 function exportModel(){
   return {name:M.name,
     intervals:M.intervals.map(function(v){return{id:v.id,label:v.label,start:fmtDate(v.s),end:fmtDate(v.e),startFuzz:r2(v.sf),endFuzz:r2(v.ef),pinned:v.pinned,color:v.color,row:v.row,who:v.who,note:v.note,conf:v.conf};}),
