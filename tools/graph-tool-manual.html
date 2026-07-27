@@ -476,7 +476,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
           <tr><td>Duplicate</td><td><strong>Dupe</strong> or <kbd>Ctrl</kbd>+<kbd>D</kbd></td><td>Duplicates selected nodes and their internal edges, offset slightly</td></tr>
           <tr><td>Delete</td><td><strong>Delete</strong> or <kbd>Delete</kbd> / <kbd>Backspace</kbd></td><td>Deletes selected nodes and all edges connected to them</td></tr>
           <tr><td>Reverse selected</td><td><strong>Rev.sel</strong></td><td>Reverses direction of selected edges</td></tr>
-          <tr><td>Reverse all</td><td><strong>Rev.all</strong></td><td>Reverses all edges in the graph</td></tr>
+          <tr><td>Reverse all</td><td><strong>Rev.all</strong></td><td>Reverses all edges in the graph — asks for confirmation first, since it rewrites every edge</td></tr>
           <tr><td>Clear canvas</td><td><strong>Clear</strong> (red)</td><td>Deletes everything — undoable</td></tr>
         </tbody>
       </table>
@@ -653,6 +653,16 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
       </ol>
       <p>
         Edges in multiple traces show stacked colored dots at their midpoint — one per trace, ordered T1→T4 along the edge direction.
+      </p>
+      <h3>Clearing a whole trace</h3>
+      <p>
+        The <strong>∅</strong> button only clears the edges you have selected, and it clears
+        <em>all</em> their traces at once. To delete one entire trace from the graph, use the
+        <strong>Clear a whole trace</strong> row in the sidebar Trace controls: <strong>✕ T1 / ✕ T2 /
+        ✕ T3 / ✕ T4</strong>. Each button strips that one trace number from every edge that carries
+        it, regardless of what is selected. Other traces on the same edge are kept, and edges,
+        directions and labels are never touched. If the trace being cleared is currently animating,
+        the animation stops first. One <kbd>Undo</kbd> puts the trace back.
       </p>
       <h3>Animating a trace</h3>
       <ol>
@@ -1200,7 +1210,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
           <tr><td>Long-press node (Basic mode)</td><td>Open Driver Tree popup (Effects / Causes / Both)</td></tr>
           <tr><td>Long-press node (CLD mode)</td><td>Open propagation popup (↑/↓)</td></tr>
           <tr><td><kbd>T</kbd></td><td>Toggle triple on the selected edge — promotes or demotes it as a reifiable triple (when one edge is selected)</td></tr>
-          <tr><td><kbd>Alt</kbd>+click edge</td><td>Cycle arrow direction (→ / ← / —) without opening the Properties panel</td></tr>
+          <tr><td><kbd>Alt</kbd>+click edge</td><td>Cycle arrow direction (→ / ← / —) without opening the Properties panel. Select mode only, and only on a click that does not move — <kbd>Alt</kbd>+<em>drag</em> pans the canvas as usual, even when the press lands on an edge. The <strong>—</strong> state draws no arrowhead and leaves <code>src</code>/<code>tgt</code> as authored.</td></tr>
         </tbody>
       </table>
     </section>

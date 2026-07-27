@@ -752,6 +752,13 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
           <button id="btn-tl-t3" class="tb-btn" onclick="sendTraceToTimeline(3)" style="flex:1;font-size:10px;color:#0e7490;border-color:#22d3ee" title="Open T3 in the RCN Timeline">&#8987; T3</button>
           <button id="btn-tl-t4" class="tb-btn" onclick="sendTraceToTimeline(4)" style="flex:1;font-size:10px;color:#9f1239;border-color:#fb7185" title="Open T4 in the RCN Timeline">&#8987; T4</button>
         </div>
+        <div style="font-size:10px;color:#64748b;margin:6px 0 3px;padding:0 2px" title="Removes that trace from every edge that carries it. Edges, directions and other traces are untouched.">Clear a whole trace</div>
+        <div style="display:flex;gap:3px">
+          <button id="btn-clr-t1" class="tb-btn" onclick="clearTrace(1)" style="flex:1;font-size:10px;color:#c2410c;border-color:#fb923c" title="Remove T1 from every edge">&#10005; T1</button>
+          <button id="btn-clr-t2" class="tb-btn" onclick="clearTrace(2)" style="flex:1;font-size:10px;color:#6b21a8;border-color:#a855f7" title="Remove T2 from every edge">&#10005; T2</button>
+          <button id="btn-clr-t3" class="tb-btn" onclick="clearTrace(3)" style="flex:1;font-size:10px;color:#0e7490;border-color:#22d3ee" title="Remove T3 from every edge">&#10005; T3</button>
+          <button id="btn-clr-t4" class="tb-btn" onclick="clearTrace(4)" style="flex:1;font-size:10px;color:#9f1239;border-color:#fb7185" title="Remove T4 from every edge">&#10005; T4</button>
+        </div>
         <div style="display:flex;align-items:center;gap:4px;margin-top:6px">
           <span style="font-size:10px;color:#64748b;flex-shrink:0">Speed</span>
           <input type="range" id="trace-speed" min="100" max="1200" step="100" value="400" style="flex:1;min-width:0" oninput="propAnimSpeed=+this.value"/>
@@ -915,6 +922,11 @@ var lineMarkDrag=null; // {id,moved} — dragging label along line
 var linePanelColorTarget='line'; // 'line' | 'label'
 var prevGraphMode=null; // set to 'opm' when switching from opm→edge mode
 var pan={x:0,y:0},zoom=1,panStart=null,rubberBand=null;
+// Alt+mousedown on an edge arms the arrow-cycle but does not fire it — Alt is
+// also the pan modifier, and every edge carries a 20px invisible hit band, so
+// pressing Alt to pan over a dense graph used to reverse whatever was beneath
+// the cursor. onCanvasUp fires the cycle only if the pointer never moved.
+var altEdgeArm=null;
 var undoStack=[],redoStack=[],searchTerm='',simulation=null,modalMode='';
 var curveDrag=null;
 var edgeMarkDrag=null; // {edgeId,mark:'label'|'pol'|'delay',moved:false}
@@ -3256,6 +3268,18 @@ function setTrace_all(val){
   }
   renderAll();buildPanel();
 }
+// Remove one whole trace from the graph, regardless of what is selected.
+// Touches only e.traces — never src/tgt, never the edge list. snap() first,
+// so a single Undo puts the trace back.
+function clearTrace(n){
+  var hit=edges.filter(function(e){return (e.traces||[]).indexOf(n)>=0;});
+  if(!hit.length){toast('T'+n+' has no edges');return;}
+  snap();
+  if(activeTraceNum===n)stopTraceAnim(true);
+  hit.forEach(function(e){e.traces=e.traces.filter(function(t){return t!==n;});});
+  renderAll();buildPanel();updateTraceBtns();
+  toast('Cleared T'+n+' from '+hit.length+' edge'+(hit.length===1?'':'s'));
+}
 
 // ── Loop highlight on label click ─────────────────────────
 function toggleLoopHighlight(loopId){
@@ -3952,7 +3976,7 @@ function uMetaEdgeLabel(id,v){uMetaEdgeProp(id,'label',v);}
 
 function onEdgeDown(ev,id){ev.stopPropagation();
   var e=edgeById(id);if(!e)return;
-  if(checkDblTap(id,function(){openEdgeEditor(e);}))return;if(ev.shiftKey&&mode!=='cld'){var idx=selected.edges.indexOf(id);if(idx>=0){selected.edges.splice(idx,1);renderAll();buildPanel();}else{selected.edges.push(id);renderAll();buildPanel();}return;}if(ev.altKey){snap();var _cur=e.arrowDir||'end';if(_cur==='end'){var _t=e.src;e.src=e.tgt;e.tgt=_t;e.arrowDir='reversed';toast('Arrow: ←');}else if(_cur==='reversed'){e.arrowDir='none';toast('Arrow: —');}else{var _t=e.src;e.src=e.tgt;e.tgt=_t;delete e.arrowDir;toast('Arrow: →');}selectEdgeId(id,false);return;}if(mode!=='select'){selectEdgeId(id,false);return;}if(!e.curved){selectEdgeId(id,false);return;}var src=nodeById(e.src),tgt=nodeById(e.tgt);if(!src||!tgt||src.id===tgt.id){selectEdgeId(id,false);return;}selectEdgeId(id,false);curveDrag={edgeId:id,moved:false};document.getElementById('curve-hint').style.display='block';svgEl.style.cursor='grabbing';}
+  if(checkDblTap(id,function(){openEdgeEditor(e);}))return;if(ev.shiftKey&&mode!=='cld'){var idx=selected.edges.indexOf(id);if(idx>=0){selected.edges.splice(idx,1);renderAll();buildPanel();}else{selected.edges.push(id);renderAll();buildPanel();}return;}if(ev.altKey){panStart={mx:ev.clientX,my:ev.clientY,px:pan.x,py:pan.y};if(mode==='select')altEdgeArm={id:id,mx:ev.clientX,my:ev.clientY};return;}if(mode!=='select'){selectEdgeId(id,false);return;}if(!e.curved){selectEdgeId(id,false);return;}var src=nodeById(e.src),tgt=nodeById(e.tgt);if(!src||!tgt||src.id===tgt.id){selectEdgeId(id,false);return;}selectEdgeId(id,false);curveDrag={edgeId:id,moved:false};document.getElementById('curve-hint').style.display='block';svgEl.style.cursor='grabbing';}
 function selectNodeId(id,add){if(!add)selected={nodes:[id],edges:[],lines:[],triples:[]};else if(selected.nodes.indexOf(id)<0)selected.nodes.push(id);renderAll();buildPanel();}
 function selectEdgeId(id,add){if(!add)selected={nodes:[],edges:[id],lines:[],triples:[]};else if(selected.edges.indexOf(id)<0)selected.edges.push(id);renderAll();buildPanel();}
 function selectAll(){selected={nodes:nodes.map(function(n){return n.id;}),edges:[],lines:[],triples:[]};renderAll();buildPanel();toast('Selected '+nodes.length+' nodes');}
@@ -3985,7 +4009,22 @@ function deleteSelected(){
 function clearAll(){snap();nodes=[];edges=[];lines=[];metaEdges=[];nextId=1;nextTripleNum=1;selected={nodes:[],edges:[],lines:[],triples:[]};curveDrag=null;metaMarkDrag=null;hiddenLayers={};legendEntries=[];legendVisible=false;buildLegendSection();renderLegendOverlay();renderAll();buildPanel();}
 function reverseEdge(e){var t=e.src;e.src=e.tgt;e.tgt=t;}
 function reverseSelected(){var sel=edges.filter(function(e){return selected.edges.indexOf(e.id)>=0;});if(!sel.length){toast('Select edges first');return;}snap();sel.forEach(reverseEdge);renderAll();toast('Reversed '+sel.length+' edges');}
-function reverseAll(){if(!edges.length)return;snap();edges.forEach(reverseEdge);renderAll();toast('Reversed all edges');}
+// Rev.all sits next to Rev.sel / All nodes / All edges, so a misclick used to
+// silently rewrite src/tgt on the whole model. Confirm first.
+function reverseAll(){if(!edges.length)return;if(!confirm('Reverse the direction of ALL '+edges.length+' edges?\n\nThis rewrites src/tgt on every edge in the model. Undo restores it.'))return;snap();edges.forEach(reverseEdge);renderAll();toast('Reversed all '+edges.length+' edges');}
+// Alt+click arrow cycle, deferred here from onEdgeDown so a drag pans instead.
+// end:      arrow →, src/tgt as authored
+// reversed: arrow ←, src/tgt swapped
+// none:     no arrow, src/tgt back to AS AUTHORED (was left swapped before)
+function cycleArrowDir(id){
+  var e=edgeById(id);if(!e)return;
+  snap();
+  var cur=e.arrowDir||'end';
+  if(cur==='end'){reverseEdge(e);e.arrowDir='reversed';toast('Arrow: ←');}
+  else if(cur==='reversed'){reverseEdge(e);e.arrowDir='none';toast('Arrow: — (direction restored)');}
+  else{delete e.arrowDir;toast('Arrow: →');}
+  selectEdgeId(id,false);
+}
 // ── KEY FIX v20: translate user CPs when nodes move ──────
 function translateEdgeCPs(movingIds,dx,dy){for(var i=0;i<edges.length;i++){var e=edges[i];if(e.cpxUser===undefined||e.cpyUser===undefined)continue;var sm=movingIds.indexOf(e.src)>=0,tm=movingIds.indexOf(e.tgt)>=0;if(!sm&&!tm)continue;var f=(sm&&tm)?1.0:0.5;e.cpxUser+=dx*f;e.cpyUser+=dy*f;}}
 function onCanvasDown(ev){if(ev.button!==0)return;if(curveDrag){curveDrag=null;document.getElementById('curve-hint').style.display='none';svgEl.style.cursor='default';}if(mode==='cld'){
@@ -4082,6 +4121,9 @@ function onCanvasUp(ev){
   else if(longPressActive)clearLongPress();
   else if(dragging&&dragging.moved)clearLongPress();
   else{clearTimeout(longPressTimer);longPressTimer=null;}
+  if(altEdgeArm){var _a=altEdgeArm;altEdgeArm=null;panStart=null;
+    if(Math.abs(ev.clientX-_a.mx)<=4&&Math.abs(ev.clientY-_a.my)<=4)cycleArrowDir(_a.id);
+    return;}
   if(lineEndpointDrag){lineEndpointDrag=null;renderAll();buildPanel();return;}
   if(lineMarkDrag){lineMarkDrag=null;return;}
   if(lineBodyDrag){lineBodyDrag=null;renderAll();buildPanel();return;}
