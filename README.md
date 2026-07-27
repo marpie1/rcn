@@ -318,11 +318,40 @@ Impact Matrix, System Roles, Partial Scenario (transfer-curve editor +
 simulation). localStorage auto-save, JSON save/load, Neo4j Cypher export,
 SFD export into `tools/graph-tool-v22.html`.
 
-Run: `cd ~/rcn/vester && npm run dev` → http://localhost:5173
-Build: `npm run build` → `vester/dist/` (gitignored)
+### The one URL — http://localhost:8765/vester/
+
+Same sofi-proxy that serves every other tool, always running under launchd.
+Nothing to start. This is the URL to hand to anyone.
+
+sofi-proxy aliases `/vester/` → `vester/dist/`, and `vite.config.js` sets
+`base: '/vester/'` so the built asset paths match. The nginx plan routes
+`/vester/` the same way, so this URL is identical in deployment.
+
+**It serves the build, not the source. After changing anything under
+`vester/src/`, run `npm run build` or the URL keeps showing the old app.**
+
+```
+cd ~/rcn/vester && npm run build      # refresh what /vester/ serves
+```
+
+### Developing (hot reload)
+
+`cd ~/rcn/vester && npm run dev` → http://localhost:5173/vester/
+(note the `/vester/` path — `base` applies to the dev server too).
+
+**Models saved on :5173 do not appear on :8765 and vice versa.** localStorage
+is per-origin and a different port is a different origin. To move a model
+between them, use ↓ Save on one and ↑ Load on the other. Do the real work on
+the 8765 URL; treat 5173 as a scratch origin.
 
 `LS_KEY` is still `"sensimod_v1"` on purpose — changing it would orphan
 every model already saved in a user's browser.
+
+### Reloading sofi-proxy after editing it
+
+launchd (`com.evsm.proxy`) restarts it automatically, so `kill <pid>` is the
+whole procedure — do not start it by hand or you race launchd and get
+"Address already in use".
 
 ---
 
@@ -334,7 +363,7 @@ every model already saved in a user's browser.
 | FastAPI | uvicorn from `~/Desktop/rcn_api.py`, port 8000, auto-reload |
 | Neo4j | Relational/temporal truth, point types, H3 arrays |
 | FedWiki | `localfedwiki.relocalizecreativity.net`, launchd auto-start, port 3000 |
-| sofi-proxy | `~/rcn/sofi-proxy.py`, port 8765 — Anthropic API relay + FedWiki filesystem write API + static file server for `~/rcn/` |
+| sofi-proxy | `~/rcn/sofi-proxy.py`, port 8765 — Anthropic API relay + FedWiki filesystem write API + static file server for `~/rcn/`; aliases `/vester/` → `vester/dist/` |
 | coupler-proxy | `~/rcn/coupler-proxy.py`, port 8766 — My Health Picture AI proxy + FedWiki write API; serves `~/rcn/scp-coupler/`; resolves per-patient wiki site from `people.json` (`get_wiki_host`) |
 
 ### coupler-proxy environment variables
@@ -692,9 +721,9 @@ Pi is the long-term neighborhood distribution target.
 | 5432 | PostgreSQL + PostGIS (Docker) | db `rcn_geo` |
 | 7474/7687 | Neo4j | graph DB, Java |
 | 8000 | FastAPI/uvicorn | map API, `~/Desktop/rcn_api.py` |
-| 8765 | sofi-proxy (Python) | Anthropic API relay + FedWiki write API + static file server for ~/rcn/; `python3 sofi-proxy.py` — **always use http://localhost:8765/ to open tools, never file://** |
+| 8765 | sofi-proxy (Python) | Anthropic API relay + FedWiki write API + static file server for ~/rcn/; runs under launchd as `com.evsm.proxy` (kill it to reload, don't start by hand) — **always use http://localhost:8765/ to open tools, never file://**; aliases `/vester/` → `vester/dist/` |
 | 3000 | FedWiki (Node) | launchd |
-| 5173 | Vite dev server | vester/ only |
+| 5173 | Vite dev server | vester/ only, development — the shareable URL is http://localhost:8765/vester/ |
 
 **Known apps not yet fully in repo** (some built in Claude.ai Chat, not Claude Code):
 - All tools in `rcn/tools/` are here

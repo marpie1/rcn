@@ -153,6 +153,17 @@ class Handler(BaseHTTPRequestHandler):
         path = self.path.split('?')[0].lstrip('/')
         if not path:
             path = 'evsm-aggregator.html'
+
+        # Vester is the one tool with a build step, so it needs an alias:
+        # /vester/ -> vester/dist/index.html, /vester/assets/x -> vester/dist/assets/x.
+        # Gives the app a single stable URL and matches the nginx route, so the
+        # dev and deployed URLs are identical. Vite's base is '/vester/' to suit.
+        # Source under vester/src/ stays unreachable, which is what we want.
+        if path == 'vester' or path.startswith('vester/'):
+            rest = path[len('vester'):].lstrip('/')
+            if not rest.startswith('dist/'):
+                path = 'vester/dist/' + (rest or 'index.html')
+
         filepath = os.path.join(eVSM_DIR, path)
         if os.path.isfile(filepath):
             ext = path.rsplit('.', 1)[-1]
