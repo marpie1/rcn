@@ -251,7 +251,7 @@ export default function ImpactMatrix({ variables, matrix, setMatrix, modelName, 
         <span style={{ fontSize: 12, color: "#92400e", lineHeight: 1.5 }}>
           Downloads a <code style={{ background: "#fef3c7", borderRadius: 2, padding: "0 3px" }}>.json</code> file.
           In graph-tool-v22.html: click <strong>JSON</strong> import → drag the file in → switch to <strong>SFD</strong> mode.
-          Nodes are colored by role (critical/active/passive/buffering) and carry a <code style={{ background: "#fef3c7", borderRadius: 2, padding: "0 3px" }}>sensimodId</code> for future round-trips.
+          Nodes are colored by role (critical/active/passive/buffering) and carry a <code style={{ background: "#fef3c7", borderRadius: 2, padding: "0 3px" }}>vesterId</code> for future round-trips.
         </span>
       </div>
 

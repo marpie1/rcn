@@ -1,7 +1,9 @@
 // ── store.js ──────────────────────────────────────────────────────────────────
-// Single source of truth for all SensiMod data.
+// Single source of truth for all Vester data.
 // App.jsx owns the state; this file provides shapes, persistence, and I/O.
 
+// Deliberately still "sensimod_v1" after the rename to Vester: changing this
+// key would orphan every model already saved in a user's localStorage.
 export const LS_KEY = "sensimod_v1";
 
 // ── ID generation ─────────────────────────────────────────────────────────────
@@ -42,7 +44,7 @@ export const emptyStore = () => {
 };
 
 // ── System Criteria ───────────────────────────────────────────────────────────
-// 24 criteria in 5 groupings, matching Vester's SensiMod layout.
+// 24 criteria in 5 groupings, matching Vester's Sensitivity Model layout.
 export const CRITERIA_GROUPS = [
   {
     id: "spheres",
@@ -155,7 +157,7 @@ export function exportJSON(state) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${(state.modelName || "sensimod").replace(/\s+/g, "_")}.json`;
+  a.download = `${(state.modelName || "vester").replace(/\s+/g, "_")}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -175,7 +177,7 @@ export function importJSON(file, onLoad, onError) {
 // ── Neo4j Cypher export ───────────────────────────────────────────────────────
 export function buildCypher(state) {
   const { modelName, modelPurpose, variables, criteria } = state;
-  const lines = [`// SensiMod export — ${new Date().toISOString()}`];
+  const lines = [`// Vester Influence Analysis export — ${new Date().toISOString()}`];
 
   lines.push(`MERGE (m:SystemModel {name: ${JSON.stringify(modelName)}})
 SET m.purpose = ${JSON.stringify(modelPurpose)}, m.updated = datetime();\n`);
@@ -320,7 +322,7 @@ export function buildSFDJSON({ modelName, variables, influenceMatrix }) {
       },
       fontSize: 12,
       sfdType: "aux",
-      sensimodId: v.id,
+      vesterId: v.id,
     };
   });
 
@@ -354,5 +356,5 @@ export function buildSFDJSON({ modelName, variables, influenceMatrix }) {
     });
   });
 
-  return JSON.stringify({ version: "1.0", modelName: modelName || "SensiMod Export", nodes, edges }, null, 2);
+  return JSON.stringify({ version: "1.0", modelName: modelName || "Vester Export", nodes, edges }, null, 2);
 }

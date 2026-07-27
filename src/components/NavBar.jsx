@@ -13,7 +13,7 @@ export default function NavBar({ activeTool, onSelect, modelName }) {
     <div style={{ background: "#1e3a5f", padding: "0 24px", display: "flex", alignItems: "center", gap: 0, borderBottom: "3px solid #84cc16" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginRight: 24, padding: "10px 0" }}>
         <div style={{ width: 14, height: 14, background: "#84cc16", borderRadius: 2 }} />
-        <span style={{ color: "white", fontWeight: 700, fontSize: 14, fontFamily: "Arial, sans-serif" }}>SensiMod</span>
+        <span style={{ color: "white", fontWeight: 700, fontSize: 14, fontFamily: "Arial, sans-serif" }}>Vester</span>
       </div>
       {TOOLS.map((tool) => (
         <button
