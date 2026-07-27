@@ -39,9 +39,9 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
   tools/      standalone HTML tools (see below)
   maps/       rcn_map.html — NDC map (the live page); rcn_static_data.js — baseline data (loaded by flat name from same folder); build_standalone_map.py → rcn_map_standalone.html — single-file handout (data+issues inlined; NOT the live site); rcn-map-intro.html, rcn-map-manual.html — docs; rcn-ndc-map.pptx — deck; rcn-map-components.graph.json — component graph; rcn-region-federation-spec.md (+ .graph.json/.svg) — region federation
   data/       PostGIS Python load scripts
-  docs/       tool documentation (nrm-tripod-beta.md, sensimod-manual.html, sodoto-manual.html)
+  docs/       tool documentation (nrm-tripod-beta.md, vester-manual.html, sodoto-manual.html)
   deploy/     deployment artifacts — docker/ (SODOTO Docker package, handed to Wiki Café), scp/ (SCP+Groove Docker package, hosted/WikiCafe track), home/ (SCP 3.0 personal-computer stack), fedwiki-personal/ (bare personal FedWiki, no SCP parts), launchd plists, handoff-sodoto.md
-  vester/     Vester chapter notes and SensiMod context
+  vester/     Vester Influence Analysis — Vite/React app (the only tool with a build step); also Vester chapter notes
   archive/    old numbered drafts
   veramo/     SODOTO credential infrastructure (see SODOTO section below)
   scp/        Shared Care Plan: plugins/ (19 wiki-plugin-scp-* repos), pages/ (17 canonical page templates)
@@ -50,8 +50,6 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
   coupler-proxy.py  My Health Picture AI proxy (port 8766) — per-patient wiki routing
   database.rules.json   Firebase Realtime DB security rules (scoped to sessions/ and topics/ paths)
   SODOTO-CLAUDE-CODE-CONTEXT.md   full SODOTO onboarding doc (authoritative)
-
-~/sensimod/   Vite/React app — Vester Sensitivity Model (keep separate, has node_modules)
 ```
 
 ---
@@ -309,12 +307,22 @@ node --check /tmp/test.js
 
 ---
 
-## SensiMod (`~/sensimod/`)
+## Vester Influence Analysis (`vester/`)
 
-Vite/React app implementing Vester's Sensitivity Model.
-Steps 0–2 built. localStorage auto-save. Neo4j Cypher export.
-Run: `cd ~/sensimod && npm run dev`
-Kept outside ~/rcn/ because of node_modules size.
+Vite/React app implementing Vester's Sensitivity Model. Formerly called
+SensiMod; renamed Jul 2026. The only tool in the repo with a build step —
+everything in `tools/` is single-file HTML served straight off sofi-proxy.
+
+Steps 0–5 built: System Description, Variable Set, System Criteria,
+Impact Matrix, System Roles, Partial Scenario (transfer-curve editor +
+simulation). localStorage auto-save, JSON save/load, Neo4j Cypher export,
+SFD export into `tools/graph-tool-v22.html`.
+
+Run: `cd ~/rcn/vester && npm run dev` → http://localhost:5173
+Build: `npm run build` → `vester/dist/` (gitignored)
+
+`LS_KEY` is still `"sensimod_v1"` on purpose — changing it would orphan
+every model already saved in a user's browser.
 
 ---
 
@@ -504,7 +512,7 @@ The Berwick deck has its own script: `python3 docs/make_berwick_pptx.py`
 
 - **Foothills Outlook automation**: Convert monthly local newspaper (PDF) into FedWiki newspaper pages, going back 2 years. Goal: put the tool in the hands of the writers and editor by end of Summer 2026.
 
-- **Vester's Sensitivity Model platform**: SensiMod — Vite/React app at `~/sensimod/`. Steps 0–2 built (variable definition, influence matrix, active/passive/critical/buffering classification). Next: multi-group Impact Matrix workflow.
+- **Vester's Sensitivity Model platform**: Vester Influence Analysis — Vite/React app at `vester/`. Steps 0–5 built, through Partial Scenario simulation. Next: multi-group Impact Matrix workflow.
 
 - **Haier Group Workbench**: A platform of tools to collect and share information that makes RenDanHeYi work at scale across the Haier Group (multinational enterprise), tuned for neighborhood entrepreneurship. Early stage.
 
@@ -686,13 +694,13 @@ Pi is the long-term neighborhood distribution target.
 | 8000 | FastAPI/uvicorn | map API, `~/Desktop/rcn_api.py` |
 | 8765 | sofi-proxy (Python) | Anthropic API relay + FedWiki write API + static file server for ~/rcn/; `python3 sofi-proxy.py` — **always use http://localhost:8765/ to open tools, never file://** |
 | 3000 | FedWiki (Node) | launchd |
-| 5173 | Vite dev server | sensimod only |
+| 5173 | Vite dev server | vester/ only |
 
 **Known apps not yet fully in repo** (some built in Claude.ai Chat, not Claude Code):
 - All tools in `rcn/tools/` are here
 - ~~`graph-tool-v22UPDATE.html` on Desktop~~ — **nothing to merge.** Despite the name it is titled "Graph Diagramming Tool **v20**", 1,228 lines against the repo's 5,596, with zero function or `const` definitions the repo lacks and none of Wardley/OPM/SFD/Trace/NRM/triples/Untangle/Dagre/legend/icons. Strictly a subset — safe to archive (verified 2026-07-25)
 - Unknown number of Chat-built apps not yet inventoried
-- `~/sensimod/` — React/Vite app, kept separate
+- ~~`~/sensimod/`~~ — **now in the repo** at `vester/`, history preserved (2026-07-27)
 
 ### Architecture decisions (made, don't revisit)
 
@@ -704,7 +712,7 @@ Pi is the long-term neighborhood distribution target.
 /tools/        → all HTML tools (static)
 /api/          → FastAPI
 /proxy/        → evsm-proxy (Anthropic relay)
-/sensimod/     → Vite build output (static)
+/vester/       → Vite build output (static)
 /wiki/         → FedWiki (proxied)
 ```
 
