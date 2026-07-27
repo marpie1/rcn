@@ -267,11 +267,13 @@ function CurveEditor({ fromVar, toVar, scaleLabels, points, onChange, descriptio
   );
 }
 
-// ── Simulation network layout ─────────────────────────────────────────────────
-function ScenarioNetwork({ selVars, matrix, transferCurves, states, onSelectEdge, selectedEdge }) {
-  const W = 500, H = 400, CX = 250, CY = 200;
+// ── Scenario network diagram ──────────────────────────────────────────────────
+// mode="curves" — click edges to select curve; no state bars; solid=defined, dashed=not yet
+// mode="sim"    — state bars on nodes; edges always solid; click edges for highlighting
+function ScenarioNetwork({ selVars, matrix, transferCurves, states, onSelectEdge, selectedEdge, mode = "sim" }) {
+  const W = 480, H = 380, CX = 240, CY = 190;
   const n = selVars.length;
-  const r = Math.max(120, Math.min(170, n * 28));
+  const r = Math.max(110, Math.min(160, n * 26));
 
   const pos = selVars.map((v, i) => {
     const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
@@ -291,80 +293,125 @@ function ScenarioNetwork({ selVars, matrix, transferCurves, states, onSelectEdge
   });
 
   const edgeKey = (f, t) => `${f.id}:${t.id}`;
+  const isCurvesMode = mode === "curves";
 
   return (
-    <svg width={W} height={H} style={{ display: "block", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fafafa" }}>
+    <svg width={W} height={H}
+      style={{ display: "block", border: "1px solid #e5e7eb", borderRadius: 8,
+               background: isCurvesMode ? "#fafafa" : "#fffbf0" }}>
       <defs>
-        <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <marker id="net-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
           <path d="M0,0 L0,6 L8,3 z" fill="#64748b" />
         </marker>
-        <marker id="arrow-sel" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <marker id="net-arrow-sel" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
           <path d="M0,0 L0,6 L8,3 z" fill="#1d4ed8" />
+        </marker>
+        <marker id="net-arrow-done" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#16a34a" />
         </marker>
       </defs>
 
-      {/* Edges */}
+      {/* ── Edges ── */}
       {edges.map(({ from, to, score }) => {
         const fp = posMap[from.id];
         const tp = posMap[to.id];
         if (!fp || !tp) return null;
         const key = edgeKey(from, to);
         const isSel = selectedEdge === key;
-        const hasCurve = getCurve(transferCurves, from.id, to.id).length > 0;
+        const hasCurve = getCurve(transferCurves ?? {}, from.id, to.id).length > 0;
+
         const dx = tp.x - fp.x, dy = tp.y - fp.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         const ux = dx / dist, uy = dy / dist;
-        const NR = 18;
+        const NR = 20;
         const x1 = fp.x + ux * NR, y1 = fp.y + uy * NR;
         const x2 = tp.x - ux * (NR + 8), y2 = tp.y - uy * (NR + 8);
-        // Slight curve
-        const mx = (x1 + x2) / 2 - uy * 20, my = (y1 + y2) / 2 + ux * 20;
+        const cx = (x1 + x2) / 2 - uy * 22, cy = (y1 + y2) / 2 + ux * 22;
+
+        // Color logic
+        let stroke, dash, marker;
+        if (isSel) {
+          stroke = "#1d4ed8"; dash = "none"; marker = "url(#net-arrow-sel)";
+        } else if (isCurvesMode && hasCurve) {
+          stroke = "#16a34a"; dash = "none"; marker = "url(#net-arrow-done)";
+        } else if (isCurvesMode) {
+          stroke = "#94a3b8"; dash = "5,4"; marker = "url(#net-arrow)";
+        } else {
+          stroke = "#94a3b8"; dash = "none"; marker = "url(#net-arrow)";
+        }
+
+        // Invisible wider hit area for easier clicking
         return (
           <g key={key} onClick={() => onSelectEdge(isSel ? null : key)}
-            style={{ cursor: "pointer" }}>
-            <path d={`M${x1},${y1} Q${mx},${my} ${x2},${y2}`}
-              fill="none"
-              stroke={isSel ? "#1d4ed8" : "#94a3b8"}
-              strokeWidth={isSel ? 2.5 : Math.max(1, score * 0.8)}
-              strokeDasharray={hasCurve ? "none" : "4,3"}
-              markerEnd={isSel ? "url(#arrow-sel)" : "url(#arrow)"}
-              opacity="0.8" />
+            style={{ cursor: isCurvesMode ? "pointer" : "default" }}>
+            <path d={`M${x1},${y1} Q${cx},${cy} ${x2},${y2}`}
+              fill="none" stroke="transparent" strokeWidth="12" />
+            <path d={`M${x1},${y1} Q${cx},${cy} ${x2},${y2}`}
+              fill="none" stroke={stroke}
+              strokeWidth={isSel ? 2.5 : Math.max(1, score * 0.7)}
+              strokeDasharray={dash}
+              markerEnd={marker} opacity={isSel ? 1 : 0.8} />
             {score >= 2 && (
-              <text x={(x1 + mx * 2 + x2) / 4} y={(y1 + my * 2 + y2) / 4}
-                textAnchor="middle" fontSize="9" fill={isSel ? "#1d4ed8" : "#94a3b8"} fontFamily="Arial,sans-serif">
-                {score}
-              </text>
+              <text x={(x1 + cx * 2 + x2) / 4} y={(y1 + cy * 2 + y2) / 4 - 4}
+                textAnchor="middle" fontSize="9"
+                fill={isSel ? "#1d4ed8" : isCurvesMode && hasCurve ? "#16a34a" : "#94a3b8"}
+                fontFamily="Arial,sans-serif">{score}</text>
             )}
           </g>
         );
       })}
 
-      {/* Nodes */}
+      {/* ── Nodes ── */}
       {pos.map(({ x, y, v }) => {
         const state = states?.[v.id] ?? 15;
         const pct = state / SCALE_MAX;
-        const barH = 24, barW = 6;
+        const isSelNode = selectedEdge &&
+          (selectedEdge.startsWith(v.id + ":") || selectedEdge.includes(":" + v.id));
         return (
           <g key={v.id}>
-            {/* State bar */}
-            <rect x={x + 20} y={y - barH / 2} width={barW} height={barH} fill="#e5e7eb" rx="2" />
-            <rect x={x + 20} y={y + barH / 2 - barH * pct} width={barW} height={barH * pct}
-              fill={pct > 0.7 ? "#dc2626" : pct > 0.4 ? "#f59e0b" : "#22c55e"} rx="2" />
+            {/* State bar — sim mode only */}
+            {!isCurvesMode && (() => {
+              const barH = 26, barW = 6;
+              return (
+                <>
+                  <rect x={x + 22} y={y - barH / 2} width={barW} height={barH} fill="#e5e7eb" rx="2" />
+                  <rect x={x + 22} y={y + barH / 2 - barH * pct} width={barW} height={barH * pct}
+                    fill={pct > 0.7 ? "#dc2626" : pct > 0.4 ? "#f59e0b" : "#22c55e"} rx="2" />
+                </>
+              );
+            })()}
             {/* Node circle */}
-            <circle cx={x} cy={y} r={18} fill="white" stroke="#94a3b8" strokeWidth="1.5" />
-            <text x={x} y={y - 2} textAnchor="middle" fontSize="10" fontWeight="700" fill="#1e3a5f" fontFamily="Arial,sans-serif">
-              {v.number}
-            </text>
-            <text x={x} y={y + 10} textAnchor="middle" fontSize="7" fill="#64748b" fontFamily="Arial,sans-serif">
-              {state}
-            </text>
-            {/* Name below */}
-            <text x={x} y={y + 30} textAnchor="middle" fontSize="9" fill="#374151" fontFamily="Arial,sans-serif">
-              {(v.name || `#${v.number}`).slice(0, 14)}
+            <circle cx={x} cy={y} r={20}
+              fill="white"
+              stroke={isSelNode ? "#1d4ed8" : "#94a3b8"}
+              strokeWidth={isSelNode ? 2.5 : 1.5} />
+            <text x={x} y={y - 3} textAnchor="middle" fontSize="11" fontWeight="700"
+              fill="#1e3a5f" fontFamily="Arial,sans-serif">{v.number}</text>
+            {!isCurvesMode && (
+              <text x={x} y={y + 10} textAnchor="middle" fontSize="8" fill="#64748b" fontFamily="Arial,sans-serif">
+                {state}
+              </text>
+            )}
+            {/* Name label below node */}
+            <text x={x} y={y + 36} textAnchor="middle" fontSize="9" fill="#374151" fontFamily="Arial,sans-serif">
+              {(v.name || `#${v.number}`).slice(0, 15)}
             </text>
           </g>
         );
       })}
+
+      {/* ── Curves-mode legend ── */}
+      {isCurvesMode && (
+        <g>
+          <line x1={10} y1={H - 26} x2={28} y2={H - 26} stroke="#16a34a" strokeWidth="2" />
+          <text x={32} y={H - 22} fontSize="9" fill="#16a34a" fontFamily="Arial,sans-serif">curve defined</text>
+          <line x1={100} y1={H - 26} x2={118} y2={H - 26} stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="4,3" />
+          <text x={122} y={H - 22} fontSize="9" fill="#94a3b8" fontFamily="Arial,sans-serif">not yet defined</text>
+          <text x={W - 6} y={H - 22} fontSize="9" fill="#94a3b8" fontFamily="Arial,sans-serif" textAnchor="end">
+            click an arrow to edit
+          </text>
+        </g>
+      )}
     </svg>
   );
 }
@@ -633,26 +680,17 @@ export default function PartialScenario({ variables, matrix, transferCurves, set
         </div>
 
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "flex-start" }}>
-          {/* Edge list */}
-          <div style={{ minWidth: 240, maxWidth: 280 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 8 }}>
-              Relationships — click to edit curve
-            </div>
-            {selEdges.map(({ from, to, score }) => {
-              const key = `${from.id}:${to.id}`;
-              const hasCurve = getCurve(transferCurves, from.id, to.id).length > 0;
-              const isSel = selectedEdge === key;
-              return (
-                <button key={key} onClick={() => setSelectedEdge(isSel ? null : key)}
-                  style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 10px", marginBottom: 4, background: isSel ? "#eff6ff" : "white", border: `1px solid ${isSel ? "#1d4ed8" : "#e5e7eb"}`, borderRadius: 5, cursor: "pointer", textAlign: "left" }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: hasCurve ? "#22c55e" : "#e5e7eb", flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, color: "#1e3a5f", fontWeight: 600, flex: 1 }}>
-                    {from.name || `#${from.number}`} → {to.name || `#${to.number}`}
-                  </span>
-                  <span style={{ fontSize: 10, color: "#94a3b8" }}>{score}</span>
-                </button>
-              );
-            })}
+          {/* Effect diagram — click arrows to select curve */}
+          <div>
+            <ScenarioNetwork
+              mode="curves"
+              selVars={selVars}
+              matrix={matrix}
+              transferCurves={transferCurves}
+              states={null}
+              selectedEdge={selectedEdge}
+              onSelectEdge={setSelectedEdge}
+            />
           </div>
 
           {/* Curve editor */}
@@ -735,6 +773,7 @@ export default function PartialScenario({ variables, matrix, transferCurves, set
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
         {/* Network */}
         <ScenarioNetwork
+          mode="sim"
           selVars={selVars}
           matrix={matrix}
           transferCurves={transferCurves}
