@@ -417,6 +417,18 @@
     border-color: var(--border2);
     font-weight: 600;
   }
+  .facet-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 9px;
+    font-family: var(--mono);
+    color: var(--text3);
+    padding: 6px 4px 0;
+    cursor: pointer;
+  }
+  .facet-toggle:hover { color: var(--text2); }
+  .facet-toggle input { cursor: pointer; }
   .zoom-hint {
     font-size: 9px;
     font-family: var(--mono);
@@ -578,6 +590,10 @@
         <button class="zbtn" data-level="instance" onclick="setZoom('instance')">instance</button>
       </div>
       <div class="zoom-hint" id="zoom-hint"></div>
+      <label class="facet-toggle">
+        <input type="checkbox" id="facet-check" onchange="setFacet(this.checked)">
+        <span>group by family</span>
+      </label>
     </div>
 
     <div class="ctrl-section">
@@ -768,7 +784,8 @@ let panSVG = null
 let panZoomState = null
 let drawing = false
 let bridgeMode = false
-let zoomLevel = 'variable'  // 'schema' | 'variable' | 'instance' — see nodeKey()
+let zoomLevel = 'variable'  // 'family' | 'schema' | 'variable' | 'instance' — see nodeKey()
+let facetByFamily = false   // draw each family in its own labelled box
 
 // ═══════════════════════════════════════════════════════
 // Beam management
@@ -1183,6 +1200,42 @@ function dotify(complex, layout = 'dot') {
     return `  ${id} [label="${label}" fillcolor="${fillcolor}" fontcolor="${fontcolor}" color="${pencolor}" penwidth=${penwidth} shape=${shape} style=${style} tooltip="${tipText}"]`
   })
 
+  // ── Spatial faceting ───────────────────────────────────────────────────
+  // Wrap each family in its own labelled box. This is the channel colour
+  // cannot carry on its own: eight categorical fills sit in the CVD band that
+  // is only legal alongside a second encoding, and enclosure-plus-label IS that
+  // encoding — it names the family in words and separates confusable fills in
+  // space, so the pairs that measure closest rarely end up side by side.
+  //
+  // Meaningless at family level, where each node already IS a family.
+  const wrapped = (() => {
+    if (!facetByFamily || level === 'family' || !FAMILIES) return nodes
+    const byFam = new Map()
+    graph.nodes.forEach((node, id) => {
+      const f = familyOf(node) || '(unfamilied)'
+      if (!byFam.has(f)) byFam.set(f, [])
+      byFam.get(f).push(id)
+    })
+    // A node with no family stays loose rather than being herded into a box
+    // with every other stranger — the Composer must keep working on graphs
+    // that know nothing of this schema.
+    const loose = (byFam.get('(unfamilied)') || []).map(id => nodes[id])
+    byFam.delete('(unfamilied)')
+    const order = (FAMILIES.order || [...byFam.keys()]).filter(f => byFam.has(f))
+    const boxes = order.map((f, i) => {
+      const d = FAMILIES.families[f] || {}
+      return [
+        `  subgraph cluster_${i} {`,
+        `    label="${safe(f)}" labelloc=t labeljust=l`,
+        `    fontname="monospace" fontsize=11 fontcolor="#52514e"`,
+        `    style="rounded" color="${d.color || '#c9c7c0'}" penwidth=1.6 margin=14`,
+        ...byFam.get(f).map(id => '  ' + nodes[id]),
+        '  }'
+      ].join('\n')
+    })
+    return [...boxes, ...loose]
+  })()
+
   const omits = new Set()
   // Family and schema are both ontology levels — the argument below applies to
   // each, and family more strongly, since a family has even less claim to a
@@ -1260,7 +1313,10 @@ function dotify(complex, layout = 'dot') {
     '  graph [bgcolor="#f5f4f1"]',
     '  node [shape=box style="filled,rounded" fontname="monospace" fontsize=11 margin="0.35,0.25" width=0 height=0 penwidth=1]',
     '  edge [fontname="monospace" fontsize=9 color="#000000" fontcolor="#000000"]',
-    ...nodes,
+    // Clusters only constrain rank when the layout engine understands them;
+    // dot does, the force-directed engines route around them.
+    ...(facetByFamily && level !== 'family' ? ['  compound=true'] : []),
+    ...wrapped,
     ...edges,
     '}'
   ].join('\n')
@@ -1374,6 +1430,13 @@ function syncZoomUI() {
     b.classList.toggle('on', b.dataset.level === zoomLevel))
   const hint = document.getElementById('zoom-hint')
   if (hint) hint.textContent = ZOOM_HINT[zoomLevel] || ''
+}
+
+function setFacet(on) {
+  facetByFamily = !!on
+  // Purely a drawing change — the composite is identical either way — so this
+  // one really is a re-render, unlike the zoom.
+  redraw()
 }
 
 function setZoom(level) {
@@ -1518,7 +1581,15 @@ function updateStatus() {
 // ═══════════════════════════════════════════════════════
 
 const LONG_PRESS_MS = 600      // same as the Graph Tool
-const LONG_PRESS_SLOP = 5      // px of movement that cancels — that's a pan
+// Cancel when the pointer LEAVES THE NODE, not on a pixel budget. A hand
+// resting on a trackpad drifts several pixels over 600ms without meaning
+// anything by it, and the old 5px allowance cancelled on exactly that drift —
+// so the hold silently never fired and the click-through opened the detail
+// panel instead, which is what "click and hold does nothing" looked like.
+// Worse, the same drift panned the canvas, so the gesture read as a failed pan.
+// Holding ON A NODE is the intent; leaving it is what revokes it.
+const LONG_PRESS_PAD = 10      // px of forgiveness outside the node's box
+const LONG_PRESS_SLOP = 160    // px ceiling, in case the box is unavailable
 
 let lpTimer = null
 let lpActive = false
@@ -1544,6 +1615,7 @@ function edgeEndsOf(el) {
 
 function clearHighlight() {
   clearTimeout(lpTimer); lpTimer = null; lpOrigin = null
+  if (panSVG) { try { panSVG.enablePan() } catch (e) {} }
   if (!lpActive) return
   lpActive = false
   const svg = document.querySelector('#canvas svg')
@@ -1612,7 +1684,12 @@ function hookNodeClicks(container, graph) {
       const nid = nodeIdOf(nodeEl)
       if (isNaN(nid) || !graph.nodes[nid]) return
       clearHighlight()
-      lpOrigin = { x: e.clientX, y: e.clientY }
+      let rect = null
+      try { rect = nodeEl.getBoundingClientRect() } catch (err) {}
+      lpOrigin = { x: e.clientX, y: e.clientY, rect }
+      // Freeze panning for the length of the hold, so the drawing does not
+      // slide out from under a gesture that means to stay put.
+      if (panSVG) { try { panSVG.disablePan() } catch (err) {} }
       lpTimer = setTimeout(() => {
         lpTimer = null
         lpSuppressClick = true   // don't also open the detail panel
@@ -1629,18 +1706,25 @@ function hookNodeClicks(container, graph) {
   })
 }
 
-// Moving the pointer means the user is panning, not holding.
+// Leaving the node means the user changed their mind. Drifting inside it does not.
 document.addEventListener('mousemove', e => {
   if (!lpTimer || !lpOrigin) return
-  if (Math.abs(e.clientX - lpOrigin.x) > LONG_PRESS_SLOP ||
-      Math.abs(e.clientY - lpOrigin.y) > LONG_PRESS_SLOP) {
+  const r = lpOrigin.rect
+  const left = r
+    ? (e.clientX < r.left - LONG_PRESS_PAD || e.clientX > r.right  + LONG_PRESS_PAD ||
+       e.clientY < r.top  - LONG_PRESS_PAD || e.clientY > r.bottom + LONG_PRESS_PAD)
+    : (Math.abs(e.clientX - lpOrigin.x) > LONG_PRESS_SLOP ||
+       Math.abs(e.clientY - lpOrigin.y) > LONG_PRESS_SLOP)
+  if (left) {
     clearTimeout(lpTimer); lpTimer = null; lpOrigin = null
+    if (panSVG) { try { panSVG.enablePan() } catch (err) {} }
   }
 })
 
 // Hold to show, release to clear — the Graph Tool's contract.
 document.addEventListener('mouseup', () => {
   if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; lpOrigin = null }
+  if (panSVG) { try { panSVG.enablePan() } catch (err) {} }
   if (lpActive) clearHighlight()
 })
 
