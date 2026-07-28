@@ -1679,7 +1679,17 @@ function hookNodeClicks(container, graph) {
   container.querySelectorAll('.node').forEach(nodeEl => {
     nodeEl.style.cursor = 'pointer'
 
-    nodeEl.addEventListener('mousedown', e => {
+    // POINTER events, not mouse events. svg-pan-zoom runs with
+    // preventMouseEventsDefault, so it calls preventDefault() on pointerdown —
+    // and per the Pointer Events spec that suppresses the compatibility mouse
+    // events entirely. Over this canvas the browser fires pointerdown and then
+    // click, and NEVER mousedown or mouseup. A mousedown listener here could
+    // therefore never run, so the hold never started and the click fell through
+    // to the detail panel. That is what "click and hold does nothing" was.
+    // (Synthetic MouseEvents fired fine, which is exactly why this survived
+    // two rounds of testing: dispatching one manufactures the event the
+    // browser declines to send.)
+    nodeEl.addEventListener('pointerdown', e => {
       if (e.button !== 0) return
       const nid = nodeIdOf(nodeEl)
       if (isNaN(nid) || !graph.nodes[nid]) return
@@ -1707,7 +1717,7 @@ function hookNodeClicks(container, graph) {
 }
 
 // Leaving the node means the user changed their mind. Drifting inside it does not.
-document.addEventListener('mousemove', e => {
+document.addEventListener('pointermove', e => {
   if (!lpTimer || !lpOrigin) return
   const r = lpOrigin.rect
   const left = r
@@ -1721,12 +1731,16 @@ document.addEventListener('mousemove', e => {
   }
 })
 
-// Hold to show, release to clear — the Graph Tool's contract.
-document.addEventListener('mouseup', () => {
-  if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; lpOrigin = null }
-  if (panSVG) { try { panSVG.enablePan() } catch (err) {} }
-  if (lpActive) clearHighlight()
-})
+// Hold to show, release to clear — the Graph Tool's contract. pointercancel
+// matters as much as pointerup: a touch that turns into a scroll gets cancelled
+// rather than released, and would otherwise leave the highlight stuck on.
+for (const ev of ['pointerup', 'pointercancel']) {
+  document.addEventListener(ev, () => {
+    if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; lpOrigin = null }
+    if (panSVG) { try { panSVG.enablePan() } catch (err) {} }
+    if (lpActive) clearHighlight()
+  })
+}
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && lpActive) clearHighlight()
