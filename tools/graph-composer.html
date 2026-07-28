@@ -397,6 +397,33 @@
     line-height: 1.4;
   }
   .cbtn:hover { color: var(--text); border-color: var(--border2); background: var(--bg); }
+  .zoom-row { display: flex; }
+  .zbtn {
+    flex: 1;
+    font-size: 9px;
+    font-family: var(--mono);
+    color: var(--text3);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 6px 2px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .zbtn + .zbtn { border-left: none; }
+  .zbtn:hover { color: var(--text2); background: var(--bg); }
+  .zbtn.on {
+    color: var(--text);
+    background: var(--bg);
+    border-color: var(--border2);
+    font-weight: 600;
+  }
+  .zoom-hint {
+    font-size: 9px;
+    font-family: var(--mono);
+    color: var(--text3);
+    line-height: 1.5;
+    padding: 6px 4px 0;
+  }
   .cbtn .desc {
     display: block;
     font-size: 9px;
@@ -530,7 +557,7 @@
       <div class="ctrl-label">Compose</div>
       <button class="cbtn" onclick="doComposite()">
         Composite
-        <span class="desc">Merge checked — shared nodes (type+name) collapse</span>
+        <span class="desc">Merge checked — shared nodes collapse at the Detail level below</span>
       </button>
       <button class="cbtn" onclick="doBridge()">
         Bridge
@@ -540,6 +567,16 @@
         Partition
         <span class="desc">Split composite into disconnected components</span>
       </button>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="ctrl-label">Detail</div>
+      <div class="zoom-row">
+        <button class="zbtn" data-level="schema"   onclick="setZoom('schema')">schema</button>
+        <button class="zbtn" data-level="variable" onclick="setZoom('variable')">variable</button>
+        <button class="zbtn" data-level="instance" onclick="setZoom('instance')">instance</button>
+      </div>
+      <div class="zoom-hint" id="zoom-hint"></div>
     </div>
 
     <div class="ctrl-section">
@@ -677,9 +714,15 @@ class Graph {
         const _schemaLabel = n.schemaLabel || ''
         const raw = n.props?.name
         const name = (raw === undefined || raw === null || raw === '' || raw === '?') ? '' : String(raw)
+        // The display label is the VARIABLE — "Effectiveness of ACTION" against
+        // the bare concept "Action". It is a level in its own right, sitting
+        // between the schema type and the instance name, so it has to survive
+        // import. Dropping it here is what made every variabilised subgraph
+        // render as its own skeleton.
+        const label = (n.label === undefined || n.label === null) ? '' : String(n.label)
         const inProps = { ...(n.props || {}) }
         delete inProps._composerFill
-        nmap[id] = g.addNode(type, { ...inProps, ...visual, name, _schemaLabel })
+        nmap[id] = g.addNode(type, { ...inProps, ...visual, name, label, _schemaLabel })
       })
       const links = obj.edges || obj.rels
       links.forEach(e => {
@@ -722,6 +765,7 @@ let panSVG = null
 let panZoomState = null
 let drawing = false
 let bridgeMode = false
+let zoomLevel = 'variable'  // 'schema' | 'variable' | 'instance' — see nodeKey()
 
 // ═══════════════════════════════════════════════════════
 // Beam management
@@ -817,14 +861,52 @@ function clearAll() {
 
 const uniq = (v, i, a) => a.indexOf(v) === i
 
-function composite(concepts) {
+// ── Detail levels ────────────────────────────────────────────────────────
+// Three nested levels of identity live in every node already:
+//
+//   schema    schemaLabel   "Action"                  what it IS
+//   variable  label         "Effectiveness of ACTION" which aspect of it moves
+//   instance  props.name    "Fix the Elm St culvert"  which one, concretely
+//
+// Each level's key is the previous key plus one more field, so the levels are
+// strictly nested and the coarser view is a CONTRACTION of the finer one: every
+// schema node is an equivalence class of variable nodes. Zooming out merges;
+// zooming in never invents. The goal is few schemaLabels carrying many
+// variables, so the contraction should get more dramatic over time — that ratio
+// is the point, and the tally counts read it off.
+const LEVELS = ['schema', 'variable', 'instance']
+
+function nodeKey(node, level = zoomLevel) {
+  const p = node.props || {}
+  const schema = p._schemaLabel || node.type || ''
+  if (level === 'schema') return schema
+  // JSON-encoded so the parts cannot run together: a label must not be able
+  // to impersonate a field boundary and collide with a different node.
+  const variable = JSON.stringify([schema, p.label || ''])
+  if (level === 'variable') return variable
+  return JSON.stringify([schema, p.label || '', p.name || ''])
+}
+
+// What a node is CALLED at a given level. Falls back down the chain, so a
+// subgraph that never got variabilised still reads as its schema type rather
+// than going blank.
+function nodeText(node, level = zoomLevel) {
+  const p = node.props || {}
+  const schema = p._schemaLabel || node.type || ''
+  if (level === 'schema') return schema
+  const variable = p.label || schema
+  if (level === 'variable') return variable
+  return p.name ? `${variable}\n${p.name}` : variable
+}
+
+function composite(concepts, level = zoomLevel) {
   const merged = { nids: [] }
   const comp = new Graph()
 
   for (const concept of concepts) {
     merge(comp, concept.graph, concept.name)
   }
-  return { graph: comp, merged }
+  return { graph: comp, merged, level }
 
   function mergeProps(into, from) {
     for (const key of Object.keys(into).concat(Object.keys(from)).filter(uniq)) {
@@ -835,9 +917,8 @@ function composite(concepts) {
   function merge(comp, incr, source) {
     const nids = {}
     incr.nodes.forEach((node, id) => {
-      const match = comp.nodes.find(e =>
-        e.type === node.type && e.props?.name === node.props?.name
-      )
+      const k = nodeKey(node, level)
+      const match = comp.nodes.find(e => nodeKey(e, level) === k)
       if (match) {
         nids[id] = comp.nodes.indexOf(match)
         merged.nids.push(nids[id])
@@ -911,15 +992,17 @@ function partitions(graph) {
 // of them lights up, and the more of the selection it touches the stronger it
 // glows — so overlap accumulates as you check more boxes.
 //
-// The key is the MERGE key (schemaLabel + instance name), so a highlight is a
+// The key is the MERGE key at the ACTIVE detail level, so a highlight is a
 // promise: compositing that subgraph really will fuse those nodes rather than
-// add them alongside.
+// add them alongside. Zooming in narrows the key, so overlaps legitimately
+// disappear — two subgraphs sharing "Action" need not share any one variable
+// of it.
 //
 // bridge() is the stricter sibling — it wants a subgraph touching TWO or more
 // selected ones, i.e. something that would close a loop between them.
 function nodeKeys(graph) {
   const s = new Set()
-  for (const n of graph.nodes) s.add(`${n.type}:${n.props?.name || ''}`)
+  for (const n of graph.nodes) s.add(nodeKey(n))
   return s
 }
 
@@ -957,7 +1040,7 @@ function sharedHighlight() {
 }
 
 function bridge(selected) {
-  const hash = n => `${n.type}:${n.props?.name || ''}`
+  const hash = n => nodeKey(n)
   const selectedGraphs = selected.map(s => s.graph)
 
   const touches = (a, b) => {
@@ -995,6 +1078,7 @@ function bridge(selected) {
 
 function dotify(complex, layout = 'dot') {
   const { graph, merged } = complex
+  const level = complex.level || zoomLevel
   const safe = s => (s || '').toString()
     .replace(/\\/g, '\\\\')
     .replace(/"/g, "'")
@@ -1014,13 +1098,9 @@ function dotify(complex, layout = 'dot') {
 
   const nodes = graph.nodes.map((node, id) => {
     const p = node.props || {}
-    // Graph Tool: node.type holds the label text; p.name may also hold it
-    const typeLine = safe(node.type || '')
-    const nameLine = safe(p.name || p.label || '')
-    // Avoid printing type twice if name === type
-    const label = (nameLine && nameLine !== typeLine)
-      ? (typeLine ? `${typeLine}\\n${nameLine}` : nameLine)
-      : (typeLine || `node${id}`)
+    // What it is called at the active level — schema type, variable, or
+    // variable over instance name. nodeText() handles the fallbacks.
+    const label = safe(nodeText(node, level)) || `node${id}`
     const isMerged = mergedSet.has(id)
 
     const fillcolor = p.color || (isMerged ? '#f5c842' : '#b8e0b8')
@@ -1035,27 +1115,61 @@ function dotify(complex, layout = 'dot') {
   })
 
   const omits = new Set()
-  const edges = graph.rels.map(rel => {
+  const schemaView = level === 'schema'
+
+  // At schema level the drawing is an ontology, not a dynamic model: it says
+  // what relates to what. A signed link needs a quantity at both ends, and a
+  // bare concept has no magnitude — only a variable OF it does. So polarity is
+  // undefined up here, and is dropped rather than reconciled. Where two
+  // variables of one concept push a third in opposite directions, that
+  // disagreement is real information belonging to the variable view; averaging
+  // it into a "±" on the skeleton would say nothing.
+  //
+  // Parallel edges collapse to a single arrow. The verb survives if the folded
+  // edges agree on it; otherwise the arrow goes bare and the tooltip lists what
+  // went into it. (The digraph is `strict`, so Graphviz was already folding
+  // these — but arbitrarily, last-one-wins. This makes it deliberate.)
+  const groups = []
+  if (schemaView) {
+    const byPair = new Map()
+    graph.rels.forEach(rel => {
+      const k = `${rel.from}->${rel.to}`
+      if (!byPair.has(k)) byPair.set(k, [])
+      byPair.get(k).push(rel)
+    })
+    byPair.forEach(g => groups.push(g))
+  } else {
+    graph.rels.forEach(rel => groups.push([rel]))
+  }
+
+  const edges = groups.map(group => {
+    const rel = group[0]
     const f = rel.from, t = rel.to
     const p = rel.props || {}
 
-    const polarity = rel.polarity || p.polarity || ''
-    const isNeg    = polarity === '-'
+    const polarity = schemaView ? '' : (rel.polarity || p.polarity || '')
+    const isNeg    = polarity === '-' || polarity === '−'
 
     // Red for negative edges; black for positive
     const color  = isNeg ? '#ef4444' : (rel.color || p.color || '#000000')
     const width  = rel.width  || p.width  || 1.5
-    const delay  = rel.delay  ?? p.delay  ?? false
+    const delay  = schemaView ? false : (rel.delay ?? p.delay ?? false)
     const curved = rel.curved ?? p.curved ?? false
 
     // Label: edge type/name only — no polarity mark (color carries the signal)
-    const label = safe(rel.type || p.label || '')
+    const verbs = [...new Set(group.map(r => r.type || '').filter(Boolean))]
+    const label = safe(verbs.length === 1 ? verbs[0] : '')
     const style = delay ? 'dashed' : 'solid'
 
-    const attrs = `label="${label}" color="${color}" penwidth=${width} style=${style}`
+    const folded = group.length > 1
+      ? `${group.length} relations folded: ${safe(verbs.join(', '))}`
+      : ''
+    const tipAttr = folded ? ` tooltip="${folded}" labeltooltip="${folded}"` : ''
 
-    // Bidirectional detection
-    if (graph.rels.find(r => r.from === t && r.to === f)) {
+    const attrs = `label="${label}" color="${color}" penwidth=${width} style=${style}${tipAttr}`
+
+    // Bidirectional detection — a self-loop is not its own reverse
+    if (f !== t && graph.rels.find(r => r.from === t && r.to === f)) {
       if (omits.has(`${t}->${f}`)) return ''
       omits.add(`${f}->${t}`)
       return `  ${f}->${t} [${attrs} dir=both]`
@@ -1157,6 +1271,31 @@ async function render(complex) {
 function redraw() {
   if (!currentGraph) return
   render(currentGraph)
+}
+
+const ZOOM_HINT = {
+  schema:   'the skeleton — bare concepts. No polarity up here: only a variable has a magnitude to push. Parallel links fold into one.',
+  variable: 'what actually moves — "Effectiveness of ACTION" rather than "Action". Signed links live at this level.',
+  instance: 'the particular — each named instance kept apart, variable above it.'
+}
+
+function syncZoomUI() {
+  document.querySelectorAll('.zbtn').forEach(b =>
+    b.classList.toggle('on', b.dataset.level === zoomLevel))
+  const hint = document.getElementById('zoom-hint')
+  if (hint) hint.textContent = ZOOM_HINT[zoomLevel] || ''
+}
+
+function setZoom(level) {
+  if (!LEVELS.includes(level) || level === zoomLevel) return
+  zoomLevel = level
+  syncZoomUI()
+  // Overlap badges are keyed at the active level too, so they have to move with it
+  sharedHighlight()
+  if (!currentSources) return
+  // Re-COMPOSE, not merely re-render. The level IS the identity function, so
+  // the graph is genuinely coarser or finer — not the same graph relabelled.
+  if (bridgeMode) doBridge(); else doComposite()
 }
 
 function clearCanvas() {
@@ -1504,11 +1643,15 @@ function toGraphToolState(complex) {
     const schemaLabel = p._schemaLabel || n.type || ''
     const name = p.name || ''
     // Graph Tool's own separation: label is what we call it, schemaLabel is
-    // what it is. An unnamed node is "the type itself", so it shows the type.
-    const label = name || n.type || `node${i}`
+    // what it is. Prefer the VARIABLE — writing the instance name (or the bare
+    // type) into `label` here is what made the variabilised labels vanish on
+    // round-trip, even when they had survived import. The instance name stays
+    // in props, where the Graph Tool expects it.
+    const label = p.label || name || n.type || `node${i}`
 
     VISUAL_KEYS.forEach(k => delete p[k])
     delete p._schemaLabel
+    delete p.label
     if (synthFill || synthBorder) p._composerFill = '1'
 
     return {
@@ -1729,6 +1872,7 @@ function loadDemo() {
 
 // Load demo on start
 loadDemo()
+syncZoomUI()
 </script>
 </body>
 </html>
