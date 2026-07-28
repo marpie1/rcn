@@ -324,9 +324,13 @@
   #canvas .node polygon,
   #canvas .node ellipse,
   #canvas .node rect { cursor: pointer; }
-  #canvas .node text { fill: #000000 !important; font-family: monospace !important; font-size: 11px !important; }
+  /* Bold throughout. Graphviz lays the graph out from regular-weight metrics, so
+     bolding here alone would widen every label after the boxes were already
+     sized — node margins in dotify() are widened to match. */
+  #canvas .node text { fill: #000000 !important; font-family: monospace !important; font-size: 11px !important; font-weight: 700 !important; }
   #canvas .edge path { }
-  #canvas .edge text { fill: #000000 !important; font-size: 9px !important; }
+  #canvas .edge text { fill: #000000 !important; font-size: 9px !important; font-weight: 700 !important; }
+  #canvas .cluster text { font-weight: 700 !important; }
 
   /* ── Click-and-hold neighbourhood highlight ──
      Ported from the Graph Tool's long-press ("shift+long-press to highlight
@@ -1330,7 +1334,8 @@ function dotify(complex, layout = 'dot') {
     `  overlap=false; splines=${splines}`,
     `  layout=${layout}`,
     '  graph [bgcolor="#f5f4f1"]',
-    '  node [shape=box style="filled,rounded" fontname="monospace" fontsize=11 margin="0.35,0.25" width=0 height=0 penwidth=1]',
+    // margin widened from 0.35 to absorb the extra width bold adds after layout
+    '  node [shape=box style="filled,rounded" fontname="monospace bold" fontsize=11 margin="0.42,0.26" width=0 height=0 penwidth=1]',
     '  edge [fontname="monospace" fontsize=9 color="#000000" fontcolor="#000000"]',
     // Clusters only constrain rank when the layout engine understands them;
     // dot does, the force-directed engines route around them.
