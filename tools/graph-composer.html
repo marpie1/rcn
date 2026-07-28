@@ -909,9 +909,21 @@ function familyOf(node) {
   return c ? c.family : ''
 }
 
+// Node text is ALWAYS black — `#canvas .node text { fill:#000 !important }` in
+// this file's own stylesheet overrides whatever fontcolor Graphviz writes, so a
+// per-family font colour can never reach the screen. The fill therefore has to
+// be pale enough to read black text on: worst case here is 12.7:1.
+//
+// Pale fills cannot tell eight families apart, though — tints lose chroma and
+// Issue/Resource collapse to ΔE 3.2 — so the discriminating channel is the RING,
+// which carries the family hue at full strength and measures clean all-pairs.
+// Fill is reinforcement; the ring is the signal. Ring WIDTH stays independent
+// and still carries merge depth.
 function familyFill(node) {
   const f = FAMILIES?.families?.[familyOf(node)]
-  return f ? { color: f.color, fontColor: f.fontColor } : { color: '#c9c7c0', fontColor: '#000000' }
+  return f
+    ? { fill: f.fill || f.color, ring: f.color, fontColor: '#000000' }
+    : { fill: '#e8e6e0', ring: '#8a8880', fontColor: '#000000' }
 }
 
 async function loadFamilies() {
@@ -1176,7 +1188,9 @@ function dotify(complex, layout = 'dot') {
   // over the merge indicator — so the pale nodes read as "the unique ones" when
   // they only meant "the ones nobody coloured". Decoration was being read as
   // signal; that is the whole reason colour here was confusing.
-  const depthPen = d => d >= 8 ? 5 : d >= 5 ? 4 : d >= 3 ? 3 : d >= 2 ? 2 : 1
+  // Floor raised from 1: a coloured ring needs more weight than a black one to
+  // read as a hue rather than as an outline.
+  const depthPen = d => d >= 8 ? 5.5 : d >= 5 ? 4.4 : d >= 3 ? 3.4 : d >= 2 ? 2.6 : 1.8
 
   const nodes = graph.nodes.map((node, id) => {
     const p = node.props || {}
@@ -1185,12 +1199,12 @@ function dotify(complex, layout = 'dot') {
     const label = safe(nodeText(node, level)) || `node${id}`
     const depth = merged.sources?.[id]?.size || 1
     const fam = familyOf(node)
-    const { color, fontColor } = familyFill(node)
+    const { fill, ring, fontColor } = familyFill(node)
 
-    const fillcolor = color
+    const fillcolor = fill
     const fontcolor = fontColor
     const penwidth  = depthPen(depth)
-    const pencolor  = '#1a1a19'
+    const pencolor  = ring
     const rawShape  = p.shape || 'rounded'
     const shape     = shapeMap[rawShape] || 'box'
     const style     = rawShape === 'rounded' ? '"filled,rounded"' : '"filled"'
@@ -1423,9 +1437,10 @@ function renderFamilyLegend() {
   if (!FAMILIES) { el.innerHTML = '<div style="font-size:9px;font-family:var(--mono);color:var(--text3)">families.json not loaded</div>'; return }
   el.innerHTML = FAMILIES.order.map(f => {
     const d = FAMILIES.families[f]
+    // Swatch mirrors the node: pale fill inside the family-hued ring.
     return `<div class="tally-row" title="${(d.members || []).join(', ')}">`
-         + `<span class="k"><span style="display:inline-block;width:9px;height:9px;background:${d.color};`
-         + `border:1px solid #1a1a19;vertical-align:-1px;margin-right:5px"></span>${f}</span>`
+         + `<span class="k"><span style="display:inline-block;width:10px;height:10px;background:${d.fill || d.color};`
+         + `border:2px solid ${d.color};vertical-align:-1px;margin-right:5px"></span>${f}</span>`
          + `<span class="v">${(d.members || []).length}</span></div>`
   }).join('')
 }
@@ -1843,12 +1858,12 @@ function toGraphToolState(complex) {
     // to Cypher.
     const fam = familyFill(n)
     const synthFill = true
-    const color = fam.color
+    const color = fam.fill
     const fontColor = fam.fontColor
-    const borderColor = '#1a1a19'
+    const borderColor = fam.ring
     const synthBorder = true
     const depth = complex.merged?.sources?.[i]?.size || 1
-    const borderWidth = depth >= 8 ? 5 : depth >= 5 ? 4 : depth >= 3 ? 3 : depth >= 2 ? 2 : 1.5
+    const borderWidth = depth >= 8 ? 5.5 : depth >= 5 ? 4.4 : depth >= 3 ? 3.4 : depth >= 2 ? 2.6 : 1.8
 
     const schemaLabel = p._schemaLabel || n.type || ''
     const name = p.name || ''
