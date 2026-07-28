@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <!-- RCN Graph Composer — User Manual
-     Update when: identity rules change (schemaLabel / props.name / UNNAMED),
-     beam colours or channels change, buttons are added, or the accepted input
-     formats change. Verified against graph-composer.html, July 2026. -->
+     Update when: identity rules change (the four detail levels and their keys),
+     the visual channels change (family fill / ring colour / ring width /
+     polarity glyph / dotted-unsigned), buttons are added, the canonical source
+     files change, or the accepted input formats change.
+     Verified against graph-composer.html, July 2026. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -71,10 +73,12 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
       <li><a href="#beam">The beam</a></li>
       <li><a href="#colours">Reading the colours</a></li>
       <li><a href="#compose">Composite, Bridge, Partition</a></li>
+      <li><a href="#detail">Detail — the four levels</a></li>
       <li><a href="#stats">The numbers</a></li>
       <li><a href="#canvas">The drawing</a></li>
       <li><a href="#export">Getting results out</a></li>
       <li><a href="#identity">Making nodes merge — the identity rules</a></li>
+      <li><a href="#sources">The canonical sources — what to edit</a></li>
       <li><a href="#trouble">When it doesn't do what you expect</a></li>
     </ol>
   </div>
@@ -88,10 +92,25 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
 
   <h3>Getting subgraphs in</h3>
   <ul>
+    <li><strong>Set buttons</strong> under the search box load a whole curated set in one click — <em>EIP aspects — variabilized (16)</em> and <em>EIP aspects — original (16)</em>. This is the usual way in.</li>
     <li><strong>Drag and drop</strong> one or many files anywhere on the window.</li>
     <li><strong>+ Load</strong> at the top of the beam opens a file picker.</li>
     <li>Demo graphs (zoning-rules, land-trust, public-hearing) load automatically so the tool is never empty on first open.</li>
   </ul>
+
+  <p>
+    A set button loads past the browser cache, replaces any earlier copy of the
+    same set rather than stacking a second one, and ticks <em>only</em> that set —
+    so the composite is the set, not the set plus whatever else was lying around.
+    The sets themselves are listed in <code>tools/graph-sets.json</code>; that
+    file is the one place to register a new subgraph, because HTTP cannot list a
+    directory.
+  </p>
+
+  <div class="callout">
+    A set knows nothing about any particular schema — it is a name, a directory
+    and a list of filenames. Adding your own is three lines of JSON.
+  </div>
 
   <h3>What it accepts</h3>
   <table class="k">
@@ -166,8 +185,9 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
   <h3>Composite</h3>
   <p>
     Merges everything ticked. Two nodes from different subgraphs become one when
-    their schema label and instance name both match; their properties are merged.
-    Duplicate relations of the same type between the same pair collapse to one.
+    their identity matches at the current <a href="#detail">Detail level</a>;
+    their properties are merged. Duplicate relations of the same type between the
+    same pair collapse to one.
   </p>
 
   <h3>Bridge</h3>
@@ -193,13 +213,73 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
     <em>curated</em>, not derived.
   </div>
 
-  <h2 id="stats">5 · The numbers</h2>
+  <h2 id="detail">5 · Detail — the four levels</h2>
+
+  <p>
+    Every node already carries four nested answers to "what is this?". The
+    <strong>Detail</strong> control picks which one counts, and it is not a
+    relabelling — <strong>the level is the identity function</strong>, so
+    switching it re-composites. A coarser level is a genuine contraction of a
+    finer one: each of its nodes is an equivalence class of the level below.
+  </p>
+
+  <table class="k">
+    <tr><th>Level</th><th>Identity</th><th>Example</th><th>All 16 EIP aspects</th></tr>
+    <tr><td>family</td><td>lookup in <code>families.json</code></td><td>Doing</td><td>8 nodes</td></tr>
+    <tr><td>schema</td><td><code>schemaLabel</code></td><td>Action</td><td>24 nodes</td></tr>
+    <tr><td>variable</td><td>+ <code>label</code></td><td>Effectiveness of ACTION</td><td>25 nodes</td></tr>
+    <tr><td>instance</td><td>+ <code>props.name</code></td><td>Fix the Elm St culvert</td><td>25 nodes</td></tr>
+  </table>
+
+  <p>
+    The goal is <strong>few schema labels carrying many variables</strong>, so the
+    contraction should get more dramatic over time. The <em>Node types</em> panel
+    reads that ratio off directly: it tallies by schema label at every level, so
+    at variable level a count above 1 means that concept has been elaborated.
+    Today only Affect has — <code>Affect 2</code>, Positive and Negative.
+  </p>
+
+  <div class="callout">
+    Instance level looks identical to variable level in the EIP set because every
+    <code>props.name</code> is still <code>"?"</code>. That is the level sitting
+    empty, waiting for real data — it separates the moment you put named
+    instances in.
+  </div>
+
+  <h3>Why polarity disappears at the top two levels</h3>
+  <p>
+    A signed link needs a quantity at both ends. A bare concept has no magnitude;
+    only a <em>variable of</em> it does — "Action" cannot increase, but
+    "Effectiveness of ACTION" can. So at family and schema level polarity is
+    undefined by design rather than missing, and is dropped rather than
+    reconciled. Where two variables of one concept push a third in opposite
+    directions, that disagreement is real information belonging to the variable
+    view; averaging it into a "±" on the skeleton would say nothing.
+  </p>
+
+  <p>
+    Those two levels also <strong>fold parallel edges</strong> into a single
+    arrow, keeping the verb when the folded edges agree and listing what went in
+    via the tooltip.
+  </p>
+
+  <h3>group by family</h3>
+  <p>
+    The checkbox under Detail draws each family in its own labelled box. It is
+    off by default. Faceting is the second encoding channel the palette needs —
+    a box names its family in words and separates confusable fills in space — but
+    it forces the graph wider and flatter, so it reads better as a printed or
+    projected reference than as the working view.
+  </p>
+
+  <h2 id="stats">6 · The numbers</h2>
 
   <table class="k">
     <tr><th>Stat</th><th>Meaning</th></tr>
     <tr><td>nodes</td><td>Nodes in the composite, after merging</td></tr>
     <tr><td>edges</td><td>Relations in the composite</td></tr>
     <tr><td>merged</td><td>How many nodes were recognised as repeats and fused</td></tr>
+    <tr><td>1-source</td><td><strong>How many nodes rest on a single drawing.</strong> These are where the model is thinnest — one witness, nothing corroborating it. Goes amber past half. All 16 EIP aspects at schema level: <code>10/24</code>.</td></tr>
     <tr><td>sources</td><td>How many subgraphs went in</td></tr>
     <tr><td>typed</td><td><strong>How many source nodes carry a <code>schemaLabel</code>.</strong> Goes amber when short of the total.</td></tr>
   </table>
@@ -211,22 +291,67 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
     is relying on its display text.
   </p>
 
-  <h2 id="canvas">6 · The drawing</h2>
+  <h2 id="canvas">7 · The drawing</h2>
 
-  <p>The composite renders through Graphviz. Node colours describe provenance:</p>
+  <p>
+    The composite renders through Graphviz. Every visual channel carries exactly
+    one meaning, and no meaning rides on two channels at once.
+  </p>
 
   <table class="k">
-    <tr><th>Colour</th><th>Meaning</th></tr>
-    <tr><td><span class="swatch" style="background:#b8d4b8"></span> pale green</td><td>Unique node — came from only one subgraph</td></tr>
-    <tr><td><span class="swatch" style="background:#b8860b"></span> gold</td><td><strong>Merged</strong> node — arrived from two or more and was fused</td></tr>
-    <tr><td>black edge</td><td>Positive relation</td></tr>
-    <tr><td>red edge</td><td>Negative relation</td></tr>
+    <tr><th>Channel</th><th>Carries</th></tr>
+    <tr><td>node <strong>fill</strong></td><td>Its <strong>family</strong>, as a pale tint. Pale because node text is always black — worst contrast on the canvas is 12.7:1.</td></tr>
+    <tr><td>node <strong>ring colour</strong></td><td>The same family at full strength. This is the channel that actually distinguishes eight families; the pale fills cannot.</td></tr>
+    <tr><td>node <strong>ring width</strong></td><td><strong>Merge depth</strong> — how many subgraphs attest to that node. Thin is one witness; thickest is eight or more.</td></tr>
+    <tr><td><strong>+</strong> at the arrowhead</td><td>Positive relation</td></tr>
+    <tr><td><span style="color:#ef4444;font-weight:700">−</span> at the arrowhead, red line</td><td>Negative relation</td></tr>
+    <tr><td>heavy <strong>dotted</strong> edge</td><td><strong>Unsigned</strong> — no polarity recorded. Not a claim that it is positive.</td></tr>
     <tr><td>dashed edge</td><td>Delay</td></tr>
   </table>
 
   <p>
-    Gold is composition made visible — it shows you exactly where the pieces
-    joined. <strong>Layout</strong> offers the Graphviz engines: dot (hierarchical),
+    The sign is a <em>glyph</em>, not merely a colour, and it sits at the
+    arrowhead because that is what it is about: what this edge does to its
+    <strong>target</strong>. Sign carried by colour alone fails for red-green
+    colour blindness, in greyscale print, and on a washed-out projector.
+  </p>
+
+  <p>
+    Unsigned edges are drawn <strong>heavier</strong> than signed ones. Partly
+    optical — a dotted line reads thinner than a solid one of the same nominal
+    width — and partly because an unsigned edge is unfinished work, so it should
+    not be the quietest thing on the canvas. Sign one and the extra weight drops
+    away by itself; the width is derived from polarity on every render, never
+    stored, so an edge cannot get stuck heavy.
+  </p>
+
+  <p>
+    Families come from <code>families.json</code>. Nodes whose schema label is not
+    in that file stay grey rather than being herded into one bucket — the
+    Composer keeps working on graphs that know nothing of this taxonomy.
+  </p>
+
+  <h3>Canvas colour</h3>
+  <p>
+    Five presets and a colour picker. The choice drives the drawing, the pane
+    behind it, and the exported JSON, so a composite opened in the Graph Tool
+    lands on the background it was composed against.
+  </p>
+  <p>
+    Edge ink follows the background automatically — on a dark canvas it flips to
+    light, because edges and their labels sit directly on the canvas with nothing
+    behind them. Node text does <em>not</em> follow: it sits on a pale family fill
+    that stays pale whatever the background. Negative red also stays put, being
+    the one edge colour that carries meaning rather than merely legibility.
+  </p>
+
+  <div class="callout">
+    The family palette was measured against the default <code>#f5f4f1</code>. Far
+    from it the ring contrasts drift, and the hint line under the swatches says so.
+  </div>
+
+  <p>
+    <strong>Layout</strong> offers the Graphviz engines: dot (hierarchical),
     neato, fdp, circo, twopi, sfdp.
   </p>
 
@@ -254,11 +379,13 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
   </div>
 
   <p>
-    If you start to drag, the hold is cancelled — that is a pan, not a
-    question. Re-composing clears any highlight along with the old drawing.
+    Move off the node and the hold is cancelled — that is a pan, not a question.
+    Drifting <em>within</em> the node is fine; panning is frozen for the length of
+    the hold so the drawing cannot slide out from under the gesture. Re-composing
+    clears any highlight along with the old drawing.
   </p>
 
-  <h2 id="export">7 · Getting results out</h2>
+  <h2 id="export">8 · Getting results out</h2>
 
   <ul>
     <li><strong>Open in Graph Tool ↗</strong> — converts the composite and opens it in the Graph Tool in a new tab, <em>already laid out exactly as you see it here</em>. Nothing to save, nothing to load. This is the one you want.</li>
@@ -308,26 +435,40 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
   </div>
 
   <p>
-    One subtlety: <strong>gold is a fact about that composite, not about the
-    node.</strong> The export bakes the merge colour in so the Graph Tool shows
-    it, but marks it as synthesised. Load that file back into the Composer and
-    the colour is dropped, so a node cannot stay gold in a later composite where
-    it no longer merges. Colours you authored yourself are untouched.
+    One subtlety: <strong>the family fill and the ring weight are facts about
+    that composite and this taxonomy, not about the node.</strong> The export
+    bakes them in so the Graph Tool shows what you were looking at, but marks
+    them as synthesised. Load that file back into the Composer and they are
+    dropped, so a node cannot keep a family fill in a drawing that knows nothing
+    of families, nor a thick ring in a composite where it no longer merges. The
+    canvas colour travels too.
   </p>
 
-  <h2 id="identity">8 · Making nodes merge — the identity rules</h2>
+  <h2 id="identity">9 · Making nodes merge — the identity rules</h2>
 
   <p>This is the part worth understanding properly. Four fields, four questions:</p>
 
   <table class="k">
     <tr><th>Field</th><th>Question</th><th>Identity?</th></tr>
-    <tr><td>label</td><td>What do we call it here?</td><td>No — free</td></tr>
-    <tr><td>schemaLabel</td><td>What is it, in the schema?</td><td><strong>Yes</strong></td></tr>
-    <tr><td>props.name</td><td>Which one, if several?</td><td><strong>Yes</strong></td></tr>
+    <tr><td>label</td><td>Which aspect of it moves?</td><td><strong>At variable level and below</strong></td></tr>
+    <tr><td>schemaLabel</td><td>What is it, in the schema?</td><td><strong>Yes, at every level</strong></td></tr>
+    <tr><td>props.name</td><td>Which one, if several?</td><td><strong>At instance level</strong></td></tr>
     <tr><td>extraLabels</td><td>What else is it called?</td><td>No — aliases</td></tr>
   </table>
 
-  <p>The merge key is <code>schemaLabel</code> + <code>props.name</code>.</p>
+  <p>
+    The merge key grows one field at a time as you zoom in — see
+    <a href="#detail">Detail</a>. At <strong>variable</strong> level, the default,
+    it is <code>schemaLabel</code> + <code>label</code>.
+  </p>
+
+  <div class="callout warn">
+    <strong>A variable label usually lives in several files.</strong> Fourteen of
+    the 25 EIP labels do: <code>Effectiveness of ORG</code> appears in 9 of the 16
+    subgraphs. Rename it in one file only and the key stops matching, so that
+    concept silently splits in two — and it will look like a modelling change
+    rather than a typo. Search and replace across the whole folder.
+  </div>
 
   <h3>Unnamed means "the type itself"</h3>
   <p>
@@ -357,7 +498,42 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
     and worth keeping; they just aren't what a node <em>is</em>.
   </div>
 
-  <h2 id="trouble">9 · When it doesn't do what you expect</h2>
+  <h2 id="sources">10 · The canonical sources — what to edit</h2>
+
+  <div class="callout">
+    <strong>Neither the family diagram nor the schema diagram is a file.</strong>
+    Both are computed views — the Composer contracts whatever is in the beam at
+    render time. There is nothing to open and edit. What is canonical lives one
+    layer down.
+  </div>
+
+  <p>The Composer fetches exactly <strong>two</strong> files by itself:</p>
+
+  <table class="k">
+    <tr><th>File</th><th>Supplies</th><th>To apply a change</th></tr>
+    <tr><td><code>tools/families.json</code></td><td>Family membership, colours, legend order, and the note arguing each assignment</td><td><strong>↻ reload families.json</strong> under the legend</td></tr>
+    <tr><td><code>tools/graph-sets.json</code></td><td>Which sets appear as buttons, and their filenames</td><td>Reload the page</td></tr>
+    <tr><td><code>tools/eip-aspects-variabilized/*.json</code></td><td>Every node, edge, verb, sign and variable label</td><td>Click the set button again</td></tr>
+  </table>
+
+  <p>
+    <code>tools/eip-schema-cld.json</code> — the signed CLD — is
+    <strong>not read by the Composer</strong>. It is a separate authored artifact,
+    useful as the reference for what the signs should be, but nothing live depends
+    on it.
+  </p>
+
+  <table class="k">
+    <tr><th>To change</th><th>Edit</th></tr>
+    <tr><td>Which family a concept belongs to</td><td><code>families.json</code> → <code>concepts</code></td></tr>
+    <tr><td>A family's colour, fill or legend order</td><td><code>families.json</code> → <code>families</code> / <code>order</code></td></tr>
+    <tr><td>Add or remove a node</td><td>The subgraph file</td></tr>
+    <tr><td>An edge, its verb, or its sign</td><td>The subgraph file that owns it</td></tr>
+    <tr><td>A variable label</td><td><strong>Every</strong> subgraph containing it</td></tr>
+    <tr><td>Register a new subgraph</td><td><code>graph-sets.json</code></td></tr>
+  </table>
+
+  <h2 id="trouble">11 · When it doesn't do what you expect</h2>
 
   <h3>Two nodes that should be one</h3>
   <p>Check, in order:</p>
@@ -385,10 +561,41 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
 
   <h3>Click-and-hold does nothing</h3>
   <p>
-    The hold is about half a second, and it cancels if the pointer moves more
-    than a few pixels — the tool reads movement as a pan. Press, keep still,
-    wait. If a highlight never appears on any node, check that something is
-    actually composed: the gesture works on the drawing, not on the beam.
+    The hold is about half a second, and it cancels only if the pointer leaves
+    the node — drifting inside it is fine. If a highlight never appears on any
+    node, check that something is actually composed: the gesture works on the
+    drawing, not on the beam.
+  </p>
+  <div class="callout ok">
+    This was genuinely broken until July 2026, and not intermittently — it could
+    never fire at all. The pan/zoom library calls <code>preventDefault()</code> on
+    <code>pointerdown</code>, which by specification suppresses the compatibility
+    mouse events, so over the canvas the browser fires <code>pointerdown</code>
+    and then <code>click</code> and <strong>never</strong>
+    <code>mousedown</code> — which was the event the gesture listened for. The
+    click then fell through to the details panel, which is what "does nothing"
+    looked like. It now listens on pointer events, which also brings touch and pen.
+  </div>
+
+  <h3>Everything is dotted</h3>
+  <p>
+    Dotted means unsigned, and most edges in a corpus usually are. Signs live in
+    the CLD; port them onto the subgraphs and the edges go solid and thin. Note
+    that family and schema level are never dotted — polarity is undefined there
+    by design, so they stay solid.
+  </p>
+
+  <h3>All the nodes are grey</h3>
+  <p>
+    <code>families.json</code> did not load, or the graph's schema labels are not
+    in it. The legend says which. Grey is the honest fallback, not a failure —
+    the Composer does not assume any particular taxonomy.
+  </p>
+
+  <h3>A concept split in two after an edit</h3>
+  <p>
+    Almost always a variable label changed in one subgraph but not the others.
+    See the warning in <a href="#identity">§9</a>.
   </p>
 
   <h3>Nothing highlights</h3>
@@ -406,9 +613,13 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
 
   <div class="foot">
     RCN Graph Composer · <code>tools/graph-composer.html</code> ·
+    taxonomy in <code>tools/families.json</code> ·
+    sets in <code>tools/graph-sets.json</code> ·
     file format details in <code>tools/schemas/graph-tool-v22.md</code> ·
     provenance in <code>tools/schemas/ward-graph.md</code> ·
-    example subgraphs in <code>tools/eip-aspects/</code>
+    subgraphs in <code>tools/eip-aspects-variabilized/</code> ·
+    open questions in <code>tools/eip-cld-subgraph-mismatches.md</code> ·
+    updated July 2026
   </div>
 
 </div>

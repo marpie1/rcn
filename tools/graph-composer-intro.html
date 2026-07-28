@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <!-- RCN Graph Composer — Introduction & Positioning
-     Update this file when the identity model changes (schemaLabel, instance
-     names), when beam affordances change (highlighting, bridge, partition),
-     or when the Graph Tool / Composer division of labour shifts. -->
+     Update this file when the identity model changes (the four detail levels
+     and their keys), when beam affordances change (highlighting, bridge,
+     partition, graph sets), when the family/colour model changes, or when the
+     Graph Tool / Composer division of labour shifts. Updated July 2026. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -156,17 +157,52 @@ code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5
 
   <table class="k">
     <tr><th>Field</th><th>Question it answers</th><th>Part of identity?</th></tr>
-    <tr><td>label</td><td>What do we <em>call</em> it on this drawing?</td><td>No — free to change</td></tr>
-    <tr><td>schemaLabel</td><td>What <em>is</em> it, in the schema?</td><td><strong>Yes</strong></td></tr>
-    <tr><td>props.name</td><td><em>Which</em> one, when there are several?</td><td><strong>Yes</strong></td></tr>
+    <tr><td>family</td><td>Which part of the schema is it?</td><td>At family level</td></tr>
+    <tr><td>schemaLabel</td><td>What <em>is</em> it, in the schema?</td><td><strong>Always</strong></td></tr>
+    <tr><td>label</td><td>Which <em>aspect</em> of it moves?</td><td>At variable level and below</td></tr>
+    <tr><td>props.name</td><td><em>Which</em> one, when there are several?</td><td>At instance level</td></tr>
     <tr><td>extraLabels</td><td>What else is it called? Aliases.</td><td>No — data, exported to Neo4j</td></tr>
   </table>
 
+  <h3>Four levels, not one</h3>
+
   <p>
-    The consequence is worth stating plainly: <strong>the words on the drawing are
-    free.</strong> A node can be renamed <code>HOUSING</code> or <code>Housing</code>
-    or <code>the housing we have</code> to suit the audience without changing what
-    it merges with. Legibility and identity stop fighting each other.
+    Those fields nest, and the <strong>Detail</strong> control picks how far down
+    to look. This is not a relabelling — <strong>the level is the identity
+    function</strong> — so a coarser view is a genuine contraction of a finer one,
+    each of its nodes an equivalence class of the level below.
+  </p>
+
+  <table class="k">
+    <tr><th>Level</th><th>Reads</th><th>All 16 EIP aspects</th></tr>
+    <tr><td>family</td><td>Doing</td><td>8 nodes — the whole schema as eight blobs</td></tr>
+    <tr><td>schema</td><td>Action</td><td>24 nodes — the skeleton</td></tr>
+    <tr><td>variable</td><td>Effectiveness of ACTION</td><td>25 nodes — what actually moves</td></tr>
+    <tr><td>instance</td><td>Fix the Elm St culvert</td><td>the particular case</td></tr>
+  </table>
+
+  <p>
+    The goal is <strong>few schema labels carrying many variables</strong>, so the
+    contraction gets more dramatic as the model is elaborated. Open a meeting at
+    family level, drop to schema when someone asks what is inside Doing, drop to
+    variable when the argument turns to which direction something pushes.
+  </p>
+
+  <p>
+    One consequence falls straight out: <strong>polarity only exists at variable
+    level.</strong> A signed link needs a quantity at both ends, and a bare concept
+    has no magnitude — "Action" cannot increase, but "Effectiveness of ACTION"
+    can. So the top two levels answer <em>what relates to what</em>, and the lower
+    two answer <em>which way it pushes</em>.
+  </p>
+
+  <p>
+    The other consequence is worth stating plainly: <strong>at schema level and
+    above, the words on the drawing are free.</strong> A node can be renamed to
+    suit the audience without changing what it merges with. Legibility and
+    identity stop fighting each other — until you zoom to variable level, where
+    the words become the identity, and a rename in one file but not its siblings
+    will split a concept in two.
   </p>
 
   <div class="callout">
@@ -184,7 +220,15 @@ code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5
     </div>
     <div class="hl-card">
       <h4>Composite</h4>
-      <p>Merge the ticked subgraphs. Nodes matching on schema label + instance name become one.</p>
+      <p>Merge the ticked subgraphs. Nodes matching at the current Detail level become one.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Detail</h4>
+      <p>Family · schema · variable · instance. Switching re-composites, because the level <em>is</em> the identity.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Families</h4>
+      <p>Node fill and ring carry the supracategory — the one property that survives the zoom unchanged.</p>
     </div>
     <div class="hl-card">
       <h4>Shared-node highlighting</h4>
@@ -232,9 +276,9 @@ code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5
   </p>
 
   <p>
-    Ticking all sixteen composites <strong>74 source nodes down to 25</strong>,
-    matching the whole-schema reference exactly, with no duplicates. Forty-nine
-    nodes were recognised as repeats of ones already present.
+    Ticking all sixteen composites 75 source nodes down to <strong>25 at variable
+    level, 24 at schema level, and 8 families</strong> — one drawing, three
+    grains, no duplicates.
   </p>
 
   <p>
@@ -243,8 +287,20 @@ code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5
     Motivation</code>, <code>Place —support→ Person</code>, <code>Person —make→
     Commitment</code>, <code>Conversation —for→ Action</code> — plus edge labels
     that flattening had fused (<code>create / stimulates</code> was two separate
-    relations). <strong>The subgraphs are the better source of truth.</strong>
+    relations).
   </p>
+
+  <div class="callout">
+    <strong>That claim needed qualifying.</strong> Three of those four turn out to
+    exist in the finished CLD too, pointing the <em>other way</em>:
+    <code>Motivation —power→ Person</code>, <code>Person —inhabit→ Place</code>,
+    <code>Commitment —to→ Person</code>. So the subgraphs did not simply preserve
+    what flattening lost — the two artifacts genuinely disagree about direction,
+    which in a causal-loop diagram decides which feedback loops exist.
+    Thirty-one such disagreements are catalogued in
+    <code>tools/eip-cld-subgraph-mismatches.md</code>. Neither source is
+    automatically the better one; that is a human call, and it is still open.
+  </div>
 
   <h2>Where it came from</h2>
 
@@ -311,8 +367,10 @@ code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5
   </div>
 
   <div class="foot">
-    RCN Graph Composer · <code>tools/graph-composer.html</code> · part of the RCN toolset
-    alongside the Graph Tool, Timeline, and Issue Polygon Map.
+    RCN Graph Composer · <code>tools/graph-composer.html</code> ·
+    taxonomy in <code>tools/families.json</code> ·
+    sets in <code>tools/graph-sets.json</code> ·
+    part of the RCN toolset alongside the Graph Tool, Timeline, and Issue Polygon Map.
   </div>
 
 </div>
