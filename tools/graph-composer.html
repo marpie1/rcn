@@ -646,9 +646,11 @@
       <div style="font-size:9px;font-family:var(--mono);color:var(--text3);line-height:1.8;margin-top:8px;border-top:1px solid var(--border);padding-top:6px;">
         <div>▁ thin border = 1 source</div>
         <div>▃ thick border = many sources</div>
-        <div>─ <span style="color:#000000">black</span> = positive edge</div>
-        <div>─ <span style="color:#ef4444">red</span> = negative edge</div>
-        <div>- - <span style="color:#000000">dashed</span> = delay</div>
+        <div><b style="color:#111111">+</b> at arrowhead = positive</div>
+        <div><b style="color:#ef4444">−</b> at arrowhead = negative</div>
+        <div>&middot;&middot;&middot; dotted = unsigned, no polarity recorded &mdash; which is not a claim that it is positive</div>
+        <div>&mdash; solid = signed (or an ontology level, where sign does not apply)</div>
+        <div>- - dashed = delay</div>
       </div>
     </div>
 
@@ -1259,7 +1261,6 @@ function dotify(complex, layout = 'dot') {
     return [...boxes, ...loose]
   })()
 
-  const omits = new Set()
   // Family and schema are both ontology levels — the argument below applies to
   // each, and family more strongly, since a family has even less claim to a
   // magnitude than a concept does.
@@ -1297,9 +1298,12 @@ function dotify(complex, layout = 'dot') {
 
     const polarity = schemaView ? '' : (rel.polarity || p.polarity || '')
     const isNeg    = polarity === '-' || polarity === '−'
+    const isPos    = polarity === '+'
 
-    // Red for negative edges; black for positive
-    const color  = isNeg ? '#ef4444' : (rel.color || p.color || '#000000')
+    // Red for negative, near-black for positive, recessive grey for UNSIGNED.
+    // Unsigned is not the same claim as positive — most edges here record no
+    // polarity at all — so it must not be drawn as though it were.
+    const color  = isNeg ? '#ef4444' : isPos ? '#111111' : (rel.color || p.color || '#666666')
     const width  = rel.width  || p.width  || 1.5
     const delay  = schemaView ? false : (rel.delay ?? p.delay ?? false)
     const curved = rel.curved ?? p.curved ?? false
@@ -1307,21 +1311,37 @@ function dotify(complex, layout = 'dot') {
     // Label: edge type/name only — no polarity mark (color carries the signal)
     const verbs = [...new Set(group.map(r => r.type || '').filter(Boolean))]
     const label = safe(verbs.length === 1 ? verbs[0] : '')
-    const style = delay ? 'dashed' : 'solid'
+
+    // Dotted = no polarity recorded. Only where a sign would MEAN something:
+    // at family and schema level polarity is undefined by design, not missing,
+    // so dotting the whole skeleton would assert something different and false.
+    // Dotted survives greyscale and projection, which the colour never did.
+    // (Dashed still means delay; nothing in this corpus sets it, and a delayed
+    // edge is drawn dashed whether or not it carries a sign.)
+    const unsigned = !schemaView && !isNeg && !isPos
+    const style = delay ? 'dashed' : unsigned ? 'dotted' : 'solid'
 
     const folded = group.length > 1
       ? `${group.length} relations folded: ${safe(verbs.join(', '))}`
       : ''
     const tipAttr = folded ? ` tooltip="${folded}" labeltooltip="${folded}"` : ''
 
-    const attrs = `label="${label}" color="${color}" penwidth=${width} style=${style}${tipAttr}`
+    // The sign rides at the ARROWHEAD, because that is what it is about: what
+    // this edge does to its TARGET. And it is a glyph, not merely a colour —
+    // sign carried by colour alone fails for red/green colour blindness, in
+    // greyscale print, and on a washed-out projector.
+    const sign = (isNeg || isPos)
+      ? ` headlabel="${isNeg ? '−' : '+'}" labeldistance=2.2 labelangle=22 labelfontsize=16 labelfontcolor="${color}"`
+      : ''
 
-    // Bidirectional detection — a self-loop is not its own reverse
-    if (f !== t && graph.rels.find(r => r.from === t && r.to === f)) {
-      if (omits.has(`${t}->${f}`)) return ''
-      omits.add(`${f}->${t}`)
-      return `  ${f}->${t} [${attrs} dir=both]`
-    }
+    const attrs = `label="${label}" color="${color}" penwidth=${width} style=${style}${sign}${tipAttr}`
+
+    // Reciprocal pairs are drawn as TWO edges, not folded into one dir=both
+    // line. Folding them looked tidy but silently threw the reverse edge's verb
+    // away — "MOTIVATION power PERSON" survived while "PERSON experience
+    // MOTIVATION" vanished — and it cannot carry two different polarities at
+    // once either. Two arrowheads on one line also read as a single mutual
+    // relation rather than as two distinct claims.
     return `  ${f}->${t} [${attrs}]`
   }).filter(Boolean)
 
