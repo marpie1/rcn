@@ -572,6 +572,7 @@
     <div class="ctrl-section">
       <div class="ctrl-label">Detail</div>
       <div class="zoom-row">
+        <button class="zbtn" data-level="family"   onclick="setZoom('family')">family</button>
         <button class="zbtn" data-level="schema"   onclick="setZoom('schema')">schema</button>
         <button class="zbtn" data-level="variable" onclick="setZoom('variable')">variable</button>
         <button class="zbtn" data-level="instance" onclick="setZoom('instance')">instance</button>
@@ -585,6 +586,7 @@
         <div>nodes: <span class="val" id="stat-nodes">—</span></div>
         <div>edges: <span class="val" id="stat-edges">—</span></div>
         <div>merged: <span class="val" id="stat-merged">—</span></div>
+        <div>1-source: <span class="val" id="stat-thin">—</span></div>
         <div>sources: <span class="val" id="stat-sources">—</span></div>
         <div>typed: <span class="val" id="stat-typed">—</span></div>
       </div>
@@ -619,10 +621,11 @@
     </div>
 
     <div class="ctrl-section">
-      <div class="ctrl-label">Node colors</div>
-      <div style="font-size:9px;font-family:var(--mono);color:var(--text3);line-height:1.8;">
-        <div>■ <span style="color:#b8d4b8">palegreen</span> = unique node</div>
-        <div>■ <span style="color:#b8860b">gold</span> = merged node</div>
+      <div class="ctrl-label">Families</div>
+      <div id="family-legend"></div>
+      <div style="font-size:9px;font-family:var(--mono);color:var(--text3);line-height:1.8;margin-top:8px;border-top:1px solid var(--border);padding-top:6px;">
+        <div>▁ thin border = 1 source</div>
+        <div>▃ thick border = many sources</div>
         <div>─ <span style="color:#000000">black</span> = positive edge</div>
         <div>─ <span style="color:#ef4444">red</span> = negative edge</div>
         <div>- - <span style="color:#000000">dashed</span> = delay</div>
@@ -861,9 +864,47 @@ function clearAll() {
 
 const uniq = (v, i, a) => a.indexOf(v) === i
 
-// ── Detail levels ────────────────────────────────────────────────────────
-// Three nested levels of identity live in every node already:
+// ── Families ─────────────────────────────────────────────────────────────
+// The schema's supracategorisation: every schemaLabel belongs to exactly one of
+// eight families. Loaded from eip-families.json rather than stamped into the 16
+// subgraphs, so the taxonomy has one home and the drawings stay clean.
 //
+// Family is the ONLY property that survives the detail zoom unchanged — a node
+// has one at family, schema, variable and instance level alike. Elaboration
+// count degenerates at variable level (every variable carries exactly itself)
+// and merge depth moves with the beam selection, so neither can hold the
+// colour channel without the drawing changing meaning under the viewer. Family
+// can, so colour is keyed to it and nothing else.
+let FAMILIES = null   // { order, families:{name:{color,fontColor,members}}, concepts:{key:{family,note}} }
+
+// The CLD writes "ActiveGoal" and "SideEffect"; the subgraphs write them with a
+// space. Neither is wrong, so match on the spaceless form.
+const famKey = s => (s || '').replace(/\s+/g, '')
+
+function familyOf(node) {
+  const p = node.props || {}
+  const c = FAMILIES?.concepts?.[famKey(p._schemaLabel || node.type)]
+  return c ? c.family : ''
+}
+
+function familyFill(node) {
+  const f = FAMILIES?.families?.[familyOf(node)]
+  return f ? { color: f.color, fontColor: f.fontColor } : { color: '#c9c7c0', fontColor: '#000000' }
+}
+
+async function loadFamilies() {
+  try {
+    FAMILIES = await fetch('eip-families.json').then(r => r.ok ? r.json() : null)
+  } catch (e) { FAMILIES = null }
+  if (!FAMILIES) console.warn('eip-families.json not loaded — family colouring falls back to grey')
+  renderFamilyLegend()
+  if (currentSources) doComposite()
+}
+
+// ── Detail levels ────────────────────────────────────────────────────────
+// Four nested levels of identity, three of which live in every node already:
+//
+//   family    (lookup)      "Doing"                   which part of the schema
 //   schema    schemaLabel   "Action"                  what it IS
 //   variable  label         "Effectiveness of ACTION" which aspect of it moves
 //   instance  props.name    "Fix the Elm St culvert"  which one, concretely
@@ -874,10 +915,14 @@ const uniq = (v, i, a) => a.indexOf(v) === i
 // zooming in never invents. The goal is few schemaLabels carrying many
 // variables, so the contraction should get more dramatic over time — that ratio
 // is the point, and the tally counts read it off.
-const LEVELS = ['schema', 'variable', 'instance']
+const LEVELS = ['family', 'schema', 'variable', 'instance']
 
 function nodeKey(node, level = zoomLevel) {
   const p = node.props || {}
+  // Family sits above schemaLabel rather than extending it — a concept with no
+  // family entry keeps its own identity instead of collapsing into one nameless
+  // bucket with every other stranger.
+  if (level === 'family') return familyOf(node) || `?${p._schemaLabel || node.type || ''}`
   const schema = p._schemaLabel || node.type || ''
   if (level === 'schema') return schema
   // JSON-encoded so the parts cannot run together: a label must not be able
@@ -892,6 +937,7 @@ function nodeKey(node, level = zoomLevel) {
 // than going blank.
 function nodeText(node, level = zoomLevel) {
   const p = node.props || {}
+  if (level === 'family') return familyOf(node) || (p._schemaLabel || node.type || '')
   const schema = p._schemaLabel || node.type || ''
   if (level === 'schema') return schema
   const variable = p.label || schema
@@ -900,7 +946,10 @@ function nodeText(node, level = zoomLevel) {
 }
 
 function composite(concepts, level = zoomLevel) {
-  const merged = { nids: [] }
+  // sources[nid] = the set of subgraphs that landed on this node. Its size is
+  // the merge DEPTH — how many independent drawings attest to the concept.
+  // Depth 1 means a single witness, which is where the schema is thinnest.
+  const merged = { nids: [], sources: [] }
   const comp = new Graph()
 
   for (const concept of concepts) {
@@ -926,6 +975,7 @@ function composite(concepts, level = zoomLevel) {
       } else {
         nids[id] = comp.addNode(node.type, { ...(node.props || {}) })
       }
+      ;(merged.sources[nids[id]] ||= new Set()).add(source)
     })
     incr.rels.forEach(rel => {
       const f = nids[rel.from], t = nids[rel.to]
@@ -1094,28 +1144,50 @@ function dotify(complex, layout = 'dot') {
     cylinder: 'cylinder', barrel: 'cylinder', circle: 'circle'
   }
 
-  const mergedSet = new Set(merged.nids)
+  // Three channels, three meanings, no overlap:
+  //   fill        = family      categorical, and the only thing stable across the zoom
+  //   border      = merge depth quantitative, moves with the beam selection
+  //   edge colour = polarity    already the one honest use of colour in this tool
+  //
+  // The fills the subgraphs carry are deliberately IGNORED. They were whatever
+  // the person drawing that file happened to pick, and worse, they used to win
+  // over the merge indicator — so the pale nodes read as "the unique ones" when
+  // they only meant "the ones nobody coloured". Decoration was being read as
+  // signal; that is the whole reason colour here was confusing.
+  const depthPen = d => d >= 8 ? 5 : d >= 5 ? 4 : d >= 3 ? 3 : d >= 2 ? 2 : 1
 
   const nodes = graph.nodes.map((node, id) => {
     const p = node.props || {}
-    // What it is called at the active level — schema type, variable, or
+    // What it is called at the active level — family, schema type, variable, or
     // variable over instance name. nodeText() handles the fallbacks.
     const label = safe(nodeText(node, level)) || `node${id}`
-    const isMerged = mergedSet.has(id)
+    const depth = merged.sources?.[id]?.size || 1
+    const fam = familyOf(node)
+    const { color, fontColor } = familyFill(node)
 
-    const fillcolor = p.color || (isMerged ? '#f5c842' : '#b8e0b8')
-    const fontcolor = p.fontColor || '#000000'
-    const penwidth  = p.borderWidth != null ? p.borderWidth : (isMerged ? 2 : 1)
-    const pencolor  = p.borderColor || '#000000'
+    const fillcolor = color
+    const fontcolor = fontColor
+    const penwidth  = depthPen(depth)
+    const pencolor  = '#1a1a19'
     const rawShape  = p.shape || 'rounded'
     const shape     = shapeMap[rawShape] || 'box'
     const style     = rawShape === 'rounded' ? '"filled,rounded"' : '"filled"'
 
-    return `  ${id} [label="${label}" fillcolor="${fillcolor}" fontcolor="${fontcolor}" color="${pencolor}" penwidth=${penwidth} shape=${shape} style=${style} tooltip="${tip(p)}"]`
+    const note = FAMILIES?.concepts?.[famKey(p._schemaLabel || node.type)]?.note
+    const tipText = [
+      fam ? `${fam}${note ? ' — ' + note : ''}` : '',
+      `${depth} source${depth === 1 ? '' : 's'}: ${[...(merged.sources?.[id] || [])].sort().join(', ')}`,
+      tip(p)
+    ].filter(Boolean).map(safe).join('\\n')
+
+    return `  ${id} [label="${label}" fillcolor="${fillcolor}" fontcolor="${fontcolor}" color="${pencolor}" penwidth=${penwidth} shape=${shape} style=${style} tooltip="${tipText}"]`
   })
 
   const omits = new Set()
-  const schemaView = level === 'schema'
+  // Family and schema are both ontology levels — the argument below applies to
+  // each, and family more strongly, since a family has even less claim to a
+  // magnitude than a concept does.
+  const schemaView = level === 'schema' || level === 'family'
 
   // At schema level the drawing is an ontology, not a dynamic model: it says
   // what relates to what. A signed link needs a quantity at both ends, and a
@@ -1274,9 +1346,27 @@ function redraw() {
 }
 
 const ZOOM_HINT = {
+  family:   'the supracategory — eight families, the whole schema as eight blobs and the flow between them.',
   schema:   'the skeleton — bare concepts. No polarity up here: only a variable has a magnitude to push. Parallel links fold into one.',
   variable: 'what actually moves — "Effectiveness of ACTION" rather than "Action". Signed links live at this level.',
   instance: 'the particular — each named instance kept apart, variable above it.'
+}
+
+// The legend is not decoration. Eight categorical fills sit in the CVD band that
+// is only legal ALONGSIDE a second channel, so the legend — with the node labels
+// themselves and the family zoom level — is what makes the colouring readable
+// rather than merely pretty. Ship it always.
+function renderFamilyLegend() {
+  const el = document.getElementById('family-legend')
+  if (!el) return
+  if (!FAMILIES) { el.innerHTML = '<div style="font-size:9px;font-family:var(--mono);color:var(--text3)">eip-families.json not loaded</div>'; return }
+  el.innerHTML = FAMILIES.order.map(f => {
+    const d = FAMILIES.families[f]
+    return `<div class="tally-row" title="${(d.members || []).join(', ')}">`
+         + `<span class="k"><span style="display:inline-block;width:9px;height:9px;background:${d.color};`
+         + `border:1px solid #1a1a19;vertical-align:-1px;margin-right:5px"></span>${f}</span>`
+         + `<span class="v">${(d.members || []).length}</span></div>`
+  }).join('')
 }
 
 function syncZoomUI() {
@@ -1364,6 +1454,18 @@ function updateStats(complex, sources) {
   document.getElementById('stat-nodes').textContent = complex ? complex.graph.nodes.length : '—'
   document.getElementById('stat-edges').textContent = complex ? complex.graph.rels.length : '—'
   document.getElementById('stat-merged').textContent = complex ? complex.merged.nids.length : '—'
+  // How many nodes rest on a SINGLE drawing. These are where the schema is
+  // thinnest — one witness, nothing corroborating it — so it is worth a number
+  // of its own rather than being left to be inferred from border weights.
+  const thin = document.getElementById('stat-thin')
+  if (thin) {
+    if (!complex) { thin.textContent = '—'; thin.style.color = '' }
+    else {
+      const n = complex.graph.nodes.filter((_, i) => (complex.merged.sources?.[i]?.size || 1) === 1).length
+      thin.textContent = `${n}/${complex.graph.nodes.length}`
+      thin.style.color = n > complex.graph.nodes.length / 2 ? '#b45309' : ''
+    }
+  }
   document.getElementById('stat-sources').textContent = sources ? sources.length : '—'
   // How many of the SOURCE nodes carried a schemaLabel? A node without one
   // identifies by its display label and will silently fail to merge with a
@@ -1626,19 +1728,24 @@ function toGraphToolState(complex) {
     const geo = pos[i]
 
     const shape = p.shape || 'rounded'
-    // Same rule dotify uses, so the drawing carries its meaning across:
-    // gold = this node arrived from more than one subgraph.
-    // But merge colour is a fact about THIS composite, not about the node. If
-    // we bake it in and the file comes back, it would read as an authored
-    // colour and the node would stay gold in a composite where it no longer
-    // merges. Flag it so the loader knows to drop it. `_` prefix = display-only
-    // by the house convention, so the Graph Tool won't export it to Cypher.
-    const synthFill = p.color === undefined || p.color === ''
-    const color = synthFill ? (mergedSet.has(i) ? '#f5c842' : '#b8e0b8') : p.color
-    const fontColor = p.fontColor || '#000000'
-    const borderColor = p.borderColor || '#000000'
-    const synthBorder = p.borderWidth == null
-    const borderWidth = synthBorder ? (mergedSet.has(i) ? 2 : 1.5) : p.borderWidth
+    // Same rule dotify uses, so the drawing carries its meaning across: fill is
+    // the family, border weight the merge depth.
+    //
+    // Both are facts about THIS composite and this taxonomy, not about the node.
+    // Bake them in unflagged and a returning file would read them as authored
+    // colour — the node would keep its family fill in a drawing that knows
+    // nothing of families, and keep a thick border in a composite where it no
+    // longer merges. Flag them so the loader drops them. `_` prefix =
+    // display-only by the house convention, so the Graph Tool won't export it
+    // to Cypher.
+    const fam = familyFill(n)
+    const synthFill = true
+    const color = fam.color
+    const fontColor = fam.fontColor
+    const borderColor = '#1a1a19'
+    const synthBorder = true
+    const depth = complex.merged?.sources?.[i]?.size || 1
+    const borderWidth = depth >= 8 ? 5 : depth >= 5 ? 4 : depth >= 3 ? 3 : depth >= 2 ? 2 : 1.5
 
     const schemaLabel = p._schemaLabel || n.type || ''
     const name = p.name || ''
@@ -1873,6 +1980,7 @@ function loadDemo() {
 // Load demo on start
 loadDemo()
 syncZoomUI()
+loadFamilies()
 </script>
 </body>
 </html>
