@@ -648,7 +648,7 @@
         <div>▃ thick border = many sources</div>
         <div><b style="color:#111111">+</b> at arrowhead = positive</div>
         <div><b style="color:#ef4444">−</b> at arrowhead = negative</div>
-        <div>&middot;&middot;&middot; dotted = unsigned, no polarity recorded &mdash; which is not a claim that it is positive</div>
+        <div>&middot;&middot;&middot; heavy dotted = unsigned, no polarity recorded &mdash; which is not a claim that it is positive. Sign it and it thins to solid</div>
         <div>&mdash; solid = signed (or an ontology level, where sign does not apply)</div>
         <div>- - dashed = delay</div>
       </div>
@@ -1300,11 +1300,24 @@ function dotify(complex, layout = 'dot') {
     const isNeg    = polarity === '-' || polarity === '−'
     const isPos    = polarity === '+'
 
+    // Dotted = no polarity recorded. Only where a sign would MEAN something:
+    // at family and schema level polarity is undefined by design, not missing,
+    // so dotting the whole skeleton would assert something different and false.
+    const unsigned = !schemaView && !isNeg && !isPos
+
     // Red for negative, near-black for positive, recessive grey for UNSIGNED.
     // Unsigned is not the same claim as positive — most edges here record no
     // polarity at all — so it must not be drawn as though it were.
     const color  = isNeg ? '#ef4444' : isPos ? '#111111' : (rel.color || p.color || '#666666')
-    const width  = rel.width  || p.width  || 1.5
+
+    // Unsigned edges are drawn HEAVIER. Partly optical — a dotted line reads
+    // thinner than a solid one of the same nominal width, because the gaps eat
+    // it — and partly because an unsigned edge is unfinished work, so it should
+    // not be the quietest thing on the canvas. Sign one and the extra weight
+    // drops away by itself: this is derived from polarity, never stored, so an
+    // edge cannot get stuck heavy.
+    const baseWidth = rel.width || p.width || 1.5
+    const width  = unsigned ? Math.round((baseWidth + 1.3) * 10) / 10 : baseWidth
     const delay  = schemaView ? false : (rel.delay ?? p.delay ?? false)
     const curved = rel.curved ?? p.curved ?? false
 
@@ -1312,13 +1325,9 @@ function dotify(complex, layout = 'dot') {
     const verbs = [...new Set(group.map(r => r.type || '').filter(Boolean))]
     const label = safe(verbs.length === 1 ? verbs[0] : '')
 
-    // Dotted = no polarity recorded. Only where a sign would MEAN something:
-    // at family and schema level polarity is undefined by design, not missing,
-    // so dotting the whole skeleton would assert something different and false.
     // Dotted survives greyscale and projection, which the colour never did.
     // (Dashed still means delay; nothing in this corpus sets it, and a delayed
     // edge is drawn dashed whether or not it carries a sign.)
-    const unsigned = !schemaView && !isNeg && !isPos
     const style = delay ? 'dashed' : unsigned ? 'dotted' : 'solid'
 
     const folded = group.length > 1
