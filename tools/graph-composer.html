@@ -329,7 +329,10 @@
      sized — node margins in dotify() are widened to match. */
   #canvas .node text { fill: #000000 !important; font-family: monospace !important; font-size: 11px !important; font-weight: 700 !important; }
   #canvas .edge path { }
-  #canvas .edge text { fill: #000000 !important; font-size: 9px !important; font-weight: 700 !important; }
+  /* Edge labels follow the canvas, since they sit ON it with nothing behind
+     them. Node labels do not: they sit on a pale family fill that stays pale
+     whatever the background, so they stay black. */
+  #canvas .edge text { fill: var(--edge-ink, #000000) !important; font-size: 9px !important; font-weight: 700 !important; }
   #canvas .cluster text { font-weight: 700 !important; }
 
   /* ── Click-and-hold neighbourhood highlight ──
@@ -420,6 +423,23 @@
     background: var(--bg);
     border-color: var(--border2);
     font-weight: 600;
+  }
+  .bg-row { display: flex; gap: 4px; align-items: center; }
+  .bgsw {
+    width: 22px; height: 22px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    padding: 0;
+    transition: border-color .15s, transform .1s;
+  }
+  .bgsw:hover { border-color: var(--border2); transform: translateY(-1px); }
+  .bgsw.on { border-color: var(--text2); border-width: 2px; }
+  #bg-picker {
+    width: 30px; height: 22px; padding: 0;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    cursor: pointer;
+    margin-left: auto;
   }
   .facet-toggle {
     display: flex;
@@ -618,6 +638,19 @@
     </div>
 
     <div class="ctrl-section">
+      <div class="ctrl-label">Canvas</div>
+      <div class="bg-row">
+        <button class="bgsw" data-bg="#f5f4f1" style="background:#f5f4f1" title="paper (default — the surface the palette was validated on)" onclick="setCanvasBg('#f5f4f1')"></button>
+        <button class="bgsw" data-bg="#ffffff" style="background:#ffffff" title="white" onclick="setCanvasBg('#ffffff')"></button>
+        <button class="bgsw" data-bg="#f7f1e3" style="background:#f7f1e3" title="warm" onclick="setCanvasBg('#f7f1e3')"></button>
+        <button class="bgsw" data-bg="#e8eef2" style="background:#e8eef2" title="cool" onclick="setCanvasBg('#e8eef2')"></button>
+        <button class="bgsw" data-bg="#1f2226" style="background:#1f2226" title="dark — edge ink flips to light so edges stay visible" onclick="setCanvasBg('#1f2226')"></button>
+        <input type="color" id="bg-picker" value="#f5f4f1" title="any colour" oninput="setCanvasBg(this.value)">
+      </div>
+      <div class="zoom-hint" id="bg-hint"></div>
+    </div>
+
+    <div class="ctrl-section">
       <div class="ctrl-label">Layout</div>
       <select id="layout-select" onchange="redraw()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-family:var(--mono);font-size:10px;padding:6px 8px;width:100%;cursor:pointer;">
         <option value="dot">dot (hierarchical)</option>
@@ -792,6 +825,23 @@ let drawing = false
 let bridgeMode = false
 let zoomLevel = 'variable'  // 'family' | 'schema' | 'variable' | 'instance' — see nodeKey()
 let facetByFamily = false   // draw each family in its own labelled box
+let canvasBg = '#f5f4f1'    // the surface the palette was validated against
+
+// Is a colour dark enough that black ink would disappear on it? WCAG relative
+// luminance, so the answer is the same one a contrast checker would give.
+function isDark(hex) {
+  const h = (hex || '').replace('#','')
+  if (h.length !== 6) return false
+  const ch = i => { const c = parseInt(h.slice(i, i+2), 16) / 255
+                    return c <= 0.04045 ? c/12.92 : ((c + 0.055)/1.055) ** 2.4 }
+  return 0.2126*ch(0) + 0.7152*ch(2) + 0.0722*ch(4) < 0.4
+}
+
+// Edges and their labels sit directly ON the canvas with nothing behind them,
+// so their ink has to follow it or they vanish. Node labels are exempt — they
+// sit on a pale family fill that stays pale whatever the background.
+const edgeInk    = () => isDark(canvasBg) ? '#f2f2ef' : '#111111'
+const unsignedInk = () => isDark(canvasBg) ? '#9a978f' : '#666666'
 
 // ═══════════════════════════════════════════════════════
 // Beam management
@@ -1252,7 +1302,7 @@ function dotify(complex, layout = 'dot') {
       return [
         `  subgraph cluster_${i} {`,
         `    label="${safe(f)}" labelloc=t labeljust=l`,
-        `    fontname="monospace" fontsize=11 fontcolor="#52514e"`,
+        `    fontname="monospace" fontsize=11 fontcolor="${isDark(canvasBg) ? '#c3c2b7' : '#52514e'}"`,
         `    style="rounded" color="${d.color || '#c9c7c0'}" penwidth=1.6 margin=14`,
         ...byFam.get(f).map(id => '  ' + nodes[id]),
         '  }'
@@ -1308,7 +1358,9 @@ function dotify(complex, layout = 'dot') {
     // Red for negative, near-black for positive, recessive grey for UNSIGNED.
     // Unsigned is not the same claim as positive — most edges here record no
     // polarity at all — so it must not be drawn as though it were.
-    const color  = isNeg ? '#ef4444' : isPos ? '#111111' : (rel.color || p.color || '#666666')
+    // Red stays red on any background — it is the only edge colour carrying
+    // meaning rather than merely being legible, and it reads on both.
+    const color  = isNeg ? '#ef4444' : isPos ? edgeInk() : unsignedInk()
 
     // Unsigned edges are drawn HEAVIER. Partly optical — a dotted line reads
     // thinner than a solid one of the same nominal width, because the gaps eat
@@ -1362,7 +1414,7 @@ function dotify(complex, layout = 'dot') {
     'strict digraph {',
     `  overlap=false; splines=${splines}`,
     `  layout=${layout}`,
-    '  graph [bgcolor="#f5f4f1"]',
+    `  graph [bgcolor="${canvasBg}"]`,
     // margin widened from 0.35 to absorb the extra width bold adds after layout
     '  node [shape=box style="filled,rounded" fontname="monospace bold" fontsize=11 margin="0.42,0.26" width=0 height=0 penwidth=1]',
     '  edge [fontname="monospace" fontsize=9 color="#000000" fontcolor="#000000"]',
@@ -1484,6 +1536,24 @@ function syncZoomUI() {
     b.classList.toggle('on', b.dataset.level === zoomLevel))
   const hint = document.getElementById('zoom-hint')
   if (hint) hint.textContent = ZOOM_HINT[zoomLevel] || ''
+}
+
+function setCanvasBg(hex) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return
+  canvasBg = hex.toLowerCase()
+  const cv = document.getElementById('canvas')
+  // The area around the drawing, for when the graph is zoomed out and does not
+  // fill the pane — otherwise the chosen colour ends at the graph's edge.
+  cv.style.background = canvasBg
+  cv.style.setProperty('--edge-ink', edgeInk())
+  document.querySelectorAll('.bgsw').forEach(b => b.classList.toggle('on', b.dataset.bg === canvasBg))
+  const picker = document.getElementById('bg-picker')
+  if (picker && picker.value.toLowerCase() !== canvasBg) picker.value = canvasBg
+  const hint = document.getElementById('bg-hint')
+  if (hint) hint.textContent = isDark(canvasBg)
+    ? 'dark canvas — edge ink flipped to light. Node fills stay pale, so node text stays black.'
+    : (canvasBg === '#f5f4f1' ? '' : 'the family palette was measured against #f5f4f1; far from it, the ring contrasts drift.')
+  redraw()
 }
 
 function setFacet(on) {
@@ -1950,7 +2020,11 @@ function toGraphToolState(complex) {
     version: '1.0',
     modelName: names ? `Composite — ${names}` : 'Composite',
     modelNote: `Composed in the RCN Graph Composer from ${(currentSources || []).length} subgraph(s). `
-             + `Gold nodes were merged — they arrived from more than one source.`,
+             + `Thick-ringed nodes were merged — they arrived from more than one source.`,
+    // Export what is on screen: the chosen canvas colour travels with the
+    // drawing, so opening it in the Graph Tool does not snap back to a
+    // different background than the one it was composed against.
+    canvasBg,
     nodes, edges
   }
 }
@@ -2132,6 +2206,7 @@ function loadDemo() {
 // Load demo on start
 loadDemo()
 syncZoomUI()
+setCanvasBg(canvasBg)
 loadFamilies()
 </script>
 </body>
