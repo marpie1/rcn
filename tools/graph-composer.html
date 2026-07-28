@@ -882,9 +882,14 @@ function clearAll() {
 const uniq = (v, i, a) => a.indexOf(v) === i
 
 // ── Families ─────────────────────────────────────────────────────────────
-// The schema's supracategorisation: every schemaLabel belongs to exactly one of
-// eight families. Loaded from eip-families.json rather than stamped into the 16
-// subgraphs, so the taxonomy has one home and the drawings stay clean.
+// A supracategorisation: every schemaLabel belongs to exactly one of eight
+// families. Loaded from families.json rather than stamped into the subgraphs,
+// so the taxonomy has one home and the drawings stay clean.
+//
+// Families are NOT an EIP construct. They happen to have been worked out
+// against the EIP schema and their notes were lifted from that CLD, but the
+// scheme is meant to be used across diagram types — so the file is not named
+// for one of them, and nothing here may assume EIP.
 //
 // Family is the ONLY property that survives the detail zoom unchanged — a node
 // has one at family, schema, variable and instance level alike. Elaboration
@@ -911,9 +916,9 @@ function familyFill(node) {
 
 async function loadFamilies() {
   try {
-    FAMILIES = await fetch('eip-families.json').then(r => r.ok ? r.json() : null)
+    FAMILIES = await fetch('families.json').then(r => r.ok ? r.json() : null)
   } catch (e) { FAMILIES = null }
-  if (!FAMILIES) console.warn('eip-families.json not loaded — family colouring falls back to grey')
+  if (!FAMILIES) console.warn('families.json not loaded — family colouring falls back to grey')
   renderFamilyLegend()
   if (currentSources) doComposite()
 }
@@ -1415,7 +1420,7 @@ const ZOOM_HINT = {
 function renderFamilyLegend() {
   const el = document.getElementById('family-legend')
   if (!el) return
-  if (!FAMILIES) { el.innerHTML = '<div style="font-size:9px;font-family:var(--mono);color:var(--text3)">eip-families.json not loaded</div>'; return }
+  if (!FAMILIES) { el.innerHTML = '<div style="font-size:9px;font-family:var(--mono);color:var(--text3)">families.json not loaded</div>'; return }
   el.innerHTML = FAMILIES.order.map(f => {
     const d = FAMILIES.families[f]
     return `<div class="tally-row" title="${(d.members || []).join(', ')}">`
