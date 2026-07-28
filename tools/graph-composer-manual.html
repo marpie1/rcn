@@ -86,9 +86,19 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
   <h2 id="start">1 · Opening it and loading files</h2>
 
   <p>
-    <code>tools/graph-composer.html</code> is a single file. Open it in a browser —
-    no server, no install. It loads the icon library and works offline.
+    <code>tools/graph-composer.html</code> opens in a browser with no install.
+    Family colours, the taxonomy and the set list all arrive as <code>&lt;script&gt;</code>
+    sidecars, so they work whether the file is opened from disk or served.
   </p>
+
+  <div class="callout">
+    <strong>One thing does need a server: loading a set.</strong> The set button
+    has to read the subgraph files, and <code>fetch()</code> cannot read a
+    <code>file://</code> URL — Chrome throws <em>TypeError: Failed to fetch</em>.
+    Opened from disk, the buttons are replaced by a note saying so; drag the files
+    in instead, or serve the folder over http. Everything else, colours included,
+    behaves identically either way.
+  </div>
 
   <h3>Getting subgraphs in</h3>
   <ul>
@@ -102,7 +112,7 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
     A set button loads past the browser cache, replaces any earlier copy of the
     same set rather than stacking a second one, and ticks <em>only</em> that set —
     so the composite is the set, not the set plus whatever else was lying around.
-    The sets themselves are listed in <code>tools/graph-sets.json</code>; that
+    The sets themselves are listed in <code>tools/graph-sets.js</code>; that
     file is the one place to register a new subgraph, because HTTP cannot list a
     directory.
   </p>
@@ -225,7 +235,7 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
 
   <table class="k">
     <tr><th>Level</th><th>Identity</th><th>Example</th><th>All 16 EIP aspects</th></tr>
-    <tr><td>family</td><td>lookup in <code>families.json</code></td><td>Doing</td><td>8 nodes</td></tr>
+    <tr><td>family</td><td>lookup in <code>families.js</code></td><td>Doing</td><td>8 nodes</td></tr>
     <tr><td>schema</td><td><code>schemaLabel</code></td><td>Action</td><td>24 nodes</td></tr>
     <tr><td>variable</td><td>+ <code>label</code></td><td>Effectiveness of ACTION</td><td>25 nodes</td></tr>
     <tr><td>instance</td><td>+ <code>props.name</code></td><td>Fix the Elm St culvert</td><td>25 nodes</td></tr>
@@ -326,7 +336,7 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
   </p>
 
   <p>
-    Families come from <code>families.json</code>. Nodes whose schema label is not
+    Families come from <code>families.js</code>. Nodes whose schema label is not
     in that file stay grey rather than being herded into one bucket — the
     Composer keeps working on graphs that know nothing of this taxonomy.
   </p>
@@ -511,8 +521,8 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
 
   <table class="k">
     <tr><th>File</th><th>Supplies</th><th>To apply a change</th></tr>
-    <tr><td><code>tools/families.json</code></td><td>Family membership, colours, legend order, and the note arguing each assignment</td><td><strong>↻ reload families.json</strong> under the legend</td></tr>
-    <tr><td><code>tools/graph-sets.json</code></td><td>Which sets appear as buttons, and their filenames</td><td>Reload the page</td></tr>
+    <tr><td><code>tools/families.js</code></td><td>Family membership, colours, legend order, and the note arguing each assignment</td><td><strong>↻ reload families.js</strong> under the legend — works from disk too, it re-injects the script rather than fetching</td></tr>
+    <tr><td><code>tools/graph-sets.js</code></td><td>Which sets appear as buttons, and their filenames</td><td>Reload the page</td></tr>
     <tr><td><code>tools/eip-aspects-variabilized/*.json</code></td><td>Every node, edge, verb, sign and variable label</td><td>Click the set button again</td></tr>
   </table>
 
@@ -525,12 +535,12 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
 
   <table class="k">
     <tr><th>To change</th><th>Edit</th></tr>
-    <tr><td>Which family a concept belongs to</td><td><code>families.json</code> → <code>concepts</code></td></tr>
-    <tr><td>A family's colour, fill or legend order</td><td><code>families.json</code> → <code>families</code> / <code>order</code></td></tr>
+    <tr><td>Which family a concept belongs to</td><td><code>families.js</code> → <code>concepts</code></td></tr>
+    <tr><td>A family's colour, fill or legend order</td><td><code>families.js</code> → <code>families</code> / <code>order</code></td></tr>
     <tr><td>Add or remove a node</td><td>The subgraph file</td></tr>
     <tr><td>An edge, its verb, or its sign</td><td>The subgraph file that owns it</td></tr>
     <tr><td>A variable label</td><td><strong>Every</strong> subgraph containing it</td></tr>
-    <tr><td>Register a new subgraph</td><td><code>graph-sets.json</code></td></tr>
+    <tr><td>Register a new subgraph</td><td><code>graph-sets.js</code></td></tr>
   </table>
 
   <h2 id="trouble">11 · When it doesn't do what you expect</h2>
@@ -587,7 +597,7 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
 
   <h3>All the nodes are grey</h3>
   <p>
-    <code>families.json</code> did not load, or the graph's schema labels are not
+    <code>families.js</code> did not load, or the graph's schema labels are not
     in it. The legend says which. Grey is the honest fallback, not a failure —
     the Composer does not assume any particular taxonomy.
   </p>
@@ -613,8 +623,8 @@ table.k td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
 
   <div class="foot">
     RCN Graph Composer · <code>tools/graph-composer.html</code> ·
-    taxonomy in <code>tools/families.json</code> ·
-    sets in <code>tools/graph-sets.json</code> ·
+    taxonomy in <code>tools/families.js</code> ·
+    sets in <code>tools/graph-sets.js</code> ·
     file format details in <code>tools/schemas/graph-tool-v22.md</code> ·
     provenance in <code>tools/schemas/ward-graph.md</code> ·
     subgraphs in <code>tools/eip-aspects-variabilized/</code> ·

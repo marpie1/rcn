@@ -7,6 +7,11 @@
 <script src="https://unpkg.com/@hpcc-js/wasm@1.20.1/dist/index.min.js"></script>
 <script>var hpccWasm = window["@hpcc-js/wasm"];</script>
 <script src="https://cdn.jsdelivr.net/gh/dash14/svg-pan-zoom/dist/svg-pan-zoom.min.js"></script>
+<!-- Sidecars, not fetch(). fetch() cannot read a file:// URL, so opening this
+     tool straight off disk left FAMILIES null and every node grey. A <script>
+     tag works under both file:// and http://. -->
+<script src="families.js"></script>
+<script src="graph-sets.js"></script>
 <style>
   :root {
     --bg: #f5f4f1;
@@ -663,7 +668,7 @@
 
     <div class="ctrl-section">
       <div class="ctrl-label">Layout</div>
-      <select id="layout-select" onchange="redraw()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-family:var(--mono);font-size:10px;padding:6px 8px;width:100%;cursor:pointer;">
+      <select id="layout-select" onchange="redraw(); setRankdir(rankdir)" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-family:var(--mono);font-size:10px;padding:6px 8px;width:100%;cursor:pointer;">
         <option value="dot">dot (hierarchical)</option>
         <option value="neato">neato (spring)</option>
         <option value="fdp">fdp (force-directed)</option>
@@ -671,6 +676,13 @@
         <option value="twopi">twopi (radial)</option>
         <option value="sfdp">sfdp (large graph)</option>
       </select>
+      <select id="rankdir-select" onchange="setRankdir(this.value)" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-family:var(--mono);font-size:10px;padding:6px 8px;width:100%;cursor:pointer;margin-top:4px;">
+        <option value="TB">TB — top to bottom</option>
+        <option value="LR">LR — left to right</option>
+        <option value="BT">BT — bottom to top</option>
+        <option value="RL">RL — right to left</option>
+      </select>
+      <div class="zoom-hint" id="rankdir-hint">orientation applies to dot; the force-directed engines have no ranks to turn.</div>
     </div>
 
     <div class="ctrl-section">
@@ -687,7 +699,7 @@
     <div class="ctrl-section">
       <div class="ctrl-label">Families</div>
       <div id="family-legend"></div>
-      <button class="setbtn" style="width:100%;margin-top:6px" title="Re-read families.json from disk — use after editing the taxonomy, no page reload needed" onclick="loadFamilies(true)">↻ reload families.json</button>
+      <button class="setbtn" style="width:100%;margin-top:6px" title="Re-read families.js from disk — use after editing the taxonomy, no page reload needed" onclick="loadFamilies(true)">↻ reload families.js</button>
       <div style="font-size:9px;font-family:var(--mono);color:var(--text3);line-height:1.8;margin-top:8px;border-top:1px solid var(--border);padding-top:6px;">
         <div>▁ thin border = 1 source</div>
         <div>▃ thick border = many sources</div>
@@ -838,6 +850,7 @@ let bridgeMode = false
 let zoomLevel = 'variable'  // 'family' | 'schema' | 'variable' | 'instance' — see nodeKey()
 let facetByFamily = false   // draw each family in its own labelled box
 let canvasBg = '#f5f4f1'    // the surface the palette was validated against
+let rankdir = 'TB'          // TB | LR | BT | RL — dot's rank direction
 
 // Is a colour dark enough that black ink would disappear on it? WCAG relative
 // luminance, so the answer is the same one a contrast checker would give.
@@ -951,7 +964,7 @@ const uniq = (v, i, a) => a.indexOf(v) === i
 
 // ── Families ─────────────────────────────────────────────────────────────
 // A supracategorisation: every schemaLabel belongs to exactly one of eight
-// families. Loaded from families.json rather than stamped into the subgraphs,
+// families. Loaded from families.js rather than stamped into the subgraphs,
 // so the taxonomy has one home and the drawings stay clean.
 //
 // Families are NOT an EIP construct. They happen to have been worked out
@@ -996,18 +1009,29 @@ function familyFill(node) {
 
 // ── Named graph sets ─────────────────────────────────────────────────────
 // One click to put a whole curated set in the beam, instead of hand-picking
-// sixteen files every session. HTTP cannot list a directory, so graph-sets.json
+// sixteen files every session. HTTP cannot list a directory, so graph-sets.js
 // writes the filenames down; that file is also the one place to register a new
 // subgraph. Nothing here knows about any particular schema — a set is just a
 // name and a list.
 let GRAPH_SETS = null
 
-async function loadGraphSets() {
-  try { GRAPH_SETS = await fetch('graph-sets.json').then(r => r.ok ? r.json() : null) }
-  catch (e) { GRAPH_SETS = null }
+// Loading a SET still needs fetch, because the subgraph files themselves have to
+// be read. Under file:// that is impossible however the manifest arrives, so say
+// so plainly rather than offering buttons that fail silently. Drag-and-drop is
+// the way in when running off disk.
+const offline = location.protocol === 'file:'
+
+function loadGraphSets() {
+  GRAPH_SETS = window.GRAPH_SETS_DATA || null
   const el = document.getElementById('graph-sets')
   if (!el) return
   if (!GRAPH_SETS?.sets?.length) { el.innerHTML = ''; return }
+  if (offline) {
+    el.innerHTML = '<div style="font-size:9px;font-family:var(--mono);color:var(--text3);line-height:1.5">'
+      + 'Set loading needs a server — a page opened from disk cannot read the subgraph files. '
+      + 'Drag them in, or serve the folder over http.</div>'
+    return
+  }
   el.innerHTML = GRAPH_SETS.sets.map((s, i) =>
     `<button class="setbtn" title="${s.note || ''}" onclick="loadGraphSet(${i})">`
     + `▤ ${s.name} <span class="n">(${s.files.length})</span></button>`).join('')
@@ -1042,20 +1066,25 @@ async function loadGraphSet(i) {
     : `${set.name}: ${set.files.length} loaded`
 }
 
-// `bust` defeats the browser cache, so editing families.json and pressing
-// reload actually shows the edit rather than the copy from page load.
+// Reload re-injects the <script> with a cache-buster rather than fetching, so it
+// works identically over file:// and http://.
 async function loadFamilies(bust) {
-  try {
-    FAMILIES = await fetch('families.json' + (bust ? `?v=${Date.now()}` : ''))
-      .then(r => r.ok ? r.json() : null)
-  } catch (e) { FAMILIES = null }
-  if (!FAMILIES) console.warn('families.json not loaded — family colouring falls back to grey')
+  if (bust) {
+    await new Promise(res => {
+      const s = document.createElement('script')
+      s.src = `families.js?v=${Date.now()}`
+      s.onload = s.onerror = () => { s.remove(); res() }
+      document.head.appendChild(s)
+    })
+  }
+  FAMILIES = window.FAMILIES_DATA || null
+  if (!FAMILIES) console.warn('families.js not loaded — family colouring falls back to grey')
   renderFamilyLegend()
   if (currentSources) doComposite()
   if (bust) {
     document.getElementById('status').textContent = FAMILIES
-      ? `families.json reloaded — ${Object.keys(FAMILIES.concepts || {}).length} concepts, ${(FAMILIES.order || []).length} families`
-      : 'families.json could not be read'
+      ? `families.js reloaded — ${Object.keys(FAMILIES.concepts || {}).length} concepts, ${(FAMILIES.order || []).length} families`
+      : 'families.js could not be read'
   }
 }
 
@@ -1482,7 +1511,9 @@ function dotify(complex, layout = 'dot') {
     'strict digraph {',
     `  overlap=false; splines=${splines}`,
     `  layout=${layout}`,
-    `  graph [bgcolor="${canvasBg}"]`,
+    // rankdir is dot's alone — the force-directed engines have no ranks to turn,
+    // and circo/twopi are radial. Harmless to emit either way; Graphviz ignores it.
+    `  graph [bgcolor="${canvasBg}" rankdir=${rankdir}]`,
     // margin widened from 0.35 to absorb the extra width bold adds after layout
     '  node [shape=box style="filled,rounded" fontname="monospace bold" fontsize=11 margin="0.42,0.26" width=0 height=0 penwidth=1]',
     '  edge [fontname="monospace" fontsize=9 color="#000000" fontcolor="#000000"]',
@@ -1588,7 +1619,7 @@ const ZOOM_HINT = {
 function renderFamilyLegend() {
   const el = document.getElementById('family-legend')
   if (!el) return
-  if (!FAMILIES) { el.innerHTML = '<div style="font-size:9px;font-family:var(--mono);color:var(--text3)">families.json not loaded</div>'; return }
+  if (!FAMILIES) { el.innerHTML = '<div style="font-size:9px;font-family:var(--mono);color:var(--text3)">families.js not loaded</div>'; return }
   el.innerHTML = FAMILIES.order.map(f => {
     const d = FAMILIES.families[f]
     // Swatch mirrors the node: pale fill inside the family-hued ring.
@@ -1621,6 +1652,17 @@ function setCanvasBg(hex) {
   if (hint) hint.textContent = isDark(canvasBg)
     ? 'dark canvas — edge ink flipped to light. Node fills stay pale, so node text stays black.'
     : (canvasBg === '#f5f4f1' ? '' : 'the family palette was measured against #f5f4f1; far from it, the ring contrasts drift.')
+  redraw()
+}
+
+function setRankdir(v) {
+  if (!['TB','LR','BT','RL'].includes(v)) return
+  rankdir = v
+  const hint = document.getElementById('rankdir-hint')
+  const engine = document.getElementById('layout-select')?.value
+  if (hint) hint.textContent = engine === 'dot'
+    ? 'orientation applies to dot; the force-directed engines have no ranks to turn.'
+    : `${engine} ignores orientation — switch to dot to use it.`
   redraw()
 }
 
