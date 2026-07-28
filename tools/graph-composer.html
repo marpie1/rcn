@@ -424,6 +424,16 @@
     border-color: var(--border2);
     font-weight: 600;
   }
+  #graph-sets { padding: 0 10px 8px; display: flex; flex-direction: column; gap: 4px; }
+  .setbtn {
+    font-size: 9px; font-family: var(--mono);
+    color: var(--text2); background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 6px 8px; cursor: pointer; text-align: left;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  .setbtn:hover { color: var(--text); border-color: var(--border2); background: var(--bg); }
+  .setbtn .n { color: var(--text3); }
   .bg-row { display: flex; gap: 4px; align-items: center; }
   .bgsw {
     width: 22px; height: 22px;
@@ -565,6 +575,7 @@
     <div id="beam-search">
       <input type="text" id="search-input" placeholder="search nodes…" autocomplete="off">
     </div>
+    <div id="graph-sets"></div>
     <div id="beam-list">
       <div id="beam-empty">Drop .mdl or .json<br>files anywhere, or<br>use + Load above.</div>
     </div>
@@ -676,6 +687,7 @@
     <div class="ctrl-section">
       <div class="ctrl-label">Families</div>
       <div id="family-legend"></div>
+      <button class="setbtn" style="width:100%;margin-top:6px" title="Re-read families.json from disk — use after editing the taxonomy, no page reload needed" onclick="loadFamilies(true)">↻ reload families.json</button>
       <div style="font-size:9px;font-family:var(--mono);color:var(--text3);line-height:1.8;margin-top:8px;border-top:1px solid var(--border);padding-top:6px;">
         <div>▁ thin border = 1 source</div>
         <div>▃ thick border = many sources</div>
@@ -982,13 +994,69 @@ function familyFill(node) {
     : { fill: '#e8e6e0', ring: '#8a8880', fontColor: '#000000' }
 }
 
-async function loadFamilies() {
+// ── Named graph sets ─────────────────────────────────────────────────────
+// One click to put a whole curated set in the beam, instead of hand-picking
+// sixteen files every session. HTTP cannot list a directory, so graph-sets.json
+// writes the filenames down; that file is also the one place to register a new
+// subgraph. Nothing here knows about any particular schema — a set is just a
+// name and a list.
+let GRAPH_SETS = null
+
+async function loadGraphSets() {
+  try { GRAPH_SETS = await fetch('graph-sets.json').then(r => r.ok ? r.json() : null) }
+  catch (e) { GRAPH_SETS = null }
+  const el = document.getElementById('graph-sets')
+  if (!el) return
+  if (!GRAPH_SETS?.sets?.length) { el.innerHTML = ''; return }
+  el.innerHTML = GRAPH_SETS.sets.map((s, i) =>
+    `<button class="setbtn" title="${s.note || ''}" onclick="loadGraphSet(${i})">`
+    + `▤ ${s.name} <span class="n">(${s.files.length})</span></button>`).join('')
+}
+
+async function loadGraphSet(i) {
+  const set = GRAPH_SETS?.sets?.[i]
+  if (!set) return
+  const status = document.getElementById('status')
+  status.textContent = `loading ${set.name}…`
+  // Replace rather than append: loading a set twice should not give you two of
+  // everything, and two of everything would merge into a graph that looks fine.
+  const keep = beam.filter(b => b.label !== set.name)
+  beam.splice(0, beam.length, ...keep)
+  checked.clear()
+  let failed = 0
+  for (const f of set.files) {
+    try {
+      const j = await fetch(`${set.dir}/${f}?v=${Date.now()}`).then(r => r.ok ? r.json() : Promise.reject(f))
+      addToBeam(f.replace(/\.json$/, ''), Graph.load(j), set.name)
+    } catch (e) { failed++; console.warn('graph set: could not load', f, e) }
+  }
+  // Check only THIS set. Checking the whole beam would quietly composite it
+  // alongside the demo graphs and whatever else was already loaded, and the
+  // result would look plausible rather than wrong.
+  checked.clear()
+  beam.forEach((b, n) => { if (b.label === set.name) checked.add(n) })
+  refreshBeam()
+  doComposite()
+  status.textContent = failed
+    ? `${set.name}: ${set.files.length - failed} loaded, ${failed} failed — see console`
+    : `${set.name}: ${set.files.length} loaded`
+}
+
+// `bust` defeats the browser cache, so editing families.json and pressing
+// reload actually shows the edit rather than the copy from page load.
+async function loadFamilies(bust) {
   try {
-    FAMILIES = await fetch('families.json').then(r => r.ok ? r.json() : null)
+    FAMILIES = await fetch('families.json' + (bust ? `?v=${Date.now()}` : ''))
+      .then(r => r.ok ? r.json() : null)
   } catch (e) { FAMILIES = null }
   if (!FAMILIES) console.warn('families.json not loaded — family colouring falls back to grey')
   renderFamilyLegend()
   if (currentSources) doComposite()
+  if (bust) {
+    document.getElementById('status').textContent = FAMILIES
+      ? `families.json reloaded — ${Object.keys(FAMILIES.concepts || {}).length} concepts, ${(FAMILIES.order || []).length} families`
+      : 'families.json could not be read'
+  }
 }
 
 // ── Detail levels ────────────────────────────────────────────────────────
@@ -2208,6 +2276,7 @@ loadDemo()
 syncZoomUI()
 setCanvasBg(canvasBg)
 loadFamilies()
+loadGraphSets()
 </script>
 </body>
 </html>
