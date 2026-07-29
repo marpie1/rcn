@@ -11,6 +11,7 @@ checklist and the decisions log.
 | `db.py` | The one way this project talks to Neo4j. Cypher over HTTP, stdlib only |
 | `seed.py` | Builds the n=6 reference graph from scratch. Idempotent |
 | `api.py` | The projection layer, port 8768. Serves the tools too, so one origin and no CORS |
+| `load_composite.py` | Stage 2 — the 26-node signed EIP CLD into its own database |
 | `tool-inventory.md` | Every RCN tool, what it demands of the schema, and coverage status |
 | `tool-status-checklist.md` | The live-vs-parked pass — one checkbox per tool, for Marc |
 | `edge-families-proposal.md` | The seven relation families, and why they are declared not drawn |
@@ -37,6 +38,19 @@ python3 api.py                         # projections + the tools, port 8768
 ```
 
 Then: <http://localhost:8768/> lists the projections and the rendered views.
+
+## Two graphs, one set of queries
+
+| database | what | how to read it |
+|---|---|---|
+| `neo4j` | the n=6 reference — the permanent conformance test | `/projection/causal` |
+| `composite26` | the 25-concept signed EIP CLD, 57 edges | `/projection/causal?db=composite26` |
+
+`?db=` selects **which graph, never which query.** Both are read by
+byte-identical Cypher. That is the Stage 2 claim — only the data grows — and if
+it ever stops being true, the architecture was not proven at n=6.
+
+    python3 load_composite.py --verify
 
 ## Layout is not stored, and must still be emitted
 

@@ -25,7 +25,7 @@ only the fields its lens needs, but always in this envelope. No adapters.
 """
 import json, os, sys, posixpath
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from db import run, BASE, DATABASE
@@ -94,10 +94,13 @@ PROJECTIONS = {
 }
 
 
-def project(name):
+def project(name, database=None):
+    """`database` selects WHICH graph, never WHICH query. The n=6 reference and
+    the 26-node composite are read by byte-identical Cypher — that is the Stage
+    2 claim, and if it ever stops being true the architecture was not proven."""
     node_q, edge_q = PROJECTIONS[name]
-    nodes = run(node_q)
-    edges = run(edge_q) if edge_q else []
+    nodes = run(node_q, database=database)
+    edges = run(edge_q, database=database) if edge_q else []
     for n in nodes:                       # drop nulls so the JSON stays clean
         for k in [k for k, v in n.items() if v is None]:
             del n[k]
@@ -125,19 +128,28 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
+        qs = parse_qs(parsed.query)
+        db = (qs.get('db') or [None])[0]
         if path == '/':
             return self._send(200, INDEX.encode(), 'text/html; charset=utf-8')
         if path == '/projection':
+            try:
+                dbs = [r['name'] for r in run(
+                    "SHOW DATABASES YIELD name WHERE name <> 'system' RETURN name",
+                    database='system')]
+            except Exception:
+                dbs = [DATABASE]
             return self._send(200, {'available': sorted(PROJECTIONS),
-                                    'database': DATABASE})
+                                    'default': DATABASE, 'databases': sorted(dbs)})
         if path.startswith('/projection/'):
             name = posixpath.basename(path)
             if name not in PROJECTIONS:
                 return self._send(404, {'error': f'no projection {name!r}',
                                         'available': sorted(PROJECTIONS)})
             try:
-                return self._send(200, project(name))
+                return self._send(200, project(name, db))
             except Exception as e:
                 # Say what actually went wrong. A renderer that silently draws
                 # nothing is the failure mode this whole build is guarding
@@ -161,10 +173,14 @@ lens, in graph-tool's native schema.</p>
 <ul>
 <li><a href="/projection/causal">/projection/causal</a> — polarity, magnitude, relation family</li>
 <li><a href="/projection/gold">/projection/gold</a> — provenance: who drew what, and where two hands met</li>
+<li><a href="/projection">/projection</a> — what is available, and which databases exist</li>
 </ul>
+<p>Add <code>?db=composite26</code> to read the 26-node signed EIP CLD instead of the
+six-node reference. <b>Same query, same renderer — only the data grows.</b></p>
 <h1>Rendered</h1>
 <ul>
-<li><a href="/tools/graph-tool-v22.html?url=/projection/causal">graph-tool ← causal</a></li>
+<li><a href="/tools/graph-tool-v22.html?url=/projection/causal">graph-tool ← causal</a> — n=6 reference</li>
+<li><a href="/tools/graph-tool-v22.html?url=%2Fprojection%2Fcausal%3Fdb%3Dcomposite26">graph-tool ← causal</a> — 26-node composite</li>
 <li><a href="/one-thing-many-views.html">the harness ← gold</a></li>
 </ul>
 """
