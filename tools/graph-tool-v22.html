@@ -1678,6 +1678,122 @@ function applyEIPToNewNode(n){
     }
   }
 }
+// ── Edge label suggester ──────────────────────────────────────────────────
+// Stop verb drift where it starts, at the keyboard — NOT afterwards in the
+// data. `constitute` and `constitutes` became two relations that could never
+// merge or go gold; `create`/`creates` the same. The tempting fix was to
+// normalise labels on merge, which silently rewrites what an author wrote.
+// Marc's call was better: normalise only to FIND candidates, then show them
+// and let the person choose. The author's words are never touched.
+//
+// Vocabulary, in order of authority:
+//   1. labels already on this canvas
+//   2. labels used across the substrate, with how widely (needs api.py)
+//   3. the verb lists in edge-families.js — a curated starting vocabulary
+var _subVocab = null;
+function loadSubstrateVocab(){
+  if(_subVocab!==null) return Promise.resolve(_subVocab);
+  return fetch('/vocabulary/edge-labels').then(function(r){ return r.ok?r.json():null; })
+    .then(function(j){ _subVocab = (j&&j.labels)||[]; return _subVocab; })
+    .catch(function(){ _subVocab = []; return _subVocab; });
+}
+// The SAME normalisation the merge fix would have used — here it only decides
+// what to offer, never what to store.
+// Normalise PER WORD, not just at the end: the corpus has `lead_to` beside
+// `leads_to`, where the inflected word is not the last one. Used only to decide
+// what to OFFER — an author's label is never rewritten by this.
+function _lblKey(s){
+  return String(s||'').toLowerCase().trim().replace(/[_\-]+/g,' ').replace(/\s+/g,' ')
+    .split(' ').map(function(w){ return w.replace(/e?s$/,'').replace(/e$/,''); }).join(' ');
+}
+function _lev(a,b){
+  if(a===b) return 0;
+  var m=a.length,n=b.length; if(!m||!n) return m||n;
+  var prev=[],cur=[],i,j;
+  for(j=0;j<=n;j++) prev[j]=j;
+  for(i=1;i<=m;i++){ cur[0]=i;
+    for(j=1;j<=n;j++) cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));
+    prev=cur.slice();
+  }
+  return prev[n];
+}
+function edgeLabelSuggestions(text){
+  var t=String(text||'').trim(); if(t.length<2) return [];
+  var key=_lblKey(t), seen={}, out=[];
+  function add(label, note, rank, used){
+    if(!label || label===t) return;                 // never suggest what is typed
+    var k=label.toLowerCase();
+    if(seen[k]){
+      if(note&&seen[k].note.indexOf(note)<0) seen[k].note+=' · '+note;
+      if(used) seen[k].used=true;
+      return;
+    }
+    seen[k]={label:label, note:note, rank:rank, used:!!used};
+    out.push(seen[k]);
+  }
+  function consider(label, note, used){
+    if(!label) return;
+    var lk=_lblKey(label);
+    if(lk===key) add(label, note, 0, used);         // the drift case — top billing
+    else if(label.toLowerCase().indexOf(t.toLowerCase())===0) add(label, note, 1, used);
+    else if(_lev(lk,key)<=2 && Math.abs(lk.length-key.length)<=3) add(label, note, 2, used);
+  }
+  var here={};
+  edges.forEach(function(e){ if(e.label) here[e.label]=(here[e.label]||0)+1; });
+  Object.keys(here).forEach(function(l){ consider(l, 'on this canvas ×'+here[l]); });
+  (_subVocab||[]).forEach(function(v){
+    consider(v.label, 'substrate ×'+v.uses+(v.linkFamily?' · '+v.linkFamily:''));
+  });
+  if(typeof EDGE_FAM_DATA!=='undefined' && EDGE_FAM_DATA){
+    EDGE_FAM_ORDER.forEach(function(fn){
+      (EDGE_FAM_DATA.families[fn].verbs||[]).forEach(function(v){ consider(v, fn+' verb'); });
+    });
+  }
+  // A word ACTUALLY IN USE outranks one that merely exists in the vocabulary.
+  // edge-families.js lists both `support` and `supports` as mapping aids, so
+  // without this the suggester could offer the drift form it exists to prevent.
+  out.sort(function(a,b){
+    return a.rank-b.rank || (b.used?1:0)-(a.used?1:0) || a.label.localeCompare(b.label);
+  });
+  return out.slice(0,6);
+}
+
+var _lblBox=null;
+function showLabelSuggest(ta, edgeId){
+  hideLabelSuggest();
+  var sugg=edgeLabelSuggestions(ta.value);
+  if(!sugg.length) return;
+  var drift=sugg[0].rank===0;
+  var r=ta.getBoundingClientRect();
+  _lblBox=document.createElement('div');
+  _lblBox.style.cssText='position:fixed;z-index:9999;min-width:'+Math.max(200,r.width)+'px;'
+    +'max-width:320px;background:#fff;border:1px solid '+(drift?'#f59e0b':'#cbd5e1')+';'
+    +'border-radius:6px;box-shadow:0 6px 20px rgba(15,23,42,.16);overflow:hidden;'
+    +'font:12px system-ui,sans-serif;left:'+r.left+'px;top:'+(r.bottom+3)+'px';
+  var head=drift
+    ? '<div style="padding:5px 9px;background:#fffbeb;color:#92400e;font-size:11px;border-bottom:1px solid #fde68a">Already in use with a different spelling</div>'
+    : '<div style="padding:5px 9px;background:#f8fafc;color:#64748b;font-size:11px;border-bottom:1px solid #f1f5f9">Existing labels</div>';
+  _lblBox.innerHTML = head + sugg.map(function(s,i){
+    return '<div class="lblsg" data-v="'+escH(s.label)+'" style="padding:6px 9px;cursor:pointer;'
+      + (i?'border-top:1px solid #f8fafc;':'')+'display:flex;justify-content:space-between;gap:10px">'
+      + '<span style="font-weight:'+(s.rank===0?'600':'500')+';color:#0f172a">'+escH(s.label)+'</span>'
+      + '<span style="color:#94a3b8;font-size:10.5px;text-align:right">'+escH(s.note)+'</span></div>';
+  }).join('');
+  document.body.appendChild(_lblBox);
+  _lblBox.querySelectorAll('.lblsg').forEach(function(row){
+    row.addEventListener('mousedown', function(ev){
+      ev.preventDefault();
+      ta.value=row.getAttribute('data-v');
+      uEL(edgeId, ta.value);
+      hideLabelSuggest();
+    });
+    row.addEventListener('mouseenter', function(){ row.style.background='#f1f5f9'; });
+    row.addEventListener('mouseleave', function(){ row.style.background=''; });
+  });
+}
+function hideLabelSuggest(){ if(_lblBox&&_lblBox.parentNode)_lblBox.parentNode.removeChild(_lblBox); _lblBox=null; }
+document.addEventListener('scroll', hideLabelSuggest, true);
+
 // ── Write-back to the substrate ───────────────────────────────────────────
 // The return leg of the round trip. Loading via ?url=/projection/subgraph/org
 // records which drawing this is; saving replaces THAT drawing and nothing else.
@@ -4980,7 +5096,7 @@ setTimeout(function(){var t=pc.querySelector('textarea.note-ta');if(t){_rTA(t);}
 return;}
 if(sE.length>=1){if(panelColorTarget!=='line'&&panelColorTarget!=='label')panelColorTarget='line';var multi2=sE.length>1,e=sE[0],ec=e.color||DEF_EDGE.color,ew=e.width||1.5,ef=e.fontSize||10,pol=e.polarity||'none',hasDelay=!!e.delay,ed=e.dash||'solid',traces=(e.traces||[]),hasUserCP=e.curved&&e.cpxUser!==undefined,pr2='';if(!multi2){var eKeys=Object.keys(e.props||{});eKeys.forEach(function(k,i){var v=e.props[k];pr2+='<div class="prop-kv-row"><button style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:10px;padding:0 1px;line-height:1" onclick="moveEProp(\''+e.id+'\','+i+',-1)"'+(i===0?' disabled':'')+'>↑</button><button style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:10px;padding:0 1px;line-height:1" onclick="moveEProp(\''+e.id+'\','+i+',1)"'+(i===eKeys.length-1?' disabled':'')+'>↓</button><input placeholder="key" value="'+escH(k)+'" onchange="uEPK(\''+e.id+'\',\''+escH(k)+'\',this.value)"/><input placeholder="value" value="'+escH(v)+'" onchange="uEPV(\''+e.id+'\',\''+escH(k)+'\',this.value)"/>'+(isURL(v)?'<a href="'+escH(v)+'" target="_blank" rel="noopener" style="color:#2563eb;font-size:13px;text-decoration:none;padding:0 1px;flex-shrink:0" title="Open URL">&#8599;</a>':'')+'<button style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:14px;padding:0 2px" onclick="rEP(\''+e.id+'\',\''+escH(k)+'\')">x</button></div>';});}
 pc.innerHTML=(multi2?'<div style="padding:8px 12px 4px;font-size:12px;color:#64748b">'+sE.length+' edges &mdash; edits apply to all<br><span style="font-size:11px;opacity:.7">Shift-click to remove from selection</span></div>':'')
-+(!multi2?'<div class="prop-row"><div class="prop-label">Relationship type</div><textarea class="prop-input lbl-ta" spellcheck="true" rows="1" style="resize:none;overflow:hidden" placeholder="e.g. KNOWS&#10;(Enter for new line)" onchange="uEL(\''+e.id+'\',this.value)" oninput="_rTA(this)">'+escH(e.label)+'</textarea></div>':'')
++(!multi2?'<div class="prop-row"><div class="prop-label">Relationship type</div><textarea class="prop-input lbl-ta" spellcheck="true" rows="1" style="resize:none;overflow:hidden" placeholder="e.g. KNOWS&#10;(Enter for new line)" onchange="uEL(\''+e.id+'\',this.value)" oninput="_rTA(this);showLabelSuggest(this,\''+e.id+'\')" onfocus="loadSubstrateVocab().then(function(){showLabelSuggest(document.activeElement,\''+e.id+'\')})" onblur="setTimeout(hideLabelSuggest,120)">'+escH(e.label)+'</textarea></div>':'')
 +(hasUserCP?'<div style="padding:5px 12px;border-bottom:1px solid #f1f5f9"><button class="tb-btn" style="width:100%" onclick="resetArc(\''+e.id+'\')">&#8635; Reset arc to auto</button></div>':'')
 +(!multi2&&(e.labelT!==undefined||e.polT!==undefined||e.delayT!==undefined)?'<div style="padding:5px 12px;border-bottom:1px solid #f1f5f9"><button class="tb-btn" style="width:100%" onclick="resetEdgeMarks(\''+e.id+'\')">&#8635; Reset mark positions</button></div>':'')
 +'<div class="section-hd" style="padding-top:8px" title="Not CLD-only — the + / &minus; mark draws on the edge in the base diagram and every other mode too.">Polarity &nbsp;+&thinsp;/&thinsp;&minus;'+(multi2?' (all)':'')+'</div><div class="polarity-row"><button class="pol-btn'+(pol==='+'?' active-plus':'')+'" onclick="setPol_all(\'+\')">+</button><button class="pol-btn'+(pol==='-'?' active-minus':'')+'" onclick="setPol_all(\'-\')">&minus;</button><button class="pol-btn'+(pol==='none'?' active-none':'')+'" onclick="setPol_all(\'none\')">&empty;</button><span style="font-size:11px;color:#64748b;margin-left:4px">'+(pol==='+'?'same dir':pol==='-'?'opposite dir':'none')+'</span></div>'

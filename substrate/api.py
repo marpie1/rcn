@@ -120,6 +120,19 @@ RETURN r.id AS id, s.id AS src, t.id AS tgt,
 ORDER BY id
 """
 
+# Every edge label already in use, with how widely. Feeds the authoring
+# suggester in graph-tool: the drift (constitute/constitutes, create/creates)
+# is cheapest to stop at the moment somebody types the second spelling.
+EDGE_VOCAB = """
+MATCH ()-[r:REL]->() WHERE r.label <> ''
+WITH r.label AS label, count(*) AS uses,
+     reduce(acc = [], s IN collect(r.sources) | acc + s) AS srcs,
+     collect(DISTINCT r.linkFamily) AS fams
+RETURN label, uses, size([x IN srcs WHERE true]) AS witnesses,
+       [f IN fams WHERE f IS NOT NULL][0] AS linkFamily
+ORDER BY uses DESC, label
+"""
+
 SUBGRAPH_LIST = """
 MATCH (a:Aspect)
 OPTIONAL MATCH (c:Concept) WHERE a.name IN c.sources
@@ -268,6 +281,12 @@ class Handler(SimpleHTTPRequestHandler):
                 dbs = [DATABASE]
             return self._send(200, {'available': sorted(PROJECTIONS),
                                     'default': DATABASE, 'databases': sorted(dbs)})
+        if path == '/vocabulary/edge-labels':
+            try:
+                return self._send(200, {'database': db or ASPECT_DB,
+                    'labels': run(EDGE_VOCAB, database=db or ASPECT_DB)})
+            except Exception as e:
+                return self._send(503, {'error': str(e)})
         if path == '/projection/subgraphs':
             try:
                 return self._send(200, {'database': db or ASPECT_DB,
