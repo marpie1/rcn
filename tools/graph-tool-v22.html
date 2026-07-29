@@ -324,6 +324,82 @@ UNDO: calls snap() exactly once (after the guard checks, so a no-op run pushes
 nothing) and mutates only n.x/n.y. One Undo restores every position. Disabled
 in Wardley mode (positions encode evolution/visibility there), matching Dagre.
 
+── EDGE DIRECTION — THREE SILENT FLIPPERS (Jul 27 2026) ─────────────
+
+A CLD came back with 48 of its 55 edges reversed. Diffing against the
+baseline showed a uniform flip, not a scatter, and ZERO edges rewired to a
+different pair — the signature of reverseAll(), not of a rendering bug.
+Diagnosis rule for next time: if labels survive and no edge changed which
+NODES it joins, the direction change was one global operation.
+
+Three ways direction could change without the user meaning it. All fixed:
+
+1. reverseAll() ("Rev.all") sits between Rev.sel and All nodes in the
+   toolbar and rewrote src/tgt on every edge with no prompt. Now confirms,
+   with the edge count in the message so the blast radius is legible.
+
+2. Alt is BOTH the canvas pan modifier (onCanvasDown) and the arrow-cycle
+   modifier (onEdgeDown). Every edge carries a 20px transparent hit band and
+   onEdgeDown starts with stopPropagation(), so Alt-dragging to pan over a
+   dense graph reversed whatever edge was under the cursor and never panned.
+   Fix: Alt+mousedown on an edge sets panStart ITSELF (the canvas handler
+   will never see the event) and arms altEdgeArm; onCanvasUp fires the cycle
+   only if the pointer moved <=4px. Alt-drag now pans in every mode.
+
+3. The arrow cycle did not round-trip: end -(swap)-> reversed -(NO swap)->
+   none. An edge parked in 'none' had reversed src/tgt AND no arrowhead
+   drawn, so the data was wrong with nothing on screen to show it, and
+   Cypher/Vensim/trace-to-Timeline all read src/tgt. cycleArrowDir() now
+   swaps back on the middle transition: 'none' holds the authored
+   orientation. Three clicks return to the exact starting state.
+
+LESSON: a modifier key that is already a global gesture must not also be a
+per-object mutation on mousedown. Defer to mouseup and require no movement.
+
+── TRACE / POLARITY / ROUTES (Jul 27 2026) ──────────────────────────
+
+clearTrace(n) + "Clear a whole trace" row (X T1-T4) in the sidebar Trace
+controls. The empty-set button in the edge panel is selection-scoped AND
+clears all four traces at once, so there was no way to delete one trace from
+the graph. clearTrace touches only e.traces, keeps other traces on the same
+edge, stops the animation only if that trace is the one running.
+
+POLARITY WAS NEVER CLD-ONLY. Nothing gates it — the render and the panel
+section have no mode check, and +/- has always drawn on the base diagram.
+The heading said "CLD — Polarity", which is why it read as unavailable. Now
+"Polarity + / −". ("CLD — Delay" right below it has the identical problem
+and is still mislabeled.) Lesson: check whether a capability is actually
+gated before building a way to ungate it — here the whole fix was a label.
+
+"?± Gaps" toolbar toggle (showPolarityGaps) flags every edge with polarity
+unset: amber "?" badge at the polarity slot. View-only, never touches
+e.polarity, nothing reaches any export. Matters because CLD mode counts
+unset edges as neutral silently, which greys out real loops.
+
+"Routes" button: select two nodes (first = start, second = end), get the
+count of simple directed routes between them, broken down by step count,
+with the reverse direction B->A below a divider. Simple routes only, so
+loops can't blow up; parallel edges count separately; self-loops and triples
+skipped. Bounded DFS, ROUTE_CAP 50000 — counting simple paths is #P-complete.
+In practice cheap: all 650 ordered pairs of the 26-node EIP CLD in 39ms.
+
+── LEGEND COLLAPSE (Jul 27 2026) ────────────────────────────────────
+
+Chevron built into the legend's own SVG title bar, not a sidebar control.
+Collapsed = rows set to [] and a fixed narrow boxW, so the existing
+bottom-right anchor math (bx = vw-boxW-20) keeps it pinned to the corner
+instead of drifting. Title becomes "LEGEND (n)" so you can see what is
+tucked away. legendCollapsed persists next to legendVisible in buildState.
+
+The toggle <g> needs BOTH handlers: click to toggle, and mousedown with
+stopPropagation, or the canvas starts a rubber-band selection through the
+legend. Because g.innerHTML is used, listeners must be attached AFTER the
+innerHTML assignment — querySelector the id, then addEventListener.
+
+NOTE: the chevron lives in legend-layer, so it currently appears in SVG and
+PNG exports. Strip it at export time if a static diagram should not show an
+interactive control.
+
 ── DECISIONS LOG MAINTENANCE ────────────────────────────────────────
 
 This block lives at the top of the HTML file as an HTML comment (invisible to browser).
@@ -462,6 +538,14 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
 #cld-node-loops .cld-nl-badge.B{background:#dbeafe;color:#1d4ed8;border:1.5px solid #93c5fd}
 #cld-node-loops .cld-nl-badge.U{background:#f1f5f9;color:#64748b;border:1.5px solid #cbd5e1}
 #cld-node-loops .cld-nl-empty{font-size:10px;color:#94a3b8;font-style:italic;padding:2px 3px}
+#routes-panel{position:absolute;top:44px;left:12px;z-index:60;background:rgba(255,255,255,0.97);border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;display:none;box-shadow:0 4px 16px rgba(0,0,0,.18);font-family:system-ui,sans-serif;font-size:11px;color:#334155;max-width:270px;max-height:60%;overflow-y:auto}
+#routes-panel .rp-hd{display:flex;align-items:center;gap:8px;font-weight:600;font-size:12px;color:#0f172a;margin-bottom:4px}
+#routes-panel .rp-x{margin-left:auto;cursor:pointer;color:#94a3b8;font-size:14px;line-height:1}
+#routes-panel .rp-big{font-size:20px;font-weight:700;color:#0f172a}
+#routes-panel .rp-row{display:flex;justify-content:space-between;gap:10px;padding:1px 0}
+#routes-panel .rp-note{color:#64748b;margin-top:5px;line-height:1.4}
+#routes-panel .rp-rev{display:flex;align-items:baseline;gap:10px;margin-top:7px;padding-top:6px;border-top:1px solid #e2e8f0}
+#routes-panel .rp-revn{margin-left:auto;font-size:15px;font-weight:700;color:#0f172a}
 #cld-prop-popup{position:absolute;z-index:50;background:#1e293b;border-radius:10px;padding:8px 10px;display:none;flex-direction:column;align-items:center;gap:6px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
 #cld-prop-popup .pp-label{font-size:11px;color:#94a3b8;white-space:nowrap}
 #cld-prop-popup .pp-btns{display:flex;gap:6px}
@@ -601,6 +685,7 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
     <button class="tb-btn" onclick="reverseAll()">Rev.all</button>
     <button class="tb-btn" onclick="selectAll()">All nodes</button>
     <button class="tb-btn" onclick="selectAllEdges()">All edges</button>
+    <button class="tb-btn" onclick="countRoutes()" title="Select exactly two nodes, then count every route from the first you clicked to the second">Routes</button>
     <button class="tb-btn" id="btn-clear" onclick="clearAll()">Clear</button>
   </div>
   <div class="tb-sep"></div>
@@ -608,6 +693,8 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
     <span class="tg-lbl">Edges</span>
     <label class="tb-check"><input type="checkbox" id="chk-curved" onchange="setAllCurved(this.checked)"> Curved</label>
     <label class="tb-check"><input type="checkbox" id="chk-straight" checked onchange="setAllStraight(this.checked)"> Straight</label>
+    <button class="tb-btn" id="btn-polgaps" onclick="togglePolarityGaps()" title="Flag every edge with no + or &minus; set. View only — changes nothing in the model and is not exported.">?&plusmn; Gaps</button>
+    <button class="tb-btn" id="btn-edgetext" onclick="cycleEdgeText()" title="Edge text: the author&rsquo;s words">Aa Text</button>
   </div>
   <div class="tb-sep"></div>
   <div class="tg">
@@ -655,6 +742,7 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
     <div id="opm-banner">OPM Mode — use +Edge to draw typed relationships</div>
     <div id="sfd-banner">SFD Mode — place Stocks, Flows &amp; Auxiliaries</div>
     <div id="trace-banner">Trace Mode — select edges, assign T1–T4, then ▶ to animate</div>
+    <div id="routes-panel" onmousedown="event.stopPropagation()"></div>
     <div id="wardley-banner">Wardley Mode — Genesis · Custom · Product · Commodity</div>
     <div id="canvas-hint">dbl-click node = edit &middot; click &amp; hold node = highlight its edges &middot; alt+drag = pan &middot; ctrl/pinch+scroll = zoom &middot; drag empty = select box &middot; Del = remove</div>
     <div id="legend-overlay">
@@ -895,6 +983,7 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
 <!-- RCN house icon library (sidecar, same folder). Optional: the tool degrades
      to shapes-only if the file is absent. -->
 <script src="rcn-icons.js"></script>
+<script src="edge-families.js"></script>
 <script>
 var PALETTE=['#ffffff','#000000','#f8fafc','#fef2f2','#fff7ed','#fefce8','#f0fdf4','#f0fdfa','#eff6ff','#eef2ff','#faf5ff','#fdf2f8','#f1f5f9','#fee2e2','#ffedd5','#fef9c3','#dcfce7','#ccfbf1','#dbeafe','#e0e7ff','#f3e8ff','#fce7f3','#e2e8f0','#fecaca','#fed7aa','#fef08a','#bbf7d0','#99f6e4','#bfdbfe','#c7d2fe','#e9d5ff','#fbcfe8','#cbd5e1','#fca5a5','#fdba74','#fde047','#86efac','#5eead4','#93c5fd','#a5b4fc','#d8b4fe','#f9a8d4','#94a3b8','#f87171','#fb923c','#facc15','#4ade80','#2dd4bf','#60a5fa','#818cf8','#c084fc','#f472b6','#64748b','#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#3b82f6','#6366f1','#a855f7','#ec4899','#475569','#dc2626','#ea580c','#ca8a04','#16a34a','#0d9488','#2563eb','#4f46e5','#9333ea','#db2777','#1e293b','#991b1b','#9a3412','#854d0e','#166534','#115e59','#1d4ed8','#3730a3','#7e22ce','#be185d'];
 var FONT_COLORS=['#ffffff','#f1f5f9','#cbd5e1','#94a3b8','#64748b','#1e293b','#0f172a','#000000','#991b1b','#166534','#1d4ed8','#7e22ce','#9a3412','#854d0e','#115e59','#3730a3'];
@@ -1678,6 +1767,7 @@ function exitWardley(){while(wardleyLayer.firstChild)wardleyLayer.removeChild(wa
 // to node rows, preserving the original meaning (color was the node fill).
 var legendEntries=[];
 var legendVisible=false;
+var legendCollapsed=false;
 var legendLayer=null; // set on init; NOT pan/zoom transformed, so it exports
 
 // ── House icon library (sidecar rcn-icons.js; absent is fine) ─────────────
@@ -1696,6 +1786,39 @@ function iconSVG(key,px,color){
   return '<g transform="scale('+s+')" color="'+(color||'#000')+'" fill="none" '
        + 'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" '
        + 'stroke-linejoin="round" pointer-events="none">'+ic.svg+'</g>';
+}
+
+// ── Relation families (sidecar edge-families.js; absent is fine) ──────────
+// The shared vocabulary that lets two neighborhoods' differently-worded edges
+// merge. DECLARED, never drawn: local styling stays free and loud, the family
+// is what is shared. See substrate/edge-families-proposal.md §5.
+var EDGE_FAM_DATA=(typeof EDGE_FAMILIES_DATA!=='undefined')?EDGE_FAMILIES_DATA
+                 :(window.EDGE_FAMILIES_DATA||null);
+var EDGE_FAM_ORDER=EDGE_FAM_DATA?EDGE_FAM_DATA.order:[];
+function edgeFamDef(name){
+  if(!name||!EDGE_FAM_DATA)return null;
+  return EDGE_FAM_DATA.families[name]||null;
+}
+// An edge's family resolves through the same chain as every other styled
+// value: element override → legend row → the edge's own field.
+function edgeFamilyOf(e){return sv(e,'linkFamily')||'';}
+// Suggest a family from an author's free text. Never applied automatically —
+// nothing is guessed silently. Used by the "Suggest" button in the legend.
+function suggestEdgeFamily(text){
+  if(!text||!EDGE_FAM_DATA)return '';
+  var t=String(text).toLowerCase().trim();
+  for(var i=0;i<EDGE_FAM_ORDER.length;i++){
+    var f=EDGE_FAM_DATA.families[EDGE_FAM_ORDER[i]];
+    if(f.verbs&&f.verbs.indexOf(t)>=0)return EDGE_FAM_ORDER[i];
+  }
+  for(var j=0;j<EDGE_FAM_ORDER.length;j++){
+    var g=EDGE_FAM_DATA.families[EDGE_FAM_ORDER[j]];
+    for(var k=0;k<(g.verbs||[]).length;k++){
+      var v=g.verbs[k];
+      if(v.length>3&&t.indexOf(v)>=0)return EDGE_FAM_ORDER[j];
+    }
+  }
+  return '';
 }
 
 function legendRowById(id){
@@ -1796,12 +1919,16 @@ function renderLegendSVG(){
   if(!legendLayer)return;
   while(legendLayer.firstChild)legendLayer.removeChild(legendLayer.firstChild);
   if(!legendVisible||!legendEntries.length)return;
-  var rows=legendEntries;
+  // Collapsed = title bar only, so the legend can be tucked away without
+  // losing track of it. Rendered into the same <g>, so it exports with the
+  // diagram like everything else in legend-layer.
+  var rows=legendCollapsed?[]:legendEntries;
   var fs=11;
   // width from the longest label
   var maxLbl=0;
   rows.forEach(function(r){maxLbl=Math.max(maxLbl,(r.label||'').length);});
-  var boxW=LEGEND_PAD*2+LEGEND_SWW+LEGEND_GAP+Math.max(60,maxLbl*fs*0.58);
+  var boxW=legendCollapsed?(LEGEND_PAD*2+86)
+          :LEGEND_PAD*2+LEGEND_SWW+LEGEND_GAP+Math.max(60,maxLbl*fs*0.58);
   var titleH=20;
   var boxH=LEGEND_PAD*2+titleH+rows.length*LEGEND_ROWH;
   var _r=svgEl.getBoundingClientRect();
@@ -1813,7 +1940,17 @@ function renderLegendSVG(){
   var inner='<rect x="0" y="0" width="'+boxW.toFixed(1)+'" height="'+boxH.toFixed(1)+'" rx="8" '
           + 'fill="rgba(255,255,255,0.92)" stroke="rgba(0,0,0,0.14)" stroke-width="1"/>'
           + '<text x="'+LEGEND_PAD+'" y="'+(LEGEND_PAD+11)+'" font-family="system-ui,sans-serif" '
-          + 'font-size="10" font-weight="700" letter-spacing="0.06em" fill="#475569">LEGEND</text>';
+          + 'font-size="10" font-weight="700" letter-spacing="0.06em" fill="#475569">LEGEND'
+          + (legendCollapsed?' ('+legendEntries.length+')':'')+'</text>';
+  // collapse / expand chevron, top-right of the title row
+  var tgX=boxW-LEGEND_PAD-5, tgY=LEGEND_PAD+7;
+  inner+='<g id="legend-toggle" style="cursor:pointer">'
+       + '<title>'+(legendCollapsed?'Expand legend':'Collapse legend')+'</title>'
+       + '<rect x="'+(tgX-11)+'" y="'+(tgY-9)+'" width="22" height="18" rx="4" fill="rgba(0,0,0,0.04)"/>'
+       + '<path d="'+(legendCollapsed?('M'+(tgX-5)+','+(tgY+2)+' L'+tgX+','+(tgY-3)+' L'+(tgX+5)+','+(tgY+2))
+                                     :('M'+(tgX-5)+','+(tgY-2)+' L'+tgX+','+(tgY+3)+' L'+(tgX+5)+','+(tgY-2)))+'" '
+       + 'fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'
+       + '</g>';
   rows.forEach(function(r,i){
     var cy=LEGEND_PAD+titleH+i*LEGEND_ROWH+LEGEND_ROWH/2;
     inner+='<g transform="translate('+LEGEND_PAD+',0)">'+legendRowSwatch(r,cy)+'</g>';
@@ -1823,7 +1960,14 @@ function renderLegendSVG(){
   });
   g.innerHTML=inner;
   legendLayer.appendChild(g);
+  var tg=g.querySelector('#legend-toggle');
+  if(tg){
+    // stop the mousedown or the canvas starts a rubber-band under the legend
+    tg.addEventListener('mousedown',function(ev){ev.stopPropagation();});
+    tg.addEventListener('click',function(ev){ev.stopPropagation();toggleLegendCollapsed();});
+  }
 }
+function toggleLegendCollapsed(){legendCollapsed=!legendCollapsed;renderLegendSVG();}
 
 window.addEventListener('resize',function(){renderLegendSVG();});
 
@@ -1942,6 +2086,38 @@ function buildLegendSection(){
       });
       ds.addEventListener('change',function(){snap();legendEntries[i].dash=ds.value;renderAll();});
       r2.appendChild(wi);r2.appendChild(ds);
+      // Relation family. DATA ONLY — declaring it changes no colour, width or
+      // dash. Local styling above stays exactly as the author set it; the
+      // family is what lets this row merge with another drawing's differently
+      // worded row. See substrate/edge-families-proposal.md §5.2.
+      if(EDGE_FAM_DATA){
+        var fam=document.createElement('select');
+        fam.style.cssText=IN+';width:96px';
+        fam.title='Relation family — shared vocabulary for merging. Affects no styling.';
+        fam.innerHTML='<option value="">— family —</option>'+EDGE_FAM_ORDER.map(function(fn){
+          return '<option value="'+fn+'"'+((entry.linkFamily||'')===fn?' selected':'')+'>'+fn+'</option>';
+        }).join('');
+        fam.addEventListener('change',function(){
+          snap();
+          if(fam.value)legendEntries[i].linkFamily=fam.value;
+          else delete legendEntries[i].linkFamily;
+          renderAll();
+        });
+        r2.appendChild(fam);
+        if(!entry.linkFamily){
+          var sug=suggestEdgeFamily(entry.label||'');
+          if(sug){
+            var sb=document.createElement('button');
+            sb.textContent='?'+sug.slice(0,4);
+            sb.title='Suggested from "'+(entry.label||'')+'": '+sug+'. Click to accept — nothing is applied automatically.';
+            sb.style.cssText='font:inherit;font-size:9px;padding:1px 4px;border:1px dashed #14b8a6;border-radius:4px;background:#f0fdfa;color:#0f766e;cursor:pointer';
+            sb.addEventListener('click',function(){
+              snap();legendEntries[i].linkFamily=sug;buildLegendSection();renderAll();
+            });
+            r2.appendChild(sb);
+          }
+        }
+      }
     }else{
       var ip=document.createElement('select');ip.style.cssText=IN+';flex:1';ip.title='Icon';
       ip.innerHTML=legendIconOptions(entry.icon||'');
@@ -3705,11 +3881,12 @@ if(e.sfdFlow){path.setAttribute('stroke-width',String(isSel?7:5));path.setAttrib
 var edgeDash=sv(e,'dash')||'solid';if(e.matchQuery){path.setAttribute('stroke-dasharray','6 3');}else if(e.opmDash){path.setAttribute('stroke-dasharray',e.opmDash);}else if(edgeDash==='dashed'){path.setAttribute('stroke-dasharray','8 5');}else if(edgeDash==='dotted'){path.setAttribute('stroke-dasharray','2 4');}
 if((e.arrowDir||'end')!=='none')path.setAttribute('marker-end','url(#'+mId+')');path.setAttribute('pointer-events','none');g.appendChild(path);if(e.curved&&src.id!==tgt.id&&(isSel||isCurveDrag)&&ep&&!ep.selfLoop){var cpx=ep.cpx,cpy=ep.cpy;var handle=document.createElementNS('http://www.w3.org/2000/svg','circle');handle.setAttribute('cx',String(cpx));handle.setAttribute('cy',String(cpy));handle.setAttribute('r','5');handle.setAttribute('fill',hasUserCP?'#3b82f6':'rgba(59,130,246,0.3)');handle.setAttribute('stroke','#3b82f6');handle.setAttribute('stroke-width','1');handle.setAttribute('pointer-events','none');g.appendChild(handle);var dl1=document.createElementNS('http://www.w3.org/2000/svg','line');dl1.setAttribute('x1',String(ep.srcPt.x));dl1.setAttribute('y1',String(ep.srcPt.y));dl1.setAttribute('x2',String(cpx));dl1.setAttribute('y2',String(cpy));dl1.setAttribute('stroke','rgba(59,130,246,0.3)');dl1.setAttribute('stroke-width','1');dl1.setAttribute('stroke-dasharray','3 3');dl1.setAttribute('pointer-events','none');g.appendChild(dl1);var dl2=document.createElementNS('http://www.w3.org/2000/svg','line');dl2.setAttribute('x1',String(ep.tgtPt.x));dl2.setAttribute('y1',String(ep.tgtPt.y));dl2.setAttribute('x2',String(cpx));dl2.setAttribute('y2',String(cpy));dl2.setAttribute('stroke','rgba(59,130,246,0.3)');dl2.setAttribute('stroke-width','1');dl2.setAttribute('stroke-dasharray','3 3');dl2.setAttribute('pointer-events','none');g.appendChild(dl2);}
 if(e.delay&&ep&&!ep.selfLoop){var _dT=e.delayT!==undefined?e.delayT:0.25;var ddx=ep.tgtPt.x-ep.srcPt.x,ddy=ep.tgtPt.y-ep.srcPt.y,al=Math.sqrt(ddx*ddx+ddy*ddy)||100;var dg=document.createElementNS('http://www.w3.org/2000/svg','g');dg.setAttribute('pointer-events','none');[-0.5,0.5].forEach(function(of){var dpt2=ptAtT(e,_dT+(5*of)/al),nx=-dpt2.ty,ny=dpt2.tx;var ln=document.createElementNS('http://www.w3.org/2000/svg','line');ln.setAttribute('x1',String(dpt2.x+nx*10));ln.setAttribute('y1',String(dpt2.y+ny*10));ln.setAttribute('x2',String(dpt2.x-nx*10));ln.setAttribute('y2',String(dpt2.y-ny*10));ln.setAttribute('stroke',col);ln.setAttribute('stroke-width',String(sw));ln.setAttribute('stroke-linecap','round');dg.appendChild(ln);});var dptC=ptAtT(e,_dT);var dhr=document.createElementNS('http://www.w3.org/2000/svg','circle');dhr.setAttribute('cx',String(dptC.x));dhr.setAttribute('cy',String(dptC.y));dhr.setAttribute('r','14');dhr.setAttribute('fill','transparent');dhr.setAttribute('stroke','none');dhr.setAttribute('pointer-events','all');dhr.style.cursor='move';dhr.addEventListener('mousedown',function(ev){ev.stopPropagation();edgeMarkDrag={edgeId:e.id,mark:'delay',moved:false};});g.appendChild(dhr);g.appendChild(dg);}
-var hasL=!!e.label;if(hasL){var _horiz=e.labelHoriz!==undefined?e.labelHoriz:globalLabelHoriz;var _wrap=e.labelWrap!==undefined?e.labelWrap:globalLabelWrap;var rawLblLines=(e.label||'').split('\n');var lblLines=_wrap?[].concat.apply([],rawLblLines.map(function(l){return wrapLabel(l,16);})):rawLblLines;var lLineH=fs+2;var lTotalH=lblLines.length*lLineH;var lStartY=ly-(lTotalH-lLineH)/2;var lpt=ptAtT(e,_lT);var ang=_horiz?0:(Math.atan2(lpt.ty,lpt.tx)*180/Math.PI);if(ang>90)ang-=180;if(ang<-90)ang+=180;var rot=ang?'rotate('+ang.toFixed(1)+','+lx.toFixed(1)+','+ly.toFixed(1)+')':'';var txt=document.createElementNS('http://www.w3.org/2000/svg','text');txt.setAttribute('text-anchor','middle');txt.setAttribute('pointer-events','none');if(rot)txt.setAttribute('transform',rot);lblLines.forEach(function(line,i){var ts=document.createElementNS('http://www.w3.org/2000/svg','tspan');ts.setAttribute('x',String(lx));ts.setAttribute('y',String(lStartY+i*lLineH));ts.setAttribute('font-size',String(fs));ts.setAttribute('font-style','italic');ts.setAttribute('fill',e.fontColor||col);ts.textContent=line;txt.appendChild(ts);});g.appendChild(txt);var lMaxLen=Math.max.apply(null,lblLines.map(function(l){return l.length;}));var lw=Math.max(60,lMaxLen*fs*.65);var lhr=document.createElementNS('http://www.w3.org/2000/svg','rect');lhr.setAttribute('x',String(lx-lw/2));lhr.setAttribute('y',String(lStartY-lLineH/2));lhr.setAttribute('width',String(lw));lhr.setAttribute('height',String(lTotalH+4));lhr.setAttribute('fill','transparent');lhr.setAttribute('stroke','none');lhr.setAttribute('pointer-events','all');lhr.style.cursor='move';lhr.addEventListener('mousedown',function(ev){ev.stopPropagation();edgeMarkDrag={edgeId:e.id,mark:'label',moved:false};});if(rot)lhr.setAttribute('transform',rot);g.appendChild(lhr);}
+var _eTxt=edgeDisplayText(e);var hasL=!!_eTxt;if(hasL){var _horiz=e.labelHoriz!==undefined?e.labelHoriz:globalLabelHoriz;var _wrap=e.labelWrap!==undefined?e.labelWrap:globalLabelWrap;var rawLblLines=_eTxt.split('\n');var lblLines=_wrap?[].concat.apply([],rawLblLines.map(function(l){return wrapLabel(l,16);})):rawLblLines;var lLineH=fs+2;var lTotalH=lblLines.length*lLineH;var lStartY=ly-(lTotalH-lLineH)/2;var lpt=ptAtT(e,_lT);var ang=_horiz?0:(Math.atan2(lpt.ty,lpt.tx)*180/Math.PI);if(ang>90)ang-=180;if(ang<-90)ang+=180;var rot=ang?'rotate('+ang.toFixed(1)+','+lx.toFixed(1)+','+ly.toFixed(1)+')':'';var txt=document.createElementNS('http://www.w3.org/2000/svg','text');txt.setAttribute('text-anchor','middle');txt.setAttribute('pointer-events','none');if(rot)txt.setAttribute('transform',rot);lblLines.forEach(function(line,i){var ts=document.createElementNS('http://www.w3.org/2000/svg','tspan');ts.setAttribute('x',String(lx));ts.setAttribute('y',String(lStartY+i*lLineH));ts.setAttribute('font-size',String(fs));ts.setAttribute('font-style','italic');ts.setAttribute('fill',e.fontColor||col);ts.textContent=line;txt.appendChild(ts);});g.appendChild(txt);var lMaxLen=Math.max.apply(null,lblLines.map(function(l){return l.length;}));var lw=Math.max(60,lMaxLen*fs*.65);var lhr=document.createElementNS('http://www.w3.org/2000/svg','rect');lhr.setAttribute('x',String(lx-lw/2));lhr.setAttribute('y',String(lStartY-lLineH/2));lhr.setAttribute('width',String(lw));lhr.setAttribute('height',String(lTotalH+4));lhr.setAttribute('fill','transparent');lhr.setAttribute('stroke','none');lhr.setAttribute('pointer-events','all');lhr.style.cursor='move';lhr.addEventListener('mousedown',function(ev){ev.stopPropagation();edgeMarkDrag={edgeId:e.id,mark:'label',moved:false};});if(rot)lhr.setAttribute('transform',rot);g.appendChild(lhr);}
 // note indicator dot on edges
 var hasNote=(e.note&&e.note.trim().length>0)||Object.keys(e.props||{}).length>0;if(hasNote){var nd=document.createElementNS('http://www.w3.org/2000/svg','circle');nd.setAttribute('cx',String(mp.x+off.nx*(lo+12)));nd.setAttribute('cy',String(mp.y+off.ny*(lo+12)));nd.setAttribute('r','4');nd.setAttribute('fill','#f59e0b');nd.setAttribute('stroke','#fff');nd.setAttribute('stroke-width','1');nd.setAttribute('pointer-events','none');g.appendChild(nd);}
 if(e.traces&&e.traces.length){var _trs=e.traces.slice().sort(function(a,b){return a-b;});var _trBase=mp.x+off.nx*10,_trBase_y=mp.y+off.ny*10;var _trStep=14;_trs.forEach(function(tn,ti){var tc=TRACE_COLORS[tn-1];var trx=_trBase+off.tx*(_trStep*(ti-(_trs.length-1)/2));var tr_y=_trBase_y+off.ty*(_trStep*(ti-(_trs.length-1)/2));var tlit=!!traceAnimEdges[e.id]&&traceAnimEdges[e.id]===tn;var trr=tlit?8:6;var trc=document.createElementNS('http://www.w3.org/2000/svg','circle');trc.setAttribute('cx',String(trx));trc.setAttribute('cy',String(tr_y));trc.setAttribute('r',String(trr));trc.setAttribute('fill',tc);trc.setAttribute('stroke','#fff');trc.setAttribute('stroke-width',tlit?'2':'1');trc.setAttribute('opacity',tlit?'1':'0.72');trc.setAttribute('pointer-events','none');g.appendChild(trc);var trt=document.createElementNS('http://www.w3.org/2000/svg','text');trt.setAttribute('x',String(trx));trt.setAttribute('y',String(tr_y));trt.setAttribute('text-anchor','middle');trt.setAttribute('dominant-baseline','central');trt.setAttribute('font-size',tlit?'9':'8');trt.setAttribute('font-weight','700');trt.setAttribute('fill','#fff');trt.setAttribute('pointer-events','none');trt.textContent=String(tn);g.appendChild(trt);});}
 var pol=e.polarity||'none';if(pol!=='none'){var _pT=e.polT!==undefined?e.polT:0.82;var p82=ptAtT(e,_pT),pox=-p82.ty*14,poy=p82.tx*14,pfs=fs+2;var pt2=document.createElementNS('http://www.w3.org/2000/svg','text');pt2.setAttribute('x',String(p82.x+pox));pt2.setAttribute('y',String(p82.y+poy));pt2.setAttribute('text-anchor','middle');pt2.setAttribute('dominant-baseline','central');pt2.setAttribute('font-size',String(pfs));pt2.setAttribute('font-weight','700');pt2.setAttribute('fill',pol==='+'?'#166534':'#991b1b');pt2.setAttribute('pointer-events','none');pt2.textContent=pol==='+'?'+':'\u2212';g.appendChild(pt2);var phr=document.createElementNS('http://www.w3.org/2000/svg','rect');phr.setAttribute('x',String(p82.x+pox-pfs*1.5));phr.setAttribute('y',String(p82.y+poy-pfs*1.5));phr.setAttribute('width',String(pfs*3));phr.setAttribute('height',String(pfs*3));phr.setAttribute('fill','transparent');phr.setAttribute('stroke','none');phr.setAttribute('pointer-events','all');phr.style.cursor='move';phr.addEventListener('mousedown',function(ev){ev.stopPropagation();edgeMarkDrag={edgeId:e.id,mark:'pol',moved:false};});g.appendChild(phr);}
+else if(showPolarityGaps&&!e.isTriple){var _gT=e.polT!==undefined?e.polT:0.82;var gp=ptAtT(e,_gT),gox=-gp.ty*14,goy=gp.tx*14;var gc=document.createElementNS('http://www.w3.org/2000/svg','circle');gc.setAttribute('cx',String(gp.x+gox));gc.setAttribute('cy',String(gp.y+goy));gc.setAttribute('r',String((fs+2)*0.62));gc.setAttribute('fill','#fef3c7');gc.setAttribute('stroke','#f59e0b');gc.setAttribute('stroke-width','1.5');gc.setAttribute('pointer-events','none');g.appendChild(gc);var gt=document.createElementNS('http://www.w3.org/2000/svg','text');gt.setAttribute('x',String(gp.x+gox));gt.setAttribute('y',String(gp.y+goy));gt.setAttribute('text-anchor','middle');gt.setAttribute('dominant-baseline','central');gt.setAttribute('font-family','system-ui,sans-serif');gt.setAttribute('font-size',String(fs+1));gt.setAttribute('font-weight','700');gt.setAttribute('fill','#b45309');gt.setAttribute('pointer-events','none');gt.textContent='?';g.appendChild(gt);}
 g.addEventListener('mousedown',function(ev){ev.stopPropagation();onEdgeDown(ev,e.id);});
 g.addEventListener('mouseenter',function(ev){showObjTooltip(null,e,ev);});
 g.addEventListener('mousemove',function(ev){moveTooltip(ev);});
@@ -4742,7 +4919,7 @@ pc.innerHTML=(multi2?'<div style="padding:8px 12px 4px;font-size:12px;color:#647
 +(!multi2?'<div class="prop-row"><div class="prop-label">Relationship type</div><textarea class="prop-input lbl-ta" spellcheck="true" rows="1" style="resize:none;overflow:hidden" placeholder="e.g. KNOWS&#10;(Enter for new line)" onchange="uEL(\''+e.id+'\',this.value)" oninput="_rTA(this)">'+escH(e.label)+'</textarea></div>':'')
 +(hasUserCP?'<div style="padding:5px 12px;border-bottom:1px solid #f1f5f9"><button class="tb-btn" style="width:100%" onclick="resetArc(\''+e.id+'\')">&#8635; Reset arc to auto</button></div>':'')
 +(!multi2&&(e.labelT!==undefined||e.polT!==undefined||e.delayT!==undefined)?'<div style="padding:5px 12px;border-bottom:1px solid #f1f5f9"><button class="tb-btn" style="width:100%" onclick="resetEdgeMarks(\''+e.id+'\')">&#8635; Reset mark positions</button></div>':'')
-+'<div class="section-hd" style="padding-top:8px">CLD — Polarity'+(multi2?' (all)':'')+'</div><div class="polarity-row"><button class="pol-btn'+(pol==='+'?' active-plus':'')+'" onclick="setPol_all(\'+\')">+</button><button class="pol-btn'+(pol==='-'?' active-minus':'')+'" onclick="setPol_all(\'-\')">&minus;</button><button class="pol-btn'+(pol==='none'?' active-none':'')+'" onclick="setPol_all(\'none\')">&empty;</button><span style="font-size:11px;color:#64748b;margin-left:4px">'+(pol==='+'?'same dir':pol==='-'?'opposite dir':'none')+'</span></div>'
++'<div class="section-hd" style="padding-top:8px" title="Not CLD-only — the + / &minus; mark draws on the edge in the base diagram and every other mode too.">Polarity &nbsp;+&thinsp;/&thinsp;&minus;'+(multi2?' (all)':'')+'</div><div class="polarity-row"><button class="pol-btn'+(pol==='+'?' active-plus':'')+'" onclick="setPol_all(\'+\')">+</button><button class="pol-btn'+(pol==='-'?' active-minus':'')+'" onclick="setPol_all(\'-\')">&minus;</button><button class="pol-btn'+(pol==='none'?' active-none':'')+'" onclick="setPol_all(\'none\')">&empty;</button><span style="font-size:11px;color:#64748b;margin-left:4px">'+(pol==='+'?'same dir':pol==='-'?'opposite dir':'none')+'</span></div>'
 +'<div class="section-hd">CLD — Delay'+(multi2?' (all)':'')+'</div><div style="padding:6px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f1f5f9"><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" '+(hasDelay?'checked':'')+' onchange="setDelay_all(this.checked)"> Delay marks</label></div>'
 +(function(){
   function tOn(n){return selected.edges.every(function(id){var e2=edgeById(id);return e2&&(e2.traces||[]).indexOf(n)>=0;});}
@@ -4851,6 +5028,114 @@ function sEC_all(c){snap();getMarkerId(c);selected.edges.forEach(function(id){va
 function sEFC_all(c){snap();selected.edges.forEach(function(id){var e=edgeById(id);if(e){if(c===null)delete e.fontColor;else e.fontColor=c;}});renderAll();buildPanel();}
 function sEW_all(v){selected.edges.forEach(function(id){var e=edgeById(id);if(e)setStyled(e,'width',v);});renderAll();}
 function sEF_all(v){selected.edges.forEach(function(id){var e=edgeById(id);if(e)e.fontSize=v;});renderAll();}
+// ── ROUTE COUNT ──────────────────────────────────────────────────────
+// How many ways can you get from A to B? Counts simple directed routes —
+// no node visited twice, so no infinite walking around a feedback loop.
+// Parallel edges count separately: two A→B edges are two routes.
+// Counting simple paths is #P-complete, so this is a bounded DFS. It stops
+// at ROUTE_CAP and reports "more than", rather than hanging on a dense graph.
+var ROUTE_CAP=50000;
+function routeAdj(){
+  var adj={};
+  edges.forEach(function(e){
+    if(e.isTriple||e.src===e.tgt)return;
+    if(!nodeById(e.src)||!nodeById(e.tgt))return;
+    (adj[e.src]=adj[e.src]||[]).push(e.tgt);
+  });
+  return adj;
+}
+function enumerateRoutes(fromId,toId){
+  var adj=routeAdj(),byLen={},total=0,capped=false,onPath={};
+  function dfs(cur,depth){
+    if(capped)return;
+    if(cur===toId&&depth>0){total++;byLen[depth]=(byLen[depth]||0)+1;if(total>=ROUTE_CAP)capped=true;return;}
+    var nxt=adj[cur]||[];
+    onPath[cur]=true;
+    for(var i=0;i<nxt.length;i++){
+      if(onPath[nxt[i]])continue;
+      dfs(nxt[i],depth+1);
+      if(capped)break;
+    }
+    onPath[cur]=false;
+  }
+  dfs(fromId,0);
+  return {total:total,byLen:byLen,capped:capped};
+}
+function hideRoutesPanel(){var p=document.getElementById('routes-panel');if(p)p.style.display='none';}
+function countRoutes(){
+  var sel=selected.nodes.slice();
+  if(sel.length!==2){toast(sel.length<2?'Select two nodes — first the start, then the end':'Select exactly two nodes ('+sel.length+' selected)');return;}
+  var a=nodeById(sel[0]),b=nodeById(sel[1]);
+  if(!a||!b)return;
+  if(a.id===b.id){toast('Pick two different nodes');return;}
+  var fwd=enumerateRoutes(a.id,b.id),rev=enumerateRoutes(b.id,a.id);
+  var lens=Object.keys(fwd.byLen).map(Number).sort(function(x,y){return x-y;});
+  var rows=lens.map(function(L){
+    return '<div class="rp-row"><span>'+L+' step'+(L===1?'':'s')+'</span><span><strong>'+fwd.byLen[L]+'</strong></span></div>';
+  }).join('');
+  var html='<div class="rp-hd">Routes<span class="rp-x" onclick="hideRoutesPanel()" title="Close">&#10005;</span></div>'
+    +'<div style="margin-bottom:5px">'+escH(a.label)+' &rarr; '+escH(b.label)+'</div>'
+    +'<div class="rp-big">'+(fwd.capped?'&gt; ':'')+fwd.total+'</div>'
+    +(fwd.total?'<div style="margin-top:5px">'+rows+'</div>':'<div class="rp-note">No route follows the arrows from '+escH(a.label)+' to '+escH(b.label)+'.</div>')
+    +'<div class="rp-rev">'+escH(b.label)+' &rarr; '+escH(a.label)+'<span class="rp-revn">'+(rev.capped?'&gt;':'')+rev.total+'</span></div>'
+    +(fwd.capped||rev.capped?'<div class="rp-note">Stopped counting at '+ROUTE_CAP.toLocaleString()+'.</div>':'')
+    +'<div class="rp-note">Simple routes only — each node used at most once, so a loop is never walked twice. Parallel edges count separately.</div>';
+  var p=document.getElementById('routes-panel');
+  p.innerHTML=html;p.style.display='block';
+  toast((fwd.capped?'>':'')+fwd.total+' route'+(fwd.total===1?'':'s')+' '+a.label+' → '+b.label);
+}
+
+// View-only check: flag edges whose polarity is still unset. Draws an amber "?"
+// where the + / − mark would sit. Never touches e.polarity, so nothing lands in
+// any export — CLD mode counts unset edges as neutral without saying so, and
+// this is how you see which ones those are.
+// ── Edge text mode ────────────────────────────────────────────────────────
+// What words an edge carries. 'family' mode is itself a lens: 202 free-text
+// labels collapse to 7 words and the structure of a drawing becomes readable
+// at a glance. 'both' is the authoring/QA mode — it makes a family assignment
+// visible, and therefore correctable by a group who can point at it.
+var EDGE_TEXT_MODES=['label','family','both','none'];
+var EDGE_TEXT_TITLES={label:'Edge text: the author’s words',
+                      family:'Edge text: relation family',
+                      both:'Edge text: words + family',
+                      none:'Edge text: none'};
+var edgeTextMode='label';
+function edgeDisplayText(e){
+  var lbl=e.label||'', fam=edgeFamilyOf(e);
+  if(edgeTextMode==='none')return '';
+  if(edgeTextMode==='label')return lbl;
+  if(edgeTextMode==='family')return fam;
+  return fam?(lbl?lbl+'\n'+fam:fam):lbl;   // 'both'
+}
+function cycleEdgeText(){
+  edgeTextMode=EDGE_TEXT_MODES[(EDGE_TEXT_MODES.indexOf(edgeTextMode)+1)%EDGE_TEXT_MODES.length];
+  var b=document.getElementById('btn-edgetext');
+  if(b){
+    b.textContent=edgeTextMode==='label'?'Aa Text':edgeTextMode==='family'?'Aa Family'
+                 :edgeTextMode==='both'?'Aa Both':'Aa None';
+    var on=edgeTextMode!=='label';
+    b.style.background=on?'#0d9488':'';b.style.color=on?'#fff':'';
+    b.style.borderColor=on?'#0d9488':'';
+    b.title=EDGE_TEXT_TITLES[edgeTextMode];
+  }
+  renderAll();
+  if(edgeTextMode==='family'||edgeTextMode==='both'){
+    var miss=edges.filter(function(e){return !edgeFamilyOf(e);}).length;
+    toast(EDGE_TEXT_TITLES[edgeTextMode]+(miss?' — '+miss+' edge'+(miss===1?'':'s')+' with no family':''));
+  }else toast(EDGE_TEXT_TITLES[edgeTextMode]);
+}
+
+var showPolarityGaps=false;
+function polarityGapEdges(){return edges.filter(function(e){return !e.isTriple&&(!e.polarity||e.polarity==='none');});}
+function togglePolarityGaps(){
+  showPolarityGaps=!showPolarityGaps;
+  var b=document.getElementById('btn-polgaps');
+  if(b){b.style.background=showPolarityGaps?'#f59e0b':'';b.style.color=showPolarityGaps?'#fff':'';b.style.borderColor=showPolarityGaps?'#f59e0b':'';}
+  renderAll();
+  if(!showPolarityGaps){toast('Polarity gaps off');return;}
+  var n=polarityGapEdges().length,tot=edges.filter(function(e){return !e.isTriple;}).length;
+  toast(n?(n+' of '+tot+' edges have no polarity'):'Every edge has polarity set');
+}
 function setPol_all(val){snap();var allSame=selected.edges.every(function(id){var e=edgeById(id);return e&&e.polarity===val;});selected.edges.forEach(function(id){var e=edgeById(id);if(e)e.polarity=allSame?'none':val;});renderAll();buildPanel();}
 function setDelay_all(val){snap();selected.edges.forEach(function(id){var e=edgeById(id);if(e)e.delay=val;});renderAll();buildPanel();}
 function resetArc(id){snap();var e=edgeById(id);if(e){delete e.cpxUser;delete e.cpyUser;renderAll();buildPanel();toast('Arc reset to auto');}}
@@ -4861,7 +5146,7 @@ function sLLC_all(c){snap();(selected.lines||[]).forEach(function(id){var l=line
 function sLFC_all(c){snap();(selected.lines||[]).forEach(function(id){var l=lineById(id);if(l){if(c===null||c===undefined)delete l.fontColor;else l.fontColor=c;}});renderAll();buildPanel();}
 function resetLineLabelPos(){snap();(selected.lines||[]).forEach(function(id){var l=lineById(id);if(l)delete l.labelT;});renderAll();buildPanel();}
 function setLineLabel(id,val){snap();var l=lineById(id);if(l){l.label=val;renderAll();}}
-function buildState(){return{version:'1.0',modelName:modelName(),modelNote:(document.getElementById('model-note').value||'').trim(),canvasBg:canvasBg,graphAttrs:graphAttrs,cldLoopNames:cldLoopNames,legendEntries:legendEntries.map(function(e){return Object.assign({},e);}),legendVisible:legendVisible,customSymbols:customSymbols.map(function(s){return Object.assign({},s);}),nodes:nodes.map(function(n){return Object.assign({},n,{props:Object.assign({},n.props)});}),edges:edges.map(function(e){return Object.assign({},e,{props:Object.assign({},e.props)});}),lines:lines.map(function(l){return Object.assign({},l);}),metaEdges:metaEdges.map(function(me){return Object.assign({},me);})};}
+function buildState(){return{version:'1.0',modelName:modelName(),modelNote:(document.getElementById('model-note').value||'').trim(),canvasBg:canvasBg,graphAttrs:graphAttrs,cldLoopNames:cldLoopNames,legendEntries:legendEntries.map(function(e){return Object.assign({},e);}),legendVisible:legendVisible,legendCollapsed:legendCollapsed,customSymbols:customSymbols.map(function(s){return Object.assign({},s);}),nodes:nodes.map(function(n){return Object.assign({},n,{props:Object.assign({},n.props)});}),edges:edges.map(function(e){return Object.assign({},e,{props:Object.assign({},e.props)});}),lines:lines.map(function(l){return Object.assign({},l);}),metaEdges:metaEdges.map(function(me){return Object.assign({},me);})};}
 function cleanXmileLabel(raw){return(raw||'').replace(/^"+|"+$/g,'').replace(/^\\+|\\+$/g,'').replace(/_/g,' ').trim();}
 function xmileKey(raw){return(raw||'').replace(/^"+|"+$/g,'').replace(/^\\+|\\+$/g,'').trim().toLowerCase();}
 function toXmileName(label){return label.replace(/\s+/g,'_');}
@@ -5129,7 +5414,7 @@ if(wardleyData&&wardleyData.components){
   return;
 }
 var isArrows=raw.relationships!==undefined||(raw.nodes&&raw.nodes[0]&&raw.nodes[0].position!==undefined);var isNative=raw.nodes&&raw.edges!==undefined;if(!isArrows&&!isNative){toast('Unrecognised JSON');return;}snap();if(isArrows){var conv=translateArrows(raw);nodes=conv.nodes;edges=conv.edges;toast('Arrows import: '+nodes.length+' nodes');}else{nodes=raw.nodes.map(function(n){return Object.assign({fontSize:DEF_NFS,fontColor:'auto',borderColor:'',borderWidth:1.5,borderDash:'solid',note:'',extraLabels:[]},n,{props:n.props||{},extraLabels:n.extraLabels||[]});});edges=raw.edges.map(function(e){var out=Object.assign({dash:'solid',note:''},e,{props:e.props||{},polarity:e.polarity||'none',delay:!!e.delay});if(out.trace&&!out.traces){out.traces=[out.trace];}if(!out.traces)out.traces=[];delete out.trace;return out;});if(raw.modelName)document.getElementById('model-name').value=raw.modelName;if(raw.canvasBg)setBgColor(raw.canvasBg);if(raw.graphAttrs)graphAttrs=raw.graphAttrs;nodes.forEach(autoSize);toast('Loaded '+nodes.length+' nodes');}lines=(raw.lines||[]).map(function(l){return Object.assign({color:'#000000',width:1.5,dash:'solid',arrowhead:'none',label:''},l);});var ids=nodes.map(function(n){return+String(n.id).replace(/\D/g,'')||0;}).concat(edges.map(function(e){return+String(e.id).replace(/\D/g,'')||0;})).concat(lines.map(function(l){return+String(l.id).replace(/\D/g,'')||0;}));nextId=(ids.length?Math.max.apply(null,ids):0)+1;selected={nodes:[],edges:[],lines:[],triples:[]};edges.forEach(function(e){if(e.color)getMarkerId(e.color);if(e.opmMarker&&e.color)getOPMMarkerId(e.opmMarker,e.color);});metaEdges=(raw.metaEdges||[]).map(function(me){return Object.assign({},me);});if(raw.cldLoopNames)cldLoopNames=raw.cldLoopNames;requestAnimationFrame(function(){renderLegendSVG();});
-if(raw.legendEntries){legendEntries=raw.legendEntries;legendVisible=!!raw.legendVisible;normaliseLegend();legendEntries.forEach(function(r){if((r.kind||'node')==='edge'&&r.color)getMarkerId(r.color);});buildLegendSection();renderLegendOverlay();}var _mn=document.getElementById('model-note');_mn.value=raw.modelNote||'';renderModelNote();// update nextTripleNum based on loaded triples
+if(raw.legendEntries){legendEntries=raw.legendEntries;legendVisible=!!raw.legendVisible;legendCollapsed=!!raw.legendCollapsed;normaliseLegend();legendEntries.forEach(function(r){if((r.kind||'node')==='edge'&&r.color)getMarkerId(r.color);});buildLegendSection();renderLegendOverlay();}var _mn=document.getElementById('model-note');_mn.value=raw.modelNote||'';renderModelNote();// update nextTripleNum based on loaded triples
 var tNums=edges.filter(function(e){return e.tripleId;}).map(function(e){return parseInt(e.tripleId.slice(1))||0;});nextTripleNum=(tNums.length?Math.max.apply(null,tNums):0)+1;
 customSymbols=(raw.customSymbols||[]).map(function(s){return Object.assign({},s);});_vsAddMode=false;
 syncCC();renderAll();zoomFit();}
