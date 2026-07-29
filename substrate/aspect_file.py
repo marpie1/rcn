@@ -36,8 +36,35 @@ def path_for(aspect):
     return os.path.join(ASPECT_DIR, f'{aspect}.json')
 
 
-def build_file(aspect, database='aspects16'):
-    """The JSON this aspect's file WOULD become. Pure — writes nothing."""
+def layout_of(aspect):
+    """schemaLabel -> (x, y) from the source file: the FIRST placement of each.
+
+    The substrate stores no coordinates on purpose — where a node sits is a
+    fact about a drawing, not about a concept. But then a drawing opened from
+    the substrate came back in a synthetic ring, not the arrangement its author
+    made, and any rearrangement was discarded on save. Layout has an owner: the
+    file. So the projection reads it from there, and a save writes it back.
+    Layout goes file -> tool -> file and never passes through Neo4j.
+    """
+    p = path_for(aspect)
+    if not os.path.exists(p):
+        return {}
+    out = {}
+    for n in json.load(open(p)).get('nodes', []):
+        sl = ''.join((n.get('schemaLabel') or '').split())
+        if sl and sl not in out and 'x' in n and 'y' in n:
+            out[sl] = (n['x'], n['y'])       # first placement wins; see duplicates
+    return out
+
+
+def build_file(aspect, database='aspects16', positions=None):
+    """The JSON this aspect's file WOULD become. Pure — writes nothing.
+
+    `positions` maps schemaLabel -> {x, y} and comes from a canvas the person
+    has just arranged. When present it overrides the stored coordinates; every
+    other placement of the same concept keeps its own offset from the first, so
+    a duplicate does not collapse onto its twin.
+    """
     p = path_for(aspect)
     original = {}
     if os.path.exists(p):
@@ -72,7 +99,7 @@ def build_file(aspect, database='aspects16'):
     # ORDER IS PART OF THE DIFF. The database has no opinion about the order of
     # a set, so returning rows in Cypher's order rewrites the whole file every
     # save — 44 insertions for a one-character change, and a diff nobody reads.
-    nodes, ids_of, next_n = [], {}, 0
+    nodes, ids_of, next_n, first_seen = [], {}, 0, {}
     for n in original.get('nodes', []):          # every original placement, in order
         sl = ''.join((n.get('schemaLabel') or '').split())
         r = db_by_schema.get(sl)
@@ -81,6 +108,18 @@ def build_file(aspect, database='aspects16'):
         node = dict(n)                           # keep id, x, y, colour, props
         node['label'] = r['label']               # the substrate owns the label
         node['schemaLabel'] = sl
+        if positions and sl in positions:
+            # The canvas moved this concept. Shift every placement of it by the
+            # same delta, so a duplicate keeps its own offset instead of
+            # stacking on top of its twin.
+            base = first_seen.get(sl)
+            if base is None:
+                first_seen[sl] = (n.get('x', 0), n.get('y', 0))
+                base = first_seen[sl]
+            dx = n.get('x', 0) - base[0]
+            dy = n.get('y', 0) - base[1]
+            node['x'] = round(positions[sl].get('x', n.get('x', 0)) + dx)
+            node['y'] = round(positions[sl].get('y', n.get('y', 0)) + dy)
         ids_of.setdefault(sl, []).append(node['id'])
         nodes.append(node)
     for r in rows:                               # concepts the file did not have
@@ -165,11 +204,11 @@ def build_file(aspect, database='aspects16'):
     return out
 
 
-def write_file(aspect, database='aspects16'):
+def write_file(aspect, database='aspects16', positions=None):
     """Write it, and report what actually changed."""
     p = path_for(aspect)
     before = open(p).read() if os.path.exists(p) else ''
-    data = build_file(aspect, database)
+    data = build_file(aspect, database, positions)
     after = json.dumps(data, indent=2, ensure_ascii=False) + '\n'
     changed = before != after
     if changed:

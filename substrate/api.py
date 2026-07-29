@@ -166,9 +166,17 @@ ASPECT_DB = 'aspects16'   # where the 16 drawings live, with exact provenance
 def subgraph(aspect, database=ASPECT_DB):
     nodes = run(SUBGRAPH_NODES, {'aspect': aspect}, database=database)
     edges = run(SUBGRAPH_EDGES, {'aspect': aspect}, database=database)
+    # LAYOUT COMES FROM THE FILE, NOT THE RING. The substrate stores no
+    # coordinates by design, but a drawing opened from it should still be the
+    # arrangement its author made. The synthetic ring is the fallback for a
+    # concept the file has never placed.
+    lay = aspect_file.layout_of(aspect)
     for n in nodes:
         for k in [k for k, v in n.items() if v is None]:
             del n[k]
+        xy = lay.get(n.get('schemaLabel'))
+        if xy:
+            n['x'], n['y'] = xy
     return {'version': '1.0', 'modelName': aspect, 'subgraph': aspect,
             'nodes': nodes, 'edges': edges, 'lines': []}
 
@@ -356,7 +364,10 @@ class Handler(SimpleHTTPRequestHandler):
         if path.startswith('/subgraph/') and path.endswith('/file'):
             name = path[len('/subgraph/'):-len('/file')]
             try:
-                return self._send(200, aspect_file.write_file(name, db or ASPECT_DB))
+                n = int(self.headers.get('Content-Length') or 0)
+                body = json.loads(self.rfile.read(n) or b'{}') if n else {}
+                return self._send(200, aspect_file.write_file(
+                    name, db or ASPECT_DB, body.get('positions')))
             except Exception as e:
                 return self._send(503, {'error': str(e)})
         return self._send(404, {'error': 'POST only to /subgraph/<name>/file'})

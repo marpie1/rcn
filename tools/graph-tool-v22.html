@@ -1841,7 +1841,18 @@ function saveToSubstrate(){
     method:'PUT', headers:{'Content-Type':'application/json'}, body:body
   }).then(jok)
     .then(function(j){
-      return fetch('/subgraph/'+encodeURIComponent(name)+'/file', {method:'POST'})
+      // Send the ARRANGEMENT too. The substrate stores no coordinates — layout
+      // belongs to the drawing — so it travels file -> tool -> file and never
+      // through Neo4j. Without this a rearrangement made on this canvas would
+      // be silently discarded when the file was rebuilt.
+      var pos={};
+      nodes.forEach(function(n){
+        var sl=n.schemaLabel||(n.props&&n.props.schemaLabel);
+        if(sl) pos[String(sl).replace(/\s+/g,'')]={x:Math.round(n.x),y:Math.round(n.y)};
+      });
+      return fetch('/subgraph/'+encodeURIComponent(name)+'/file', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({positions:pos})})
         .then(jok).then(function(f){ return [j, f]; });
     })
     .then(function(both){
