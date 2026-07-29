@@ -41,6 +41,16 @@ with Marc before relying on them.
 4. **n=6 reference graph lives in the default `neo4j` database.** The Stage 2
    composite gets its own database later. Enterprise edition (5.26.4, Desktop)
    makes this free.
+5. **Four levels = Option C.** family/schema/variable are vocabulary and live as
+   fields on `:Concept`; an instance is a thing that happened and gets its own
+   node, carrying the geometry and time a vocabulary level cannot hold.
+6. **MORE does not belong in the substrate.** It stays a file tool. Removes the
+   only demand for ordered relationships.
+7. **Meta-edges resolve by lookup, not traversal.** `(:MetaEdge {tgtEdgeId})`
+   referencing the edge by id. No universal reification.
+8. **Relation families are declared, not drawn.** `tools/edge-families.js` is the
+   one source; the substrate holds a generated copy. Local edge styling always
+   wins — declaring a family changes no colour, width or dash.
 
 ---
 
@@ -174,7 +184,7 @@ This is the checklist. Rows 1–6 are what the original brief covered.
 | 6 | **Provenance** — `sources` as a list | federation, gold nodes | COVERED |
 | 7 | **Mode** — which grammar this graph speaks | all 5 graph modes + IBIS + Wardley + CfA | COVERED — property on nodes and edges |
 | 8 | **Four levels** — family / schema / variable / instance | Composer; Superior AZ real instances | COVERED — Option C |
-| 9 | **Containment / hierarchy** | MORE tree, OPM in-zoom, Composer nesting, regions | OPEN |
+| 9 | **Containment / hierarchy** | ~~MORE tree~~, OPM in-zoom, regions | **CLOSED** — see below |
 | 10 | **Geometry** — points and polygons | rcn_map, issue-polygon-map, NRM `ndc_id` | **partial** — lat/lng on `:Instance`; polygons still open |
 | 11 | **Intervals with fuzzy dates** | rcn-timeline | COVERED — on `:Instance` |
 | 12 | **Typed edge vocabularies** | OPM ×10, IBIS, SFD flows, CfA speech acts | OPEN — see `edge-families-proposal.md` |
@@ -184,7 +194,23 @@ This is the checklist. Rows 1–6 are what the original brief covered.
 | 16 | **Credentials / signatures** | SODOTO, veramo | OPEN |
 | 17 | **Access control** | SCP | SEPARATE substrate |
 
-### The three that most need a decision before building
+### Row 9 resolved — it was four problems, not one
+
+Investigating what actually nests found four different structures wearing one
+name. Three needed nothing; the fourth got a decision.
+
+| Sub-problem | Resolution |
+|---|---|
+| **part-of as meaning** ("Main St is part of downtown") | The **Composition** family in `edge-families.js`. Transitive, and one of the two candidates for a genuinely typed Neo4j relationship. No new schema |
+| **ordered trees** (MORE — `children[]`, and `cloneId` ×36) | **Marc 2026-07-28: MORE does not belong in the substrate.** It stays a file tool. This was the only demand for ordered relationships, which Neo4j does not have natively — so no `ord` property is needed |
+| **federation by reference** (`regions.json`) | Not containment at all — a flat list of `{region, steward, url}` pointing at other documents. It is a *boundary*: which database, which steward. Modelling a region as a parent node would have made cross-region queries strange for no gain |
+| **reification** (graph-tool's `metaEdges` — `tgt` is a `tripleId`, a claim about a claim) | **Marc 2026-07-28: lookup, not traversal.** A `(:MetaEdge {tgtEdgeId})` node referencing the edge by its `id`, matching what graph-tool already does. True reification would promote every edge to a node — doubling the graph, destroying the uniform single-MATCH all five projections depend on, and making the n=6 eyeball test unreadable. The cost is that a meta-claim reaches its edge by lookup rather than by hop |
+
+Note graph-tool has essentially **no** data containment today: `n.parent` appears
+5 times against 10 uses of DOM `parentNode`, `layer` is a flat named string, and
+there is no in-zoom code. OPM in-zooming exists in the standard, not the tool.
+
+### The remaining rows that need a decision before building
 
 **Row 8 — four levels.** The brief's `schemaLabel` + `name` covers two of the
 four. Without the other two there is no way to say "the chicken ordinance in
@@ -228,6 +254,10 @@ the uniform MATCH, keeps the grammar.
   loaded — `substrate/seed.py`, 8 families + 6 concepts + 7 edges + 2 instances.
   Rows 5, 7, 8, 11 now COVERED; row 10 partial (points yes, polygons no).
   Six rows remain OPEN: 9, 10, 12, 13, 14, 15, 16.
+- **2026-07-28** — Row 9 (containment) **CLOSED**. Split into four structures;
+  Marc ruled MORE out of the substrate (removing the only ordered-tree demand)
+  and chose lookup over traversal for meta-edges. Decisions 6 and 7.
+  `tool-status-checklist.md` created for the live-vs-parked pass.
 - **2026-07-28** — Edge vocabulary corpus harvested: **202 distinct labels across
   375 edges, 115 used exactly once**, with `create`/`creates`,
   `support`/`supports`/`Supports`, `constitute`/`constitutes` already drifting.
