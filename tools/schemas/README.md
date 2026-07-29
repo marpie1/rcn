@@ -15,7 +15,7 @@ provenance.
 | `tools/graph-tool-v22.html` | [graph-tool-v22.md](graph-tool-v22.md) | native graph JSON |
 | `tools/rcn-timeline.html` | [rcn-timeline.md](rcn-timeline.md) | timeline model JSON |
 | `tools/issue-polygon-map.html` | [issue-polygon-map.md](issue-polygon-map.md) | GeoJSON FeatureCollection |
-| `tools/graph-composer.html` | [graph-tool-v22.md](graph-tool-v22.md) — same file format | native graph JSON |
+| `tools/graph-composer.html` | [graph-composer.md](graph-composer.md) — its own sidecars, detail levels, export loss | native graph JSON, plus `families.js` + `graph-sets.js` |
 | the substrate projections | [../../substrate/ROUND-TRIP.md](../../substrate/ROUND-TRIP.md) | same native graph JSON, served over HTTP |
 
 Plus one file that is **not** a schema but explains where a tool came from:
