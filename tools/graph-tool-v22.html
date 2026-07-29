@@ -918,6 +918,7 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="copyPNG()" title="Copy diagram to clipboard — paste into Word or PowerPoint">Copy</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="printCanvas()" title="Print the current canvas view">Print</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportCypher()">Cypher</button>
+        <button class="tb-btn" id="btn-substrate" title="Replace this drawing in the Neo4j substrate. Other drawings are untouched — concepts they also contain keep their other witnesses." style="background:transparent;border-color:transparent;color:#7c3aed" onclick="saveToSubstrate()">→ Substrate</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportURL()">URL</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportJSON()">JSON</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#b45309" onclick="exportSnapshot()" title="Download a single HTML file with this diagram baked in — share without a separate JSON file">Snapshot</button>
@@ -1677,6 +1678,53 @@ function applyEIPToNewNode(n){
     }
   }
 }
+// ── Write-back to the substrate ───────────────────────────────────────────
+// The return leg of the round trip. Loading via ?url=/projection/subgraph/org
+// records which drawing this is; saving replaces THAT drawing and nothing else.
+//
+// Safe by construction, because the substrate retracts then re-asserts: it
+// drops this aspect from every sources list, deletes only what is left with no
+// witness at all, then re-inserts what you send. A concept another drawing also
+// contains keeps its other witnesses and survives. You cannot delete a
+// collaborator's work, even by saving an empty canvas.
+var substrateSubgraph = null;   // set by loadGraphJSON when the file names one
+
+function saveToSubstrate(){
+  var name = substrateSubgraph;
+  if(!name){
+    name = prompt('Replace which subgraph in the substrate?\n\n'
+                + 'This replaces that drawing only. Concepts other drawings also\n'
+                + 'contain keep their other witnesses and survive.');
+    if(!name) return;
+    name = name.trim();
+    if(!name) return;
+  } else if(!confirm('Replace the "'+name+'" drawing in the substrate with what is '
+                   + 'on this canvas?\n\n'+nodes.length+' nodes, '+edges.length+' edges.\n\n'
+                   + 'Other drawings are untouched.')){
+    return;
+  }
+  var body = JSON.stringify({
+    nodes: nodes.map(function(n){
+      return {id:n.id, label:n.label, schemaLabel:n.schemaLabel||(n.props&&n.props.schemaLabel)||n.label,
+              w:n.w, h:n.h, shape:n.shape, props:n.props||{}};
+    }),
+    edges: edges.map(function(e){
+      return {id:e.id, src:e.src, tgt:e.tgt, label:e.label||'',
+              polarity:e.polarity||'none',
+              props:{linkFamily:edgeFamilyOf(e)||((e.props||{}).linkFamily)||null}};
+    })
+  });
+  fetch('/subgraph/'+encodeURIComponent(name), {
+    method:'PUT', headers:{'Content-Type':'application/json'}, body:body
+  }).then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||('HTTP '+r.status)); return j; }); })
+    .then(function(j){
+      toast('✓ '+name+': '+j.nodesWritten+' nodes, '+j.edgesWritten+' edges written'
+          + (j.deletedLastWitnessNodes||j.deletedLastWitnessEdges
+             ? ' · retired '+j.deletedLastWitnessNodes+'n/'+j.deletedLastWitnessEdges+'e with no other witness' : ''));
+    })
+    .catch(function(err){ toast('⚠️ Save failed: '+err.message); });
+}
+
 function exportEIPCypher(){
   var lines=['// EIP Graph — Neo4j Cypher','// Generated '+new Date().toISOString().slice(0,10),''];
   nodes.forEach(function(n){
@@ -5996,7 +6044,7 @@ function download(fname,mime,content){var blob=new Blob([content],{type:mime});v
 var toastT;
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},2400);}
 function loadFromURL(){var h=location.hash;if(h.indexOf('#graph=')<0)return;try{var raw=h.split('#graph=')[1];var st=JSON.parse(decodeURIComponent(escape(atob(raw))));nodes=st.nodes||[];edges=st.edges||[];if(st.modelName)document.getElementById('model-name').value=st.modelName;if(st.canvasBg)setBgColor(st.canvasBg);if(st.graphAttrs)graphAttrs=st.graphAttrs;if(st.cldLoopNames)cldLoopNames=st.cldLoopNames;var _mn2=document.getElementById('model-note');_mn2.value=st.modelNote||'';renderModelNote();edges.forEach(function(e){e.polarity=e.polarity||'none';e.delay=!!e.delay;e.dash=e.dash||'solid';if(!e.note)e.note='';if(e.color)getMarkerId(e.color);if(e.opmMarker&&e.color)getOPMMarkerId(e.opmMarker,e.color);});nodes.forEach(function(n){if(!n.fontSize)n.fontSize=DEF_NFS;if(!n.fontColor)n.fontColor='auto';if(!n.borderColor)n.borderColor='';if(!n.borderWidth)n.borderWidth=1.5;if(!n.borderDash)n.borderDash='solid';if(!n.note)n.note='';if(!n.extraLabels)n.extraLabels=[];autoSize(n);});var ids=nodes.map(function(n){return+String(n.id).replace(/\D/g,'')||0;}).concat(edges.map(function(e){return+String(e.id).replace(/\D/g,'')||0;}));nextId=(ids.length?Math.max.apply(null,ids):0)+1;renderAll();zoomFit();syncCC();toast('Loaded: '+nodes.length+' nodes, '+edges.length+' edges');}catch(err){console.warn('URL load failed',err);setTimeout(function(){toast('\u26a0\ufe0f URL load failed \u2014 link may be truncated. Use JSON export for large diagrams.');},400);}}
-function loadFromQueryParam(){var params=new URLSearchParams(window.location.search);var url=params.get('url');if(!url)return;fetch(url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(text){loadGraphJSON(text);zoomFit();}).catch(function(err){console.warn('?url= load failed',err);setTimeout(function(){toast('\u26a0\ufe0f Could not load model \u2014 check URL and CORS headers');},400);});}
+function loadFromQueryParam(){var params=new URLSearchParams(window.location.search);var url=params.get('url');if(url&&/\/projection\/subgraph\//.test(url)){substrateSubgraph=decodeURIComponent(url.split('/projection/subgraph/')[1].split('?')[0]);}if(!url)return;fetch(url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(text){loadGraphJSON(text);zoomFit();}).catch(function(err){console.warn('?url= load failed',err);setTimeout(function(){toast('\u26a0\ufe0f Could not load model \u2014 check URL and CORS headers');},400);});}
 function sendToWikiItem(){
   if(!window.opener){toast('Not running as wiki popup — use → Wiki for ghost page');return;}
   var clone=buildExportSVG();

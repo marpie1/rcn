@@ -88,6 +88,44 @@ RETURN n.id AS id, n.variableLabel AS label,
 ORDER BY id
 """
 
+# ── one contributor's drawing, as a filter ────────────────────────────────
+# A subgraph is not stored. `WHERE $a IN c.sources` IS the subgraph. The 16
+# drawings and their union are the same rows read two ways — which is the
+# payoff of keeping sources as a list rather than a scalar.
+SUBGRAPH_NODES = """
+MATCH (n:Concept) WHERE $aspect IN n.sources
+WITH n ORDER BY n.id
+WITH collect(n) AS ns, count(*) AS total
+UNWIND range(0, total - 1) AS i
+WITH ns[i] AS n, i, total
+OPTIONAL MATCH (n)-[:IN_FAMILY]->(f:Family)
+RETURN n.id AS id, n.variableLabel AS label,
+       round(460 + 300 * cos(6.28318530718 * i / total)) AS x,
+       round(330 + 235 * sin(6.28318530718 * i / total)) AS y,
+       n.w AS w, n.h AS h, n.shape AS shape,
+       f.fill AS color, f.color AS borderColor, n.schemaLabel AS schemaLabel,
+       {family:f.name, mode:n.mode, sources:n.sources,
+        gold: size(n.sources) > 1, shared: size(n.sources) > 1} AS props
+ORDER BY id
+"""
+
+SUBGRAPH_EDGES = """
+MATCH (s:Concept)-[r:REL]->(t:Concept) WHERE $aspect IN r.sources
+RETURN r.id AS id, s.id AS src, t.id AS tgt,
+       r.label AS label, r.polarity AS polarity,
+       {linkFamily:r.linkFamily, rel:r.rel, mode:r.mode, sources:r.sources,
+        gold: size(r.sources) > 1} AS props
+ORDER BY id
+"""
+
+SUBGRAPH_LIST = """
+MATCH (a:Aspect)
+OPTIONAL MATCH (c:Concept) WHERE a.name IN c.sources
+WITH a, count(DISTINCT c) AS concepts
+OPTIONAL MATCH ()-[r:REL]->() WHERE a.name IN r.sources
+RETURN a.name AS name, concepts, count(r) AS edges ORDER BY name
+"""
+
 PROJECTIONS = {
     'causal': (CAUSAL_NODES, CAUSAL_EDGES),
     'gold':   (GOLD_NODES,   None),
@@ -107,9 +145,94 @@ def project(name, database=None):
     return {'nodes': nodes, 'edges': edges}
 
 
+ASPECT_DB = 'aspects16'   # where the 16 drawings live, with exact provenance
+
+
+def subgraph(aspect, database=ASPECT_DB):
+    nodes = run(SUBGRAPH_NODES, {'aspect': aspect}, database=database)
+    edges = run(SUBGRAPH_EDGES, {'aspect': aspect}, database=database)
+    for n in nodes:
+        for k in [k for k, v in n.items() if v is None]:
+            del n[k]
+    return {'version': '1.0', 'modelName': aspect, 'subgraph': aspect,
+            'nodes': nodes, 'edges': edges, 'lines': []}
+
+
+def put_subgraph(aspect, payload, database=ASPECT_DB):
+    """Replace one contributor's drawing. NON-DESTRUCTIVE TO OTHERS.
+
+    Retract, then re-assert:
+      1. drop `aspect` from every sources list
+      2. delete only what is left with NO witness at all
+      3. upsert the incoming content, carrying `aspect`
+
+    A concept another drawing also contains keeps its other witnesses and
+    survives step 2. That is the whole reason sources is a list: one
+    contributor cannot delete another's work, even by submitting an empty
+    drawing. The gold flag recomputes for free, because it was never stored.
+    """
+    kw = {'a': aspect}
+    before = run("MATCH (c:Concept) WHERE $a IN c.sources RETURN count(c) AS c",
+                 kw, database=database)[0]['c']
+
+    run("MATCH (c:Concept) WHERE $a IN c.sources "
+        "SET c.sources = [s IN c.sources WHERE s <> $a]", kw, database=database)
+    run("MATCH ()-[r:REL]->() WHERE $a IN r.sources "
+        "SET r.sources = [s IN r.sources WHERE s <> $a]", kw, database=database)
+    orphaned_e = run("MATCH ()-[r:REL]->() WHERE size(r.sources) = 0 "
+                     "DELETE r RETURN count(r) AS c", database=database)[0]['c']
+    orphaned_n = run("MATCH (c:Concept) WHERE size(c.sources) = 0 "
+                     "DETACH DELETE c RETURN count(c) AS c", database=database)[0]['c']
+
+    for n in payload.get('nodes', []):
+        schema = n.get('schemaLabel') or (n.get('props') or {}).get('schemaLabel') \
+                 or n.get('label') or n.get('id')
+        nid = ''.join(str(schema).split()).lower()
+        run("""MERGE (c:Concept {id:$id})
+               ON CREATE SET c.schemaLabel=$sl, c.variableLabel=$vl, c.mode='EIP',
+                             c.sources=[], c.w=$w, c.h=$h, c.shape=$sh
+               SET c.variableLabel = coalesce($vl, c.variableLabel),
+                   c.sources = CASE WHEN $a IN c.sources THEN c.sources
+                               ELSE c.sources + $a END""",
+            dict(id=nid, sl=''.join(str(schema).split()),
+                 vl=n.get('label'), w=n.get('w', 110), h=n.get('h', 60),
+                 sh=n.get('shape', 'ellipse'), a=aspect), database=database)
+
+    for e in payload.get('edges', []):
+        run("""MATCH (s:Concept {id:$src}), (t:Concept {id:$tgt})
+               MERGE (s)-[r:REL {label:$label}]->(t)
+               ON CREATE SET r.id=$id, r.mode='EIP', r.rel='before', r.sources=[]
+               SET r.polarity=$pol,
+                   r.linkFamily = coalesce($lf, r.linkFamily),
+                   r.sources = CASE WHEN $a IN r.sources THEN r.sources
+                               ELSE r.sources + $a END""",
+            dict(src=str(e.get('src', '')).lower(), tgt=str(e.get('tgt', '')).lower(),
+                 label=e.get('label', ''), id=e.get('id') or f"w_{aspect}_{e.get('src')}_{e.get('tgt')}",
+                 pol=e.get('polarity', 'none'),
+                 lf=(e.get('props') or {}).get('linkFamily'), a=aspect),
+            database=database)
+
+    after = run("MATCH (c:Concept) WHERE $a IN c.sources RETURN count(c) AS c",
+                kw, database=database)[0]['c']
+    return {'subgraph': aspect, 'conceptsBefore': before, 'conceptsAfter': after,
+            'nodesWritten': len(payload.get('nodes', [])),
+            'edgesWritten': len(payload.get('edges', [])),
+            'deletedLastWitnessNodes': orphaned_n,
+            'deletedLastWitnessEdges': orphaned_e}
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=BASE, **kw)
+
+    def end_headers(self):
+        # No caching, for STATIC files too — not just the projections.
+        # Without this the browser holds an old graph-sets.js or an old
+        # graph-tool-v22.html and you debug a file you already fixed. That
+        # failure wastes more time than any other in this kind of work,
+        # because the evidence looks exactly like a broken change.
+        self.send_header('Cache-Control', 'no-store, must-revalidate')
+        super().end_headers()
 
     def _send(self, code, payload, ctype='application/json'):
         body = json.dumps(payload, indent=1).encode() if ctype.startswith('application/json') else payload
@@ -117,7 +240,6 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('Content-Type', ctype)
         self.send_header('Content-Length', str(len(body)))
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Cache-Control', 'no-store')
         self.end_headers()
         self.wfile.write(body)
 
@@ -125,6 +247,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(204)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Headers', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS')
         self.end_headers()
 
     def do_GET(self):
@@ -143,6 +266,21 @@ class Handler(SimpleHTTPRequestHandler):
                 dbs = [DATABASE]
             return self._send(200, {'available': sorted(PROJECTIONS),
                                     'default': DATABASE, 'databases': sorted(dbs)})
+        if path == '/projection/subgraphs':
+            try:
+                return self._send(200, {'database': db or ASPECT_DB,
+                    'subgraphs': run(SUBGRAPH_LIST, database=db or ASPECT_DB)})
+            except Exception as e:
+                return self._send(503, {'error': str(e)})
+        if path.startswith('/projection/subgraph/'):
+            name = posixpath.basename(path)
+            try:
+                sg = subgraph(name, db or ASPECT_DB)
+            except Exception as e:
+                return self._send(503, {'error': str(e)})
+            if not sg['nodes']:
+                return self._send(404, {'error': f'no subgraph {name!r}'})
+            return self._send(200, sg)
         if path.startswith('/projection/'):
             name = posixpath.basename(path)
             if name not in PROJECTIONS:
@@ -157,6 +295,25 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._send(503, {'error': str(e),
                                         'hint': 'is the DBMS running in Neo4j Desktop?'})
         return super().do_GET()
+
+    def do_PUT(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
+        db = (parse_qs(parsed.query).get('db') or [None])[0]
+        if not path.startswith('/subgraph/'):
+            return self._send(404, {'error': 'PUT only to /subgraph/<name>'})
+        name = posixpath.basename(path)
+        try:
+            n = int(self.headers.get('Content-Length') or 0)
+            payload = json.loads(self.rfile.read(n) or b'{}')
+        except Exception as e:
+            return self._send(400, {'error': f'bad JSON: {e}'})
+        if not isinstance(payload.get('nodes'), list):
+            return self._send(400, {'error': 'need {"nodes":[...],"edges":[...]}'})
+        try:
+            return self._send(200, put_subgraph(name, payload, db or ASPECT_DB))
+        except Exception as e:
+            return self._send(503, {'error': str(e)})
 
     def log_message(self, fmt, *args):
         if '/projection' in (args[0] if args else ''):

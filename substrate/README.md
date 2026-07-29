@@ -12,6 +12,7 @@ checklist and the decisions log.
 | `seed.py` | Builds the n=6 reference graph from scratch. Idempotent |
 | `api.py` | The projection layer, port 8768. Serves the tools too, so one origin and no CORS |
 | `load_composite.py` | Stage 2 — the 26-node signed EIP CLD into its own database |
+| `load_aspects.py` | The 16 aspect drawings with EXACT provenance, into `aspects16` |
 | `tool-inventory.md` | Every RCN tool, what it demands of the schema, and coverage status |
 | `tool-status-checklist.md` | The live-vs-parked pass — one checkbox per tool, for Marc |
 | `edge-families-proposal.md` | The seven relation families, and why they are declared not drawn |
@@ -45,6 +46,7 @@ Then: <http://localhost:8768/> lists the projections and the rendered views.
 |---|---|---|
 | `neo4j` | the n=6 reference — the permanent conformance test | `/projection/causal` |
 | `composite26` | the 25-concept signed EIP CLD, 57 edges | `/projection/causal?db=composite26` |
+| `aspects16` | the 16 aspect drawings, exact provenance, 24 concepts / 63 edges | `/projection/subgraph/org` |
 
 `?db=` selects **which graph, never which query.** Both are read by
 byte-identical Cypher. That is the Stage 2 claim — only the data grows — and if
@@ -140,3 +142,44 @@ The loop query `MATCH path=(n)-[:REL*]->(n)` returns each cycle once per
 starting node — 7 rows for 2 distinct cycles at n=6. The eventual `loops`
 projection has to canonicalise before reporting, or the loop count will be
 wrong in a way that looks plausible.
+
+## A subgraph is a filter, not a thing
+
+`aspects16` holds the 16 drawings and their union in one graph. A subgraph is
+not stored:
+
+```cypher
+MATCH (c:Concept) WHERE 'org' IN c.sources
+```
+
+**is** the `org` drawing. The drawings and the composite are the same rows read
+two ways — which is the whole payoff of keeping `sources` as a list rather than
+a scalar, and it means nothing is duplicated to make both readings work.
+
+| endpoint | what |
+|---|---|
+| `GET /projection/subgraphs` | the 16, with concept and edge counts |
+| `GET /projection/subgraph/<name>` | one drawing, in graph-tool's native schema |
+| `PUT /subgraph/<name>` | replace that drawing — **and only that drawing** |
+
+## The round trip
+
+    graph-tool-v22.html?url=/projection/subgraph/org   →  edit  →  "→ Substrate"
+
+Loading by that URL records which drawing this is, so saving replaces the right
+one without being asked. Composer reads the same 16 through the
+**EIP aspects — from the substrate** set.
+
+### Why write-back cannot destroy a collaborator's work
+
+`PUT` retracts, then re-asserts:
+
+1. drop this aspect from every `sources` list
+2. delete only what is left with **no witness at all**
+3. upsert what was sent, carrying this aspect
+
+A concept another drawing also contains keeps its other witnesses and survives
+step 2. Verified by submitting an **empty** `org` drawing: 0 concepts left the
+union — all six had other witnesses — while the 5 edges only `org` had drawn
+were correctly retired. One contributor cannot delete another's work, even by
+saving an empty canvas. Gold recomputes for free, because it was never stored.
