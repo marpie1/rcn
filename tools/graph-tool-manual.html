@@ -350,7 +350,20 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
         Polarity exports to Cypher as a property, to MDL as the Vensim polarity field, and
         to XMILE.
       </p>
+      <p>
+        Polarity is <em>not</em> CLD-only. The <strong>Polarity + / −</strong> section is in the edge
+        Properties panel in every mode, and the mark draws on the edge in the base diagram just as it
+        does in CLD. Use it anywhere a relationship has a direction of effect worth showing.
+      </p>
       <div class="tip">Polarity is central to CLD mode. Set it before switching to CLD to get accurate loop detection.</div>
+      <h3>Finding edges with no polarity</h3>
+      <p>
+        Click <strong>?± Gaps</strong> in the toolbar to flag every edge whose polarity is still unset.
+        Flagged edges get an amber <strong>?</strong> where the + / − mark would sit, and the button
+        reports the count. It is a view toggle only — it changes nothing in the model and is not
+        exported. Use it before entering CLD mode, where unset edges are silently treated as neutral
+        and can turn a real loop grey.
+      </p>
 
       <h3>Delay mark</h3>
       <p>
@@ -477,9 +490,31 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
           <tr><td>Delete</td><td><strong>Delete</strong> or <kbd>Delete</kbd> / <kbd>Backspace</kbd></td><td>Deletes selected nodes and all edges connected to them</td></tr>
           <tr><td>Reverse selected</td><td><strong>Rev.sel</strong></td><td>Reverses direction of selected edges</td></tr>
           <tr><td>Reverse all</td><td><strong>Rev.all</strong></td><td>Reverses all edges in the graph — asks for confirmation first, since it rewrites every edge</td></tr>
+          <tr><td>Count routes</td><td><strong>Routes</strong></td><td>Select two nodes, then count every route from the first to the second — see below</td></tr>
+          <tr><td>Flag missing polarity</td><td><strong>?± Gaps</strong></td><td>View toggle: marks every edge with no + or − set</td></tr>
           <tr><td>Clear canvas</td><td><strong>Clear</strong> (red)</td><td>Deletes everything — undoable</td></tr>
         </tbody>
       </table>
+
+      <h3>Counting routes between two nodes</h3>
+      <p>
+        Click one node, shift-click a second, then press <strong>Routes</strong>. The order matters:
+        the first node you clicked is the start, the second is the end. A panel opens at the top left
+        of the canvas with the total, a breakdown by number of steps, and — below a divider — the
+        reverse direction written out the same way, <em>B → A</em> with its own count. The two are
+        usually very different, and the reverse is often the more telling number.
+      </p>
+      <ul>
+        <li><strong>Routes follow the arrows.</strong> An edge is only usable from <code>src</code> to
+        <code>tgt</code>, so A→B and B→A generally give different answers.</li>
+        <li><strong>Simple routes only.</strong> Each node is used at most once, so a feedback loop is
+        never walked round twice and the count is always finite.</li>
+        <li><strong>Parallel edges count separately.</strong> Two edges from A to B are two routes.</li>
+        <li>Self-loops are skipped, and reified triples are not traversed.</li>
+      </ul>
+      <div class="note">Counting simple routes is a genuinely hard problem, so the search stops at
+      50,000 and reports “&gt; 50000”. In practice it is fast — every ordered pair in a 26-node,
+      57-edge model resolves in about 40&nbsp;ms total.</div>
 
       <h3>Undo / Redo</h3>
       <p>
@@ -717,6 +752,20 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
         The <strong>Legend</strong> section in the sidebar (between Graph Mode and Properties) manages
         a color legend for the diagram. The legend can be shown as a frosted-glass overlay in the
         bottom-right corner of the canvas.
+      </p>
+      <h3>Collapse and expand</h3>
+      <p>
+        The legend has its own chevron in its title bar, at the top right of the legend box on the
+        canvas. Click it to collapse the legend down to a single slim bar reading
+        <strong>LEGEND (n)</strong>, where <em>n</em> is the number of entries you have tucked away.
+        Click it again to expand. The box stays pinned to the bottom-right corner either way, so it
+        never wanders when you collapse it.
+      </p>
+      <p>
+        This is separate from the sidebar <strong>Hide</strong> button: <em>Hide</em> removes the
+        legend from the canvas entirely, while <em>collapse</em> keeps it present but out of the way
+        so you can see the diagram underneath it. The collapsed state is saved in the JSON, so a
+        model reopens the way you left it.
       </p>
       <h3>Auto-derive</h3>
       <p>

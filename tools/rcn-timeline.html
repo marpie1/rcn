@@ -70,6 +70,8 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9;color:#1e293b}
 .tb-btn{font-size:11px;padding:3px 8px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#1e293b;cursor:pointer;white-space:nowrap;line-height:1.4}
 .tb-btn:hover{background:#f1f5f9}
 .tb-btn.active{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+.tb-btn:disabled{opacity:.4;cursor:default}
+.tb-btn:disabled:hover{background:#fff}
 a.tb-btn{text-decoration:none;display:inline-flex;align-items:center}
 a.tb-btn.help{color:#1d4ed8;border-color:#bfdbfe;background:#eff6ff}
 a.tb-btn.help:hover{background:#dbeafe}
@@ -105,6 +107,10 @@ textarea.prop-input{resize:vertical;min-height:44px;font-family:inherit}
 .del-btn:hover{background:#fef2f2}
 .link-btn{font-size:11px;margin:9px 12px 0;padding:5px 8px;border:1px solid #bfdbfe;border-radius:6px;cursor:pointer;background:#fff;color:#1d4ed8;width:calc(100% - 24px)}
 .link-btn:hover{background:#eff6ff}
+.note-links{display:flex;flex-direction:column;gap:3px;padding:2px 12px 8px;border-bottom:1px solid #f1f5f9}
+.note-links:empty{display:none}
+.note-link{font-size:11px;color:#1d4ed8;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.note-link:hover{text-decoration:underline}
 #issues{border-top:1px solid #e2e8f0;background:#fef2f2;padding:8px 12px;display:none}
 #issues.show{display:block}
 #issues h4{font-size:11px;font-weight:600;color:#b91c1c;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
@@ -147,6 +153,8 @@ textarea.prop-input{resize:vertical;min-height:44px;font-family:inherit}
   <div id="toolbar">
     <span class="tb-title">⏳ RCN Timeline</span>
     <button class="tb-btn" id="btn-newmodel" title="Start a new, blank timeline (clears the canvas — press Demo to bring the sample back)">New</button>
+    <button class="tb-btn" id="btn-undo" title="Undo the last change (Ctrl/Cmd-Z)" disabled>↶ Undo</button>
+    <button class="tb-btn" id="btn-redo" title="Redo the undone change (Ctrl/Cmd-Shift-Z)" disabled>↷ Redo</button>
     <input id="model-name" class="prop-input" style="width:120px" value="Untitled timeline" title="Name of this timeline">
     <span class="tb-sep"></span>
     <button class="tb-btn" id="btn-new" title="Add a new interval at the center of the current view">+ Interval</button>
@@ -175,7 +183,7 @@ textarea.prop-input{resize:vertical;min-height:44px;font-family:inherit}
     <div id="canvas-wrap">
       <svg id="svg"></svg>
       <div id="toast"></div>
-      <div id="hint">drag background = pan · scroll = zoom · double-click = new · Del = remove · P = pin</div>
+      <div id="hint">drag background = pan · scroll = zoom · double-click = new · Del = remove · P = pin · Ctrl-Z = undo</div>
     </div>
     <div id="panel">
       <div id="panel-header">Properties</div>
@@ -247,6 +255,8 @@ function addLink(fromId,toId,rel){
   M.links.push(lk);return lk;
 }
 function deleteSelected(){
+  if(!sel.type)return;
+  beforeChange("delete");
   if(sel.type==="iv"){
     M.links=M.links.filter(function(L){return L.from!==sel.id&&L.to!==sel.id;});
     M.intervals=M.intervals.filter(function(v){return v.id!==sel.id;});
@@ -510,19 +520,19 @@ function onIvDown(e,iv){
   e.stopPropagation();
   if(mode==="before"||mode==="meets"){
     if(!linkStart){linkStart=iv.id;toast("click the target of “"+iv.label+" "+mode+" …”");}
-    else{addLink(linkStart,iv.id,mode);linkStart=null;mode="select";syncModeBtns();solve();render();renderPanel();toast("link added");}
+    else{beforeChange("link");addLink(linkStart,iv.id,mode);linkStart=null;mode="select";syncModeBtns();solve();render();renderPanel();toast("link added");}
     return;
   }
   selectIv(iv.id);
   if(iv.pinned){drag=null;return;} // pinned body doesn't move
-  var p=svgPt(e);
-  drag={kind:"body",iv:iv,grabT:xt(p.x),s0:iv.s,e0:iv.e};
+  var p=svgPt(e), pre=cloneModel();
+  drag={kind:"body",iv:iv,grabT:xt(p.x),s0:iv.s,e0:iv.e,pre:pre,preStr:JSON.stringify(pre)};
 }
 function startHandle(e,iv,kind){
   selectIv(iv.id);
-  var p=svgPt(e);
+  var p=svgPt(e), pre=cloneModel();
   drag={kind:"handle",which:kind,iv:iv,t:xt(p.x),
-    s0:iv.s,e0:iv.e,sf0:iv.sf,ef0:iv.ef};
+    s0:iv.s,e0:iv.e,sf0:iv.sf,ef0:iv.ef,pre:pre,preStr:JSON.stringify(pre)};
 }
 
 svg.addEventListener("mousedown",function(e){
@@ -534,6 +544,7 @@ svg.addEventListener("mousedown",function(e){
 });
 svg.addEventListener("dblclick",function(e){
   var p=svgPt(e);
+  beforeChange("add-iv");
   var iv=newInterval(null, r2(xt(p.x)), r2(xt(p.x)+niceStep()));
   // drop it onto the row under the cursor if empty-ish
   iv.row=Math.max(0,Math.round((p.y-ROW_TOP)/ROW_H));
@@ -562,7 +573,10 @@ window.addEventListener("mousemove",function(e){
     solve(); render(); renderPanel(); return;
   }
 });
-window.addEventListener("mouseup",function(){drag=null;});
+window.addEventListener("mouseup",function(){
+  if(drag&&drag.pre&&modelStr()!==drag.preStr)pushPrev(drag.pre); // record the drag as one undo step
+  drag=null;
+});
 
 wrap.addEventListener("wheel",function(e){
   e.preventDefault();
@@ -575,8 +589,10 @@ wrap.addEventListener("wheel",function(e){
 
 window.addEventListener("keydown",function(e){
   if(/INPUT|TEXTAREA/.test((e.target.tagName||"")))return;
+  if((e.metaKey||e.ctrlKey)&&(e.key==="z"||e.key==="Z")){e.preventDefault();if(e.shiftKey)redo();else undo();return;}
+  if((e.metaKey||e.ctrlKey)&&(e.key==="y"||e.key==="Y")){e.preventDefault();redo();return;}
   if(e.key==="Delete"||e.key==="Backspace"){if(sel.type){e.preventDefault();deleteSelected();}}
-  if(e.key==="p"||e.key==="P"){if(sel.type==="iv"){var iv=ivById(sel.id);iv.pinned=!iv.pinned;solve();render();renderPanel();}}
+  if(e.key==="p"||e.key==="P"){if(sel.type==="iv"){var iv=ivById(sel.id);beforeChange("pin:"+iv.id);iv.pinned=!iv.pinned;solve();render();renderPanel();}}
 });
 
 /* ── selection ───────────────────────────────────────────── */
@@ -595,19 +611,30 @@ function row(label,input){var d=document.createElement("div");d.className="prop-
   var l=document.createElement("div");l.className="prop-label";l.textContent=label;d.appendChild(l);d.appendChild(input);return d;}
 function inp(val,on){var i=document.createElement("input");i.className="prop-input";i.value=val;i.addEventListener("input",function(){on(i.value);});return i;}
 function numInp(val,on){var i=inp(val,function(v){var n=parseFloat(v);if(!isNaN(n))on(n);});i.type="text";return i;}
+/* pull any http(s) URLs out of a note and render them as clickable chips */
+function renderNoteLinks(holder,text){
+  holder.innerHTML="";
+  var urls=(text||"").match(/https?:\/\/[^\s<>"')]+/g);
+  if(!urls)return;
+  urls.forEach(function(u){
+    var a=document.createElement("a");a.className="note-link";a.href=u;a.target="_blank";a.rel="noopener";
+    a.textContent="↗ "+u.replace(/^https?:\/\//,"").replace(/\/+$/,"");a.title=u;
+    holder.appendChild(a);
+  });
+}
 
 function ivPanel(iv){
   var f=document.createDocumentFragment();
-  f.appendChild(row("Label",inp(iv.label,function(v){iv.label=v;render();})));
+  f.appendChild(row("Label",inp(iv.label,function(v){beforeChange("label:"+iv.id);iv.label=v;render();})));
   // start/end (as dates)
   var two=document.createElement("div");two.className="prop-row two";
   var d1=document.createElement("div");var l1=document.createElement("div");l1.className="prop-label";l1.textContent="Start";
   var si=document.createElement("input");si.className="prop-input";si.value=fmtDate(iv.s);si.title="e.g. Mar 15, 2021 · 2021-03-15 · 2021";
-  si.addEventListener("change",function(){if(!iv.pinned){var n=parseDate(si.value);if(n!=null)iv.s=Math.min(n,iv.e-EPS);}solve();render();renderPanel();});
+  si.addEventListener("change",function(){if(!iv.pinned){beforeChange("date:"+iv.id);var n=parseDate(si.value);if(n!=null)iv.s=Math.min(n,iv.e-EPS);}solve();render();renderPanel();});
   d1.appendChild(l1);d1.appendChild(si);
   var d2=document.createElement("div");var l2=document.createElement("div");l2.className="prop-label";l2.textContent="End";
   var ei=document.createElement("input");ei.className="prop-input";ei.value=fmtDate(iv.e);ei.title="e.g. Dec 31, 2025 · 2025-12-31 · 2025";
-  ei.addEventListener("change",function(){if(!iv.pinned){var n=parseDate(ei.value);if(n!=null)iv.e=Math.max(n,iv.s+EPS);}solve();render();renderPanel();});
+  ei.addEventListener("change",function(){if(!iv.pinned){beforeChange("date:"+iv.id);var n=parseDate(ei.value);if(n!=null)iv.e=Math.max(n,iv.s+EPS);}solve();render();renderPanel();});
   d2.appendChild(l2);d2.appendChild(ei);
   two.appendChild(d1);two.appendChild(d2);f.appendChild(two);
 
@@ -615,26 +642,28 @@ function ivPanel(iv){
   var tr=document.createElement("div");tr.className="toggle-row";
   var bp=document.createElement("div");bp.className="toggle-btn"+(iv.pinned?" on-pin":"");bp.textContent="📌 Pinned";
   var bf=document.createElement("div");bf.className="toggle-btn"+(!iv.pinned?" on-float":"");bf.textContent="Floating";
-  bp.onclick=function(){iv.pinned=true;solve();render();renderPanel();};
-  bf.onclick=function(){iv.pinned=false;solve();render();renderPanel();};
+  bp.onclick=function(){beforeChange("pin:"+iv.id);iv.pinned=true;solve();render();renderPanel();};
+  bf.onclick=function(){beforeChange("pin:"+iv.id);iv.pinned=false;solve();render();renderPanel();};
   tr.appendChild(bp);tr.appendChild(bf);f.appendChild(tr);
 
   // fuzz sliders (durations)
-  f.appendChild(rangeRow("Start fuzz",iv.sf,function(v){iv.sf=v;render();},0,10,0.05,false,true));
-  f.appendChild(rangeRow("End fuzz",iv.ef,function(v){iv.ef=v;render();},0,10,0.05,false,true));
+  f.appendChild(rangeRow("Start fuzz",iv.sf,function(v){beforeChange("sf:"+iv.id);iv.sf=v;render();},0,10,0.05,false,true));
+  f.appendChild(rangeRow("End fuzz",iv.ef,function(v){beforeChange("ef:"+iv.id);iv.ef=v;render();},0,10,0.05,false,true));
   // confidence
-  f.appendChild(rangeRow("Confidence",iv.conf,function(v){iv.conf=v;render();},0,1,0.05,true));
+  f.appendChild(rangeRow("Confidence",iv.conf,function(v){beforeChange("conf:"+iv.id);iv.conf=v;render();},0,1,0.05,true));
 
   // color
   var cr=document.createElement("div");cr.className="color-row";
-  COLORS.forEach(function(c){var s=document.createElement("div");s.className="cs"+(iv.color===c?" selected":"");s.style.background=c;s.onclick=function(){iv.color=c;render();renderPanel();};cr.appendChild(s);});
+  COLORS.forEach(function(c){var s=document.createElement("div");s.className="cs"+(iv.color===c?" selected":"");s.style.background=c;s.onclick=function(){beforeChange("color:"+iv.id);iv.color=c;render();renderPanel();};cr.appendChild(s);});
   f.appendChild(cr);
 
   // provenance
   var ph=document.createElement("div");ph.className="prop-label";ph.style.padding="7px 12px 0";ph.textContent="PROVENANCE";f.appendChild(ph);
-  f.appendChild(row("Asserted by",inp(iv.who,function(v){iv.who=v;})));
-  var na=document.createElement("textarea");na.className="prop-input";na.value=iv.note;na.placeholder="evidence / source";na.addEventListener("input",function(){iv.note=na.value;});
+  f.appendChild(row("Asserted by",inp(iv.who,function(v){beforeChange("who:"+iv.id);iv.who=v;})));
+  var na=document.createElement("textarea");na.className="prop-input";na.value=iv.note;na.placeholder="evidence / source — paste a URL and it becomes a link below";
   f.appendChild(row("Evidence / note",na));
+  var nl=document.createElement("div");nl.className="note-links";renderNoteLinks(nl,iv.note);f.appendChild(nl);
+  na.addEventListener("input",function(){beforeChange("note:"+iv.id);iv.note=na.value;renderNoteLinks(nl,na.value);});
 
   var lnk=document.createElement("button");lnk.className="link-btn";lnk.textContent="🔗 Copy link to this interval";lnk.onclick=function(){copyLink(iv.id);};f.appendChild(lnk);
   var del=document.createElement("button");del.className="del-btn";del.textContent="Delete interval";del.onclick=deleteSelected;f.appendChild(del);
@@ -650,13 +679,15 @@ function linkPanel(L){
   var tr=document.createElement("div");tr.className="toggle-row";
   var bb=document.createElement("div");bb.className="toggle-btn"+(L.rel==="before"?" on-float":"");bb.textContent="before → (loose)";
   var bm=document.createElement("div");bm.className="toggle-btn"+(L.rel==="meets"?" on-pin":"");bm.textContent="meets ⊣⊢ (rigid)";
-  bb.onclick=function(){L.rel="before";solve();render();renderPanel();};
-  bm.onclick=function(){L.rel="meets";solve();render();renderPanel();};
+  bb.onclick=function(){beforeChange("rel:"+L.id);L.rel="before";solve();render();renderPanel();};
+  bm.onclick=function(){beforeChange("rel:"+L.id);L.rel="meets";solve();render();renderPanel();};
   tr.appendChild(bb);tr.appendChild(bm);f.appendChild(tr);
-  f.appendChild(rangeRow("Confidence",L.conf,function(v){L.conf=v;},0,1,0.05,true));
-  f.appendChild(row("Asserted by",inp(L.who,function(v){L.who=v;})));
-  var na=document.createElement("textarea");na.className="prop-input";na.value=L.note;na.placeholder="why / source";na.addEventListener("input",function(){L.note=na.value;});
+  f.appendChild(rangeRow("Confidence",L.conf,function(v){beforeChange("lconf:"+L.id);L.conf=v;},0,1,0.05,true));
+  f.appendChild(row("Asserted by",inp(L.who,function(v){beforeChange("lwho:"+L.id);L.who=v;})));
+  var na=document.createElement("textarea");na.className="prop-input";na.value=L.note;na.placeholder="why / source — paste a URL and it becomes a link below";
   f.appendChild(row("Note",na));
+  var nl=document.createElement("div");nl.className="note-links";renderNoteLinks(nl,L.note);f.appendChild(nl);
+  na.addEventListener("input",function(){beforeChange("lnote:"+L.id);L.note=na.value;renderNoteLinks(nl,na.value);});
   var lnk=document.createElement("button");lnk.className="link-btn";lnk.textContent="🔗 Copy link to this relation";lnk.onclick=function(){copyLink(L.id);};f.appendChild(lnk);
   var del=document.createElement("button");del.className="del-btn";del.textContent="Delete link";del.onclick=deleteSelected;f.appendChild(del);
   return f;
@@ -687,7 +718,7 @@ function renderIssues(){
 /* ── sentence parser (dual face) ─────────────────────────── */
 function resolveOrMake(name){var iv=ivByLabel(name);if(!iv)iv=newInterval(name.trim());return iv;}
 function runSentence(str){
-  str=str.trim(); if(!str)return; var m;
+  str=str.trim(); if(!str)return; var m; var pre=cloneModel();
   if(m=str.match(/^new\s+(.+)$/i)){newInterval(m[1].trim());}
   else if(m=str.match(/^pin\s+(.+)$/i)){var a=ivByLabel(m[1]);if(a){a.pinned=true;}else{toast("no interval “"+m[1].trim()+"”");}}
   else if(m=str.match(/^unpin\s+(.+)$/i)){var a2=ivByLabel(m[1]);if(a2){a2.pinned=false;}else{toast("no interval “"+m[1].trim()+"”");}}
@@ -697,7 +728,7 @@ function runSentence(str){
   else if(m=str.match(/^(.+?)\s+lasts?\s+(.+)$/i)){var iv2=resolveOrMake(m[1]);var du=parseDur(m[2]);if(du!=null)iv2.e=iv2.s+du;}
   else if(m=str.match(/^(.+?)\s*~=?\s*(.+)$/)){var iv3=resolveOrMake(m[1]);var c=parseDate(m[2]);if(c!=null){iv3.s=iv3.e=c;iv3.sf=iv3.ef=niceStep()/2;}}
   else {toast("didn’t parse — try “A before B”, “A = Jan 2018 .. Dec 2020”, “A lasts 6 months”, “pin A”"); return;}
-  solve();render();renderPanel();
+  pushPrev(pre);solve();render();renderPanel();
 }
 document.getElementById("sentence").addEventListener("keydown",function(e){
   if(e.key==="Enter"){runSentence(e.target.value);e.target.value="";}
@@ -706,16 +737,17 @@ document.getElementById("sentence").addEventListener("keydown",function(e){
 /* ── toolbar ─────────────────────────────────────────────── */
 function toast(msg){var t=document.getElementById("toast");t.textContent=msg;t.className="show";clearTimeout(toast._t);toast._t=setTimeout(function(){t.className="";},1800);}
 function syncModeBtns(){document.getElementById("btn-before").className="tb-btn"+(mode==="before"?" active":"");document.getElementById("btn-meets").className="tb-btn"+(mode==="meets"?" active":"");}
-document.getElementById("btn-new").onclick=function(){var iv=newInterval(null);selectIv(iv.id);solve();render();renderPanel();};
+document.getElementById("btn-new").onclick=function(){beforeChange("add-iv");var iv=newInterval(null);selectIv(iv.id);solve();render();renderPanel();};
 document.getElementById("btn-before").onclick=function(){mode=(mode==="before"?"select":"before");linkStart=null;syncModeBtns();toast(mode==="before"?"click source interval, then target":"");render();};
 document.getElementById("btn-meets").onclick=function(){mode=(mode==="meets"?"select":"meets");linkStart=null;syncModeBtns();toast(mode==="meets"?"click source interval, then target":"");render();};
 document.getElementById("btn-zin").onclick=function(){view.pxPerUnit*=1.25;render();};
 document.getElementById("btn-zout").onclick=function(){view.pxPerUnit/=1.25;render();};
 document.getElementById("btn-fit").onclick=fit;
 document.getElementById("model-name").addEventListener("input",function(e){M.name=e.target.value;});
-document.getElementById("btn-demo").onclick=function(){loadDemo();};
+document.getElementById("btn-demo").onclick=function(){beforeChange("load");loadDemo();};
 document.getElementById("btn-newmodel").onclick=function(){newModel();};
 function newModel(){
+  beforeChange("load");
   var y=new Date().getUTCFullYear();
   M={name:"Untitled timeline",intervals:[],links:[]};uid=1;sel={type:null,id:null};mode="select";linkStart=null;issues=[];
   view={t0:y-2,pxPerUnit:60};
@@ -820,7 +852,7 @@ document.getElementById("modal-close").onclick=function(){mbg.className="";};
 mload.onclick=function(){
   if(!pending)return;
   var n=(pending.intervals||[]).length,m=(pending.links||[]).length;
-  importModel(pending);mbg.className="";
+  beforeChange("import");importModel(pending);mbg.className="";
   toast("Loaded "+n+" interval"+(n===1?"":"s")+", "+m+" link"+(m===1?"":"s"));
 };
 mtext.addEventListener("input",function(){
@@ -944,9 +976,45 @@ function loadDemo(){
    ]});
 }
 
+/* ── undo / redo ─────────────────────────────────────────────
+   Snapshots of the whole model. Discrete actions call beforeChange(tag)
+   before they mutate; a keystroke/slider burst with the same tag inside
+   900ms coalesces into ONE step. Drags and sentences pre-capture at the
+   start and commit the pre-state with pushPrev() only if something changed. */
+var undoStack=[], redoStack=[], undoTag=null, undoAt=0, UNDO_MAX=80;
+function cloneModel(){return JSON.parse(JSON.stringify({name:M.name,intervals:M.intervals,links:M.links,uid:uid}));}
+function modelStr(){return JSON.stringify({name:M.name,intervals:M.intervals,links:M.links,uid:uid});}
+function beforeChange(tag){
+  var now=Date.now();
+  if(tag&&tag===undoTag&&(now-undoAt)<900){undoAt=now;return;}
+  undoStack.push(cloneModel()); if(undoStack.length>UNDO_MAX)undoStack.shift();
+  redoStack.length=0; undoTag=tag; undoAt=now; updateUndoBtns();
+}
+function pushPrev(pre){ // pre is a snapshot already taken before the change
+  undoStack.push(pre); if(undoStack.length>UNDO_MAX)undoStack.shift();
+  redoStack.length=0; undoTag=null; undoAt=Date.now(); updateUndoBtns();
+}
+function applySnapshot(s){
+  M={name:s.name,intervals:s.intervals,links:s.links}; uid=s.uid||uid;
+  if(sel.type){var ok=sel.type==="iv"?ivById(sel.id):linkById(sel.id); if(!ok)sel={type:null,id:null};}
+  document.getElementById("model-name").value=M.name;
+  solve(); render(); renderPanel();
+}
+function undo(){ if(!undoStack.length){toast("nothing to undo");return;}
+  redoStack.push(cloneModel()); applySnapshot(undoStack.pop()); undoTag=null; updateUndoBtns(); toast("undid one step"); }
+function redo(){ if(!redoStack.length){toast("nothing to redo");return;}
+  undoStack.push(cloneModel()); applySnapshot(redoStack.pop()); undoTag=null; updateUndoBtns(); toast("redid one step"); }
+function updateUndoBtns(){
+  document.getElementById("btn-undo").disabled=!undoStack.length;
+  document.getElementById("btn-redo").disabled=!redoStack.length;
+}
+document.getElementById("btn-undo").onclick=undo;
+document.getElementById("btn-redo").onclick=redo;
+
 /* ── boot ────────────────────────────────────────────────── */
 window.addEventListener("resize",render);
 if(!applyHash())loadDemo();
+updateUndoBtns();
 </script>
 </body>
 </html>

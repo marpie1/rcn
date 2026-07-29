@@ -61,7 +61,7 @@ fails silently and looks deliberate.
 | `id` | string | **yes** | Unique. Easy to forget — the tool renders without it, but the validator rejects it and duplicate/absent ids break selection and undo. |
 | `src`, `tgt` | string | **yes** | Node ids. **The tool reads `src`/`tgt` only.** An edge using `from`/`to` imports successfully and then never renders. |
 | `label` | string | no | |
-| `polarity` | `+` \| `-` \| `none` | no | Default `none`. CLD mode uses this for loop detection. |
+| `polarity` | `+` \| `-` \| `none` | no | Default `none`. **Not CLD-only** — the `+`/`−` mark draws in every mode, including the base diagram. CLD mode additionally uses it for loop detection, where `none` is counted as neutral *silently*, so unset edges quietly grey out real loops. The `?± Gaps` toolbar toggle flags every edge still on `none`. |
 | `color` | hex string | no | Default `#000000` |
 | `width` | number | no | Default `1.5` |
 | `fontSize` | number | no | Default `10` |
@@ -72,6 +72,8 @@ fails silently and looks deliberate.
 | `note` | string | no | |
 | `props` | object | no | **The extension bag.** |
 | `layer` | string | no | |
+| `traces` | array of 1–4 | no | Trace-path membership, e.g. `[1,3]`. An edge can be in several. Legacy single `trace: 1` is migrated on load. |
+| `arrowDir` | `reversed` \| `none` | no | Set by Alt+click on an edge, not something to author. `reversed` means `src`/`tgt` were swapped; `none` draws no arrowhead and holds the authored orientation. Absent = normal `src → tgt` arrow. |
 
 Note the naming trap: graph edges use **`src`/`tgt`**, but timeline links use
 **`from`/`to`**. They are different tools; do not carry the habit across.
@@ -249,7 +251,8 @@ property in their place.
 
 ```
 version  modelName  modelNote  canvasBg  graphAttrs  cldLoopNames
-legendEntries  legendVisible  customSymbols  nodes  edges  lines  metaEdges
+legendEntries  legendVisible  legendCollapsed  customSymbols
+nodes  edges  lines  metaEdges
 ```
 
 (`legendEntries` now carries the registry — see "The legend IS the registry".)
@@ -274,8 +277,10 @@ never let it be the only copy.
 - `cldLoopNames` — `{"nodeId,nodeId,...": "Loop name"}`. Key is the loop's node
   ids **sorted lexically**, comma-joined.
 - `lines` — free-drawn annotation lines: `{id, x1, y1, x2, y2, color, width, dash, arrowhead, label}`
-- `metaEdges`, `legendEntries`, `legendVisible`, `customSymbols`, `graphAttrs` —
-  tool-managed; omit unless you know what you're writing.
+- `metaEdges`, `legendEntries`, `legendVisible`, `legendCollapsed`,
+  `customSymbols`, `graphAttrs` — tool-managed; omit unless you know what you're
+  writing. `legendCollapsed` shrinks the on-canvas legend to a `LEGEND (n)` title
+  bar; `legendVisible: false` removes it altogether. They are independent.
 
 ## Choosing this tool
 

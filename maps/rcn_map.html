@@ -42,11 +42,13 @@
     width: 13px; height: 13px; border-radius: 2px; flex-shrink: 0;
   }
   .legend-swatch.circle { border-radius: 50%; }
+  /* Route swatch: a short line, so routes read differently from area/point rows */
+  .legend-swatch.line { height: 0; border-radius: 0; border-top-width: 3px; border-top-style: solid; margin: 6px 0; }
   .legend-hint { font-size: 10px; color: #aaa; margin-top: 6px; text-align: center; }
   .freeze-toggle { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px; color: #475569; margin-top: 4px; cursor: pointer; user-select: none; }
   .freeze-toggle input { cursor: pointer; }
   @media print {
-    #sidebar, .leaflet-control-container, #draw-panel, #add-loc-form,
+    #sidebar, .leaflet-control-container, #draw-panel, #route-panel, #add-loc-form,
     #correction-banner, #add-location-banner, #draw-banner { display: none !important; }
     #map { position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; }
   }
@@ -286,17 +288,28 @@
   .basemap-legend-ctl a { color: #2563eb; text-decoration: none; }
   .basemap-legend-ctl a:hover { text-decoration: underline; }
   /* Unified draw panel floats over the map (top-centered) so the whole flow is in one place */
-  #draw-panel {
+  #draw-panel, #route-panel {
     position: fixed; top: 14px; left: 45%; transform: translateX(-50%);
     z-index: 1200; width: 320px; max-width: 80vw;
     background: #ffffff; border: 1px solid #93c5fd; border-radius: 8px;
     padding: 10px 12px; font-size: 12px; color: #1e293b; line-height: 1.4;
     box-shadow: 0 3px 14px rgba(0,0,0,0.28);
   }
-  #draw-stage-draw { text-align: center; }
+  #route-panel { border-color: #5eead4; }
+  #draw-stage-draw, #route-stage-draw { text-align: center; }
   #draw-stage-name > b { display: block; text-align: center; color: #2563eb; }
-  #draw-panel .add-location-cancel { margin: 6px 3px 0; }
-  #draw-panel .poly-form-actions { margin-top: 8px; }
+  #route-stage-name > b { display: block; text-align: center; color: #0f766e; }
+  #draw-panel .add-location-cancel, #route-panel .add-location-cancel { margin: 6px 3px 0; }
+  #draw-panel .poly-form-actions, #route-panel .poly-form-actions { margin-top: 8px; }
+  #route-panel .add-location-cancel { border-color: #5eead4; color: #0f766e; }
+  #route-panel .add-location-cancel:hover { background: #f0fdfa; }
+  .route-btn {
+    display: block; width: 100%; margin: 4px 0 6px; padding: 7px 8px;
+    background: white; color: #0f766e; border: 1px solid #0f766e; border-radius: 6px;
+    cursor: pointer; font-size: 12px; text-align: left;
+  }
+  .route-btn:hover { background: #f0fdfa; }
+  .route-btn.active { background: #ccfbf1; font-weight: 600; }
   .add-loc-popup { min-width: 190px; }
   .add-loc-popup p { margin: 0 0 4px; font-size: 12px; font-weight: 600; }
   .add-loc-popup input {
@@ -426,6 +439,64 @@
     </div>
   </div>
 
+  <!-- Draw route — same two-stage floating panel, but for open lines (paths, corridors, trips) -->
+  <div id="route-panel" style="display:none">
+    <!-- Stage 1: drawing -->
+    <div id="route-stage-draw">
+      <b>Draw a route</b>
+      <div id="route-count" style="margin:4px 0 2px">Click the map to drop points along the route (need at least 2).</div>
+      <div id="route-length" style="font-size:11px;color:#64748b"></div>
+      <button class="add-location-cancel" onclick="finishRouteMode()" title="End the route and name it (Enter, or double-click the map)">✓ Finish &amp; name</button>
+      <button class="add-location-cancel" onclick="undoRoutePoint()" title="Remove the last point (Backspace / Ctrl+Z)">↩ Undo</button>
+      <button class="add-location-cancel" onclick="cancelRouteMode()" title="Discard and exit">✕ Cancel</button>
+    </div>
+    <!-- Stage 2: naming -->
+    <div id="route-stage-name" style="display:none">
+      <b>✓ Route drawn — name &amp; save it</b>
+      <div class="poly-form-row" style="margin-top:6px">
+        <label title="Required. Name for this route — shown in its popup and the legend.">Name <span class="req" title="Required field">*</span></label>
+        <input id="route-form-name" class="poly-form-input" type="text" placeholder="e.g. School walking route">
+      </div>
+      <div class="poly-form-row">
+        <label title="Optional. File this route INSIDE an NDC's section in the legend. Leave as 'none' to keep it in 'My additions &amp; layers'.">Under NDC</label>
+        <select id="route-form-ndc" class="poly-form-input"><option value="">— none (My additions) —</option></select>
+      </div>
+      <div class="poly-form-row">
+        <label title="State / province / country code used to group this route in the legend. Pick a suggested code or type a NEW one.">State / group</label>
+        <input id="route-form-state" class="poly-form-input" type="text" list="state-group-options"
+          value="AZ" placeholder="Pick or type a bucket — e.g. AZ, Whatcom, Nooksack" maxlength="32">
+      </div>
+      <div class="poly-form-row">
+        <label title="Line colour of this route on the map (also its legend swatch).">Colour</label>
+        <input id="route-form-color" class="poly-form-input" type="color" value="#0f766e" style="height:32px;padding:2px;cursor:pointer">
+      </div>
+      <div style="display:flex;gap:6px">
+        <div class="poly-form-row" style="flex:1">
+          <label title="Solid, dashed, or dotted line.">Line style</label>
+          <select id="route-form-dash" class="poly-form-input">
+            <option value="solid">Solid</option>
+            <option value="dashed">Dashed</option>
+            <option value="dotted">Dotted</option>
+          </select>
+        </div>
+        <div class="poly-form-row" style="flex:1">
+          <label title="Line thickness in pixels.">Width</label>
+          <input id="route-form-weight" class="poly-form-input" type="number" min="1" max="12" step="1" value="4">
+        </div>
+      </div>
+      <div class="poly-form-row">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"
+          title="Show arrowheads along the line so the direction of travel is obvious.">
+          <input id="route-form-arrows" type="checkbox" checked style="width:auto;margin:0"> Direction arrows
+        </label>
+      </div>
+      <div class="poly-form-actions">
+        <button class="poly-btn" onclick="confirmDrawnRoute()">Save route</button>
+        <button class="poly-btn secondary" onclick="discardDrawnRoute()">Discard</button>
+      </div>
+    </div>
+  </div>
+
   <h2 title="Interactive map of all RCN Neighborhood Development Centers, their geographic context, and community issues. Everything you add is saved in your browser.">RCN NDC Map</h2>
   <p id="sidebar-desc">Neighborhood development centers</p>
   <div class="doc-links">
@@ -447,8 +518,9 @@
   <button class="overview-btn" onclick="showOverview()" title="Zoom back out to show all NDCs at once, with the full legend.">Overview — all NDCs</button>
   <button class="add-location-btn" id="add-location-mode-btn" onclick="enterAddLocationMode()" title="Drop a named pin anywhere on the map. Saved in your browser and shown in the legend.">+ Add location</button>
   <button class="add-location-btn" id="draw-boundary-btn" onclick="startDrawMode()" title="Draw a boundary freehand by clicking points on the map, then name and save it. A control panel appears at the top of the map.">✎ Draw a boundary</button>
-  <button class="export-all-btn" onclick="exportAll()" title="Download everything you've added — NDCs, locations, boundaries, corrections — as one JSON file">⬇ Export my data (JSON)</button>
-  <button class="export-all-btn" onclick="document.getElementById('import-data-file').click()" title="Load a previously exported rcn-map-data.json — REPLACES your current NDCs, locations, boundaries, and corrections (built-in NDCs and federated regions are untouched).">⬆ Import my data (JSON)</button>
+  <button class="route-btn" id="draw-route-btn" onclick="startRouteMode()" title="Draw a route by hand — click points along the path, then name, colour and save it. Nothing is routed or calculated; the line is exactly what you draw.">➤ Draw a route</button>
+  <button class="export-all-btn" onclick="exportAll()" title="Download everything you've added — NDCs, locations, boundaries, routes, corrections — as one JSON file">⬇ Export my data (JSON)</button>
+  <button class="export-all-btn" onclick="document.getElementById('import-data-file').click()" title="Load a previously exported rcn-map-data.json — REPLACES your current NDCs, locations, boundaries, routes, and corrections (built-in NDCs and federated regions are untouched).">⬆ Import my data (JSON)</button>
   <input type="file" id="import-data-file" accept=".json,application/json" style="display:none" onchange="importMyDataFile(this)">
   <div id="export-row" style="display:flex;gap:4px;margin-bottom:6px">
     <button class="export-all-btn" style="flex:1;font-size:11px;text-align:center" onclick="exportMapImage('svg')" title="Download the current view's overlays (boundaries, NDCs, pins, issue areas) as an editable SVG. Basemap tiles are not included.">↧ SVG</button>
@@ -484,7 +556,7 @@
       <div class="poly-tab-row">
         <button class="poly-tab active" id="tab-osm" onclick="switchPolyTab('osm')" title="Find a real jurisdiction boundary (county, city, watershed) from OpenStreetMap.">Search OSM</button>
         <button class="poly-tab" id="tab-claude" onclick="switchPolyTab('claude')" title="Describe a boundary in words and get GeoJSON from Claude to paste back in.">Ask Claude</button>
-        <button class="poly-tab" id="tab-saved" onclick="switchPolyTab('saved')" title="Your saved boundaries, locations, and corrections — with per-dataset export buttons.">Saved</button>
+        <button class="poly-tab" id="tab-saved" onclick="switchPolyTab('saved')" title="Your saved boundaries, routes, locations, and corrections — with per-dataset export buttons.">Saved</button>
       </div>
 
       <!-- OSM tab -->
@@ -563,6 +635,7 @@
         <div class="export-row">
           <button class="poly-btn secondary" onclick="exportUserLocations()" style="font-size:10px">Export locations</button>
           <button class="poly-btn secondary" onclick="exportUserPolygons()" style="font-size:10px">Export polygons</button>
+          <button class="poly-btn secondary" onclick="exportUserRoutes()" style="font-size:10px">Export routes</button>
           <button class="poly-btn secondary" onclick="exportUserNDCs()" style="font-size:10px">Export NDCs</button>
           <button class="poly-btn secondary" onclick="exportCorrections()" style="font-size:10px">Export corrections</button>
         </div>
@@ -762,7 +835,8 @@ const colors = {
   ndc_zone:         '#E8593C',
   mineral_deposit:  '#CD7F32',
   church:           '#7B5EA7',
-  custom_location:  '#0ea5e9'
+  custom_location:  '#0ea5e9',
+  route:            '#0F766E'
 };
 
 // layersById: id → { type, layers: [Leaflet layer, ...] }
@@ -781,6 +855,7 @@ function clearLayers() {
   activeHighlights = new Set();
   // Re-register user polygons and locations into layersById so highlight works after view change
   reregisterUserPolyLayers();
+  reregisterUserRouteLayers();
   reregisterUserLocLayers();
   reregisterFederatedLayers();
 }
@@ -938,7 +1013,7 @@ function ndcOptionsHTML(selected) {
 
 // Fill the "Under NDC" selects in the draw + paste forms with the current NDCs.
 function populateNDCSelects() {
-  ['draw-form-ndc', 'poly-form-ndc'].forEach(id => {
+  ['draw-form-ndc', 'poly-form-ndc', 'route-form-ndc'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = ndcOptionsHTML(el.value || '');
   });
@@ -1030,6 +1105,92 @@ function assignPolygonNDC(i, ndcName) {
   refreshPolyViews();
 }
 
+// ── Hand-drawn routes: legend row + inline editor ──────────────────────
+// Which route (index) is open in its inline editor, or null.
+let editingRouteIndex = null;
+
+function routeSwatchStyle(r) {
+  const c = r.color || ROUTE_DEFAULT_COLOR;
+  const style = r.dash === 'dashed' ? 'dashed' : (r.dash === 'dotted' ? 'dotted' : 'solid');
+  return `border-top-color:${c};border-top-style:${style};width:13px`;
+}
+
+function userRouteLegendItem(r, i) {
+  if (i === editingRouteIndex) return userRouteEditorHTML(r, i);
+  return `<div class="legend-item" data-id="route:${i}" onclick="highlightById('route:${i}',event)">` +
+    `<div class="legend-swatch line" style="${routeSwatchStyle(r)}"></div>${r.name} ` +
+    (r.state ? `<span class="legend-user-badge">${r.state}</span>` : '') +
+    `<span class="legend-edit" title="Edit this route's name, colour, line style, width, arrows, bucket, and which NDC it's under" ` +
+    `onclick="event.stopPropagation();editUserRoute(${i})">✎ Edit</span>` +
+    `<span class="legend-remove" title="Remove" onclick="event.stopPropagation();removeUserRoute(${i})">×</span></div>`;
+}
+
+function userRouteEditorHTML(r, i) {
+  const color  = r.color || ROUTE_DEFAULT_COLOR;
+  const dash   = r.dash  || 'solid';
+  const dashOpt = (v, lbl) => `<option value="${v}"${dash === v ? ' selected' : ''}>${lbl}</option>`;
+  return `<div class="poly-editor" onclick="event.stopPropagation()" ` +
+    `style="border:1px solid #99f6e4;border-radius:6px;padding:7px;margin:2px 0 6px">` +
+    `<div class="poly-form-row" style="margin:0 0 4px"><label>Name</label>` +
+      `<input id="er-name-${i}" class="poly-form-input" type="text" value="${(r.name||'').replace(/"/g,'&quot;')}"></div>` +
+    `<div style="display:flex;gap:6px;margin-bottom:4px">` +
+      `<div class="poly-form-row" style="flex:1;margin:0"><label>Colour</label>` +
+        `<input id="er-color-${i}" class="poly-form-input" type="color" value="${color}" style="padding:1px;height:24px"></div>` +
+      `<div class="poly-form-row" style="flex:1;margin:0"><label title="Line thickness in pixels">Width</label>` +
+        `<input id="er-weight-${i}" class="poly-form-input" type="number" min="1" max="12" step="1" value="${r.weight || 4}"></div>` +
+    `</div>` +
+    `<div style="display:flex;gap:6px;margin-bottom:4px">` +
+      `<div class="poly-form-row" style="flex:1;margin:0"><label>Line style</label>` +
+        `<select id="er-dash-${i}" class="poly-form-input">` +
+          dashOpt('solid','Solid') + dashOpt('dashed','Dashed') + dashOpt('dotted','Dotted') +
+        `</select></div>` +
+      `<div class="poly-form-row" style="flex:1;margin:0"><label title="Group bucket — a state, country, or any label.">Bucket</label>` +
+        `<input id="er-bucket-${i}" class="poly-form-input" type="text" maxlength="32" value="${(r.state||'').replace(/"/g,'&quot;')}"></div>` +
+    `</div>` +
+    `<div class="poly-form-row" style="margin:0 0 4px">` +
+      `<label style="display:flex;align-items:center;gap:6px;cursor:pointer" title="Arrowheads showing direction of travel">` +
+        `<input id="er-arrows-${i}" type="checkbox"${r.arrows !== false ? ' checked' : ''} style="width:auto;margin:0"> Direction arrows</label></div>` +
+    `<div class="poly-form-row" style="margin:0 0 6px"><label title="File this route inside an NDC's legend section, or leave in My additions.">Under NDC</label>` +
+      `<select id="er-ndc-${i}" class="poly-form-input">${ndcOptionsHTML(r.ndc || '')}</select></div>` +
+    `<div style="display:flex;gap:6px">` +
+      `<button class="poly-btn" style="flex:1" onclick="saveEditRoute(${i})">Save</button>` +
+      `<button class="poly-btn secondary" style="flex:1" onclick="cancelEditRoute()">Cancel</button>` +
+    `</div></div>`;
+}
+
+// Re-render both places a route row can appear (My additions + any open NDC).
+function refreshRouteViews() {
+  renderUserRoutes();
+  renderAdditions();
+  if (expandedNDCKey) {
+    const entry = NDC_LIST.find(n => ndcKey(n.name) === expandedNDCKey);
+    if (entry) showNDC(entry.name, entry.state, expandedNDCKey);
+  }
+}
+
+function editUserRoute(i)  { editingRouteIndex = i;    refreshRouteViews(); }
+function cancelEditRoute() { editingRouteIndex = null; refreshRouteViews(); }
+
+function saveEditRoute(i) {
+  const routes = loadUserRoutes();
+  if (!routes[i]) { editingRouteIndex = null; refreshRouteViews(); return; }
+  const g = id => document.getElementById(id + '-' + i);
+  const name = g('er-name').value.trim();
+  routes[i].name   = name || routes[i].name;
+  routes[i].color  = g('er-color').value;
+  routes[i].dash   = g('er-dash').value;
+  routes[i].state  = g('er-bucket').value.trim() || 'OTHER';
+  routes[i].arrows = g('er-arrows').checked;
+  const w = parseInt(g('er-weight').value, 10);
+  if (!isNaN(w)) routes[i].weight = Math.max(1, Math.min(12, w));
+  const ndc = g('er-ndc').value;
+  if (ndc) routes[i].ndc = ndc; else delete routes[i].ndc;
+  saveUserRoutes(routes);
+  editingRouteIndex = null;
+  refreshRouteViews();
+  refreshSavedTab();
+}
+
 // ── Custom location pins: rename / recolour ────────────────────────────
 // Which custom location (index) is open in its inline editor, or null.
 let editingLocIndex = null;
@@ -1094,6 +1255,14 @@ function renderAdditions() {
   if (loose.length) {
     html += `<div class="legend-group-header">Custom boundaries</div>`;
     loose.forEach(({ p, i }) => { html += userPolyLegendItem(p, i); });
+  }
+
+  const looseRoutes = loadUserRoutes()
+    .map((r, i) => ({ r, i }))
+    .filter(({ r }) => !r.ndc || !NDC_LIST.find(n => n.name === r.ndc));
+  if (looseRoutes.length) {
+    html += `<div class="legend-group-header">Routes</div>`;
+    looseRoutes.forEach(({ r, i }) => { html += userRouteLegendItem(r, i); });
   }
 
   const userLocs = loadUserLocations();
@@ -1213,6 +1382,7 @@ async function showOverview() {
   // No flat legend in Overview — the NDC accordion is the layer key. Draw user
   // + federated overlays, and list them once in the "My additions" section.
   renderUserPolygons();
+  renderUserRoutes();
   renderUserLocations();
   renderFederatedRegions();
   renderAdditions();
@@ -1326,6 +1496,7 @@ async function showNDC(name, state, k = null) {
   const legendTarget = k ? 'ndc-legend-' + k : 'legend';
   buildLegend(ndcMeta, featuresByState, depositCounts, churchCounts, legendTarget);
   renderUserPolygons();
+  renderUserRoutes();
   renderUserLocations();
   renderFederatedRegions();
   renderAdditions();
@@ -1338,6 +1509,16 @@ async function showNDC(name, state, k = null) {
   if (el && assigned.length) {
     let extra = `<div class="legend-group-header">Custom boundaries</div>`;
     assigned.forEach(({ p, i }) => { extra += userPolyLegendItem(p, i); });
+    el.insertAdjacentHTML('beforeend', extra);
+  }
+
+  // Routes assigned to THIS NDC nest inside its section too.
+  const assignedRoutes = loadUserRoutes()
+    .map((r, i) => ({ r, i }))
+    .filter(({ r }) => r.ndc === name);
+  if (el && assignedRoutes.length) {
+    let extra = `<div class="legend-group-header">Routes</div>`;
+    assignedRoutes.forEach(({ r, i }) => { extra += userRouteLegendItem(r, i); });
     el.insertAdjacentHTML('beforeend', extra);
   }
 }
@@ -2233,6 +2414,7 @@ function hideDrawPanel() {
 
 function startDrawMode() {
   if (addLocationModeActive) cancelAddLocationMode();
+  if (routeModeActive) cancelRouteMode();
   drawModeActive = true;
   drawPoints = [];
   clearDrawPreview();
@@ -2352,6 +2534,171 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
+// ── Draw route mode ───────────────────────────────────────────────────
+// Same click-to-place interaction as boundaries, but the result stays an OPEN
+// line (a LineString), not a closed ring. Nothing is routed or snapped — the
+// line is exactly the points the user placed.
+let routeModeActive      = false;
+let routePoints          = [];
+let routePreview         = null;
+let routeVertexMarkers   = [];
+let routePendingGeoJSON  = null;
+
+const routeOverlay = document.createElement('div');
+routeOverlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:681;display:none;cursor:crosshair';
+routeOverlay.addEventListener('click', function(e) {
+  addRoutePoint(map.mouseEventToLatLng(e));
+});
+// Double-click ends the route. Two `click` events already fired, so the second
+// (duplicate) point is dropped first. L.DomEvent.stop keeps Leaflet's
+// double-click-to-zoom from also firing.
+routeOverlay.addEventListener('dblclick', function(e) {
+  L.DomEvent.stop(e);
+  if (routePoints.length >= 3) { undoRoutePoint(); finishRouteMode(); }
+});
+map.getContainer().appendChild(routeOverlay);
+
+function showRouteStage(stage) {   // 'draw' or 'name'
+  document.getElementById('route-panel').style.display = '';
+  document.getElementById('route-stage-draw').style.display = stage === 'draw' ? '' : 'none';
+  document.getElementById('route-stage-name').style.display = stage === 'name' ? '' : 'none';
+}
+function hideRoutePanel() {
+  document.getElementById('route-panel').style.display = 'none';
+}
+
+function startRouteMode() {
+  if (routeModeActive) { cancelRouteMode(); return; }
+  if (addLocationModeActive) cancelAddLocationMode();
+  if (drawModeActive) cancelDrawMode();
+  routeModeActive = true;
+  routePoints = [];
+  clearRoutePreview();
+  showRouteStage('draw');
+  document.getElementById('draw-route-btn').classList.add('active');
+  document.getElementById('map').classList.add('crosshair-cursor');
+  routeOverlay.style.display = 'block';
+  updateRouteCount();
+}
+
+function renderRoutePreview() {
+  if (routePreview) { map.removeLayer(routePreview); routePreview = null; }
+  if (routePoints.length < 2) return;
+  routePreview = L.polyline(routePoints.map(p => [p.lat, p.lng]),
+    { color: '#0f766e', weight: 3, dashArray: '6 4' }).addTo(map);
+}
+
+function addRoutePoint(latlng) {
+  routePoints.push(latlng);
+  const dot = L.circleMarker(latlng, { radius: 4, color: '#0f766e', fillColor: '#fff', weight: 2, fillOpacity: 1 }).addTo(map);
+  routeVertexMarkers.push(dot);
+  renderRoutePreview();
+  updateRouteCount();
+}
+
+function undoRoutePoint() {
+  if (!routeModeActive || !routePoints.length) return;
+  routePoints.pop();
+  const dot = routeVertexMarkers.pop();
+  if (dot) map.removeLayer(dot);
+  renderRoutePreview();
+  updateRouteCount();
+}
+
+// Total length of a list of LatLngs, formatted in both miles and km.
+function routeLengthLabel(latlngs) {
+  let m = 0;
+  for (let i = 1; i < latlngs.length; i++) m += map.distance(latlngs[i - 1], latlngs[i]);
+  const km = m / 1000, mi = km * 0.621371;
+  return (mi < 0.2)
+    ? Math.round(m * 3.28084) + ' ft · ' + Math.round(m) + ' m'
+    : mi.toFixed(mi < 10 ? 2 : 1) + ' mi · ' + km.toFixed(km < 10 ? 2 : 1) + ' km';
+}
+
+function updateRouteCount() {
+  const n = routePoints.length;
+  document.getElementById('route-count').textContent = n >= 2
+    ? n + ' points placed — double-click the map, press Enter, or click “✓ Finish & name”.'
+    : 'Click the map to drop points along the route (' + n + ' of 2 minimum).';
+  document.getElementById('route-length').textContent =
+    n >= 2 ? 'Length so far: ' + routeLengthLabel(routePoints) : '';
+}
+
+function clearRouteVertices() {
+  routeVertexMarkers.forEach(m => map.removeLayer(m));
+  routeVertexMarkers = [];
+}
+function clearRoutePreview() {
+  clearRouteVertices();
+  if (routePreview) { map.removeLayer(routePreview); routePreview = null; }
+}
+
+function exitRouteInteraction() {
+  routeModeActive = false;
+  routeOverlay.style.display = 'none';
+  document.getElementById('draw-route-btn').classList.remove('active');
+  document.getElementById('map').classList.remove('crosshair-cursor');
+}
+
+function cancelRouteMode() {
+  exitRouteInteraction();
+  clearRoutePreview();
+  routePoints = [];
+  hideRoutePanel();
+}
+
+function finishRouteMode() {
+  if (routePoints.length < 2) { alert('Place at least 2 points on the map before finishing.'); return; }
+  routePendingGeoJSON = {
+    type: 'Feature',
+    geometry: { type: 'LineString', coordinates: routePoints.map(p => [p.lng, p.lat]) },
+    properties: {}
+  };
+  exitRouteInteraction();
+  clearRouteVertices();          // drop the dots but KEEP the line visible while naming
+  showRouteStage('name');
+  const nm = document.getElementById('route-form-name');
+  nm.value = '';
+  setTimeout(() => nm.focus(), 100);
+}
+
+function confirmDrawnRoute() {
+  if (!routePendingGeoJSON) return;
+  const name = document.getElementById('route-form-name').value.trim();
+  if (!name) { document.getElementById('route-form-name').focus(); return; }
+  addUserRoute(routePendingGeoJSON, {
+    name,
+    state:  document.getElementById('route-form-state').value.trim() || 'OTHER',
+    color:  document.getElementById('route-form-color').value,
+    dash:   document.getElementById('route-form-dash').value,
+    weight: parseInt(document.getElementById('route-form-weight').value, 10) || 4,
+    arrows: document.getElementById('route-form-arrows').checked,
+    ndc:    document.getElementById('route-form-ndc').value
+  });
+  discardDrawnRoute();
+}
+
+function discardDrawnRoute() {
+  clearRoutePreview();          // remove the temporary line (saved routes re-render separately)
+  routePendingGeoJSON = null;
+  routePoints = [];
+  hideRoutePanel();
+}
+
+// Keyboard shortcuts while drawing a route: Backspace / Ctrl+Z undo, Enter finish, Esc cancel.
+document.addEventListener('keydown', function(e) {
+  if (!routeModeActive) return;
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+  if (e.key === 'Backspace' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z')) {
+    e.preventDefault(); undoRoutePoint();
+  } else if (e.key === 'Enter') {
+    e.preventDefault(); finishRouteMode();
+  } else if (e.key === 'Escape') {
+    e.preventDefault(); cancelRouteMode();
+  }
+});
+
 function loadUserLocations() {
   try { return JSON.parse(localStorage.getItem(LS_USER_LOCATIONS) || '[]'); }
   catch(e) { return []; }
@@ -2364,6 +2711,7 @@ function saveUserLocations(arr) {
 function enterAddLocationMode() {
   if (addLocationModeActive) { cancelAddLocationMode(); return; }
   if (correctionModeNDC) cancelCorrection();
+  if (routeModeActive) cancelRouteMode();
   addLocationModeActive = true;
   document.getElementById('add-location-banner').style.display = 'block';
   document.getElementById('add-location-mode-btn').classList.add('active');
@@ -2573,6 +2921,150 @@ function removeUserPolygon(idx) {
   refreshSavedTab();
 }
 
+// ════════════════════════════════════════════════════════════════════════
+// ── USER ROUTES ──────────────────────────────────────────────────────
+// Hand-drawn lines: paths, corridors, trips, delivery runs, proposed trails.
+// Nothing here is routed or snapped to roads — the line is exactly what was
+// drawn. Stored as GeoJSON LineString Features, same shape as user polygons
+// (plus kind:'route'), so export/import and the SVG/PNG export get them free.
+// ════════════════════════════════════════════════════════════════════════
+
+const LS_USER_ROUTES = 'rcn_user_routes';
+const ROUTE_DEFAULT_COLOR = '#0f766e';
+// Maps user route index → Leaflet layer (for re-registration without re-rendering)
+const userRouteLeafletLayers = {};
+// Persistent layer group for user-drawn routes (never cleared by clearLayers)
+const userRouteGroup = L.layerGroup().addTo(map);
+
+function loadUserRoutes() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(LS_USER_ROUTES) || '[]');
+    return Array.isArray(arr) ? arr : [];
+  } catch(e) { return []; }
+}
+
+function saveUserRoutes(arr) {
+  localStorage.setItem(LS_USER_ROUTES, JSON.stringify(arr));
+}
+
+// Dash pattern for a route's line style. Solid → no dashArray.
+function routeDashArray(dash) {
+  if (dash === 'dashed') return '10 7';
+  if (dash === 'dotted') return '1 7';
+  return null;
+}
+
+// The style a saved route renders with.
+function userRouteStyle(r) {
+  const color = r.color || ROUTE_DEFAULT_COLOR;
+  const style = {
+    color, weight: r.weight || 4, opacity: 1, fill: false,
+    lineCap: r.dash === 'dotted' ? 'round' : 'butt', lineJoin: 'round'
+  };
+  const da = routeDashArray(r.dash);
+  if (da) style.dashArray = da;
+  return style;
+}
+
+// Direction arrowheads, done with an SVG <marker> on the Leaflet path itself,
+// so they follow the line and stay screen-sized at every zoom. One marker def
+// per colour, created lazily in whichever SVG the renderer put the path in.
+function applyRouteArrows(layer, color) {
+  const path = layer && layer._path;
+  if (!path) return;
+  const svg = path.ownerSVGElement;
+  if (!svg) return;
+  const id = 'rt-arrow-' + color.replace(/[^0-9a-zA-Z]/g, '');
+  if (!svg.querySelector('#' + id)) {
+    let defs = svg.querySelector('defs');
+    if (!defs) {
+      defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      svg.insertBefore(defs, svg.firstChild);
+    }
+    defs.insertAdjacentHTML('beforeend',
+      `<marker id="${id}" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" ` +
+      `orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="${color}"/></marker>`);
+  }
+  path.setAttribute('marker-mid', `url(#${id})`);
+  path.setAttribute('marker-end', `url(#${id})`);
+}
+
+function routePopupHTML(r, i) {
+  const latlngs = (r.geojson.geometry.coordinates || []).map(c => L.latLng(c[1], c[0]));
+  const dash = r.dash && r.dash !== 'solid' ? r.dash : 'solid';
+  return `<b>${r.name}</b><br>Route · ${dash}` +
+    `<br><small>${routeLengthLabel(latlngs)} · ${latlngs.length} points</small>` +
+    `<br><small>Hand-drawn · ${r.state || 'OTHER'}</small>` +
+    `<br><button class="popup-btn" onclick="copyLink(layerLink('route:${i}'))">🔗 Copy link</button>` +
+    `<br><span class="popup-reset" onclick="map.closePopup();removeUserRoute(${i})">Remove</span>`;
+}
+
+// Full re-render: rebuild userRouteGroup and update layersById
+function renderUserRoutes() {
+  userRouteGroup.clearLayers();
+  Object.keys(userRouteLeafletLayers).forEach(k => delete userRouteLeafletLayers[k]);
+
+  loadUserRoutes().forEach((r, i) => {
+    if (!r || !r.geojson) return;
+    const style = userRouteStyle(r);
+    const layer = L.geoJSON(r.geojson, {
+      style,
+      onEachFeature: (feat, lyr) => { lyr.bindPopup(routePopupHTML(r, i)); }
+    }).addTo(userRouteGroup);
+    if (r.arrows !== false) {
+      layer.eachLayer(l => applyRouteArrows(l, style.color));
+    }
+    userRouteLeafletLayers[i] = layer;
+    registerLayer(`route:${i}`, 'route', layer, style);
+  });
+}
+
+function reregisterUserRouteLayers() {
+  const routes = loadUserRoutes();
+  Object.entries(userRouteLeafletLayers).forEach(([idx, layer]) => {
+    const r = routes[+idx];
+    if (r) registerLayer(`route:${idx}`, 'route', layer, userRouteStyle(r));
+  });
+}
+
+function addUserRoute(geojson, opts) {
+  const routes = loadUserRoutes();
+  const entry = {
+    kind:    'route',
+    name:    opts.name,
+    state:   opts.state || 'OTHER',
+    color:   opts.color || ROUTE_DEFAULT_COLOR,
+    dash:    opts.dash  || 'solid',
+    weight:  opts.weight || 4,
+    arrows:  opts.arrows !== false,
+    geojson,
+    addedAt: new Date().toISOString()
+  };
+  if (opts.ndc) entry.ndc = opts.ndc;
+  routes.push(entry);
+  saveUserRoutes(routes);
+  renderUserRoutes();
+  rebuildLegendInPlace();
+  refreshSavedTab();
+}
+
+function removeUserRoute(idx) {
+  const routes = loadUserRoutes();
+  if (!routes[idx]) return;
+  routes.splice(idx, 1);
+  saveUserRoutes(routes);
+  map.closePopup();
+  renderUserRoutes();
+  rebuildLegendInPlace();
+  refreshSavedTab();
+}
+
+function exportUserRoutes() {
+  const data = loadUserRoutes();
+  if (!data.length) { alert('No routes drawn yet.'); return; }
+  downloadJSON(data, 'rcn-user-routes.json');
+}
+
 // Rebuild just the legend without reloading the whole view
 // ════════════════════════════════════════════════════════════════════════
 // ── FEDERATED REGIONS ────────────────────────────────────────────────
@@ -2740,11 +3232,12 @@ function switchPolyTab(tab) {
 
 function refreshSavedTab() {
   const polys       = loadUserPolygons();
+  const routes      = loadUserRoutes();
   const corrections = loadCorrections();
   const locs        = loadUserLocations();
   const listEl      = document.getElementById('user-poly-list');
-  if (!polys.length && !Object.keys(corrections).length && !locs.length) {
-    listEl.innerHTML = '<div class="user-poly-empty">No saved locations, polygons, or corrections yet.</div>';
+  if (!polys.length && !routes.length && !Object.keys(corrections).length && !locs.length) {
+    listEl.innerHTML = '<div class="user-poly-empty">No saved locations, polygons, routes, or corrections yet.</div>';
     return;
   }
   let html = '';
@@ -2767,6 +3260,18 @@ function refreshSavedTab() {
         <span class="user-poly-name">${p.name}</span>
         <span class="user-poly-state">${p.state}</span>
         <span class="user-poly-del" title="Remove" onclick="removeUserPolygon(${i})">×</span>
+      </div>`;
+    });
+  }
+  if (routes.length) {
+    html += '<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;padding:6px 0 4px">Routes</div>';
+    routes.forEach((r, i) => {
+      const c = r.color || ROUTE_DEFAULT_COLOR;
+      html += `<div class="user-poly-row">
+        <div style="width:10px;height:3px;background:${c};flex-shrink:0"></div>
+        <span class="user-poly-name">${r.name}</span>
+        <span class="user-poly-state">${r.state || 'OTHER'}</span>
+        <span class="user-poly-del" title="Remove" onclick="removeUserRoute(${i})">×</span>
       </div>`;
     });
   }
@@ -3080,12 +3585,13 @@ function exportAll() {
     ndcs:        loadUserNDCsFromStorage(),
     locations:   loadUserLocations(),
     polygons:    loadUserPolygons(),
+    routes:      loadUserRoutes(),
     corrections: loadCorrections()
   };
-  const isEmpty = !bundle.ndcs.length && !bundle.locations.length &&
-                  !bundle.polygons.length && !Object.keys(bundle.corrections).length;
+  const isEmpty = !bundle.ndcs.length && !bundle.locations.length && !bundle.polygons.length &&
+                  !bundle.routes.length && !Object.keys(bundle.corrections).length;
   if (isEmpty) {
-    alert('Nothing to export yet — add a location, boundary, NDC, or correction first.');
+    alert('Nothing to export yet — add a location, boundary, route, NDC, or correction first.');
     return;
   }
   downloadJSON(bundle, 'rcn-map-data.json');
@@ -3109,16 +3615,19 @@ function importMyData(text) {
 
   // Accept the full "rcn-map-data.json" bundle OR any single-dataset export
   // (Export locations / polygons / NDCs / corrections). Detect by shape.
-  let ndcs = null, locations = null, polygons = null, corrections = null, kind = '';
+  let ndcs = null, locations = null, polygons = null, routes = null, corrections = null, kind = '';
 
   if (data && data.type === 'RCNMapUserData') {
     ndcs        = Array.isArray(data.ndcs)      ? data.ndcs      : [];
     locations   = Array.isArray(data.locations) ? data.locations : [];
     polygons    = Array.isArray(data.polygons)  ? data.polygons  : [];
+    routes      = Array.isArray(data.routes)    ? data.routes    : [];
     corrections = (data.corrections && typeof data.corrections === 'object') ? data.corrections : {};
     kind = 'the full bundle';
   } else if (Array.isArray(data)) {
-    if (data.some(x => x && x.geojson))                                       { polygons  = data; kind = 'boundaries'; }
+    // Routes first — they also carry .geojson, so they'd otherwise look like boundaries.
+    if (data.some(x => x && x.kind === 'route'))                              { routes    = data; kind = 'routes'; }
+    else if (data.some(x => x && x.geojson))                                  { polygons  = data; kind = 'boundaries'; }
     else if (data.some(x => x && x.code !== undefined))                       { ndcs      = data; kind = 'NDCs'; }
     else if (data.some(x => x && x.lat !== undefined && x.lng !== undefined)) { locations = data; kind = 'locations'; }
   } else if (data && typeof data === 'object') {
@@ -3128,7 +3637,7 @@ function importMyData(text) {
 
   if (!kind) {
     alert('Unrecognised file. Import a JSON file written by this map\'s Export buttons — ' +
-          'the full "rcn-map-data.json", or a locations / boundaries / NDCs / corrections export.');
+          'the full "rcn-map-data.json", or a locations / boundaries / routes / NDCs / corrections export.');
     return;
   }
 
@@ -3136,9 +3645,10 @@ function importMyData(text) {
   if (ndcs)        parts.push(ndcs.length + ' NDCs');
   if (locations)   parts.push(locations.length + ' locations');
   if (polygons)    parts.push(polygons.length + ' boundaries');
+  if (routes)      parts.push(routes.length + ' routes');
   if (corrections) parts.push(Object.keys(corrections).length + ' corrections');
   const scope = kind === 'the full bundle'
-    ? 'Replace ALL of your current NDCs, locations, boundaries, and corrections'
+    ? 'Replace ALL of your current NDCs, locations, boundaries, routes, and corrections'
     : 'Replace your current ' + kind;
   if (!confirm(scope + ' with this file?\n\nContains: ' + parts.join(', ') + '.\n' +
                '(Built-in NDCs and federated regions are not affected.)')) return;
@@ -3146,6 +3656,7 @@ function importMyData(text) {
   if (ndcs)        localStorage.setItem(USER_NDCS_KEY,     JSON.stringify(ndcs));
   if (locations)   localStorage.setItem(LS_USER_LOCATIONS, JSON.stringify(locations));
   if (polygons)    localStorage.setItem(LS_USER_POLYS,     JSON.stringify(polygons));
+  if (routes)      localStorage.setItem(LS_USER_ROUTES,    JSON.stringify(routes));
   if (corrections) localStorage.setItem(LS_CORRECTIONS,    JSON.stringify(corrections));
 
   // Reload so the imported NDCs, corrections, and layers rebuild cleanly from a fresh init.
