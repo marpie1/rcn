@@ -179,6 +179,26 @@ def verify():
                     RETURN [x IN nodes(path) | x.schemaLabel] AS cycle"""):
         print("  " + " -> ".join(r['cycle']))
 
+    # Family belongs to the SCHEMA LABEL, not to the concept — families.js says
+    # Affect is in Person, full stop. But the family edge hangs on :Concept, so
+    # the fact is stored once per concept and nothing makes the copies agree.
+    # Harmless while seed.py derives family from families.js on every load; the
+    # moment write-back lets a person set a family directly, two variables of
+    # one schema could disagree. The 26-node composite already has such a pair:
+    # Affect carries both Positive AFFECT and Negative AFFECT.
+    # Cannot be a Neo4j constraint — "same X implies same Y" is not expressible.
+    print("\n--- schema/family consistency ---")
+    bad = run("""
+        MATCH (c:Concept)-[:IN_FAMILY]->(f:Family)
+        WITH c.schemaLabel AS schema, collect(DISTINCT f.name) AS fams
+        WHERE size(fams) > 1
+        RETURN schema, fams""")
+    if bad:
+        for r in bad:
+            print(f"  MISMATCH  {r['schema']} is in {r['fams']}")
+    else:
+        print("  ok — every schemaLabel maps to exactly one family")
+
     print("\n--- instances: what a Concept cannot carry ---")
     for r in run("""MATCH (i:Instance)-[:INSTANCE_OF]->(c:Concept)
                     RETURN i.name AS name, c.variableLabel AS of,

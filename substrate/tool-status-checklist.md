@@ -55,7 +55,8 @@ Anything you are unsure of, put `?` and we will talk about it.
 - [ ] **evsm-report** — eVSM reporting
 - [ ] **evsm-svg-v3** — eVSM drawing
 - [ ] **evsm_excel_tool** — eVSM spreadsheet path
-- [ ] **bias-checker** (+ intro, manual) — hosted at Wiki Café, Firebase for DB
+- [ ] **bias-checker** (+ intro, manual) — hosted at Wiki Café, Firebase for DB.
+      **Not graph-shaped** (Marc, 2026-07-28) — never needs a projection
 
 ## 5. Health and the person record
 
@@ -132,13 +133,15 @@ Anything you are unsure of, put `?` and we will talk about it.
 - ~~Reification?~~ **Lookup, not traversal.** `(:MetaEdge {tgtEdgeId})`
   referencing the edge by id, as graph-tool already does with `tripleId`.
 
+- ~~Is bias-checker graph-shaped?~~ **No.** It never needs a projection.
+- ~~Family on `:Concept` vs a `:Schema` node?~~ **Consistency check added to
+  `seed.py`**, `:Schema` node deferred until write-back. Family is derived from
+  `families.js` on every load, so today a mismatch is unreachable; the check
+  catches the day that stops being true.
+
 Row 9 (containment) is now **closed**.
 
 ## Still waiting
 
-1. Is **bias-checker** graph-shaped, or a survey that only feeds aggregates in?
-2. Does **Wardley** belong in the substrate, or is it a standalone lens?
-3. The small one: family currently attaches to `:Concept`, not to an
-   intermediate `:Schema` node — so nothing enforces that two concepts sharing a
-   `schemaLabel` share a family. Add a constraint, or add the node? My
-   suggestion is to wait until a second variable per schema actually exists.
+1. Does **Wardley** belong in the substrate, or is it a standalone lens?
+2. Everything above — the actual checkboxes.

@@ -112,7 +112,7 @@ with Marc before relying on them.
 |---|---|---|
 | `vester/` (SensiMod) | Vester sensitivity model. React/Vite app | **Magnitude 0–3**; active-sum / passive-sum computed; 3-groups-of-3 impact matrix |
 | `tools/evsm-aggregator.html`, `evsm-report.html`, `evsm-svg-v3.html`, `evsm_excel_tool.html` | Enterprise value stream mapping | **Flow quantities** — cycle times, rates; survey aggregation |
-| `tools/bias-checker.html` (+ intro/manual) | Bias checking. Hosted at Wiki Café; Firebase for DB only | Response records; not obviously graph-shaped *(inferred)* |
+| `tools/bias-checker.html` (+ intro/manual) | Bias checking. Hosted at Wiki Café; Firebase for DB only | **Not graph-shaped** (Marc, 2026-07-28). No projection, ever |
 
 ### 3e. Person / health record — **SEPARATE SUBSTRATE**
 
@@ -234,8 +234,7 @@ the uniform MATCH, keeps the grammar.
    nodes joined by an `INSTANCE_OF` edge, or properties on one node?
 2. **Row 12** — `linkType` property, or genuinely typed Neo4j relationships?
 3. Does **Wardley** belong in the substrate at all, or is it a standalone lens?
-4. Is **bias-checker** graph-shaped, or a survey instrument that only feeds the
-   graph aggregates?
+4. ~~Is bias-checker graph-shaped?~~ **Answered: no.**
 5. Which of the 45+ tools are **live and cared about** vs. parked? This list is
    exhaustive, not prioritised — the schema should not pay a cost for something
    abandoned.
