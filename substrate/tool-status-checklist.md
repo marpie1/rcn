@@ -24,13 +24,13 @@ Anything you are unsure of, put `?` and we will talk about it.
 
 ## 1. Graph tools
 
-- [ ] **graph-tool-v22** — the main diagram tool. CLD, EIP, NRM, OPM, SFD modes
-- [ ] **graph-composer** — composes graphs from families.js + graph-sets.js; the four levels
+- [x] **graph-tool-v22** — the main diagram tool. CLD, EIP, NRM, OPM, SFD modes
+- [x] **graph-composer** — composes graphs from families.js + graph-sets.js; the four levels
 - [ ] **ibis-map-rcn** — IBIS argument map (issue / position / argument)
 - [ ] **wardley-map-generator** — value chain × evolution axis.
       **Standalone** (Marc, 2026-07-28) — never federates
 - [ ] **sfd-stella-approach** — stock & flow, Stella style
-- [ ] **cfa-dsc-creator** — Conversation for Action → digital smart contract
+- [x] **cfa-dsc-creator** — Conversation for Action → digital smart contract
 - [ ] **eip_integration_explorer** — EIP explorer
 - [ ] **eip_local_finance_diagram** — EIP local finance
 - [ ] **conversation-navigator-flow** — conversation flow
@@ -41,20 +41,20 @@ Anything you are unsure of, put `?` and we will talk about it.
 
 ## 2. Time
 
-- [ ] **rcn-timeline** — intervals, fuzzy dates, before/meets. Sibling of graph + map
+- [x] **rcn-timeline** — intervals, fuzzy dates, before/meets. Sibling of graph + map
 
 ## 3. Place
 
-- [ ] **rcn_map** + `rcn_static_data.js` — the live RCN/NDC map
-- [ ] **issue-polygon-map** — editable parcels, GeoJSON, deep links
-- [ ] **regions.json / region federation + forking specs** — how regions federate
+- [x] **rcn_map** + `rcn_static_data.js` — the live RCN/NDC map
+- [x] **issue-polygon-map** — editable parcels, GeoJSON, deep links
+- [x] **regions.json / region federation + forking specs** — how regions federate
 
 ## 4. Quantity and measurement
 
-- [ ] **vester (SensiMod)** — impact matrix, active/passive sums. React app
+- [x] **vester (SensiMod)** — impact matrix, active/passive sums. React app
 - [ ] **evsm-aggregator** — value stream survey aggregation
-- [ ] **evsm-report** — eVSM reporting
-- [ ] **evsm-svg-v3** — eVSM drawing
+- [x] **evsm-report** — eVSM reporting
+- [x] **evsm-svg-v3** — eVSM drawing
 - [ ] **evsm_excel_tool** — eVSM spreadsheet path
 - [ ] **bias-checker** (+ intro, manual) — hosted at Wiki Café, Firebase for DB.
       **Not graph-shaped** (Marc, 2026-07-28) — never needs a projection
@@ -76,7 +76,7 @@ Anything you are unsure of, put `?` and we will talk about it.
 
 ## 6. Credentials, identity, trust
 
-- [ ] **sodoto-issuer** — See One, Do One, Teach One badge issuer
+- [x] **sodoto-issuer** — See One, Do One, Teach One badge issuer
 - [ ] **wiki-plugin-sodoto-badge** — FedWiki badge plugin
 - [ ] **veramo** — DIDs, keys, verifiable credentials
 - [ ] **sodoto-crypto-test** — crypto test harness
@@ -92,11 +92,11 @@ Anything you are unsure of, put `?` and we will talk about it.
 
 ## 8. Shared vocabularies — probably all live, confirm anyway
 
-- [ ] **families.js** — the eight node families. One source
-- [ ] **edge-families.js** — the seven relation families. New, this session
-- [ ] **rcn-icons.js** + **rcn-icon-sheet** — the icon library
-- [ ] **graph-sets.js** — one-click graph sets
-- [ ] **tools/schemas/*.md** — written schemas for chat-Claude
+- [x] **families.js** — the eight node families. One source
+- [x] **edge-families.js** — the seven relation families. New, this session
+- [x] **rcn-icons.js** + **rcn-icon-sheet** — the icon library
+- [x] **graph-sets.js** — one-click graph sets
+- [x] **tools/schemas/*.md** — written schemas for chat-Claude
 
 ## 9. Infrastructure
 
@@ -144,6 +144,30 @@ Row 9 (containment) is now **closed**.
 
 - ~~Does Wardley belong in the substrate?~~ **No — standalone.**
 
-## Still waiting
+## ANSWERED 2026-07-28 — the federating set is 11 tools
 
-Just the checkboxes above.
+graph-tool-v22 · graph-composer · cfa-dsc-creator · rcn-timeline · rcn_map ·
+issue-polygon-map · regions/federation · vester · evsm-report · evsm-svg-v3 ·
+sodoto-issuer — plus all five shared vocabularies, which are *sources* rather
+than consumers.
+
+**Marc's direction:** "we are already working with enough tools to get a good
+working first instance and kick the tires before going bigger." So Stage 1
+builds two projections, not eleven.
+
+### What the answers did NOT do
+
+They closed no coverage rows. Each of the four still-open rows is demanded by at
+least one checked tool:
+
+| Row | Kept alive by |
+|---|---|
+| 10 geometry — polygons | `issue-polygon-map` |
+| 13 flow quantities | `evsm-report`, `evsm-svg-v3`, graph-tool's SFD mode |
+| 14 icon binding | `rcn-icons.js`, graph-tool |
+| 15 layers + trace paths | `graph-tool-v22` |
+| 16 credentials | `sodoto-issuer` |
+
+What the answers *did* do is cut the projection work from 45 tools to 11, and
+confirm that no whole layer can be dropped. The remaining rows get built when
+the tool that needs them gets its projection — not before.

@@ -10,6 +10,7 @@ checklist and the decisions log.
 |---|---|
 | `db.py` | The one way this project talks to Neo4j. Cypher over HTTP, stdlib only |
 | `seed.py` | Builds the n=6 reference graph from scratch. Idempotent |
+| `api.py` | The projection layer, port 8768. Serves the tools too, so one origin and no CORS |
 | `tool-inventory.md` | Every RCN tool, what it demands of the schema, and coverage status |
 | `tool-status-checklist.md` | The live-vs-parked pass — one checkbox per tool, for Marc |
 | `edge-families-proposal.md` | The seven relation families, and why they are declared not drawn |
@@ -31,7 +32,23 @@ cd ~/rcn/substrate
 python3 db.py --check                  # is it up, and what is in it
 python3 seed.py --verify               # rebuild n=6 and print the eyeball check
 python3 db.py -q "MATCH (n) RETURN count(n)"
+
+python3 api.py                         # projections + the tools, port 8768
 ```
+
+Then: <http://localhost:8768/> lists the projections and the rendered views.
+
+## Layout is not stored, and must still be emitted
+
+`x`/`y` are a rendering concern — the substrate has no business holding where a
+node sits on somebody's canvas. But graph-tool **requires** them: a node with no
+`x`/`y` gets a NaN centre, paints nothing, and the file still reports a
+successful load. That silent failure caught this build once. The brief's §5
+contract omits `x`/`y`; `tools/schemas/graph-tool-v22.md` is the authority and
+lists them as required — trust the schema doc.
+
+So every projection emits a deterministic ring. Same graph, same positions, every
+time; the renderer's own Dagre/Force buttons take it from there.
 
 ## The model (Option C)
 

@@ -1,0 +1,179 @@
+#!/usr/bin/env python3
+"""
+api.py — the projection layer. Port 8768.
+
+Each endpoint is ONE named Cypher query returning ONE lens, in the contract
+shape below. The renderers stay dumb: they draw shapes from data and know
+nothing about the domain. If a lens seems to need a custom renderer, the
+projection is probably wrong — fix the query, not the renderer.
+
+    python3 substrate/api.py
+    open http://localhost:8768/
+
+Stdlib only, matching sofi-proxy.py (8765) and coupler-proxy.py (8766). It also
+SERVES the tools and the harness, so everything is one origin and CORS never
+arises. CORS headers are set anyway, for a tool opened from somewhere else.
+
+THE CONTRACT — every projection returns this envelope, no exceptions:
+
+    { "nodes": [ {id, label, props:{...}, w, h, shape} ],
+      "edges": [ {id, src, tgt, label, polarity, props:{...}} ] }
+
+It is graph-tool's native schema, declared canonical so renderers read it with
+zero translation. Note edges use src/tgt — never from/to. A projection returns
+only the fields its lens needs, but always in this envelope. No adapters.
+"""
+import json, os, sys, posixpath
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import urlparse
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from db import run, BASE, DATABASE
+
+PORT = int(os.environ.get('PORT', 8768))
+
+# ── the projections ───────────────────────────────────────────────────────
+# One query each. Kept as literals here, not built from strings, so what runs
+# is what you read.
+
+# LAYOUT IS NOT STORED, AND MUST STILL BE EMITTED.
+#
+# x/y are a rendering concern — the substrate has no business holding where a
+# node sits on someone's canvas. But graph-tool REQUIRES them: a node without
+# x/y gets a NaN centre and paints nothing, and the file still "loads
+# successfully". That is a silent failure, and it caught this build once
+# already. (The brief's §5 contract omits x/y; tools/schemas/graph-tool-v22.md
+# is the authority and lists them as required. Trust the schema doc.)
+#
+# So every projection emits a deterministic ring: same graph, same positions,
+# every time. The renderer's own Dagre/Force buttons take it from there.
+RING = ("round(460 + 300 * cos(6.28318530718 * i / total))",
+        "round(330 + 235 * sin(6.28318530718 * i / total))")
+
+_NODE_PREAMBLE = """
+MATCH (n:Concept)
+WITH n ORDER BY n.id
+WITH collect(n) AS ns, count(*) AS total
+UNWIND range(0, total - 1) AS i
+WITH ns[i] AS n, i, total
+OPTIONAL MATCH (n)-[:IN_FAMILY]->(f:Family)
+"""
+
+CAUSAL_NODES = _NODE_PREAMBLE + f"""
+RETURN n.id AS id, n.variableLabel AS label,
+       {RING[0]} AS x, {RING[1]} AS y,
+       n.w AS w, n.h AS h, n.shape AS shape,
+       f.fill AS color, f.color AS borderColor,
+       {{schemaLabel:n.schemaLabel, family:f.name, mode:n.mode,
+         gold: size(n.sources) > 1}} AS props
+ORDER BY id
+"""
+
+CAUSAL_EDGES = """
+MATCH (s:Concept)-[r:REL]->(t:Concept)
+RETURN r.id AS id, s.id AS src, t.id AS tgt,
+       r.label AS label, r.polarity AS polarity,
+       {linkFamily:r.linkFamily, magnitude:r.magnitude, rel:r.rel,
+        mode:r.mode, gold: size(r.sources) > 1} AS props
+ORDER BY id
+"""
+
+# Provenance. The federation lens: who drew what, and where two hands met.
+GOLD_NODES = _NODE_PREAMBLE + f"""
+RETURN n.id AS id, n.variableLabel AS label,
+       {RING[0]} AS x, {RING[1]} AS y,
+       n.w AS w, n.h AS h, n.shape AS shape,
+       {{sources:n.sources, gold: size(n.sources) > 1,
+         family:f.name, schemaLabel:n.schemaLabel}} AS props
+ORDER BY id
+"""
+
+PROJECTIONS = {
+    'causal': (CAUSAL_NODES, CAUSAL_EDGES),
+    'gold':   (GOLD_NODES,   None),
+}
+
+
+def project(name):
+    node_q, edge_q = PROJECTIONS[name]
+    nodes = run(node_q)
+    edges = run(edge_q) if edge_q else []
+    for n in nodes:                       # drop nulls so the JSON stays clean
+        for k in [k for k, v in n.items() if v is None]:
+            del n[k]
+    return {'nodes': nodes, 'edges': edges}
+
+
+class Handler(SimpleHTTPRequestHandler):
+    def __init__(self, *a, **kw):
+        super().__init__(*a, directory=BASE, **kw)
+
+    def _send(self, code, payload, ctype='application/json'):
+        body = json.dumps(payload, indent=1).encode() if ctype.startswith('application/json') else payload
+        self.send_response(code)
+        self.send_header('Content-Type', ctype)
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Cache-Control', 'no-store')
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Headers', '*')
+        self.end_headers()
+
+    def do_GET(self):
+        path = urlparse(self.path).path
+        if path == '/':
+            return self._send(200, INDEX.encode(), 'text/html; charset=utf-8')
+        if path == '/projection':
+            return self._send(200, {'available': sorted(PROJECTIONS),
+                                    'database': DATABASE})
+        if path.startswith('/projection/'):
+            name = posixpath.basename(path)
+            if name not in PROJECTIONS:
+                return self._send(404, {'error': f'no projection {name!r}',
+                                        'available': sorted(PROJECTIONS)})
+            try:
+                return self._send(200, project(name))
+            except Exception as e:
+                # Say what actually went wrong. A renderer that silently draws
+                # nothing is the failure mode this whole build is guarding
+                # against, so never return an empty graph on error.
+                return self._send(503, {'error': str(e),
+                                        'hint': 'is the DBMS running in Neo4j Desktop?'})
+        return super().do_GET()
+
+    def log_message(self, fmt, *args):
+        if '/projection' in (args[0] if args else ''):
+            sys.stderr.write("  %s\n" % (fmt % args))
+
+
+INDEX = """<!doctype html><meta charset=utf-8><title>RCN Substrate — projections</title>
+<style>body{font:16px/1.6 system-ui;max-width:44rem;margin:3rem auto;padding:0 1.5rem;color:#16233b}
+code{background:#f1f5f9;padding:.1em .35em;border-radius:4px;font-size:.9em}
+a{color:#0f766e}h1{font-size:1.5rem}li{margin:.5rem 0}</style>
+<h1>RCN Substrate — projections</h1>
+<p>One graph, read several ways. Each link is one named Cypher query returning one
+lens, in graph-tool's native schema.</p>
+<ul>
+<li><a href="/projection/causal">/projection/causal</a> — polarity, magnitude, relation family</li>
+<li><a href="/projection/gold">/projection/gold</a> — provenance: who drew what, and where two hands met</li>
+</ul>
+<h1>Rendered</h1>
+<ul>
+<li><a href="/tools/graph-tool-v22.html?url=/projection/causal">graph-tool ← causal</a></li>
+<li><a href="/one-thing-many-views.html">the harness ← gold</a></li>
+</ul>
+"""
+
+if __name__ == '__main__':
+    try:
+        n = run("MATCH (n:Concept) RETURN count(n) AS c")[0]['c']
+    except Exception as e:
+        sys.exit(f"cannot reach Neo4j — {e}")
+    print(f"substrate api  http://localhost:{PORT}/   db={DATABASE}  concepts={n}")
+    print(f"  /projection/causal   /projection/gold")
+    ThreadingHTTPServer(('127.0.0.1', PORT), Handler).serve_forever()
