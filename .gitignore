@@ -28,8 +28,14 @@ deploy/home/store.sparsebundle
 
 # Filled-in environment files anywhere — only .env.example is tracked.
 # This repo is public; a real .env carries the proxy passphrase and API key.
+# The .env.* form matters: plain `.env` does NOT match `.env.neo4j`, which
+# holds the substrate database password.
 .env
 **/.env
+.env.*
+**/.env.*
+!.env.example
+!**/.env.example
 
 # Generated single-file map bundle (rebuild: python3 maps/build_standalone_map.py)
 maps/rcn_map_standalone.html
