@@ -13,6 +13,7 @@ checklist and the decisions log.
 | `api.py` | The projection layer, port 8768. Serves the tools too, so one origin and no CORS |
 | `load_composite.py` | Stage 2 — the 26-node signed EIP CLD into its own database |
 | `load_aspects.py` | The 16 aspect drawings with EXACT provenance, into `aspects16` |
+| `aspect_file.py` | Writes a drawing back to its source file, so nothing silently reverts |
 | `tool-inventory.md` | Every RCN tool, what it demands of the schema, and coverage status |
 | `tool-status-checklist.md` | The live-vs-parked pass — one checkbox per tool, for Marc |
 | `edge-families-proposal.md` | The seven relation families, and why they are declared not drawn |
@@ -169,6 +170,33 @@ a scalar, and it means nothing is duplicated to make both readings work.
 Loading by that URL records which drawing this is, so saving replaces the right
 one without being asked. Composer reads the same 16 through the
 **EIP aspects — from the substrate** set.
+
+### Files stay canonical — both stores move together
+
+`→ Substrate` does two things, always:
+
+    PUT  /subgraph/role        the database
+    POST /subgraph/role/file   tools/eip-aspects-variabilized/role.json
+
+Saving to the database alone would leave the file saying something else, and the
+next `load_aspects.py` would silently revert the edit. Two answers to one
+question is the failure this substrate exists to end, not to introduce. The file
+stays canonical so git keeps the history of a governance-grade artifact; the
+database is always rebuildable from disk.
+
+`GET /subgraph/<name>/file` previews the JSON without writing it. Writing is a
+POST — a GET that changes the world is a GET something will eventually prefetch.
+
+**Order is part of the diff.** The database has no opinion about the order of a
+set, so emitting rows in Cypher's order rewrote whole files on every save — 44
+insertions for a one-character change, and a diff nobody reads. The writer keeps
+the file's own node and edge order, and its ids, coordinates, colours and
+untouched props. Fixing one polarity now produces:
+
+```diff
+-      "polarity": "none",
++      "polarity": "+",
+```
 
 ### Why write-back cannot destroy a collaborator's work
 

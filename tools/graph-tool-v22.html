@@ -918,7 +918,7 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="copyPNG()" title="Copy diagram to clipboard — paste into Word or PowerPoint">Copy</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="printCanvas()" title="Print the current canvas view">Print</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportCypher()">Cypher</button>
-        <button class="tb-btn" id="btn-substrate" title="Replace this drawing in the Neo4j substrate. Other drawings are untouched — concepts they also contain keep their other witnesses." style="background:transparent;border-color:transparent;color:#7c3aed" onclick="saveToSubstrate()">→ Substrate</button>
+        <button class="tb-btn" id="btn-substrate" title="Save this drawing to BOTH the Neo4j substrate and its source file, so neither can silently revert the other. Other drawings are untouched — concepts they also contain keep their other witnesses." style="background:transparent;border-color:transparent;color:#7c3aed" onclick="saveToSubstrate()">→ Substrate</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportURL()">URL</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportJSON()">JSON</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#b45309" onclick="exportSnapshot()" title="Download a single HTML file with this diagram baked in — share without a separate JSON file">Snapshot</button>
@@ -1714,11 +1714,27 @@ function saveToSubstrate(){
               props:{linkFamily:edgeFamilyOf(e)||((e.props||{}).linkFamily)||null}};
     })
   });
+  // BOTH STORES MOVE TOGETHER, always. Saving to the database alone would
+  // leave the source file saying something else, and the next re-load would
+  // silently revert the edit — two answers to one question, which is the
+  // failure the substrate exists to end rather than introduce. The file stays
+  // canonical so git keeps the history; the database is rebuildable from it.
+  var jok = function(r){ return r.json().then(function(j){
+    if(!r.ok) throw new Error(j.error||('HTTP '+r.status)); return j; }); };
   fetch('/subgraph/'+encodeURIComponent(name), {
     method:'PUT', headers:{'Content-Type':'application/json'}, body:body
-  }).then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||('HTTP '+r.status)); return j; }); })
+  }).then(jok)
     .then(function(j){
-      toast('✓ '+name+': '+j.nodesWritten+' nodes, '+j.edgesWritten+' edges written'
+      return fetch('/subgraph/'+encodeURIComponent(name)+'/file', {method:'POST'})
+        .then(jok).then(function(f){ return [j, f]; });
+    })
+    .then(function(both){
+      var j=both[0], f=both[1];
+      var pol = (f.polarityChanges||[]).map(function(p){
+        return p.edge+' '+(p.from==='none'?'∅':p.from)+'→'+(p.to==='none'?'∅':p.to); });
+      toast('✓ '+name+': '+j.nodesWritten+'n/'+j.edgesWritten+'e to the database'
+          + (f.changed ? ' · file updated' : ' · file already matched')
+          + (pol.length ? ' · '+pol.join(', ') : '')
           + (j.deletedLastWitnessNodes||j.deletedLastWitnessEdges
              ? ' · retired '+j.deletedLastWitnessNodes+'n/'+j.deletedLastWitnessEdges+'e with no other witness' : ''));
     })

@@ -29,6 +29,8 @@ from urllib.parse import urlparse, parse_qs
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from db import run, BASE, DATABASE
+import aspect_file
+aspect_file.configure(BASE)
 
 PORT = int(os.environ.get('PORT', 8768))
 
@@ -247,7 +249,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(204)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Headers', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS')
+        self.send_header('Access-Control-Allow-Methods', 'GET, PUT, POST, OPTIONS')
         self.end_headers()
 
     def do_GET(self):
@@ -270,6 +272,12 @@ class Handler(SimpleHTTPRequestHandler):
             try:
                 return self._send(200, {'database': db or ASPECT_DB,
                     'subgraphs': run(SUBGRAPH_LIST, database=db or ASPECT_DB)})
+            except Exception as e:
+                return self._send(503, {'error': str(e)})
+        if path.startswith('/subgraph/') and path.endswith('/file'):
+            name = path[len('/subgraph/'):-len('/file')]
+            try:
+                return self._send(200, aspect_file.build_file(name, db or ASPECT_DB))
             except Exception as e:
                 return self._send(503, {'error': str(e)})
         if path.startswith('/projection/subgraph/'):
@@ -314,6 +322,20 @@ class Handler(SimpleHTTPRequestHandler):
             return self._send(200, put_subgraph(name, payload, db or ASPECT_DB))
         except Exception as e:
             return self._send(503, {'error': str(e)})
+
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
+        db = (parse_qs(parsed.query).get('db') or [None])[0]
+        # Writing to disk is a POST, not a GET. A GET that changes the world is
+        # a GET something will eventually prefetch.
+        if path.startswith('/subgraph/') and path.endswith('/file'):
+            name = path[len('/subgraph/'):-len('/file')]
+            try:
+                return self._send(200, aspect_file.write_file(name, db or ASPECT_DB))
+            except Exception as e:
+                return self._send(503, {'error': str(e)})
+        return self._send(404, {'error': 'POST only to /subgraph/<name>/file'})
 
     def log_message(self, fmt, *args):
         if '/projection' in (args[0] if args else ''):
