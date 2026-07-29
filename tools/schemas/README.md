@@ -16,6 +16,7 @@ provenance.
 | `tools/rcn-timeline.html` | [rcn-timeline.md](rcn-timeline.md) | timeline model JSON |
 | `tools/issue-polygon-map.html` | [issue-polygon-map.md](issue-polygon-map.md) | GeoJSON FeatureCollection |
 | `tools/graph-composer.html` | [graph-tool-v22.md](graph-tool-v22.md) — same file format | native graph JSON |
+| the substrate projections | [../../substrate/ROUND-TRIP.md](../../substrate/ROUND-TRIP.md) | same native graph JSON, served over HTTP |
 
 Plus one file that is **not** a schema but explains where a tool came from:
 [ward-graph.md](ward-graph.md) — Ward Cunningham's `Graph` class, the

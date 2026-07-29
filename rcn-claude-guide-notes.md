@@ -10,6 +10,70 @@ DID / LEARNED / OPEN.
 
 ---
 
+## 2026-07-28/29 — Sessions 3–4 (Claude Code): the RCN Substrate
+
+One Neo4j graph carrying every layer; the diagram tools become lenses over it.
+Full reference: `substrate/ROUND-TRIP.md` and `substrate/README.md`.
+
+### DID
+- Stood up the substrate on Neo4j **5.26.4 Enterprise** (Neo4j Desktop 1.6.1,
+  server "RCN SCHEMA"). Three databases: `neo4j` (the n=6 reference),
+  `composite26` (the signed 26-node CLD), `aspects16` (the 16 aspect drawings
+  with exact provenance).
+- `substrate/db.py` (Cypher over HTTP, stdlib only), `seed.py`, `api.py`
+  (projections, port 8768), `load_composite.py`, `load_aspects.py`,
+  `aspect_file.py` (write-back to source files).
+- Two projections through two renderers: `/projection/causal` into
+  graph-tool via its existing `?url=` path, `/projection/gold` into the harness.
+- Stage 2 held: the 26-node composite loaded behind **byte-identical Cypher**.
+  `?db=` selects which graph, never which query.
+- `tools/edge-families.js` — seven relation families, declared not drawn.
+- Round trip: Composer and graph-tool read the substrate; `→ Substrate` writes
+  the database *and* the source file.
+- `tools/schemas/graph-tool-v22.md` updated for the substrate additions.
+
+### LEARNED
+- **A merge key that does not normalise is not a merge key.** One drawing writes
+  `Active Goal`, another `ActiveGoal`. `families.js` warned about exactly this.
+  Unnormalised, it is one concept splitting into two nodes that never merge and
+  never go gold.
+- **Silent success is the failure mode to design against.** A projection that
+  omitted `x`/`y` made graph-tool report a clean load of 6 nodes and 7 edges and
+  draw nothing. NaN centres, no error. Four of the seven bugs in ROUND-TRIP §7
+  presented as working code.
+- **The stated acceptance test could not fail.** The harness's provenance pane
+  was hardcoded SVG, and against the real data it was wrong on two of five
+  nodes. It would have passed against an empty database. A test that cannot fail
+  is worse than no test.
+- **`sources` as a LIST is load-bearing** — it is why gold is computable, why a
+  subgraph is a filter rather than a stored thing, and why write-back cannot
+  delete a collaborator's work.
+- **Verify at the layer Marc sees.** Two of my own checks were wrong: a CSS
+  selector that reported a working dropdown as missing, and a claim that layout
+  round-tripped when only half of it did.
+- **Data findings.** The two self-loops in `eip-cld-subgraph-mismatches.md` are
+  merge artefacts of duplicate node placements, not decisions — 2 of its 23
+  items close. And its groups 1 and 2 are *exactly* the 16 unsigned edges: 9
+  reversed relative to the CLD, 7 absent from it, **0** agreeing. The missing
+  sign and the unresolved direction are the same fact.
+- **The anomalous edge-direction switching is not a bug.** Tested: 54 edges
+  agree with the CLD, 11 reversed, scattered across 8 drawings with correct
+  edges alongside. A `reverseAll()` flips a whole drawing. What looks like
+  switching is composing from the subgraphs versus reading the signed CLD.
+
+### OPEN
+- Marc + Kerry: the 16 unsigned edges (`substrate/unsigned-edges.md`) and the 22
+  edges with no relation family (`substrate/eip-composite-edge-families.md`).
+- Four coverage rows still open in `substrate/tool-inventory.md`: polygons,
+  flow quantities, icon binding, layers/traces, credentials.
+- No concurrent-edit protection on write-back; last write wins silently.
+- Provenance grain is "which drawing", not who or when. A `(:Contribution)`
+  node is the eventual shape.
+- `constitute`/`constitutes` and `create`/`creates` still split in the data. The
+  typeahead prevents new drift; these two pairs need fixing by hand.
+
+---
+
 ## 2026-07-25 — Session 2 (Claude Code): validator round-trip on the v22 JSON
 
 ### DID

@@ -14,6 +14,7 @@ checklist and the decisions log.
 | `load_composite.py` | Stage 2 — the 26-node signed EIP CLD into its own database |
 | `load_aspects.py` | The 16 aspect drawings with EXACT provenance, into `aspects16` |
 | `aspect_file.py` | Writes a drawing back to its source file, so nothing silently reverts |
+| `ROUND-TRIP.md` | **How the round trip works, how to use it, and what can go wrong** |
 | `tool-inventory.md` | Every RCN tool, what it demands of the schema, and coverage status |
 | `tool-status-checklist.md` | The live-vs-parked pass — one checkbox per tool, for Marc |
 | `edge-families-proposal.md` | The seven relation families, and why they are declared not drawn |
@@ -64,8 +65,14 @@ successful load. That silent failure caught this build once. The brief's §5
 contract omits `x`/`y`; `tools/schemas/graph-tool-v22.md` is the authority and
 lists them as required — trust the schema doc.
 
-So every projection emits a deterministic ring. Same graph, same positions, every
-time; the renderer's own Dagre/Force buttons take it from there.
+So the ring is the **fallback**, not the answer. Where a drawing exists,
+`/projection/subgraph/<name>` overlays that file's own coordinates, so a drawing
+opens in the arrangement its author made. The ring is what a concept gets when no
+file has ever placed it — and `/projection/causal`, which spans all drawings and
+therefore has no single arrangement to honour.
+
+Layout travels **file → tool → file** and never passes through Neo4j. See
+`ROUND-TRIP.md`.
 
 ## The model (Option C)
 

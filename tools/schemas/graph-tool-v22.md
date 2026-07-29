@@ -1,7 +1,8 @@
 # Graph Tool v22 — native JSON schema
 
-Verified against `tools/graph-tool-v22.html`, 2026-07-25 (post legend-as-registry
-and icon-node work; earlier baseline was commit `5d1c70c`).
+Verified against `tools/graph-tool-v22.html`, **2026-07-29** (post substrate
+round-trip work; previously 2026-07-25, post legend-as-registry and icon-node
+work; earlier baseline was commit `5d1c70c`).
 Derived from `loadGraphJSON()` (import), `buildState()` (export), `makeNode()`
 (defaults), and `shapeHTML()` (rendering).
 
@@ -386,3 +387,61 @@ node tools/validate-rcn-graph.js yourfile.json
 
 Then load it and re-export before trusting it. The validator cannot see the
 `meta` class of bug.
+
+
+---
+
+## Substrate additions (2026-07-29)
+
+The tool can now read from and write to the RCN substrate. Three additions
+matter to anyone generating JSON for it. See `substrate/ROUND-TRIP.md`.
+
+### `linkFamily` — on a legend EDGE row, or on an edge
+
+The shared relation vocabulary from `tools/edge-families.js`: seven families —
+`Influence`, `Provision`, `Composition`, `Classification`, `Transformation`,
+`Agency`, `Sequence`. It exists so two neighborhoods' differently worded edges
+can merge.
+
+```json
+{ "id":"lg_e_harm", "kind":"edge", "label":"acts on them",
+  "color":"#dc2626", "width":3.5, "dash":"dashed",
+  "linkFamily":"Influence" }
+```
+
+Resolves through the same chain as every other styled value — element override →
+legend row → the element's own field — so it may sit on either.
+
+**Declaring a family changes no colour, width or dash.** Local styling always
+wins. `edge-families.js` carries a `fallbackStyle` per family, nested under its
+own key precisely so it cannot be spread onto a row by accident; nothing reads
+it today, and if that ever changes it must be an explicit opt-in, off by
+default.
+
+### `x`/`y` are required, and the reason is worth knowing
+
+Already stated above, but this is the bug that shipped: a projection omitted
+them, the tool reported a clean load of 6 nodes and 7 edges, and drew a **blank
+canvas**. NaN centres, no error, no warning. If you generate JSON, emit
+coordinates — even arbitrary ones.
+
+### Fields the substrate adds, which the tool ignores safely
+
+A projection puts computed values in `props`, never at the top level:
+`props.gold` (`size(sources) > 1`, never stored), `props.sources`,
+`props.family`, `props.mode`, `props.linkFamily`. `schemaLabel` appears at the
+top level. All are additive — the tool assigns defaults for anything absent and
+changes nothing it was given.
+
+### UI, for writing instructions rather than files
+
+| control | does |
+|---|---|
+| `?± Gaps` | flags every edge with no `+`/`−` |
+| `Aa Text` | cycles edge text: label / family / both / none. Default `label` — an unmodified file looks identical |
+| `→ Substrate` | writes the database *and* the source file. Appears in EXPORT |
+| edge label typeahead | typing a spelling of a label already in use offers the existing one, headed "Already in use with a different spelling". It suggests; it never rewrites |
+
+`?url=` accepts a projection path, e.g.
+`?url=/projection/subgraph/role`, and loading that way records which drawing it
+is so `→ Substrate` replaces the right one.
