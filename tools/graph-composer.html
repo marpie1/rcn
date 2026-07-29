@@ -907,14 +907,13 @@ function refreshBeam() {
     const nc = b.graph.nodes.length
     const rc = b.graph.rels.length
     const isChecked = checked.has(i)
-    const matchesSearch = searchTerm ? b.graph.nodes.some(n =>
-      (n.type || '').toLowerCase().includes(searchTerm) ||
-      (n.props?.name || '').toLowerCase().includes(searchTerm)
-    ) : false
+    const hit = beamMatch(b, searchTerm)
+    const matchesSearch = !!hit
+    const tip = hit ? `${b.name} — ${hitSummary(hit)}` : b.name
     html += `
       <div class="beam-item${matchesSearch ? ' highlighted' : ''}" data-index="${i}">
         <input type="checkbox" id="bc${i}" value="${i}" ${isChecked ? 'checked' : ''} onchange="onBeamCheck(${i}, this.checked)">
-        <label for="bc${i}" title="${b.name}">${b.name}</label>
+        <label for="bc${i}" title="${tip}">${b.name}</label>
         <span class="share-badge"></span>
         <span class="node-count">${nc}n/${rc}e</span>
         <button class="del-btn" onclick="event.stopPropagation();removeFromBeam(${i})" title="Remove">×</button>
@@ -2254,10 +2253,65 @@ document.addEventListener('drop', e => {
 // ═══════════════════════════════════════════════════════
 // Search
 // ═══════════════════════════════════════════════════════
+//
+// Search EVERY word a subgraph carries, not just its schema.
+//
+// It used to check `type` (the schema label) and `props.name` (the INSTANCE
+// label) — and miss `props.label`, the VARIABLE label, which is the level the
+// Composer opens on and the words a person actually reads. Searching
+// "seriousness" or "effectiveness" against the EIP set returned nothing while
+// 15 and 61 nodes contained them. props.name is `"?"` throughout that data, so
+// of the two fields checked, one was dead.
+//
+// The levels are a strict contraction, so a term belonging to any of them
+// belongs to the node. Finding is not the same as viewing: a search should not
+// depend on which zoom you happen to be at.
+
+function nodeSearchText(n) {
+  const p = n.props || {}
+  let fam = ''
+  try { fam = familyOf(n) || '' } catch (e) { }
+  return [n.type, p._schemaLabel, p.label, p.name, p._gloss, p._family,
+          p.title, fam, (n.extraLabels || []).join(' ')]
+    .filter(Boolean).join(' ').toLowerCase()
+}
+
+function relSearchText(r) {
+  const p = r.props || {}
+  return [r.type, r.label, p.label, p.linkFamily, p.source, p._gloss]
+    .filter(Boolean).join(' ').toLowerCase()
+}
+
+// Returns null, or a count of what matched — so the tooltip can say WHY a row
+// lit up. A highlight you cannot account for is a highlight you stop trusting.
+function beamMatch(b, term) {
+  if (!term) return null
+  const hit = { nodes: 0, rels: 0, name: false }
+  if ((b.name || '').toLowerCase().includes(term)) hit.name = true
+  b.graph.nodes.forEach(n => { if (nodeSearchText(n).includes(term)) hit.nodes++ })
+  ;(b.graph.rels || []).forEach(r => { if (relSearchText(r).includes(term)) hit.rels++ })
+  return (hit.nodes || hit.rels || hit.name) ? hit : null
+}
+
+function hitSummary(hit) {
+  const parts = []
+  if (hit.name) parts.push('name')
+  if (hit.nodes) parts.push(`${hit.nodes} node${hit.nodes === 1 ? '' : 's'}`)
+  if (hit.rels) parts.push(`${hit.rels} edge${hit.rels === 1 ? '' : 's'}`)
+  return 'matches ' + parts.join(', ')
+}
 
 document.getElementById('search-input').addEventListener('input', e => {
   refreshBeam()
-  // if search active, highlight beam items matching any node
+  const term = e.target.value.toLowerCase().trim()
+  const st = document.getElementById('status')
+  if (!st) return
+  if (!term) { st.textContent = ''; return }
+  let subs = 0, nodes = 0, rels = 0
+  beam.forEach(b => { const h = beamMatch(b, term); if (h) { subs++; nodes += h.nodes; rels += h.rels } })
+  st.textContent = subs
+    ? `“${term}” — ${subs} subgraph${subs === 1 ? '' : 's'}, ${nodes} node${nodes === 1 ? '' : 's'}, ${rels} edge${rels === 1 ? '' : 's'}`
+    : `“${term}” — no match in ${beam.length} subgraphs`
 })
 
 // ═══════════════════════════════════════════════════════
