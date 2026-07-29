@@ -27,7 +27,8 @@ Anything you are unsure of, put `?` and we will talk about it.
 - [ ] **graph-tool-v22** — the main diagram tool. CLD, EIP, NRM, OPM, SFD modes
 - [ ] **graph-composer** — composes graphs from families.js + graph-sets.js; the four levels
 - [ ] **ibis-map-rcn** — IBIS argument map (issue / position / argument)
-- [ ] **wardley-map-generator** — value chain × evolution axis
+- [ ] **wardley-map-generator** — value chain × evolution axis.
+      **Standalone** (Marc, 2026-07-28) — never federates
 - [ ] **sfd-stella-approach** — stock & flow, Stella style
 - [ ] **cfa-dsc-creator** — Conversation for Action → digital smart contract
 - [ ] **eip_integration_explorer** — EIP explorer
@@ -141,7 +142,8 @@ Anything you are unsure of, put `?` and we will talk about it.
 
 Row 9 (containment) is now **closed**.
 
+- ~~Does Wardley belong in the substrate?~~ **No — standalone.**
+
 ## Still waiting
 
-1. Does **Wardley** belong in the substrate, or is it a standalone lens?
-2. Everything above — the actual checkboxes.
+Just the checkboxes above.

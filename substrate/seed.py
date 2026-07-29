@@ -29,6 +29,7 @@ import json, os, re, sys, argparse
 from db import run, BASE
 
 FAMILIES_JS = os.path.join(BASE, 'tools', 'families.js')
+EDGE_FAMILIES_JS = os.path.join(BASE, 'tools', 'edge-families.js')
 MODE = 'EIP'
 
 
@@ -46,6 +47,22 @@ def read_families():
     return data
 
 
+def read_edge_families():
+    """Parse tools/edge-families.js — the ONE source for relation families.
+
+    Same one-directional rule as families.js: the .js is the source and the
+    database holds a GENERATED copy. Editing :LinkFamily in the Neo4j Browser
+    is never correct. Vocabulary changes rarely and deliberately, so it belongs
+    under version control where it gets history, diff, review and rollback —
+    none of which Neo4j gives a node edited in place.
+    """
+    with open(EDGE_FAMILIES_JS) as fh:
+        text = fh.read()
+    start = text.index('window.EDGE_FAMILIES_DATA')
+    text = text[text.index('=', start) + 1:]
+    return json.loads(text.strip().rstrip(';'))
+
+
 # The six. variableLabel is what a person reads; schemaLabel is the merge key.
 # sources is a LIST so that two contributors drawing the same concept is
 # recorded as evidence rather than resolved as a conflict — size(sources) > 1
@@ -61,14 +78,18 @@ CONCEPTS = [
 
 # magnitude 0-3 is the Vester layer and is PLACEHOLDER — real values come from
 # Marc + Kerry via SensiMod's 3-groups-of-3 impact matrix.
+# linkFamily is the SHARED vocabulary that lets two neighborhoods' differently
+# worded edges merge; label keeps the author's own words. Note the spread here
+# is deliberate — the reference graph should exercise more than one family, or
+# it proves nothing about the vocabulary.
 EDGES = [
-    dict(id='e_pm', src='problem',    tgt='motivation', label='create',     polarity='none', magnitude=2, rel='before', sources=['organizer']),
-    dict(id='e_ma', src='motivation', tgt='action',     label='consider',   polarity='+',    magnitude=2, rel='before', sources=['organizer']),
-    dict(id='e_pa', src='person',     tgt='action',     label='take',       polarity='+',    magnitude=3, rel='before', sources=['merchant']),
-    dict(id='e_oa', src='org',        tgt='action',     label='facilitate', polarity='+',    magnitude=2, rel='before', sources=['merchant', 'organizer']),
-    dict(id='e_ar', src='action',     tgt='result',     label='yield',      polarity='+',    magnitude=3, rel='before', sources=['organizer']),
-    dict(id='e_ap', src='action',     tgt='problem',    label='address',    polarity='-',    magnitude=3, rel='before', sources=['merchant']),
-    dict(id='e_rp', src='result',     tgt='problem',    label='resolve',    polarity='-',    magnitude=2, rel='meets',  sources=['organizer']),
+    dict(id='e_pm', src='problem',    tgt='motivation', label='create',     linkFamily='Influence',      polarity='none', magnitude=2, rel='before', sources=['organizer']),
+    dict(id='e_ma', src='motivation', tgt='action',     label='consider',   linkFamily='Influence',      polarity='+',    magnitude=2, rel='before', sources=['organizer']),
+    dict(id='e_pa', src='person',     tgt='action',     label='take',       linkFamily='Agency',         polarity='+',    magnitude=3, rel='before', sources=['merchant']),
+    dict(id='e_oa', src='org',        tgt='action',     label='facilitate', linkFamily='Provision',      polarity='+',    magnitude=2, rel='before', sources=['merchant', 'organizer']),
+    dict(id='e_ar', src='action',     tgt='result',     label='yield',      linkFamily='Transformation', polarity='+',    magnitude=3, rel='before', sources=['organizer']),
+    dict(id='e_ap', src='action',     tgt='problem',    label='address',    linkFamily='Influence',      polarity='-',    magnitude=3, rel='before', sources=['merchant']),
+    dict(id='e_rp', src='result',     tgt='problem',    label='resolve',    linkFamily='Influence',      polarity='-',    magnitude=2, rel='meets',  sources=['organizer']),
 ]
 
 # Two instances, so the fourth level is REAL at n=6 rather than theoretical.
@@ -99,8 +120,11 @@ def build():
         for m in f['members']:
             member_of[m] = fname
 
-    print("wiping Concept / Instance / Family …")
-    run("MATCH (n) WHERE n:Concept OR n:Instance OR n:Family DETACH DELETE n")
+    efam = read_edge_families()
+
+    print("wiping Concept / Instance / Family / LinkFamily …")
+    run("MATCH (n) WHERE n:Concept OR n:Instance OR n:Family OR n:LinkFamily "
+        "DETACH DELETE n")
 
     # Constraints. The brief omitted these; without them nothing stops a
     # duplicate id when Stage 2 loads the 26-node composite, which would
@@ -110,8 +134,22 @@ def build():
         "CREATE CONSTRAINT concept_id IF NOT EXISTS FOR (n:Concept) REQUIRE n.id IS UNIQUE",
         "CREATE CONSTRAINT instance_id IF NOT EXISTS FOR (n:Instance) REQUIRE n.id IS UNIQUE",
         "CREATE CONSTRAINT family_name IF NOT EXISTS FOR (n:Family) REQUIRE n.name IS UNIQUE",
+        "CREATE CONSTRAINT linkfamily_name IF NOT EXISTS FOR (n:LinkFamily) REQUIRE n.name IS UNIQUE",
     ]:
         run(stmt)
+
+    # Relation families — a GENERATED copy of tools/edge-families.js.
+    # fallbackStyle is deliberately NOT loaded: it exists only for a possible
+    # future opt-in that renders unstyled edges, and an author's own styling
+    # must always win. Nothing in the substrate should be able to restyle a
+    # drawing because of the family it declared.
+    print(f"link families ({len(efam['order'])}) …")
+    for i, name in enumerate(efam['order']):
+        f = efam['families'][name]
+        run("""CREATE (n:LinkFamily {name:$name, gloss:$gloss, note:$note,
+                                     transitive:$transitive, ord:$ord})""",
+            dict(name=name, gloss=f['gloss'], note=f['note'],
+                 transitive=f['transitive'], ord=i))
 
     print(f"families ({len(order)}) …")
     for i, name in enumerate(order):
@@ -136,9 +174,14 @@ def build():
         """, dict(mode=MODE, family=family, **c))
 
     print(f"edges ({len(EDGES)}) …")
+    known = set(efam['order'])
     for e in EDGES:
+        if e['linkFamily'] not in known:
+            sys.exit(f"edge {e['id']}: linkFamily {e['linkFamily']!r} "
+                     f"is not in edge-families.js")
         run("""MATCH (s:Concept {id:$src}), (t:Concept {id:$tgt})
-               CREATE (s)-[:REL {id:$id, label:$label, mode:$mode,
+               CREATE (s)-[r:REL {id:$id, label:$label, mode:$mode,
+                 linkFamily:$linkFamily,
                  polarity:$polarity, magnitude:$magnitude, rel:$rel,
                  sources:$sources}]->(t)""", dict(mode=MODE, **e))
 
@@ -168,11 +211,27 @@ def verify():
         print(f"{r['label']:<32}{r['schema']:<12}{r['family']:<13}"
               f"{'GOLD' if r['gold'] else '-':<7}{r['instances']}")
 
-    print("\n--- edges ---")
+    print("\n--- edges: the author's words, and the shared family ---")
     for r in run("""MATCH (s:Concept)-[r:REL]->(t:Concept)
                     RETURN s.schemaLabel AS s, r.label AS l, r.polarity AS p,
-                           r.magnitude AS m, t.schemaLabel AS t ORDER BY r.id"""):
-        print(f"  {r['s']:<11} --{r['l']}({r['p']}, mag {r['m']})--> {r['t']}")
+                           r.magnitude AS m, r.linkFamily AS fam,
+                           t.schemaLabel AS t ORDER BY r.id"""):
+        print(f"  {r['s']:<11} --{r['l']:<11}({r['p']}, mag {r['m']})--> "
+              f"{r['t']:<11} [{r['fam']}]")
+
+    print("\n--- relation families in use ---")
+    for r in run("""MATCH ()-[r:REL]->()
+                    WITH r.linkFamily AS fam, count(*) AS n
+                    MATCH (lf:LinkFamily {name:fam})
+                    RETURN fam, n, lf.gloss AS gloss, lf.transitive AS transitive
+                    ORDER BY n DESC, fam"""):
+        t = ' (transitive)' if r['transitive'] else ''
+        print(f"  {r['fam']:<15} {r['n']}  — {r['gloss']}{t}")
+    unused = run("""MATCH (lf:LinkFamily) WHERE NOT EXISTS {
+                        MATCH ()-[r:REL]->() WHERE r.linkFamily = lf.name }
+                    RETURN collect(lf.name) AS names""")[0]['names']
+    if unused:
+        print(f"  (not exercised at n=6: {', '.join(unused)})")
 
     print("\n--- the loop the CLD is supposed to have ---")
     for r in run("""MATCH path=(n:Concept)-[:REL*1..4]->(n)

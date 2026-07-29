@@ -11,6 +11,8 @@ checklist and the decisions log.
 | `db.py` | The one way this project talks to Neo4j. Cypher over HTTP, stdlib only |
 | `seed.py` | Builds the n=6 reference graph from scratch. Idempotent |
 | `tool-inventory.md` | Every RCN tool, what it demands of the schema, and coverage status |
+| `tool-status-checklist.md` | The live-vs-parked pass — one checkbox per tool, for Marc |
+| `edge-families-proposal.md` | The seven relation families, and why they are declared not drawn |
 
 ## Prerequisites
 
@@ -48,8 +50,12 @@ python3 db.py -q "MATCH (n) RETURN count(n)"
     name, place, lat, lng, startDate, endDate, fuzzyStart, sources
 (:Instance)-[:INSTANCE_OF]->(:Concept)
 
+(:LinkFamily)             the 7 relation families from tools/edge-families.js
 (:Concept)-[:REL]->(:Concept)     every lens layer on one edge
-    label, polarity, magnitude, rel, mode, sources
+    label        the author's own words — never rewritten
+    linkFamily   the SHARED vocabulary, so two neighborhoods' differently
+                 worded edges can merge. Declared, never drawn
+    polarity, magnitude, rel, mode, sources
 ```
 
 ### Why the four levels are split this way
