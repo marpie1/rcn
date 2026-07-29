@@ -189,6 +189,11 @@ def put_subgraph(aspect, payload, database=ASPECT_DB):
     kw = {'a': aspect}
     before = run("MATCH (c:Concept) WHERE $a IN c.sources RETURN count(c) AS c",
                  kw, database=database)[0]['c']
+    # Register the drawing itself, so a NEW one appears in /projection/subgraphs
+    # and therefore in Composer's beam. Without this a first save writes real
+    # content that nothing ever lists — present in the data, invisible in every
+    # tool, which is the worst of both.
+    run("MERGE (a:Aspect {name:$a})", kw, database=database)
 
     run("MATCH (c:Concept) WHERE $a IN c.sources "
         "SET c.sources = [s IN c.sources WHERE s <> $a]", kw, database=database)

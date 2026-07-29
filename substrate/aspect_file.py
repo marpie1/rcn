@@ -44,49 +44,61 @@ def build_file(aspect, database='aspects16'):
         original = json.load(open(p))
 
     # schemaLabel -> the original node dict, so ids and positions survive.
-    by_schema = {}
+    # DUPLICATION BELONGS TO THE DRAWING, NOT THE CONCEPT.
+    #
+    # `org` places `Effectiveness of ORG` twice and `Achievability of GOALS &
+    # OBJECTIVES` twice — a layout decision, so that edges do not cross. The
+    # substrate merges them by schemaLabel, which is right: it is one concept.
+    # But the file owns the placement, exactly as it owns x/y and colour, so
+    # writing back must restore every placement it had.
+    #
+    # Collapsing them silently cost `org` 8 nodes -> 6. It is also where the
+    # two "self-loops" in eip-cld-subgraph-mismatches.md came from: in the file
+    # `n0 --relate_with--> n1` runs between two DIFFERENT nodes that share a
+    # label. Nobody drew a self-loop; merging invented it.
+    by_schema = {}                       # schemaLabel -> [original nodes], in file order
     for n in original.get('nodes', []):
         sl = n.get('schemaLabel')
         if sl:
-            by_schema[''.join(sl.split())] = n
+            by_schema.setdefault(''.join(sl.split()), []).append(n)
     used = {n.get('id') for n in original.get('nodes', [])}
 
     rows = run("""MATCH (c:Concept) WHERE $a IN c.sources
                   RETURN c.schemaLabel AS sl, c.variableLabel AS label,
                          c.w AS w, c.h AS h, c.shape AS shape
                   ORDER BY c.id""", {'a': aspect}, database=database)
+    db_by_schema = {r['sl']: r for r in rows}
 
     # ORDER IS PART OF THE DIFF. The database has no opinion about the order of
     # a set, so returning rows in Cypher's order rewrites the whole file every
     # save — 44 insertions for a one-character change, and a diff nobody reads.
-    # Keep the file's own order for concepts it already had; append the rest.
-    order = {sl: i for i, sl in enumerate(by_schema)}
-    rows.sort(key=lambda r: (order.get(r['sl'], len(order)), r['sl']))
-
-    nodes, id_of, next_n = [], {}, 0
-    for r in rows:
-        sl = r['sl']
-        prev = by_schema.get(sl)
-        if prev:
-            node = dict(prev)                    # keep id, x, y, colour, props
-            node['label'] = r['label']           # the substrate owns the label
-        else:
-            while f'n{next_n}' in used:
-                next_n += 1
-            nid = f'n{next_n}'
-            used.add(nid)
-            node = {'id': nid, 'label': r['label'], 'x': 200, 'y': 200,
-                    'w': r['w'] or 110, 'h': r['h'] or 60,
-                    'shape': r['shape'] or 'ellipse', 'color': '#93c5fd',
-                    'fontColor': '#000000', 'props': {}, 'fontSize': 12,
-                    'extraLabels': [sl], 'schemaLabel': sl}
+    nodes, ids_of, next_n = [], {}, 0
+    for n in original.get('nodes', []):          # every original placement, in order
+        sl = ''.join((n.get('schemaLabel') or '').split())
+        r = db_by_schema.get(sl)
+        if not r:
+            continue                             # the concept was retracted
+        node = dict(n)                           # keep id, x, y, colour, props
+        node['label'] = r['label']               # the substrate owns the label
         node['schemaLabel'] = sl
-        id_of[sl] = node['id']
+        ids_of.setdefault(sl, []).append(node['id'])
         nodes.append(node)
+    for r in rows:                               # concepts the file did not have
+        if r['sl'] in ids_of:
+            continue
+        while f'n{next_n}' in used:
+            next_n += 1
+        nid = f'n{next_n}'
+        used.add(nid)
+        nodes.append({'id': nid, 'label': r['label'], 'x': 200, 'y': 200,
+                      'w': r['w'] or 110, 'h': r['h'] or 60,
+                      'shape': r['shape'] or 'ellipse', 'color': '#93c5fd',
+                      'fontColor': '#000000', 'props': {}, 'fontSize': 12,
+                      'extraLabels': [r['sl']], 'schemaLabel': r['sl']})
+        ids_of[r['sl']] = [nid]
+    first_of = {sl: v[0] for sl, v in ids_of.items()}
 
-    prev_edges = {}
-    for e in original.get('edges', []):
-        prev_edges[(e.get('src'), e.get('tgt'), e.get('label', ''))] = e
+    id_schema = {n['id']: n['schemaLabel'] for n in nodes}
     used_e = {e.get('id') for e in original.get('edges', [])}
 
     erows = run("""MATCH (s:Concept)-[r:REL]->(t:Concept) WHERE $a IN r.sources
@@ -95,17 +107,35 @@ def build_file(aspect, database='aspects16'):
                           r.linkFamily AS linkFamily
                    ORDER BY r.id""", {'a': aspect}, database=database)
 
-    eorder = {k: i for i, k in enumerate(prev_edges)}
-    erows.sort(key=lambda r: (eorder.get(
-        (id_of.get(r['src']), id_of.get(r['tgt']), r['label'] or ''),
-        len(eorder)), r['label'] or ''))
+    # Which ORIGINAL edge does each substrate edge correspond to? Keyed on the
+    # schema pair plus the verb, because that is all the substrate knows. When
+    # a drawing has several placements, several original edges can share that
+    # key — so keep them as a queue and hand them out in file order. That is
+    # what routes `Org -> Org` back to `n0 --> n1` rather than to a self-loop.
+    from collections import defaultdict, deque
+    pending = defaultdict(deque)
+    for i, e in enumerate(original.get('edges', [])):
+        k = (id_schema.get(e.get('src')), id_schema.get(e.get('tgt')), e.get('label', ''))
+        pending[k].append((i, e))
+
+    ordered = []
+    for r in erows:
+        k = (r['src'], r['tgt'], r['label'] or '')
+        while pending[k]:
+            ordered.append((pending[k].popleft(), r))      # one per original edge
+            if not pending[k]:
+                break
+        else:
+            ordered.append((None, r))                       # newly added in the tool
+    ordered.sort(key=lambda p: p[0][0] if p[0] else 10 ** 6)
 
     edges, next_e = [], 0
-    for r in erows:
-        s, t = id_of.get(r['src']), id_of.get(r['tgt'])
+    for prev_pair, r in ordered:
+        prev = prev_pair[1] if prev_pair else None
+        s = prev['src'] if prev else first_of.get(r['src'])
+        t = prev['tgt'] if prev else first_of.get(r['tgt'])
         if not s or not t:
             continue
-        prev = prev_edges.get((s, t, r['label'] or ''))
         if prev:
             edge = dict(prev)
         else:
