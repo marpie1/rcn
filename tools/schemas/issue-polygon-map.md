@@ -77,28 +77,44 @@ to the `unknown` colour and looks like a deliberate "unknown" — silent, and
 wrong in a way that misrepresents someone's position. **Default to `unknown`
 rather than guessing a stance from indirect evidence.**
 
-## Known round-trip loss
+## Round trip — all three feature types survive (fixed 2026-07-26)
 
-`exportData()` writes the main issue polygon as `type: "IssuePolygon"`.
-`loadFromGeoJSON()` handles only `Parcel` and `CustomIssuePolygon` — so **the
-issue polygon does not survive an export→import cycle.** Export, re-import, and
-the boundary that defines the issue is gone; parcels and any custom drawn
-polygon come back.
+`loadFromGeoJSON()` handles `Parcel`, `CustomIssuePolygon` **and**
+`IssuePolygon`. All three survive an export→import cycle.
 
-This is the same class of bug as the Graph Tool's dropped `meta`: structurally
-valid, no error, silent loss. Until it is fixed, treat the exported GeoJSON as a
-**parcel** file, and keep the issue polygon definition somewhere else. If you
-need a boundary to round-trip today, author it as `CustomIssuePolygon`, which
-does import — it also takes a `label`, which becomes the polygon's name.
+This section used to warn that the issue boundary was silently dropped, which
+was true until 2026-07-26. The fix holds the incoming `IssuePolygon` in a
+`pendingIssue` variable and applies it after the feature loop, so it can't be
+overwritten by whatever order the features arrive in. If you read an older copy
+of this doc, ignore the warning.
+
+`CustomIssuePolygon` still takes a `label`, which becomes the polygon's name.
 
 ## Deep links
 
 The tool supports URL parameters, useful for handing someone a specific view:
 
+- `?issue=<key>` — load `issue-data/<key>.json`, resolved **relative to the
+  page**, so the same link works under sofi-proxy (`/tools/`), on a static
+  host, and from `file://`
+- `?data=<base>` — override that base, e.g. a published FedWiki asset folder
 - `?parcel=<id>` — open with that parcel's popup
 - `?lat=<n>&lng=<n>&zoom=<n>` — open at a location
 
 Every popup has a **Copy link** control that builds these.
+
+`?issue=` was broken until 2026-07-26 — it fetched a hardcoded
+`http://127.0.0.1:8000/issue-data/<key>` (wrong port, missing `/tools/`, no
+`.json`), so it always threw and fell through to the landing page. If you are
+told "the deep link doesn't work", check the tool's date before believing it.
+
+## Editing a drawn polygon
+
+A `CustomIssuePolygon` can be reshaped after it is closed: its popup has
+**✎ Edit shape** — drag a corner, click a hollow midpoint dot to insert one,
+right-click a corner to remove it (minimum 3). Each change is undoable
+separately. Before 2026-07-26 the only options were rename and delete, so
+fixing one corner meant redrawing the whole shape.
 
 ## Choosing this tool
 
