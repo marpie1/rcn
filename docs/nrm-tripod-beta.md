@@ -201,7 +201,7 @@ MATCH p=(uc:UnderlyingCause)-[*]->(e:Event) RETURN p
 |------|-----------|
 | **CLD** (graph-tool NRM mode) | A CLD feedback loop that produces a harmful outcome can be annotated with a Tripod Beta causal path. The NRM mode and CLD mode are both available in the same canvas — place NRM nodes alongside CLD variables and connect them with typed edges. |
 | **EIP** (graph-tool NRM mode) | Institutional failures (Incompatible Goals, Organisation, Communication BRFs) can be traced to specific EIP nodes. A missing barrier may be an institutional gap; an underlying cause may sit in the Politics or Ecology column. |
-| **SensiMod** | Underlying Causes with high cross-impact in a Vester sensitivity matrix are structurally similar to BRFs with high recurrence across multiple analyses. Cross-reference the two to find leverage points with both systemic weight and incident history. |
+| **Vester** | Underlying Causes with high cross-impact in a Vester sensitivity matrix are structurally similar to BRFs with high recurrence across multiple analyses. Cross-reference the two to find leverage points with both systemic weight and incident history. |
 | **PostGIS / Neo4j** | `ndc_id` on NRM nodes links analyses to `place_geo` rows. Neo4j Cypher export uses the shared `:NRM` label for cross-location queries. |
 | **SODOTO** | A future NRM practitioner credential would gate the ability to conduct a formal Tripod Beta analysis at an NDC. The methodology is learnable but requires practice — accreditation is part of the original spec. |
 

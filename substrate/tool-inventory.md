@@ -122,7 +122,7 @@ with Marc before relying on them.
 
 | Tool | What it is | Demands |
 |---|---|---|
-| `vester/` (SensiMod) | Vester sensitivity model. React/Vite app | **Magnitude 0–3**; active-sum / passive-sum computed; 3-groups-of-3 impact matrix |
+| `vester/` | Vester sensitivity model. React/Vite app | **Magnitude 0–3**; active-sum / passive-sum computed; 3-groups-of-3 impact matrix |
 | `tools/evsm-aggregator.html`, `evsm-report.html`, `evsm-svg-v3.html`, `evsm_excel_tool.html` | Enterprise value stream mapping | **Flow quantities** — cycle times, rates; survey aggregation |
 | `tools/bias-checker.html` (+ intro/manual) | Bias checking. Hosted at Wiki Café; Firebase for DB only | **Not graph-shaped** (Marc, 2026-07-28). No projection, ever |
 
@@ -191,7 +191,7 @@ This is the checklist. Rows 1–6 are what the original brief covered.
 | 1 | **Identity** — schema label, the merge key | everything | COVERED |
 | 2 | **Name** — variabilized human label | EIP, all views | COVERED |
 | 3 | **Polarity** +/− | CLD, EIP | COVERED |
-| 4 | **Magnitude** 0–3 | Vester / SensiMod | COVERED |
+| 4 | **Magnitude** 0–3 | Vester | COVERED |
 | 5 | **Timing** | timeline | COVERED — `rel` on edges, intervals on `:Instance` |
 | 6 | **Provenance** — `sources` as a list | federation, gold nodes | COVERED |
 | 7 | **Mode** — which grammar this graph speaks | all 5 graph modes + IBIS + CfA (~~Wardley~~) | COVERED — property on nodes and edges |

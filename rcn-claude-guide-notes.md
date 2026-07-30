@@ -343,7 +343,7 @@ OK: renders in RCN Graph Tool (23 nodes, 23 edges). 0 warning(s).
 6. **Tool-selection sequencing that emerged** (reusable heuristic):
    - No-consent-needed first: Graph Tool, EIP sketch, FedWiki pages, RCN Map layer.
    - First-contact instrument: Six Questions/Six Contexts.
-   - Relationship-gated: e-VSM Survey, CAM field test, SensiMod, SODOTO, CfA-dSC.
+   - Relationship-gated: e-VSM Survey, CAM field test, Vester, SODOTO, CfA-dSC.
 7. **Architecture clarification (important)**: chat-Claude has NO live access
    to ~/rcn. Its schema knowledge is *memory of past conversations* — accurate
    but recall, not reference. Consequences: (a) validator round-trips are the

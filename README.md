@@ -739,6 +739,10 @@ Pi is the long-term neighborhood distribution target.
 
 **Docker Compose** is the packaging unit. One `docker-compose.yml` defines the full stack. Run it on Mac Mini, push to Wiki Café, shrink for Pi. Write once, deploy everywhere.
 
+**Every tool is reachable as a URL off sofi-proxy** — no tool requires a terminal command to open. Tools in `tools/` are single-file HTML and need nothing; `vester/` has a build step, so sofi-proxy aliases `/vester/` to its build output and `npm run build` refreshes it. Anything added later with a build step follows the same pattern rather than exposing a dev-server port.
+
+**`node_modules/` is gitignored repo-wide** (root `.gitignore`), not per subproject. Several subprojects carry a `package.json` with no `.gitignore` of their own; the repo-wide rule means a stray `npm install` can never put dependencies into history.
+
 **nginx as single entry point** — all apps under one domain, no more hardcoded `localhost:8000`:
 ```
 /              → map (rcn_map.html)

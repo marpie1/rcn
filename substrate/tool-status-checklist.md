@@ -51,7 +51,7 @@ Anything you are unsure of, put `?` and we will talk about it.
 
 ## 4. Quantity and measurement
 
-- [x] **vester (SensiMod)** — impact matrix, active/passive sums. React app
+- [x] **vester** — impact matrix, active/passive sums. React app
 - [ ] **evsm-aggregator** — value stream survey aggregation
 - [x] **evsm-report** — eVSM reporting
 - [x] **evsm-svg-v3** — eVSM drawing
