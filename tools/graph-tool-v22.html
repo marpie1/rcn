@@ -400,12 +400,156 @@ NOTE: the chevron lives in legend-layer, so it currently appears in SVG and
 PNG exports. Strip it at export time if a static diagram should not show an
 interactive control.
 
+═════════════════════════════════════════════════════════════════════
+  RECONSTRUCTED ENTRIES (written Jul 29 2026, not in-session)
+  The five commits below all came from one session that did not update
+  this log. These entries were rebuilt from their commit messages and
+  diffs, so trust them less than the in-the-moment ones above, and go to
+  the named commit when it matters. Where the reason was not captured
+  anywhere, that is said rather than guessed.
+═════════════════════════════════════════════════════════════════════
+
+── SUBSTRATE WRITE-BACK (edcf117, Jul 28 2026) ──────────────────────
+
+The tool gained a "→ Substrate" button and saveToSubstrate(). The return
+leg of a round trip: load a drawing from the Neo4j substrate via
+?url=/projection/subgraph/<name>, edit on canvas, save that drawing back.
+
+A SUBGRAPH IS A FILTER, NOT A THING. `MATCH (c:Concept) WHERE 'org' IN
+c.sources` *is* the org drawing. The 16 aspect drawings and their union are
+the same rows read two ways, so nothing is duplicated to make both readings
+work. Keeping `sources` a LIST rather than a scalar is what makes a subgraph
+addressable enough to write back to — and is the same choice that makes gold
+computable.
+
+loadGraphJSON records the subgraph name in `substrateSubgraph` when the file
+names one, so saving replaces the right drawing without asking. No name = a
+prompt.
+
+WHY SAVING CANNOT DESTROY A COLLABORATOR'S WORK: the server retracts then
+re-asserts — drops this aspect from every sources list, deletes only what is
+then left with no witness at all, upserts what was sent. A concept another
+drawing also contains keeps its other witnesses. Verified by submitting an
+EMPTY org drawing: 0 concepts left the union (all six had other witnesses),
+while the 5 edges only org had drawn were correctly retired.
+
+MERGE KEYS MUST NORMALISE. Loading the 16 drawings surfaced one writing
+`Active Goal` and another `ActiveGoal` — one concept splitting into two nodes
+that never merge and never go gold. A merge key that does not normalise is
+not a merge key.
+
+Also from that commit, and the most expensive kind of bug in this work:
+no-store had to cover STATIC files, not just projections. A stale
+graph-sets.js showed 2 sets while the file on disk had 3. Debugging a file
+you have already fixed looks exactly like a broken change.
+
+── BOTH STORES MOVE TOGETHER (3b60beb, Jul 28 2026) ─────────────────
+
+"→ Substrate" now always does two writes, never one:
+
+    PUT  /subgraph/<name>          the database
+    POST /subgraph/<name>/file     the source JSON under tools/
+
+Saving to the database alone would leave the file saying something else, and
+the next rebuild would silently revert the edit. Two answers to one question
+is the failure this substrate exists to END, not to introduce. Files stay
+canonical so git keeps the history of a governance-grade artifact; the
+database is rebuildable from them.
+
+GET /subgraph/<name>/file previews without writing. Writing is a POST,
+deliberately: a GET that changes the world is a GET something will
+eventually prefetch.
+
+ORDER IS PART OF THE DIFF. The first version preserved ids and coordinates
+but emitted nodes in Cypher's order — and a set has no order — so a
+one-character change rewrote the whole file, 44 insertions and 36 deletions.
+A diff that size does not get reviewed, which costs more than the round trip
+is worth. The writer now keeps the file's own node and edge order alongside
+its ids, coordinates, colours and untouched props.
+
+── LAYOUT HAS AN OWNER, AND IT IS THE FILE (8fc52cc, Jul 28 2026) ───
+
+Opening /projection/subgraph/role gave a synthetic ring, not the arrangement
+its author made, and rearranging then saving threw the new arrangement away.
+
+The substrate stores no coordinates and should not: where a node sits is a
+fact about a DRAWING, not about a concept, and the same concept sits
+somewhere different in every drawing that contains it. So layout travels
+file → tool → file and never passes through Neo4j:
+
+  reading  the projection overlays the file's coordinates on the query
+           result; the ring remains the fallback for a concept never placed
+  writing  the file POST carries the canvas arrangement, keyed by
+           schemaLabel with spaces stripped
+
+── EDGE LABEL SUGGESTER (7b0e8ef, Jul 28 2026) ──────────────────────
+
+`constitute` and `constitutes` had become two relations that could never
+merge or go gold; `create`/`creates` and `lead_to`/`leads_to` the same. The
+tempting fix was to normalise labels on merge, which silently rewrites what
+an author wrote. Marc's call inverted it: the same fuzzy matching decides
+only what to OFFER, and the person chooses. No label is changed behind
+anyone's back, and drift is stopped where it starts.
+
+Typing a label that exists in another spelling opens a dropdown headed
+"Already in use with a different spelling". Vocabulary in order of
+authority: this canvas · the substrate with usage counts (GET
+/vocabulary/edge-labels) · the verb lists in edge-families.js.
+
+Two things the build had to get right, both worth keeping:
+
+USAGE OUTRANKS VOCABULARY. edge-families.js lists both `support` and
+`supports` as mapping aids, so the first version offered `supports`
+alongside `support` — the suggester proposing the very drift it exists to
+prevent. A word actually in use now sorts above one that merely exists.
+
+NORMALISE PER WORD, NOT AT THE END (_lblKey). Stripping `es` then a bare
+trailing `e` gave constitutes → "constitut" against constitute →
+"constitute", which never matched, so the drift case fell through to the
+generic edit-distance branch without its warning. And `lead_to`/`leads_to`
+put the inflected word first, not last.
+
+── RELATION FAMILIES — DECLARED, NEVER DRAWN (3a12579, Jul 28 2026) ──
+
+Sidecar `edge-families.js` (absent is fine) gives seven families: Influence,
+Provision, Composition, Classification, Transformation, Agency, Sequence. A
+harvest of every graph JSON in the repo found 202 distinct edge labels
+across 375 edges, 115 used exactly once.
+
+Influence vs Provision is the cut that earns its keep: influence is
+incremental, provision is structural. "The grant funds the program" is not
+"the grant increases the program" — only one tells you what collapses when
+funding is cut.
+
+DATA ONLY. Setting a family changes no colour, width or dash. Local styling
+stays free and loud; the family is the part that is shared, and is what lets
+two neighborhoods' differently-worded edges merge. `edgeFamilyOf(e)`
+resolves `linkFamily` through the same override → legend row → own field
+chain as every other styled value. See substrate/edge-families-proposal.md.
+
+(This same commit also swept in the unrelated Trace/Polarity/Routes/legend
+work logged above — its message covers only the families. If you are looking
+for when Routes appeared, it is here.)
+
 ── DECISIONS LOG MAINTENANCE ────────────────────────────────────────
 
 This block lives at the top of the HTML file as an HTML comment (invisible to browser).
 At the end of each working session, ask Claude: "update the decisions log."
 Claude reads the current block and adds new entries. No separate file needed.
 The goal: next session's Claude reads this and doesn't rediscover what cost us cycles.
+
+THE RULE HAS FAILED ONCE, AND IT COST SOMETHING. Five commits from one
+session (edcf117, 3b60beb, 7b0e8ef, 8fc52cc, 3a12579 — Jul 28 2026) changed
+this file substantially, including making it read and write a Neo4j
+substrate, and none of them touched this block. They were reconstructed on
+Jul 29 from their commit messages and diffs, which worked only because those
+messages were unusually thorough. A terser message would have lost the
+reasoning for good.
+
+So: asking at the end of a session is not reliable, because a session that
+runs long or ends abruptly never gets asked. If you are editing this file and
+you notice the newest entry is older than the newest commit touching it, the
+log is behind — say so and offer to catch it up, without being asked.
 
 ═══════════════════════════════════════════════════════════════════
 -->
