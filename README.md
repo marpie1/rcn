@@ -448,6 +448,16 @@ FedWiki with no SCP components. See its README.
   and without it every person's pages collapse into one shared site. Without
   `security_legacy` the wiki is read-only over HTTP and page writes 403.
   `security_legacy` is safe **only** while the port stays on `127.0.0.1`.
+- **Wiki version — re-verify needed.** The home stack builds FedWiki from
+  `deploy/scp/Dockerfile.fedwiki`, which is now pinned to `wiki@0.27.0`
+  (wiki-server 0.20.1) because wiki 0.40.x silently stops serving the 19 SCP
+  plugins. The July 22 end-to-end tests here — the `wiki_put_page` action API
+  (create/fork), `--farm`, `--security_legacy`, and search indexing — all ran
+  on the then-unpinned `wiki` (0.40.2 / wiki-server 0.27.0), a different
+  wiki-server major. Those behaviours must be re-verified on 0.27.0 before the
+  home stack is trusted; they are not guaranteed to be identical. The coupler's
+  own push path uses only markdown/html items, so those tests would not have
+  revealed missing SCP plugins either. Tracked in the work list.
 - `Dockerfile.coupler` deletes `scp-coupler/data` and `scp-fhir/data`. Docker
   seeds a new named volume from whatever the image holds at the mount path, so
   without this every install would start out containing the pilot records.
