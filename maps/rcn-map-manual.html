@@ -185,6 +185,48 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       <div class="note">The two are <strong>not interchangeable as the baseline</strong>: never replace <code>rcn_static_data.js</code> with either of these, and remember the standalone is a <em>snapshot</em> — it won't reflect edits to the source until <code>build_standalone_map.py</code> is re-run. Either way, Leaflet and the map tiles still load from the internet, so "self-contained" means "no companion <em>files</em>," not "works offline."</div>
       <div class="warn">Don't put the standalone at your live URL <em>and</em> keep editing the source — they'll drift. Serve <code>rcn_map.html</code> as the canonical live page; use the standalone only as a portable copy.</div>
 
+      <h3>What <code>rcn_static_data.js</code> is</h3>
+      <p>
+        <code>rcn_static_data.js</code> is the map's <strong>baseline data file</strong> — the geography
+        the map draws before you add anything. It holds the <strong>built-in NDCs</strong> and <strong>all
+        their geographic context layers</strong> (admin boundaries, ecological zones / watersheds, NDC
+        zone polygons, mineral-deposit points, churches) as JavaScript variables the map reads on load.
+        It's a <code>.js</code> file (loaded via <code>&lt;script src&gt;</code>) rather than a
+        <code>.json</code> file so the map also works opened straight from disk. It is
+        <strong>generated once from the RCN geo database</strong> by <code>generate_static_data.py</code>
+        (see §16) — not hand-edited.
+      </p>
+
+      <h3>The RCN base vs. your additions — two separate layers</h3>
+      <p>This is the most important distinction in the tool. What you see on the map is <strong>two
+        layers stacked together</strong>, and they are never mixed:</p>
+      <table class="feat-table">
+        <thead><tr><th></th><th>The RCN base</th><th>Your additions</th></tr></thead>
+        <tbody>
+          <tr><td><strong>What</strong></td><td>Built-in NDCs + geographic context layers</td><td>Custom NDCs, boundaries, location pins, NDC location corrections</td></tr>
+          <tr><td><strong>Lives in</strong></td><td><code>rcn_static_data.js</code> (+ the built-in <code>NDC_LIST</code> in <code>rcn_map.html</code>)</td><td>Your browser's <code>localStorage</code> — on this device, in this browser only</td></tr>
+          <tr><td><strong>Who sees it</strong></td><td>Everyone who opens the map</td><td>Only you (until you export &amp; publish it — §18)</td></tr>
+          <tr><td><strong>Editable in the map?</strong></td><td><strong>No</strong> — read-only to users</td><td><strong>Yes</strong> — add, ✎ Edit, remove freely</td></tr>
+          <tr><td><strong>Changed by</strong></td><td>A maintainer, in the source (see below)</td><td>You, right in the map UI</td></tr>
+        </tbody>
+      </table>
+      <div class="tip"><strong>Nothing you do in the map changes the RCN base.</strong> Adding an NDC,
+        drawing a boundary, dropping a pin, even correcting an NDC's location — all of it is written to
+        <em>your</em> localStorage layer, sitting on top of the shared base. Other people's maps are
+        unaffected. This is deliberate: you can experiment freely without touching the network's shared data.</div>
+
+      <h3>How &amp; who can change the RCN base</h3>
+      <p>Changing the base is a deliberate, source-level act — it cannot happen by accident through the UI. There are two ways, both done by whoever maintains the deployed files:</p>
+      <ul>
+        <li><strong>Add/adjust a built-in NDC</strong> — edit the <code>NDC_LIST</code> array in <code>rcn_map.html</code> (§14), then re-deploy the file.</li>
+        <li><strong>Change boundaries or context layers</strong> — update the RCN geo database and re-run <code>generate_static_data.py</code> to rebuild <code>rcn_static_data.js</code> (§16), then re-deploy it.</li>
+      </ul>
+      <div class="note"><strong>Corrections look like base edits but aren't.</strong> When you use
+        <strong>📍 Correct location</strong> on a built-in NDC, the corrected position is saved to
+        <em>your</em> <code>localStorage</code> (<code>rcn_ndc_corrections</code>) and overrides the
+        display <em>for you only</em>. To make a correction permanent in the base, export it (§12) and
+        hand it to whoever maintains <code>rcn_static_data.js</code>, so the fix goes into the source.</div>
+
       <p>The interface has two areas:</p>
       <ul>
         <li><strong>Map canvas</strong> — fills the full browser window. Powered by Leaflet.</li>
