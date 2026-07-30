@@ -198,7 +198,7 @@ td:first-child code{font-weight:600}
   <p>Every interval and every link carries provenance, editable in the panel:</p>
   <ul>
     <li><strong>Asserted by</strong> — who is making this claim.</li>
-    <li><strong>Evidence / note</strong> — the source or reasoning.</li>
+    <li><strong>Evidence / note</strong> — the source or reasoning. Any <code>http(s)://…</code> URL you type here appears as a <strong>clickable link</strong> just below the field (it opens in a new tab); the note itself stays plain, editable text.</li>
     <li><strong>Confidence</strong> — a slider; lower confidence makes the bar's core render fainter, so shaky claims look shaky.</li>
   </ul>
   <p>Hover any interval or link to see its provenance in a frosted tooltip. This is what makes a timeline something a <em>group</em> can refine: each contribution says who, why, and how sure.</p>
@@ -208,13 +208,14 @@ td:first-child code{font-weight:600}
     <li><strong>Select:</strong> click an interval or a link. Its handles appear and the panel fills in. Click empty canvas to deselect.</li>
     <li><strong>Rename / recolour:</strong> in the panel. Eight colours are available.</li>
     <li><strong>Delete:</strong> the red button in the panel, or press <kbd>Delete</kbd> / <kbd>Backspace</kbd> with something selected. Deleting an interval also removes its links.</li>
+    <li><strong>Undo / Redo:</strong> the <strong>↶ Undo</strong> and <strong>↷ Redo</strong> toolbar buttons, or <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>-<kbd>Z</kbd> and <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>-<kbd>Shift</kbd>-<kbd>Z</kbd>. Every change is covered — creating, deleting, dragging, pinning, editing a field, running a sentence, loading a demo, and importing. A run of keystrokes or a slider drag on one field folds into a single step, so undo doesn't crawl character by character.</li>
   </ul>
 
   <h2 id="s13">13 · Deep links (Copy link)</h2>
   <p>Any object can produce a link that reopens <em>this exact timeline</em> and highlights that object.</p>
   <ul>
     <li><strong>🔗 Link</strong> (toolbar) copies a link to the whole timeline — highlighting the current selection, if any.</li>
-    <li><strong>🔗 Copy link to this interval / relation</strong> (panel) copies a link focused on the selected object; opening it centres and selects it.</li>
+    <li><strong>🔗 Copy link to this interval / relation</strong> (panel) copies the <em>same</em> whole-timeline link, only focused: opening it rebuilds the entire timeline and then centres and selects that one object. It is not a slice of the timeline — there's no server to fetch a slice from, so every link carries the full model; the only difference from the toolbar button is which object opens selected.</li>
   </ul>
   <div class="warn">Because the tool has no server, the link is <strong>self-contained</strong> — it carries the whole timeline inside the URL. That means links can get long and won't auto-update if you change the timeline later. It's perfect for "here's the state I'm looking at" sharing into a document, chat, or FedWiki page. (If timelines are later hosted under names, links can become short pointers instead.)</div>
 
@@ -233,7 +234,7 @@ td:first-child code{font-weight:600}
     <li><span class="warn-chip">Amber</span> — it will load, but something is worth knowing: a link whose <code>rel</code> is not <code>meets</code> or <code>before</code> (it will silently behave as <code>before</code>), an interval with no end date (it will default to one year long), an unreadable date, or — the one that catches people — <strong>a link between two intervals that overlap</strong>. Neither relation can say <em>during</em>, so the solver will push the second interval, and everything after it, until the overlap is gone. Your dates go quietly missing. See <a href="#s8">§8</a>.</li>
     <li><span class="bad-chip">Red</span> — it cannot load, and <em>Load</em> is disabled: JSON that will not parse, a link pointing at an interval id that does not exist, or duplicate ids.</li>
   </ul>
-  <div class="warn">Importing <strong>replaces</strong> what is on the canvas. There is no undo. Export first if you want to keep it.</div>
+  <div class="warn">Importing <strong>replaces</strong> what is on the canvas. It is undoable (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>-<kbd>Z</kbd> restores the previous timeline), but exporting first is still the safe habit.</div>
   <h3>Getting a timeline out</h3>
   <ul>
     <li><strong>JSON</strong> downloads the model as a <code>.json</code> file, named after the model. Dates are stored as readable strings; each object keeps a stable <code>id</code> (so a future bridge can match an interval to a Graph node or a Map parcel).</li>
@@ -253,6 +254,8 @@ td:first-child code{font-weight:600}
     <tr><td>Drag body / edges</td><td>Move / resize / re-fuzz (see §5)</td></tr>
     <tr><td><kbd>P</kbd></td><td>Toggle pinned on the selected interval</td></tr>
     <tr><td><kbd>Delete</kbd> / <kbd>Backspace</kbd></td><td>Delete selection</td></tr>
+    <tr><td><kbd>Ctrl</kbd>/<kbd>Cmd</kbd>-<kbd>Z</kbd></td><td>Undo the last change</td></tr>
+    <tr><td><kbd>Ctrl</kbd>/<kbd>Cmd</kbd>-<kbd>Shift</kbd>-<kbd>Z</kbd></td><td>Redo</td></tr>
     <tr><td><kbd>Enter</kbd> (in sentence box)</td><td>Run the sentence</td></tr>
   </table>
 
