@@ -37,7 +37,7 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
 ```
 ~/rcn/
   tools/      standalone HTML tools (see below)
-  maps/       rcn_map.html — NDC map (the live page); rcn_static_data.js — baseline data (loaded by flat name from same folder); build_standalone_map.py → rcn_map_standalone.html — single-file handout (data+issues inlined; NOT the live site); rcn-map-intro.html, rcn-map-manual.html — docs; rcn-ndc-map.pptx — deck; rcn-map-components.graph.json — component graph; rcn-region-federation-spec.md (+ .graph.json/.svg) — region federation
+  maps/       rcn_map.html — NDC map (the live page); rcn_static_data.js — baseline data (loaded by flat name from same folder); build_standalone_map.py → rcn_map_standalone.html — single-file handout (data+issues inlined; NOT the live site); rcn-map-intro.html, rcn-map-manual.html — docs; rcn-ndc-map.pptx — deck; rcn-map-components.graph.json — component graph; rcn-region-federation-spec.md (+ .graph.json/.svg) — region federation (built loader); rcn-region-forking-spec.md (+ .graph.json) — federation via FedWiki forking (proposal)
   data/       PostGIS Python load scripts
   docs/       tool documentation (nrm-tripod-beta.md, vester-manual.html, sodoto-manual.html)
   deploy/     deployment artifacts — docker/ (SODOTO Docker package, handed to Wiki Café), scp/ (SCP+Groove Docker package, hosted/WikiCafe track), home/ (SCP 3.0 personal-computer stack), fedwiki-personal/ (bare personal FedWiki, no SCP parts), launchd plists, handoff-sodoto.md
@@ -97,7 +97,7 @@ and `conf` 0.8, because the order *is* attributed. See
 | `evsm-svg-v3.html` | eVSM directed edge assessment (Agree/Disagree/Unknown); Snapshot button bakes config into a single distributable HTML file; Print My Report generates blob-based individual report | Active |
 | `evsm-report.html` | eVSM individual respondent report — one person's assessment data; opened via blob URL from Survey Tool or by drag-drop; for aggregate reports across all respondents use Aggregator's Full Report | Active |
 | `ibis-map-rcn.html` | IBIS argument mapping (post-hoc mode preferred) | Active |
-| `rcn_map.html` (in maps/) | Leaflet NDC map — 9 built-in NDCs, 7 base layers, geographic context layers, issue overlay, shift+click legend, custom location pins, add-NDC (**editable** name/location via Edit link in Saved NDCs), NDC location correction, user boundary layer builder (OSM search + Claude bridge); **boundary nesting** — an "Under NDC" dropdown files a drawn/pasted boundary inside that NDC's accordion section, reassignable any time (unassigned boundaries stay in "My additions & layers"); **group buckets** — the CODE field accepts up to 32 chars in any case (e.g. `Whatcom`, `Nooksack`), grouping is exact-string match; loads `rcn_static_data.js` by flat name from the same folder; SVG/PNG/Print export; all user data in localStorage with top-level **⬇ Export my data (JSON)** one-file backup (+ per-dataset exports in Saved tab); **region federation** — `loadRegions()` merges steward-published region bundles from a `regions.json` manifest (or `?regions=URL`) as read-only namespaced overlay layers; **deep links**: `?highlight=NAME` zooms to any named polygon/NDC, `?openissue=KEY` loads an issue overlay, `?lat=&lng=&zoom=` flies to coordinates; every polygon popup has **🔗 Copy link**; floating **🔗 Copy view link** button captures current view | Active |
+| `rcn_map.html` (in maps/) | Leaflet NDC map — 9 built-in NDCs, 7 base layers, geographic context layers, issue overlay, shift+click legend, custom location pins, add-NDC (**editable** name/location via Edit link in Saved NDCs), NDC location correction, user boundary layer builder (OSM search + Claude bridge); **full metadata editing** — every custom boundary has an **✎ Edit** editor (name, type, group bucket, colour, opacity, and which NDC it's filed under) and every custom pin has one (name, colour); **boundary nesting** — the editor's "Under NDC" field files a boundary inside that NDC's accordion section, reassignable any time (unassigned boundaries stay in "My additions & layers"); **group buckets** — the CODE field accepts up to 32 chars in any case (e.g. `Whatcom`, `Nooksack`), grouping is exact-string match; loads `rcn_static_data.js` by flat name from the same folder; SVG/PNG/Print export; all user data in localStorage with top-level **⬇ Export my data (JSON)** one-file backup (+ per-dataset exports in Saved tab); **region federation** — `loadRegions()` merges steward-published region bundles from a `regions.json` manifest (or `?regions=URL`) as read-only namespaced overlay layers; a **Publish regions** panel builds that `regions.json` manifest for download; **deep links**: `?highlight=NAME` zooms to any named polygon/NDC, `?openissue=KEY` loads an issue overlay, `?lat=&lng=&zoom=` flies to coordinates; every polygon popup has **🔗 Copy link**; floating **🔗 Copy view link** button captures current view | Active |
 | `issue-polygon-map.html` | Polycentric governance / Issue Polygon viewer — data-driven via `?issue=` URL param; loads `issue-data/*.json`; parcel stances, layer toggles, draw/name/rename custom polygons, GeoJSON export; **deep links**: `?parcel=ID` flies to a parcel and opens its popup, `?lat=&lng=&zoom=` flies to a view; every parcel and issue polygon popup has **↗ Copy link**; toolbar **↗ Copy view link** button | Active |
 | `more-outliner.html` | Outliner with autosave, MD/HTML/FedWiki export, Hoist; **→ Wiki Ghost** button sends outline as ghost page to FedWiki lineup | Active |
 | `graphjson_to_vensim_cld.html` | Canonical MDL format reference — read before fixing MDL bugs | Reference |
@@ -148,8 +148,13 @@ Marc/WA) to their own FedWiki (or any host). `loadRegions()` fetches a manifest 
 beside the map, or `?regions=<URL>`), pulls each region bundle (the same file the **⬇ Export my
 data** button writes), and merges its NDCs/boundaries/locations as **read-only, region-namespaced**
 overlay layers under a "Federated regions (read-only)" legend section — skipping any unreachable
-region gracefully. Design + flow: `rcn-region-federation-spec.md`, `rcn-region-federation.graph.json`
-(RCN Graph Tool source), `rcn-region-federation.svg` (exported diagram).
+region gracefully. The **Publish regions** sidebar panel builds the `regions.json` manifest itself:
+list each steward's region file (label, steward, file/URL) and it downloads the assembled manifest
+for you to upload — the map can generate the manifest content but a browser page can't write it into
+the assets folder. Design + flow: `rcn-region-federation-spec.md`, `rcn-region-federation.graph.json`
+(RCN Graph Tool source), `rcn-region-federation.svg` (exported diagram). A forward-looking proposal to
+replace the hand-maintained manifest with FedWiki's native **fork** gesture (a fork = an add-region,
+with provenance) is in `rcn-region-forking-spec.md` (+ `rcn-region-forking.graph.json`).
 
 **Docs:** `rcn-map-intro.html` (overview), `rcn-map-manual.html` (user manual), `rcn-ndc-map.pptx`
 (deck), `rcn-map-components.graph.json` (component graph for the RCN graph tool).
@@ -235,8 +240,10 @@ All user data is stored in `localStorage` under three keys. Export buttons in th
 | **Custom location correction** | Click any sky-blue custom marker → popup → **📍 Correct location** → click correct spot | `rcn_user_locations` (lat/lng updated in-place) |
 | **Boundary layer (OSM)** | Add boundary layer panel → Search OSM → pick result → name + type → Add to map | `rcn_user_polygons` |
 | **Boundary layer (Claude)** | Add boundary layer panel → Ask Claude tab → describe boundary → copy prompt → paste response → Import polygon | `rcn_user_polygons` |
-| **Boundary → under an NDC** | On the Draw/Paste form, pick an NDC in **Under NDC**; or use the assign dropdown on any boundary row in the legend. Assigned boundaries render inside that NDC's section (`p.ndc` field); unassigned stay in "My additions & layers" | `rcn_user_polygons` (`ndc` field) |
+| **Edit a boundary (all metadata)** | **✎ Edit** on any boundary row → inline editor for name, type, group bucket, colour, fill opacity, and **Under NDC** (file it inside an NDC or leave in "My additions"). Assigned boundaries render inside that NDC's section (`p.ndc` field) | `rcn_user_polygons` |
+| **Edit a pin (rename / recolour)** | **✎ Edit** on any custom-location row → inline editor for name + colour. (Move it via **📍 Correct location** in the pin's map popup) | `rcn_user_locations` |
 | **Add / edit an NDC** | **Add NDC** panel → set name / location / code (group bucket) + pin; **Edit** link in Saved NDCs renames name/location | `rcn_user_ndcs` |
+| **Publish a region (federation)** | **Publish regions** panel → list each steward's region file (label, steward, file/URL) → **⬇ Generate regions.json**. Downloads the manifest for you to upload into the assets folder (the browser can't write it there itself) | — (downloads `regions.json`) |
 
 ### place_geo schema
 

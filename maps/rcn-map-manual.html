@@ -132,6 +132,7 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       <li><a href="#s15">15. Adding an issue</a></li>
       <li><a href="#s16">16. Updating geographic data</a></li>
       <li><a href="#s17">17. Sharing &amp; deep links</a></li>
+      <li><a href="#s18">18. Publishing &amp; federating regions</a></li>
     </ul>
     <div class="sb-links">
       <a href="rcn-map-intro.html">← Introduction</a>
@@ -911,8 +912,8 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
         <li>A sky-blue circle marker appears at the clicked position. It is added to the legend under "Custom locations" with a + badge.</li>
       </ol>
 
-      <h3>Correcting or removing a custom pin</h3>
-      <p>Click the sky-blue marker to open its popup. <strong>📍 Correct location</strong> lets you reposition it (same crosshair flow as NDC corrections). <strong>Remove</strong> deletes it.</p>
+      <h3>Editing, moving, or removing a custom pin</h3>
+      <p>In the legend under <strong>Custom locations</strong>, each pin has an <strong>✎ Edit</strong> link that opens an inline editor to <strong>rename</strong> it and <strong>recolour</strong> it — the change updates the legend and the map marker live. To <em>move</em> the pin, click it on the map and use <strong>📍 Correct location</strong> in its popup (same crosshair flow as NDC corrections). <strong>×</strong> (in the legend) or <strong>Remove</strong> (in the popup) deletes it.</p>
 
       <h3>Persisting your pins</h3>
       <p>Custom pins are saved to localStorage. The quickest way to back them up is the top-level <strong>⬇ Export my data (JSON)</strong> button near the top of the sidebar (just under <strong>+ Add location</strong>), which downloads everything you have added — NDCs, locations, boundaries, and corrections — as one file. To export just the pins, open <strong>Add boundary layer → Saved</strong> and click <strong>Export locations</strong>.</p>
@@ -1050,7 +1051,7 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       <p>The <strong>Add boundary layer</strong> panel lets you add any polygon boundary to the map — a county, city limit, watershed, national forest, or any custom area. Added layers appear in the legend with a group-bucket badge, support highlighting, and persist across page reloads. You can draw one freehand, or use the two tabs below.</p>
       <p>Click <strong>Add boundary layer ▶</strong> in the sidebar to expand the panel.</p>
 
-      <div class="tip"><strong>File a boundary under an NDC.</strong> Both the draw and paste forms carry an <strong>Under NDC</strong> dropdown. Pick an NDC and the boundary is listed <em>inside</em> that NDC's section of the legend instead of the flat "My additions &amp; layers" list. Every boundary row also has its own assign dropdown, so you can move one under an NDC — or set it back to "none" — at any time without redrawing. The choice is saved with the boundary (an <code>ndc</code> field).</div>
+      <div class="tip"><strong>Edit a boundary after you make it.</strong> Every boundary in the legend has an <strong>✎ Edit</strong> link that opens an inline editor for all of its metadata — <strong>name, type, group bucket, colour, fill opacity</strong>, and <strong>Under NDC</strong>. The <strong>Under NDC</strong> field files the boundary <em>inside</em> that NDC's section of the legend (instead of the flat "My additions &amp; layers" list), or set it to "— none —" to keep it loose. The draw and paste forms also carry an Under NDC field so you can set it at creation. Every choice is saved with the boundary; changes update the map live.</div>
 
       <h3>Search OSM tab</h3>
       <p>Finds real boundary polygons directly from OpenStreetMap for any named jurisdiction.</p>
@@ -1493,6 +1494,37 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
         <li>Links to user-added polygons (<code>user:N</code>) and custom locations (<code>loc:N</code>) only work on the same device — that data lives in <code>localStorage</code>, not the server.</li>
         <li>Parameters can be combined: <code>?openissue=az--chickens&amp;lat=33.295&amp;lng=-110.983&amp;zoom=15</code> will load the issue overlay <em>and</em> fly to the given view.</li>
       </ul>
+    </section>
+
+    <!-- §18: PUBLISHING & FEDERATING REGIONS -->
+    <section id="s18">
+      <div class="section-pill">Federation</div>
+      <h2>18. Publishing &amp; federating regions</h2>
+      <p>Everything you add lives in <em>your</em> browser. To <strong>share</strong> it — so other people's maps show your NDCs, boundaries, and pins — you publish it as a <strong>region file</strong> and list it in a <strong>manifest</strong> (<code>regions.json</code>). Each map reads the manifest on load and pulls in every region as read-only overlays. This is how regional stewards (e.g. Jerry / Michigan, Chris / Arizona, Marc / Whatcom) stitch their areas into one shared network map.</p>
+
+      <div class="note">Two different files: a <strong>region file</strong> is your <em>data</em> (it's exactly what <strong>⬇ Export my data</strong> writes); <code>regions.json</code> is a small <em>roster</em> that points at one or more region files. Do <strong>not</strong> overwrite <code>rcn_static_data.js</code> (the baseline) with either — they're separate.</div>
+
+      <h3>Step by step</h3>
+      <ol>
+        <li>In the map, click <strong>⬇ Export my data (JSON)</strong> → you get <code>rcn-map-data.json</code>. Rename it to something regional, e.g. <code>whatcom-region.json</code>.</li>
+        <li>Upload that region file into the assets folder (the same place <code>rcn_map.html</code> lives).</li>
+        <li>Open the <strong>Publish regions (federation)</strong> panel. Add a row per steward — <strong>Region</strong> label, optional <strong>Steward</strong>, and the <strong>File / URL</strong> (just the filename if it's in the same folder, or a full <code>https://…</code> URL if it's on another steward's site).</li>
+        <li>Click <strong>⬇ Generate regions.json</strong> → it downloads the assembled manifest.</li>
+        <li>Upload <code>regions.json</code> into the same assets folder.</li>
+        <li>Reload the map. It fetches <code>regions.json</code>, pulls each region file, and lists them under <strong>“Federated regions (read-only)”</strong> in the legend.</li>
+      </ol>
+
+      <div class="warn">A web page cannot write files to the server — that's a browser security boundary. So the Publish panel can only <em>generate</em> <code>regions.json</code> and hand it to you; <strong>you</strong> upload it (and the region files) into the assets folder. Likewise, collecting other stewards' region files and placing them in your folder is a manual step.</div>
+
+      <h3>Things to know</h3>
+      <ul>
+        <li><strong>Read-only.</strong> Federated regions can be viewed and highlighted but not edited on your map — they're published copies, not your working draft.</li>
+        <li><strong>Boundary→NDC nesting doesn't travel.</strong> The <em>Under NDC</em> field is a local view setting; in a region file, boundaries appear under the "Federated regions" heading, namespaced by region.</li>
+        <li><strong>More stewards = more rows.</strong> Add a line per steward; each entry's <code>url</code> can be a flat filename (same folder) or a full URL (their own host).</li>
+        <li><strong>Corrections aren't published</strong> — only NDCs, boundaries, and locations are read from a region file.</li>
+      </ul>
+
+      <div class="note">A forward-looking design — replacing the hand-maintained manifest with FedWiki's native <strong>fork</strong> gesture (forking a steward's region page = adding their region, with full provenance) — is written up in <code>rcn-region-forking-spec.md</code>.</div>
     </section>
 
     <!-- Footer -->
