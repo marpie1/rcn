@@ -1,17 +1,10 @@
 # EIP composite — 22 edges with no relation family
 
-For Marc and Kerry. Generated from `composite26` after loading the signed
-26-node CLD. Sibling of `tools/eip-cld-subgraph-mismatches.md`.
+For Marc and Kerry. Generated from `composite26` after loading the signed 26-node CLD. Sibling of `tools/eip-cld-subgraph-mismatches.md`.
 
-35 of 57 edges took a family from the author's own wording, matched against
-the verb lists in `tools/edge-families.js`. These 22 did not. **Nothing here
-has been guessed** — an unmatched edge is left null rather than assigned a
-plausible family, for the same reason the mismatches file leaves its 23 items
-open: a wrong family that nobody can see is worse than a gap that everybody can.
+35 of 57 edges took a family from the author's own wording, matched against the verb lists in `tools/edge-families.js`. These 22 did not. **Nothing here has been guessed** — an unmatched edge is left null rather than assigned a plausible family, for the same reason the mismatches file leaves its 23 items open: a wrong family that nobody can see is worse than a gap that everybody can.
 
-Assign in graph-tool with the legend picker, or say the word and I will apply
-a list. The `Aa Text` toggle in **both** mode shows label and family together,
-which is the mode this list is meant to be worked in.
+Assign in graph-tool with the legend picker, or say the word and I will apply a list. The `Aa Text` toggle in **both** mode shows label and family together, which is the mode this list is meant to be worked in.
 
 ## Assigned so far
 
@@ -54,6 +47,4 @@ which is the mode this list is meant to be worked in.
 
 ## Note on the blank ones
 
-Several carry no label at all. Those cannot be suggested from wording by
-any method — they need a person who knows what the arrow meant. They are
-also the edges most likely to have lost their meaning already.
+Several carry no label at all. Those cannot be suggested from wording by any method — they need a person who knows what the arrow meant. They are also the edges most likely to have lost their meaning already.

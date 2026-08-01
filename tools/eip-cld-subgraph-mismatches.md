@@ -1,23 +1,16 @@
 # EIP: where the CLD and the aspect subgraphs disagree
 
-For Marc and Kerry. Generated 2026-07-28 from `tools/eip-schema-cld.json`
-(the finished signed CLD, 26 nodes / 57 edges) against the 16 files in
-`tools/eip-aspects-variabilized/` (58 distinct edges).
+For Marc and Kerry. Generated 2026-07-28 from `tools/eip-schema-cld.json` (the finished signed CLD, 26 nodes / 57 edges) against the 16 files in `tools/eip-aspects-variabilized/` (58 distinct edges).
 
-42 of 58 subgraph edges matched the CLD and inherited its sign. These 31 did not.
-Nothing here has been guessed at — every item needs a human decision.
+42 of 58 subgraph edges matched the CLD and inherited its sign. These 31 did not. Nothing here has been guessed at — every item needs a human decision.
 
 ---
 
 ## 1. Direction disagreements (9)
 
-The same relation exists in both, pointing opposite ways. These matter most:
-in a CLD the arrow direction determines the loop structure, so a reversed
-edge does not merely mislabel — it changes which feedback loops exist.
+The same relation exists in both, pointing opposite ways. These matter most: in a CLD the arrow direction determines the loop structure, so a reversed edge does not merely mislabel — it changes which feedback loops exist.
 
-Four use the *identical verb*, which makes a transcription slip more likely
-than a genuine disagreement. (There is precedent: commit 6796303 was
-"stop edges reversing by accident".)
+Four use the *identical verb*, which makes a transcription slip more likely than a genuine disagreement. (There is precedent: commit 6796303 was "stop edges reversing by accident".)
 
 | # | subgraph says | CLD says | verb |
 |---|---|---|---|
@@ -47,8 +40,7 @@ Still unsigned in the composite — they appear as dotted edges.
 | 6 | `Effectiveness of Proposed SOLUTION` → `Seriousness of PROBLEM` | resolve | solution |
 | 7 | `MOTIVATION` → `Effectiveness of ACTION` | consider | action |
 
-**Decide:** add to the CLD with a sign, or drop from the subgraphs.
-The two self-loops are worth a second look — they may be artefacts of merging.
+**Decide:** add to the CLD with a sign, or drop from the subgraphs. The two self-loops are worth a second look — they may be artefacts of merging.
 
 ## 3. In the CLD, absent from every subgraph (7)
 
@@ -64,14 +56,11 @@ Signed relations the aspect drawings never recorded.
 | 6 | `Q of RESULT` → `Value of ASSETS` | — | `+` |
 | 7 | `SIDE EFFECT` → `Seriousness of PROBLEM` | creates | `+` |
 
-**Decide:** which aspect subgraph each belongs in, or accept that the CLD
-carries relations no single aspect owns.
+**Decide:** which aspect subgraph each belongs in, or accept that the CLD carries relations no single aspect owns.
 
 ---
 
 ## Note on `Q of RESULT → Seriousness of PROBLEM`
 
-This is one of only three negative links in the whole CLD, and it is in
-group 3 — no subgraph has it. Worth placing deliberately rather than letting
-it live only in the CLD.
+This is one of only three negative links in the whole CLD, and it is in group 3 — no subgraph has it. Worth placing deliberately rather than letting it live only in the CLD.
 
