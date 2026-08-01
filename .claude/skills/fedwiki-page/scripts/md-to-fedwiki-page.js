@@ -112,11 +112,30 @@ function mdToStory(md) {
       continue;
     }
     if (isListLn(lines[i])) {                      // contiguous list: one item
-      const buf = [];
+      const raw = [];
       while (i < lines.length && (isListLn(lines[i]) || (/^\s+\S/.test(lines[i]) && !isBlank(lines[i])))) {
-        buf.push(lines[i].trim() ? lines[i].replace(/\s+$/, '') : lines[i]); i++;
+        raw.push(lines[i].replace(/\s+$/, '')); i++;
       }
-      items.push({ type: 'markdown', text: buf.map(l => l.trim()).join('\n') });
+      /* Two things the old version got wrong, both of which shipped
+         hard-wrapped text into the wiki:
+           - a bullet's continuation lines stayed on their own lines, so an
+             80-column source wrapped in a 40-column wiki column;
+           - every line was trimmed, which flattened nested bullets.
+         Fold continuations onto their bullet; keep nesting relative to the
+         first bullet's indent. */
+      const baseIndent = (raw[0].match(/^\s*/) || [''])[0].length;
+      const out = [];
+      for (const l of raw) {
+        if (isListLn(l)) {
+          const indent = (l.match(/^\s*/) || [''])[0].length;
+          out.push(' '.repeat(Math.max(0, indent - baseIndent)) + l.trim());
+        } else if (out.length) {
+          out[out.length - 1] += ' ' + l.trim();   // hard-wrapped continuation
+        } else {
+          out.push(l.trim());
+        }
+      }
+      items.push({ type: 'markdown', text: out.join('\n') });
       continue;
     }
     // paragraph: contiguous prose lines, UNWRAPPED into one line
@@ -170,9 +189,12 @@ for (const file of inputs) {
 
   let items = mdToStory(md);
   let title = TITLE;
-  if (!title && items.length && /^#\s+/.test(items[0].text)) {
-    title = items[0].text.replace(/^#\s+/, '');
-    items = items.slice(1);                        // H1 becomes the title, not an item
+  /* A leading H1 always leaves the story — FedWiki renders the page title
+     above the story, so keeping it would print the title twice. --title only
+     decides what the title SAYS, not whether the H1 stays. */
+  if (items.length && /^#\s+/.test(items[0].text)) {
+    if (!title) title = items[0].text.replace(/^#\s+/, '');
+    items = items.slice(1);
   }
   if (!title) title = path.basename(file, path.extname(file)).replace(/[-_]+/g, ' ');
   title = sanitizeTitle(title);

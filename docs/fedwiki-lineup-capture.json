@@ -1,0 +1,1230 @@
+{
+  "title": "FedWiki Lineup Capture",
+  "story": [
+    {
+      "type": "markdown",
+      "text": "`~/rcn/tools/fedwiki-lineup.js`",
+      "id": "a12c50d5d7bb47eb"
+    },
+    {
+      "type": "markdown",
+      "text": "## What it is for",
+      "id": "6d67ef2e274f2f36"
+    },
+    {
+      "type": "markdown",
+      "text": "You have a lineup of open pages in FedWiki. You want that lineup as **one file** — to hand to Claude Code for analysis, to archive, to import onto another wiki, or to turn into a document for people who will never touch a wiki.",
+      "id": "35f8c65a2b62f232"
+    },
+    {
+      "type": "markdown",
+      "text": "This script takes the lineup URL and produces a single JSON file holding every page's complete content. That file works in three directions:",
+      "id": "55f6fc1b503782fd"
+    },
+    {
+      "type": "markdown",
+      "text": "- **Analysis** — hand it to Claude Code. Nothing is lost: item ids, item types, and full plugin data all survive.\n- **Import** — carry the pages onto another wiki (`--shape export`, then drag).\n- **Documents** — feed it to `export-fedwiki-page.js` for markdown or HTML (and PDF by printing the HTML).",
+      "id": "9348b83416b78911"
+    },
+    {
+      "type": "markdown",
+      "text": "## Two shapes — pick the right one",
+      "id": "f31fafc68bb75923"
+    },
+    {
+      "type": "markdown",
+      "text": "FedWiki has two importer-related shapes and **they are not interchangeable**:",
+      "id": "d1b8733497009790"
+    },
+    {
+      "type": "markdown",
+      "text": "**`--shape`:** `bundle` (default) — **Structure:** a page: `{title, story:[…,{type:\"importer\", pages:{slug:page}}], journal}` — **Who accepts it:** `export-fedwiki-page.js`; Claude; placing on a site as a page",
+      "id": "363d5497cf7ea796"
+    },
+    {
+      "type": "markdown",
+      "text": "**`--shape`:** `export` — **Structure:** bare map: `{slug: page, slug: page, …}` — **Who accepts it:** the browser's drag-and-drop importer — **only** this shape",
+      "id": "b264998e9dc29309"
+    },
+    {
+      "type": "markdown",
+      "text": "The browser importer is not a factory plugin. It is core wiki-client (`lib/importer.coffee`, bundled into `client.js`). It has no editor and never appears in the factory menu. It exists to render a *dropped file*: `readFile()` does `JSON.parse(file)` and treats **every top-level key as a slug**. That is the same shape `/system/export.json` returns.",
+      "id": "e1fd8b1de5ec87db"
+    },
+    {
+      "type": "markdown",
+      "text": "So dropping a `bundle` file on a wiki produces three junk entries named `title`, `story`, and `journal`. If the file is going into a browser, use `--shape export`. If it is going to Claude or to `export-fedwiki-page.js`, use `bundle`.",
+      "id": "8e27a6d4a839bc39"
+    },
+    {
+      "type": "markdown",
+      "text": "## When you do NOT need it",
+      "id": "425a8c5293f3ee68"
+    },
+    {
+      "type": "markdown",
+      "text": "If the wiki is reachable from the machine Claude Code is running on — localhost, or Wiki Café — **just paste Claude the lineup URL.** It fetches the pages itself. No file, no download, no step for you.",
+      "id": "91b8378d6789767e"
+    },
+    {
+      "type": "markdown",
+      "text": "Use this script when you want a durable artifact: something to archive, import elsewhere, or turn into a document.",
+      "id": "0f5dd6090309696a"
+    },
+    {
+      "type": "markdown",
+      "text": "## What it cannot capture — use the bookmarklet instead",
+      "id": "4599cfd0fd54c8f0"
+    },
+    {
+      "type": "markdown",
+      "text": "The script reads the **server**. Anything that exists only in your browser is invisible to it:",
+      "id": "8885727bb0c4c32e"
+    },
+    {
+      "type": "markdown",
+      "text": "- **Edits made while not logged in.** FedWiki writes those to browser localStorage (`pageHandler.useLocalStorage()` is true whenever a `.login` element is present) and never sends them to the server.\n- **Ghost pages.** Search results and neighbor pages you have never forked have no JSON anywhere. The script names them and continues.\n- **Pages behind a login.** It has no session cookie.\n- **Wikis this machine cannot route to.**",
+      "id": "8c3c1921e0542a1b"
+    },
+    {
+      "type": "markdown",
+      "text": "For all of these use `fedwiki-lineup-bookmarklet.js`, which runs inside the tab. Its output is byte-identical to this script's for pages both can see — verified by comparing item ids and journal dates from both paths.",
+      "id": "3948afc467e4d884"
+    },
+    {
+      "type": "markdown",
+      "text": "## Invoking it",
+      "id": "32bcd63015f219b7"
+    },
+    {
+      "type": "markdown",
+      "text": "Copy the whole address bar out of the browser. **Quote it** — the shell will mangle it otherwise.",
+      "id": "a26e9c5939e39ac7"
+    },
+    {
+      "type": "markdown",
+      "text": "```bash\nnode ~/rcn/tools/fedwiki-lineup.js \"http://localhost:3000/view/welcome-visitors/view/some-page\"\n```",
+      "id": "1fe3070fe9d3cf2f"
+    },
+    {
+      "type": "markdown",
+      "text": "Writes `lineup-<first-slug>.json` in the current directory.",
+      "id": "b64655dda218bc7c"
+    },
+    {
+      "type": "markdown",
+      "text": "### Options",
+      "id": "cc186d6ade4caf9f"
+    },
+    {
+      "type": "markdown",
+      "text": "Any reachable wiki works — localhost, Wiki Café, an NDC site, someone else's public wiki. The origin in the URL is simply where it fetches from:",
+      "id": "16c5da06f66e7d12"
+    },
+    {
+      "type": "markdown",
+      "text": "```bash\nnode ~/rcn/tools/fedwiki-lineup.js \"http://ward.asia.wiki.org/view/welcome-visitors/ward.bay.wiki.org/welcome-visitors\"\n```",
+      "id": "5d690a5eaea30117"
+    },
+    {
+      "type": "markdown",
+      "text": "**Option:** `--out <file>` — **Effect:** Output path. Default `lineup-<first-slug>.json`.",
+      "id": "f3edfbb11b47aa2f"
+    },
+    {
+      "type": "markdown",
+      "text": "**Option:** `--shape bundle\\ — **Effect:** export` — **Col 3:** See \"Two shapes\" above. Default `bundle`.",
+      "id": "686b6e6c24982429"
+    },
+    {
+      "type": "markdown",
+      "text": "**Option:** `--title \"...\"` — **Effect:** Bundle page title. Default `Lineup: <first page title>`.",
+      "id": "99d2c16f0c3b5d21"
+    },
+    {
+      "type": "markdown",
+      "text": "**Option:** `--journal full\\ — **Effect:** fork\\ — **Col 3:** none` — **Col 4:** How much page history to keep. Default `fork`.",
+      "id": "85f88f4af6a6d6b2"
+    },
+    {
+      "type": "markdown",
+      "text": "**Option:** `--pages-dir <dir>` — **Effect:** Also write each page as its own `<slug>.json`.",
+      "id": "ecd7f2c7aa6b86da"
+    },
+    {
+      "type": "markdown",
+      "text": "**Option:** `--no-bundle` — **Effect:** Write only `--pages-dir`, no bundle. Requires `--pages-dir`.",
+      "id": "f76c91e40219dce2"
+    },
+    {
+      "type": "markdown",
+      "text": "**Option:** `--quiet` — **Effect:** Suppress the per-page report.",
+      "id": "257705116399c655"
+    },
+    {
+      "type": "markdown",
+      "text": "### Choosing `--journal`",
+      "id": "614e618c775d5c0c"
+    },
+    {
+      "type": "markdown",
+      "text": "**Mode:** `fork` (default) — **Keeps:** One fork entry: which site, what date — **Use when:** Almost always. Provenance without the noise.",
+      "id": "e528577359ad34dd"
+    },
+    {
+      "type": "markdown",
+      "text": "**Mode:** `full` — **Keeps:** Every edit ever made to the page — **Use when:** You are asking about *history* — who changed what, when, how a page evolved.",
+      "id": "35be33ecb7084902"
+    },
+    {
+      "type": "markdown",
+      "text": "**Mode:** `none` — **Keeps:** Nothing — **Use when:** Clean slate for import onto a new site.",
+      "id": "6cfc48e2f28e2ad1"
+    },
+    {
+      "type": "markdown",
+      "text": "Journals are bulky — a three-item page here carried seven journal entries. Ask for `full` when history is the question, not by habit.",
+      "id": "f95afae6e5c61c47"
+    },
+    {
+      "type": "markdown",
+      "text": "### Examples",
+      "id": "ce032d44260554da"
+    },
+    {
+      "type": "markdown",
+      "text": "Straight capture for analysis:",
+      "id": "c52f6cc8b6163225"
+    },
+    {
+      "type": "markdown",
+      "text": "```bash\nnode ~/rcn/tools/fedwiki-lineup.js \"http://localhost:3000/view/a/view/b\" --out ~/rcn/data/lineup.json\n```",
+      "id": "d31711a85801cfd7"
+    },
+    {
+      "type": "markdown",
+      "text": "History included, because the question is how these pages evolved:",
+      "id": "2dccbc429a29bd2b"
+    },
+    {
+      "type": "markdown",
+      "text": "```bash\nnode ~/rcn/tools/fedwiki-lineup.js \"$URL\" --journal full --out evolution.json\n```",
+      "id": "6ea14f2fd9ac4dd8"
+    },
+    {
+      "type": "markdown",
+      "text": "Loose page files as well as the bundle, so pages can be edited individually and re-bundled later with `bundle-fedwiki-import.js`:",
+      "id": "5cbcf08daff6cfb7"
+    },
+    {
+      "type": "markdown",
+      "text": "```bash\nnode ~/rcn/tools/fedwiki-lineup.js \"$URL\" --pages-dir ./pages --out bundle.json\n```",
+      "id": "27f37c3fb69f1221"
+    },
+    {
+      "type": "markdown",
+      "text": "## Reading the output",
+      "id": "b17b7779e1f48783"
+    },
+    {
+      "type": "markdown",
+      "text": "Per page, on stderr:",
+      "id": "f6f5d64bf5ef248e"
+    },
+    {
+      "type": "markdown",
+      "text": "```\n  ok       1-2                            3 items (3 markdown)\n  ok       welcome-visitors               6 items (6 paragraph)  [from wiki.ralfbarkow.ch]\n  MISSING  local/no-such-page-xyz\n```",
+      "id": "022f835e2ff5e4a9"
+    },
+    {
+      "type": "markdown",
+      "text": "Failures are named and non-fatal — a lineup with one ghost page still produces a bundle of the rest.",
+      "id": "2d4a54b610affbb6"
+    },
+    {
+      "type": "markdown",
+      "text": "If a slug appears twice from different sites, the second is re-keyed (`welcome-visitors-superior`) and a note is printed. Importer keys are slugs, so without this the second copy would silently overwrite the first.",
+      "id": "7d95f9a3d23b4b99"
+    },
+    {
+      "type": "markdown",
+      "text": "## Making a document — the short way",
+      "id": "dc54143a32693221"
+    },
+    {
+      "type": "markdown",
+      "text": "```bash\nnode ~/rcn/tools/fedwiki-print.js \"$URL\"         # opens it, ready for Cmd-P\nnode ~/rcn/tools/fedwiki-print.js \"$URL\" --pdf   # writes the PDF directly\nnode ~/rcn/tools/fedwiki-print.js captured.json --pdf\n```",
+      "id": "046cbbf3ad9c09cb"
+    },
+    {
+      "type": "markdown",
+      "text": "One command replaces capture → export → open. The `--base` for wiki links is derived from the URL, so you never type it. `--pdf` drives headless Chrome; without it you get HTML and your own print dialog.",
+      "id": "6b5d03adf525ed14"
+    },
+    {
+      "type": "markdown",
+      "text": "Other options: `--out <file>`, `--links text|wiki|anchor`, `--journal full`, `--keep` (keep the intermediate bundle), `--no-open`.",
+      "id": "25a61bdc90ca2459"
+    },
+    {
+      "type": "markdown",
+      "text": "**With no terminal at all:** the *Print Lineup → PDF* bookmarklet does the same job from inside the browser — see `fedwiki-lineup-bookmarklet.html`.",
+      "id": "8bce4ecc7aea7569"
+    },
+    {
+      "type": "markdown",
+      "text": "## The long way, when you want the intermediate files",
+      "id": "ae93c134cf8104cd"
+    },
+    {
+      "type": "markdown",
+      "text": "```bash\nS=~/rcn/.claude/skills/fedwiki-page/scripts\n\n# one markdown file, all pages, in Index order if the lineup has an Index page\nnode $S/export-fedwiki-page.js bundle.json --to md --merge --out lineup.md\n\n# one HTML file, [[wiki links]] pointing back at the live wiki\nnode $S/export-fedwiki-page.js bundle.json --to html --merge \\\n     --links wiki --base http://localhost:3000 --out lineup.html\n\n# separate files, one per page, into ./export/\nnode $S/export-fedwiki-page.js bundle.json --to md\n```",
+      "id": "1c79cc78bd20b137"
+    },
+    {
+      "type": "markdown",
+      "text": "`--links` controls what `[[Wiki Links]]` become: `text` (plain, for readers with no wiki access), `wiki` (hyperlink to the live page, needs `--base`), or `anchor` (jump within the merged document when the target is in the bundle, falling back to `wiki` or `text`).",
+      "id": "d59f613dc4a6908e"
+    },
+    {
+      "type": "markdown",
+      "text": "For PDF: export to HTML, open it, print to PDF. The HTML wraps every item in `<div class=\"item\" id=\"<item-id>\">`, so paragraph-level addressability survives.",
+      "id": "f2c0322fdc07596f"
+    },
+    {
+      "type": "markdown",
+      "text": "**The export script drops journals by design** — it exports the document, not its history. If you want history in a document, ask Claude to read the `--journal full` bundle and write it up.",
+      "id": "25121b25f08976f0"
+    },
+    {
+      "type": "markdown",
+      "text": "## Importing onto another wiki",
+      "id": "7752bf3bbe64660c"
+    },
+    {
+      "type": "markdown",
+      "text": "Capture with `--shape export`, then drag the file onto a FedWiki page in the browser:",
+      "id": "75b0644810ff3041"
+    },
+    {
+      "type": "markdown",
+      "text": "```bash\nnode ~/rcn/tools/fedwiki-lineup.js \"$URL\" --shape export --out drop-me.json\n```",
+      "id": "1ca63f9ccea85b48"
+    },
+    {
+      "type": "markdown",
+      "text": "It arrives as a ghost page holding an importer item that lists every page; click a page to create it on that site. This is how a lineup moves between wikis — Wiki Café to localhost, or out to an NDC site.",
+      "id": "0257c03d3c44512a"
+    },
+    {
+      "type": "markdown",
+      "text": "Dragging a `--shape bundle` file instead yields three junk entries named `title`, `story`, and `journal`. Wrong shape, no error message — just nonsense.",
+      "id": "a490c766cae2c95b"
+    },
+    {
+      "type": "markdown",
+      "text": "## Sharing with other people",
+      "id": "b26670f8d43dee55"
+    },
+    {
+      "type": "markdown",
+      "text": "The **script** needs Node and a copy of the file. Someone with both runs it exactly as documented here; there are no paths baked in and no dependencies. Anyone without Node cannot use it at all.",
+      "id": "605e05783e8e45ea"
+    },
+    {
+      "type": "markdown",
+      "text": "The **bookmarklet** (`~/rcn/tools/fedwiki-lineup-bookmarklet.js`) needs no install and no terminal — send someone `~/rcn/tools/fedwiki-lineup-bookmarklet.html` and they drag a button to their bookmarks bar. That is the form to hand to NDC sites. Rebuild that page with `node ~/rcn/tools/build-lineup-bookmarklet.js` after editing the source.",
+      "id": "928b0fa233a13f49"
+    },
+    {
+      "type": "markdown",
+      "text": "## How the lineup URL is parsed",
+      "id": "b66fb1eda31257a1"
+    },
+    {
+      "type": "markdown",
+      "text": "FedWiki encodes the lineup as strict `loc/slug` pairs (this matches wiki-client's `urlPages`/`urlLocs`):",
+      "id": "5d31309932708127"
+    },
+    {
+      "type": "markdown",
+      "text": "```\n/view/welcome-visitors/view/some-page/other.site.org/their-page\n ^loc  ^slug           ^loc  ^slug    ^loc           ^slug\n```",
+      "id": "d807725984c8370f"
+    },
+    {
+      "type": "markdown",
+      "text": "`loc` is either `view` — a page on the URL's own origin — or a hostname, meaning a page federated in from that site.",
+      "id": "2be2531db608d8ec"
+    },
+    {
+      "type": "markdown",
+      "text": "Local pages are fetched from `<origin>/<slug>.json`. Remote pages go through the origin server's proxy at `<origin>/remote/<site>/<slug>.json`, so http/https and CORS are the server's problem; if that fails the script tries the remote host directly.",
+      "id": "1a37b64602bce7f1"
+    },
+    {
+      "type": "markdown",
+      "text": "## A note on the renderer",
+      "id": "0825055bf33306ed"
+    },
+    {
+      "type": "markdown",
+      "text": "`export-fedwiki-page.js` used to require *every* line of an item to be a bullet before it would build a list, so the common \"label line, then bullets\" item — a `STATUS - COLOR` heading over its checkboxes — came out as one paragraph with the asterisks showing. It now splits an item into blocks, so one item can mix prose, lists, and `>` quotes. This changed a shared script; `git diff` on `.claude/skills/fedwiki-page/scripts/export-fedwiki-page.js` shows exactly what.",
+      "id": "ced754712b8a8777"
+    },
+    {
+      "type": "markdown",
+      "text": "## Related",
+      "id": "3b7521bd8a27bb81"
+    },
+    {
+      "type": "markdown",
+      "text": "- `~/rcn/.claude/skills/fedwiki-page/scripts/bundle-fedwiki-import.js` — build a bundle from a *directory* of page files. Same output shape. Use it when pages come from authoring rather than from a live wiki.\n- `~/rcn/.claude/skills/fedwiki-page/scripts/md-to-fedwiki-page.js` — markdown into page JSON, the authoring direction.\n- `~/rcn/.claude/skills/fedwiki-page/scripts/export-fedwiki-page.js` — the reverse gear, page JSON or bundle out to md/html.",
+      "id": "73b6612fd1520d27"
+    }
+  ],
+  "journal": [
+    {
+      "type": "create",
+      "item": {
+        "title": "FedWiki Lineup Capture",
+        "story": []
+      },
+      "date": 1785603258412
+    },
+    {
+      "type": "add",
+      "id": "a12c50d5d7bb47eb",
+      "item": {
+        "type": "markdown",
+        "id": "a12c50d5d7bb47eb",
+        "text": "`~/rcn/tools/fedwiki-lineup.js`"
+      },
+      "date": 1785603258413
+    },
+    {
+      "type": "add",
+      "id": "6d67ef2e274f2f36",
+      "item": {
+        "type": "markdown",
+        "id": "6d67ef2e274f2f36",
+        "text": "## What it is for"
+      },
+      "date": 1785603258414,
+      "after": "a12c50d5d7bb47eb"
+    },
+    {
+      "type": "add",
+      "id": "35f8c65a2b62f232",
+      "item": {
+        "type": "markdown",
+        "id": "35f8c65a2b62f232",
+        "text": "You have a lineup of open pages in FedWiki. You want that lineup as **one file** — to hand to Claude Code for analysis, to archive, to import onto another wiki, or to turn into a document for people who will never touch a wiki."
+      },
+      "date": 1785603258415,
+      "after": "6d67ef2e274f2f36"
+    },
+    {
+      "type": "add",
+      "id": "55f6fc1b503782fd",
+      "item": {
+        "type": "markdown",
+        "id": "55f6fc1b503782fd",
+        "text": "This script takes the lineup URL and produces a single JSON file holding every page's complete content. That file works in three directions:"
+      },
+      "date": 1785603258416,
+      "after": "35f8c65a2b62f232"
+    },
+    {
+      "type": "add",
+      "id": "9348b83416b78911",
+      "item": {
+        "type": "markdown",
+        "id": "9348b83416b78911",
+        "text": "- **Analysis** — hand it to Claude Code. Nothing is lost: item ids, item types, and full plugin data all survive.\n- **Import** — carry the pages onto another wiki (`--shape export`, then drag).\n- **Documents** — feed it to `export-fedwiki-page.js` for markdown or HTML (and PDF by printing the HTML)."
+      },
+      "date": 1785603258417,
+      "after": "55f6fc1b503782fd"
+    },
+    {
+      "type": "add",
+      "id": "f31fafc68bb75923",
+      "item": {
+        "type": "markdown",
+        "id": "f31fafc68bb75923",
+        "text": "## Two shapes — pick the right one"
+      },
+      "date": 1785603258418,
+      "after": "9348b83416b78911"
+    },
+    {
+      "type": "add",
+      "id": "d1b8733497009790",
+      "item": {
+        "type": "markdown",
+        "id": "d1b8733497009790",
+        "text": "FedWiki has two importer-related shapes and **they are not interchangeable**:"
+      },
+      "date": 1785603258419,
+      "after": "f31fafc68bb75923"
+    },
+    {
+      "type": "add",
+      "id": "363d5497cf7ea796",
+      "item": {
+        "type": "markdown",
+        "id": "363d5497cf7ea796",
+        "text": "**`--shape`:** `bundle` (default) — **Structure:** a page: `{title, story:[…,{type:\"importer\", pages:{slug:page}}], journal}` — **Who accepts it:** `export-fedwiki-page.js`; Claude; placing on a site as a page"
+      },
+      "date": 1785603258420,
+      "after": "d1b8733497009790"
+    },
+    {
+      "type": "add",
+      "id": "b264998e9dc29309",
+      "item": {
+        "type": "markdown",
+        "id": "b264998e9dc29309",
+        "text": "**`--shape`:** `export` — **Structure:** bare map: `{slug: page, slug: page, …}` — **Who accepts it:** the browser's drag-and-drop importer — **only** this shape"
+      },
+      "date": 1785603258421,
+      "after": "363d5497cf7ea796"
+    },
+    {
+      "type": "add",
+      "id": "e1fd8b1de5ec87db",
+      "item": {
+        "type": "markdown",
+        "id": "e1fd8b1de5ec87db",
+        "text": "The browser importer is not a factory plugin. It is core wiki-client (`lib/importer.coffee`, bundled into `client.js`). It has no editor and never appears in the factory menu. It exists to render a *dropped file*: `readFile()` does `JSON.parse(file)` and treats **every top-level key as a slug**. That is the same shape `/system/export.json` returns."
+      },
+      "date": 1785603258422,
+      "after": "b264998e9dc29309"
+    },
+    {
+      "type": "add",
+      "id": "8e27a6d4a839bc39",
+      "item": {
+        "type": "markdown",
+        "id": "8e27a6d4a839bc39",
+        "text": "So dropping a `bundle` file on a wiki produces three junk entries named `title`, `story`, and `journal`. If the file is going into a browser, use `--shape export`. If it is going to Claude or to `export-fedwiki-page.js`, use `bundle`."
+      },
+      "date": 1785603258423,
+      "after": "e1fd8b1de5ec87db"
+    },
+    {
+      "type": "add",
+      "id": "425a8c5293f3ee68",
+      "item": {
+        "type": "markdown",
+        "id": "425a8c5293f3ee68",
+        "text": "## When you do NOT need it"
+      },
+      "date": 1785603258424,
+      "after": "8e27a6d4a839bc39"
+    },
+    {
+      "type": "add",
+      "id": "91b8378d6789767e",
+      "item": {
+        "type": "markdown",
+        "id": "91b8378d6789767e",
+        "text": "If the wiki is reachable from the machine Claude Code is running on — localhost, or Wiki Café — **just paste Claude the lineup URL.** It fetches the pages itself. No file, no download, no step for you."
+      },
+      "date": 1785603258425,
+      "after": "425a8c5293f3ee68"
+    },
+    {
+      "type": "add",
+      "id": "0f5dd6090309696a",
+      "item": {
+        "type": "markdown",
+        "id": "0f5dd6090309696a",
+        "text": "Use this script when you want a durable artifact: something to archive, import elsewhere, or turn into a document."
+      },
+      "date": 1785603258426,
+      "after": "91b8378d6789767e"
+    },
+    {
+      "type": "add",
+      "id": "4599cfd0fd54c8f0",
+      "item": {
+        "type": "markdown",
+        "id": "4599cfd0fd54c8f0",
+        "text": "## What it cannot capture — use the bookmarklet instead"
+      },
+      "date": 1785603258427,
+      "after": "0f5dd6090309696a"
+    },
+    {
+      "type": "add",
+      "id": "8885727bb0c4c32e",
+      "item": {
+        "type": "markdown",
+        "id": "8885727bb0c4c32e",
+        "text": "The script reads the **server**. Anything that exists only in your browser is invisible to it:"
+      },
+      "date": 1785603258428,
+      "after": "4599cfd0fd54c8f0"
+    },
+    {
+      "type": "add",
+      "id": "8c3c1921e0542a1b",
+      "item": {
+        "type": "markdown",
+        "id": "8c3c1921e0542a1b",
+        "text": "- **Edits made while not logged in.** FedWiki writes those to browser localStorage (`pageHandler.useLocalStorage()` is true whenever a `.login` element is present) and never sends them to the server.\n- **Ghost pages.** Search results and neighbor pages you have never forked have no JSON anywhere. The script names them and continues.\n- **Pages behind a login.** It has no session cookie.\n- **Wikis this machine cannot route to.**"
+      },
+      "date": 1785603258429,
+      "after": "8885727bb0c4c32e"
+    },
+    {
+      "type": "add",
+      "id": "3948afc467e4d884",
+      "item": {
+        "type": "markdown",
+        "id": "3948afc467e4d884",
+        "text": "For all of these use `fedwiki-lineup-bookmarklet.js`, which runs inside the tab. Its output is byte-identical to this script's for pages both can see — verified by comparing item ids and journal dates from both paths."
+      },
+      "date": 1785603258430,
+      "after": "8c3c1921e0542a1b"
+    },
+    {
+      "type": "add",
+      "id": "32bcd63015f219b7",
+      "item": {
+        "type": "markdown",
+        "id": "32bcd63015f219b7",
+        "text": "## Invoking it"
+      },
+      "date": 1785603258431,
+      "after": "3948afc467e4d884"
+    },
+    {
+      "type": "add",
+      "id": "a26e9c5939e39ac7",
+      "item": {
+        "type": "markdown",
+        "id": "a26e9c5939e39ac7",
+        "text": "Copy the whole address bar out of the browser. **Quote it** — the shell will mangle it otherwise."
+      },
+      "date": 1785603258432,
+      "after": "32bcd63015f219b7"
+    },
+    {
+      "type": "add",
+      "id": "1fe3070fe9d3cf2f",
+      "item": {
+        "type": "markdown",
+        "id": "1fe3070fe9d3cf2f",
+        "text": "```bash\nnode ~/rcn/tools/fedwiki-lineup.js \"http://localhost:3000/view/welcome-visitors/view/some-page\"\n```"
+      },
+      "date": 1785603258433,
+      "after": "a26e9c5939e39ac7"
+    },
+    {
+      "type": "add",
+      "id": "b64655dda218bc7c",
+      "item": {
+        "type": "markdown",
+        "id": "b64655dda218bc7c",
+        "text": "Writes `lineup-<first-slug>.json` in the current directory."
+      },
+      "date": 1785603258434,
+      "after": "1fe3070fe9d3cf2f"
+    },
+    {
+      "type": "add",
+      "id": "cc186d6ade4caf9f",
+      "item": {
+        "type": "markdown",
+        "id": "cc186d6ade4caf9f",
+        "text": "### Options"
+      },
+      "date": 1785603258435,
+      "after": "b64655dda218bc7c"
+    },
+    {
+      "type": "add",
+      "id": "16c5da06f66e7d12",
+      "item": {
+        "type": "markdown",
+        "id": "16c5da06f66e7d12",
+        "text": "Any reachable wiki works — localhost, Wiki Café, an NDC site, someone else's public wiki. The origin in the URL is simply where it fetches from:"
+      },
+      "date": 1785603258436,
+      "after": "cc186d6ade4caf9f"
+    },
+    {
+      "type": "add",
+      "id": "5d690a5eaea30117",
+      "item": {
+        "type": "markdown",
+        "id": "5d690a5eaea30117",
+        "text": "```bash\nnode ~/rcn/tools/fedwiki-lineup.js \"http://ward.asia.wiki.org/view/welcome-visitors/ward.bay.wiki.org/welcome-visitors\"\n```"
+      },
+      "date": 1785603258437,
+      "after": "16c5da06f66e7d12"
+    },
+    {
+      "type": "add",
+      "id": "f3edfbb11b47aa2f",
+      "item": {
+        "type": "markdown",
+        "id": "f3edfbb11b47aa2f",
+        "text": "**Option:** `--out <file>` — **Effect:** Output path. Default `lineup-<first-slug>.json`."
+      },
+      "date": 1785603258438,
+      "after": "5d690a5eaea30117"
+    },
+    {
+      "type": "add",
+      "id": "686b6e6c24982429",
+      "item": {
+        "type": "markdown",
+        "id": "686b6e6c24982429",
+        "text": "**Option:** `--shape bundle\\ — **Effect:** export` — **Col 3:** See \"Two shapes\" above. Default `bundle`."
+      },
+      "date": 1785603258439,
+      "after": "f3edfbb11b47aa2f"
+    },
+    {
+      "type": "add",
+      "id": "99d2c16f0c3b5d21",
+      "item": {
+        "type": "markdown",
+        "id": "99d2c16f0c3b5d21",
+        "text": "**Option:** `--title \"...\"` — **Effect:** Bundle page title. Default `Lineup: <first page title>`."
+      },
+      "date": 1785603258440,
+      "after": "686b6e6c24982429"
+    },
+    {
+      "type": "add",
+      "id": "85f88f4af6a6d6b2",
+      "item": {
+        "type": "markdown",
+        "id": "85f88f4af6a6d6b2",
+        "text": "**Option:** `--journal full\\ — **Effect:** fork\\ — **Col 3:** none` — **Col 4:** How much page history to keep. Default `fork`."
+      },
+      "date": 1785603258441,
+      "after": "99d2c16f0c3b5d21"
+    },
+    {
+      "type": "add",
+      "id": "ecd7f2c7aa6b86da",
+      "item": {
+        "type": "markdown",
+        "id": "ecd7f2c7aa6b86da",
+        "text": "**Option:** `--pages-dir <dir>` — **Effect:** Also write each page as its own `<slug>.json`."
+      },
+      "date": 1785603258442,
+      "after": "85f88f4af6a6d6b2"
+    },
+    {
+      "type": "add",
+      "id": "f76c91e40219dce2",
+      "item": {
+        "type": "markdown",
+        "id": "f76c91e40219dce2",
+        "text": "**Option:** `--no-bundle` — **Effect:** Write only `--pages-dir`, no bundle. Requires `--pages-dir`."
+      },
+      "date": 1785603258443,
+      "after": "ecd7f2c7aa6b86da"
+    },
+    {
+      "type": "add",
+      "id": "257705116399c655",
+      "item": {
+        "type": "markdown",
+        "id": "257705116399c655",
+        "text": "**Option:** `--quiet` — **Effect:** Suppress the per-page report."
+      },
+      "date": 1785603258444,
+      "after": "f76c91e40219dce2"
+    },
+    {
+      "type": "add",
+      "id": "614e618c775d5c0c",
+      "item": {
+        "type": "markdown",
+        "id": "614e618c775d5c0c",
+        "text": "### Choosing `--journal`"
+      },
+      "date": 1785603258445,
+      "after": "257705116399c655"
+    },
+    {
+      "type": "add",
+      "id": "e528577359ad34dd",
+      "item": {
+        "type": "markdown",
+        "id": "e528577359ad34dd",
+        "text": "**Mode:** `fork` (default) — **Keeps:** One fork entry: which site, what date — **Use when:** Almost always. Provenance without the noise."
+      },
+      "date": 1785603258446,
+      "after": "614e618c775d5c0c"
+    },
+    {
+      "type": "add",
+      "id": "35be33ecb7084902",
+      "item": {
+        "type": "markdown",
+        "id": "35be33ecb7084902",
+        "text": "**Mode:** `full` — **Keeps:** Every edit ever made to the page — **Use when:** You are asking about *history* — who changed what, when, how a page evolved."
+      },
+      "date": 1785603258447,
+      "after": "e528577359ad34dd"
+    },
+    {
+      "type": "add",
+      "id": "6cfc48e2f28e2ad1",
+      "item": {
+        "type": "markdown",
+        "id": "6cfc48e2f28e2ad1",
+        "text": "**Mode:** `none` — **Keeps:** Nothing — **Use when:** Clean slate for import onto a new site."
+      },
+      "date": 1785603258448,
+      "after": "35be33ecb7084902"
+    },
+    {
+      "type": "add",
+      "id": "f95afae6e5c61c47",
+      "item": {
+        "type": "markdown",
+        "id": "f95afae6e5c61c47",
+        "text": "Journals are bulky — a three-item page here carried seven journal entries. Ask for `full` when history is the question, not by habit."
+      },
+      "date": 1785603258449,
+      "after": "6cfc48e2f28e2ad1"
+    },
+    {
+      "type": "add",
+      "id": "ce032d44260554da",
+      "item": {
+        "type": "markdown",
+        "id": "ce032d44260554da",
+        "text": "### Examples"
+      },
+      "date": 1785603258450,
+      "after": "f95afae6e5c61c47"
+    },
+    {
+      "type": "add",
+      "id": "c52f6cc8b6163225",
+      "item": {
+        "type": "markdown",
+        "id": "c52f6cc8b6163225",
+        "text": "Straight capture for analysis:"
+      },
+      "date": 1785603258451,
+      "after": "ce032d44260554da"
+    },
+    {
+      "type": "add",
+      "id": "d31711a85801cfd7",
+      "item": {
+        "type": "markdown",
+        "id": "d31711a85801cfd7",
+        "text": "```bash\nnode ~/rcn/tools/fedwiki-lineup.js \"http://localhost:3000/view/a/view/b\" --out ~/rcn/data/lineup.json\n```"
+      },
+      "date": 1785603258452,
+      "after": "c52f6cc8b6163225"
+    },
+    {
+      "type": "add",
+      "id": "2dccbc429a29bd2b",
+      "item": {
+        "type": "markdown",
+        "id": "2dccbc429a29bd2b",
+        "text": "History included, because the question is how these pages evolved:"
+      },
+      "date": 1785603258453,
+      "after": "d31711a85801cfd7"
+    },
+    {
+      "type": "add",
+      "id": "6ea14f2fd9ac4dd8",
+      "item": {
+        "type": "markdown",
+        "id": "6ea14f2fd9ac4dd8",
+        "text": "```bash\nnode ~/rcn/tools/fedwiki-lineup.js \"$URL\" --journal full --out evolution.json\n```"
+      },
+      "date": 1785603258454,
+      "after": "2dccbc429a29bd2b"
+    },
+    {
+      "type": "add",
+      "id": "5cbcf08daff6cfb7",
+      "item": {
+        "type": "markdown",
+        "id": "5cbcf08daff6cfb7",
+        "text": "Loose page files as well as the bundle, so pages can be edited individually and re-bundled later with `bundle-fedwiki-import.js`:"
+      },
+      "date": 1785603258455,
+      "after": "6ea14f2fd9ac4dd8"
+    },
+    {
+      "type": "add",
+      "id": "27f37c3fb69f1221",
+      "item": {
+        "type": "markdown",
+        "id": "27f37c3fb69f1221",
+        "text": "```bash\nnode ~/rcn/tools/fedwiki-lineup.js \"$URL\" --pages-dir ./pages --out bundle.json\n```"
+      },
+      "date": 1785603258456,
+      "after": "5cbcf08daff6cfb7"
+    },
+    {
+      "type": "add",
+      "id": "b17b7779e1f48783",
+      "item": {
+        "type": "markdown",
+        "id": "b17b7779e1f48783",
+        "text": "## Reading the output"
+      },
+      "date": 1785603258457,
+      "after": "27f37c3fb69f1221"
+    },
+    {
+      "type": "add",
+      "id": "f6f5d64bf5ef248e",
+      "item": {
+        "type": "markdown",
+        "id": "f6f5d64bf5ef248e",
+        "text": "Per page, on stderr:"
+      },
+      "date": 1785603258458,
+      "after": "b17b7779e1f48783"
+    },
+    {
+      "type": "add",
+      "id": "022f835e2ff5e4a9",
+      "item": {
+        "type": "markdown",
+        "id": "022f835e2ff5e4a9",
+        "text": "```\n  ok       1-2                            3 items (3 markdown)\n  ok       welcome-visitors               6 items (6 paragraph)  [from wiki.ralfbarkow.ch]\n  MISSING  local/no-such-page-xyz\n```"
+      },
+      "date": 1785603258459,
+      "after": "f6f5d64bf5ef248e"
+    },
+    {
+      "type": "add",
+      "id": "2d4a54b610affbb6",
+      "item": {
+        "type": "markdown",
+        "id": "2d4a54b610affbb6",
+        "text": "Failures are named and non-fatal — a lineup with one ghost page still produces a bundle of the rest."
+      },
+      "date": 1785603258460,
+      "after": "022f835e2ff5e4a9"
+    },
+    {
+      "type": "add",
+      "id": "7d95f9a3d23b4b99",
+      "item": {
+        "type": "markdown",
+        "id": "7d95f9a3d23b4b99",
+        "text": "If a slug appears twice from different sites, the second is re-keyed (`welcome-visitors-superior`) and a note is printed. Importer keys are slugs, so without this the second copy would silently overwrite the first."
+      },
+      "date": 1785603258461,
+      "after": "2d4a54b610affbb6"
+    },
+    {
+      "type": "add",
+      "id": "dc54143a32693221",
+      "item": {
+        "type": "markdown",
+        "id": "dc54143a32693221",
+        "text": "## Making a document — the short way"
+      },
+      "date": 1785603258462,
+      "after": "7d95f9a3d23b4b99"
+    },
+    {
+      "type": "add",
+      "id": "046cbbf3ad9c09cb",
+      "item": {
+        "type": "markdown",
+        "id": "046cbbf3ad9c09cb",
+        "text": "```bash\nnode ~/rcn/tools/fedwiki-print.js \"$URL\"         # opens it, ready for Cmd-P\nnode ~/rcn/tools/fedwiki-print.js \"$URL\" --pdf   # writes the PDF directly\nnode ~/rcn/tools/fedwiki-print.js captured.json --pdf\n```"
+      },
+      "date": 1785603258463,
+      "after": "dc54143a32693221"
+    },
+    {
+      "type": "add",
+      "id": "6b5d03adf525ed14",
+      "item": {
+        "type": "markdown",
+        "id": "6b5d03adf525ed14",
+        "text": "One command replaces capture → export → open. The `--base` for wiki links is derived from the URL, so you never type it. `--pdf` drives headless Chrome; without it you get HTML and your own print dialog."
+      },
+      "date": 1785603258464,
+      "after": "046cbbf3ad9c09cb"
+    },
+    {
+      "type": "add",
+      "id": "25a61bdc90ca2459",
+      "item": {
+        "type": "markdown",
+        "id": "25a61bdc90ca2459",
+        "text": "Other options: `--out <file>`, `--links text|wiki|anchor`, `--journal full`, `--keep` (keep the intermediate bundle), `--no-open`."
+      },
+      "date": 1785603258465,
+      "after": "6b5d03adf525ed14"
+    },
+    {
+      "type": "add",
+      "id": "8bce4ecc7aea7569",
+      "item": {
+        "type": "markdown",
+        "id": "8bce4ecc7aea7569",
+        "text": "**With no terminal at all:** the *Print Lineup → PDF* bookmarklet does the same job from inside the browser — see `fedwiki-lineup-bookmarklet.html`."
+      },
+      "date": 1785603258466,
+      "after": "25a61bdc90ca2459"
+    },
+    {
+      "type": "add",
+      "id": "ae93c134cf8104cd",
+      "item": {
+        "type": "markdown",
+        "id": "ae93c134cf8104cd",
+        "text": "## The long way, when you want the intermediate files"
+      },
+      "date": 1785603258467,
+      "after": "8bce4ecc7aea7569"
+    },
+    {
+      "type": "add",
+      "id": "1c79cc78bd20b137",
+      "item": {
+        "type": "markdown",
+        "id": "1c79cc78bd20b137",
+        "text": "```bash\nS=~/rcn/.claude/skills/fedwiki-page/scripts\n\n# one markdown file, all pages, in Index order if the lineup has an Index page\nnode $S/export-fedwiki-page.js bundle.json --to md --merge --out lineup.md\n\n# one HTML file, [[wiki links]] pointing back at the live wiki\nnode $S/export-fedwiki-page.js bundle.json --to html --merge \\\n     --links wiki --base http://localhost:3000 --out lineup.html\n\n# separate files, one per page, into ./export/\nnode $S/export-fedwiki-page.js bundle.json --to md\n```"
+      },
+      "date": 1785603258468,
+      "after": "ae93c134cf8104cd"
+    },
+    {
+      "type": "add",
+      "id": "d59f613dc4a6908e",
+      "item": {
+        "type": "markdown",
+        "id": "d59f613dc4a6908e",
+        "text": "`--links` controls what `[[Wiki Links]]` become: `text` (plain, for readers with no wiki access), `wiki` (hyperlink to the live page, needs `--base`), or `anchor` (jump within the merged document when the target is in the bundle, falling back to `wiki` or `text`)."
+      },
+      "date": 1785603258469,
+      "after": "1c79cc78bd20b137"
+    },
+    {
+      "type": "add",
+      "id": "f2c0322fdc07596f",
+      "item": {
+        "type": "markdown",
+        "id": "f2c0322fdc07596f",
+        "text": "For PDF: export to HTML, open it, print to PDF. The HTML wraps every item in `<div class=\"item\" id=\"<item-id>\">`, so paragraph-level addressability survives."
+      },
+      "date": 1785603258470,
+      "after": "d59f613dc4a6908e"
+    },
+    {
+      "type": "add",
+      "id": "25121b25f08976f0",
+      "item": {
+        "type": "markdown",
+        "id": "25121b25f08976f0",
+        "text": "**The export script drops journals by design** — it exports the document, not its history. If you want history in a document, ask Claude to read the `--journal full` bundle and write it up."
+      },
+      "date": 1785603258471,
+      "after": "f2c0322fdc07596f"
+    },
+    {
+      "type": "add",
+      "id": "7752bf3bbe64660c",
+      "item": {
+        "type": "markdown",
+        "id": "7752bf3bbe64660c",
+        "text": "## Importing onto another wiki"
+      },
+      "date": 1785603258472,
+      "after": "25121b25f08976f0"
+    },
+    {
+      "type": "add",
+      "id": "75b0644810ff3041",
+      "item": {
+        "type": "markdown",
+        "id": "75b0644810ff3041",
+        "text": "Capture with `--shape export`, then drag the file onto a FedWiki page in the browser:"
+      },
+      "date": 1785603258473,
+      "after": "7752bf3bbe64660c"
+    },
+    {
+      "type": "add",
+      "id": "1ca63f9ccea85b48",
+      "item": {
+        "type": "markdown",
+        "id": "1ca63f9ccea85b48",
+        "text": "```bash\nnode ~/rcn/tools/fedwiki-lineup.js \"$URL\" --shape export --out drop-me.json\n```"
+      },
+      "date": 1785603258474,
+      "after": "75b0644810ff3041"
+    },
+    {
+      "type": "add",
+      "id": "0257c03d3c44512a",
+      "item": {
+        "type": "markdown",
+        "id": "0257c03d3c44512a",
+        "text": "It arrives as a ghost page holding an importer item that lists every page; click a page to create it on that site. This is how a lineup moves between wikis — Wiki Café to localhost, or out to an NDC site."
+      },
+      "date": 1785603258475,
+      "after": "1ca63f9ccea85b48"
+    },
+    {
+      "type": "add",
+      "id": "a490c766cae2c95b",
+      "item": {
+        "type": "markdown",
+        "id": "a490c766cae2c95b",
+        "text": "Dragging a `--shape bundle` file instead yields three junk entries named `title`, `story`, and `journal`. Wrong shape, no error message — just nonsense."
+      },
+      "date": 1785603258476,
+      "after": "0257c03d3c44512a"
+    },
+    {
+      "type": "add",
+      "id": "b26670f8d43dee55",
+      "item": {
+        "type": "markdown",
+        "id": "b26670f8d43dee55",
+        "text": "## Sharing with other people"
+      },
+      "date": 1785603258477,
+      "after": "a490c766cae2c95b"
+    },
+    {
+      "type": "add",
+      "id": "605e05783e8e45ea",
+      "item": {
+        "type": "markdown",
+        "id": "605e05783e8e45ea",
+        "text": "The **script** needs Node and a copy of the file. Someone with both runs it exactly as documented here; there are no paths baked in and no dependencies. Anyone without Node cannot use it at all."
+      },
+      "date": 1785603258478,
+      "after": "b26670f8d43dee55"
+    },
+    {
+      "type": "add",
+      "id": "928b0fa233a13f49",
+      "item": {
+        "type": "markdown",
+        "id": "928b0fa233a13f49",
+        "text": "The **bookmarklet** (`~/rcn/tools/fedwiki-lineup-bookmarklet.js`) needs no install and no terminal — send someone `~/rcn/tools/fedwiki-lineup-bookmarklet.html` and they drag a button to their bookmarks bar. That is the form to hand to NDC sites. Rebuild that page with `node ~/rcn/tools/build-lineup-bookmarklet.js` after editing the source."
+      },
+      "date": 1785603258479,
+      "after": "605e05783e8e45ea"
+    },
+    {
+      "type": "add",
+      "id": "b66fb1eda31257a1",
+      "item": {
+        "type": "markdown",
+        "id": "b66fb1eda31257a1",
+        "text": "## How the lineup URL is parsed"
+      },
+      "date": 1785603258480,
+      "after": "928b0fa233a13f49"
+    },
+    {
+      "type": "add",
+      "id": "5d31309932708127",
+      "item": {
+        "type": "markdown",
+        "id": "5d31309932708127",
+        "text": "FedWiki encodes the lineup as strict `loc/slug` pairs (this matches wiki-client's `urlPages`/`urlLocs`):"
+      },
+      "date": 1785603258481,
+      "after": "b66fb1eda31257a1"
+    },
+    {
+      "type": "add",
+      "id": "d807725984c8370f",
+      "item": {
+        "type": "markdown",
+        "id": "d807725984c8370f",
+        "text": "```\n/view/welcome-visitors/view/some-page/other.site.org/their-page\n ^loc  ^slug           ^loc  ^slug    ^loc           ^slug\n```"
+      },
+      "date": 1785603258482,
+      "after": "5d31309932708127"
+    },
+    {
+      "type": "add",
+      "id": "2be2531db608d8ec",
+      "item": {
+        "type": "markdown",
+        "id": "2be2531db608d8ec",
+        "text": "`loc` is either `view` — a page on the URL's own origin — or a hostname, meaning a page federated in from that site."
+      },
+      "date": 1785603258483,
+      "after": "d807725984c8370f"
+    },
+    {
+      "type": "add",
+      "id": "1a37b64602bce7f1",
+      "item": {
+        "type": "markdown",
+        "id": "1a37b64602bce7f1",
+        "text": "Local pages are fetched from `<origin>/<slug>.json`. Remote pages go through the origin server's proxy at `<origin>/remote/<site>/<slug>.json`, so http/https and CORS are the server's problem; if that fails the script tries the remote host directly."
+      },
+      "date": 1785603258484,
+      "after": "2be2531db608d8ec"
+    },
+    {
+      "type": "add",
+      "id": "0825055bf33306ed",
+      "item": {
+        "type": "markdown",
+        "id": "0825055bf33306ed",
+        "text": "## A note on the renderer"
+      },
+      "date": 1785603258485,
+      "after": "1a37b64602bce7f1"
+    },
+    {
+      "type": "add",
+      "id": "ced754712b8a8777",
+      "item": {
+        "type": "markdown",
+        "id": "ced754712b8a8777",
+        "text": "`export-fedwiki-page.js` used to require *every* line of an item to be a bullet before it would build a list, so the common \"label line, then bullets\" item — a `STATUS - COLOR` heading over its checkboxes — came out as one paragraph with the asterisks showing. It now splits an item into blocks, so one item can mix prose, lists, and `>` quotes. This changed a shared script; `git diff` on `.claude/skills/fedwiki-page/scripts/export-fedwiki-page.js` shows exactly what."
+      },
+      "date": 1785603258486,
+      "after": "0825055bf33306ed"
+    },
+    {
+      "type": "add",
+      "id": "3b7521bd8a27bb81",
+      "item": {
+        "type": "markdown",
+        "id": "3b7521bd8a27bb81",
+        "text": "## Related"
+      },
+      "date": 1785603258487,
+      "after": "ced754712b8a8777"
+    },
+    {
+      "type": "add",
+      "id": "73b6612fd1520d27",
+      "item": {
+        "type": "markdown",
+        "id": "73b6612fd1520d27",
+        "text": "- `~/rcn/.claude/skills/fedwiki-page/scripts/bundle-fedwiki-import.js` — build a bundle from a *directory* of page files. Same output shape. Use it when pages come from authoring rather than from a live wiki.\n- `~/rcn/.claude/skills/fedwiki-page/scripts/md-to-fedwiki-page.js` — markdown into page JSON, the authoring direction.\n- `~/rcn/.claude/skills/fedwiki-page/scripts/export-fedwiki-page.js` — the reverse gear, page JSON or bundle out to md/html."
+      },
+      "date": 1785603258488,
+      "after": "3b7521bd8a27bb81"
+    }
+  ]
+}
