@@ -157,15 +157,36 @@ function mdItemToHtml(text) {
   const t = text.trim();
   const h = t.match(/^(#{1,6})\s+(.*)$/s);
   if (h) return `<h${h[1].length}>${inlineHtml(escapeHtml(h[2].trim()))}</h${h[1].length}>`;
+
+  /* Block-by-block, so ONE item can mix prose, lists, and quotes. An earlier
+     version required every line to be a bullet before it would build a list,
+     which silently flattened the common "label line, then bullets" item —
+     e.g. a STATUS - COLOR heading over its checkboxes — into one paragraph
+     with the asterisks showing. */
   const lines = t.split('\n').map(l => l.trim()).filter(Boolean);
-  const isUl = lines.every(l => /^[-*]\s+/.test(l));
-  const isOl = lines.every(l => /^\d+[.)]\s+/.test(l));
-  if (lines.length && (isUl || isOl)) {
-    const tag = isUl ? 'ul' : 'ol';
-    const lis = lines.map(l => `  <li>${inlineHtml(escapeHtml(l.replace(/^([-*]|\d+[.)])\s+/, '')))}</li>`).join('\n');
-    return `<${tag}>\n${lis}\n</${tag}>`;
+  if (!lines.length) return '';
+
+  const kindOf = l => /^[-*]\s+/.test(l) ? 'ul'
+                    : /^\d+[.)]\s+/.test(l) ? 'ol'
+                    : /^>\s?/.test(l) ? 'quote'
+                    : 'p';
+
+  const blocks = [];
+  for (const line of lines) {
+    const kind = kindOf(line);
+    const last = blocks[blocks.length - 1];
+    if (last && last.kind === kind) last.lines.push(line);
+    else blocks.push({ kind, lines: [line] });
   }
-  return `<p>${inlineHtml(escapeHtml(t))}</p>`;
+
+  const li = l => `  <li>${inlineHtml(escapeHtml(l.replace(/^([-*]|\d+[.)])\s+/, '')))}</li>`;
+  return blocks.map(b => {
+    if (b.kind === 'ul' || b.kind === 'ol')
+      return `<${b.kind}>\n${b.lines.map(li).join('\n')}\n</${b.kind}>`;
+    if (b.kind === 'quote')
+      return `<blockquote>${inlineHtml(escapeHtml(b.lines.map(l => l.replace(/^>\s?/, '')).join(' ')))}</blockquote>`;
+    return `<p>${inlineHtml(escapeHtml(b.lines.join(' ')))}</p>`;
+  }).join('\n');
 }
 
 /* ---------- per-page exporters ---------- */
