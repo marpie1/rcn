@@ -330,6 +330,7 @@ async function reauth() {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ISSUERS = {
+  demoAcademy:    { label: 'DEMO Academy · test issuer (use for demo badges)',  did: 'did:key:z6MkjvwvsKUPVWV5QpsuxsNmNQCdrtw5LkjR17DWEX7h4R1K', url: '' },
   rcn:            { label: 'ReLocalize Creativity Network · Bellingham WA',  did: 'did:key:z6MkrpszcAgGXVm3svfuVL35xfPgncW77Ev15JGnE7YR7V64', url: 'https://relocalizecreativity.net' },
   columbiaValley: { label: 'Columbia Valley NDC · Whatcom County WA',        did: 'did:key:z6MkqfgCZjLZTtnJue7sc1WMEivM3zhS6SPPmZT7v3E2eK11', url: 'https://columbiavalleyndc.net' },
   fledge:         { label: 'The Fledge · Lansing MI',                        did: 'did:key:z6MkkPjFHVtxRRYNo2r5upSpNMsLekjv6JGPcFGGTr8pokv1', url: 'https://thefledge.com' },
@@ -359,11 +360,13 @@ const ASSERTIONS = {
   TeachOne: { mentor: ['satisfied','needs-more-work','not-satisfied'], learner: ['has-taught','attempted','not-ready']            },
 }
 
-const SEED_PEOPLE = [
-  { slug: 'marc-pierson',  name: 'Marc Pierson',  did: 'did:key:z6MkozBoq41VqSMQVvzunaCcqFbUmG531deb2SjTDNb2Qswb', site: WIKI_SITE, portfolioSlug: 'marc-pierson-sodoto-portfolio'  },
-  { slug: 'kerry-turner',  name: 'Kerry Turner',  did: 'did:key:z6Mkr8Xwq2GdTKMUzrkHyizSsCVUcCvG3WqjF6sJ2nweMPZ2', site: WIKI_SITE, portfolioSlug: 'kerry-turner-sodoto-portfolio'  },
-  { slug: 'noah-williams', name: 'Noah Williams', did: 'did:key:z6MkmsryVRZGZuiCp4wwo5UgszvaunmH9ukLvUkgzyy1MrJe', site: WIKI_SITE, portfolioSlug: 'noah-williams-sodoto-portfolio' },
-]
+// Intentionally empty. People come from the per-deployment people-registry
+// (seeded, served by the proxy at /api/people-registry) — not hardcoded here.
+// The list used to merge these entries in on every load, which meant real
+// personal DIDs shipped in this public file and leaked into any deployment,
+// demo or not. Keeping it empty makes the seeded registry the single source of
+// truth: real people locally, demo people on the demo pilot. See sodoto/seed/.
+const SEED_PEOPLE = []
 
 const LS_PEOPLE    = 'sodoto-people'
 const LS_CONTRACTS = 'sodoto-contracts'
@@ -673,15 +676,12 @@ async function submitGateAttempt() {
     logTo('gate-log','ok',`  Learner portfolio: ${learnerItemId}`)
   } catch (e) { logTo('gate-log','err',`  Learner portfolio error: ${e.message}`) }
 
-  // 2. Mentor portfolio
+  // 2. Mentor portfolio — into a single "Mentoring Log" section so entries fold
+  //    together instead of orphaning under whatever heading is last on the page.
   logTo('gate-log','dim',`Writing to ${mentor.name}'s portfolio (${mentor.portfolioSlug})…`)
-  const mentorItemId = 'taught-' + uid()
   try {
-    await wikiPost('/api/wiki-add-items', {
-      site: mentor.site, slug: mentor.portfolioSlug,
-      items: [{ type: 'html', id: mentorItemId, text: buildMentorHTML({ gate, attemptN, date, learner, mentorAssertion, learnerAssertion, outcome: outcomeVal, skillName: skill.name, narrativeSlug }) }]
-    })
-    logTo('gate-log','ok',`  Mentor portfolio: ${mentorItemId}`)
+    await updateMentoringLogSection(mentor.site, mentor.portfolioSlug, {
+      learner, skillName: skill.name, gate, attemptN, date, outcome: outcomeVal, narrativeSlug })
   } catch (e) { logTo('gate-log','err',`  Mentor portfolio error: ${e.message}`) }
 
   // 3. Narrative stub (only if page doesn't exist)
@@ -733,11 +733,11 @@ function buildGateHTML({ gate, attemptN, date, mentor, mentorAssertion, learnerA
   return `<p style='font-family:sans-serif;font-size:12px;margin:2px 0;'>`
     + `<span style='color:${color};font-weight:700;'>${mark} ${skillName} — ${GATE_LABELS[gate]} (attempt ${attemptN})</span>`
     + ` · <strong>Date:</strong> ${date}`
-    + ` · <strong>Mentor:</strong> <a href='/view/${mentor.portfolioSlug}' style='color:#2a6b5a;'>${mentor.name}</a>`
+    + ` · <strong>Mentor:</strong> <a class='sodoto-pagelink' href='/${mentor.portfolioSlug}.html' data-page-name='${mentor.portfolioSlug}' style='color:#2a6b5a;cursor:pointer;'>${mentor.name}</a>`
     + ` · <strong>Mentor says:</strong> ${mentorAssertion}`
     + ` · <strong>Learner says:</strong> ${learnerAssertion}`
     + ` · <strong>Outcome:</strong> ${outcome}`
-    + ` · <a href='/view/${narrativeSlug}' style='color:#555;font-size:11px;'>${narrativeSlug}</a></p>`
+    + ` · <a class='sodoto-pagelink' href='/${narrativeSlug}.html' data-page-name='${narrativeSlug}' style='color:#555;font-size:11px;cursor:pointer;'>${narrativeSlug}</a></p>`
 }
 
 function buildMentorHTML({ gate, attemptN, date, learner, mentorAssertion, learnerAssertion, outcome, skillName, narrativeSlug }) {
@@ -745,20 +745,20 @@ function buildMentorHTML({ gate, attemptN, date, learner, mentorAssertion, learn
   const color = done ? '#2a5c3f' : '#8b5e00'
   const mark  = done ? '✓' : '○'
   return `<p style='font-family:sans-serif;font-size:12px;margin:2px 0;'>`
-    + `<span style='color:${color};font-weight:700;'>${mark} Mentored <a href='/view/${learner.portfolioSlug}' style='color:#2a6b5a;'>${learner.name}</a> — ${skillName} ${GATE_LABELS[gate]} (attempt ${attemptN})</span>`
+    + `<span style='color:${color};font-weight:700;'>${mark} Mentored <a class='sodoto-pagelink' href='/${learner.portfolioSlug}.html' data-page-name='${learner.portfolioSlug}' style='color:#2a6b5a;cursor:pointer;'>${learner.name}</a> — ${skillName} ${GATE_LABELS[gate]} (attempt ${attemptN})</span>`
     + ` · <strong>Date:</strong> ${date}`
     + ` · <strong>Mentor says:</strong> ${mentorAssertion}`
     + ` · <strong>Learner says:</strong> ${learnerAssertion}`
     + ` · <strong>Outcome:</strong> ${outcome}`
-    + ` · <a href='/view/${narrativeSlug}' style='color:#555;font-size:11px;'>${narrativeSlug}</a></p>`
+    + ` · <a class='sodoto-pagelink' href='/${narrativeSlug}.html' data-page-name='${narrativeSlug}' style='color:#555;font-size:11px;cursor:pointer;'>${narrativeSlug}</a></p>`
 }
 
 function buildStudentHTML({ date, teacherName, teacherPortfolioSlug, skillName, attemptN, narrativeSlug }) {
   return `<p style='font-family:sans-serif;font-size:12px;margin:2px 0;'>`
     + `<strong>See One (observed teaching) — ${skillName}</strong>`
-    + ` · <strong>Teacher:</strong> <a href='/view/${teacherPortfolioSlug}' style='color:#2a6b5a;'>${teacherName}</a>`
+    + ` · <strong>Teacher:</strong> <a class='sodoto-pagelink' href='/${teacherPortfolioSlug}.html' data-page-name='${teacherPortfolioSlug}' style='color:#2a6b5a;cursor:pointer;'>${teacherName}</a>`
     + ` · <strong>Date:</strong> ${date}`
-    + ` · <a href='/view/${narrativeSlug}' style='color:#555;font-size:11px;'>${narrativeSlug}</a></p>`
+    + ` · <a class='sodoto-pagelink' href='/${narrativeSlug}.html' data-page-name='${narrativeSlug}' style='color:#555;font-size:11px;cursor:pointer;'>${narrativeSlug}</a></p>`
 }
 
 // ─── Crypto ───────────────────────────────────────────────────────────────────
@@ -959,7 +959,7 @@ async function updateStudentsTaughtSection(site, portfolioSlug, skillName, stude
   }
 
   const studentLink = studentData.portfolio
-    ? `<a href='/view/${studentData.portfolio}' style='color:#2a6b5a;text-decoration:underline;'>${studentData.name}</a>`
+    ? `<a class='sodoto-pagelink' href='/${studentData.portfolio}.html' data-page-name='${studentData.portfolio}' style='color:#2a6b5a;text-decoration:underline;cursor:pointer;'>${studentData.name}</a>`
     : studentData.name
   const newRow = `<tr style='border-bottom:1px solid #ede8e0;'>`
     + `<td style='padding:4px 8px 4px 0;'>${studentLink}</td>`
@@ -996,6 +996,62 @@ async function updateStudentsTaughtSection(site, portfolioSlug, skillName, stude
   logTo('sign-log','ok',`Students Taught — ${skillName} section created.`)
 }
 
+// Mentor gates accumulate in ONE "Mentoring Log" table on the mentor's
+// portfolio, so they fold as their own section instead of orphaning under
+// whatever heading happens to be last on the page. Mirrors updateStudentsTaughtSection.
+async function updateMentoringLogSection(site, portfolioSlug, { learner, skillName, gate, attemptN, date, outcome, narrativeSlug }) {
+  const page = await wikiRead(site, portfolioSlug)
+  if (!page) { logTo('gate-log','err',`Could not read ${portfolioSlug} for Mentoring Log`); return }
+  const story = page.story || []
+
+  let headerIdx = -1
+  for (let i = 0; i < story.length; i++) {
+    if (story[i].text && story[i].text.includes('<h3') && story[i].text.includes('Mentoring Log')) { headerIdx = i; break }
+  }
+
+  const learnerLink = learner.portfolioSlug
+    ? `<a class='sodoto-pagelink' href='/${learner.portfolioSlug}.html' data-page-name='${learner.portfolioSlug}' style='color:#2a6b5a;text-decoration:underline;cursor:pointer;'>${learner.name}</a>`
+    : learner.name
+  const narrLink = `<a class='sodoto-pagelink' href='/${narrativeSlug}.html' data-page-name='${narrativeSlug}' style='color:#555;cursor:pointer;'>${narrativeSlug}</a>`
+  const mark = outcome === 'complete' ? '✓' : '○'
+  const newRow = `<tr style='border-bottom:1px solid #ede8e0;'>`
+    + `<td style='padding:4px 8px 4px 0;font-size:13px;'>${learnerLink}</td>`
+    + `<td style='padding:4px 8px;font-size:11px;color:#555;'>${skillName} — ${GATE_LABELS[gate]} (attempt ${attemptN})</td>`
+    + `<td style='padding:4px 8px;font-size:11px;color:#555;'>${date}</td>`
+    + `<td style='padding:4px 8px;font-size:11px;color:#555;'>${mark} ${outcome}</td>`
+    + `<td style='padding:4px 0;font-size:11px;'>${narrLink}</td>`
+    + `</tr>`
+
+  if (headerIdx >= 0) {
+    for (let j = headerIdx + 1; j < story.length && j < headerIdx + 5; j++) {
+      if (story[j].text && story[j].text.includes('<table')) {
+        const newText = story[j].text.replace('</tbody></table>', newRow + '</tbody></table>')
+        await wikiPost('/api/wiki-update-item', { site, slug: portfolioSlug, itemId: story[j].id, text: newText })
+        logTo('gate-log','ok',`  Mentoring Log row added.`)
+        return
+      }
+    }
+  }
+
+  const h3HTML = `<h3 style='font-family:sans-serif;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:#4a3f35;margin:16px 0 8px;'>Mentoring Log</h3>`
+  const tableHTML = `<table style='width:100%;border-collapse:collapse;font-family:sans-serif;font-size:13px;margin:8px 0;'>`
+    + `<thead><tr style='border-bottom:2px solid #d4c5b0;'>`
+    + `<th style='text-align:left;padding:4px 8px 6px 0;font-size:11px;color:#888;'>LEARNER</th>`
+    + `<th style='text-align:left;padding:4px 8px;font-size:11px;color:#888;'>SKILL — GATE</th>`
+    + `<th style='text-align:left;padding:4px 8px;font-size:11px;color:#888;'>DATE</th>`
+    + `<th style='text-align:left;padding:4px 8px;font-size:11px;color:#888;'>OUTCOME</th>`
+    + `<th style='text-align:left;padding:4px 0;font-size:11px;color:#888;'>NARRATIVE</th>`
+    + `</tr></thead><tbody>${newRow}</tbody></table>`
+  await wikiPost('/api/wiki-add-items', {
+    site, slug: portfolioSlug,
+    items: [
+      { type: 'html', id: 'mlgh-' + uid(), text: h3HTML },
+      { type: 'html', id: 'mlgt-' + uid(), text: tableHTML }
+    ]
+  })
+  logTo('gate-log','ok',`  Mentoring Log section created.`)
+}
+
 async function updateLedgerTable(skillName, learner, issuer, cred, date) {
   const page = await wikiRead(WIKI_SITE, 'rcn-sodoto-ledger')
   if (!page) { logTo('sign-log','err','Could not read rcn-sodoto-ledger'); return }
@@ -1017,10 +1073,10 @@ async function updateLedgerTable(skillName, learner, issuer, cred, date) {
     : issuer.label.split(' ·')[0]
   const mentorPortfolio = seeOneMentor?.portfolio || ''
   const mentorCell = mentorPortfolio
-    ? `<a href='/view/${mentorPortfolio}' style='color:#2a6b5a;text-decoration:underline;'>${mentorName}</a>`
+    ? `<a class='sodoto-pagelink' href='/${mentorPortfolio}.html' data-page-name='${mentorPortfolio}' style='color:#2a6b5a;text-decoration:underline;cursor:pointer;'>${mentorName}</a>`
     : mentorName
   const holderCell = learner.portfolioSlug
-    ? `<a href='/view/${learner.portfolioSlug}' style='color:#2a6b5a;text-decoration:underline;'>${learner.name}</a>`
+    ? `<a class='sodoto-pagelink' href='/${learner.portfolioSlug}.html' data-page-name='${learner.portfolioSlug}' style='color:#2a6b5a;text-decoration:underline;cursor:pointer;'>${learner.name}</a>`
     : learner.name
   const doSym = cred.gates.DoOne?.completedAt    ? '✓' : '—'
   const teSym = cred.gates.TeachOne?.completedAt ? '✓' : '—'

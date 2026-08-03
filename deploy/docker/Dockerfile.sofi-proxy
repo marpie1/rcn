@@ -8,4 +8,7 @@ COPY . .
 
 EXPOSE 8765
 
-CMD ["python3", "sofi-proxy.py"]
+# Seed the demo cast (idempotent, opt-in via SEED_DEMO), then start the proxy.
+# The `;` — not `&&` — means a seed hiccup never blocks the proxy from starting.
+# seed.py no-ops unless SEED_DEMO is set, and never overwrites existing content.
+CMD ["sh", "-c", "python3 sodoto/seed/seed.py; exec python3 sofi-proxy.py"]

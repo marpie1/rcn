@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""Idempotent SODOTO demo seeder.
+
+Runs at proxy startup. Seeds the demo people-registry and the demo portfolio /
+ledger / welcome pages into whatever site WIKI_SITE names — so it is correct on
+localhost (dev) and on the WikiCafe domain alike, with no hardcoded site.
+
+Opt-in: does nothing unless SEED_DEMO is truthy. A real (non-demo) deployment
+simply leaves SEED_DEMO unset and is never touched.
+
+Idempotent: only writes a file that is absent. It never overwrites an existing
+page, registry, or owner file — so re-running on an already-seeded (or
+operator-edited) site is a no-op, and real content is never clobbered.
+"""
+import json
+import os
+import sys
+
+SRC          = os.path.dirname(os.path.abspath(__file__))
+WIKI_SITE    = os.environ.get('WIKI_SITE', 'localhost')
+WIKI_ROOT    = os.path.expanduser(os.environ.get('WIKI_ROOT', '~/.wiki'))
+SODOTO_ROOT  = os.path.expanduser(os.environ.get('SODOTO_ROOT', '~/.sodoto'))
+SEED_DEMO    = os.environ.get('SEED_DEMO', '').strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+def truthy_exit(msg):
+    print(f"[seed] {msg}")
+    sys.exit(0)
+
+
+def main():
+    if not SEED_DEMO:
+        truthy_exit("SEED_DEMO not set — skipping demo seed.")
+
+    pages_src = os.path.join(SRC, 'pages')
+    registry_src = os.path.join(SRC, 'people-registry.json')
+    if not os.path.isdir(pages_src) or not os.path.isfile(registry_src):
+        truthy_exit(f"seed source missing under {SRC} — nothing to do.")
+
+    site_pages = os.path.join(WIKI_ROOT, WIKI_SITE, 'pages')
+    os.makedirs(site_pages, exist_ok=True)
+    os.makedirs(SODOTO_ROOT, exist_ok=True)
+
+    wrote = []
+    skipped = []
+
+    # 1. People registry — stamp each person's site with WIKI_SITE. Absent-only.
+    registry_dest = os.path.join(SODOTO_ROOT, 'people-registry.json')
+    if os.path.exists(registry_dest):
+        skipped.append('people-registry.json')
+    else:
+        with open(registry_src, encoding='utf-8') as f:
+            registry = json.load(f)
+        for person in registry.get('people', []):
+            person['site'] = WIKI_SITE
+        with open(registry_dest, 'w', encoding='utf-8') as f:
+            json.dump(registry, f, ensure_ascii=False, indent=2)
+        wrote.append(f"registry ({len(registry.get('people', []))} demo people)")
+
+    # 2. Pages — one file per slug (filename minus .json). Absent-only.
+    for fname in sorted(os.listdir(pages_src)):
+        if not fname.endswith('.json'):
+            continue
+        slug = fname[:-5]
+        dest = os.path.join(site_pages, slug)
+        if os.path.exists(dest):
+            skipped.append(slug)
+            continue
+        with open(os.path.join(pages_src, fname), encoding='utf-8') as f:
+            page = json.load(f)
+        with open(dest, 'w', encoding='utf-8') as f:
+            json.dump(page, f, ensure_ascii=False)
+        wrote.append(slug)
+
+    # 3. owner.json for the site — absent-only, so a claimed site is left alone.
+    owner_dest = os.path.join(WIKI_ROOT, WIKI_SITE, 'owner.json')
+    if not os.path.exists(owner_dest):
+        with open(owner_dest, 'w', encoding='utf-8') as f:
+            json.dump({'name': 'SODOTO (DEMO)', 'color': '#7c3aed'}, f, indent=2)
+        wrote.append('owner.json')
+
+    print(f"[seed] site={WIKI_SITE} root={WIKI_ROOT}")
+    print(f"[seed] wrote:   {', '.join(wrote) if wrote else '(nothing new)'}")
+    if skipped:
+        print(f"[seed] skipped: {', '.join(skipped)} (already present)")
+
+
+if __name__ == '__main__':
+    main()

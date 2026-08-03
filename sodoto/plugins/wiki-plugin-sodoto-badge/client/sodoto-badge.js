@@ -246,11 +246,17 @@
     return { name: field.name || 'Unknown', did: field.did || null, portfolio: field.portfolio || null }
   }
 
-  // Render a person as a clickable link if portfolio is known, otherwise plain text
+  // Render a person as a clickable link if portfolio is known, otherwise plain text.
+  // Uses the FedWiki internal-link convention (class + data-page-name) so a click
+  // opens the portfolio in the lineup to the RIGHT of this badge, not a new window.
+  // The slug lives in data-page-name — never the link text — because the text is a
+  // display name that FedWiki's built-in handler would mis-slugify. The delegated
+  // handler installed at the bottom of this file reads data-page-name. (baseUrl is
+  // kept in the signature for call-site compatibility; it is no longer used.)
   function personLink(field, baseUrl) {
     const p = resolvePerson(field)
-    if (p.portfolio && baseUrl) {
-      return `<a href="${baseUrl}/view/${p.portfolio}" target="_blank" style="color:#2a6b5a;text-decoration:underline;">${p.name}</a>`
+    if (p.portfolio) {
+      return `<a class="sodoto-pagelink" href="/${p.portfolio}.html" data-page-name="${p.portfolio}" style="color:#2a6b5a;text-decoration:underline;cursor:pointer;">${p.name}</a>`
     }
     return p.name
   }
@@ -621,7 +627,191 @@
     })
   }
 
+  // Open SODOTO internal page links (participant portfolios, gate narratives) in
+  // the FedWiki lineup to the RIGHT of the page that holds the link — not a new
+  // browser window. One delegated, document-level handler covers both the badge
+  // items rendered here and the static gate-HTML items the issuer tool writes,
+  // and keeps working across the plugin's re-renders. The target slug is read
+  // from data-page-name, so display text can be a human name.
+  function installSodotoLinkHandler() {
+    if (typeof document === 'undefined' || window.__sodotoLinkHandlerInstalled) return
+    window.__sodotoLinkHandlerInstalled = true
+    document.addEventListener('click', function(e) {
+      // Catch both the new links (data-page-name) and the legacy /view/<slug>
+      // links that older pages already have baked in — so existing portfolios
+      // are fixed with no data migration. Only fires on pages where this plugin
+      // is loaded, i.e. SODOTO badge pages, where /view/ links are ours.
+      const a = e.target.closest && e.target.closest('a.sodoto-pagelink, a[href^="/view/"]')
+      if (!a) return
+      let slug = a.getAttribute('data-page-name')
+      if (!slug) {
+        const m = (a.getAttribute('href') || '').match(/^\/view\/([^\/?#]+)/)
+        if (m) slug = decodeURIComponent(m[1])
+      }
+      if (!slug) return
+      e.preventDefault()
+      const page = a.closest('.page')            // the page holding the link
+      // Reach the FedWiki global the same way bind() does: bare `wiki`, with a
+      // window.wiki fallback for any environment that only exposes it there.
+      const w = (typeof wiki !== 'undefined') ? wiki : (window.wiki || null)
+      if (w && w.doInternalLink) {
+        w.doInternalLink(slug, page)             // opens slug to the right of page
+      }
+    })
+  }
+
+  // ── Portfolio section accordion ────────────────────────────────────────────
+  // Each <h3> heading collapses the story items beneath it (up to the next
+  // heading) — everything stays on one page, collapsed by default, expand on
+  // demand, using the same chevron idiom as the MORE outliner (▸ / ▾). Purely
+  // presentational: it toggles a CSS class on sibling story items and never
+  // touches page data. What you expand persists per page+heading in localStorage.
+  const ACC_STYLE =
+    '.sodoto-sec-hidden{display:none !important}' +
+    '.sodoto-sec-toggle{display:inline-block;width:1.1em;text-align:center;cursor:pointer;' +
+      'color:#999;user-select:none;margin-right:.25em;font-size:.9em}' +
+    'h3[data-sodoto-acc]{cursor:pointer}' +
+    'h3[data-sodoto-acc]:hover .sodoto-sec-toggle{color:#555}' +
+    '.sodoto-mentgroup > td{border-top:2px solid #e5ddd0 !important;padding-top:7px !important}'
+  let accStyleInjected = false
+  function ensureAccStyle() {
+    if (accStyleInjected || typeof document === 'undefined') return
+    const s = document.createElement('style'); s.textContent = ACC_STYLE
+    document.head.appendChild(s); accStyleInjected = true
+  }
+  // A heading item is an html story item that contains an <h3> and is not a badge.
+  function isHeadingItem(item) {
+    return !!(item.querySelector && item.querySelector('h3') && !item.querySelector('.sodoto-badge'))
+  }
+  // The items belonging to a heading: following siblings up to the next heading.
+  function sectionBody(headingItem) {
+    const body = []; let el = headingItem.nextElementSibling
+    while (el && el.classList && el.classList.contains('item')) {
+      if (isHeadingItem(el)) break
+      body.push(el); el = el.nextElementSibling
+    }
+    return body
+  }
+  function accKey(headingItem, h3) {
+    const page = headingItem.closest('.page')
+    return 'sodoto-acc:' + ((page && page.id) || 'page') + ':' + (h3.textContent || '').trim().slice(0, 60)
+  }
+  function applySectionState(headingItem, collapsed) {
+    sectionBody(headingItem).forEach(function(el) {
+      if (collapsed && el.contains(document.activeElement)) return   // never hide an item being edited
+      el.classList.toggle('sodoto-sec-hidden', collapsed)
+    })
+  }
+  function enhanceHeading(headingItem) {
+    const h3 = headingItem.querySelector('h3'); if (!h3) return
+    let collapsed
+    if (h3.dataset.sodotoAcc) {
+      collapsed = h3.dataset.sodotoCollapsed === '1'        // already wired — just re-apply state
+    } else {
+      let stored = null; try { stored = localStorage.getItem(accKey(headingItem, h3)) } catch (e) {}
+      collapsed = (stored === null) ? true : (stored === '1')   // default: collapsed
+      const chev = document.createElement('span'); chev.className = 'sodoto-sec-toggle'
+      h3.insertBefore(chev, h3.firstChild)
+      h3.dataset.sodotoAcc = '1'
+      h3.addEventListener('click', function(e) {
+        e.preventDefault(); e.stopPropagation()
+        const now = h3.dataset.sodotoCollapsed !== '1'      // toggle
+        h3.dataset.sodotoCollapsed = now ? '1' : '0'
+        const c = h3.querySelector('.sodoto-sec-toggle'); if (c) c.textContent = now ? '▸' : '▾'
+        applySectionState(headingItem, now)
+        try { localStorage.setItem(accKey(headingItem, h3), now ? '1' : '0') } catch (e2) {}
+      })
+    }
+    h3.dataset.sodotoCollapsed = collapsed ? '1' : '0'
+    const c = h3.querySelector('.sodoto-sec-toggle'); if (c) c.textContent = collapsed ? '▸' : '▾'
+    applySectionState(headingItem, collapsed)
+  }
+  function initSodotoAccordion() {
+    if (typeof document === 'undefined') return
+    ensureAccStyle()
+    document.querySelectorAll('.page .story').forEach(function(story) {
+      Array.from(story.children).forEach(function(item) {
+        if (item.classList && item.classList.contains('item') && isHeadingItem(item)) enhanceHeading(item)
+      })
+    })
+  }
+  // ── Mentoring Log grouping (client-side, presentation only) ─────────────────
+  // The issuer just appends rows to one "Mentoring Log" table. Here we re-order
+  // those rows at render into meaningful groups: by learner + skill, gates in
+  // See → Do → Teach order, groups with the most recent activity first. Stored
+  // data is never touched — this only moves DOM rows and adds a separator class,
+  // and it only re-appends when the order actually changes (so the MutationObserver
+  // doesn't loop).
+  const GATE_RANK = { 'See One': 0, 'Do One': 1, 'Teach One': 2 }
+  function parseMentRow(tr) {
+    const td = tr.querySelectorAll('td')
+    const learner = (td[0] ? td[0].textContent : '').trim()
+    const skillGate = (td[1] ? td[1].textContent : '').trim()
+    const date = (td[2] ? td[2].textContent : '').trim()
+    const gm = skillGate.match(/(See One|Do One|Teach One)/)
+    const gate = gm ? gm[1] : ''
+    const skill = skillGate.split(' — ')[0].trim()
+    const am = skillGate.match(/attempt\s+(\d+)/i)
+    return { tr, key: learner + '|' + skill, gateRank: (gate in GATE_RANK) ? GATE_RANK[gate] : 9,
+             date: date, attempt: am ? parseInt(am[1], 10) : 0 }
+  }
+  function sortMentoringTable(table) {
+    const tbody = table.querySelector('tbody'); if (!tbody) return
+    const original = Array.from(tbody.querySelectorAll(':scope > tr'))
+    if (original.length < 2) return
+    const rows = original.map(parseMentRow)
+    const recency = {}   // most recent date per learner+skill group
+    rows.forEach(function (r) { if (!recency[r.key] || r.date > recency[r.key]) recency[r.key] = r.date })
+    const sorted = rows.slice().sort(function (a, b) {
+      if (recency[a.key] !== recency[b.key]) return recency[a.key] < recency[b.key] ? 1 : -1  // recent groups first
+      if (a.key !== b.key) return a.key < b.key ? -1 : 1                                        // keep each group contiguous
+      if (a.gateRank !== b.gateRank) return a.gateRank - b.gateRank                             // See → Do → Teach
+      if (a.date !== b.date) return a.date < b.date ? -1 : 1
+      return a.attempt - b.attempt
+    })
+    // Re-append only if the order changed — prevents an observer feedback loop.
+    const changed = sorted.some(function (r, i) { return r.tr !== original[i] })
+    if (changed) sorted.forEach(function (r) { tbody.appendChild(r.tr) })
+    // Mark the first row of each group (after the first) for a CSS separator.
+    // Attribute-only change, so it doesn't feed the childList observer.
+    let prevKey = null
+    sorted.forEach(function (r) {
+      r.tr.classList.toggle('sodoto-mentgroup', prevKey !== null && r.key !== prevKey)
+      prevKey = r.key
+    })
+  }
+  function sortMentoringLogs() {
+    if (typeof document === 'undefined') return
+    document.querySelectorAll('.page .story').forEach(function (story) {
+      Array.from(story.children).forEach(function (item) {
+        if (!(item.classList && item.classList.contains('item'))) return
+        const h3 = item.querySelector('h3')
+        if (!h3 || !/mentoring log/i.test(h3.textContent)) return
+        let el = item.nextElementSibling
+        while (el && el.classList && el.classList.contains('item') && !el.querySelector('h3')) {
+          const table = el.querySelector('table')
+          if (table) { sortMentoringTable(table); break }
+          el = el.nextElementSibling
+        }
+      })
+    })
+  }
+
+  let accTimer = null
+  function runSodotoEnhancements() { initSodotoAccordion(); sortMentoringLogs() }
+  function scheduleAccordion() { clearTimeout(accTimer); accTimer = setTimeout(runSodotoEnhancements, 150) }
+
   if (typeof window !== 'undefined') {
+    installSodotoLinkHandler()
+    // Wire the accordion once: run after the page settles, and re-run when
+    // FedWiki adds or re-renders pages/items (observe childList only, so our own
+    // class toggles don't feed back into the observer).
+    if (typeof document !== 'undefined' && !window.__sodotoAccordionInstalled) {
+      window.__sodotoAccordionInstalled = true
+      scheduleAccordion()
+      if (document.body) new MutationObserver(scheduleAccordion)
+        .observe(document.body, { childList: true, subtree: true })
+    }
     window.plugins = window.plugins || {}
     window.plugins['sodoto-badge'] = { emit, bind }
   }
