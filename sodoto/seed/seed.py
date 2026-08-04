@@ -72,12 +72,16 @@ def main():
             json.dump(page, f, ensure_ascii=False)
         wrote.append(slug)
 
-    # 3. owner.json for the site — absent-only, so a claimed site is left alone.
-    owner_dest = os.path.join(WIKI_ROOT, WIKI_SITE, 'owner.json')
+    # 3. owner.json — FedWiki reads it from the site's status/ subfolder, not the
+    #    site root. Absent-only, so an already-claimed site is left alone. (Thanks
+    #    to Christian for catching that this was landing in the wrong folder.)
+    status_dir = os.path.join(WIKI_ROOT, WIKI_SITE, 'status')
+    owner_dest = os.path.join(status_dir, 'owner.json')
     if not os.path.exists(owner_dest):
+        os.makedirs(status_dir, exist_ok=True)
         with open(owner_dest, 'w', encoding='utf-8') as f:
             json.dump({'name': 'SODOTO (DEMO)', 'color': '#7c3aed'}, f, indent=2)
-        wrote.append('owner.json')
+        wrote.append('status/owner.json')
 
     print(f"[seed] site={WIKI_SITE} root={WIKI_ROOT}")
     print(f"[seed] wrote:   {', '.join(wrote) if wrote else '(nothing new)'}")

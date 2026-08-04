@@ -71,7 +71,7 @@
 
 <!-- ══════════════════════════════════════════════════ REGISTRY PANEL -->
 <div id="panel-registry" class="panel">
-  <h2>People Registry</h2>
+  <h2>People Registry <a href="sodoto-issuer-guide.html#registry" target="_blank" rel="noopener" style="float:right;font-size:12px;font-weight:400;color:#2a6b5a;text-decoration:none;" title="What is this tab and how do I use it?">? Guide ↗</a></h2>
   <table id="people-table">
     <thead><tr>
       <th>Name</th><th>Slug</th><th>Site</th><th>DID (last 12)</th><th>Portfolio Slug</th><th></th>
@@ -116,7 +116,7 @@
 
 <!-- ══════════════════════════════════════════════════ CONTRACT PANEL -->
 <div id="panel-contract" class="panel">
-  <h2>Active Contract</h2>
+  <h2>Active Contract <a href="sodoto-issuer-guide.html#contract" target="_blank" rel="noopener" style="float:right;font-size:12px;font-weight:400;color:#2a6b5a;text-decoration:none;" title="What is this tab and how do I use it?">? Guide ↗</a></h2>
 
   <div class="row2">
     <div>
@@ -228,7 +228,7 @@
 
 <!-- ══════════════════════════════════════════════════════ SIGN PANEL -->
 <div id="panel-sign" class="panel">
-  <h2>Sign &amp; Issue Credential</h2>
+  <h2>Sign &amp; Issue Credential <a href="sodoto-issuer-guide.html#sign" target="_blank" rel="noopener" style="float:right;font-size:12px;font-weight:400;color:#2a6b5a;text-decoration:none;" title="What is this tab and how do I use it?">? Guide ↗</a></h2>
 
   <div id="sign-no-contract" class="warn">No active contract. Open a contract in the Contract panel first.</div>
 
@@ -1145,13 +1145,21 @@ function downloadCredential() {
 
 // ─── Rendering ────────────────────────────────────────────────────────────────
 
+// Public URL of a portfolio page on the wiki. On WikiCafe, WIKI_SITE is the wiki
+// domain, so it's https://<domain>/view/<slug>; locally it's localhost:3000.
+function wikiPageUrl(slug) {
+  const base = WIKI_SITE.includes('.') ? 'https://' + WIKI_SITE : 'http://' + WIKI_SITE + ':3000'
+  return base + '/view/' + slug
+}
+
 function renderPeople() {
   const tbody = el('people-tbody')
   tbody.innerHTML = ''
   for (const p of people) {
     const canRemove = !SEED_PEOPLE.find(s => s.slug === p.slug)
+    const nameCell = `<a href="${wikiPageUrl(p.portfolioSlug)}" target="_blank" rel="noopener" style="color:#2a6b5a;text-decoration:underline;">${p.name}</a>`
     const tr = document.createElement('tr')
-    tr.innerHTML = `<td class="name">${p.name}</td><td>${p.slug}</td><td>${p.site}</td>`
+    tr.innerHTML = `<td class="name">${nameCell}</td><td>${p.slug}</td><td>${p.site}</td>`
       + `<td title="${p.did}">…${p.did.slice(-12)}</td><td>${p.portfolioSlug}</td>`
       + `<td>${canRemove ? `<button class="small danger" onclick="removePerson('${p.slug}')">×</button>` : ''}</td>`
     tbody.appendChild(tr)

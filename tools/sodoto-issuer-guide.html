@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SODOTO Issuer — Guide</title>
+<style>
+  :root { color-scheme: light; }
+  body { font-family: system-ui, -apple-system, sans-serif; color: #1a1208; background: #faf7f2;
+         max-width: 820px; margin: 0 auto; padding: 32px 20px 80px; line-height: 1.55; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .sub { color: #6b6055; font-size: 14px; margin: 0 0 28px; }
+  h2 { font-size: 17px; letter-spacing: 0.02em; margin: 34px 0 8px; padding-bottom: 4px;
+       border-bottom: 1px solid #e5ddd0; scroll-margin-top: 16px; }
+  h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: #4a3f35; margin: 18px 0 6px; }
+  p, li { font-size: 14px; }
+  code { background: #f0eae1; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  .diagram { background: #fff; border: 1px solid #e5ddd0; border-radius: 8px; padding: 18px; margin: 14px 0 8px; }
+  .diagram svg { display: block; }
+  .cap { color: #6b6055; font-size: 12px; text-align: center; margin: 4px 0 0; }
+  ol.flow { counter-reset: step; list-style: none; padding-left: 0; }
+  ol.flow > li { counter-increment: step; position: relative; padding-left: 34px; margin: 10px 0; }
+  ol.flow > li::before { content: counter(step); position: absolute; left: 0; top: 0;
+    width: 22px; height: 22px; border-radius: 50%; background: #2a5c3f; color: #fff;
+    font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .tab { display: inline-block; background: #2a5c3f; color: #fff; font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 5px; letter-spacing: 0.04em; }
+  .note { background: #f5f0eb; border-left: 3px solid #b45309; border-radius: 4px;
+    padding: 10px 14px; margin: 14px 0; font-size: 13px; color: #4a3f35; }
+  a { color: #2a6b5a; }
+  .toc a { display: inline-block; margin-right: 14px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<h1>SODOTO Issuer — Guide</h1>
+<p class="sub">How to issue a skill credential, and how the three tabs fit together. <span class="tab">See One · Do One · Teach One</span></p>
+
+<p>The SODOTO Issuer records that a learner has <em>seen</em>, <em>done</em>, and <em>taught</em> a skill,
+then issues them a cryptographically signed badge. The badge lives on the learner's FedWiki portfolio page
+and verifies in any browser with no server call — the signature is checked locally against the issuer's
+public identity. The issuer's private key never leaves your browser.</p>
+
+<p class="toc"><strong>Jump to:</strong>
+  <a href="#workflow">The workflow</a>
+  <a href="#registry">Registry</a>
+  <a href="#contract">Contract</a>
+  <a href="#sign">Sign &amp; Issue</a>
+</p>
+
+<h2 id="workflow">The workflow</h2>
+<div class="diagram"><svg xmlns="http://www.w3.org/2000/svg" width="1302" height="156" viewBox="9 142 1302 156" style="width:100%;height:auto;max-width:1310px"><rect x="9" y="142" width="1302" height="156" fill="#ffffff"/>
+      <defs id="svg-defs"><marker id="mk000000" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#000000"/></marker><marker id="mkc53030" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#c53030"/></marker><marker id="mkc05621" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#c05621"/></marker><marker id="mkb7791f" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#b7791f"/></marker><marker id="mk276749" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#276749"/></marker><marker id="mk2b4c7e" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#2b4c7e"/></marker><marker id="mk553c9a" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#553c9a"/></marker><marker id="mk97266d" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#97266d"/></marker><marker id="mk234e52" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#234e52"/></marker><marker id="mk1a202c" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#1a202c"/></marker><marker id="mk3b82f6" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#3b82f6"/></marker><marker id="mkf59e0b" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#f59e0b"/></marker><marker id="mk8b5cf6" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#8b5cf6"/></marker><marker id="mk7c3aed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#7c3aed"/></marker></defs>
+      
+      <g id="wardley-layer" />
+      <g id="lines-layer" />
+      <g id="edges-layer" ><g id="edge-e6" style="cursor: pointer; opacity: 1;"><path d="M195,220 L285,220" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none"><tspan x="240" y="234" font-size="10" font-style="italic" fill="#000000">add to registry</tspan></text></g><g id="edge-e7" style="cursor: pointer; opacity: 1;"><path d="M435,220 L585,220" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none"><tspan x="510" y="234" font-size="10" font-style="italic" fill="#000000">once per gate</tspan></text></g><g id="edge-e8" style="cursor: pointer; opacity: 1;"><path d="M735,220 L865,220" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none"><tspan x="800" y="234" font-size="10" font-style="italic" fill="#000000">when all complete</tspan></text></g><g id="edge-e9" style="cursor: pointer; opacity: 1;"><path d="M1015,220 L1125,220" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none"><tspan x="1070" y="234" font-size="10" font-style="italic" fill="#000000">signed JWT</tspan></text></g></g>
+      <g id="nodes-layer" ><g id="node-n1" transform="translate(120,220)" style="cursor: move; opacity: 1;"><rect x="-75" y="-26" width="150" height="52" rx="10" fill="#bfdbfe" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="0.0">Register person</tspan></text></g><g id="node-n2" transform="translate(360,220)" style="cursor: move; opacity: 1;"><rect x="-75" y="-42" width="150" height="84" rx="10" fill="#a7f3d0" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="-16.0">Define contract</tspan><tspan x="0" dy="16">issuer · skill ·</tspan><tspan x="0" dy="16">learner</tspan></text></g><g id="node-n3" transform="translate(660,220)" style="cursor: move; opacity: 1;"><rect x="-75" y="-34" width="150" height="68" rx="10" fill="#fde68a" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="-8.0">Record gates See ·</tspan><tspan x="0" dy="16">Do · Teach</tspan></text></g><g id="node-n4" transform="translate(940,220)" style="cursor: move; opacity: 1;"><rect x="-75" y="-26" width="150" height="52" rx="10" fill="#ddd6fe" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="0.0">Sign &amp; Issue badge</tspan></text></g><g id="node-n5" transform="translate(1200,220)" style="cursor: move; opacity: 1;"><rect x="-75" y="-34" width="150" height="68" rx="10" fill="#fecaca" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="-8.0">Badge on portfolio +</tspan><tspan x="0" dy="16">ledger</tspan></text></g></g>
+      <g id="triples-layer" />
+      <g id="drag-layer"/>
+      <g id="legend-layer"/>
+    </svg></div>
+<p class="cap">Left to right: the three tabs, in the order you use them.</p>
+
+<ol class="flow">
+  <li><strong>Register the people</strong> in the <span class="tab">Registry</span> — the learner, and anyone who will mentor a gate. Each person carries a decentralized identity (DID) that badges bind to.</li>
+  <li><strong>Define the contract</strong> in the <span class="tab">Contract</span> tab — one issuer, one skill, one learner. This names what is being credentialed and to whom.</li>
+  <li><strong>Record each gate</strong> — See One, then Do One, then Teach One — as the learner completes them, with the mentor and the outcome for each attempt.</li>
+  <li><strong>Sign &amp; issue</strong> the badge in the <span class="tab">Sign &amp; Issue</span> tab once the gates are complete.</li>
+  <li>The signed badge is written to the learner's <strong>portfolio</strong> and recorded in the <strong>ledger</strong>. Anyone can open it and click <em>Verify</em>.</li>
+</ol>
+
+<h2 id="registry">Registry — who can be credentialed</h2>
+<p>The Registry is the roster of people the tool knows about. Everyone who appears as a learner, mentor,
+or student elsewhere in the tool comes from here.</p>
+<h3>What each person carries</h3>
+<ul>
+  <li><strong>Name</strong> — links to that person's portfolio page on the wiki.</li>
+  <li><strong>DID</strong> (<code>did:key:z6Mk…</code>) — their decentralized identity. A badge is issued <em>to</em> this DID, so a verifier can confirm it belongs to the right person, not just to a name anyone could type.</li>
+  <li><strong>Portfolio slug</strong> — the wiki page where their badges and history live.</li>
+</ul>
+<h3>How to use it</h3>
+<p>Add a person by entering their name (the slug and portfolio slug fill in automatically) and their DID,
+then <em>Add to registry</em>. The learner and mentor drop-downs on the Contract tab draw from this list.
+On the pilot, the demo people (all prefixed <code>DEMO —</code>) are seeded here for you.</p>
+
+<h2 id="contract">Contract — what is being credentialed</h2>
+<p>A contract is the unit of credentialing: <strong>one issuer, one skill, one learner</strong>. Choosing
+those three sets up the record that the gates attach to.</p>
+<h3>The three gates</h3>
+<p>SODOTO credentials a skill through three gates, recorded in order:</p>
+<ul>
+  <li><span class="tab">See One</span> — the learner observed the skill performed.</li>
+  <li><span class="tab">Do One</span> — the learner performed it, assessed by a mentor.</li>
+  <li><span class="tab">Teach One</span> — the learner taught it to someone else.</li>
+</ul>
+<h3>Recording a gate</h3>
+<p>For each gate you record the mentor, the date, what the mentor and learner each assert, the outcome,
+and a narrative slug (a wiki page for the story of that gate). A gate can take more than one attempt —
+each attempt is recorded. Recording a gate writes an entry to the learner's portfolio and, for the mentor,
+a row in their <strong>Mentoring Log</strong>.</p>
+
+<h2 id="sign">Sign &amp; Issue — make it a credential</h2>
+<p>Once the gates are complete, this tab turns the contract into a signed badge.</p>
+<h3>How signing works</h3>
+<p>You review the credential, then paste the <strong>issuer's private key seed</strong> (a 64-character
+hex string). The badge is signed in your browser using that key — the key is never sent anywhere. The
+result is a signed JWT embedded in the badge.</p>
+<h3>Where the badge goes</h3>
+<p>Signing writes the badge to the learner's portfolio page and adds a row to the <code>rcn-sodoto-ledger</code>.
+On the portfolio, the badge renders with its seal, gate dates, and a <em>Verify</em> button that checks the
+signature locally — proving the badge is genuine and unaltered, with no call back to any server.</p>
+
+<div class="note"><strong>The pilot uses a demo cast.</strong> For testing, select the
+<strong>DEMO Academy</strong> issuer and the <code>DEMO —</code> learners, and paste the DEMO Academy seed.
+Nothing signed with real institutional keys should go on the pilot until it's secured — the demo prefix
+keeps demo badges from ever being confused with real ones.</div>
+
+</body>
+</html>
