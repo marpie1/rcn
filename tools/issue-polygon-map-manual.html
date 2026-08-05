@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<!-- Issue Polygon Map — User Manual
+     Update when features change. Section numbering is referenced from the intro
+     and from tools/schemas/issue-polygon-map.md — renumber with care. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Issue Polygon Map — User Manual</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+.page{max-width:860px;margin:0 auto;padding:40px 24px 80px}
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:32px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:32px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569;line-height:1.5}
+.doc-nav{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+.toc{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px 22px;margin-bottom:40px}
+.toc h4{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:10px}
+.toc ol{list-style:none;columns:2;column-gap:26px}
+.toc li{font-size:13px;padding:3px 0;break-inside:avoid}
+h2{font-size:19px;font-weight:700;color:#0f172a;margin:44px 0 12px;padding-top:10px;border-top:1px solid #e2e8f0;scroll-margin-top:16px}
+h3{font-size:14px;font-weight:700;color:#1e293b;margin:24px 0 7px}
+p{margin-bottom:13px;color:#334155;font-size:14px}
+ul,ol.steps{margin:0 0 15px 20px}
+li{font-size:14px;color:#334155;margin-bottom:6px;line-height:1.6}
+table{width:100%;border-collapse:collapse;margin:14px 0 20px;font-size:13px}
+th{text-align:left;font-weight:700;color:#0f172a;background:#f1f5f9;padding:8px 10px;border:1px solid #e2e8f0}
+td{padding:8px 10px;border:1px solid #e2e8f0;color:#334155;vertical-align:top}
+td code,th code{white-space:nowrap}
+code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;font-size:12.5px;color:#0f172a;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:14px 16px;overflow-x:auto;margin:12px 0 18px;font-size:12.5px;line-height:1.6}
+pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
+.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:12px 16px;margin:14px 0;font-size:13px;color:#1e3a8a}
+.warn{background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:12px 16px;margin:14px 0;font-size:13px;color:#713f12}
+.stop{background:#fef2f2;border:1px solid #fecaca;border-radius:9px;padding:12px 16px;margin:14px 0;font-size:13px;color:#991b1b}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.p-pro{background:#dcfce7;color:#166534}
+.p-con{background:#fee2e2;color:#991b1b}
+.p-unk{background:#e2e8f0;color:#475569}
+.foot{margin-top:48px;padding-top:18px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8}
+@media (max-width:640px){.toc ol{columns:1}table{font-size:12px}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-tag">RCN Toolset · Spatial Layer</div>
+    <div class="doc-title">🗺️ Issue Polygon Map — User Manual</div>
+    <div class="doc-sub">Drawing the boundary of a civic issue, mapping the parcels inside it, and tracking which rules apply and where people stand.</div>
+  </div>
+
+  <nav class="doc-nav">
+    <a href="issue-polygon-map-intro.html">Introduction</a>
+    <a href="issue-polygon-map-manual.html" class="current">User Manual</a>
+    <a href="issue-polygon-map.html">Open the Tool ↗</a>
+  </nav>
+
+  <div class="toc">
+    <h4>Contents</h4>
+    <ol>
+      <li><a href="#s1">1 · Core ideas in one minute</a></li>
+      <li><a href="#s2">2 · Opening an issue</a></li>
+      <li><a href="#s3">3 · The interface</a></li>
+      <li><a href="#s4">4 · Layers &amp; basemaps</a></li>
+      <li><a href="#s5">5 · Parcels</a></li>
+      <li><a href="#s6">6 · Stance &amp; the tally</a></li>
+      <li><a href="#s7">7 · The issue polygon</a></li>
+      <li><a href="#s8">8 · Drawing &amp; reshaping a polygon</a></li>
+      <li><a href="#s9">9 · Undo</a></li>
+      <li><a href="#s10">10 · Search</a></li>
+      <li><a href="#s11">11 · Deep links</a></li>
+      <li><a href="#s12">12 · Import &amp; export</a></li>
+      <li><a href="#s13">13 · Pictures — SVG, PNG, Print</a></li>
+      <li><a href="#s14">14 · Authoring an issue file</a></li>
+      <li><a href="#s15">15 · Working patterns</a></li>
+    </ol>
+  </div>
+
+  <h2 id="s1">1 · Core ideas in one minute</h2>
+  <p>The tool holds <strong>one issue</strong> at a time. An issue is a question with a footprint, and it has five parts:</p>
+  <table>
+    <tr><th>Part</th><th>What it is</th></tr>
+    <tr><td><strong>Issue polygon</strong></td><td>The gold dashed boundary that defines the scope. Everything inside it is in the argument.</td></tr>
+    <tr><td><strong>Parcels</strong></td><td>Individual properties inside the boundary, each with a stance and a set of facts (lot size, zoning, HOA, and so on).</td></tr>
+    <tr><td><strong>Boundaries</strong></td><td>The governments whose rules overlap the issue — typically a municipality and a county.</td></tr>
+    <tr><td><strong>Laws</strong></td><td>The specific rules in play, each tagged with the jurisdiction it comes from and what it does.</td></tr>
+    <tr><td><strong>Actions</strong></td><td>What has to happen next, and whether it is pending, contingent, or not started.</td></tr>
+  </table>
+  <p>Everything except <em>stance</em> is public record. That is what makes this an instrument you can build before you have spoken to anybody.</p>
+
+  <h2 id="s2">2 · Opening an issue</h2>
+  <p>Open <code>issue-polygon-map.html</code> in a browser. With no issue specified you get the landing page, which offers three ways in:</p>
+  <ul>
+    <li><strong>↑ Open file</strong> — choose a <code>.json</code> issue file or a <code>.geojson</code> export from disk.</li>
+    <li><strong>↑ Load pasted</strong> — paste the contents of either directly.</li>
+    <li><strong>Search</strong> — find a place by name to start from a location.</li>
+  </ul>
+  <h3>By URL</h3>
+  <p>Add <code>?issue=&lt;key&gt;</code> and the tool fetches <code>issue-data/&lt;key&gt;.json</code> alongside itself:</p>
+  <pre><code>issue-polygon-map.html?issue=superior-az--chickens</code></pre>
+  <p>The path is relative, so this works served by sofi-proxy, by any static host, or from a <code>file://</code> copy — as long as <code>issue-data/</code> sits next to the HTML. Add <code>?data=&lt;base&gt;</code> to point at a different folder, e.g. a published issue directory.</p>
+  <div class="note">If the fetch fails you land back on the landing page with the reason shown, and can still open the file by hand. A failed <code>?issue=</code> is usually a missing <code>.json</code> in <code>issue-data/</code> or a typo in the key.</div>
+
+  <h2 id="s3">3 · The interface</h2>
+  <p>Map on the left, sidebar on the right.</p>
+  <p>The <strong>sidebar</strong> carries, top to bottom: the issue title and community; the layer toggles; the stance tally; the laws in play, colour-coded by jurisdiction; the action list; and the export controls.</p>
+  <p>The <strong>toolbar</strong> above the map holds the editing and sharing actions: <code>+ Add Parcel</code>, <code>✎ Draw Polygon</code>, <code>↩ Undo</code>, <code>↓ Export GeoJSON</code>, <code>↑ Load GeoJSON</code>, <code>↧ SVG</code>, <code>↧ PNG</code>, <code>🖨 Print</code>, and <code>↗ Copy view link</code>.</p>
+
+  <h2 id="s4">4 · Layers &amp; basemaps</h2>
+  <p>Each layer toggle turns a layer on or off and refits the view to whatever is still visible. Available layers depend on what the issue file provides:</p>
+  <table>
+    <tr><th>Layer</th><th>Shows</th></tr>
+    <tr><td>Municipality</td><td>Town or city boundary, with a popup carrying its code status and any note about preemption.</td></tr>
+    <tr><td>County</td><td>County boundary, with the county-level standard in its popup.</td></tr>
+    <tr><td>Issue polygon</td><td>The gold dashed scope boundary.</td></tr>
+    <tr><td>Parcels</td><td>All parcel pins.</td></tr>
+    <tr><td>NDC</td><td>A pink ring around the anchor parcel — the Neighborhood Development Cooperative convening the issue.</td></tr>
+  </table>
+  <p><strong>Basemaps:</strong> Light, OpenStreetMap, Topo, Satellite, Dark. Satellite is the useful one for arguments about lot size, setbacks and what is actually built on a property.</p>
+
+  <h2 id="s5">5 · Parcels</h2>
+  <h3>Adding one</h3>
+  <ol class="steps">
+    <li>Click <code>+ Add Parcel</code>.</li>
+    <li>Click the location on the map.</li>
+    <li>A pin appears with a generated id. Open its popup to fill in the details.</li>
+  </ol>
+  <h3>Parcel fields</h3>
+  <table>
+    <tr><th>Field</th><th>Meaning</th></tr>
+    <tr><td><code>id</code></td><td>Parcel number. Use the real APN where you have it — generated ids are placeholders.</td></tr>
+    <tr><td><code>label</code></td><td>Street address or a name people will recognise.</td></tr>
+    <tr><td><code>stance</code></td><td><span class="pill p-pro">Pro</span> <span class="pill p-con">Con</span> <span class="pill p-unk">Unknown</span> — see §6.</td></tr>
+    <tr><td><code>lot_size</code></td><td>Acres. Often decides whether a setback rule can even be met.</td></tr>
+    <tr><td><code>zoning</code></td><td>Free text, e.g. <code>R-1</code>.</td></tr>
+    <tr><td><code>hoa</code></td><td>Whether an HOA covenant applies — frequently stricter than any government rule.</td></tr>
+    <tr><td><code>qualifies_hb2325</code></td><td>Issue-specific eligibility flag. Rename per issue.</td></tr>
+    <tr><td><code>desired_flock</code></td><td>Issue-specific quantity. Rename per issue.</td></tr>
+    <tr><td><code>notes</code></td><td>Free text. <strong>Put your source here</strong> — especially for stance.</td></tr>
+    <tr><td><code>ndc</code></td><td>Marks this parcel as the NDC anchor.</td></tr>
+  </table>
+  <p>Delete a parcel from its popup with <code>✕ Delete parcel</code>. It is undoable (§9).</p>
+
+  <h2 id="s6">6 · Stance &amp; the tally</h2>
+  <p>Stance has exactly three values — <code>pro</code>, <code>con</code>, <code>unknown</code> — set from buttons in the parcel popup. The pin recolours immediately and the tally updates.</p>
+  <div class="warn"><strong>Unknown is the correct answer until somebody asks.</strong> Public record tells you who owns a parcel and how big it is. It does not tell you what they think. Inferring a stance from a yard sign, a voter file, or a neighbour's opinion puts words in someone's mouth on a map you intend to show a council. Leave it Unknown and record in <code>notes</code> what you actually know.</div>
+  <p>The tally is the honest measure of coverage: a large Unknown count is not a failure, it is the work remaining, and it is the number to bring to a meeting when someone claims the neighbourhood is against something.</p>
+
+  <h2 id="s7">7 · The issue polygon</h2>
+  <p>Drawn from the issue file as a gold dashed boundary. Its popup shows the issue title, its id, the parcel count, and the scale ladder from neighbourhood up to state. Two controls sit in the popup: <code>↗ Copy link</code> (§11) and <code>✕ Delete polygon</code>.</p>
+  <p>Deleting is undoable, and reimporting a GeoJSON that contains the polygon restores it (§12).</p>
+
+  <h2 id="s8">8 · Drawing &amp; reshaping a polygon</h2>
+  <h3>Draw</h3>
+  <ol class="steps">
+    <li>Click <code>✎ Draw Polygon</code>.</li>
+    <li>Click each corner in turn. Existing polygons pass clicks through, so you can trace over them.</li>
+    <li>Finish. The shape appears with a default name.</li>
+    <li>Use <code>✎ Rename</code> in its popup to give it a name that says what it is.</li>
+  </ol>
+  <h3>Reshape</h3>
+  <p>A drawn polygon can be edited after the fact rather than redrawn. Turn on shape editing and each vertex gets a draggable handle:</p>
+  <ul>
+    <li><strong>Drag a handle</strong> to move that corner.</li>
+    <li><strong>Insert a vertex</strong> to add detail along an edge.</li>
+    <li><strong>Remove a vertex</strong> to simplify.</li>
+  </ul>
+  <p>Each change is undoable. Drawing and shape editing both want your clicks, so turning on one turns off the other.</p>
+  <div class="note">Use a drawn polygon for anything that isn't the issue boundary itself — a proposed overlay district, the area within 100 ft of a school, the blocks canvassed so far. Unlike the issue polygon, drawn polygons carry a name of your choosing.</div>
+
+  <h2 id="s9">9 · Undo</h2>
+  <p><code>↩ Undo</code> steps back through parcel edits, stance changes, deletions, polygon drawing and vertex edits. Reach for it before redoing work by hand.</p>
+
+  <h2 id="s10">10 · Search</h2>
+  <p>Search by place name (via OpenStreetMap's Nominatim service) to jump the map somewhere. Useful when starting a new issue from nothing, or checking where a boundary actually runs. Requires an internet connection.</p>
+
+  <h2 id="s11">11 · Deep links</h2>
+  <p>Three kinds of shareable URL, all built for you by a <code>Copy link</code> control:</p>
+  <table>
+    <tr><th>Link</th><th>Built by</th><th>Opens</th></tr>
+    <tr><td><code>?issue=&lt;key&gt;&amp;parcel=&lt;id&gt;</code></td><td>Copy link in a parcel popup</td><td>The map zoomed to that parcel with its popup open</td></tr>
+    <tr><td><code>?issue=&lt;key&gt;</code></td><td>Copy link in the issue polygon popup</td><td>The issue at its default view</td></tr>
+    <tr><td><code>?issue=&lt;key&gt;&amp;lat=&amp;lng=&amp;zoom=</code></td><td><code>↗ Copy view link</code></td><td>Exactly the view you are looking at</td></tr>
+  </table>
+  <p>Send a parcel link when the conversation is about one property. Send a view link when it is about an area. These are the difference between "look at the map and find the corner of Main and Belmont" and a link that just opens there.</p>
+
+  <h2 id="s12">12 · Import &amp; export</h2>
+  <h3>Export</h3>
+  <p><code>↓ Export GeoJSON</code> writes a standard <code>FeatureCollection</code> containing the issue polygon, every parcel as a point, and any drawn polygon. It opens in QGIS or anything else that reads GeoJSON.</p>
+  <h3>Import</h3>
+  <p><code>↑ Load GeoJSON</code> takes that file back, from disk or pasted. Features are recognised by <code>properties.type</code>:</p>
+  <table>
+    <tr><th><code>properties.type</code></th><th>Geometry</th><th>Restores</th></tr>
+    <tr><td><code>Parcel</code></td><td>Point</td><td>Pin, stance and all fields</td></tr>
+    <tr><td><code>IssuePolygon</code></td><td>Polygon</td><td>The issue boundary, its title and id</td></tr>
+    <tr><td><code>CustomIssuePolygon</code></td><td>Polygon</td><td>A drawn polygon and its name</td></tr>
+  </table>
+  <p>Importing <strong>replaces</strong> the current parcels rather than merging. The status line reports what came back, e.g. <em>Loaded 12 parcels + issue polygon</em>. When an issue polygon is restored the view refits to it, so importing an issue from another area doesn't leave you staring at the wrong place.</p>
+  <div class="note"><strong>Fixed August 2026.</strong> The exporter always wrote the issue polygon, but the importer used to ignore it — so the boundary that defines the issue silently died on its own round-trip. Parcels came back, which made it look like the import had worked. If you have GeoJSON exports made before this fix, they are fine: the polygon was always in the file, only the reading of it was missing.</div>
+  <div class="stop"><strong>Hand-editing GeoJSON:</strong> coordinates are <code>[longitude, latitude]</code> — the opposite order from what most people write. Getting it backwards produces no error, just a parcel in the wrong hemisphere. Full field reference and traps: <code>tools/schemas/issue-polygon-map.md</code>.</div>
+
+  <h2 id="s13">13 · Pictures — SVG, PNG, Print</h2>
+  <table>
+    <tr><th>Control</th><th>Gives you</th><th>Basemap?</th></tr>
+    <tr><td><code>↧ SVG</code></td><td>The current view's shapes — parcels, boundaries, polygons — as editable vector</td><td><strong>No</strong></td></tr>
+    <tr><td><code>↧ PNG</code></td><td>The same shapes as a raster image</td><td><strong>No</strong></td></tr>
+    <tr><td><code>🖨 Print</code></td><td>The full map through your browser; choose "Save as PDF" for a file</td><td><strong>Yes</strong></td></tr>
+  </table>
+  <div class="warn"><strong>SVG and PNG do not include the basemap tiles.</strong> You get the shapes on a blank background — ideal for overlaying on something else or editing in Illustrator, and confusing if you expected streets. When the picture needs to show <em>where</em> — a council packet, a door-knock sheet — use <strong>Print</strong> instead, which renders the basemap with everything else.</div>
+
+  <h2 id="s14">14 · Authoring an issue file</h2>
+  <p>An issue is a single JSON file in <code>issue-data/</code>, named <code>&lt;key&gt;.json</code>. Top-level shape:</p>
+  <pre><code>{
+  "meta":       { "id", "title", "community", "ndc", "coordinator",
+                  "date", "status", "description", "apn_prefix" },
+  "issue":      { "centroid": [lat, lng], "polygon": [[lat, lng], ...] },
+  "parcels":    [ { "id", "label", "latLng", "stance", ... } ],
+  "boundaries": { "municipality": {...}, "county": {...} },
+  "laws":       [ { "name", "jurisdiction", "effect", "tag" } ],
+  "actions":    [ { "step", "type", "status", "description" } ]
+}</code></pre>
+  <div class="warn"><strong>Coordinate order differs between the two formats.</strong> The issue <code>.json</code> uses <code>[lat, lng]</code> throughout, because that is what the map library takes. Exported <code>.geojson</code> uses <code>[lng, lat]</code>, because that is the GeoJSON standard. Both are correct; they are different files. Do not copy coordinates from one into the other without swapping.</div>
+  <p><code>laws[].jurisdiction</code> should be <code>state</code>, <code>county</code> or <code>municipality</code> — it drives the colour coding. <code>actions[].status</code> is <code>pending</code>, <code>contingent</code> or <code>not_started</code>.</p>
+
+  <h2 id="s15">15 · Working patterns</h2>
+  <h3>Starting an issue from public record</h3>
+  <ol class="steps">
+    <li>Draw the issue polygon around the area actually affected — resist making it bigger than the argument.</li>
+    <li>Add the parcels inside it from assessor records. Leave every stance Unknown.</li>
+    <li>Add the jurisdictions that overlap, with the actual code citation in each popup.</li>
+    <li>List the laws, tagged by jurisdiction, including the ones you suspect but haven't verified.</li>
+    <li>Turn each unverified thing into an action with a name attached.</li>
+  </ol>
+  <p>That map is buildable in an afternoon, needs nobody's permission, and is a far better opening than an opinion.</p>
+  <h3>Canvassing</h3>
+  <p>Work the Unknown pins. After each conversation set the stance and put the source and date in <code>notes</code>. The tally becomes an honest report of coverage, and the parcel deep links let two people split an area without stepping on each other.</p>
+  <h3>Taking it to a hearing</h3>
+  <p>Print the map with the tally visible. The argument it makes is specific: <em>here is the boundary, here is the rule, here is who is inside it, and here is how many we have actually asked.</em> Bring the unknowns rather than hiding them — the credibility is in the gaps.</p>
+  <h3>Pairing with the other tools</h3>
+  <p>The map says <em>where</em>. When the question turns to why the situation persists, that is the <a href="graph-tool-intro.html">Graph Tool</a>; when it turns to what happened when, that is the <a href="rcn-timeline-intro.html">Timeline</a>. A parcel id can carry across as a node or interval id, so the three stay linked.</p>
+
+  <div class="foot">RCN Toolset · Issue Polygon Map · <a href="issue-polygon-map-intro.html">Introduction</a> · <a href="issue-polygon-map.html">Open the Tool</a> · Schema: <code>tools/schemas/issue-polygon-map.md</code></div>
+</div>
+</body>
+</html>
