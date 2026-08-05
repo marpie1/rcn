@@ -3,40 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SODOTO — Health Partner Guide</title>
+<title>SODOTO — User Manual</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; background: #fafaf8; }
 .page { max-width: 860px; margin: 0 auto; padding: 48px 32px 80px; }
-nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 48px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
 nav a { color: #0f766e; text-decoration: none; }
 nav a:hover { text-decoration: underline; }
 nav .current { color: #1a1a1a; font-weight: 500; }
-.doc-header { margin-bottom: 48px; }
+.doc-header { margin-bottom: 36px; }
 .doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
 h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
-.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 640px; line-height: 1.65; }
-h2 { font-size: 19px; font-weight: 600; margin: 44px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 660px; line-height: 1.65; }
+.updated { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #999; margin-top: 14px; }
+h2 { font-size: 20px; font-weight: 600; margin: 46px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
 h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: #166534; }
 p { margin-bottom: 14px; }
 ul, ol { padding-left: 22px; margin-bottom: 14px; }
 li { margin-bottom: 6px; }
 strong { font-weight: 600; }
-
+code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #eef0ec; padding: 1px 5px; border-radius: 3px; }
+.toc { background: #fff; border: 1px solid #e8e8e4; border-radius: 10px; padding: 18px 22px; margin: 8px 0 32px; }
+.toc-title { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #166534; margin-bottom: 10px; }
+.toc ul { list-style: none; padding: 0; margin: 0; columns: 2; column-gap: 28px; }
+.toc li { margin-bottom: 6px; font-size: 13px; }
+.toc a { color: #0f766e; text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
 .note { background: #f0fdf4; border-left: 3px solid #0f766e; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0 24px; line-height: 1.6; }
 .note strong { color: #065f46; }
 .callout { background: #f0fdf4; border-left: 3px solid #22c55e; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0 24px; line-height: 1.6; }
 .callout strong { color: #166534; }
 .warn { background: #fffbeb; border-left: 3px solid #d97706; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0 24px; line-height: 1.6; }
 .warn strong { color: #92400e; }
-
-.step-list { list-style: none; padding: 0; counter-reset: steps; margin: 16px 0 28px; }
-.step-list li { counter-increment: steps; padding: 12px 0 12px 52px; position: relative; border-bottom: 1px solid #f0f0ec; font-size: 14px; line-height: 1.6; }
-.step-list li:last-child { border-bottom: none; }
-.step-list li::before { content: counter(steps); position: absolute; left: 0; top: 13px; width: 30px; height: 30px; background: #166534; color: white; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; line-height: 30px; text-align: center; }
-.step-list li strong { color: #1e3a5f; }
-
+.role-pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 18px 0 28px; }
+.role-pick a { display: block; border: 1.5px solid #86efac; border-radius: 10px; padding: 16px 18px; background: #f0fdf4; text-decoration: none; color: inherit; }
+.role-pick a:hover { border-color: #22c55e; background: #ecfdf3; }
+.role-pick .rp-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #166534; margin-bottom: 6px; }
+.role-pick .rp-title { font-size: 15px; font-weight: 600; color: #14532d; margin-bottom: 4px; }
+.role-pick .rp-desc { font-size: 12.5px; color: #555; line-height: 1.5; }
 .gate-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin: 20px 0 28px; }
 .gate-card { border-radius: 10px; padding: 20px 18px; }
 .gate-card.see { background: #eff6ff; border: 1.5px solid #93c5fd; }
@@ -48,37 +54,26 @@ strong { font-weight: 600; }
 .gate-card.teach .gate-label { color: #7c3aed; }
 .gate-card h3 { font-size: 16px; font-weight: 600; color: #1e3a5f; margin: 0 0 8px; }
 .gate-card p { font-size: 13px; color: #444; line-height: 1.55; margin: 0; }
-
-.skill-tier { margin: 16px 0 28px; }
-.tier-header { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #166534; margin-bottom: 10px; font-weight: 500; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
-.skill-list { list-style: none; padding: 0; }
-.skill-list li { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; border-bottom: 1px solid #f4f4f0; font-size: 14px; }
-.skill-list li:last-child { border-bottom: none; }
-.skill-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
-.skill-dot.blue { background: #3b82f6; }
-.skill-dot.green { background: #22c55e; }
-.skill-dot.purple { background: #a855f7; }
-.skill-name { font-weight: 600; color: #1e3a5f; display: block; margin-bottom: 1px; }
-.skill-desc { font-size: 13px; color: #555; }
-
+.step-list { list-style: none; padding: 0; counter-reset: steps; margin: 16px 0 28px; }
+.step-list li { counter-increment: steps; padding: 12px 0 12px 52px; position: relative; border-bottom: 1px solid #f0f0ec; font-size: 14px; line-height: 1.6; }
+.step-list li:last-child { border-bottom: none; }
+.step-list li::before { content: counter(steps); position: absolute; left: 0; top: 13px; width: 30px; height: 30px; background: #166534; color: white; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; line-height: 30px; text-align: center; }
+.step-list li strong { color: #1e3a5f; }
 .credential-card { background: white; border: 2px solid #22c55e; border-radius: 12px; padding: 20px 24px; margin: 16px 0 28px; }
 .credential-card .cred-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #166534; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
 .cred-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
 .cred-field { background: #f8f9fa; border-radius: 6px; padding: 10px 12px; }
 .cred-field .cf-label { font-size: 11px; color: #888; font-family: 'IBM Plex Mono', monospace; margin-bottom: 3px; }
 .cred-field .cf-value { font-size: 13px; color: #1a1a1a; font-weight: 500; }
-
 .scenario { background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 10px; padding: 18px 22px; margin: 16px 0 24px; }
 .scenario .sc-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #92400e; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
 .scenario p { font-size: 14px; color: #78350f; line-height: 1.65; margin: 0; }
 .scenario p + p { margin-top: 10px; }
-
 .role-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
 .role-table th { text-align: left; padding: 8px 12px; background: #f0f0ec; font-weight: 600; font-size: 12px; border: 1px solid #ddd; }
 .role-table td { padding: 10px 12px; border: 1px solid #e0e0da; vertical-align: top; line-height: 1.5; }
 .role-table tr:nth-child(even) td { background: #fafaf7; }
-
-@media (max-width: 620px) { .gate-row { grid-template-columns: 1fr; } .cred-fields { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .gate-row, .role-pick, .cred-fields { grid-template-columns: 1fr; } .toc ul { columns: 1; } }
 @media print { nav { display: none; } body { background: #fff; } }
 </style>
 </head>
@@ -86,306 +81,181 @@ strong { font-weight: 600; }
 <div class="page">
 
 <nav>
-  <a href="my-phs-intro.html">My PHS Introduction</a>
-  <a href="my-health-picture-intro.html">My Health Picture</a>
-  <a href="my-health-choices-manual.html">My Health Choices</a>
-  <a href="my-shared-care-plan-manual.html">My Shared Care Plan</a>
-  <span class="current">SODOTO</span>
+  <a href="sodoto-intro.html">SODOTO Reference</a>
+  <span class="current">User Manual</span>
+  <a href="../tools/sodoto-issuer-guide.html">Issuer Tool Guide</a>
 </nav>
 
 <div class="doc-header">
-  <div class="suite">My Personal Health Supporter · Tool 4</div>
-  <h1>SODOTO</h1>
-  <p class="lead">See One, Do One, Teach One — a credentialing system that recognizes your skills, rewards your teaching, and grows the network. Every skill you earn is yours. Every skill you teach makes the whole cooperative more capable.</p>
+  <div class="suite">SODOTO Documentation · ReLocalize Creativity Network</div>
+  <h1>SODOTO — User Manual</h1>
+  <p class="lead">A practical guide for the people who use SODOTO: learners earning a credential, mentors witnessing them, and coordinators issuing the badge. SODOTO works for <strong>any skill that can be taught</strong> — the examples here are just examples.</p>
+  <div class="updated">User manual · current as of August 2026</div>
 </div>
 
-<h2>What SODOTO Is</h2>
-
-<p>SODOTO stands for See One, Do One, Teach One — a phrase from medical training that describes how skills have always been passed on between practitioners. You watch an expert do it. You do it yourself under supervision. You teach it to someone else. At each step you are accountable — not just to a test, but to a real person who witnessed what you did.</p>
-
-<p>In My Personal Health Supporter, SODOTO is the system that turns that process into a formal credential — a verifiable digital badge that proves you have a skill, how you learned it, and whether you have taught it to others. The credential is yours to keep and to share. It belongs to no institution. It travels with you wherever you work.</p>
-
-<p>SODOTO credentials are tied directly to compensation tiers in the cooperative. Every new credential you earn moves you to a higher pay level. Every skill you teach earns a master credential — the highest tier. The economics of the cooperative are designed so that teaching others is the most valued contribution you can make.</p>
-
-<div class="callout">
-<strong>You do not need to be an expert to start.</strong> Every credential begins with See One — watching someone who already has the skill. That is available to you from day one. The path from newcomer to master teacher is a series of small, achievable steps, each one witnessed and recognized.
+<div class="toc">
+  <div class="toc-title">In this manual</div>
+  <ul>
+    <li><a href="#idea">SODOTO in one minute</a></li>
+    <li><a href="#gates">The three gates</a></li>
+    <li><a href="#roles">Who's who</a></li>
+    <li><a href="#learner">If you're a learner</a></li>
+    <li><a href="#mentor">If you're a mentor</a></li>
+    <li><a href="#coordinator">If you're a coordinator</a></li>
+    <li><a href="#badge">Reading &amp; verifying a badge</a></li>
+    <li><a href="#layers">Optional add-ons</a></li>
+    <li><a href="#faq">Questions</a></li>
+  </ul>
 </div>
 
-<h2>The Three Gates</h2>
+<p>Jump to your role:</p>
+<div class="role-pick">
+  <a href="#learner"><div class="rp-label">Path A</div><div class="rp-title">Learner</div><div class="rp-desc">You want to earn a credential for a skill.</div></a>
+  <a href="#mentor"><div class="rp-label">Path B</div><div class="rp-title">Mentor</div><div class="rp-desc">You hold the credential and will witness a learner.</div></a>
+  <a href="#coordinator"><div class="rp-label">Path C</div><div class="rp-title">Coordinator</div><div class="rp-desc">You record gates and sign the badge for your NDC.</div></a>
+</div>
 
-<p>Every SODOTO credential passes through three gates in sequence. You cannot skip a gate. Each gate requires a real person — a mentor who already holds the credential — to witness what you did and confirm it.</p>
+<h2 id="idea">SODOTO in One Minute</h2>
+
+<p>SODOTO stands for <strong>See One, Do One, Teach One</strong> — a phrase from medical training that describes how skills have always been passed between practitioners. You watch an expert do it. You do it yourself under supervision. You teach it to someone else. At each step you are accountable to a real person who witnessed what you did, not just to a test.</p>
+
+<p>SODOTO turns that process into a <strong>verifiable digital credential</strong> — a badge that records that you have a skill, how you learned it, who witnessed you, and whether you have taught it on. The badge is cryptographically signed by your cooperative (the NDC). It is yours to keep and to share, it belongs to no institution, and anyone can verify it in a browser with no login. It travels with you wherever you work.</p>
+
+<div class="callout"><strong>You do not need to be an expert to start.</strong> Every credential begins with See One — watching someone who already holds the skill. That is available to you from day one. The path from newcomer to teacher is a series of small, witnessed steps.</div>
+
+<div class="note"><strong>SODOTO is not tied to any one field.</strong> Anything that requires training can use it — a systems-mapping tool, a facilitation method, a trade, a clinical practice. Wherever this manual uses an example skill, the same three gates apply to your skill.</div>
+
+<h2 id="gates">The Three Gates</h2>
+
+<p>Every credential passes through three gates in order. You cannot skip a gate. Each gate needs a real mentor — someone who already holds the credential — to witness what you did and confirm it.</p>
 
 <div class="gate-row">
   <div class="gate-card see">
     <div class="gate-label">Gate 1</div>
     <h3>See One</h3>
-    <p>Watch a mentor — someone who already holds this credential — use the skill in a real situation. Not a demonstration for your benefit alone, but actual work with an actual person. You observe closely and document what you understood about what you saw.</p>
+    <p>Watch a mentor use the skill in a real situation — actual work, not a demonstration staged for you. Observe closely and write down what you understood about what you saw.</p>
   </div>
   <div class="gate-card do">
     <div class="gate-label">Gate 2</div>
     <h3>Do One</h3>
-    <p>Perform the skill yourself, with your mentor present to watch and evaluate. This is real work — a real health picture review, a real Health Choices session, a real physician package. Your mentor confirms that you did it well. If not, you do it again — there is no penalty for more than one attempt.</p>
+    <p>Perform the skill yourself with your mentor watching. This is real work. Your mentor confirms you did it well — or, if not, you simply do it again. No penalty for more than one attempt.</p>
   </div>
   <div class="gate-card teach">
     <div class="gate-label">Gate 3</div>
     <h3>Teach One</h3>
-    <p>Guide a newer health partner through their own See One and Do One. Your mentor watches you teach. The newer partner's completed work is the evidence that you actually taught — you cannot claim this gate without a real student who did the skill.</p>
+    <p>Guide a newer person through their own See One and Do One while your mentor watches you teach. That person's completed work is the evidence that you actually taught.</p>
   </div>
 </div>
 
-<div class="note">
-<strong>Multiple attempts are not failure.</strong> If your mentor is not satisfied at Do One, the attempt is recorded honestly and you try again. The record of trying more than once is evidence that you take the standard seriously — not evidence that you are not capable. There is no limit on attempts.
-</div>
+<div class="note"><strong>Multiple attempts are not failure.</strong> If your mentor is not satisfied at Do One, the attempt is recorded honestly and you try again. A record of trying more than once is evidence that you take the standard seriously — there is no limit on attempts.</div>
 
-<h2>The People in a SODOTO Credential</h2>
+<h2 id="roles">Who's Who</h2>
 
-<p>Every credential names three people: the learner, the mentor who witnessed them, and — at the Teach One gate — the student they taught. This chain of witness is what makes the credential meaningful. A certificate that says "passed a test" is easy to fake. A credential that names who showed you, who watched you, and who you taught — and where those people's own credentials can be verified — is a different kind of proof.</p>
+<p>Every credential names the people involved. This chain of witness is what makes it meaningful: a certificate that says "passed a test" is easy to fake; a credential that names who showed you, who watched you, and who you taught — each of them verifiable in turn — is a different kind of proof.</p>
 
 <table class="role-table">
-  <tr>
-    <th>Role</th>
-    <th>What they do</th>
-    <th>Who they are</th>
-  </tr>
-  <tr>
-    <td><strong>Learner</strong></td>
-    <td>Goes through all three gates. Does the skill at Do One. Teaches a student at Teach One.</td>
-    <td>You, working toward a new credential</td>
-  </tr>
-  <tr>
-    <td><strong>Mentor</strong></td>
-    <td>Demonstrates the skill at See One. Watches and evaluates at Do One and Teach One. Confirms at each gate that the standard was met.</td>
-    <td>A health partner who already holds this credential, or a physician partner for clinical skills</td>
-  </tr>
-  <tr>
-    <td><strong>Student</strong></td>
-    <td>The person you teach at Teach One. They complete their own Do One session as the evidence of your teaching.</td>
-    <td>A newer health partner beginning their own path to this credential</td>
-  </tr>
-  <tr>
-    <td><strong>NDC Coordinator</strong></td>
-    <td>Records each gate in the credentialing tool and signs the final credential on behalf of the cooperative.</td>
-    <td>A designated administrator at your Neighborhood Development Cooperative</td>
-  </tr>
+  <tr><th>Role</th><th>What they do</th><th>Who they are</th></tr>
+  <tr><td><strong>Learner</strong></td><td>Goes through all three gates. Does the skill at Do One, teaches a student at Teach One.</td><td>You, working toward a credential</td></tr>
+  <tr><td><strong>Mentor</strong></td><td>Demonstrates at See One; watches and confirms at Do One and Teach One.</td><td>Someone who already holds this credential</td></tr>
+  <tr><td><strong>Student</strong></td><td>The person you teach at Teach One. Their own Do One is the evidence of your teaching.</td><td>A newer person beginning their own path</td></tr>
+  <tr><td><strong>NDC Coordinator</strong></td><td>Records each gate in the issuer tool and signs the final badge on behalf of the cooperative.</td><td>A designated administrator at your NDC</td></tr>
 </table>
 
-<h2>My PHS Skill List</h2>
+<h2 id="learner">If You're a Learner — Your Path Step by Step</h2>
 
-<p>The following skills have SODOTO credentials available for My Personal Health Supporter health partners. Foundation skills are where everyone begins. Advanced skills require completing related foundation skills first. Master credentials require completing the Teach One gate for a skill.</p>
-
-<div class="skill-tier">
-  <div class="tier-header">Foundation Skills — start here</div>
-  <ul class="skill-list">
-    <li>
-      <span class="skill-dot blue"></span>
-      <div>
-        <span class="skill-name">Health Picture Review</span>
-        <span class="skill-desc">Walk through a person's complete Health Picture with them at home. Read each section, identify what has changed, add health partner observations, and document the session in the Shared Care Plan.</span>
-      </div>
-    </li>
-    <li>
-      <span class="skill-dot blue"></span>
-      <div>
-        <span class="skill-name">Shared Care Plan Note-Writing</span>
-        <span class="skill-desc">Write a complete, dated, factual care plan note after a home visit — observations, what was discussed, what was decided, and what happens next.</span>
-      </div>
-    </li>
-    <li>
-      <span class="skill-dot blue"></span>
-      <div>
-        <span class="skill-name">Vitals Recording</span>
-        <span class="skill-desc">Measure and record blood pressure, heart rate, weight, and blood glucose accurately. Document conditions and compare to prior readings. Identify readings that require follow-up.</span>
-      </div>
-    </li>
-    <li>
-      <span class="skill-dot blue"></span>
-      <div>
-        <span class="skill-name">Appointment Preparation</span>
-        <span class="skill-desc">Use the Appointment Prep chat tool with a person before a medical encounter. Help them identify topics, formulate questions, and record the Pre-Visit Summary.</span>
-      </div>
-    </li>
-  </ul>
-</div>
-
-<div class="skill-tier">
-  <div class="tier-header">Advanced Skills — after completing relevant foundation skills</div>
-  <ul class="skill-list">
-    <li>
-      <span class="skill-dot green"></span>
-      <div>
-        <span class="skill-name">Gap Identification and Flagging</span>
-        <span class="skill-desc">Identify diagnoses in the Health Picture that lack supporting evidence, flag them accurately in health partner observations, and prepare a gap report for the physician package. Requires: Health Picture Review.</span>
-      </div>
-    </li>
-    <li>
-      <span class="skill-dot green"></span>
-      <div>
-        <span class="skill-name">Health Choices Facilitation</span>
-        <span class="skill-desc">Open and walk through a My Health Choices option set with a person. Explain the dot display. Stay neutral. Document the person's decision and their reasoning. Requires: Health Picture Review.</span>
-      </div>
-    </li>
-    <li>
-      <span class="skill-dot green"></span>
-      <div>
-        <span class="skill-name">Physician Package Preparation</span>
-        <span class="skill-desc">Prepare a complete, structured physician package — specific problem, supporting evidence, gaps, health partner observations, and one clear question. Send through the appropriate channel and record the response. Requires: Health Picture Review, Gap Identification.</span>
-      </div>
-    </li>
-    <li>
-      <span class="skill-dot green"></span>
-      <div>
-        <span class="skill-name">Not Pursuing — Documentation</span>
-        <span class="skill-desc">Support a person who is choosing to set aside a health problem. Ensure they understand the implications, document their decision accurately in the Health Picture and Shared Care Plan, and handle the conversation with respect and clarity. Requires: Health Picture Review.</span>
-      </div>
-    </li>
-  </ul>
-</div>
-
-<div class="skill-tier">
-  <div class="tier-header">Master Credentials — awarded at Teach One completion</div>
-  <ul class="skill-list">
-    <li>
-      <span class="skill-dot purple"></span>
-      <div>
-        <span class="skill-name">Master — [any skill above]</span>
-        <span class="skill-desc">A Master credential is awarded for any skill when you complete Teach One — when you have successfully guided a newer health partner through their own See One and Do One for that skill, with your mentor present to confirm your teaching. Master credentials represent the highest pay tier for that skill and are the foundation for becoming a mentor yourself.</span>
-      </div>
-    </li>
-    <li>
-      <span class="skill-dot purple"></span>
-      <div>
-        <span class="skill-name">Health Choices Authoring</span>
-        <span class="skill-desc">Create a new My Health Choices option set — from identifying the health situation and locating evidence, through authoring the dot displays, to peer review and publication. This is a standalone advanced skill with its own three-gate path. See the Authoring Guide for details.</span>
-      </div>
-    </li>
-  </ul>
-</div>
-
-<h2>What a Credential Looks Like</h2>
-
-<p>When all three gates are complete, the NDC Coordinator signs your credential and it appears on your FedWiki portfolio page. It looks like this:</p>
-
-<div class="credential-card">
-  <div class="cred-label">SODOTO Credential — Example</div>
-  <div class="cred-fields">
-    <div class="cred-field">
-      <div class="cf-label">Skill</div>
-      <div class="cf-value">Health Picture Review</div>
-    </div>
-    <div class="cred-field">
-      <div class="cf-label">Awarded by</div>
-      <div class="cf-value">Whatcom Wealth and Health NDC</div>
-    </div>
-    <div class="cred-field">
-      <div class="cf-label">Level</div>
-      <div class="cf-value">Practitioner</div>
-    </div>
-    <div class="cred-field">
-      <div class="cf-label">Date</div>
-      <div class="cf-value">2026-07-06</div>
-    </div>
-    <div class="cred-field">
-      <div class="cf-label">Mentor</div>
-      <div class="cf-value">James Ortega (verified)</div>
-    </div>
-    <div class="cred-field">
-      <div class="cf-label">Verify</div>
-      <div class="cf-value">Click to verify — no login required</div>
-    </div>
-  </div>
-</div>
-
-<p>The credential is cryptographically signed by the cooperative — it cannot be altered or faked. Anyone can verify it by clicking the Verify link, which checks the signature directly in the browser. No account, no login, no third-party service required.</p>
-
-<p>Your credentials appear together on your FedWiki portfolio page — a public record of every skill you have earned, who witnessed it, and who you have taught. This page travels with you: a new employer, a different cooperative, a care organization anywhere can read and verify your portfolio without asking anyone's permission.</p>
-
-<h2>Your Path — Step by Step</h2>
+<p>These steps use <em>Causal Loop Diagramming</em> as a stand-in skill. Substitute whatever skill you are actually earning — the sequence is identical.</p>
 
 <ol class="step-list">
-  <li><strong>Choose your first skill.</strong> Start with Health Picture Review. It is the foundation of everything else and the skill you will use most. Talk to your team leader or NDC Coordinator about who holds this credential and can serve as your mentor.</li>
-  <li><strong>Arrange your See One.</strong> Ask your mentor to let you observe them doing a real Health Picture review with a person they work with. Bring this manual. Observe carefully — you will be asked to document what you understood about what you saw.</li>
-  <li><strong>Document your See One.</strong> Immediately after observing, write a brief narrative on your FedWiki portfolio page: what the skill involved, what you saw the mentor do, and what you now understand about how to do it. Your mentor reviews this and adds their confirmation.</li>
-  <li><strong>Arrange your Do One.</strong> Schedule a home visit where your mentor will observe you doing a full Health Picture review. Choose a person in your neighborhood who you know well and who is comfortable with a second person present. Tell the person who your mentor is and why they are there.</li>
-  <li><strong>Do the skill.</strong> Conduct a complete Health Picture review as described in the My Health Picture guide. Your mentor observes without intervening. Afterward, your mentor gives you feedback and either confirms the gate or schedules another attempt.</li>
-  <li><strong>Document your Do One.</strong> Write the narrative of what you did — the visit, the approach, what you noticed, what you would do differently. Your mentor adds their assessment. The NDC Coordinator records the gate.</li>
-  <li><strong>Arrange your Teach One.</strong> Find a newer health partner who wants to earn this credential. You become their mentor for the See One and Do One. Your own mentor observes you teaching. The student's completed Do One is the evidence for your gate.</li>
-  <li><strong>Receive your credential.</strong> Once all three gates are confirmed, the NDC Coordinator signs the credential and it appears on your portfolio. You are now eligible to serve as a mentor for this skill for others.</li>
+  <li><strong>Choose a skill and find a mentor.</strong> Ask your coordinator or team who holds this credential and can witness you. That person is your mentor for all three gates.</li>
+  <li><strong>Arrange your See One.</strong> Ask to observe your mentor using the skill in real work — not a demo staged for you. Watch what they actually do and why.</li>
+  <li><strong>Document your See One.</strong> Right afterward, write a short narrative on a FedWiki page: what the skill involved, what you saw the mentor do, and what you now understand. Your mentor reviews it and confirms.</li>
+  <li><strong>Arrange your Do One.</strong> Schedule real work where your mentor can watch you do the skill yourself. Pick a genuine task, not a rehearsal.</li>
+  <li><strong>Do the skill.</strong> Your mentor observes without taking over. Afterward they give feedback and either confirm the gate or schedule another attempt — both are fine.</li>
+  <li><strong>Document your Do One.</strong> Write what you did, what you noticed, what you would change. Your mentor adds their assessment; the coordinator records the gate.</li>
+  <li><strong>Arrange your Teach One.</strong> Find a newer person who wants this credential and become their mentor for See One and Do One. Your own mentor watches you teach. The student's completed Do One is your evidence.</li>
+  <li><strong>Receive your credential.</strong> Once all three gates are confirmed, the coordinator signs the badge and it appears on your portfolio. You are now eligible to mentor others in this skill.</li>
 </ol>
 
-<h2>Becoming a Mentor</h2>
+<div class="scenario">
+  <div class="sc-label">Worked example</div>
+  <p>Dana wanted the Causal Loop Diagramming credential, with Ken — who already holds it — as mentor. In week two Dana watched Ken build a real CLD with a working group (See One) and wrote up what they understood. In week three Dana built their own diagram with a different group while Ken observed (Do One). Ken asked for a second attempt — the first had reversed a feedback polarity — and the second was clean, so Ken confirmed it.</p>
+  <p>A month later a newcomer, Priya, wanted the same skill. Dana mentored Priya's See One and Do One while Ken watched Dana teach (Teach One). Priya's finished diagram is the evidence that Dana taught. The coordinator signed Dana's full credential, and Dana can now mentor this skill for others.</p>
+</div>
 
-<p>Once you hold a Practitioner credential — completing all three gates including Teach One — you are eligible to serve as a mentor for that skill. Being a mentor is one of the most valued roles in the cooperative. Every health partner who earns a new skill because of your mentoring strengthens the whole network.</p>
+<h2 id="mentor">If You're a Mentor</h2>
+
+<p>Once you hold a credential — all three gates, including Teach One — you can mentor that skill for others. Being a mentor is one of the most valuable roles in a cooperative: every person who gains a skill because of your mentoring strengthens the whole network.</p>
 
 <h3>What mentors do</h3>
 <ul>
-  <li>Demonstrate the skill in real working conditions for learners at See One</li>
-  <li>Watch and evaluate learners at Do One — with honest, specific, constructive feedback</li>
-  <li>Watch and evaluate learners who are teaching at Teach One</li>
-  <li>Confirm each gate in writing, with their name attached</li>
-  <li>Keep their own skills current — a mentor whose skills have lapsed cannot credibly witness others</li>
+  <li>Demonstrate the skill in real working conditions for learners at See One.</li>
+  <li>Watch and evaluate learners at Do One — with honest, specific feedback.</li>
+  <li>Watch and evaluate learners who are teaching at Teach One.</li>
+  <li>Confirm each gate in writing, with your name attached.</li>
+  <li>Keep your own skills current — a mentor whose skills have lapsed cannot credibly witness others.</li>
 </ul>
 
 <h3>The mentor standard</h3>
-<p>When you confirm a gate, you are staking your own credential and your reputation on the assessment that the learner met the standard. Confirm only what you genuinely observed. If a learner did not meet the standard, record it honestly and schedule another attempt. A mentor who passes learners who are not ready harms the person those learners will care for.</p>
+<p>When you confirm a gate, you stake your own credential and reputation on the judgment that the learner met the standard. Confirm only what you genuinely observed. If a learner did not meet it, record that honestly and schedule another attempt. A mentor who passes learners who are not ready weakens every credential downstream.</p>
 
-<div class="scenario">
-  <div class="sc-label">Example — Elena's path to master credential</div>
-  <p>Elena joined the cooperative as a new health partner in February. Her first credential was Health Picture Review, with James as her mentor. She observed James do a full review with one of his enrolled households in week two. She did her own review in week three with James present — he asked her to come back for a second attempt after the first, because she had missed reviewing the medications section. Her second attempt was complete and James confirmed it.</p>
-  <p>In May, a newer partner named Rosa joined the team. Elena offered to be Rosa's mentor for Health Picture Review. Over three weeks, Elena demonstrated the review for Rosa, watched Rosa complete her own, and gave feedback that helped Rosa pass. Elena's own mentor observed the whole teaching sequence. Elena's Master credential for Health Picture Review was signed in late May.</p>
-  <p>Elena now sits at the highest pay tier for Health Picture Review. She is working toward her Advanced credential in Physician Package Preparation — she just completed her See One with James last week.</p>
+<h2 id="coordinator">If You're a Coordinator</h2>
+
+<p>The coordinator records gates and signs badges for the NDC using the browser-based <strong>issuer tool</strong>. Everything happens in your browser — no scripts, no git. The <a href="../tools/sodoto-issuer-guide.html">Issuer Tool Guide</a> has per-tab detail; here is the whole loop.</p>
+
+<ol class="step-list">
+  <li><strong>Open the tool</strong> at <code>sodoto.ndcgroup.relocalizecreativity.net/tools/sodoto-issuer.html</code>. On first use it asks for the write passphrase, kept only in your browser.</li>
+  <li><strong>Registry tab —</strong> confirm the learner is listed. If not, add their name, DID, FedWiki site, and portfolio slug.</li>
+  <li><strong>Contract tab —</strong> pick the issuing NDC, the skill, and the learner, then Open / Resume. The tool tracks gate state per issuer–skill–learner.</li>
+  <li><strong>Gate tabs —</strong> for each gate, enter the date, mentor, both assertions, outcome, and narrative slug, then Record Attempt &amp; Write to FedWiki. The badge-in-progress updates on the learner's and mentor's portfolios immediately.</li>
+  <li><strong>Sign tab —</strong> review the preview, choose Full (all gates complete) or Partial, enter the NDC's 64-character hex key seed, and Sign &amp; Issue. Signing happens in your browser; the key is cleared right after and never sent to the server.</li>
+  <li><strong>Verify —</strong> open the learner's portfolio and click Verify on the new badge. Confirm ✓ Verified. A failure means the key seed did not match the NDC's DID.</li>
+</ol>
+
+<div class="warn"><strong>Guard the NDC key seed.</strong> The 64-character hex seed is what signs on behalf of the cooperative. Keep it in a password manager or Keychain — the tool never stores it. If it is lost the NDC can no longer sign new credentials under that DID, but every credential already issued stays valid forever (it verifies from the public key inside the DID).</div>
+
+<h2 id="badge">Reading &amp; Verifying a Badge</h2>
+
+<p>When all three gates are confirmed and signed, the badge appears on the learner's FedWiki portfolio page. It looks like this:</p>
+
+<div class="credential-card">
+  <div class="cred-label">SODOTO Credential — example</div>
+  <div class="cred-fields">
+    <div class="cred-field"><div class="cf-label">Skill</div><div class="cf-value">Causal Loop Diagramming</div></div>
+    <div class="cred-field"><div class="cf-label">Issued by</div><div class="cf-value">ReLocalize Creativity Network</div></div>
+    <div class="cred-field"><div class="cf-label">Level</div><div class="cf-value">Full (all three gates)</div></div>
+    <div class="cred-field"><div class="cf-label">Mentor</div><div class="cf-value">Ken Ito (verified)</div></div>
+    <div class="cred-field"><div class="cf-label">Gates</div><div class="cf-value">See · Do · Teach — with dates</div></div>
+    <div class="cred-field"><div class="cf-label">Verify</div><div class="cf-value">Click to verify — no login</div></div>
+  </div>
 </div>
 
-<h2>Credentials and Compensation</h2>
+<p>Each badge shows the skill and the issuing NDC's seal, the three gate dates, the mentor's name (linked to their own portfolio), the full attempt history for each gate, and a <strong>Verify</strong> button. Long badges collapse into an accordion — click a heading to expand it.</p>
 
-<p>SODOTO credentials are directly linked to compensation tiers in the Whatcom Wealth and Health cooperative. The cooperative's compensation structure recognizes that a health partner with more skills can take better care of more people — and that a mentor who grows the skills of the whole team is contributing at a level that deserves higher recognition.</p>
+<p><strong>To verify a badge</strong>, click Verify. The check runs entirely in your browser: it reads the signed credential, recovers the issuer's public key straight from its DID, and confirms the signature. ✓ Verified means the badge is authentic and unaltered. No account, no server call, no third party — and it works permanently, for anyone, anywhere.</p>
 
-<table class="role-table">
-  <tr>
-    <th>Credential level</th>
-    <th>Gates completed</th>
-    <th>Compensation</th>
-  </tr>
-  <tr>
-    <td><strong>Foundation Practitioner</strong></td>
-    <td>See One + Do One (any foundation skill)</td>
-    <td>Base pay tier — eligible to work independently with enrolled households</td>
-  </tr>
-  <tr>
-    <td><strong>Advanced Practitioner</strong></td>
-    <td>See One + Do One (any advanced skill)</td>
-    <td>Intermediate pay tier — eligible for more complex case assignments</td>
-  </tr>
-  <tr>
-    <td><strong>Master</strong></td>
-    <td>All three gates including Teach One</td>
-    <td>Highest pay tier for that skill — eligible to serve as mentor</td>
-  </tr>
-</table>
+<h2 id="layers">Optional Add-ons (Not Part of SODOTO)</h2>
 
-<p>Credentials accumulate. Each new skill you earn, at any level, adds to your compensation. The cooperative publishes its current compensation tiers; your NDC Coordinator can show you exactly how your current credential set translates to your current pay level and what is within reach.</p>
-
-<div class="callout">
-<strong>The design behind this:</strong> A cooperative that pays more for teaching creates a fundamentally different environment than one that pays only for individual performance. When your income grows by making others more capable, you have a direct personal stake in the success of everyone around you. That is the design — and it is deliberate.
-</div>
-
-<h2>Questions About Your Credentials</h2>
-
+<p>Some cooperatives layer other systems on top of SODOTO. These are <strong>separate and optional</strong> — SODOTO works fully without any of them.</p>
 <ul>
-  <li><strong>Can I lose a credential?</strong> No. A credential, once issued, is yours. It cannot be revoked by the cooperative after the fact. If your skills lapse or you stop working in the field, your credentials remain on your portfolio — they simply reflect when they were earned.</li>
-  <li><strong>What if my mentor leaves the cooperative?</strong> Your credential stands. It was signed by the NDC — the organization — not by the individual mentor. The mentor's name is in the record as a witness, but their departure does not affect the validity of what they witnessed.</li>
-  <li><strong>Can I use my credentials outside the cooperative?</strong> Yes. Your FedWiki portfolio is publicly verifiable. Any employer, care organization, or cooperative that understands the SODOTO system can read and verify your credentials. You own your portfolio.</li>
-  <li><strong>What if I disagree with a mentor's assessment?</strong> Talk to your NDC Coordinator. There is a review process. A single mentor's opinion is not final — the gate can be re-evaluated by a different mentor if there is a genuine dispute.</li>
+  <li><strong>Pay tiers or roles.</strong> A cooperative may decide that holding certain credentials moves someone to a higher pay tier or unlocks a role. That is a cooperative policy choice attached to the credential — not something SODOTO defines or requires.</li>
+  <li><strong>Agreements &amp; value exchange.</strong> A separate system (CfA-dSC) lets people make agreements and exchange value with a three-currency settlement. Anyone exchanging value can use it, and because it shares the same DID identity a cooperative <em>can</em> connect it to SODOTO — for instance recording a Teach One as a gift of value — but it stands on its own and is not needed to earn or verify a credential.</li>
+</ul>
+
+<h2 id="faq">Questions About Your Credentials</h2>
+<ul>
+  <li><strong>Can I lose a credential?</strong> No. Once issued it is yours and cannot be revoked after the fact. If your skills lapse, the credential simply reflects when it was earned.</li>
+  <li><strong>What if my mentor leaves?</strong> Your credential stands. It was signed by the NDC — the organization — not by the individual mentor. Their name remains in the record as a witness.</li>
+  <li><strong>Can I use my credentials outside my cooperative?</strong> Yes. Your portfolio is publicly verifiable. Any organization that understands SODOTO can read and verify it. You own your portfolio.</li>
+  <li><strong>What if I disagree with a mentor's assessment?</strong> Talk to your coordinator. A single mentor's opinion is not final — a gate can be re-evaluated by a different mentor if there is a genuine dispute.</li>
+  <li><strong>Do I need any special software?</strong> No. Everything happens on the web — the issuer tool and your portfolio both run in an ordinary browser over HTTPS. Nothing needs to be installed, and nothing runs on any one person's machine.</li>
 </ul>
 
 <h2>Related Documentation</h2>
 <ul>
-  <li><a href="my-phs-intro.html">My Personal Health Supporter — Suite Introduction</a></li>
-  <li><a href="my-health-picture-intro.html">My Health Picture — Introduction and Guide</a></li>
-  <li><a href="my-health-choices-manual.html">My Health Choices — Health Partner Manual</a></li>
-  <li><a href="my-shared-care-plan-manual.html">My Shared Care Plan — Health Partner Manual</a></li>
-  <li><a href="sodoto-intro.html">SODOTO Technical Reference</a> (for NDC Coordinators)</li>
+  <li><a href="sodoto-intro.html">SODOTO Reference</a> — what it is, how it works, and where every piece is hosted.</li>
+  <li><a href="../tools/sodoto-issuer-guide.html">Issuer Tool Guide</a> — per-tab help for coordinators using the tool.</li>
 </ul>
 
-</div><!-- /page -->
+</div>
 </body>
 </html>

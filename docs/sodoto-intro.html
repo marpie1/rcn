@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SODOTO — Introduction and User Manual</title>
+<title>SODOTO — What It Is, How It Works, Where It Runs</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -13,10 +13,11 @@ nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 48px; padding-bo
 nav a { color: #2d6a4f; text-decoration: none; }
 nav a:hover { text-decoration: underline; }
 nav .current { color: #1a1a1a; font-weight: 500; }
-.doc-header { margin-bottom: 48px; }
+.doc-header { margin-bottom: 40px; }
 .doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
 h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
-.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 640px; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 660px; }
+.updated { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #999; margin-top: 14px; }
 h2 { font-size: 19px; font-weight: 600; margin: 44px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
 h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: #2d6a4f; }
 p { margin-bottom: 14px; }
@@ -26,15 +27,11 @@ code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0
 pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f0ec; padding: 14px 16px; border-radius: 6px; overflow-x: auto; margin: 12px 0 18px; line-height: 1.6; }
 .note { background: #f0f9f4; border-left: 3px solid #2d6a4f; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0 24px; }
 .warn { background: #fffbeb; border-left: 3px solid #d97706; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0 24px; }
-.gap-item { background: #fef2f2; border-left: 3px solid #dc2626; padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 8px 0; }
-.gap-item strong { color: #b91c1c; }
-.connect-item { background: #f0f9f4; border-left: 3px solid #2d6a4f; padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 8px 0; }
-.connect-item strong { color: #2d6a4f; }
+.big-answer { background: #ecfdf5; border: 1.5px solid #34d399; border-radius: 10px; padding: 18px 22px; margin: 20px 0 28px; font-size: 14px; }
+.big-answer strong { color: #065f46; }
 .pill { display: inline-block; font-size: 11px; font-family: 'IBM Plex Mono', monospace; padding: 2px 8px; border-radius: 20px; background: #e8f5e9; color: #2d6a4f; margin-right: 4px; }
-.pill.amber { background: #fff8e1; color: #b45309; }
-.pill.blue { background: #e8f0fe; color: #1a56a4; }
 .pill.grey { background: #f0f0ec; color: #555; }
-.pill.red { background: #fef2f2; color: #dc2626; }
+.pill.amber { background: #fff8e1; color: #b45309; }
 .role-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
 .role-table th { text-align: left; padding: 8px 12px; background: #f0f0ec; font-weight: 600; font-size: 12px; border: 1px solid #ddd; }
 .role-table td { padding: 8px 12px; border: 1px solid #e0e0da; vertical-align: top; }
@@ -48,15 +45,14 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
 .step-list li { counter-increment: steps; padding: 10px 0 10px 48px; position: relative; border-bottom: 1px solid #f0f0ec; font-size: 14px; }
 .step-list li:last-child { border-bottom: none; }
 .step-list li::before { content: counter(steps); position: absolute; left: 0; top: 11px; width: 28px; height: 28px; background: #2d6a4f; color: white; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; line-height: 28px; text-align: center; }
-.diagram-wrap { margin: 28px 0 32px; overflow-x: auto; background: white; border: 1px solid #e8e8e4; border-radius: 8px; padding: 20px; }
-.skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 12px 0 24px; font-size: 13px; }
-.skill-item { padding: 6px 10px; border-radius: 4px; display: flex; align-items: center; gap: 8px; }
-.skill-item.issued { background: #f0f9f4; border: 1px solid #a7f3d0; }
-.skill-item.planned { background: #fafaf8; border: 1px solid #e0e0da; color: #666; }
-.skill-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.skill-item.issued .dot { background: #2d6a4f; }
-.skill-item.planned .dot { background: #ccc; }
-@media (max-width: 620px) { .gate-row { grid-template-columns: 1fr; } .skills-grid { grid-template-columns: 1fr; } }
+.diagram-wrap { margin: 20px 0 12px; overflow-x: auto; background: white; border: 1px solid #e8e8e4; border-radius: 8px; padding: 20px; text-align: center; }
+.diagram-wrap img { max-width: 100%; height: auto; }
+.caption { font-size: 12px; color: #888; text-align: center; margin: 0 0 28px; font-style: italic; }
+.status-good { background: #f0f9f4; border-left: 3px solid #16a34a; padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 8px 0; }
+.status-good strong { color: #15803d; }
+.status-todo { background: #fef2f2; border-left: 3px solid #dc2626; padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 8px 0; }
+.status-todo strong { color: #b91c1c; }
+@media (max-width: 620px) { .gate-row { grid-template-columns: 1fr; } }
 @media print { nav { display: none; } body { background: #fff; } .diagram-wrap { border: none; padding: 0; } }
 </style>
 </head>
@@ -64,558 +60,185 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
 <div class="page">
 
 <nav>
+  <span class="current">SODOTO Reference</span>
+  <a href="sodoto-manual.html">User Manual</a>
+  <a href="../tools/sodoto-issuer-guide.html">Issuer Tool Guide</a>
   <a href="rcn-stack-overview.html">RCN Stack Overview</a>
-  <span class="current">SODOTO</span>
-  <a href="cfa-dsc-intro.html">CfA-dSC</a>
 </nav>
 
 <div class="doc-header">
   <div class="suite">SODOTO Documentation · ReLocalize Creativity Network</div>
-  <h1>See One, Do One, Teach One</h1>
-  <p class="lead">A federated apprenticeship credentialing system for RCN practitioners. Skills are witnessed, practiced, and taught — then cryptographically certified by a Neighborhood Development Cooperative.</p>
+  <h1>SODOTO — What It Is, How It Works, Where It Runs</h1>
+  <p class="lead">A federated apprenticeship credentialing system. A skill is witnessed, practiced, and taught — then cryptographically certified by a Neighborhood Development Cooperative and published to a portfolio anyone can verify in a browser, with no server call and no login.</p>
+  <div class="updated">Technical reference · current as of August 2026 · supersedes all earlier SODOTO intro/context documents</div>
 </div>
 
 <h2>What SODOTO Is</h2>
 
-<p>SODOTO issues W3C Verifiable Credentials for practitioner skills. The credential documents not just that you have a skill, but how you acquired it: who showed you, who witnessed your practice, and who you subsequently taught. The full chain of transmission is embedded in the credential and cryptographically signed by the issuing NDC organization.</p>
+<p>SODOTO issues verifiable digital credentials for practitioner skills. The credential documents not just that you have a skill, but <em>how you acquired it</em>: who showed you, who witnessed your practice, and who you subsequently taught. The chain of transmission is embedded in the credential and cryptographically signed by the issuing NDC organization.</p>
 
-<p>No central server is required to validate credentials. Anyone viewing a learner's FedWiki portfolio page can click Verify — the browser extracts the issuer's public key directly from the DID string and confirms the signature. No registration, no login, no third-party service.</p>
+<p>The name comes from a medical training tradition: you observe a procedure done by an expert, you perform it yourself under supervision, and you teach it to the next learner. Each step is a <strong>gate</strong>. All three must pass before a full credential is issued.</p>
 
-<p>Credentials are issued by NDC organizations, not individuals. The credentialing authority is the cooperative — persistent, institutional, not dependent on any one person.</p>
+<p>Two properties make it different from an ordinary certificate:</p>
+<ul>
+  <li><strong>Credentials are issued by cooperatives, not individuals.</strong> The signing authority is the NDC — persistent and institutional — not dependent on any one person. A mentor's departure never invalidates what they witnessed.</li>
+  <li><strong>Verification needs no server.</strong> Anyone viewing a portfolio page can click Verify. The browser recovers the issuer's public key directly from its DID string and checks the signature. No registration, no login, no third party — permanently, for as long as the credential and its DID exist.</li>
+</ul>
 
-<p>The name comes from a medical training tradition: you observe a procedure done by an expert, you perform it yourself under supervision, and you teach it to the next learner. Each step is a gate. All three must pass before a credential is issued.</p>
+<p>SODOTO is skill-agnostic. Each NDC defines its own list of skills to credential — systems-mapping tools, health-partner practices, trades, facilitation methods, anything a cooperative wants to transmit rigorously. The three-gate machinery is the same regardless of the skill. <strong>Anything that requires training can use SODOTO.</strong></p>
 
-<h2>Roles</h2>
-
-<table class="role-table">
-  <tr>
-    <th>Role</th>
-    <th>Who</th>
-    <th>What They Do in SODOTO</th>
-  </tr>
-  <tr>
-    <td><strong>Learner</strong></td>
-    <td>Any RCN practitioner seeking a credential</td>
-    <td>Goes through all three gates in sequence. Records their own assertion at each gate. May need multiple attempts at DoOne or TeachOne — all attempts are preserved.</td>
-  </tr>
-  <tr>
-    <td><strong>Mentor</strong></td>
-    <td>Someone who already holds the credential (or a founding cohort member for bootstrapping)</td>
-    <td>Demonstrates the skill at SeeOne. Witnesses the learner at DoOne and TeachOne. Makes a mentorAssertion at each gate. Their DID is embedded in the credential.</td>
-  </tr>
-  <tr>
-    <td><strong>Student</strong></td>
-    <td>The person the learner teaches at TeachOne</td>
-    <td>Performs a DoOne session under the learner's teaching. Their DoOne FedWiki page is the evidence record for the learner's TeachOne. They begin their own credentialing path.</td>
-  </tr>
-  <tr>
-    <td><strong>NDC Coordinator</strong></td>
-    <td>Technical administrator at an issuing NDC</td>
-    <td>Records each gate attempt in the browser-based issuance tool (sodoto-issuer.html), then signs the credential with the NDC's private key seed. The tool writes the badge directly to the learner's FedWiki portfolio — no CLI scripts or git commits required.</td>
-  </tr>
-  <tr>
-    <td><strong>Issuing NDC</strong></td>
-    <td>The cooperative organization (RCN, Columbia Valley NDC, The Fledge, etc.)</td>
-    <td>Its Ed25519 key pair signs the JWT. Its DID appears in the credential as the issuer. Credentials are tied to the NDC's institutional identity, not any individual.</td>
-  </tr>
-</table>
+<div class="note"><strong>SODOTO stands alone.</strong> It needs no currency system, no health program, and no contract system to work. Those are separate, self-contained tools that <em>can</em> be used alongside it — the health-partner (CHW) program is one program that credentials with SODOTO; the three-currency agreements system (CfA-dSC) is a separate system anyone making agreements and exchanging value can use. They are examples of use, not dependencies. Each can stand on its own.</div>
 
 <h2>The Three-Gate Workflow</h2>
 
-<p>Every SODOTO credential passes through three sequential gates. Gates cannot be skipped. A gate may require multiple attempts — the record of each attempt, including failed ones, is preserved in the credential's history.</p>
+<p>Every credential passes through three sequential gates. Gates cannot be skipped. A gate may take several attempts — the record of each attempt, including ended ones, is preserved as evidence of rigor.</p>
 
 <div class="gate-row">
   <div class="gate-card">
     <div class="gate-label">Gate 1</div>
     <h3>See One</h3>
-    <p>The mentor demonstrates the skill in a real working context. The learner observes closely. Both record a brief assertion — the mentor that they showed the skill, the learner that they understood what they observed. The session is documented in a FedWiki narrative page.</p>
+    <p>The mentor demonstrates the skill in a real working context. The learner observes closely. Both record a brief assertion — the mentor that they showed it, the learner that they understood — and the session is documented on a FedWiki narrative page.</p>
   </div>
   <div class="gate-card">
     <div class="gate-label">Gate 2</div>
     <h3>Do One</h3>
-    <p>The learner performs the skill themselves. The mentor witnesses the full session. Both record assertions. If the mentor is not satisfied, the attempt is recorded as <em>ended</em> and another DoOne is scheduled. There is no penalty for multiple attempts — the history is evidence of rigor, not failure.</p>
+    <p>The learner performs the skill themselves while the mentor witnesses. Both assert. If the mentor is not satisfied, the attempt is recorded as <em>ended</em> and another Do One is scheduled. There is no penalty for multiple attempts.</p>
   </div>
   <div class="gate-card">
     <div class="gate-label">Gate 3</div>
     <h3>Teach One</h3>
-    <p>The learner teaches a new student, with the mentor present to witness the teaching. Both the mentor and the student attest. The student's subsequent DoOne page serves as the evidence record — the learner cannot claim TeachOne without a real student who actually did the skill.</p>
+    <p>The learner teaches a new student while the mentor witnesses the teaching. Both the mentor and the student attest. The student's own Do One page is the evidence record — you cannot claim Teach One without a real student who actually did the skill.</p>
   </div>
 </div>
 
-<h3>Assertion values recorded at each gate</h3>
-
+<h3>What each gate records</h3>
 <table class="role-table">
-  <tr>
-    <th>Gate</th>
-    <th>mentorAssertion</th>
-    <th>learnerAssertion</th>
-    <th>outcome</th>
-  </tr>
-  <tr>
-    <td>SeeOne (pass)</td>
-    <td><code>showed</code></td>
-    <td><code>understood</code></td>
-    <td><code>complete</code></td>
-  </tr>
-  <tr>
-    <td>DoOne (pass)</td>
-    <td><code>satisfied</code></td>
-    <td><code>has-done</code></td>
-    <td><code>complete</code></td>
-  </tr>
-  <tr>
-    <td>DoOne (fail / pause)</td>
-    <td><code>not-satisfied</code></td>
-    <td><code>has-done</code></td>
-    <td><code>ended</code></td>
-  </tr>
-  <tr>
-    <td>TeachOne (pass)</td>
-    <td><code>satisfied</code></td>
-    <td><code>has-taught</code></td>
-    <td><code>complete</code></td>
-  </tr>
+  <tr><th>Gate</th><th>mentorAssertion</th><th>learnerAssertion</th><th>outcome</th></tr>
+  <tr><td>See One (pass)</td><td><code>showed</code></td><td><code>understood</code></td><td><code>complete</code></td></tr>
+  <tr><td>Do One (pass)</td><td><code>satisfied</code></td><td><code>has-done</code></td><td><code>complete</code></td></tr>
+  <tr><td>Do One (ended)</td><td><code>not-satisfied</code></td><td><code>has-done</code></td><td><code>ended</code></td></tr>
+  <tr><td>Teach One (pass)</td><td><code>satisfied</code></td><td><code>has-taught</code></td><td><code>complete</code></td></tr>
+</table>
+<p>Each gate also records the mentor's name and DID, a date, and a link to a narrative page. Teach One additionally records the student's name, DID, portfolio slug, and the slug of the student's Do One evidence page.</p>
+
+<h2>Roles</h2>
+<table class="role-table">
+  <tr><th>Role</th><th>Who</th><th>What they do</th></tr>
+  <tr><td><strong>Learner</strong></td><td>Anyone seeking a credential</td><td>Goes through all three gates in sequence. May need multiple Do One or Teach One attempts — all are preserved.</td></tr>
+  <tr><td><strong>Mentor</strong></td><td>Someone who already holds the credential (or a founding-cohort member for bootstrapping)</td><td>Demonstrates at See One, witnesses at Do One and Teach One, asserts at each gate. Their DID is embedded in the credential.</td></tr>
+  <tr><td><strong>Student</strong></td><td>The person the learner teaches at Teach One</td><td>Does a Do One session under the learner's teaching. Their Do One page is the evidence for the learner's Teach One — and begins their own path.</td></tr>
+  <tr><td><strong>NDC Coordinator</strong></td><td>Administrator at an issuing NDC</td><td>Records each gate in the browser issuer tool, then signs the credential with the NDC's private key seed. The tool writes the badge straight to the portfolio — no scripts, no git.</td></tr>
+  <tr><td><strong>Issuing NDC</strong></td><td>The cooperative (RCN, a health NDC, The Fledge, …)</td><td>Its Ed25519 key pair signs the credential; its DID is the issuer. Trust is tied to the institution, not any individual.</td></tr>
 </table>
 
-<p>Each gate also records the mentor's name and DID, a date, and a link to a FedWiki narrative page. The TeachOne gate adds the student's name, DID, portfolio slug, and the slug of the student's DoOne evidence page.</p>
+<h2>Where Every Piece Runs</h2>
 
-<h2>System Architecture</h2>
-
-<p>The diagram below shows all components and how they relate. The left side is the human process (gates, people). The center is the technical issuance engine. The right side is where credentials surface to learners and verifiers.</p>
+<div class="big-answer">
+<strong>Nothing SODOTO needs runs on a personal machine.</strong> The entire live system is three containers on the WikiCafe server plus each person's own web browser. A coordinator issues from their own browser; a learner or verifier views and verifies from theirs. Marc's development machine only <em>builds</em> the container images and pushes them to the registry — it is never in the running path, and if it were switched off the live system would keep working.
+</div>
 
 <div class="diagram-wrap">
-<svg viewBox="0 0 800 492" xmlns="http://www.w3.org/2000/svg"
-     style="width:100%;max-width:800px;display:block;font-family:'IBM Plex Sans',system-ui,sans-serif">
-  <defs>
-    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0,8 3,0 6" fill="#666"/>
-    </marker>
-    <marker id="arr-g" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0,8 3,0 6" fill="#2d6a4f"/>
-    </marker>
-    <marker id="arr-b" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0,8 3,0 6" fill="#1a56a4"/>
-    </marker>
-    <marker id="arr-p" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0,8 3,0 6" fill="#6b21a8"/>
-    </marker>
-    <marker id="arr-a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0,8 3,0 6" fill="#92400e"/>
-    </marker>
-  </defs>
-
-  <!-- ══════════════════════════════════════════════
-       ROW 1 — PEOPLE  (y=14, h=54)
-  ══════════════════════════════════════════════ -->
-
-  <!-- Learner -->
-  <rect x="14" y="14" width="155" height="54" rx="6" fill="#dcfce7" stroke="#2d6a4f" stroke-width="1.5"/>
-  <text x="91" y="33" text-anchor="middle" font-size="9" fill="#15803d"
-        font-family="'IBM Plex Mono',monospace" font-weight="500" letter-spacing="0.07em">LEARNER</text>
-  <text x="91" y="52" text-anchor="middle" font-size="13" font-weight="500" fill="#1a1a1a">Practitioner</text>
-
-  <!-- Mentor -->
-  <rect x="313" y="14" width="155" height="54" rx="6" fill="#dcfce7" stroke="#2d6a4f" stroke-width="1.5"/>
-  <text x="390" y="33" text-anchor="middle" font-size="9" fill="#15803d"
-        font-family="'IBM Plex Mono',monospace" font-weight="500" letter-spacing="0.07em">MENTOR</text>
-  <text x="390" y="52" text-anchor="middle" font-size="13" font-weight="500" fill="#1a1a1a">Credential Holder</text>
-
-  <!-- NDC Coordinator -->
-  <rect x="570" y="14" width="216" height="54" rx="6" fill="#dbeafe" stroke="#1a56a4" stroke-width="1.5"/>
-  <text x="678" y="33" text-anchor="middle" font-size="9" fill="#1a56a4"
-        font-family="'IBM Plex Mono',monospace" font-weight="500" letter-spacing="0.07em">NDC COORDINATOR</text>
-  <text x="678" y="52" text-anchor="middle" font-size="13" font-weight="500" fill="#1a1a1a">Issues credential</text>
-
-  <!-- ══════════════════════════════════════════════
-       ARROWS — people to gates
-  ══════════════════════════════════════════════ -->
-
-  <!-- Learner → SeeOne (straight down) -->
-  <line x1="91" y1="68" x2="91" y2="116" stroke="#2d6a4f" stroke-width="1.5" marker-end="url(#arr-g)"/>
-
-  <!-- Mentor → SeeOne (diagonal, dashed: "witnesses") -->
-  <line x1="350" y1="68" x2="176" y2="116" stroke="#2d6a4f" stroke-width="1.5"
-        stroke-dasharray="5,3" marker-end="url(#arr-g)"/>
-  <text x="242" y="95" text-anchor="middle" font-size="9.5" fill="#15803d" font-style="italic">witnesses</text>
-
-  <!-- NDC Coordinator → Issuance Engine (right-side routing, dashed blue) -->
-  <polyline points="786,41 796,41 796,290 786,290"
-            fill="none" stroke="#1a56a4" stroke-width="1.5" stroke-dasharray="5,4"
-            marker-end="url(#arr-b)"/>
-  <text font-size="9.5" fill="#1a56a4" font-style="italic"
-        transform="translate(800,195) rotate(90)" text-anchor="middle">opens browser tool</text>
-
-  <!-- ══════════════════════════════════════════════
-       ROW 2 — GATES  (y=118, h=84)
-  ══════════════════════════════════════════════ -->
-
-  <!-- SeeOne -->
-  <rect x="14" y="118" width="214" height="84" rx="6" fill="#eff6ff" stroke="#1a56a4" stroke-width="1.5"/>
-  <text x="121" y="138" text-anchor="middle" font-size="9" fill="#1a56a4"
-        font-family="'IBM Plex Mono',monospace" font-weight="500" letter-spacing="0.07em">SEE ONE</text>
-  <text x="121" y="156" text-anchor="middle" font-size="12" fill="#1e293b">Mentor demonstrates</text>
-  <text x="121" y="172" text-anchor="middle" font-size="12" fill="#1e293b">Learner observes</text>
-  <text x="121" y="191" text-anchor="middle" font-size="10.5" fill="#1a56a4" font-style="italic">both assert · narrative page</text>
-
-  <!-- Arrow SeeOne → DoOne -->
-  <line x1="228" y1="160" x2="276" y2="160" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
-
-  <!-- DoOne -->
-  <rect x="280" y="118" width="214" height="84" rx="6" fill="#eff6ff" stroke="#1a56a4" stroke-width="1.5"/>
-  <text x="387" y="138" text-anchor="middle" font-size="9" fill="#1a56a4"
-        font-family="'IBM Plex Mono',monospace" font-weight="500" letter-spacing="0.07em">DO ONE</text>
-  <text x="387" y="156" text-anchor="middle" font-size="12" fill="#1e293b">Learner performs</text>
-  <text x="387" y="172" text-anchor="middle" font-size="12" fill="#1e293b">Mentor witnesses</text>
-  <text x="387" y="191" text-anchor="middle" font-size="10.5" fill="#1a56a4" font-style="italic">both assert · may retry</text>
-
-  <!-- Arrow DoOne → TeachOne -->
-  <line x1="494" y1="160" x2="542" y2="160" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
-
-  <!-- TeachOne -->
-  <rect x="546" y="118" width="230" height="84" rx="6" fill="#eff6ff" stroke="#1a56a4" stroke-width="1.5"/>
-  <text x="661" y="138" text-anchor="middle" font-size="9" fill="#1a56a4"
-        font-family="'IBM Plex Mono',monospace" font-weight="500" letter-spacing="0.07em">TEACH ONE</text>
-  <text x="661" y="156" text-anchor="middle" font-size="12" fill="#1e293b">Learner teaches student</text>
-  <text x="661" y="172" text-anchor="middle" font-size="12" fill="#1e293b">Mentor + student attest</text>
-  <text x="661" y="191" text-anchor="middle" font-size="10.5" fill="#1a56a4" font-style="italic">student's DoOne = evidence</text>
-
-  <!-- ══════════════════════════════════════════════
-       ARROW — gates → issuance
-  ══════════════════════════════════════════════ -->
-  <line x1="387" y1="202" x2="387" y2="244" stroke="#6b21a8" stroke-width="1.5" marker-end="url(#arr-p)"/>
-  <text x="406" y="226" font-size="9.5" fill="#6b21a8" font-style="italic">all three gates pass</text>
-
-  <!-- ══════════════════════════════════════════════
-       ROW 3 — ISSUANCE ENGINE  (y=248, h=92)
-  ══════════════════════════════════════════════ -->
-  <rect x="14" y="248" width="772" height="92" rx="6" fill="#f5f3ff" stroke="#6b21a8" stroke-width="1.5"/>
-  <text x="400" y="268" text-anchor="middle" font-size="9" fill="#6b21a8"
-        font-family="'IBM Plex Mono',monospace" font-weight="500" letter-spacing="0.1em">ISSUANCE ENGINE</text>
-
-  <!-- Sub-box: sodoto-issuer.html -->
-  <rect x="26" y="276" width="142" height="52" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
-  <text x="97" y="292" text-anchor="middle" font-size="9" fill="#6b21a8"
-        font-family="'IBM Plex Mono',monospace">sodoto-issuer.html</text>
-  <text x="97" y="307" text-anchor="middle" font-size="10.5" fill="#2e1065">browser · Web Crypto</text>
-  <text x="97" y="320" text-anchor="middle" font-size="10" fill="#555">Ed25519 signing</text>
-
-  <!-- Sub-box: Private key seed -->
-  <rect x="178" y="276" width="142" height="52" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
-  <text x="249" y="292" text-anchor="middle" font-size="9" fill="#6b21a8"
-        font-family="'IBM Plex Mono',monospace">private key seed</text>
-  <text x="249" y="307" text-anchor="middle" font-size="10.5" fill="#2e1065">Ed25519 · 64-char hex</text>
-  <text x="249" y="320" text-anchor="middle" font-size="10" fill="#555">entered in browser · not stored</text>
-
-  <!-- Sub-box: NDC Issuers -->
-  <rect x="330" y="276" width="142" height="52" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
-  <text x="401" y="292" text-anchor="middle" font-size="9" fill="#6b21a8"
-        font-family="'IBM Plex Mono',monospace">5 NDC issuers</text>
-  <text x="401" y="307" text-anchor="middle" font-size="10" fill="#2e1065">RCN · Col. Valley · Fledge</text>
-  <text x="401" y="320" text-anchor="middle" font-size="10" fill="#555">Leo's · Kula</text>
-
-  <!-- Sub-box: DID registry -->
-  <rect x="482" y="276" width="142" height="52" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
-  <text x="553" y="292" text-anchor="middle" font-size="9" fill="#6b21a8"
-        font-family="'IBM Plex Mono',monospace">DID registry</text>
-  <text x="553" y="307" text-anchor="middle" font-size="10.5" fill="#2e1065">dids.json</text>
-  <text x="553" y="320" text-anchor="middle" font-size="10" fill="#2e1065">people.json</text>
-
-  <!-- Sub-box: Output JWT -->
-  <rect x="634" y="276" width="140" height="52" rx="4" fill="#fef9c3" stroke="#ca8a04" stroke-width="1"/>
-  <text x="704" y="292" text-anchor="middle" font-size="9" fill="#854d0e"
-        font-family="'IBM Plex Mono',monospace">output</text>
-  <text x="704" y="307" text-anchor="middle" font-size="11" font-weight="600" fill="#1a1a1a">Ed25519 JWT</text>
-  <text x="704" y="320" text-anchor="middle" font-size="10" fill="#555">embedded in JSON</text>
-
-  <!-- ══════════════════════════════════════════════
-       ARROWS — issuance → storage/display
-  ══════════════════════════════════════════════ -->
-
-  <!-- Center-left: issuance → credential store -->
-  <line x1="200" y1="340" x2="200" y2="378" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
-
-  <!-- Center-right: issuance → FedWiki display -->
-  <line x1="575" y1="340" x2="575" y2="378" stroke="#92400e" stroke-width="1.5" marker-end="url(#arr-a)"/>
-
-  <!-- ══════════════════════════════════════════════
-       ROW 4 — STORE + DISPLAY  (y=380, h=82)
-  ══════════════════════════════════════════════ -->
-
-  <!-- Credential Store -->
-  <rect x="14" y="380" width="360" height="82" rx="6" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
-  <text x="194" y="400" text-anchor="middle" font-size="9" fill="#475569"
-        font-family="'IBM Plex Mono',monospace" font-weight="500" letter-spacing="0.08em">CREDENTIAL STORE</text>
-  <text x="194" y="418" text-anchor="middle" font-size="12" fill="#1e293b">sodoto-badge items in FedWiki portfolio pages</text>
-  <text x="194" y="434" text-anchor="middle" font-size="11" fill="#475569">JWT embedded in each badge · written by sofi-proxy</text>
-  <text x="194" y="449" text-anchor="middle" font-size="11" fill="#475569">dids.json · people-registry.json</text>
-
-  <!-- Arrow: store → display -->
-  <line x1="374" y1="421" x2="412" y2="421" stroke="#92400e" stroke-width="1.5" marker-end="url(#arr-a)"/>
-  <text x="393" y="413" text-anchor="middle" font-size="9" fill="#92400e" font-style="italic">badge reads</text>
-
-  <!-- FedWiki + Verify -->
-  <rect x="416" y="380" width="360" height="82" rx="6" fill="#fffbeb" stroke="#b45309" stroke-width="1.5"/>
-  <text x="596" y="400" text-anchor="middle" font-size="9" fill="#b45309"
-        font-family="'IBM Plex Mono',monospace" font-weight="500" letter-spacing="0.08em">FEDWIKI + VERIFY</text>
-  <text x="596" y="418" text-anchor="middle" font-size="12" fill="#1e293b">Portfolio page · sodoto-badge plugin</text>
-  <text x="596" y="434" text-anchor="middle" font-size="11" fill="#475569">Verify button → Web Crypto API</text>
-  <text x="596" y="449" text-anchor="middle" font-size="11" fill="#475569">DID → public key → JWT check · entirely in-browser</text>
-
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="15 -10 960 650" style="width:100%;height:auto;max-width:820px;font-family:'IBM Plex Sans',system-ui,sans-serif" role="img" aria-label="SODOTO deployment map: three containers on the WikiCafe server, images pulled from GitHub Container Registry, coordinator and learner browsers connecting over HTTPS."><rect x="15" y="-10" width="960" height="650" fill="#ffffff"/>
+      <defs id="svg-defs"><marker id="mk000000" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#000000"/></marker></defs>
+      <g id="edges-layer"><g id="edge-e8"><path d="M215,60 L465,60" fill="none" stroke="#000000" stroke-width="1.5" stroke-dasharray="8 5" marker-end="url(#mk000000)"/><text text-anchor="middle"><tspan x="340" y="74" font-size="10" font-style="italic" fill="#000000">build &amp; push images</tspan></text></g><g id="edge-e9"><path d="M535.2941176470588,102 L384.70588235294116,358" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)"/><text text-anchor="middle" transform="rotate(-59.5,447.9,222.9)"><tspan x="447.93292098779125" y="222.9017182281125" font-size="10" font-style="italic" fill="#000000">image pulled</tspan></text></g><g id="edge-e10"><path d="M584.7058823529412,102 L730.5882352941177,350" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)"/><text text-anchor="middle" transform="rotate(59.5,645.6,233.1)"><tspan x="645.5799798113208" y="233.0982817718875" font-size="10" font-style="italic" fill="#000000">image pulled</tspan></text></g><g id="edge-e11"><path d="M186.66666666666669,510 L504,272" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)"/><text text-anchor="middle" transform="rotate(-36.9,353.7,402.2)"><tspan x="353.73333333333335" y="402.2" font-size="10" font-style="italic" fill="#000000">HTTPS  sodoto.ndcgroup…</tspan></text></g><g id="edge-e12"><path d="M816,494 L600.7272727272727,272" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)"/><text text-anchor="middle" transform="rotate(45.9,718.4,373.3)"><tspan x="718.4142418719512" y="373.2539582949675" font-size="10" font-style="italic" fill="#000000">HTTPS  wiki-sodoto.ndcgroup…</tspan></text></g><g id="edge-e13"><path d="M510.5882352941176,272 L409.4117647058824,358" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)"/><text text-anchor="middle" transform="rotate(-40.4,450.9,304.3)"><tspan x="450.9329221186624" y="304.3328495513676" font-size="10" font-style="italic" fill="#000000">reverse proxy :8765</tspan></text></g><g id="edge-e14"><path d="M609.4117647058823,272 L701.1764705882352,350" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)"/><text text-anchor="middle" transform="rotate(40.4,646.2,321.7)"><tspan x="646.2270397657212" y="321.6671504486324" font-size="10" font-style="italic" fill="#000000">reverse proxy :3000</tspan></text></g><g id="edge-e15"><path d="M455,400 L665,400" fill="none" stroke="#000000" stroke-width="1.5" stroke-dasharray="8 5" marker-end="url(#mk000000)"/><text text-anchor="middle"><tspan x="560" y="414" font-size="10" font-style="italic" fill="#000000">writes pages (shared volume)</tspan></text></g></g>
+      <g id="nodes-layer"><g id="node-n1" transform="translate(120,60)"><rect x="-95" y="-58" width="190" height="116" rx="10" fill="#e5e7eb" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000"><tspan x="0" y="-8.0">Marc's dev machine (build</tspan><tspan x="0" dy="16">only — not in runtime path)</tspan></text></g><g id="node-n2" transform="translate(560,60)"><rect x="-95" y="-42" width="190" height="84" rx="10" fill="#ddd6fe" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000"><tspan x="0" y="-8.0">GitHub Container Registry</tspan><tspan x="0" dy="16">ghcr.io/marpie1/*</tspan></text></g><g id="node-n3" transform="translate(560,230)"><rect x="-95" y="-42" width="190" height="84" rx="10" fill="#fde68a" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000"><tspan x="0" y="-8.0">Caddy — HTTPS / TLS</tspan><tspan x="0" dy="16">(WikiCafe server)</tspan></text></g><g id="node-n4" transform="translate(360,400)"><rect x="-95" y="-42" width="190" height="84" rx="10" fill="#a7f3d0" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000"><tspan x="0" y="-8.0">sofi-proxy issuer tool +</tspan><tspan x="0" dy="16">wiki writes (WikiCafe)</tspan></text></g><g id="node-n5" transform="translate(760,400)"><rect x="-95" y="-50" width="190" height="100" rx="10" fill="#bfdbfe" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000"><tspan x="0" y="-8.0">FedWiki portfolios + badge</tspan><tspan x="0" dy="16">ledger (WikiCafe)</tspan></text></g><g id="node-n6" transform="translate(120,560)"><rect x="-95" y="-50" width="190" height="100" rx="10" fill="#fecaca" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000"><tspan x="0" y="-8.0">Coordinator browser opens</tspan><tspan x="0" dy="16">issuer tool · signs Ed25519</tspan></text></g><g id="node-n7" transform="translate(880,560)"><rect x="-95" y="-66" width="190" height="132" rx="10" fill="#fecaca" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000"><tspan x="0" y="-16.0">Learner / verifier browser</tspan><tspan x="0" dy="16">views portfolio · verifies</tspan><tspan x="0" dy="16">badge</tspan></text></g></g>
+    </svg>
 </div>
+<p class="caption">Where every piece runs. Dashed arrows are out-of-band (image build/push, shared-volume writes); solid arrows are live HTTPS traffic.</p>
+
+<h3>The three containers (on the WikiCafe server)</h3>
+<table class="role-table">
+  <tr><th>Container</th><th>Image</th><th>Serves</th></tr>
+  <tr>
+    <td><strong>sofi-proxy</strong></td>
+    <td><code>ghcr.io/marpie1/rcn-sodoto-proxy</code></td>
+    <td>The issuer tool (<code>sodoto-issuer.html</code>) and all FedWiki write calls. Runs the demo seed at startup when <code>SEED_DEMO</code> is set. Reachable at <code>sodoto.ndcgroup.relocalizecreativity.net</code>.</td>
+  </tr>
+  <tr>
+    <td><strong>FedWiki</strong></td>
+    <td><code>ghcr.io/marpie1/rcn-sodoto-wiki</code></td>
+    <td>Learner portfolio pages and the badge ledger, rendered by the vendored <code>sodoto-badge</code> plugin (pinned to <code>wiki@0.27.0</code>). Reachable at <code>wiki-sodoto.ndcgroup.relocalizecreativity.net</code>.</td>
+  </tr>
+  <tr>
+    <td><strong>Caddy</strong></td>
+    <td><code>caddy:latest</code></td>
+    <td>HTTPS reverse proxy; obtains and renews TLS certificates automatically via Let's Encrypt. Routes each subdomain to the container above.</td>
+  </tr>
+</table>
+<p>The two SODOTO containers share a <code>wiki-data</code> volume, so pages written by sofi-proxy are served immediately by FedWiki. A second <code>sodoto-data</code> volume holds the people registry. Configuration lives in the server's <code>.env</code> (domains, the write passphrase, an optional Anthropic key) — never in the images or in git. Full compose/Caddy config is in <code>deploy/docker/</code>.</p>
+
+<h3>How each person connects</h3>
+<table class="role-table">
+  <tr><th>Person</th><th>URL</th><th>What happens in their browser</th></tr>
+  <tr><td>Coordinator (issuer)</td><td><code>sodoto.ndcgroup.relocalizecreativity.net/tools/sodoto-issuer.html</code></td><td>Runs the gate workflow; enters the NDC key seed to sign. HTTPS makes Web Crypto signing available.</td></tr>
+  <tr><td>Learner / verifier</td><td><code>wiki-sodoto.ndcgroup.relocalizecreativity.net</code></td><td>Views portfolio pages; clicks Verify. The signature check runs entirely client-side — no login.</td></tr>
+</table>
+
+<div class="note"><strong>Why HTTPS matters.</strong> The browser's Web Crypto API — used for Ed25519 signing and verification — only works in a secure context (HTTPS or localhost). Because the WikiCafe deployment is HTTPS on a public domain, any coordinator can sign from their own machine. (An earlier localhost-only setup required signing on one specific machine; the WikiCafe deployment removed that limitation.)</p></div>
 
 <h2>Issuing a Credential — Coordinator Steps</h2>
 
-<p>The coordinator uses <strong>sodoto-issuer.html</strong> — a browser-based tool that handles gate recording, signing, and all FedWiki writes. No CLI scripts or git commits are required.</p>
+<p>The coordinator uses the browser-based <strong>issuer tool</strong>; it handles gate recording, signing, and every FedWiki write. No scripts or git commits. Full per-tab help is in the <a href="../tools/sodoto-issuer-guide.html">Issuer Tool Guide</a>.</p>
 
 <ol class="step-list">
-  <li>
-    <strong>Open the issuance tool.</strong> Navigate to <code>sodoto-issuer.html</code> on the SODOTO server. The tool loads the people registry automatically.
-  </li>
-  <li>
-    <strong>Confirm the learner is in the registry.</strong> Check the Registry tab. If the learner is not listed, add them — enter their name, DID, FedWiki site, and portfolio slug. New entries sync to the server-side registry automatically.
-  </li>
-  <li>
-    <strong>Open the contract.</strong> On the Contract tab, select the issuing NDC organization, the skill, and the learner. Click "Open / Resume Contract." The tool tracks gate state per issuer–skill–learner combination.
-  </li>
-  <li>
-    <strong>Record gate attempts.</strong> For each gate (SeeOne, DoOne, TeachOne), select the gate tab, fill in the date, mentor, both assertions, outcome, and narrative page slug, then click "Record Attempt &amp; Write to FedWiki." The tool writes HTML items to both the learner's and mentor's portfolio pages immediately.
-  </li>
-  <li>
-    <strong>Sign the credential.</strong> Switch to the Sign tab. Review the credential preview. Select "Full credential" once all three gates are complete (or "Partial" to issue mid-process). Enter the issuing NDC's 64-character hex private key seed and click "Sign &amp; Issue." The JWT is signed entirely in the browser using the Web Crypto API — the key is cleared immediately after use and never sent to any server.
-  </li>
-  <li>
-    <strong>Badge is written automatically.</strong> The tool posts the signed badge to the learner's FedWiki portfolio via sofi-proxy and updates the RCN SODOTO ledger page. No manual file editing required.
-  </li>
-  <li>
-    <strong>Verify in FedWiki.</strong> Open the learner's portfolio page and click the Verify button on the new badge. Confirm it returns ✓ Verified. If it fails, the private key seed used did not match the issuing NDC's DID.
-  </li>
+  <li><strong>Open the tool</strong> at <code>sodoto.ndcgroup.relocalizecreativity.net/tools/sodoto-issuer.html</code>. On first use it prompts for the write passphrase, which is kept only in that browser's local storage.</li>
+  <li><strong>Confirm the learner is registered.</strong> On the Registry tab, check they are listed; if not, add name, DID, FedWiki site, and portfolio slug. New entries sync to the server registry.</li>
+  <li><strong>Open the contract.</strong> On the Contract tab, pick the issuing NDC, the skill, and the learner, then Open / Resume. Gate state is tracked per issuer–skill–learner.</li>
+  <li><strong>Record each gate.</strong> For See One, Do One, Teach One, fill in date, mentor, both assertions, outcome, and narrative slug, then Record Attempt &amp; Write to FedWiki. The tool writes to the learner's and mentor's portfolios immediately.</li>
+  <li><strong>Sign.</strong> On the Sign tab, review the preview, choose Full (all gates complete) or Partial, enter the NDC's 64-character hex key seed, and Sign &amp; Issue. The JWT is signed in-browser with Web Crypto; the key is cleared right after and never sent anywhere.</li>
+  <li><strong>Badge is published automatically</strong> to the learner's portfolio and the ledger.</li>
+  <li><strong>Verify.</strong> Open the portfolio, click Verify on the new badge, and confirm ✓ Verified. A failure means the key seed did not match the issuing NDC's DID.</li>
 </ol>
 
-<div class="warn">
-  <strong>Guard the private key seed.</strong> Each NDC's Ed25519 private key seed is a 64-character hex string. It is never stored by the tool — coordinators must keep it in a secure location (macOS Keychain, password manager, or encrypted file). If it is lost, the NDC can no longer sign new credentials under that DID. Existing credentials remain valid permanently — they only need the public key (encoded in the DID string) to verify.
-</div>
-
-<h2>The Learner's FedWiki Portfolio</h2>
-
-<p>Each learner has a FedWiki page — for example, <code>marc-pierson-sodoto-portfolio</code> — that displays their credential badges. Pages are written by sofi-proxy directly to the FedWiki filesystem and served through the standard FedWiki server.</p>
-
-<p>Each badge on the portfolio page is rendered by the <code>sodoto-badge</code> plugin and displays:</p>
-<ul>
-  <li>The skill name and the issuing NDC's seal</li>
-  <li>The three gate completion dates</li>
-  <li>Mentor name(s), each linking to their own portfolio page</li>
-  <li>The full attempt history for each gate (including any failed attempts)</li>
-  <li>A Verify button that confirms the credential signature in-browser</li>
-</ul>
-
-<p>The badge plugin reads the credential's JWT from the page markup. The JWT is the credential — if the badge shows and the Verify button passes, the credential is authentic and unmodified.</p>
-
-<h3>Current portfolio pages</h3>
-<table class="role-table">
-  <tr><th>Person</th><th>Page slug</th><th>Credentials</th></tr>
-  <tr><td>Marc Pierson</td><td><code>marc-pierson-sodoto-portfolio</code></td><td>8 credentials (all skills issued to date)</td></tr>
-  <tr><td>Kerry Turner</td><td><code>kerry-turner-sodoto-portfolio</code></td><td>Portfolio page exists; credentials to be populated</td></tr>
-  <tr><td>Noah Williams</td><td><code>noah-williams-sodoto-portfolio</code></td><td>Portfolio page exists; credentials to be populated</td></tr>
-</table>
+<div class="warn"><strong>Two secrets, kept separate.</strong> (1) The <em>write passphrase</em> gates FedWiki writes and lives in the coordinator's browser storage. (2) Each NDC's <em>Ed25519 private key seed</em> — a 64-character hex string — signs credentials and must be kept in a password manager or Keychain. The tool never stores the key seed. If a seed is lost the NDC can no longer sign under that DID, but already-issued credentials remain valid forever (they verify from the public key encoded in the DID).</div>
 
 <h2>How Verification Works</h2>
 
-<p>The <code>did:key</code> format encodes the issuer's public key directly in the DID string. No server, no registry lookup, no external dependency. Anyone with the DID can recover the public key.</p>
-
-<p>When a user clicks Verify, the <code>sodoto-badge</code> plugin performs these steps entirely in the browser:</p>
-
+<p>The <code>did:key</code> format encodes the issuer's public key directly in the DID string, so no lookup is ever required. When a user clicks Verify, the <code>sodoto-badge</code> plugin, entirely in the browser:</p>
 <ol>
-  <li>Extract the <code>jwt</code> string from the credential markup on the page</li>
-  <li>Split the JWT into its three parts: header, payload, signature</li>
-  <li>Decode the payload and read the <code>iss</code> field — this is the issuer's <code>did:key</code> string</li>
-  <li>Decode the multibase suffix of the DID to recover the raw Ed25519 public key bytes</li>
-  <li>Call <code>crypto.subtle.verify()</code> with those key bytes, the <code>header.payload</code> string, and the decoded signature</li>
-  <li>Report ✓ Verified or ✗ Failed</li>
+  <li>Reads the <code>jwt</code> from the badge markup and splits it into header, payload, signature.</li>
+  <li>Decodes the payload and reads <code>iss</code> — the issuer's <code>did:key</code> string.</li>
+  <li>Decodes the DID's multibase suffix back to the raw Ed25519 public-key bytes.</li>
+  <li>Calls <code>crypto.subtle.verify()</code> over <code>header.payload</code> with the decoded signature.</li>
+  <li>Reports ✓ Verified or ✗ Failed.</li>
 </ol>
+<p>The JWT <em>is</em> the credential. If the badge renders and Verify passes, it is authentic and unmodified — with no server, no expiry, and no third party.</p>
 
-<p>This means credentials are permanently verifiable with no server, no expiry, and no reliance on any third party — as long as the DID string and the JWT are intact. The credential is self-contained.</p>
+<h2>The Portfolio Page</h2>
+<p>Each learner has a FedWiki portfolio page that displays their badges. Pages are written by sofi-proxy into the shared volume and served by FedWiki. Each badge, rendered by the <code>sodoto-badge</code> plugin, shows the skill and issuing NDC seal, the three gate dates, mentor name(s) linked to their own portfolios, the full attempt history per gate, and a Verify button. Long badges collapse into an accordion, and the mentoring log groups attempts by learner and skill, most-recent first.</p>
 
-<h2>Registered NDC Issuers</h2>
+<div class="note"><strong>Live demo cast.</strong> The public WikiCafe site is seeded with a clearly-labelled demo cohort (a <em>DEMO Academy</em> issuer and demo learners such as <code>demo-alex-rivera</code>) so the system can be shown end-to-end without exposing real people. Seeding is opt-in via <code>SEED_DEMO</code>, writes only files that are absent, and never overwrites real content. A production NDC simply leaves <code>SEED_DEMO</code> unset.</div>
 
-<p>Five NDC organizations currently have Ed25519 key pairs and are registered in the badge plugin's ISSUER_REGISTRY with seal branding. The full DIDs are in <code>~/rcn/veramo/dids.json</code>.</p>
+<h2>Skills</h2>
+<p>SODOTO does not fix a skill list — each NDC credentials whatever it chooses. Two example families:</p>
+<ul>
+  <li><strong>Systems-mapping tools (RCN):</strong> Causal Loop Diagramming, e-VSM, EIP, Stock-and-Flow, OPM, the Vester Sensitivity Model, and others in the RCN toolset. The Vester cluster (nine interacting skills) will need a credential-cluster design before individual credentials are issued.</li>
+  <li><strong>Health-partner practices (a health NDC):</strong> skills such as Health Picture Review or care-plan note-writing — one cooperative's chosen skill set, credentialed with the same three gates. These belong to that NDC's program, not to SODOTO itself.</li>
+</ul>
+<p>Whether a credential maps to a pay tier, a role, or nothing at all is a policy choice made by each cooperative — it is layered on top of SODOTO, not part of it.</p>
 
-<table class="role-table">
-  <tr>
-    <th>NDC</th>
-    <th>Location</th>
-    <th>Status</th>
-  </tr>
-  <tr>
-    <td><strong>ReLocalize Creativity Network</strong></td>
-    <td>Bellingham WA</td>
-    <td><span class="pill">Active — 8 credentials issued</span></td>
-  </tr>
-  <tr>
-    <td><strong>Columbia Valley NDC</strong></td>
-    <td>Whatcom County WA</td>
-    <td><span class="pill grey">Keys registered, no credentials yet</span></td>
-  </tr>
-  <tr>
-    <td><strong>The Fledge</strong></td>
-    <td>Lansing MI</td>
-    <td><span class="pill grey">Keys registered, no credentials yet</span></td>
-  </tr>
-  <tr>
-    <td><strong>Leo's</strong></td>
-    <td>(location TBD)</td>
-    <td><span class="pill grey">Placeholder</span></td>
-  </tr>
-  <tr>
-    <td><strong>Kula</strong></td>
-    <td>(location TBD)</td>
-    <td><span class="pill grey">Placeholder</span></td>
-  </tr>
-</table>
+<h2>Current Status</h2>
 
-<h2>Skills Registry</h2>
+<h3>Live now</h3>
+<div class="status-good"><strong>Hosted on WikiCafe over HTTPS.</strong> Three containers (sofi-proxy, FedWiki, Caddy) pulled from GHCR; any coordinator signs from their own browser. Nothing runs on a personal machine.</div>
+<div class="status-good"><strong>Browser issuer tool.</strong> Registry → contract → gate recording → in-browser Ed25519 signing → automatic badge write and ledger update. No CLI, no git.</div>
+<div class="status-good"><strong>Client-side verification.</strong> The <code>sodoto-badge</code> plugin verifies any badge from its DID with no server call.</div>
+<div class="status-good"><strong>Plugin vendored in the repo.</strong> <code>sodoto/plugins/wiki-plugin-sodoto-badge/</code> is committed and baked into the wiki image — the repo is self-contained.</div>
+<div class="status-good"><strong>Opt-in demo cast</strong> seeds a labelled demo cohort for end-to-end demonstrations without touching real content.</div>
 
-<p><span class="pill">8 issued</span> <span class="pill grey">23+ planned</span></p>
-<p>Green items have issued credentials. Grey items are in the planned registry — names agreed, credentials not yet issued.</p>
+<h3>Designed but not yet built</h3>
+<div class="status-todo"><strong>Neo4j credential writes.</strong> sofi-proxy already writes CfA-dSC Party/Contract nodes. A <code>/api/finalize-credential</code> endpoint to write <code>(:Credential)</code>, <code>(:GateAttempt)</code>, and <code>(:Debt)</code> nodes from a signed JWT is designed but not wired.</div>
+<div class="status-todo"><strong>v0.4 credential format.</strong> Planned: a learner JWT (the learner signs each passing gate), a student JWT (the student signs at Teach One), and an automatic commons <code>(:Debt)</code> node at Teach One. None are in the current format yet.</div>
+<div class="status-todo"><strong>Marlowe gate execution.</strong> The designed architecture has a symmetric three-handshake Marlowe contract governing gate completion and triggering the signature and graph writes. The contract source is not on disk; current issuance is coordinator-driven without Marlowe enforcement.</div>
 
-<div class="skills-grid">
-  <div class="skill-item issued"><span class="dot"></span>Causal Loop Diagramming</div>
-  <div class="skill-item issued"><span class="dot"></span>e-VSM Basic</div>
-  <div class="skill-item issued"><span class="dot"></span>e-VSM Intermediate</div>
-  <div class="skill-item issued"><span class="dot"></span>e-VSM Site Manager</div>
-  <div class="skill-item issued"><span class="dot"></span>EIP Basic</div>
-  <div class="skill-item issued"><span class="dot"></span>EIP Intermediate</div>
-  <div class="skill-item issued"><span class="dot"></span>EIP Expert</div>
-  <div class="skill-item issued"><span class="dot"></span>Stock and Flow Diagramming</div>
-  <div class="skill-item planned"><span class="dot"></span>Stock Flow Modeling</div>
-  <div class="skill-item planned"><span class="dot"></span>System Dynamics Modeling</div>
-  <div class="skill-item planned"><span class="dot"></span>VSM</div>
-  <div class="skill-item planned"><span class="dot"></span>EIP Stage Sketching</div>
-  <div class="skill-item planned"><span class="dot"></span>Six Context Questions</div>
-  <div class="skill-item planned"><span class="dot"></span>Social Action Tetrahedron (PIOA)</div>
-  <div class="skill-item planned"><span class="dot"></span>Social System Tetrahedron (BGTE)</div>
-  <div class="skill-item planned"><span class="dot"></span>Cynefin</div>
-  <div class="skill-item planned"><span class="dot"></span>15 Ps</div>
-  <div class="skill-item planned"><span class="dot"></span>Process Mapping</div>
-  <div class="skill-item planned"><span class="dot"></span>Object Process Methodology (OPM)</div>
-  <div class="skill-item planned"><span class="dot"></span>Vester Sensitivity Model</div>
-  <div class="skill-item planned"><span class="dot"></span>FedWiki</div>
-  <div class="skill-item planned"><span class="dot"></span>Neo4j</div>
-  <div class="skill-item planned"><span class="dot"></span>Persistent Syntegrating</div>
-  <div class="skill-item planned"><span class="dot"></span>DSRP</div>
-  <div class="skill-item planned"><span class="dot"></span>Ganz Organizing Story Sequence</div>
-  <div class="skill-item planned"><span class="dot"></span>Campfire Conversation / Cave Drawing Set</div>
-  <div class="skill-item planned"><span class="dot"></span>Conversation Taxonomy</div>
-  <div class="skill-item planned"><span class="dot"></span>A3 Problem Solving</div>
-</div>
+<h2>The Teaching Graph (designed)</h2>
+<p>SODOTO is designed to write its data into Neo4j so teaching chains and credential provenance are queryable — node types (<code>Person</code>, <code>Skill</code>, <code>Credential</code>, <code>GateAttempt</code>, <code>Organization</code>) and their relationships are specified; the writes are part of the Neo4j work above. This is provenance, and it stands on its own.</p>
+<p>A separate, optional layer can attach an economics to teaching: when Teach One completes, real value has changed hands. If a cooperative wants to make that explicit it can record a debt owed <em>to the commons</em> (not to the mentor), retired progressively — Do One retires half, Teach One retires the rest and creates a new debt for the student, forward-propagating with no cycles. That debt-and-value model is part of the separate agreements/currency system below, not something SODOTO requires.</p>
 
-<div class="note">The Vester Sensitivity Model cluster (nine interacting skills) will need a credential cluster design before individual credentials can be issued. The skills are deeply interdependent and a single linear credentialing path may not be appropriate.</div>
+<h2>How It Composes With Other RCN Tools</h2>
+<p>SODOTO stands alone, and so do the tools it can be paired with. It shares Ed25519/DID identity infrastructure with the <strong>CfA-dSC</strong> agreements system — a separate, self-contained tool for making agreements and exchanging value with a three-currency settlement — and both happen to surface through FedWiki: credentials as portfolio pages, agreements as party-view pages. Because they share identity, a cooperative that wants to <em>can</em> connect them (a credential qualifying a contract role; a Teach One recorded as a value exchange) — but neither depends on the other, and each is fully usable without the rest. These are examples of composition, not requirements. For the full map, see the <a href="rcn-stack-overview.html">RCN Stack Overview</a>.</p>
 
-<h2>Neo4j — The Teaching Graph</h2>
-
-<p>SODOTO is designed to write its credentialing data into Neo4j so that teaching chains, debt relationships, and credential provenance are queryable as a graph. The schema is fully designed; writes from SODOTO to Neo4j are part of the v0.4 work and not yet implemented. The CfA-dSC system does write to Neo4j today.</p>
-
-<h3>Designed node types</h3>
-
-<table class="role-table">
-  <tr><th>Node</th><th>Primary key</th><th>Key properties</th></tr>
-  <tr><td><code>Person</code></td><td><code>did</code></td><td>name, portfolio (FedWiki slug), ndcSlug</td></tr>
-  <tr><td><code>Skill</code></td><td><code>slug</code></td><td>name, domain</td></tr>
-  <tr><td><code>Credential</code></td><td><code>contractId</code></td><td>issuedAt, issuerDid, holderDid, mentorJwt, learnerJwt (v0.4), studentJwt (v0.4)</td></tr>
-  <tr><td><code>Debt</code></td><td>—</td><td>skill, status (open / do-one-complete / retired), createdAt</td></tr>
-  <tr><td><code>Organization</code></td><td><code>slug</code></td><td>name, did, url — includes a special <code>commons</code> node</td></tr>
-  <tr><td><code>GateAttempt</code></td><td>—</td><td>gate (SeeOne/DoOne/TeachOne), attempt number, date, outcome, narrative (FedWiki slug)</td></tr>
-</table>
-
-<h3>Key relationships</h3>
-
-<pre>// Teaching lineage — queryable to any depth
-(mentor:Person)-[:TAUGHT { skill, contractId }]->(learner:Person)
-
-// Mentor attestation per gate
-(mentor:Person)-[:ATTESTED_SEE_ONE   { completedAt, contractId }]->(learner:Person)
-(mentor:Person)-[:ATTESTED_DO_ONE    { completedAt, contractId }]->(learner:Person)
-(mentor:Person)-[:ATTESTED_TEACH_ONE { completedAt, contractId, studentDid }]->(learner:Person)
-
-// Learner acknowledgement back to mentor
-(learner:Person)-[:ACKNOWLEDGED_MENTOR { gate, contractId }]->(mentor:Person)
-
-// Credential chain
-(learner:Person)-[:HOLDS]->(c:Credential)
-(org:Organization)-[:ISSUED]->(c:Credential)
-(c:Credential)-[:CERTIFIES]->(skill:Skill)
-
-// Gate attempts as first-class nodes
-(person:Person)-[:ASSERTED { value, at }]->(attempt:GateAttempt)
-(teachOneAttempt:GateAttempt)-[:EVIDENCED_BY]->(studentDoOne:GateAttempt)</pre>
-
-<h3>The debt model</h3>
-
-<p>Debt is owed to the commons — not to the mentor. When TeachOne completes, a <code>(:Debt)</code> node is created and the relationship is:</p>
-<pre>(learner:Person)-[:OWES { skill, createdAt, status }]->(commons:Organization {slug: "commons"})</pre>
-
-<p>Debt is retired in two stages: DoOne completion retires the first half, TeachOne completion (with student acknowledgement) retires the second. The student's TeachOne creates a new debt — forward propagation, no cycles. Each TeachOne is real value creation: a new competent practitioner in the network.</p>
-
-<h3>Key queries (when data is populated)</h3>
-<pre>// Full teaching lineage for a skill
-MATCH path = (origin:Person)-[:TAUGHT*]->(leaf:Person)
-WHERE ALL(r IN relationships(path) WHERE r.skill = 'causal-loop-diagramming')
-RETURN path
-
-// Open debts across the network
-MATCH (p:Person)-[d:OWES]->(c:Organization {slug: 'commons'})
-WHERE d.status = 'open'
-RETURN p.name, d.skill, d.createdAt ORDER BY d.createdAt
-
-// Most active mentors
-MATCH (m:Person)-[:ATTESTED_TEACH_ONE]->(l:Person)
-RETURN m.name, count(*) AS students_taught ORDER BY students_taught DESC</pre>
-
-<div class="note">The database runs in Docker via OrbStack at <code>bolt://localhost:7687</code>. sofi-proxy (<code>~/rcn/sofi-proxy.py</code>, port 8765) already handles CfA-dSC Party and Contract node writes. Adding a <code>/api/finalize-credential</code> endpoint to write SODOTO Credential, GateAttempt, and Debt nodes is the next Neo4j task.</div>
-
-<h2>Marlowe — The Gate Execution Layer</h2>
-
-<p>Marlowe is a formal contract language for Cardano. In the RCN design, a symmetric three-handshake Marlowe contract governs SODOTO gate completion. When a gate completes in Marlowe, it triggers two things: Veramo issues the JWT, and the proxy writes the <code>(:Credential)</code> node to Neo4j. Marlowe provides the formal execution guarantee; Veramo provides the cryptographic signing; Neo4j holds the result.</p>
-
-<p>The Marlowe contract source file (<code>sodoto-mutual-certification.marlowe</code>) is not currently on disk. This is a designed but unimplemented layer — current credential issuance is done manually by the coordinator without Marlowe enforcement.</p>
-
-<h2>Connection to the RCN Stack</h2>
-
-<p>SODOTO does not stand alone. It shares identity infrastructure with the CfA-dSC contracting system and both systems surface through FedWiki. Understanding the connections matters for coordinators running either tool.</p>
-
-<div class="connect-item"><strong>Credentials authorize contract roles.</strong> A SODOTO credential establishes that a person is qualified to perform a particular skill professionally. A CfA-dSC contract for that service can reference the credential as qualification — the credential is the basis for trust between parties who may not know each other well.</div>
-
-<div class="connect-item"><strong>TeachOne creates a debt to the commons.</strong> When SODOTO TeachOne completes, the student has received something of real value. In the designed graph model, a <code>(:Debt)</code> node is written to Neo4j — owed not to the mentor but to the commons. This debt is retired progressively: completing DoOne retires half, completing TeachOne retires the rest and creates a new debt for the student. The CfA-dSC three-currency model can make this economic relationship explicit — a gift of knowledge flowing from teacher to student, expressible later as time-dollars.</div>
-
-<div class="connect-item"><strong>Shared DID infrastructure.</strong> Both systems use the same Veramo agent and the same Ed25519 key pairs. A person's DID in SODOTO is the same DID they use to sign CfA-dSC contract moves. The <code>dids.json</code> and <code>people.json</code> registries serve both systems — add a person once and they are available everywhere.</div>
-
-<div class="connect-item"><strong>Both surface in FedWiki.</strong> SODOTO credentials appear as badge portfolio pages; CfA-dSC contracts appear as party-view contract pages. A practitioner's FedWiki presence can eventually show their full professional history: credentials earned, contracts performed, teaching relationships — all in one place.</div>
-
-<p>For the full map of how all RCN tools relate, see the <a href="rcn-stack-overview.html" style="color:#2d6a4f">RCN Stack Overview</a>. For the CfA-dSC system in detail, see <a href="cfa-dsc-intro.html" style="color:#2d6a4f">cfa-dsc-intro.html</a>.</p>
-
-<h2>What Is Not Yet Built</h2>
-
-<p>The following items are designed, partially built, or simply needed — but not yet complete as of June 2026.</p>
-
-<div class="gap-item"><strong>HTTPS for multi-user access.</strong> The browser's Web Crypto API (used for Ed25519 signing) only works in secure contexts — HTTPS or localhost. On the current Mac Mini deployment, coordinators must use the Mac Mini's own browser. When deployed to a public server (DigitalOcean + Caddy + a domain), HTTPS is automatic and any coordinator can sign from their own machine.</div>
-
-<div class="gap-item"><strong>DID onboarding for new practitioners.</strong> There is no defined self-service process for a new learner to get a DID. Currently the coordinator creates one via script and manually adds it to the registry files. A lightweight onboarding flow is needed.</div>
-
-<div class="gap-item"><strong>v0.4 credential format.</strong> Planned additions: a learner JWT (the learner cryptographically acknowledges each passing gate attempt), a student JWT (the student signs their affirmation at TeachOne), and a Neo4j <code>(:Debt)</code> node created automatically when TeachOne completes — owed to the commons, retired progressively. None of these are in the current v0.3 format.</div>
-
-<div class="gap-item"><strong>SODOTO Credential writes to Neo4j not yet wired.</strong> The proxy (<code>sofi-proxy.py</code>, running) already handles CfA-dSC Party/Contract nodes. Adding a <code>/api/finalize-credential</code> endpoint to write <code>(:Credential)</code>, <code>(:GateAttempt)</code>, and <code>(:Debt)</code> nodes from a SODOTO JWT is the next Neo4j task.</div>
-
-<div class="gap-item"><strong>Marlowe gate execution not implemented.</strong> The designed architecture has Marlowe contracts governing gate completion and triggering Veramo + Neo4j writes. The Marlowe source file (<code>sodoto-mutual-certification.marlowe</code>) is not on disk. Current issuance is fully manual — coordinators run scripts without Marlowe enforcement.</div>
-
-<div class="gap-item"><strong>Real gate histories on 7 credentials.</strong> Marc's CLD credential has full two-attempt attempt histories. The e-VSM, EIP, and Stock and Flow credentials have single clean-pass placeholder histories. Real dates, mentor names, and narrative page links are needed when available.</div>
-
-<div class="gap-item"><strong>wiki-plugin-sodoto-badge source not committed to repo.</strong> The plugin source directory is installed in <code>~/.wiki/localhost/assets/</code> and <code>~/node_modules/</code> but the source has not been committed to <code>~/rcn</code>. It needs to be staged and committed so the repo is self-contained.</div>
-
-<div class="gap-item"><strong>CLI credential verification script.</strong> A coordinator tool that takes a signed credential JSON, extracts the signing payload, and confirms each Ed25519 proof against the issuer DID's public key — independent of the browser verify button. Useful for scripted audits.</div>
-
-<div class="gap-item"><strong>CfA-dSC integration.</strong> The Dyadic Smart Contract system (Conversations for Action + three-currency settlement) is a related but separate tool stack. A contract creator UI exists at <code>~/rcn/tools/cfa-dsc-creator.html</code>, Veramo DIDs are at <code>~/veramo-rcn/</code>, and FedWiki party-view pages were working as of March 2026. The connection between CfA-dSC contracts and SODOTO credentials (e.g., credential issuance triggering a debt record) is designed but not implemented.</div>
-
-<div class="gap-item"><strong>cfa-dsc-schema.json and validator library not in repo.</strong> The JSON schema and TypeScript validator (25 tests) for the CfA-dSC system were built in a prior session but are not present on disk. Need reconstruction or location and committing to <code>~/rcn</code>.</div>
+<p style="margin-top:32px;font-size:13px;color:#888;">Companion documents: the <a href="sodoto-manual.html" style="color:#2d6a4f">User Manual</a> (for learners, mentors, and coordinators) and the <a href="../tools/sodoto-issuer-guide.html" style="color:#2d6a4f">Issuer Tool Guide</a> (per-tab help inside the tool).</p>
 
 </div>
 </body>
