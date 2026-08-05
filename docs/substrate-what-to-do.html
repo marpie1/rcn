@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RCN Substrate — What To Do Next</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; background: #fafaf8; }
+.page { max-width: 860px; margin: 0 auto; padding: 48px 32px 80px; }
+nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 48px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+nav a { color: #2d6a4f; text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+nav .current { color: #1a1a1a; font-weight: 500; }
+.doc-header { margin-bottom: 40px; }
+.doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 660px; }
+.updated { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #999; margin-top: 14px; }
+h2 { font-size: 19px; font-weight: 600; margin: 44px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
+h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: #2d6a4f; }
+p { margin-bottom: 14px; }
+ul, ol { padding-left: 22px; margin-bottom: 14px; }
+li { margin-bottom: 5px; }
+code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f0ec; padding: 1px 5px; border-radius: 3px; }
+pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f0ec; padding: 14px 16px; border-radius: 6px; overflow-x: auto; margin: 12px 0 18px; line-height: 1.6; }
+.note { background: #f0f9f4; border-left: 3px solid #2d6a4f; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0 24px; }
+.warn { background: #fffbeb; border-left: 3px solid #d97706; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0 24px; }
+.stop { background: #fef2f2; border-left: 3px solid #dc2626; padding: 14px 18px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0 28px; }
+.stop strong { color: #991b1b; }
+.big-answer { background: #ecfdf5; border: 1.5px solid #34d399; border-radius: 10px; padding: 18px 22px; margin: 20px 0 28px; font-size: 14px; }
+.big-answer strong { color: #065f46; }
+.pill { display: inline-block; font-size: 11px; font-family: 'IBM Plex Mono', monospace; padding: 2px 8px; border-radius: 20px; background: #e8f5e9; color: #2d6a4f; margin-right: 4px; }
+.pill.grey { background: #f0f0ec; color: #555; }
+.pill.amber { background: #fff8e1; color: #b45309; }
+.pill.red { background: #fee2e2; color: #991b1b; }
+.role-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+.role-table th { text-align: left; padding: 8px 12px; background: #f0f0ec; font-weight: 600; font-size: 12px; border: 1px solid #ddd; }
+.role-table td { padding: 8px 12px; border: 1px solid #e0e0da; vertical-align: top; }
+.role-table tr:nth-child(even) td { background: #fafaf7; }
+.step-list { list-style: none; padding: 0; counter-reset: steps; margin: 16px 0 24px; }
+.step-list li { counter-increment: steps; padding: 10px 0 10px 48px; position: relative; border-bottom: 1px solid #f0f0ec; font-size: 14px; }
+.step-list li::before { content: counter(steps); position: absolute; left: 0; top: 10px; width: 30px; height: 30px; border-radius: 50%; background: #2d6a4f; color: #fff; font-family: 'IBM Plex Mono', monospace; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+.owner { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0 28px; }
+.owner-card { border: 1.5px solid #1a56a4; border-radius: 8px; padding: 16px 18px; background: #f0f4ff; }
+.owner-card.file { border-color: #b45309; background: #fffbf0; }
+.owner-card .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; font-weight: 500; color: #1a56a4; }
+.owner-card.file .lbl { color: #b45309; }
+.owner-card ul { margin: 0; padding-left: 18px; font-size: 13px; }
+.done { color: #2d6a4f; font-weight: 500; }
+.todo { color: #b45309; font-weight: 500; }
+@media (max-width: 640px) { .owner { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav>
+  <span class="current">What To Do Next</span>
+  <a href="../substrate/ROUND-TRIP.md">ROUND-TRIP.md</a>
+  <a href="../substrate/README.md">substrate/README.md</a>
+  <a href="../substrate/unsigned-edges.md">unsigned-edges.md</a>
+  <a href="../substrate/edge-families-proposal.md">edge-families-proposal.md</a>
+</nav>
+
+<div class="doc-header">
+  <div class="suite">RCN Substrate</div>
+  <h1>What we are supposed to do</h1>
+  <p class="lead">The substrate is built and working. What is left is not code — it is a queue of decisions only you and Kerry can make, and each one is a small, concrete act in a tool you already have open.</p>
+  <div class="updated">Written 2026-08-05 · state verified against the files on disk</div>
+</div>
+
+<div class="stop">
+  <strong>First: Neo4j is stopped.</strong> Every projection currently returns <code>cannot reach http://localhost:7474</code>. Open Neo4j Desktop and start the <strong>RCN SCHEMA</strong> server. Claude Code has full admin over the database but cannot start it — that is the one thing only you can do. Then run <code>cd ~/rcn &amp;&amp; python3 substrate/api.py</code>.
+</div>
+
+<h2>What was built, in one paragraph</h2>
+
+<p>One Neo4j graph holds the meaning of every RCN drawing — what each concept is, which way each arrow points, whether it is positive or negative, and <em>who drew it</em>. The diagram tools became lenses over that one graph instead of openers of separate files. You can now open any of the 16 EIP aspect drawings straight from the database, edit it in the Graph Tool, and save it back — and the save updates both the database and the source file, so neither can silently contradict the other.</p>
+
+<div class="big-answer">
+  <strong>The rule the whole thing follows:</strong> the substrate owns <em>meaning</em>, the file owns <em>appearance</em>, and anything derivable is computed rather than stored. Every bug found while building it was a violation of that sentence.
+</div>
+
+<div class="owner">
+  <div class="owner-card">
+    <div class="lbl">Neo4j owns — meaning</div>
+    <ul>
+      <li>schemaLabel — the merge key</li>
+      <li>the variabilized label</li>
+      <li>polarity (+ / −)</li>
+      <li>relation family</li>
+      <li>sources — who drew it</li>
+    </ul>
+  </div>
+  <div class="owner-card file">
+    <div class="lbl">The file owns — appearance</div>
+    <ul>
+      <li>x / y positions</li>
+      <li>colour, font size</li>
+      <li>node ids (n0, n1…)</li>
+      <li>duplicate placements</li>
+      <li>instance props</li>
+    </ul>
+  </div>
+</div>
+
+<p><strong>Gold is computed, never stored.</strong> A concept is gold when more than one drawing contains it — <code>size(sources) &gt; 1</code>, evaluated fresh on every request. That is the whole federation payoff: when two neighborhoods independently draw the same thing, the agreement <em>surfaces</em> rather than being declared.</p>
+
+<h2>Why edge families exist</h2>
+
+<p>This is the part worth understanding, because it is the one that makes federation actually work.</p>
+
+<p>A harvest of every graph JSON in the repo found <strong>375 labelled edges carrying 202 distinct labels</strong>, 115 of them used exactly once. And already drifting: <code>create</code> and <code>creates</code>. <code>support</code>, <code>supports</code>, <code>Supports</code>. <code>constitute</code> and <code>constitutes</code>. <code>lead_to</code> and <code>leads_to</code>.</p>
+
+<p>Two people drawing the same relation land on different strings. So nothing merges, and <strong>no edge ever goes gold.</strong> The federation payoff fails in exactly the place it matters most.</p>
+
+<p>The fix is a shared vocabulary of <strong>seven relation families</strong> in <code>tools/edge-families.js</code>, alongside the eight node families that <code>families.js</code> already provides:</p>
+
+<table class="role-table">
+  <tr><th>Family</th><th>Means</th><th>Example verbs</th></tr>
+  <tr><td><strong>Influence</strong></td><td>A changes the <em>level</em> of B. Polarity says which way</td><td>create, drive, amplify, undermine, erode</td></tr>
+  <tr><td><strong>Provision</strong></td><td>A supplies what B <em>depends on</em>. A stops, B stops</td><td>support, require, pay for, steward, hold up</td></tr>
+  <tr><td><strong>Composition</strong></td><td>A is <em>part of</em> B</td><td>encompass, aggregate, constitute</td></tr>
+  <tr><td><strong>Classification</strong></td><td>A is a <em>kind of</em> B</td><td>is a, generalize, expressed as</td></tr>
+  <tr><td><strong>Transformation</strong></td><td>Substance <em>moves or converts</em> from A to B</td><td>yield, produce, lead to, consume</td></tr>
+  <tr><td><strong>Agency</strong></td><td>A <em>acts in</em> B</td><td>play, enroll, oversee, participate, inhabit</td></tr>
+  <tr><td><strong>Sequence</strong></td><td>A comes before B in a procedure</td><td>then, next, escalate, review</td></tr>
+</table>
+
+<p><strong>The distinction that earns its keep is Influence versus Provision.</strong> Influence is incremental — more of A, somewhat more of B. Provision is structural — if A stops, B stops. <em>"The grant funds the program"</em> is not <em>"the grant increases the program."</em> Only the second is a CLD arrow; only the first tells you what collapses when the funding is cut. Merge them and you lose the fragility map, which for neighborhood work is most of the value.</p>
+
+<h3>Declared, not drawn</h3>
+
+<p>The first version of this proposal put the seven families on the <em>arrowhead</em>. Rendering the Cave Drawing exemplar killed that idea. It tells its two edge kinds apart with colour <em>and</em> weight <em>and</em> dash — three redundant channels for two distinctions, which is why it reads across a room. Seven kinds on one small mark is the opposite trade, and it spends the reader's attention to serve the database.</p>
+
+<div class="note">So the family is <strong>declared as data on the legend entry</strong>, and your local styling stays free and loud. Superior's red dashed "acts on them" and Whatcom's orange dotted "grinds them down" both declare <code>linkFamily: Influence</code> and merge into a gold edge, while each drawing keeps whatever reads best for its own group.</div>
+
+<p>Better still, your own suggestion: the family can be shown as <strong>words on the edge</strong>. The <code>Aa Text</code> button cycles label / family / both / none. Words have no ceiling and no colour-vision risk — and crucially they make a wrong family <em>visible and correctable</em>. A group can point at the word "Provision" and say "no, that one's Influence." A dash pattern nobody can read is never challenged.</p>
+
+<h2>What is already done</h2>
+
+<ul>
+  <li><span class="done">✓</span> The substrate, with three databases: the n=6 reference, the 26-node signed CLD, and the 16 aspect drawings with exact provenance</li>
+  <li><span class="done">✓</span> Projections serving graph-tool and the harness through one contract</li>
+  <li><span class="done">✓</span> The seven relation families, the legend picker, and the <code>Aa Text</code> toggle</li>
+  <li><span class="done">✓</span> The label typeahead — typing a spelling already in use offers the existing one</li>
+  <li><span class="done">✓</span> The full round trip: open from the database, edit, save to database <em>and</em> file</li>
+  <li><span class="done">✓</span> Write-back proven non-destructive to other contributors, preserving duplicate placements and layout</li>
+  <li><span class="done">✓</span> Composer reads the same 16 drawings from the substrate</li>
+</ul>
+
+<h2>What is left — the decision queue</h2>
+
+<p>None of this is code. Each item is a judgement only you and Kerry can make.</p>
+
+<h3><span class="pill amber">1</span> Seventeen unsigned edges</h3>
+
+<p>Seventeen edges across the 16 drawings still carry no <code>+</code> or <code>−</code>. But they are not seventeen small chores — cross-referencing them against the signed CLD produced the finding that matters:</p>
+
+<div class="warn"><strong>Zero of them agree with the CLD's direction.</strong> Nine are signed by the CLD but pointing the opposite way; the rest the CLD does not have at all. The missing sign and the unresolved direction are the same fact — where the two drawings disagreed, nobody ever committed to a sign.</div>
+
+<p>So for those nine, <strong>settle the direction first.</strong> In a CLD the arrow decides which feedback loops exist, and a sign on a backwards arrow is a confident wrong answer — worse than the blank.</p>
+
+<p>They split usefully. <strong>Seven use the same verb in both places</strong> — that is a transcription slip, not a disagreement, and you settle it by reading the verb aloud. An org <em>stewards</em> its assets; assets do not steward an org. <strong>Four use different verbs</strong> — <code>support</code>/<code>inhabit</code>, <code>make</code>/<code>to</code>, <code>experience</code>/<code>power</code> — and those are genuine editorial readings about which way the causation runs.</p>
+
+<p>The full list, with what the CLD says about each, is in <code>substrate/unsigned-edges.md</code>. Worst offender is <code>org</code> with five.</p>
+
+<h3><span class="pill amber">2</span> Twenty-two edges with no relation family</h3>
+
+<p>Of the 57 edges in the signed CLD, 35 took a family automatically from the author's own wording. The other 22 did not, and <strong>nothing was guessed</strong> — an unmatched edge is left blank rather than assigned a plausible family, on the same principle as the mismatches file: a wrong answer nobody can see is worse than a gap everybody can.</p>
+
+<p>Twelve of the 22 carry no label at all. Those cannot be inferred by any method — they need someone who remembers what the arrow meant. List in <code>substrate/eip-composite-edge-families.md</code>.</p>
+
+<h3><span class="pill grey">3</span> Two verb pairs still split in the data</h3>
+
+<p><code>constitute</code>/<code>constitutes</code> and <code>create</code>/<code>creates</code> are each two separate edges in the substrate, and neither half can ever go gold. The typeahead stops <em>new</em> drift; these two existing pairs need fixing by hand. Two minutes each.</p>
+
+<h2>How to do the work</h2>
+
+<ol class="step-list">
+  <li><strong>Start Neo4j Desktop</strong> — the RCN SCHEMA server. Then <code>cd ~/rcn &amp;&amp; python3 substrate/api.py</code></li>
+  <li><strong>Open a drawing</strong> at <code>localhost:8768/tools/graph-tool-v22.html?url=/projection/subgraph/org</code> — it arrives in your own layout, with gold nodes the file never knew about</li>
+  <li><strong>Click <code>?± Gaps</code></strong> — every unsigned edge gets a <code>?</code>, so you fix a whole drawing in one pass instead of hunting</li>
+  <li><strong>Click an edge</strong> → PROPERTIES → <strong>Polarity + / − / ∅</strong>. Alt+click the edge to flip its direction if you settle that too</li>
+  <li><strong>Set the family</strong> — <code>Aa Text</code> in <strong>both</strong> mode shows label and family together; that is the mode this work is meant to be done in</li>
+  <li><strong>Click → Substrate</strong> — writes the database <em>and</em> the source file, and tells you what changed</li>
+  <li><strong>Run <code>git diff</code> and commit.</strong> The file is canonical, so git is the history</li>
+</ol>
+
+<div class="note"><strong>Nothing you do can destroy someone else's work.</strong> Saving replaces only that drawing: the substrate drops your aspect from every sources list, deletes only what is left with <em>no witness at all</em>, then writes what you sent. A concept another drawing also contains keeps its other witnesses and survives. This was tested by submitting a completely empty <code>org</code> drawing — zero concepts left the union.</div>
+
+<h2>Two things this work already settled about the data</h2>
+
+<p><strong>The two self-loops in the mismatches file are merge artefacts, exactly as that document suspected.</strong> <code>Org --relate_with--&gt; Org</code> and <code>ActiveGoal --require--&gt; ActiveGoal</code> run, in the source file, between two <em>different</em> nodes that happen to share a label — the <code>org</code> drawing places some concepts twice so its edges do not cross. Nobody drew a self-loop; merging invented it. That closes 2 of the 23 open items, and they are not decisions.</p>
+
+<p><strong>The anomalous edge-direction switching is not a bug.</strong> Fifty-four edges agree with the CLD's direction and eleven are reversed, scattered across eight drawings with correct edges sitting alongside them. A <code>reverseAll()</code> flips a whole drawing at once — this is the opposite shape. What looks like switching is composing from the aspect subgraphs versus reading the signed CLD: the same relation genuinely points two ways in two artifacts. The substrate makes that visible for the first time, because both readings now sit in one place and can be diffed.</p>
+
+<h2>Honest limits</h2>
+
+<ul>
+  <li><strong>Provenance grain is "which drawing", not who or when.</strong> <code>sources: ['org','person']</code> means the concept appears in those two files. Making it "Kerry, 3 July" needs the drawings to carry that — a data-collection change, not a schema one</li>
+  <li><strong>No concurrent-edit protection.</strong> Two people saving the same drawing: last write wins, silently. Fine for two people talking to each other; not fine for a public commons</li>
+  <li><strong>The 26-node composite is read-only in practice.</strong> Its provenance was reconstructed rather than recorded — good enough to show gold, not good enough to slice apart. Round-trip against the 16 drawings instead</li>
+  <li><strong>Patient data is out of scope.</strong> SCP and Epic FHIR get a separate database with federation and gold-merging switched off. Nothing here applies to them</li>
+</ul>
+
+<h2>Where everything is</h2>
+
+<table class="role-table">
+  <tr><th>What</th><th>Where</th></tr>
+  <tr><td>How the round trip works, in full</td><td><code>substrate/ROUND-TRIP.md</code></td></tr>
+  <tr><td>The model, and how to check it by eye</td><td><code>substrate/README.md</code></td></tr>
+  <tr><td>The 17 unsigned edges, with what the CLD says</td><td><code>substrate/unsigned-edges.md</code></td></tr>
+  <tr><td>The 22 edges needing a family</td><td><code>substrate/eip-composite-edge-families.md</code></td></tr>
+  <tr><td>Why the seven families, and why declared not drawn</td><td><code>substrate/edge-families-proposal.md</code></td></tr>
+  <tr><td>Every tool, and what it demands of the schema</td><td><code>substrate/tool-inventory.md</code></td></tr>
+  <tr><td>The source drawings</td><td><code>tools/eip-aspects-variabilized/*.json</code></td></tr>
+  <tr><td>The two shared vocabularies</td><td><code>tools/families.js</code>, <code>tools/edge-families.js</code></td></tr>
+</table>
+
+<div class="updated">RCN Substrate · this page lives at <code>docs/substrate-what-to-do.html</code></div>
+
+</div>
+</body>
+</html>
