@@ -141,11 +141,43 @@ Each of these shipped, was caught, and is now guarded. They are recorded because
 4. **Layout was not preserved in either direction.** Opening from the substrate gave the synthetic ring, and rearranging then saving discarded the new arrangement. Fixed by overlaying the file's coordinates on read and sending the canvas arrangement on write.
 5. **A new drawing was invisible.** `PUT` wrote real content but created no `:Aspect` node, so nothing listed it — present in the data, absent from every tool. `PUT` now merges the `:Aspect`.
 6. **The merge key did not normalise.** One drawing writes `Active Goal`, another `ActiveGoal`. `families.js` warned about exactly this. Unnormalised, that is one concept splitting into two nodes that never merge and never go gold. **A merge key that does not normalise is not a merge key.**
+8. **`edgeFamilyOf()` did not read `props`.** A projection puts `linkFamily` in
+   `props` — the contract's extension bag — but the resolver only walked
+   override → legend row → top-level field. So `Aa Text: family` rendered blank
+   on every graph loaded from the substrate, and `?± Gaps` flagged structural
+   edges it should have skipped. No error either time.
 7. **Verb drift split relations.** `constitute` and `constitutes` are two edges, `Org → Role`, one signed and one not. The edge merge key includes the raw verb. The fix was deliberately *not* to normalise labels — that rewrites what an author wrote — but to suggest existing spellings while typing.
 
 ---
 
-## 8. Two findings this work produced about the data
+## 8. The ERD and the CLD are two lenses, not one drawing with errors
+
+These 16 drawings began as **entity-relationship diagrams** and were variabilized into CLDs — `Org` became `Effectiveness of ORG`. That gains a causal reading and costs the structural one, because the two often run in **opposite directions**, and both are true:
+
+```
+Org --exists_for--> Purpose        an org exists for a purpose          STRUCTURAL
+Purpose --(+)--> Org               coherence of purpose raises
+                                   effectiveness of org                 CAUSAL
+```
+
+**The evidence that this is a rule.** Across the 16 drawings an edge carries a sign **if and only if** its ERD direction and its causal direction agree:
+
+| | agrees with the CLD | reversed | not in the CLD |
+|---|---|---|---|
+| **signed** | 46 | 1 | 0 |
+| **unsigned** | 0 | 9 | 5 |
+
+The one signed-and-reversed exception was introduced by Claude Code on 2026-07-29 and reverted on 2026-08-05. The original author's work is 46 for 46.
+
+**So an unsigned edge is not a gap. It is a marked conflict** — the author declining to force a false choice. Three consequences:
+
+- **Do not choose a direction. Keep both**, as two edges: the structural one unsigned, the causal one signed and pointing the other way.
+- **Polarity belongs only to causal families** (Influence, Transformation). A structural relation has no sign, so `?± Gaps` skips those and reports how many it skipped.
+- **`/projection/structure`** returns the ERD reading, `/projection/causal` the CLD. Same nodes, different edges, nothing stored twice.
+
+This is the first place the data *demanded* the one-thing-many-views architecture rather than merely permitting it.
+
+## 9. Two findings this work produced about the data
 
 **The two self-loops in `eip-cld-subgraph-mismatches.md` are merge artefacts, as that document suspected.** `Org --relate_with--> Org` and `ActiveGoal --require--> ActiveGoal` run, in the file, between two *different* nodes that share a label (`n0 → n1`, `n5 → n4`). Nobody drew a self-loop. That closes 2 of its 23 open items — they are not decisions.
 

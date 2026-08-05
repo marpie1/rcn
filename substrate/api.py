@@ -141,9 +141,40 @@ OPTIONAL MATCH ()-[r:REL]->() WHERE a.name IN r.sources
 RETURN a.name AS name, concepts, count(r) AS edges ORDER BY name
 """
 
+# ── the STRUCTURE lens ────────────────────────────────────────────────────
+# These drawings began as entity-relationship diagrams and were variabilized
+# into CLDs. The two readings often run in OPPOSITE directions, and both are
+# true: an org *exists for* a purpose (structural), while coherence of purpose
+# *raises* effectiveness of org (causal).
+#
+# The evidence that this is a rule and not an anomaly: across the 16 drawings
+# an edge carries a sign IF AND ONLY IF its ERD direction and its causal
+# direction agree — 46 signed and agreeing, 0 signed and disagreeing (the one
+# exception was introduced by Claude Code and reverted). The unsigned edges are
+# not gaps. They are the author marking a conflict rather than forcing a false
+# choice.
+#
+# So the ERD is not lost to the CLD; it is a second lens on the same nodes.
+# Polarity is deliberately emitted as 'none' here — a structural relation is
+# not the kind of statement that has a sign, and drawing one would be a claim
+# nobody made.
+CAUSAL_FAMILIES = ['Influence', 'Transformation']
+
+STRUCTURE_EDGES = """
+MATCH (s:Concept)-[r:REL]->(t:Concept)
+WHERE r.linkFamily IS NULL OR NOT r.linkFamily IN $causal
+RETURN r.id AS id, s.id AS src, t.id AS tgt,
+       r.label AS label, 'none' AS polarity,
+       {linkFamily:r.linkFamily, unassigned: r.linkFamily IS NULL,
+        rel:r.rel, mode:r.mode, gold: size(r.sources) > 1,
+        alsoCausal: r.polarity <> 'none'} AS props
+ORDER BY id
+"""
+
 PROJECTIONS = {
-    'causal': (CAUSAL_NODES, CAUSAL_EDGES),
-    'gold':   (GOLD_NODES,   None),
+    'causal':    (CAUSAL_NODES, CAUSAL_EDGES),
+    'structure': (CAUSAL_NODES, STRUCTURE_EDGES),
+    'gold':      (GOLD_NODES,   None),
 }
 
 
@@ -152,8 +183,9 @@ def project(name, database=None):
     the 26-node composite are read by byte-identical Cypher — that is the Stage
     2 claim, and if it ever stops being true the architecture was not proven."""
     node_q, edge_q = PROJECTIONS[name]
-    nodes = run(node_q, database=database)
-    edges = run(edge_q, database=database) if edge_q else []
+    params = {'causal': CAUSAL_FAMILIES}
+    nodes = run(node_q, params, database=database)
+    edges = run(edge_q, params, database=database) if edge_q else []
     for n in nodes:                       # drop nulls so the JSON stays clean
         for k in [k for k, v in n.items() if v is None]:
             del n[k]
@@ -386,6 +418,7 @@ a{color:#0f766e}h1{font-size:1.5rem}li{margin:.5rem 0}</style>
 lens, in graph-tool's native schema.</p>
 <ul>
 <li><a href="/projection/causal">/projection/causal</a> — polarity, magnitude, relation family</li>
+<li><a href="/projection/structure">/projection/structure</a> — the entity-relationship reading: part-of, is-a, acts-in, depends-on. No signs, because a structural relation does not have one</li>
 <li><a href="/projection/gold">/projection/gold</a> — provenance: who drew what, and where two hands met</li>
 <li><a href="/projection">/projection</a> — what is available, and which databases exist</li>
 </ul>

@@ -2139,7 +2139,25 @@ function edgeFamDef(name){
 }
 // An edge's family resolves through the same chain as every other styled
 // value: element override → legend row → the edge's own field.
-function edgeFamilyOf(e){return sv(e,'linkFamily')||'';}
+function edgeFamilyOf(e){
+  // sv() walks override -> legend row -> the element's own field. A projection
+  // puts linkFamily in props instead, because props is the contract's extension
+  // bag — so check there too, or the family is invisible on every graph loaded
+  // from the substrate. That made "Aa Text: family" render blank and ?± Gaps
+  // flag structural edges it should skip, both without any error.
+  return sv(e,'linkFamily') || (e && e.props && e.props.linkFamily) || '';
+}
+// Only a CAUSAL relation has a sign. These drawings began as entity-relationship
+// diagrams and were variabilized into CLDs; where the structural reading and the
+// causal reading run opposite, the author left the edge unsigned ON PURPOSE. So
+// `Org --constitutes--> Role` is complete without a + or -, and flagging it as a
+// gap asks the wrong question of it.
+var CAUSAL_FAMILIES=['Influence','Transformation'];
+function isCausalEdge(e){
+  var f=edgeFamilyOf(e);
+  if(!f) return true;                       // unassigned: still worth flagging
+  return CAUSAL_FAMILIES.indexOf(f)>=0;
+}
 // Suggest a family from an author's free text. Never applied automatically —
 // nothing is guessed silently. Used by the "Suggest" button in the legend.
 function suggestEdgeFamily(text){
@@ -4224,7 +4242,7 @@ var _eTxt=edgeDisplayText(e);var hasL=!!_eTxt;if(hasL){var _horiz=e.labelHoriz!=
 var hasNote=(e.note&&e.note.trim().length>0)||Object.keys(e.props||{}).length>0;if(hasNote){var nd=document.createElementNS('http://www.w3.org/2000/svg','circle');nd.setAttribute('cx',String(mp.x+off.nx*(lo+12)));nd.setAttribute('cy',String(mp.y+off.ny*(lo+12)));nd.setAttribute('r','4');nd.setAttribute('fill','#f59e0b');nd.setAttribute('stroke','#fff');nd.setAttribute('stroke-width','1');nd.setAttribute('pointer-events','none');g.appendChild(nd);}
 if(e.traces&&e.traces.length){var _trs=e.traces.slice().sort(function(a,b){return a-b;});var _trBase=mp.x+off.nx*10,_trBase_y=mp.y+off.ny*10;var _trStep=14;_trs.forEach(function(tn,ti){var tc=TRACE_COLORS[tn-1];var trx=_trBase+off.tx*(_trStep*(ti-(_trs.length-1)/2));var tr_y=_trBase_y+off.ty*(_trStep*(ti-(_trs.length-1)/2));var tlit=!!traceAnimEdges[e.id]&&traceAnimEdges[e.id]===tn;var trr=tlit?8:6;var trc=document.createElementNS('http://www.w3.org/2000/svg','circle');trc.setAttribute('cx',String(trx));trc.setAttribute('cy',String(tr_y));trc.setAttribute('r',String(trr));trc.setAttribute('fill',tc);trc.setAttribute('stroke','#fff');trc.setAttribute('stroke-width',tlit?'2':'1');trc.setAttribute('opacity',tlit?'1':'0.72');trc.setAttribute('pointer-events','none');g.appendChild(trc);var trt=document.createElementNS('http://www.w3.org/2000/svg','text');trt.setAttribute('x',String(trx));trt.setAttribute('y',String(tr_y));trt.setAttribute('text-anchor','middle');trt.setAttribute('dominant-baseline','central');trt.setAttribute('font-size',tlit?'9':'8');trt.setAttribute('font-weight','700');trt.setAttribute('fill','#fff');trt.setAttribute('pointer-events','none');trt.textContent=String(tn);g.appendChild(trt);});}
 var pol=e.polarity||'none';if(pol!=='none'){var _pT=e.polT!==undefined?e.polT:0.82;var p82=ptAtT(e,_pT),pox=-p82.ty*14,poy=p82.tx*14,pfs=fs+2;var pt2=document.createElementNS('http://www.w3.org/2000/svg','text');pt2.setAttribute('x',String(p82.x+pox));pt2.setAttribute('y',String(p82.y+poy));pt2.setAttribute('text-anchor','middle');pt2.setAttribute('dominant-baseline','central');pt2.setAttribute('font-size',String(pfs));pt2.setAttribute('font-weight','700');pt2.setAttribute('fill',pol==='+'?'#166534':'#991b1b');pt2.setAttribute('pointer-events','none');pt2.textContent=pol==='+'?'+':'\u2212';g.appendChild(pt2);var phr=document.createElementNS('http://www.w3.org/2000/svg','rect');phr.setAttribute('x',String(p82.x+pox-pfs*1.5));phr.setAttribute('y',String(p82.y+poy-pfs*1.5));phr.setAttribute('width',String(pfs*3));phr.setAttribute('height',String(pfs*3));phr.setAttribute('fill','transparent');phr.setAttribute('stroke','none');phr.setAttribute('pointer-events','all');phr.style.cursor='move';phr.addEventListener('mousedown',function(ev){ev.stopPropagation();edgeMarkDrag={edgeId:e.id,mark:'pol',moved:false};});g.appendChild(phr);}
-else if(showPolarityGaps&&!e.isTriple){var _gT=e.polT!==undefined?e.polT:0.82;var gp=ptAtT(e,_gT),gox=-gp.ty*14,goy=gp.tx*14;var gc=document.createElementNS('http://www.w3.org/2000/svg','circle');gc.setAttribute('cx',String(gp.x+gox));gc.setAttribute('cy',String(gp.y+goy));gc.setAttribute('r',String((fs+2)*0.62));gc.setAttribute('fill','#fef3c7');gc.setAttribute('stroke','#f59e0b');gc.setAttribute('stroke-width','1.5');gc.setAttribute('pointer-events','none');g.appendChild(gc);var gt=document.createElementNS('http://www.w3.org/2000/svg','text');gt.setAttribute('x',String(gp.x+gox));gt.setAttribute('y',String(gp.y+goy));gt.setAttribute('text-anchor','middle');gt.setAttribute('dominant-baseline','central');gt.setAttribute('font-family','system-ui,sans-serif');gt.setAttribute('font-size',String(fs+1));gt.setAttribute('font-weight','700');gt.setAttribute('fill','#b45309');gt.setAttribute('pointer-events','none');gt.textContent='?';g.appendChild(gt);}
+else if(showPolarityGaps&&!e.isTriple&&isCausalEdge(e)){var _gT=e.polT!==undefined?e.polT:0.82;var gp=ptAtT(e,_gT),gox=-gp.ty*14,goy=gp.tx*14;var gc=document.createElementNS('http://www.w3.org/2000/svg','circle');gc.setAttribute('cx',String(gp.x+gox));gc.setAttribute('cy',String(gp.y+goy));gc.setAttribute('r',String((fs+2)*0.62));gc.setAttribute('fill','#fef3c7');gc.setAttribute('stroke','#f59e0b');gc.setAttribute('stroke-width','1.5');gc.setAttribute('pointer-events','none');g.appendChild(gc);var gt=document.createElementNS('http://www.w3.org/2000/svg','text');gt.setAttribute('x',String(gp.x+gox));gt.setAttribute('y',String(gp.y+goy));gt.setAttribute('text-anchor','middle');gt.setAttribute('dominant-baseline','central');gt.setAttribute('font-family','system-ui,sans-serif');gt.setAttribute('font-size',String(fs+1));gt.setAttribute('font-weight','700');gt.setAttribute('fill','#b45309');gt.setAttribute('pointer-events','none');gt.textContent='?';g.appendChild(gt);}
 g.addEventListener('mousedown',function(ev){ev.stopPropagation();onEdgeDown(ev,e.id);});
 g.addEventListener('mouseenter',function(ev){showObjTooltip(null,e,ev);});
 g.addEventListener('mousemove',function(ev){moveTooltip(ev);});
@@ -5471,6 +5489,11 @@ function togglePolarityGaps(){
   if(b){b.style.background=showPolarityGaps?'#f59e0b':'';b.style.color=showPolarityGaps?'#fff':'';b.style.borderColor=showPolarityGaps?'#f59e0b':'';}
   renderAll();
   if(!showPolarityGaps){toast('Polarity gaps off');return;}
+  var flagged=edges.filter(function(e){return (e.polarity||'none')==='none'&&isCausalEdge(e);}).length;
+  var skipped=edges.filter(function(e){return (e.polarity||'none')==='none'&&!isCausalEdge(e);}).length;
+  toast('?\u00b1 Gaps: '+flagged+' unsigned causal edge'+(flagged===1?'':'s')
+      +(skipped?' \u00b7 '+skipped+' structural edge'+(skipped===1?'':'s')+' not flagged \u2014 a structural relation has no sign':''));
+  return;
   var n=polarityGapEdges().length,tot=edges.filter(function(e){return !e.isTriple;}).length;
   toast(n?(n+' of '+tot+' edges have no polarity'):'Every edge has polarity set');
 }
