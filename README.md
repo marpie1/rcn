@@ -39,7 +39,7 @@ NDCs (Neighborhood Development Cooperatives) are the atomic unit.
   tools/      standalone HTML tools (see below)
   maps/       rcn_map.html — NDC map (the live page); rcn_static_data.js — baseline data (loaded by flat name from same folder); build_standalone_map.py → rcn_map_standalone.html — single-file handout (data+issues inlined; NOT the live site); rcn-map-intro.html, rcn-map-manual.html — docs; rcn-ndc-map.pptx — deck; rcn-map-components.graph.json — component graph; rcn-region-federation-spec.md (+ .graph.json/.svg) — region federation (built loader); rcn-region-forking-spec.md (+ .graph.json) — federation via FedWiki forking (proposal)
   data/       PostGIS Python load scripts
-  docs/       tool documentation (nrm-tripod-beta.md, vester-manual.html, sodoto-manual.html)
+  docs/       tool documentation (sodoto-intro.html, sodoto-manual.html, vester-manual.html, nrm-tripod-beta.md)
   deploy/     deployment artifacts — docker/ (SODOTO Docker package, handed to Wiki Café), scp/ (SCP+Groove Docker package, hosted/WikiCafe track), home/ (SCP 3.0 personal-computer stack), fedwiki-personal/ (bare personal FedWiki, no SCP parts), launchd plists, handoff-sodoto.md
   vester/     Vester Influence Analysis — Vite/React app (the only tool with a build step); also Vester chapter notes
   archive/    old numbered drafts
@@ -584,7 +584,7 @@ The Berwick deck has its own script: `python3 docs/make_berwick_pptx.py`
 
 - **My Health Choices** (`scp-optionbox/`): Shared decision support tool served at port 8770. Presents treatment options as icon arrays of 1,000 dots (NNT/NNH visualization). Drug safety data pipeline: openFDA label + FAERS adverse event counts + MedlinePlus plain-language term definitions. Three fact boxes: AF anticoagulation, statin primary prevention, hypertension medication vs. lifestyle. When the coupler detects a keyword match between a problem and the library, a purple **My Health Choices ↗** button appears in the toolbar. Opening the My Health Choices from the coupler passes person/problem context; a **Document this choice** button on each option card writes a structured `shared-decision` record entry back to the coupler via `POST /api/record-entry`. Shared decisions surface at the top of the coupler's Plan section (purple card), are incorporated into Narrate output, and appear in the FedWiki wiki push. Clinical curators: see `scp-optionbox/authoring-guide.html` for the JSON schema and 8-step evidence pipeline.
 
-- **SODOTO → Wiki Café deployment**: Docker Compose packaging complete (`deploy/docker/`). Three containers: sofi-proxy (Python/8765), fedwiki (Node/3000), caddy (HTTPS). Shared `wiki-data` volume. Handoff doc at `deploy/handoff-sodoto.md`. Coordination step before first build: Wiki Café generates `SODOTO_PROXY_SECRET`, shares with Marc; Marc bakes it + their domain into `sodoto-issuer.html` three-line config block, then they build. Keys never on server — each issuer enters 64-char hex seed in their own browser.
+- **SODOTO → Wiki Café deployment (LIVE)**: Deployed on WikiCafe over HTTPS — three containers (sofi-proxy/8765, fedwiki/3000, caddy) pulled from GHCR (`ghcr.io/marpie1/rcn-sodoto-proxy`, `…/rcn-sodoto-wiki`), shared `wiki-data` volume, demo cast seeded via `SEED_DEMO`. The issuer tool reads `PROXY`/`WIKI_SITE` from the proxy's `/config` at runtime and prompts for the passphrase — no hardcoded config block. Keys never on server — each issuer enters their 64-char hex seed in their own browser. Docs: `docs/sodoto-intro.html` (canonical) + `deploy/handoff-sodoto.md` (ops, somewhat dated). **PENDING (session close Aug 5 2026):** `docs/sodoto-intro.html` and `docs/sodoto-manual.html` are committed and un-ignored in `.dockerignore`, but the `rcn-sodoto-proxy` image must still be rebuilt multi-arch and pushed to GHCR to serve them at `sodoto.ndcgroup…/docs/` — Docker Desktop was down at session close, so the push did not happen.
 
 ---
 
@@ -699,9 +699,13 @@ Plugin repos live at `~/rcn/scp/plugins/wiki-plugin-scp-*/`. 19 typed item plugi
 
 ## SODOTO — credential infrastructure
 
-**See One, Do One, Teach One** — federated apprenticeship credentialing via W3C Verifiable Credentials (signed JWTs), rendered as badges in FedWiki pages, verifiable in browser with no server call.
+**See One, Do One, Teach One** — federated apprenticeship credentialing via signed JWTs (Ed25519), rendered as badges in FedWiki pages, verifiable in browser with no server call.
 
-Full detail in `SODOTO-CLAUDE-CODE-CONTEXT.md`. Orientation summary:
+**Live on WikiCafe (Aug 2026):** three containers pulled from GHCR — `rcn-sodoto-proxy` (sofi-proxy: issuer tool + wiki writes, at `sodoto.ndcgroup.relocalizecreativity.net`), `rcn-sodoto-wiki` (FedWiki portfolios + badge ledger, at `wiki-sodoto.ndcgroup…`), and Caddy (HTTPS). Nothing runs on a personal machine — Marc's laptop only builds and pushes images. A labelled demo cast is seeded opt-in via `SEED_DEMO`.
+
+**Human-readable docs (canonical, current):** `docs/sodoto-intro.html` (what it is / how it works / where every piece runs — with a hover-annotated hosting map), `docs/sodoto-manual.html` (role-based user manual), `tools/sodoto-issuer-guide.html` (per-tab tool help). The older `SODOTO-CLAUDE-CODE-CONTEXT.md` is Claude-onboarding notes that predate the WikiCafe deployment — trust the three HTML docs where they differ.
+
+Localhost dev orientation:
 
 | Item | Location |
 |------|----------|
@@ -710,12 +714,11 @@ Full detail in `SODOTO-CLAUDE-CODE-CONTEXT.md`. Orientation summary:
 | People records | `~/rcn/veramo/people.json` |
 | Signed credentials (reference) | `~/rcn/veramo/credentials/` |
 | Issuer tool | `~/rcn/tools/sodoto-issuer.html` — served via sofi-proxy at `http://localhost:8765/tools/sodoto-issuer.html` |
-| FedWiki badge plugin | `/usr/local/lib/node_modules/wiki/node_modules/wiki-plugin-sodoto-badge/client/sodoto-badge.js` — this is the file FedWiki actually serves; **not** `~/.wiki/localhost/assets/` |
-| Marc's portfolio | `~/.wiki/localhost/pages/marc-pierson-sodoto-portfolio` |
-| Kerry's portfolio | `~/.wiki/localhost/pages/kerry-turner-sodoto-portfolio` |
-| RCN SODOTO Ledger | `~/.wiki/localhost/pages/rcn-sodoto-ledger` |
+| FedWiki badge plugin | Source vendored in the repo at `sodoto/plugins/wiki-plugin-sodoto-badge/` — committed and baked into the `rcn-sodoto-wiki` image. (Localhost dev may also symlink it into the global `wiki` node_modules.) |
+| Marc's portfolio (localhost dev) | `~/.wiki/localhost/pages/marc-pierson-sodoto-portfolio` |
+| RCN SODOTO Ledger (localhost dev) | `~/.wiki/localhost/pages/rcn-sodoto-ledger` |
 
-**5 NDC issuers registered:** RCN (Bellingham WA), Columbia Valley NDC, The Fledge (Lansing MI), Leo's, Kula. All have Ed25519 key pairs. DIDs are `did:key` — public key is self-contained in the DID string, no external registry.
+**Issuer identities are `did:key`** — the public key is self-contained in the DID string, so verification needs no external registry. Dev identities live in `veramo/` (RCN, Columbia Valley, The Fledge, Leo's, Kula). The deployed issuer tool ships with **no** seeded people (`SEED_PEOPLE = []`); the WikiCafe demo uses a `DEMO Academy` issuer plus demo learners (`demo-alex-rivera`, etc.).
 
 **Signing:** purely client-side in browser via Web Crypto API (Ed25519). User enters 64-char hex private key seed into sodoto-issuer.html. Key is used once and immediately cleared. JWT format: `header.payload.signature`, all base64url. **Never sign programmatically on the user's behalf.**
 
