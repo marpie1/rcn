@@ -68,11 +68,11 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
   <div class="suite">RCN Substrate</div>
   <h1>What we are supposed to do</h1>
   <p class="lead">The substrate is built and working. What is left is not code — it is a queue of decisions only you and Kerry can make, and each one is a small, concrete act in a tool you already have open.</p>
-  <div class="updated">Written 2026-08-05 · state verified against the files on disk</div>
+  <div class="updated">Written 2026-08-05 · revised the same day, after Marc identified the ERD→CLD variabilization as the reason the unsigned edges exist</div>
 </div>
 
-<div class="stop">
-  <strong>First: Neo4j is stopped.</strong> Every projection currently returns <code>cannot reach http://localhost:7474</code>. Open Neo4j Desktop and start the <strong>RCN SCHEMA</strong> server. Claude Code has full admin over the database but cannot start it — that is the one thing only you can do. Then run <code>cd ~/rcn &amp;&amp; python3 substrate/api.py</code>.
+<div class="warn">
+  <strong>Before anything works:</strong> Neo4j Desktop must be running the <strong>RCN SCHEMA</strong> server, and then <code>cd ~/rcn &amp;&amp; python3 substrate/api.py</code>. If a projection returns <code>cannot reach http://localhost:7474</code>, the database is stopped — Claude Code has full admin over it but <em>cannot start it</em>. That is the one thing only you can do.
 </div>
 
 <h2>What was built, in one paragraph</h2>
@@ -149,23 +149,55 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
   <li><span class="done">✓</span> The full round trip: open from the database, edit, save to database <em>and</em> file</li>
   <li><span class="done">✓</span> Write-back proven non-destructive to other contributors, preserving duplicate placements and layout</li>
   <li><span class="done">✓</span> Composer reads the same 16 drawings from the substrate</li>
+  <li><span class="done">✓</span> A <strong>structure</strong> projection, so the ERD reading is a first-class view again rather than something the CLD overwrote</li>
 </ul>
 
 <h2>What is left — the decision queue</h2>
 
 <p>None of this is code. Each item is a judgement only you and Kerry can make.</p>
 
-<h3><span class="pill amber">1</span> Seventeen unsigned edges</h3>
+<h3><span class="pill amber">1</span> Seventeen unsigned edges — but they are not gaps</h3>
 
-<p>Seventeen edges across the 16 drawings still carry no <code>+</code> or <code>−</code>. But they are not seventeen small chores — cross-referencing them against the signed CLD produced the finding that matters:</p>
+<div class="big-answer">
+  <strong>These drawings began as entity-relationship diagrams and were variabilized into CLDs.</strong> That gains a causal reading and costs the structural one, because the two often run in <em>opposite directions</em> — and both are true.
+</div>
 
-<div class="warn"><strong>Zero of them agree with the CLD's direction.</strong> Nine are signed by the CLD but pointing the opposite way; the rest the CLD does not have at all. The missing sign and the unresolved direction are the same fact — where the two drawings disagreed, nobody ever committed to a sign.</div>
+<pre>Org --exists_for--&gt; Purpose      an org exists for a purpose        STRUCTURAL
+Purpose --(+)--&gt; Org             coherence of purpose raises
+                                 effectiveness of org               CAUSAL</pre>
 
-<p>So for those nine, <strong>settle the direction first.</strong> In a CLD the arrow decides which feedback loops exist, and a sign on a backwards arrow is a confident wrong answer — worse than the blank.</p>
+<p>That is not a suspicion. Across the 16 drawings, an edge carries a sign <strong>if and only if</strong> its ERD direction and its causal direction agree:</p>
 
-<p>They split usefully. <strong>Seven use the same verb in both places</strong> — that is a transcription slip, not a disagreement, and you settle it by reading the verb aloud. An org <em>stewards</em> its assets; assets do not steward an org. <strong>Four use different verbs</strong> — <code>support</code>/<code>inhabit</code>, <code>make</code>/<code>to</code>, <code>experience</code>/<code>power</code> — and those are genuine editorial readings about which way the causation runs.</p>
+<table class="role-table">
+  <tr><th></th><th>agrees with the CLD</th><th>reversed</th><th>not in the CLD</th></tr>
+  <tr><td><strong>signed</strong></td><td>46</td><td>1</td><td>0</td></tr>
+  <tr><td><strong>unsigned</strong></td><td>0</td><td>9</td><td>5</td></tr>
+</table>
 
-<p>The full list, with what the CLD says about each, is in <code>substrate/unsigned-edges.md</code>. Worst offender is <code>org</code> with five.</p>
+<p>The single signed-and-reversed exception was one Claude Code introduced on 29 July and has since reverted. <strong>The original author's work is 46 for 46.</strong> Whoever variabilized these hit exactly this problem and handled it correctly: they signed the edges where both readings pointed the same way, and left blank the ones where they conflicted.</p>
+
+<div class="note"><strong>So a blank is a marked conflict, not an omission.</strong> Do not choose a direction — keep both, as two edges. The structural one stays unsigned; the causal one is added pointing the other way, with its sign. Nine additions, no deletions, and the CLD already tells you what nine of them should be.</div>
+
+<p>The seventeen break down as:</p>
+
+<ul>
+  <li><strong>10 ERD/CLD conflicts</strong> — the CLD supplies the causal direction and sign for each. These need confirming, not inventing</li>
+  <li><strong>5 genuinely open</strong> — the CLD has no reading for them at all. Real work for you and Kerry</li>
+  <li><strong>2 merge artefacts</strong> — the two self-loops. Not decisions at all</li>
+</ul>
+
+<p>Full list in <code>substrate/unsigned-edges.md</code>.</p>
+
+<h3><span class="pill grey">1b</span> The structure lens</h3>
+
+<p>Because the ERD reading is real and worth keeping, it now has its own projection:</p>
+
+<pre>/projection/structure    the ERD — part-of, is-a, acts-in, depends-on
+/projection/causal       the CLD — signed influence</pre>
+
+<p>Same nodes, different edges, nothing stored twice. Polarity is deliberately emitted as <code>none</code> on the structure lens: a structural relation is not the kind of statement that has a sign, and drawing one would be a claim nobody made.</p>
+
+<p>For the same reason <strong><code>?± Gaps</code> now skips structural families</strong> and tells you how many it skipped. On the <code>org</code> drawing it went from <em>"5 unsigned causal edges"</em> to <em>"3 unsigned causal edges · 2 structural edges not flagged"</em> — because <code>constitutes</code> (Composition) and <code>require</code> (Provision) were complete all along.</p>
 
 <h3><span class="pill amber">2</span> Twenty-two edges with no relation family</h3>
 
@@ -212,7 +244,7 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
   <tr><th>What</th><th>Where</th></tr>
   <tr><td>How the round trip works, in full</td><td><code>substrate/ROUND-TRIP.md</code></td></tr>
   <tr><td>The model, and how to check it by eye</td><td><code>substrate/README.md</code></td></tr>
-  <tr><td>The 17 unsigned edges, with what the CLD says</td><td><code>substrate/unsigned-edges.md</code></td></tr>
+  <tr><td>The 17 unsigned edges — conflicts, open, and artefacts</td><td><code>substrate/unsigned-edges.md</code></td></tr>
   <tr><td>The 22 edges needing a family</td><td><code>substrate/eip-composite-edge-families.md</code></td></tr>
   <tr><td>Why the seven families, and why declared not drawn</td><td><code>substrate/edge-families-proposal.md</code></td></tr>
   <tr><td>Every tool, and what it demands of the schema</td><td><code>substrate/tool-inventory.md</code></td></tr>
