@@ -87,13 +87,26 @@ def read_aspects():
                 continue
             label = (e.get('label') or '').strip()
             key = (s, t, label)
+            props = e.get('props') or {}
             ed = edges.setdefault(key, {
                 'src': s, 'tgt': t, 'label': label,
-                'polarity': e.get('polarity', 'none'), 'sources': set()})
+                'polarity': e.get('polarity', 'none'),
+                # AN AUTHORED FAMILY BEATS A GUESSED ONE. This used to re-run
+                # suggest_family() on every load and ignore what the file said,
+                # so a family assigned in the legend picker and saved was
+                # silently lost the next time the drawings were reloaded —
+                # exactly the round-trip loss the substrate exists to end.
+                'linkFamily': props.get('linkFamily'),
+                'importedFrom': props.get('importedFrom'),
+                'sources': set()})
             ed['sources'].add(aspect)
             # A signed reading beats an unsigned one; don't let 'none' win.
             if ed['polarity'] == 'none' and e.get('polarity', 'none') != 'none':
                 ed['polarity'] = e['polarity']
+            if not ed.get('linkFamily') and props.get('linkFamily'):
+                ed['linkFamily'] = props['linkFamily']
+            if not ed.get('importedFrom') and props.get('importedFrom'):
+                ed['importedFrom'] = props['importedFrom']
     return concepts, edges
 
 
@@ -149,14 +162,16 @@ def build():
 
     unmapped = 0
     for i, ((s, t, label), e) in enumerate(edges.items()):
-        lf = suggest_family(label, efam)
+        lf = e.get('linkFamily') or suggest_family(label, efam)
         if not lf:
             unmapped += 1
         run("""MATCH (a:Concept {id:$s}), (b:Concept {id:$t})
                CREATE (a)-[:REL {id:$id, label:$label, mode:$m, linkFamily:$lf,
-                 polarity:$pol, rel:'before', sources:$src}]->(b)""",
+                 polarity:$pol, rel:'before', sources:$src,
+                 importedFrom:$imp}]->(b)""",
             dict(s=s.lower(), t=t.lower(), id=f'a{i:03d}', label=label, m=MODE,
-                 lf=lf, pol=e['polarity'], src=sorted(e['sources'])), database=DB)
+                 lf=lf, pol=e['polarity'], src=sorted(e['sources']),
+                 imp=e.get('importedFrom')), database=DB)
 
     print(f"{len(aspects)} aspects · {len(concepts)} concepts · {len(edges)} edges "
           f"· {unmapped} edges with no relation family")
