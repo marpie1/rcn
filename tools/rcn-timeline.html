@@ -31,10 +31,33 @@ FOUR HANDLES  (grab-target decides — no modes)
   right-fuzz (outer right) → change ef
   body drag  → translate s,e together (time only)            [floating only]
 
-ALLEN LINKS (v0 subset)
-  before(A,B): A.e ≤ B.s   — LOOSE. gap = slack. Drag A later ⇒ ripples B.
-                              Drag B earlier ⇒ stops at the wall (A.e).
-  meets (A,B): A.e = B.s    — RIGID. welded; A and B move as a block.
+ALLEN LINKS (v1 — five of the seven; a link reads "<from> REL <to>")
+  before  (A,B): A.e ≤ B.s              — LOOSE. gap = slack. Drag A later ⇒
+                                          ripples B. Drag B earlier ⇒ stops at
+                                          the wall (A.e).
+  meets   (A,B): A.e = B.s              — RIGID. welded; A and B move as a block.
+  overlaps(A,B): A.s<B.s<A.e<B.e        — they share a stretch; A starts and
+                                          ends first.
+  during  (A,B): B.s ≤ A.s, A.e ≤ B.e   — A sits wholly inside B. Say "A
+                                          contains B" in the sentence box and
+                                          you get "B during A".
+  equals  (A,B): same extent.
+
+  Not implemented: starts, finishes (and relation SETS — see step two below).
+  The solver only ever TRANSLATES the target; it never rewrites an authored
+  duration. So "during" needs a container at least as long as its content and
+  "equals" needs matching durations — where the durations make a relation
+  impossible the tool reports a contradiction rather than forcing it.
+
+  PENDING — STEP TWO (not built, deliberately):
+  Relation SETS + Allen's composition table, so a link can hold {before,meets}
+  ("I know the order, not whether they touch") and two people's partial
+  knowledge INTERSECTS into something tighter than either had. That is the
+  formal version of "accuracy is a group activity", and it is the real prize in
+  Allen. Costs: full Allen consistency is NP-complete (Vilain & Kautz), path
+  consistency is O(n³) and incomplete, and it collides with the dual-face
+  design — dragging asserts a definite configuration, which would collapse the
+  set. Decide that before building it.
 
 SOLVER  (forward propagation)
   On any edit: relax constraints forward in time. A push that would move a
@@ -266,34 +289,66 @@ function deleteSelected(){
   sel={type:null,id:null};solve();render();renderPanel();
 }
 
-/* ── SOLVER: forward propagation of before/meets ─────────── */
+/* ── ALLEN RELATIONS ─────────────────────────────────────── */
 var EPS=1e-6;
+var REL_ORDER=["before","meets","overlaps","during","equals"];
+var REL_META={
+  before  :{btn:"before →",   tip:"loose — B starts at or after A ends; the gap is slack", color:"#94a3b8", dash:"6 4", glyph:"arrow", contact:true },
+  meets   :{btn:"meets ⊣⊢",   tip:"rigid — B starts exactly when A ends",                  color:"#334155", dash:"0",   glyph:"weld",  contact:true },
+  overlaps:{btn:"overlaps ⧉", tip:"they share a stretch — A starts first and ends first",   color:"#0d9488", dash:"0",   glyph:"dot",   contact:false},
+  during  :{btn:"during ⊏",   tip:"A sits wholly inside B",                                 color:"#7c3aed", dash:"0",   glyph:"dot",   contact:false},
+  equals  :{btn:"equals =",   tip:"identical extent",                                       color:"#b45309", dash:"0",   glyph:"dot",   contact:false}
+};
+/* Each relation reduces to a permitted RANGE for B.s, because the solver only
+   ever translates the target — it never rewrites an authored duration. If B.s
+   already sits in the range, nothing moves; that is what stops the solver
+   quietly replacing dates somebody researched. Where the durations make a
+   relation impossible (a container shorter than its content) we return .bad
+   and report a contradiction instead of forcing it. Boundary contact counts as
+   satisfying: whether two ends are exactly equal is not what this tool is for. */
+function relRange(rel,A,B){
+  var da=A.e-A.s, db=B.e-B.s;
+  switch(rel){
+    case "meets":    return {lo:A.e, hi:A.e};
+    case "overlaps": return {lo:Math.max(A.s,A.e-db), hi:A.e};
+    case "during":   /* A inside B → B.s ≤ A.s and B.e ≥ A.e */
+      if(db<da-1e-3) return {bad:"“"+B.label+"” is "+fmtDur(db)+" long and “"+A.label+"” is "+fmtDur(da)+" — it can’t sit inside."};
+      return {lo:A.e-db, hi:A.s};
+    case "equals":
+      if(Math.abs(db-da)>1e-3) return {bad:"different durations ("+fmtDur(da)+" vs "+fmtDur(db)+")."};
+      return {lo:A.s, hi:A.s};
+    default:         return {lo:A.e, hi:Infinity};   /* before */
+  }
+}
+
+/* ── SOLVER: forward propagation ─────────────────────────── */
 function solve(){
   issues=[];
-  var pinBroken={}, MAXIT=200, it, changed=true;
+  var MAXIT=200, it, changed=true;
   for(it=0;it<MAXIT&&changed;it++){
     changed=false;
     for(var i=0;i<M.links.length;i++){
       var L=M.links[i], A=ivById(L.from), B=ivById(L.to);
       if(!A||!B)continue;
-      var need;
-      if(L.rel==="meets"){ need=A.e; if(Math.abs(B.s-need)>EPS){
-        if(B.pinned){pinBroken[L.id]=1;} else {moveIv(B,need);changed=true;}
-      }}
-      else { // before: B.s must be >= A.e (min gap 0)
-        need=A.e;
-        if(B.s<need-EPS){
-          if(B.pinned){pinBroken[L.id]=1;} else {moveIv(B,need);changed=true;}
-        }
-      }
+      var r=relRange(L.rel,A,B);
+      if(r.bad)continue;                        /* impossible by duration — reported below */
+      var need=null;
+      if(B.s<r.lo-EPS)      need=r.lo;
+      else if(B.s>r.hi+EPS) need=r.hi;
+      if(need!==null&&!B.pinned){moveIv(B,need);changed=true;}
     }
   }
-  // record contradictions where a push hit a pinned interval
+  // record contradictions: impossible by duration, or a push that hit a pin
   for(var i2=0;i2<M.links.length;i2++){
     var L2=M.links[i2],A2=ivById(L2.from),B2=ivById(L2.to);
     if(!A2||!B2)continue;
-    var viol=(L2.rel==="meets")?(Math.abs(B2.s-A2.e)>1e-3):(B2.s<A2.e-1e-3);
-    if(viol){
+    var r2=relRange(L2.rel,A2,B2);
+    if(r2.bad){
+      L2.bad=true;
+      issues.push({msg:"“"+A2.label+"” "+L2.rel+" “"+B2.label+"” can’t hold — "+r2.bad,ids:[A2.id,B2.id,L2.id]});
+      continue;
+    }
+    if(B2.s<r2.lo-1e-3||B2.s>r2.hi+1e-3){
       L2.bad=true;
       issues.push({msg:"“"+A2.label+"” "+L2.rel+" “"+B2.label+"” is violated — "+
         (B2.pinned?"“"+B2.label+"” is pinned and can’t move.":"unresolved."),ids:[A2.id,B2.id,L2.id]});
@@ -371,31 +426,41 @@ function render(){
 
 function renderLink(L,defs){
   var A=ivById(L.from),B=ivById(L.to);if(!A||!B)return;
-  var x1=tx(A.e),y1=rowY(A.row),x2=tx(B.s),y2=rowY(B.row);
+  var RM=REL_META[L.rel]||REL_META.before;
+  /* before/meets join at the contact point they assert (A's end to B's start).
+     The overlapping relations have no single contact point, so they join bar
+     centres — drawing those end-to-start sends the curve backwards. */
+  var x1=RM.contact?tx(A.e):tx((A.s+A.e)/2), y1=rowY(A.row),
+      x2=RM.contact?tx(B.s):tx((B.s+B.e)/2), y2=rowY(B.row);
   var bad=L.bad, selq=(sel.type==="link"&&sel.id===L.id);
-  var col=bad?"#ef4444":(L.rel==="meets"?"#334155":"#94a3b8");
+  var col=bad?"#ef4444":RM.color;
   var mx=(x1+x2)/2;
   var path=el("path",{d:"M "+x1+" "+y1+" C "+mx+" "+y1+" "+mx+" "+y2+" "+x2+" "+y2,
     fill:"none",stroke:col,"stroke-width":(selq?3:(bad?2.5:1.8)),
-    "stroke-dasharray":(L.rel==="before"?"6 4":"0"),"stroke-linecap":"round",
+    "stroke-dasharray":RM.dash,"stroke-linecap":"round",
     cursor:"pointer","data-lk":L.id});
   path.addEventListener("mousedown",function(e){e.stopPropagation();selectLink(L.id);});
   path.addEventListener("mouseenter",function(e){showTip(e,linkTip(L,A,B));});
   path.addEventListener("mousemove",moveTip);
   path.addEventListener("mouseleave",hideTip);
   svg.appendChild(path);
-  // arrow / weld glyph at target
-  if(L.rel==="before"){
-    var ang=Math.atan2(y2-y1,0.001+x2-mx), ah=6;
-    var ax=x2, ay=y2;
-    var p=el("path",{d:"M "+ax+" "+ay+" L "+(ax-ah)+" "+(ay-ah*0.7)+" L "+(ax-ah)+" "+(ay+ah*0.7)+" Z",fill:col});
-    svg.appendChild(p);
-    // slack label
-    var slack=B.s-A.e;
-    if(slack>EPS){var st=el("text",{x:mx,y:(y1+y2)/2-4,"class":"axis-text","text-anchor":"middle"});
-      st.textContent="slack "+fmtDur(slack); svg.appendChild(st);}
-  }else{
+  // glyph at the target end
+  if(RM.glyph==="arrow"){
+    var ah=6, ax=x2, ay=y2;
+    svg.appendChild(el("path",{d:"M "+ax+" "+ay+" L "+(ax-ah)+" "+(ay-ah*0.7)+" L "+(ax-ah)+" "+(ay+ah*0.7)+" Z",fill:col}));
+  }else if(RM.glyph==="weld"){
     svg.appendChild(el("rect",{x:x2-3,y:y2-7,width:6,height:14,fill:col,rx:1}));
+  }else{
+    svg.appendChild(el("circle",{cx:x2,cy:y2,r:4,fill:"#fff",stroke:col,"stroke-width":2}));
+  }
+  // mid-curve label: slack is the argumentative bit on a before link; for the
+  // rest, name the relation, since the geometry alone doesn't say which it is
+  var lbl=null;
+  if(L.rel==="before"){var slack=B.s-A.e; if(slack>EPS)lbl="slack "+fmtDur(slack);}
+  else if(L.rel!=="meets")lbl=L.rel;
+  if(lbl){
+    var st=el("text",{x:mx,y:(y1+y2)/2-4,"class":"axis-text","text-anchor":"middle"});
+    st.textContent=lbl; svg.appendChild(st);
   }
 }
 
@@ -470,7 +535,7 @@ function ivTip(iv){
 }
 function linkTip(L,A,B){
   return "<b>"+esc(A.label)+" "+L.rel+" "+esc(B.label)+"</b><br>"+
-    (L.rel==="meets"?"rigid — welded end-to-start":"loose — min gap 0, slack floats")+
+    ((REL_META[L.rel]||REL_META.before).tip)+
     (L.who?"<br>— "+esc(L.who):"")+(L.note?"<br><i>"+esc(L.note)+"</i>":"");
 }
 function showTip(e,html){tip.innerHTML=html;tip.style.display="block";moveTip(e);}
@@ -676,12 +741,17 @@ function linkPanel(L){
   var hl=document.createElement("div");hl.className="prop-label";hl.textContent="Relation";h.appendChild(hl);
   var hv=document.createElement("div");hv.style.cssText="font-size:13px;font-weight:600";hv.textContent=(A?A.label:"?")+"  "+L.rel+"  "+(B?B.label:"?");h.appendChild(hv);f.appendChild(h);
   // rel toggle
-  var tr=document.createElement("div");tr.className="toggle-row";
-  var bb=document.createElement("div");bb.className="toggle-btn"+(L.rel==="before"?" on-float":"");bb.textContent="before → (loose)";
-  var bm=document.createElement("div");bm.className="toggle-btn"+(L.rel==="meets"?" on-pin":"");bm.textContent="meets ⊣⊢ (rigid)";
-  bb.onclick=function(){beforeChange("rel:"+L.id);L.rel="before";solve();render();renderPanel();};
-  bm.onclick=function(){beforeChange("rel:"+L.id);L.rel="meets";solve();render();renderPanel();};
-  tr.appendChild(bb);tr.appendChild(bm);f.appendChild(tr);
+  var tr=document.createElement("div");tr.className="toggle-row";tr.style.flexWrap="wrap";
+  REL_ORDER.forEach(function(rel){
+    var RM=REL_META[rel];
+    var b=document.createElement("div");
+    b.className="toggle-btn"+(L.rel===rel?(rel==="meets"?" on-pin":" on-float"):"");
+    b.textContent=RM.btn; b.title=RM.tip;
+    b.style.flex="0 0 auto";
+    b.onclick=function(){beforeChange("rel:"+L.id);L.rel=rel;solve();render();renderPanel();};
+    tr.appendChild(b);
+  });
+  f.appendChild(tr);
   f.appendChild(rangeRow("Confidence",L.conf,function(v){beforeChange("lconf:"+L.id);L.conf=v;},0,1,0.05,true));
   f.appendChild(row("Asserted by",inp(L.who,function(v){beforeChange("lwho:"+L.id);L.who=v;})));
   var na=document.createElement("textarea");na.className="prop-input";na.value=L.note;na.placeholder="why / source — paste a URL and it becomes a link below";
@@ -724,10 +794,16 @@ function runSentence(str){
   else if(m=str.match(/^unpin\s+(.+)$/i)){var a2=ivByLabel(m[1]);if(a2){a2.pinned=false;}else{toast("no interval “"+m[1].trim()+"”");}}
   else if(m=str.match(/^(.+?)\s+before\s+(.+)$/i)){addLink(resolveOrMake(m[1]).id,resolveOrMake(m[2]).id,"before");}
   else if(m=str.match(/^(.+?)\s+meets\s+(.+)$/i)){addLink(resolveOrMake(m[1]).id,resolveOrMake(m[2]).id,"meets");}
+  else if(m=str.match(/^(.+?)\s+overlaps?\s+(.+)$/i)){addLink(resolveOrMake(m[1]).id,resolveOrMake(m[2]).id,"overlaps");}
+  else if(m=str.match(/^(.+?)\s+during\s+(.+)$/i)){addLink(resolveOrMake(m[1]).id,resolveOrMake(m[2]).id,"during");}
+  /* "A contains B" is "B during A" — the inverse is the same link drawn the
+     other way, which is why five relations cover seven of Allen's. */
+  else if(m=str.match(/^(.+?)\s+contains\s+(.+)$/i)){addLink(resolveOrMake(m[2]).id,resolveOrMake(m[1]).id,"during");}
+  else if(m=str.match(/^(.+?)\s+equals\s+(.+)$/i)){addLink(resolveOrMake(m[1]).id,resolveOrMake(m[2]).id,"equals");}
   else if(m=str.match(/^(.+?)\s*=\s*(.+?)\s*\.\.\s*(.+)$/)){var iv=resolveOrMake(m[1]);var a=parseDate(m[2]),b=parseDate(m[3]);if(a!=null)iv.s=a;if(b!=null)iv.e=Math.max(b,iv.s+EPS);}
   else if(m=str.match(/^(.+?)\s+lasts?\s+(.+)$/i)){var iv2=resolveOrMake(m[1]);var du=parseDur(m[2]);if(du!=null)iv2.e=iv2.s+du;}
   else if(m=str.match(/^(.+?)\s*~=?\s*(.+)$/)){var iv3=resolveOrMake(m[1]);var c=parseDate(m[2]);if(c!=null){iv3.s=iv3.e=c;iv3.sf=iv3.ef=niceStep()/2;}}
-  else {toast("didn’t parse — try “A before B”, “A = Jan 2018 .. Dec 2020”, “A lasts 6 months”, “pin A”"); return;}
+  else {toast("didn’t parse — try “A before B”, “A during B”, “A contains B”, “A = Jan 2018 .. Dec 2020”, “A lasts 6 months”, “pin A”"); return;}
   pushPrev(pre);solve();render();renderPanel();
 }
 document.getElementById("sentence").addEventListener("keydown",function(e){
@@ -807,16 +883,18 @@ function checkModel(o){
     var tag="link "+(i+1)+" ("+(L.from||"?")+" → "+(L.to||"?")+")";
     if(!byId[L.from])fatal.push(tag+" — <code>from</code> matches no interval id.");
     if(!byId[L.to])fatal.push(tag+" — <code>to</code> matches no interval id.");
-    if(L.rel&&L.rel!=="meets"&&L.rel!=="before")
-      warn.push(tag+" uses <code>"+L.rel+"</code>. Only <code>meets</code> and <code>before</code> exist; this will behave as <code>before</code>.");
-    /* the trap: both relations need disjoint intervals, so a link across an
-       overlap makes the solver move things and quietly drop your dates */
+    if(L.rel&&REL_ORDER.indexOf(L.rel)<0)
+      warn.push(tag+" uses <code>"+L.rel+"</code>, which doesn’t exist. Available: <code>"+REL_ORDER.join("</code>, <code>")+"</code>. This link will behave as <code>before</code>."+
+        (L.rel==="starts"||L.rel==="finishes"?" (<code>starts</code> and <code>finishes</code> are the two Allen relations not yet built.)":""));
+    /* the trap, now narrowed: before/meets still need disjoint intervals, but
+       an overlap is no longer unsayable — it means the author wanted overlaps,
+       during or equals and reached for the wrong relation */
     var A=byId[L.from],B=byId[L.to];
-    if(A&&B){
+    if(A&&B&&(!L.rel||L.rel==="before"||L.rel==="meets")){
       var ae=A.end!=null?parseDate(A.end):(A.e!=null?parseDate(A.e):null),
           bs=parseDate(B.start!=null?B.start:B.s);
       if(ae!=null&&bs!=null&&bs<ae-1e-6)
-        warn.push(tag+" — the intervals overlap, and neither relation can say <i>during</i>. The solver will push <b>"+(B.label||L.to)+"</b> (and anything after it) to clear the overlap.");
+        warn.push(tag+" — the intervals overlap but the relation is <code>"+(L.rel||"before")+"</code>, which requires them to be disjoint. The solver will push <b>"+(B.label||L.to)+"</b> (and anything after it) to clear the overlap. Did you mean <code>overlaps</code>, <code>during</code> or <code>equals</code>?");
     }
   });
   return{fatal:fatal,warn:warn,n:ivs.length,m:lks.length};

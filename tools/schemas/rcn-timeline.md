@@ -43,29 +43,52 @@ Verified against `tools/rcn-timeline.html` at commit `5d1c70c`, 2026-07-25. Deri
 | `who`, `note` | string | Attribution and free text |
 | `conf` | number 0–1 | Default `0.8` |
 
-### `rel` supports exactly two values
+### `rel` supports five values
+
+A link reads **`<from> rel <to>`**.
 
 ```
-meets | before
+before | meets | overlaps | during | equals
 ```
 
-- `meets` — `to.start` is forced equal to `from.end`
-- `before` — `to.start` is pushed to be ≥ `from.end` (minimum gap 0)
+| `rel` | Means | Constraint on the target |
+|---|---|---|
+| `before` | gap between them | `to.s ≥ from.e` |
+| `meets` | B starts exactly when A ends | `to.s = from.e` |
+| `overlaps` | they share a stretch; A starts first and ends first | `from.s ≤ to.s ≤ from.e` and `to.e ≥ from.e` |
+| `during` | **A sits wholly inside B** | `to.s ≤ from.s` and `to.e ≥ from.e` |
+| `equals` | identical extent | `to.s = from.s`, same duration |
 
-**This is not the full set of 13 Allen relations.** `solve()` tests `rel === "meets"` and treats *everything else* as `before` — so `"overlaps"`, `"during"`, `"starts"`, `"finishes"`, `"equals"` are accepted without complaint and silently behave as `before`. If you need those semantics, they do not exist yet; say so rather than emitting a relation name the tool will misread.
+Note the direction on `during`: `A during B` means A is the contained one. Writing "A contains B" in the sentence box creates `B during A` — the inverse is the same link drawn the other way, which is why five stored relations cover seven of Allen's named ones.
 
-### Both relations require the intervals to be disjoint
+**Two of Allen's seven are not implemented: `starts` and `finishes`.** Anything outside the five above is accepted and behaves as `before`; the Import report flags it by name. Do not emit a relation the tool will misread.
 
-`meets` and `before` are both defined against `from.end`. Neither can express "B happens *during* A." If you link two intervals that overlap in the dates you authored, the solver will not complain — it will **move `to` and everything downstream of it** until the overlap is gone, and your dates are silently lost.
+### The solver never rewrites a duration
 
-This bites hardest with long-running states. A `RESULT` interval that runs 2022→2030 with `RESULT before SOLUTION` does not mean "the solution follows from the result"; it means "the solution cannot start until 2030."
+It only ever **translates** the target interval, so each relation reduces to a permitted range for `to.s`. Two consequences worth authoring around:
 
-Two ways out, both legitimate:
+- **If the target already satisfies the relation, nothing moves.** Dates you researched are not quietly replaced by dates the solver preferred. This is why the range is clamped to the nearest bound rather than snapped to a canonical position.
+- **Some relations are impossible on durations alone**, and are reported as contradictions rather than forced: `during` needs a container at least as long as its content, `equals` needs matching durations. You get a named contradiction (`"RESULT" during "PILOT" can't hold — "PILOT" is 1 yr long and "RESULT" is 8 yr`), not a silent reshuffle.
 
-- **Bound the interval** to the event that actually causes the next thing (`title transferred, Nov 2022 – Feb 2023`) rather than to the state it opens.
-- **Don't link it.** Overlapping intervals just get authored dates and sit side by side. Links are for sequence; the dates carry everything else.
+Boundary contact counts as satisfying — whether two ends are exactly equal is not what this tool is for.
 
-`before` links are annotated on the canvas with their **slack** (`slack 2 yr 2 mo`). That label is usually the most argumentative thing on the diagram — a long slack on a causal edge is the claim that the effect took years to land.
+### `before` and `meets` still require disjoint intervals
+
+Both are defined against `from.e`. If you link two intervals that overlap in the dates you authored *with `before` or `meets`*, the solver will still **move `to` and everything downstream** until the overlap is gone, and your dates are lost.
+
+The difference since the five relations landed is that this is now a **wrong-relation error rather than an unsayable one**. A `RESULT` running 2022→2030 with `RESULT before SOLUTION` does not mean "the solution follows from the result"; it means "the solution cannot start until 2030." What you almost certainly meant was `SOLUTION during RESULT`, which now exists and moves nothing.
+
+The Import report flags exactly this: an overlapping pair linked with `before`/`meets`, naming the three relations you might have wanted instead.
+
+You can also still just **not link them**. Overlapping intervals sit side by side on their authored dates perfectly well. Links are for asserting relations you want enforced; the dates carry everything else.
+
+`before` links are annotated on the canvas with their **slack** (`slack 2 yr 2 mo`), usually the most argumentative thing on the diagram — a long slack on a causal edge is the claim that the effect took years to land. The three overlapping relations are labelled with the relation name instead, since their geometry alone doesn't say which one is being asserted.
+
+### Pending — relation sets (step two, not built)
+
+The five relations above are *definite*: a link asserts exactly one. The larger idea in Allen's algebra is a link holding a **set** of candidate relations (`{before, meets}` = "I know the order, not whether they touch"), with a composition table deriving what's possible transitively. Two people's partial knowledge then **intersects** into something tighter than either had — the formal version of "accuracy is a group activity."
+
+Deliberately not built. Full Allen consistency is NP-complete; path consistency is O(n³) and incomplete; and it collides with the dual-face design, since dragging asserts a definite configuration and would collapse the set. Decide that trade before building it.
 
 ## Dates
 
@@ -104,10 +127,13 @@ The two diagrams are meant to be read together: the graph is the argument about 
 The **Import** button now runs these checks for you and shows a report before anything loads (red = will not load, amber = loads with a caveat, green = clean). Authoring a file by hand outside the tool, check the same list:
 
 - every `links[].from` / `links[].to` matches an `intervals[].id`
-- no `rel` value other than `meets` or `before`
+- no `rel` value outside `before` / `meets` / `overlaps` / `during` / `equals`
 - `end` present wherever you do not want a one-year default
 - dates in `Mon D YYYY` form
-- **no linked pair overlaps** — then load it and compare every solved `s`/`e` against the dates you authored. Anything that moved is a link you got wrong, not a date the solver improved:
+- **no linked pair overlaps under `before` or `meets`** — if a pair genuinely overlaps, the relation should be `overlaps`, `during` or `equals`
+- `during` targets are long enough to contain their content, and `equals` pairs have matching durations — otherwise you get a contradiction rather than a placement
+
+Then load it and compare every solved `s`/`e` against the dates you authored. Anything that moved is a link you got wrong, not a date the solver improved:
 
   ```js
   importModel(m); solve();

@@ -149,34 +149,44 @@ td:first-child code{font-weight:600}
   </table>
   <p><strong>Durations</strong> (a length, not a date — used for fuzz, slack, and "lasts") display as spans like <code>6 mo</code> or <code>3 yr 2 mo</code>, never decimals. When typing a duration you can write <code>6 months</code>, <code>2 weeks</code>, <code>90 days</code>, or a bare number for years (<code>3</code>).</p>
 
-  <h2 id="s8">8 · Links — before &amp; meets</h2>
-  <p>Links are the typed relations between intervals. v0 has the two that do the most work:</p>
-  <ul>
-    <li><strong>before</strong> (loose) — A ends no later than B starts, but a gap is allowed. The gap is <strong>slack</strong>, labelled on the link. Drawn as a dashed arrow. Drag A later and it eventually pushes B; drag B earlier and it stops at A's wall.</li>
-    <li><strong>meets</strong> (rigid) — B starts exactly when A ends, welded. Drawn as a solid connector with a weld mark. Move one and the other follows as a block.</li>
-  </ul>
+  <h2 id="s8">8 · Links — the five relations</h2>
+  <p>Links are the typed relations between intervals. A link always reads <strong>source relation target</strong>.</p>
+  <table>
+    <tr><th>Relation</th><th>Means</th><th>Drawn as</th></tr>
+    <tr><td><strong>before</strong></td><td>A ends no later than B starts, gap allowed. The gap is <strong>slack</strong>, labelled on the link.</td><td>Dashed grey arrow</td></tr>
+    <tr><td><strong>meets</strong></td><td>B starts exactly when A ends. Welded — move one and the other follows as a block.</td><td>Solid dark connector with a weld mark</td></tr>
+    <tr><td><strong>overlaps</strong></td><td>They share a stretch. A starts first and ends first.</td><td>Teal connector, labelled</td></tr>
+    <tr><td><strong>during</strong></td><td><strong>A sits wholly inside B.</strong> Note the direction — A is the contained one.</td><td>Violet connector, labelled</td></tr>
+    <tr><td><strong>equals</strong></td><td>Identical extent.</td><td>Amber connector, labelled</td></tr>
+  </table>
+  <p><code>before</code> and <code>meets</code> join the two bars at the contact point they assert. The other three have no single contact point, so they join bar centres and carry the relation name on the curve — the geometry alone can't tell you which is being claimed.</p>
   <h3>Creating a link</h3>
   <ol>
-    <li>Click <strong>+ before →</strong> or <strong>+ meets ⊣⊢</strong>.</li>
-    <li>Click the <strong>source</strong> interval, then the <strong>target</strong>. Done.</li>
+    <li>Click <strong>+ before →</strong> or <strong>+ meets ⊣⊢</strong>, then the <strong>source</strong> interval and the <strong>target</strong>.</li>
+    <li>Select the link and pick any of the five in the panel to change it.</li>
   </ol>
-  <p>Or type it: <code>Pilot before Grant</code>, <code>Grant meets Scale-up</code>. Select a link to change its type, confidence, or provenance in the panel.</p>
-  <h3>Neither link can say <em>during</em></h3>
-  <p>Both relations are defined against where A <strong>ends</strong>. That means <strong>you cannot link two intervals that overlap</strong> — and if you try, nothing complains. The solver simply pushes B, and everything downstream of B, until the overlap is gone. The dates you typed are quietly replaced.</p>
-  <p>This bites hardest with long-running states. An interval "Building in community ownership, 2022→2030" with <code>before</code> pointing at "Units occupied" does not mean <em>the occupancy follows from the ownership</em> — it means <em>the occupancy cannot begin until 2030</em>.</p>
-  <p>Two ways out, both legitimate:</p>
+  <p>Or type it: <code>Pilot before Grant</code>, <code>Grant meets Scale-up</code>, <code>Audit during Receivership</code>, <code>Receivership contains Audit</code> (the same assertion, drawn the other way), <code>Pilot overlaps Rollout</code>, <code>Term A equals Term B</code>.</p>
+  <h3>Why "contains" isn't a sixth button</h3>
+  <p>Allen's algebra names thirteen relations, but six of them are just the other six reversed, and your links already have a direction. "A contains B" is stored as "B during A" — same claim, link drawn the other way. So five stored relations cover seven named ones. <strong>starts</strong> and <strong>finishes</strong> are the two not yet built.</p>
+  <h3>The solver never changes a duration</h3>
+  <p>It only ever <strong>slides</strong> the target interval. Two things follow, and both matter when you are reconstructing something from records:</p>
   <ul>
-    <li><strong>Bound the interval</strong> to the event that actually causes the next thing ("title transferred, Nov 2022 – Feb 2023") rather than to the open-ended state it begins.</li>
-    <li><strong>Don't link it.</strong> Overlapping intervals can just carry their own dates and sit side by side. Links are for sequence; dates carry everything else.</li>
+    <li><strong>If the relation already holds, nothing moves.</strong> Dates you researched are not replaced by dates the solver preferred.</li>
+    <li><strong>Some relations are impossible on durations alone</strong> and are reported rather than forced. A one-year interval cannot contain an eight-year one; <code>equals</code> needs matching durations. You get a named contradiction, not a silent reshuffle.</li>
   </ul>
-  <div class="warn">The <strong>Import</strong> report (§14) flags this before you load a file, and it is worth a glance whenever a bar lands somewhere you did not expect: it is almost always a link across an overlap, not a bad date.</div>
+  <h3>before and meets still need disjoint intervals</h3>
+  <p>Both are defined against where A <strong>ends</strong>, so linking two <em>overlapping</em> intervals with <code>before</code> or <code>meets</code> still pushes B — and everything downstream of B — until the overlap is gone.</p>
+  <p>The difference is that this is now a <strong>wrong-relation mistake, not an unsayable one</strong>. An interval "Building in community ownership, 2022→2030" with <code>before</code> pointing at "Units occupied" does not mean <em>the occupancy follows from the ownership</em> — it means <em>the occupancy cannot begin until 2030</em>. What you meant is <code>Units occupied during Building in community ownership</code>, which now exists and moves nothing.</p>
+  <div class="warn">The <strong>Import</strong> report (§14) flags an overlapping pair linked with <code>before</code>/<code>meets</code> and names the relations you might have wanted instead. Worth a glance whenever a bar lands somewhere you did not expect — it is still more often a wrong relation than a bad date.</div>
+  <div class="note"><strong>Not built, on purpose:</strong> a link holding a <em>set</em> of possible relations (<code>{before, meets}</code> — "I know the order, not whether they touch"), so that two people's partial knowledge intersects into something tighter than either had. That is the deeper idea in Allen's algebra and it is a real decision, not an oversight: full consistency checking is NP-complete, the usual approximation is incomplete, and it conflicts with dragging a bar — which asserts one definite arrangement and would collapse the set.</div>
 
   <h2 id="s9">9 · The solver &amp; contradictions</h2>
   <p>After every edit the tool re-solves: it propagates the links forward in time, moving floating intervals so the relations hold. Slack and "critical path" behaviour fall out of this automatically — you don't set them.</p>
-  <p>Two things it can't satisfy become <strong>contradictions</strong>, flagged in red (the link, the affected interval, and an issues list at the bottom of the panel):</p>
+  <p>Three things it can't satisfy become <strong>contradictions</strong>, flagged in red (the link, the affected interval, and an issues list at the bottom of the panel):</p>
   <ul>
     <li>A link would need to move a <strong>pinned</strong> interval — e.g. a task pushed past a hard deadline.</li>
     <li>A <strong>cycle</strong> of links that can never all be true (A before B before A).</li>
+    <li>A relation that is <strong>impossible on durations alone</strong> — a <code>during</code> whose container is shorter than its content, or an <code>equals</code> between intervals of different lengths. The message names both durations, because the fix is usually to correct one of them rather than to change the relation.</li>
   </ul>
   <div class="tip">Click any issue in the list to jump to the object involved. Contradictions are a feature: the tool is showing you exactly where the plan breaks or where two accounts disagree, instead of hiding it.</div>
 
@@ -187,6 +197,10 @@ td:first-child code{font-weight:600}
     <tr><td><code>new Kickoff</code></td><td>Create an interval named "Kickoff".</td></tr>
     <tr><td><code>Pilot before Grant</code></td><td>Add a loose <em>before</em> link (creating either interval if needed).</td></tr>
     <tr><td><code>Grant meets Scale-up</code></td><td>Add a rigid <em>meets</em> link.</td></tr>
+    <tr><td><code>Audit during Receivership</code></td><td>Put the Audit wholly inside the Receivership.</td></tr>
+    <tr><td><code>Receivership contains Audit</code></td><td>The same assertion, stored as <code>Audit during Receivership</code>.</td></tr>
+    <tr><td><code>Pilot overlaps Rollout</code></td><td>They share a stretch; Pilot starts and ends first.</td></tr>
+    <tr><td><code>Term A equals Term B</code></td><td>Identical extent.</td></tr>
     <tr><td><code>Report = Jan 2026 .. Jun 2026</code></td><td>Set an interval's start and end.</td></tr>
     <tr><td><code>Scale-up lasts 18 months</code></td><td>Set its end to start + that duration.</td></tr>
     <tr><td><code>Founding ~ 2016</code></td><td>Make it an instant around that date (with a little fuzz).</td></tr>
