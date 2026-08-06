@@ -261,6 +261,9 @@
       <label class="inline"><input type="radio" name="signscope" value="full"> Full (requires all 3 gates complete)</label>
     </div>
 
+    <div id="sign-attest" style="margin-top:14px"></div>
+    <label class="inline" style="display:block;margin-top:6px;"><input type="checkbox" id="sign-v03"> Issue as v0.3 (mentor + NDC only — <b>not</b> learner-attested)</label>
+
     <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
       <button onclick="signAndIssue()">Sign &amp; Write Badge to Portfolio</button>
       <button onclick="downloadCredential()" class="secondary">Download Credential JSON</button>
@@ -860,6 +863,8 @@ function buildCredentialObject(c, scope) {
       if (g.completedAt) gates[gate].completedAt = g.completedAt
       if (g.mentor)      gates[gate].mentor  = g.mentor
       if (g.student)     gates[gate].student = g.student
+      if (g.learnerJwt)  gates[gate].learnerJwt = g.learnerJwt   // v0.4 — learner's own signature
+      if (g.studentJwt)  gates[gate].studentJwt = g.studentJwt   // v0.4 — student's signature (TeachOne)
     }
   }
 
@@ -880,7 +885,101 @@ function buildCredentialObject(c, scope) {
     cred.gatesComplete = done
     cred.gatesOpen     = GATES.filter(g => !done.includes(g))
   }
+  const fullyAttested = !partial && done.length === 3 && attestTargets().every(t => !!t.jwt)
+  cred.version = fullyAttested ? '0.4' : '0.3'
+  if (fullyAttested) cred.learnerAttested = true
   return cred
+}
+
+// ─── Learner / student attestations (v0.4) ──────────────────────────────────
+function buildSignLink(pr) {
+  const u = new URL('sodoto-sign.html', location.href)
+  Object.entries(pr).forEach(([k, v]) => { if (v != null && v !== '') u.searchParams.set(k, v) })
+  return u.href
+}
+// One attestation target per completed gate (learner), plus the student at TeachOne.
+function attestTargets() {
+  const c = getContract(); if (!c) return []
+  const learner = personBySlug(c.learnerSlug), skill = skillBySlug(c.skillSlug), issuer = ISSUERS[c.issuerId]
+  const out = []
+  for (const gate of GATES) {
+    const g = c.gates[gate]
+    if (!g || !g.completedAt) continue
+    const done = g.attempts.find(a => a.outcome === 'complete') || {}
+    const m = g.mentor || done.mentor || {}
+    out.push({
+      gate, role: 'learner', label: `${GATE_LABELS[gate]} · ${learner.name}`, did: learner.did, jwt: g.learnerJwt || '',
+      want: { contractId: c.contractId, gate, skill: c.skillSlug },
+      linkParams: { contractId: c.contractId, gate, skill: c.skillSlug, skillName: skill.name, mentor: m.did, mentorName: m.name,
+                    issuer: issuer.did, date: g.completedAt, assertion: done.learnerAssertion, outcome: 'complete', attempt: '1', role: 'learner', learner: learner.did }
+    })
+    if (gate === 'TeachOne' && g.student) {
+      out.push({
+        gate: 'TeachOne', role: 'student', label: `Teach One · student ${g.student.name}`, did: g.student.did, jwt: g.studentJwt || '',
+        want: { contractId: c.contractId, role: 'student' },
+        linkParams: { contractId: c.contractId, gate: 'DoOne', skill: c.skillSlug, skillName: skill.name, mentorName: learner.name,
+                      date: g.completedAt, assertion: 'has-done', outcome: 'complete', attempt: '1', role: 'student', learner: g.student.did }
+      })
+    }
+  }
+  return out
+}
+function renderAttest() {
+  const box = el('sign-attest'); if (!box) return
+  const c = getContract(); const tg = attestTargets(); window._attestTargets = tg
+  if (!c || !tg.length) { box.innerHTML = ''; return }
+  const rows = tg.map((t, i) => `
+    <div style="border:1px solid #d9d3c7;border-radius:6px;padding:8px 10px;margin-bottom:6px;background:#fff">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span style="font-size:13px;font-weight:600">${t.label}</span>
+        <span style="font-size:11px;font-weight:700;color:${t.jwt ? '#2a5c3f' : '#8a3d0f'}">${t.jwt ? 'signed ✓' : 'not signed'}</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <button type="button" class="secondary" style="font-size:11px" onclick="showSignLink(${i})">Make signing link ↗</button>
+        <input id="attest-paste-${i}" placeholder="paste the token they return" style="flex:1;min-width:150px;font-family:'SF Mono',monospace;font-size:10px">
+        <button type="button" class="secondary" style="font-size:11px" onclick="attachAttest(${i})">Attach</button>
+      </div>
+      <input id="attest-link-${i}" readonly style="display:none;width:100%;margin-top:6px;font-family:'SF Mono',monospace;font-size:10px">
+    </div>`).join('')
+  box.innerHTML = `<div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8a8170;font-weight:700;margin-bottom:4px">Learner attestations (v0.4)</div>
+    <div class="hint" style="margin-bottom:8px">Each completed gate needs the learner's own signature. Make a link, send it, paste back the token they return.</div>${rows}`
+}
+function showSignLink(i) {
+  const t = window._attestTargets[i]; const inp = el('attest-link-' + i)
+  inp.value = buildSignLink(t.linkParams); inp.style.display = 'block'; inp.select()
+  if (navigator.clipboard) navigator.clipboard.writeText(inp.value).catch(() => {})
+  el('sign-log').style.display = 'block'; logTo('sign-log','ok',`Signing link ready for ${t.label} (copied). Send it to them.`)
+}
+async function attachAttest(i) {
+  const t = window._attestTargets[i]; const jwt = el('attest-paste-' + i).value.trim()
+  el('sign-log').style.display = 'block'
+  if (!jwt) { logTo('sign-log','err','Paste the token first.'); return }
+  const r = await verifyAttestationJwt(jwt, t.did, t.want)
+  if (!r.ok) { logTo('sign-log','err',`Rejected: ${r.why}`); return }
+  const c = getContract()
+  if (t.role === 'student') c.gates.TeachOne.studentJwt = jwt
+  else c.gates[t.gate].learnerJwt = jwt
+  saveState(); renderAttest(); renderSignPanel()
+  logTo('sign-log','ok',`Attached ${t.label}.`)
+}
+// Verify a learner/student attestation the same way the badge plugin does, and
+// confirm its claims match this contract/gate before accepting it.
+async function verifyAttestationJwt(jwt, expectedDid, want) {
+  try {
+    const parts = jwt.split('.'); if (parts.length !== 3) return { ok: false, why: 'malformed token' }
+    const payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')))
+    if (payload.iss !== expectedDid) return { ok: false, why: 'signed by a different identity than the one registered' }
+    for (const k of Object.keys(want)) {
+      if (want[k] != null && String(payload[k]) !== String(want[k])) return { ok: false, why: `${k} mismatch (${payload[k]} ≠ ${want[k]})` }
+    }
+    const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+    const b58decode = s => { let n = 0n; for (const ch of s) n = n * 58n + BigInt(B58.indexOf(ch)); const h = n.toString(16).padStart(66,'0'); return new Uint8Array(h.match(/.{2}/g).map(b => parseInt(b,16))) }
+    const pub = b58decode(expectedDid.replace('did:key:z','')).slice(2)
+    const key = await crypto.subtle.importKey('raw', pub, { name: 'Ed25519' }, false, ['verify'])
+    const sig = Uint8Array.from(atob(parts[2].replace(/-/g,'+').replace(/_/g,'/')), ch => ch.charCodeAt(0))
+    const ok = await crypto.subtle.verify({ name: 'Ed25519' }, key, sig, new TextEncoder().encode(parts[0] + '.' + parts[1]))
+    return ok ? { ok: true, payload } : { ok: false, why: 'signature invalid' }
+  } catch (e) { return { ok: false, why: e.message } }
 }
 
 async function signAndIssue() {
@@ -902,8 +1001,19 @@ async function signAndIssue() {
     logTo('sign-log','err','No gates complete yet — record at least one complete gate first.'); return
   }
 
+  // v0.4: a full credential requires the learner's signature on every completed
+  // gate (and the student's at Teach One), unless explicitly issued as v0.3.
+  const v03 = el('sign-v03') && el('sign-v03').checked
+  if (scope === 'full' && !v03) {
+    const missing = attestTargets().filter(t => !t.jwt).map(t => t.label)
+    if (missing.length) {
+      logTo('sign-log','err','Full v0.4 needs the learner\'s signature on: ' + missing.join('; ') + '. Collect them above, or tick "Issue as v0.3 (not learner-attested)".'); return
+    }
+  }
+
   logTo('sign-log','dim','Building credential…')
   const cred = buildCredentialObject(c, scope)
+  if (v03) { cred.version = '0.3'; delete cred.learnerAttested }
 
   logTo('sign-log','dim','Computing contract hash…')
   const contractHash = await sha256hex({ contractId: c.contractId, learnerDid: cred.holderDid, issuerDid: cred.issuerDid, skill: cred.skill, gates: c.gates })
@@ -922,6 +1032,8 @@ async function signAndIssue() {
         sodoto: {
           skill:       skill.name,
           skillSlug:   c.skillSlug,
+          version:     cred.version,
+          learnerAttested: !!cred.learnerAttested,
           gates:       cred.gates,
           contractId:  c.contractId,
           contractHash,
@@ -1310,6 +1422,7 @@ function renderSignPanel() {
 
   const scope = document.querySelector('input[name=signscope]:checked')?.value || 'partial'
   el('sign-preview').textContent = JSON.stringify(buildCredentialObject(c, scope), null, 2)
+  renderAttest()
   el('sign-log').style.display = 'none'; el('sign-log').innerHTML = ''
 }
 
