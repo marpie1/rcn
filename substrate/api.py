@@ -539,6 +539,9 @@ lens, in graph-tool's native schema.</p>
 six-node reference. <b>Same query, same renderer — only the data grows.</b></p>
 <h1>Rendered</h1>
 <ul>
+<li><a href="/tools/graph-tool-v22.html?url=%2Fprojection%2Fschema"><b>graph-tool ← the schema itself</b></a> — what is actually in the database, drawn from the database</li>
+<li><a href="/tools/graph-tool-v22.html?url=%2Fprojection%2Fstructure%3Fdb%3Daspects16">graph-tool ← structure</a> — the ERD reading of the 16 drawings</li>
+<li><a href="/tools/graph-tool-v22.html?url=%2Fprojection%2Fcausal%3Fdb%3Daspects16">graph-tool ← causal</a> — the CLD reading of the 16 drawings</li>
 <li><a href="/tools/graph-tool-v22.html?url=/projection/causal">graph-tool ← causal</a> — n=6 reference</li>
 <li><a href="/tools/graph-tool-v22.html?url=%2Fprojection%2Fcausal%3Fdb%3Dcomposite26">graph-tool ← causal</a> — 26-node composite</li>
 <li><a href="/one-thing-many-views.html">the harness ← gold</a></li>
