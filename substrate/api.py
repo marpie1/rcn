@@ -178,6 +178,113 @@ PROJECTIONS = {
 }
 
 
+# ── the SCHEMA lens — the substrate describing itself ─────────────────────
+# Derived from the live database rather than drawn, so it cannot go stale. It
+# answers "what have we actually put in here" in the one medium this project
+# trusts for that question: a picture a group can point at.
+#
+# Per-concept labels (:Action, :Motivation, …) are deliberately folded away.
+# They are the SECOND label on a :Concept, present so the Neo4j Browser reads
+# well — showing 24 of them as node types would drown the five that are real.
+SCHEMA_KINDS = ['Concept', 'Family', 'LinkFamily', 'Aspect', 'Instance']
+SCHEMA_PLACE = {                       # hand-placed: five boxes read better than a ring
+    'Concept':    (440, 300), 'Family':  (110, 150), 'LinkFamily': (110, 450),
+    'Aspect':     (780, 150), 'Instance': (780, 450),
+}
+SCHEMA_COLOR = {
+    'Concept':    ('#dbeafe', '#1d4ed8'), 'Family':   ('#dcfce7', '#15803d'),
+    'LinkFamily': ('#fef3c7', '#b45309'), 'Aspect':   ('#f3e8ff', '#7c3aed'),
+    'Instance':   ('#ffe4e6', '#be123c'),
+}
+
+
+def _wrap(keys, width):
+    """Property names, wrapped — one long line makes the node a letterbox."""
+    out, line = [], ''
+    for k in keys:
+        if line and len(line) + len(k) + 3 > width:
+            out.append(line); line = k
+        else:
+            line = f"{line} · {k}" if line else k
+    if line:
+        out.append(line)
+    return out or ['—']
+
+
+def schema_projection(database=None):
+    present = run("CALL db.labels() YIELD label RETURN collect(label) AS l",
+                  database=database)[0]['l']
+    nodes, edges = [], []
+    for kind in SCHEMA_KINDS:
+        if kind not in present:
+            continue
+        n = run(f"MATCH (x:{kind}) RETURN count(x) AS c", database=database)[0]['c']
+        if not n:
+            continue
+        keys = run(f"MATCH (x:{kind}) UNWIND keys(x) AS k "
+                   f"RETURN collect(DISTINCT k) AS ks", database=database)[0]['ks']
+        keys = [k for k in sorted(keys)]
+        fill, border = SCHEMA_COLOR[kind]
+        x, y = SCHEMA_PLACE[kind]
+        nodes.append({
+            'id': kind.lower(),
+            'label': f":{kind}  ×{n}\n" + "\n".join(_wrap(keys, 34)),
+            'x': x, 'y': y, 'w': 260,
+            'h': 46 + 15 * len(_wrap(keys, 34)),
+            'shape': 'rounded', 'color': fill, 'borderColor': border,
+            'borderWidth': 2.5, 'fontSize': 11, 'fontColor': '#1a1a1a',
+            'props': {'count': n, 'properties': keys}})
+    ids = {n['id'] for n in nodes}
+    pats = run("""MATCH (a)-[r]->(b)
+                  RETURN labels(a) AS al, type(r) AS rel, labels(b) AS bl,
+                         count(*) AS n, collect(DISTINCT keys(r))[0] AS rkeys
+                  ORDER BY n DESC""", database=database)
+    # SUM per pattern. Grouping on labels(a) makes [Concept,Org] and
+    # [Concept,Person] different rows, so taking the first gave ":REL (3)"
+    # for 69 relationships — a count that looks plausible and is wrong.
+    agg = {}
+    for p in pats:
+        a = next((k for k in SCHEMA_KINDS if k in p['al']), None)
+        b = next((k for k in SCHEMA_KINDS if k in p['bl']), None)
+        if not a or not b or a.lower() not in ids or b.lower() not in ids:
+            continue
+        e = agg.setdefault((a, p['rel'], b), {'n': 0, 'keys': set()})
+        e['n'] += p['n']
+        e['keys'].update(p['rkeys'] or [])
+    for (a, rel, b), v in sorted(agg.items(), key=lambda kv: -kv[1]['n']):
+        rk = " · ".join(sorted(v['keys']))
+        edges.append({
+            'id': f"s_{a}_{rel}_{b}".lower(),
+            'src': a.lower(), 'tgt': b.lower(),
+            'label': f":{rel}  ({v['n']})" + (f"\n{rk}" if rk else ''),
+            'polarity': 'none', 'width': 2, 'fontSize': 10,
+            'curved': a == b,
+            'props': {'relType': rel, 'count': v['n'], 'properties': sorted(v['keys'])}})
+
+    # An Aspect is NOT joined by a relationship — a drawing is named as a string
+    # inside c.sources, which is what makes a subgraph a filter rather than a
+    # stored thing. Drawing it as a dashed line says that out loud; leaving
+    # Aspect as an unconnected island would look like an oversight.
+    for kind, prop, colour, note in [
+            ('aspect', 'c.sources', '#7c3aed',
+             'WHERE $aspect IN c.sources IS the subgraph — no relationship needed'),
+            ('linkfamily', 'r.linkFamily', '#b45309',
+             'the shared relation vocabulary, generated from tools/edge-families.js')]:
+        if kind in ids and 'concept' in ids:
+            edges.append({
+                'id': f's_{kind}_by_name', 'src': kind, 'tgt': 'concept',
+                'label': f'named in {prop}\n(a string, not a relationship)',
+                'polarity': 'none', 'width': 1.5, 'fontSize': 10, 'dash': 'dashed',
+                'color': colour, 'fontColor': colour, 'curved': True,
+                'props': {'note': note}})
+    return {'version': '1.0',
+            'modelName': f"RCN Substrate schema — {database or DATABASE}",
+            'modelNote': 'Generated from the live database by /projection/schema. '
+                         'Per-concept labels (:Action, :Motivation …) are the second '
+                         'label on :Concept and are folded away here.',
+            'nodes': nodes, 'edges': edges, 'lines': []}
+
+
 def project(name, database=None):
     """`database` selects WHICH graph, never WHICH query. The n=6 reference and
     the 26-node composite are read by byte-identical Cypher — that is the Stage
@@ -332,6 +439,11 @@ class Handler(SimpleHTTPRequestHandler):
                     'labels': run(EDGE_VOCAB, database=db or ASPECT_DB)})
             except Exception as e:
                 return self._send(503, {'error': str(e)})
+        if path == '/projection/schema':
+            try:
+                return self._send(200, schema_projection(db or ASPECT_DB))
+            except Exception as e:
+                return self._send(503, {'error': str(e)})
         if path == '/projection/subgraphs':
             try:
                 return self._send(200, {'database': db or ASPECT_DB,
@@ -418,6 +530,7 @@ a{color:#0f766e}h1{font-size:1.5rem}li{margin:.5rem 0}</style>
 lens, in graph-tool's native schema.</p>
 <ul>
 <li><a href="/projection/causal">/projection/causal</a> — polarity, magnitude, relation family</li>
+<li><a href="/projection/schema">/projection/schema</a> &mdash; <b>the substrate describing itself</b>: node kinds, their properties, the relationships between them, with live counts</li>
 <li><a href="/projection/structure">/projection/structure</a> — the entity-relationship reading: part-of, is-a, acts-in, depends-on. No signs, because a structural relation does not have one</li>
 <li><a href="/projection/gold">/projection/gold</a> — provenance: who drew what, and where two hands met</li>
 <li><a href="/projection">/projection</a> — what is available, and which databases exist</li>

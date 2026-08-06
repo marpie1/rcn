@@ -129,6 +129,8 @@ MATCH (c:Concept) WHERE 'org' IN c.sources
 
 | endpoint | what |
 |---|---|
+| `GET /projection/schema` | **the substrate describing itself** — node kinds, their properties, and the relationships between them, with live counts. Derived from the database, so it cannot go stale |
+| `GET /projection/structure` | the ERD reading: part-of, is-a, acts-in, depends-on. No signs |
 | `GET /projection/subgraphs` | the 16, with concept and edge counts |
 | `GET /projection/subgraph/<name>` | one drawing, in graph-tool's native schema |
 | `PUT /subgraph/<name>` | replace that drawing — **and only that drawing** |
