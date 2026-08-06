@@ -1,0 +1,174 @@
+#!/usr/bin/env python3
+"""sodoto_projector.py — project SODOTO badge truth into Neo4j (a lens, not a source).
+
+Reads sodoto-badge credentials out of FedWiki portfolio pages and upserts the
+teaching graph — Person, Organization, Skill, Credential, GateAttempt, and the
+teaching edges (TAUGHT / ATTESTED / HOLDS / ISSUED / CERTIFIES). The badge on the
+portfolio stays the source of truth; Neo4j is a queryable lens over it. Issuing a
+badge never depends on this running.
+
+Idempotent on contractId — safe to re-run (MERGE everywhere; re-runs are no-ops).
+No (:Debt) node: debt/value is the separate currency layer (CfA-dSC), not SODOTO
+provenance. See project_signed_substrate_no_chain / the SODOTO reference doc.
+
+Usage:
+    python3 substrate/sodoto_projector.py             # project the default wiki
+    python3 substrate/sodoto_projector.py --pages DIR # a specific pages folder
+    python3 substrate/sodoto_projector.py --check      # dry run — what would project (no Neo4j needed)
+    python3 substrate/sodoto_projector.py --summary    # project, then print a lineage summary
+
+Credentials for Neo4j come from ~/rcn/.env.neo4j via db.py (stdlib, Desktop only).
+"""
+import os, sys, json, glob, argparse
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+DEFAULT_PAGES = os.path.expanduser(os.environ.get('WIKI_PAGES', '~/.wiki/localhost/pages'))
+GATES = ['SeeOne', 'DoOne', 'TeachOne']
+
+# One idempotent statement per credential. $cred is a flat map; $gates a list of
+# completed-gate maps. Re-running MERGEs the same nodes/edges — no duplicates.
+CYPHER = """
+MERGE (org:Organization {did: $cred.issuerDid})
+  SET org.name = coalesce($cred.issuer, org.name)
+MERGE (learner:Person {did: $cred.holderDid})
+  SET learner.name = coalesce($cred.holderName, learner.name)
+MERGE (skill:Skill {name: $cred.skill})
+MERGE (c:Credential {contractId: $cred.contractId})
+  SET c.skill = $cred.skill, c.issuedAt = $cred.issuedAt, c.version = $cred.version,
+      c.issuerDid = $cred.issuerDid, c.holderDid = $cred.holderDid,
+      c.contractHash = $cred.contractHash, c.partial = $cred.partial,
+      c.learnerAttested = $cred.learnerAttested
+MERGE (org)-[:ISSUED]->(c)
+MERGE (learner)-[:HOLDS]->(c)
+MERGE (c)-[:CERTIFIES]->(skill)
+WITH c, learner
+UNWIND $gates AS g
+  MERGE (m:Person {did: g.mentorDid})
+    SET m.name = coalesce(g.mentorName, m.name)
+  MERGE (m)-[att:ATTESTED {contractId: $cred.contractId, gate: g.gate}]->(learner)
+    SET att.completedAt = g.completedAt
+  MERGE (m)-[:TAUGHT {contractId: $cred.contractId, skill: $cred.skill}]->(learner)
+  MERGE (ga:GateAttempt {contractId: $cred.contractId, gate: g.gate})
+    SET ga.completedAt = g.completedAt, ga.attempts = g.attempts,
+        ga.learnerAttested = g.learnerAttested
+  MERGE (c)-[:HAS_GATE]->(ga)
+  MERGE (learner)-[:ASSERTED {gate: g.gate}]->(ga)
+  MERGE (m)-[:WITNESSED {gate: g.gate}]->(ga)
+  FOREACH (_ IN CASE WHEN g.studentDid IS NOT NULL THEN [1] ELSE [] END |
+    MERGE (st:Person {did: g.studentDid})
+      SET st.name = coalesce(g.studentName, st.name)
+    MERGE (learner)-[:TAUGHT {contractId: $cred.contractId, skill: $cred.skill}]->(st)
+    MERGE (st)-[:ASSERTED {gate: g.gate}]->(ga)
+  )
+"""
+
+
+def collect_credentials(pages_dir):
+    """Every sodoto-badge credential across the pages folder, as (source, cred)."""
+    out = []
+    for path in sorted(glob.glob(os.path.join(pages_dir, '*'))):
+        if os.path.isdir(path):
+            continue
+        try:
+            with open(path, encoding='utf-8') as fh:
+                page = json.load(fh)
+        except (ValueError, OSError):
+            continue
+        for item in page.get('story', []):
+            if item.get('type') == 'sodoto-badge' and item.get('credential'):
+                out.append((os.path.basename(path), item['credential']))
+    return out
+
+
+def projectable(cred):
+    return bool(cred.get('contractId') and cred.get('issuerDid') and cred.get('holderDid'))
+
+
+def to_params(cred):
+    gates = []
+    for gate in GATES:
+        g = (cred.get('gates') or {}).get(gate)
+        if not g or not g.get('completedAt'):
+            continue
+        mentor = g.get('mentor') or {}
+        student = g.get('student') or {}
+        gates.append({
+            'gate': gate,
+            'completedAt': g.get('completedAt'),
+            'mentorDid': mentor.get('did'),
+            'mentorName': mentor.get('name'),
+            'studentDid': student.get('did') or None,
+            'studentName': student.get('name'),
+            'attempts': len(g.get('attempts') or []),
+            'learnerAttested': bool(g.get('learnerJwt')),
+        })
+    cparams = {
+        'issuerDid': cred.get('issuerDid'), 'issuer': cred.get('issuer'),
+        'holderDid': cred.get('holderDid'), 'holderName': cred.get('holderName'),
+        'skill': cred.get('skill'), 'contractId': cred.get('contractId'),
+        'issuedAt': cred.get('issuedAt'), 'contractHash': cred.get('contractHash'),
+        'version': cred.get('version') or '0.3',
+        'partial': bool(cred.get('partial')),
+        'learnerAttested': bool(cred.get('learnerAttested')),
+    }
+    return {'cred': cparams, 'gates': gates}
+
+
+def print_summary(run):
+    print("\n— teaching graph —")
+    counts = [
+        ("credentials", "MATCH (c:Credential) RETURN count(c) AS c"),
+        ("people",      "MATCH (p:Person) RETURN count(p) AS c"),
+        ("skills",      "MATCH (s:Skill) RETURN count(s) AS c"),
+        ("TAUGHT edges","MATCH ()-[t:TAUGHT]->() RETURN count(t) AS c"),
+    ]
+    for label, q in counts:
+        print(f"  {label:<14} {run(q)[0]['c']}")
+    print("  most active mentors:")
+    rows = run("MATCH (m:Person)-[:TAUGHT]->(l:Person) "
+               "RETURN m.name AS mentor, count(DISTINCT l) AS learners "
+               "ORDER BY learners DESC, mentor LIMIT 5")
+    for r in rows:
+        print(f"    {r['learners']:>2}  {r.get('mentor') or '(unnamed)'}")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument('--pages', default=DEFAULT_PAGES, help='FedWiki pages folder to read')
+    ap.add_argument('--check', action='store_true', help='dry run: list what would project (no Neo4j)')
+    ap.add_argument('--summary', action='store_true', help='after projecting, print a lineage summary')
+    args = ap.parse_args()
+
+    if not os.path.isdir(args.pages):
+        sys.exit(f"pages folder not found: {args.pages}")
+
+    found = collect_credentials(args.pages)
+    good = [(src, c) for src, c in found if projectable(c)]
+    skipped = len(found) - len(good)
+    print(f"found {len(found)} badge(s) in {args.pages} — {len(good)} projectable, {skipped} skipped")
+
+    if args.check:
+        for _src, c in good:
+            gates = [g for g in GATES if ((c.get('gates') or {}).get(g) or {}).get('completedAt')]
+            who = c.get('holderName') or (c.get('holderDid') or '')[:16]
+            print(f"  {c.get('contractId'):<34} {(c.get('skill') or '')[:26]:<26} "
+                  f"{who:<18} gates={','.join(gates) or '-':<20} v{c.get('version') or '0.3'}")
+        return
+
+    from db import run  # imported here so --check needs no Neo4j / .env.neo4j
+    projected = 0
+    for _src, c in good:
+        try:
+            run(CYPHER, to_params(c))
+            projected += 1
+        except Exception as exc:  # noqa: BLE001 — report and continue over the batch
+            print(f"  ! {c.get('contractId')}: {exc}")
+    print(f"projected {projected} credential(s) into Neo4j (idempotent).")
+
+    if args.summary:
+        print_summary(run)
+
+
+if __name__ == '__main__':
+    main()
