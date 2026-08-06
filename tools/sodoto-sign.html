@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Your Gate — SODOTO</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #f4f2ec; color: #1a1208;
+         line-height: 1.55; padding: 20px 18px 64px; max-width: 560px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  .sub { color: #6b6355; font-size: 15px; margin-bottom: 22px; }
+  p { margin-bottom: 14px; font-size: 16px; }
+  .big-btn { display: block; width: 100%; font: inherit; font-size: 18px; font-weight: 700;
+             padding: 16px; border: none; border-radius: 12px; background: #2a5c3f; color: #fff; cursor: pointer; margin: 8px 0 4px; }
+  .big-btn:disabled { background: #b9c4bc; cursor: not-allowed; }
+  .big-btn.secondary { background: #fff; color: #2a5c3f; border: 2px solid #2a5c3f; }
+  .card { background: #fff; border: 1px solid #ddd6c9; border-radius: 12px; padding: 18px; margin: 14px 0; }
+  .card h2 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: #8a8170; margin-bottom: 10px; }
+  .claim { font-size: 20px; font-weight: 700; line-height: 1.35; margin-bottom: 10px; }
+  .claim .skill { color: #2a5c3f; }
+  .detail { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; padding: 7px 0; border-bottom: 1px solid #f0ece2; }
+  .detail:last-child { border-bottom: none; }
+  .detail .k { color: #8a8170; }
+  .detail .v { font-weight: 600; text-align: right; }
+  .mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12px; word-break: break-all;
+          background: #f4f2ec; border: 1px solid #e3ddd0; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+  .row { display: flex; gap: 8px; }
+  .row button { flex: 1; font: inherit; font-size: 14px; font-weight: 600; padding: 11px; border: 1.5px solid #2a5c3f;
+                background: #fff; color: #2a5c3f; border-radius: 9px; cursor: pointer; }
+  .reassure { background: #eaf3ec; border-left: 4px solid #2a5c3f; border-radius: 0 10px 10px 0; padding: 12px 14px; font-size: 14px; margin: 14px 0; }
+  .reassure b { color: #204630; }
+  .warn { background: #fdf1e8; border-left: 4px solid #c06018; border-radius: 0 10px 10px 0; padding: 12px 14px; font-size: 14px; margin: 14px 0; }
+  .warn b { color: #8a3d0f; }
+  .err { background: #fdecec; border: 1px solid #e0a3a3; color: #7a1a1a; border-radius: 10px; padding: 12px 14px; font-size: 15px; margin: 12px 0; }
+  .ok-badge { color: #2a5c3f; font-weight: 700; font-size: 15px; }
+  .hidden { display: none; }
+  .foot { color: #9a917f; font-size: 12px; text-align: center; margin-top: 28px; }
+</style>
+</head>
+<body>
+
+<h1>Sign your gate</h1>
+<div class="sub">Put your name on what you did — proof only you can give.</div>
+
+<!-- no identity on this device -->
+<div id="stage-noid" class="hidden">
+  <div class="err">You don't have a SODOTO identity on this device yet. Create one first, then open this link again.</div>
+  <a id="onboard-link" class="big-btn" style="text-decoration:none;text-align:center">Create my identity</a>
+</div>
+
+<!-- nothing to sign -->
+<div id="stage-empty" class="hidden">
+  <div class="err">This link is missing the gate details. Ask your coordinator to send you a fresh signing link.</div>
+</div>
+
+<!-- review + sign -->
+<div id="stage-review" class="hidden">
+  <div id="mismatch" class="warn hidden"></div>
+  <div class="card">
+    <div class="claim" id="claim"></div>
+    <p id="claim-desc" style="font-size:15px;color:#4a4234;margin:0 0 14px"></p>
+    <div id="details"></div>
+  </div>
+  <div class="reassure"><b>You are signing as yourself.</b> Your key never leaves this device — only the finished signature is shared.</div>
+  <button class="big-btn" id="btn-sign">Yes — this is true. Sign it.</button>
+  <div id="sign-err"></div>
+</div>
+
+<!-- signed -->
+<div id="stage-signed" class="hidden">
+  <div class="card" style="text-align:center">
+    <div style="font-size:40px;line-height:1;margin-bottom:6px">✓</div>
+    <div class="ok-badge" id="verify-line">Signed — signature valid</div>
+  </div>
+  <div class="card">
+    <h2>Your signed attestation — give this to your coordinator</h2>
+    <div class="mono" id="jwt-out"></div>
+    <div class="row">
+      <button id="copy-jwt">Copy</button>
+      <button id="download-jwt">Download</button>
+    </div>
+  </div>
+</div>
+
+<div class="foot">SODOTO · ReLocalize Creativity Network</div>
+
+<script>
+"use strict";
+const LS_KEY = 'sodoto-identity';
+
+// ---- encoding helpers ----
+function hexToBytes(h){ const u=new Uint8Array(h.length/2); for(let i=0;i<u.length;i++) u[i]=parseInt(h.substr(i*2,2),16); return u; }
+function b64url(bytes){ let s=''; for(const b of bytes) s+=String.fromCharCode(b); return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function utf8(str){ return new TextEncoder().encode(str); }
+
+// reconstruct the private signing key from the 32-byte seed alone (RFC 8410 PKCS8)
+async function privFromSeed(seedHex){
+  const seed = hexToBytes(seedHex);
+  const pkcs8 = new Uint8Array([0x30,0x2e,0x02,0x01,0x00,0x30,0x05,0x06,0x03,0x2b,0x65,0x70,0x04,0x22,0x04,0x20, ...seed]);
+  return crypto.subtle.importKey('pkcs8', pkcs8, { name:'Ed25519' }, false, ['sign']);
+}
+
+// sign a detached EdDSA JWT (header.payload.signature) — iss = the signer's DID
+async function signJWT(seedHex, payload){
+  const header = { alg:'EdDSA', typ:'JWT' };
+  const signingInput = b64url(utf8(JSON.stringify(header))) + '.' + b64url(utf8(JSON.stringify(payload)));
+  const priv = await privFromSeed(seedHex);
+  const sig = new Uint8Array(await crypto.subtle.sign({ name:'Ed25519' }, priv, utf8(signingInput)));
+  return signingInput + '.' + b64url(sig);
+}
+
+// self-verify exactly the way the sodoto-badge plugin does (decode iss DID -> pubkey)
+async function selfVerify(jwt, did){
+  const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  function b58decode(s){ let n=0n; for(const c of s) n=n*58n+BigInt(B58.indexOf(c)); const h=n.toString(16).padStart(66,'0'); return new Uint8Array(h.match(/.{2}/g).map(b=>parseInt(b,16))); }
+  const parts = jwt.split('.');
+  const pub = b58decode(did.replace('did:key:z','')).slice(2);
+  const key = await crypto.subtle.importKey('raw', pub, { name:'Ed25519' }, false, ['verify']);
+  const sig = Uint8Array.from(atob(parts[2].replace(/-/g,'+').replace(/_/g,'/')), c=>c.charCodeAt(0));
+  return crypto.subtle.verify({ name:'Ed25519' }, key, sig, utf8(parts[0]+'.'+parts[1]));
+}
+
+// ---- context ----
+const q = new URLSearchParams(location.search);
+const p = {
+  contractId: q.get('contractId') || '', gate: q.get('gate') || '',
+  skill: q.get('skill') || '', skillName: q.get('skillName') || q.get('skill') || '',
+  mentor: q.get('mentor') || '', mentorName: q.get('mentorName') || '',
+  issuer: q.get('issuer') || '', date: q.get('date') || '',
+  assertion: q.get('assertion') || '', outcome: q.get('outcome') || 'complete',
+  attempt: q.get('attempt') || '1', role: q.get('role') || 'learner',
+  learner: q.get('learner') || ''
+};
+let identity = null, signedJWT = '';
+
+function $(id){ return document.getElementById(id); }
+function show(id){ ['stage-noid','stage-empty','stage-review','stage-signed'].forEach(s=>$(s).classList.toggle('hidden', s!==id)); window.scrollTo(0,0); }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+const GATE_LABEL = { SeeOne:'See One', DoOne:'Do One', TeachOne:'Teach One' };
+function claimText(){
+  const g = GATE_LABEL[p.gate] || p.gate || 'gate';
+  return `You're signing your <span class="skill">${esc(g)}</span> of <span class="skill">${esc(p.skillName)}</span>.`;
+}
+function claimDesc(){
+  const who = p.mentorName ? esc(p.mentorName) : 'your mentor';
+  const on  = p.date ? ' on ' + esc(p.date) : '';
+  if (p.role === 'student')  return `You did this skill${on}, taught by ${who}. Signing confirms it really happened.`;
+  if (p.gate === 'SeeOne')   return `You watched ${who} do this${on}, and you understood it. Signing confirms that.`;
+  if (p.gate === 'DoOne')    return `You performed this skill yourself${on}, witnessed by ${who}. Signing confirms it.`;
+  if (p.gate === 'TeachOne') return `You taught this skill to a new student${on}, witnessed by ${who}. Signing confirms it.`;
+  return `Signing confirms this is true, in your own name.`;
+}
+function renderDetails(){
+  const rows = [
+    ['Skill', p.skillName], ['Gate', GATE_LABEL[p.gate] || p.gate],
+    p.attempt && p.attempt !== '1' ? ['Attempt', p.attempt] : null,
+    ['Witnessed by', p.mentorName || (p.mentor ? p.mentor.slice(0,20)+'…' : '—')],
+    ['Date', p.date || '—'], ['Outcome', p.outcome]
+  ].filter(Boolean);
+  $('details').innerHTML = rows.map(r =>
+    `<div class="detail"><span class="k">${esc(r[0])}</span><span class="v">${esc(r[1])}</span></div>`).join('');
+}
+
+function loadIdentity(){ try { const raw = localStorage.getItem(LS_KEY); if (raw) identity = JSON.parse(raw); } catch(e){} }
+
+async function onSign(){
+  $('sign-err').innerHTML = '';
+  const btn = $('btn-sign'); btn.disabled = true; btn.textContent = 'Signing…';
+  try {
+    const payload = {
+      iss: identity.did, sub: identity.did, role: p.role,
+      contractId: p.contractId, gate: p.gate,
+      skill: p.skill, skillName: p.skillName,
+      assertion: p.assertion, outcome: p.outcome, attempt: Number(p.attempt) || 1,
+      mentor: p.mentor || undefined, issuer: p.issuer || undefined,
+      date: p.date, iat: Math.floor(Date.now()/1000)
+    };
+    Object.keys(payload).forEach(k => (payload[k] === undefined || payload[k] === '') && delete payload[k]);
+    signedJWT = await signJWT(identity.seedHex, payload);
+    const ok = await selfVerify(signedJWT, identity.did);
+    $('verify-line').textContent = ok ? 'Signed — signature valid ✓' : 'Signed (could not self-verify)';
+    $('jwt-out').textContent = signedJWT;
+    show('stage-signed');
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Yes — this is true. Sign it.';
+    $('sign-err').innerHTML = `<div class="err">Couldn't sign (${esc(e.message||String(e))}). Needs Ed25519 over https on a modern browser.</div>`;
+  }
+}
+
+function copy(text, btn){ navigator.clipboard.writeText(text).then(()=>{ const o=btn.textContent; btn.textContent='Copied ✓'; setTimeout(()=>btn.textContent=o,1400); }).catch(()=>btn.textContent='Copy failed'); }
+function downloadJWT(){
+  const blob = new Blob([signedJWT], { type:'text/plain' });
+  const url = URL.createObjectURL(blob); const a = document.createElement('a');
+  a.href = url; a.download = `sodoto-${(p.gate||'gate').toLowerCase()}-${(p.skill||'skill')}.jwt.txt`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 2000);
+}
+
+function init(){
+  loadIdentity();
+  if (!identity) {
+    const oa = $('onboard-link');
+    const u = new URL('sodoto-onboard.html', location.href);
+    if (p.learner) u.searchParams.set('did', p.learner);
+    oa.href = u.href;
+    show('stage-noid'); return;
+  }
+  if (!p.gate || !p.skillName) { show('stage-empty'); return; }
+  if (p.learner && p.learner !== identity.did) {
+    const m = $('mismatch'); m.classList.remove('hidden');
+    m.innerHTML = '<b>Heads up:</b> this link was made for a different identity than the one on this device. Only sign if this is really you.';
+  }
+  $('claim').innerHTML = claimText();
+  $('claim-desc').textContent = claimDesc();
+  renderDetails();
+  $('btn-sign').addEventListener('click', onSign);
+  $('copy-jwt').addEventListener('click', e => copy(signedJWT, e.target));
+  $('download-jwt').addEventListener('click', downloadJWT);
+  show('stage-review');
+}
+init();
+</script>
+</body>
+</html>
