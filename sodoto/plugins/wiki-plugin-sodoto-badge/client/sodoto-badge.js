@@ -453,6 +453,7 @@
     const el = document.createElement('div')
     el.className = 'sodoto-badge'
     let verifyState = null  // null | 'pending' | 'valid' | 'invalid'
+    let attestResult = null // { learner: {gate: bool}, student: bool|null } — set by doVerify (v0.4)
 
     function render() {
       // Pre-compute person links (must be outside nested template literal)
@@ -470,12 +471,29 @@
       const completedGates = allGates.filter(g => cred.gates[g] && cred.gates[g].completedAt)
       const isPartial = completedGates.length < 3
       const gateCount = completedGates.length + ' of 3 gates complete'
+      const isV04 = cred.version === '0.4' || cred.learnerAttested === true
+
+      // v0.4 attestation tags for the verify panel
+      const aTag = g => {
+        if (!(cred.gates[g] && cred.gates[g].learnerJwt)) return ''
+        const ok = attestResult && attestResult.learner[g]
+        return ok === true  ? ' &middot; <span style="color:#2a5c3f;font-weight:600;">learner &#x2713;</span>'
+             : ok === false ? ' &middot; <span style="color:#b91c1c;font-weight:600;">learner &#x2717;</span>'
+             :                ' &middot; <span style="color:#8a8170;">learner signed</span>'
+      }
+      const sTag = () => {
+        if (!(cred.gates.TeachOne && cred.gates.TeachOne.studentJwt)) return ''
+        const ok = attestResult && attestResult.student
+        return ok === true  ? ' &middot; <span style="color:#2a5c3f;font-weight:600;">student &#x2713;</span>'
+             : ok === false ? ' &middot; <span style="color:#b91c1c;font-weight:600;">student &#x2717;</span>'
+             :                ' &middot; <span style="color:#8a8170;">student signed</span>'
+      }
 
       el.innerHTML = `
         <div class="badge-band"></div>
         <div class="badge-body">
           <div class="badge-main">
-            <div class="badge-label">SODOTO Credential${isPartial ? ' &middot; <em style="font-style:italic;font-weight:400;color:#888;">Partial</em>' : ''}</div>
+            <div class="badge-label">SODOTO Credential${isPartial ? ' &middot; <em style="font-style:italic;font-weight:400;color:#888;">Partial</em>' : ''}${isV04 ? ' &middot; <span style="color:#2a5c3f;font-weight:600;">learner-attested</span>' : ''}</div>
             <div class="badge-skill">${cred.skill}</div>
             <div class="badge-gates">
               ${allGates.map(g => {
@@ -537,7 +555,7 @@
           ${cred.gates.SeeOne && cred.gates.SeeOne.completedAt ? `
           <div class="verify-row">
             <div class="verify-row-label">See One</div>
-            <div class="verify-row-value">${cred.gates.SeeOne.completedAt} &middot; ${seeOneMentor} witnessed</div>
+            <div class="verify-row-value">${cred.gates.SeeOne.completedAt} &middot; ${seeOneMentor} witnessed${aTag('SeeOne')}</div>
           </div>` : `
           <div class="verify-row">
             <div class="verify-row-label">See One</div>
@@ -546,7 +564,7 @@
           ${cred.gates.DoOne && cred.gates.DoOne.completedAt ? `
           <div class="verify-row">
             <div class="verify-row-label">Do One</div>
-            <div class="verify-row-value">${cred.gates.DoOne.completedAt} &middot; ${doOneMentor} witnessed</div>
+            <div class="verify-row-value">${cred.gates.DoOne.completedAt} &middot; ${doOneMentor} witnessed${aTag('DoOne')}</div>
           </div>` : `
           <div class="verify-row">
             <div class="verify-row-label">Do One</div>
@@ -555,7 +573,7 @@
           ${cred.gates.TeachOne && cred.gates.TeachOne.completedAt ? `
           <div class="verify-row">
             <div class="verify-row-label">Teach One</div>
-            <div class="verify-row-value">${cred.gates.TeachOne.completedAt} &middot; ${teachOneMentor} verifies ${cred.skill} taught to ${teachOneStudent}</div>
+            <div class="verify-row-value">${cred.gates.TeachOne.completedAt} &middot; ${teachOneMentor} verifies ${cred.skill} taught to ${teachOneStudent}${aTag('TeachOne')}${sTag()}</div>
           </div>` : `
           <div class="verify-row">
             <div class="verify-row-label">Teach One</div>
@@ -588,12 +606,33 @@
       })
     }
 
+    // v0.4: verify each learner attestation against the holder DID, and the
+    // student attestation against the student DID — no network, same as the NDC check.
+    async function verifyAttestations() {
+      const res = { learner: {}, student: null }
+      for (const g of ['SeeOne','DoOne','TeachOne']) {
+        const gate = cred.gates[g]
+        if (gate && gate.learnerJwt) {
+          try { res.learner[g] = (await verifyJWT(gate.learnerJwt, cred.holderDid)).valid }
+          catch (e) { res.learner[g] = false }
+        }
+      }
+      const t = cred.gates.TeachOne
+      if (t && t.studentJwt && t.student && t.student.did) {
+        try { res.student = (await verifyJWT(t.studentJwt, t.student.did)).valid }
+        catch (e) { res.student = false }
+      }
+      return res
+    }
+
     function doVerify() {
       if (verifyState === 'pending') return
       verifyState = 'pending'
       render()
       verifyJWT(cred.jwt, cred.issuerDid)
-        .then(function(r) { verifyState = r.valid ? 'valid' : 'invalid'; render() })
+        .then(function(r) { verifyState = r.valid ? 'valid' : 'invalid' })
+        .then(function()  { return verifyAttestations() })
+        .then(function(a) { attestResult = a; render() })
         .catch(function()  { verifyState = 'invalid'; render() })
     }
 
