@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your SODOTO Identity</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #f4f2ec; color: #1a1208;
+         line-height: 1.55; padding: 20px 18px 64px; max-width: 560px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  .sub { color: #6b6355; font-size: 15px; margin-bottom: 22px; }
+  .who { background: #fff; border: 1px solid #ddd6c9; border-radius: 12px; padding: 12px 16px; margin-bottom: 22px; font-size: 15px; }
+  .who b { display: block; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: #8a8170; font-weight: 700; margin-bottom: 2px; }
+  p { margin-bottom: 14px; font-size: 16px; }
+  .big-btn { display: block; width: 100%; font: inherit; font-size: 18px; font-weight: 700;
+             padding: 16px; border: none; border-radius: 12px; background: #2a5c3f; color: #fff; cursor: pointer; margin: 8px 0 4px; }
+  .big-btn:disabled { background: #b9c4bc; cursor: not-allowed; }
+  .big-btn.secondary { background: #fff; color: #2a5c3f; border: 2px solid #2a5c3f; }
+  .card { background: #fff; border: 1px solid #ddd6c9; border-radius: 12px; padding: 16px; margin: 14px 0; }
+  .card h2 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: #8a8170; margin-bottom: 8px; }
+  .mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13px; word-break: break-all;
+          background: #f4f2ec; border: 1px solid #e3ddd0; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+  .row { display: flex; gap: 8px; }
+  .row button { flex: 1; font: inherit; font-size: 14px; font-weight: 600; padding: 11px; border: 1.5px solid #2a5c3f;
+                background: #fff; color: #2a5c3f; border-radius: 9px; cursor: pointer; }
+  .reassure { background: #eaf3ec; border-left: 4px solid #2a5c3f; border-radius: 0 10px 10px 0; padding: 12px 14px; font-size: 14px; margin: 16px 0; }
+  .reassure b { color: #204630; }
+  .danger { background: #fdf1e8; border-left: 4px solid #c06018; border-radius: 0 10px 10px 0; padding: 12px 14px; font-size: 14px; margin: 14px 0; }
+  .danger b { color: #8a3d0f; }
+  .save-check { display: flex; gap: 10px; align-items: flex-start; margin: 12px 2px 2px; font-size: 15px; }
+  .save-check input { width: 22px; height: 22px; margin-top: 1px; flex-shrink: 0; }
+  .instruct { background: #fff8e6; border: 1px solid #e8d48a; border-radius: 12px; padding: 16px; margin: 18px 0; font-size: 16px; }
+  .instruct b { color: #6b4c00; }
+  .hidden { display: none; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: #8a8170; font-weight: 700; margin-bottom: 4px; }
+  .field input { width: 100%; font: inherit; font-size: 16px; padding: 10px 12px; border: 1px solid #c9c1b1; border-radius: 8px; background: #fff; }
+  .foot { color: #9a917f; font-size: 12px; text-align: center; margin-top: 28px; }
+  .err { background: #fdecec; border: 1px solid #e0a3a3; color: #7a1a1a; border-radius: 10px; padding: 12px 14px; font-size: 14px; margin: 12px 0; }
+</style>
+</head>
+<body>
+
+<h1>Your SODOTO Identity</h1>
+<div class="sub">A personal seal that only you hold. It proves the skills you earn are really yours.</div>
+
+<!-- ============ STAGE 0 — INTRO ============ -->
+<div id="stage-intro">
+  <div class="who"></div>
+
+  <p>To earn SODOTO credentials, you need an <b>identity</b> — a private key that lives only on this phone. When you finish a gate, you sign it with this key, and anyone can check the signature. No one can fake it, and no one else can make it for you.</p>
+
+  <div class="reassure">
+    <b>This page never sends anything anywhere.</b> Your key is made right here on your device and stays here. We never see it.
+  </div>
+
+  <div id="intro-fields"></div>
+
+  <button class="big-btn" id="btn-create">Create my identity</button>
+  <div id="intro-err"></div>
+</div>
+
+<!-- ============ STAGE 1 — CREATED ============ -->
+<div id="stage-done" class="hidden">
+
+  <div class="card">
+    <h2>① Your public name — give this to your coordinator</h2>
+    <div class="mono" id="did-out"></div>
+    <div class="row">
+      <button id="copy-did">Copy</button>
+      <button id="show-did-again">Show again</button>
+    </div>
+  </div>
+
+  <div class="instruct">
+    <b>Next step:</b> show this screen (or read your public name aloud) to your coordinator so they can finish signing you up. This name is safe to share — it is <i>public</i>.
+  </div>
+
+  <div class="card">
+    <h2>② Your recovery key — keep this secret &amp; safe</h2>
+    <p style="font-size:14px;margin-bottom:8px">If you ever lose this phone, this is the only way to sign as you again. Write it down or save the file somewhere private. <b>Never share it.</b></p>
+    <div class="mono" id="seed-out"></div>
+    <div class="row">
+      <button id="copy-seed">Copy</button>
+      <button id="download-seed">Download file</button>
+    </div>
+    <label class="save-check">
+      <input type="checkbox" id="saved-check">
+      <span>I have saved my recovery key somewhere safe.</span>
+    </label>
+  </div>
+
+  <div class="danger" id="lost-note">
+    <b>If you lose both this phone and your recovery key:</b> every badge you already earned still works forever — they verify from your public name. You would just make a new identity for future gates.
+  </div>
+
+  <button class="big-btn" id="btn-finish" disabled>I'm done</button>
+</div>
+
+<!-- ============ STAGE 2 — FINISHED ============ -->
+<div id="stage-finish" class="hidden">
+  <div class="card" style="text-align:center;padding:28px 16px">
+    <div style="font-size:44px;line-height:1;margin-bottom:10px">✓</div>
+    <h2 style="color:#2a5c3f">You're set up</h2>
+    <p style="margin:10px 0 0">Your identity is saved on this phone. Your coordinator can now register your public name. When you finish a gate, come back and sign it.</p>
+  </div>
+  <div class="mono" id="did-final" style="margin-top:4px"></div>
+  <button class="big-btn secondary" id="btn-review" style="margin-top:14px">Review my recovery key</button>
+</div>
+
+<div class="foot">SODOTO · ReLocalize Creativity Network</div>
+
+<script>
+"use strict";
+const LS_KEY = 'sodoto-identity';
+const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
+// ---- encoding helpers (mirror the badge plugin's did:key decode) ----
+function b58encode(bytes) {
+  let n = 0n;
+  for (const b of bytes) n = n * 256n + BigInt(b);
+  let out = '';
+  while (n > 0n) { out = B58[Number(n % 58n)] + out; n = n / 58n; }
+  for (const b of bytes) { if (b === 0) out = '1' + out; else break; }
+  return out;
+}
+function didKeyFromPub(pub32) {                       // Uint8Array(32) -> did:key:z...
+  const p = new Uint8Array(2 + pub32.length);
+  p[0] = 0xed; p[1] = 0x01;                           // multicodec Ed25519-pub
+  p.set(pub32, 2);
+  return 'did:key:z' + b58encode(p);
+}
+function bytesToHex(u8) { return [...u8].map(b => b.toString(16).padStart(2, '0')).join(''); }
+function b64urlToBytes(s) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(s); const u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return u;
+}
+
+// ---- key generation (WebCrypto Ed25519, self-custody, never leaves device) ----
+async function mintIdentity() {
+  const kp = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
+  const jwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
+  const seed = b64urlToBytes(jwk.d);                  // 32-byte private seed
+  const pub  = b64urlToBytes(jwk.x);                  // 32-byte public key
+  return { did: didKeyFromPub(pub), seedHex: bytesToHex(seed) };
+}
+
+// ---- context from the one-time onboarding link ----
+const q = new URLSearchParams(location.search);
+const ctx = { name: q.get('name') || '', site: q.get('site') || '', slug: q.get('slug') || q.get('portfolioSlug') || '' };
+
+// ---- state ----
+let identity = null;   // { did, seedHex, name, site, slug, createdAt }
+
+function $(id) { return document.getElementById(id); }
+function show(id) { ['stage-intro','stage-done','stage-finish'].forEach(s => $(s).classList.toggle('hidden', s !== id)); window.scrollTo(0,0); }
+
+function renderContext() {
+  const box = document.querySelector('.who');
+  if (ctx.name || ctx.slug) {
+    box.innerHTML = '<b>Setting up identity for</b>' + (ctx.name ? escapeHtml(ctx.name) : '(you)') +
+                    (ctx.slug ? ' · <span style="color:#8a8170">' + escapeHtml(ctx.slug) + '</span>' : '');
+  } else {
+    // no link context — let them type a name so the coordinator recognises them
+    box.classList.add('hidden');
+    $('intro-fields').innerHTML =
+      '<div class="field"><label>Your name (so your coordinator recognises you)</label>' +
+      '<input id="in-name" type="text" autocomplete="name" placeholder="e.g. Dana Rivera"></div>';
+  }
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function loadExisting() {
+  try { const raw = localStorage.getItem(LS_KEY); if (raw) identity = JSON.parse(raw); } catch (e) {}
+}
+
+function paintDone() {
+  $('did-out').textContent = identity.did;
+  $('did-final').textContent = identity.did;
+  $('seed-out').textContent = identity.seedHex;
+}
+
+// ---- actions ----
+async function onCreate() {
+  $('intro-err').innerHTML = '';
+  if (!('subtle' in (crypto || {}))) {
+    $('intro-err').innerHTML = '<div class="err">This browser can\'t create secure keys. Open this page over https on a modern phone browser.</div>'; return;
+  }
+  const btn = $('btn-create'); btn.disabled = true; btn.textContent = 'Creating…';
+  try {
+    const { did, seedHex } = await mintIdentity();
+    const nameInput = $('in-name');
+    identity = { did, seedHex, name: ctx.name || (nameInput ? nameInput.value.trim() : ''),
+                 site: ctx.site, slug: ctx.slug, createdAt: new Date().toISOString() };
+    localStorage.setItem(LS_KEY, JSON.stringify(identity));
+    paintDone(); show('stage-done');
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'Create my identity';
+    $('intro-err').innerHTML = '<div class="err">Couldn\'t create a key here (' + escapeHtml(e.message || String(e)) +
+      '). This needs Ed25519 support over https — try an up-to-date Safari or Chrome.</div>';
+  }
+}
+
+function copy(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const old = btn.textContent; btn.textContent = 'Copied ✓';
+    setTimeout(() => { btn.textContent = old; }, 1400);
+  }).catch(() => { btn.textContent = 'Copy failed'; });
+}
+
+function downloadRecovery() {
+  const payload = {
+    _what: 'SODOTO recovery key — KEEP SECRET. This is your private signing key.',
+    name: identity.name, did: identity.did, seedHex: identity.seedHex, createdAt: identity.createdAt
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safe = (identity.name || 'my').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'my';
+  a.href = url; a.download = 'sodoto-recovery-' + safe + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+// ---- wire up ----
+function init() {
+  renderContext();
+  loadExisting();
+  if (identity) { paintDone(); show('stage-finish'); }   // already has an identity on this device
+
+  $('btn-create').addEventListener('click', onCreate);
+  $('copy-did').addEventListener('click', e => copy(identity.did, e.target));
+  $('copy-seed').addEventListener('click', e => copy(identity.seedHex, e.target));
+  $('download-seed').addEventListener('click', downloadRecovery);
+  $('show-did-again').addEventListener('click', () => { alert(identity.did); });
+  $('saved-check').addEventListener('change', e => { $('btn-finish').disabled = !e.target.checked; });
+  $('btn-finish').addEventListener('click', () => show('stage-finish'));
+  $('btn-review').addEventListener('click', () => { paintDone(); $('saved-check').checked = true; $('btn-finish').disabled = false; show('stage-done'); });
+}
+init();
+</script>
+</body>
+</html>
