@@ -91,10 +91,19 @@
       <div class="hint">auto-derived from name</div>
     </div>
   </div>
+  <div style="margin:2px 0 12px;padding:10px 12px;background:#e8f4ed;border:1px solid #b9d6c6;border-radius:6px;">
+    <div style="font-size:12px;margin-bottom:7px;"><b>New learner?</b> They make their own key on their own phone — you never hold it. Enter their name above, make a link, and send it to them. They send back a DID to paste below.</div>
+    <button class="secondary" type="button" onclick="makeOnboardLink()" style="font-size:11px;">Make onboarding link ↗</button>
+    <div id="onboard-link-out" style="display:none;margin-top:8px;">
+      <input type="text" id="onboard-link" readonly style="width:100%;font-family:'SF Mono',monospace;font-size:11px;">
+      <button class="secondary" type="button" onclick="copyOnboardLink()" style="font-size:11px;margin-top:5px;">Copy link</button>
+    </div>
+  </div>
   <div class="row2">
     <div>
       <label>DID</label>
       <input type="text" id="add-did" placeholder="did:key:z6Mk…" autocomplete="off" spellcheck="false">
+      <div class="hint">the learner sends this back from their phone</div>
     </div>
     <div>
       <label>Site (FedWiki host)</label>
@@ -493,6 +502,32 @@ function addPerson() {
   rebuildPeopleSelects()
   el('add-name').value = ''; el('add-slug').value = ''; el('add-did').value = ''; el('add-portfolio').value = ''
   logTo('registry-log','ok',`Added: ${name} (${slug})`)
+}
+
+// Build a one-time onboarding link for a new learner. They open it on their own
+// phone, mint their own Ed25519 key (self-custody — the mentor never holds it),
+// and send back only their public DID for the coordinator to paste above.
+function makeOnboardLink() {
+  const name  = el('add-name').value.trim()
+  const slug  = el('add-slug').value.trim() || slugify(name)
+  const site  = el('add-site').value.trim() || 'localhost'
+  const pSlug = el('add-portfolio').value.trim() || (slug ? `${slug}-sodoto-portfolio` : '')
+  el('registry-log').style.display = 'block'
+  if (!name) { logTo('registry-log','err','Enter the learner\'s name first.'); return }
+  const url = new URL('sodoto-onboard.html', location.href)
+  url.searchParams.set('name', name)
+  if (site)  url.searchParams.set('site', site)
+  if (pSlug) url.searchParams.set('slug', pSlug)
+  el('onboard-link').value = url.href
+  el('onboard-link-out').style.display = 'block'
+  logTo('registry-log','ok',`Onboarding link ready for ${name}. Send it to them; paste the DID they return into the DID box, then Add to Registry.`)
+}
+
+function copyOnboardLink() {
+  const inp = el('onboard-link'); inp.select()
+  navigator.clipboard.writeText(inp.value)
+    .then(() => logTo('registry-log','ok','Link copied.'))
+    .catch(() => logTo('registry-log','err','Copy failed — select the link and copy manually.'))
 }
 
 function removePerson(slug) {
