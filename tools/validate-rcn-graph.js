@@ -29,8 +29,8 @@ var DASH     = ['solid', 'dashed', 'dotted'];
 // author, created, schema version) on 2026-07-25. Keep this list in step with
 // buildState.
 var TOP_LEVEL = ['version', 'modelName', 'modelNote', 'canvasBg', 'graphAttrs',
-                 'cldLoopNames', 'legendEntries', 'legendVisible', 'customSymbols',
-                 'nodes', 'edges', 'lines', 'metaEdges'];
+                 'cldLoopNames', 'legendEntries', 'legendVisible', 'legendCollapsed',
+                 'customSymbols', 'nodes', 'edges', 'lines', 'metaEdges'];
 
 function num(v) { return typeof v === 'number' && isFinite(v); }
 

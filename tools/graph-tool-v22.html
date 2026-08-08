@@ -2208,6 +2208,25 @@ function clearOvr(o,field){
   if(!o||!o.ovr)return;
   if(field)delete o.ovr[field]; else o.ovr={};
 }
+// Stamp the RESOLVED style onto an exported copy as bare fields.
+// A node carrying only `type` renders right here — sv() reads its legend row — but
+// carries no colour of its own, so every reader that does not implement that chain
+// (Neo4j projections, converters, an LLM reading the file, a human scanning it) sees
+// an uncoloured graph. Worse, loadGraphJSON() spreads defaults like dash:'solid' onto
+// each element, so the file can actively contradict the screen.
+// The row still outranks a bare field on reload, so the legend keeps full control and
+// this changes nothing about how the drawing behaves. Export only — never the live
+// arrays, so restyling a row still repaints every follower.
+var STAMP_NODE_FIELDS=['color','borderColor','borderWidth','borderDash','fontColor','fontSize','icon'];
+var STAMP_EDGE_FIELDS=['color','width','dash','fontSize','fontColor','linkFamily'];
+function stampStyle(copy,src,fields){
+  if(!src||!src.type||!legendRowById(src.type))return copy;
+  fields.forEach(function(f){
+    var v=sv(src,f);
+    if(v!==undefined&&v!=='')copy[f]=v;
+  });
+  return copy;
+}
 function nextLegendId(){return 'lg_'+Date.now()+'_'+Math.floor(Math.random()*1000);}
 // Migrate/repair rows loaded from a file.
 function normaliseLegend(){
@@ -5507,7 +5526,7 @@ function sLLC_all(c){snap();(selected.lines||[]).forEach(function(id){var l=line
 function sLFC_all(c){snap();(selected.lines||[]).forEach(function(id){var l=lineById(id);if(l){if(c===null||c===undefined)delete l.fontColor;else l.fontColor=c;}});renderAll();buildPanel();}
 function resetLineLabelPos(){snap();(selected.lines||[]).forEach(function(id){var l=lineById(id);if(l)delete l.labelT;});renderAll();buildPanel();}
 function setLineLabel(id,val){snap();var l=lineById(id);if(l){l.label=val;renderAll();}}
-function buildState(){return{version:'1.0',modelName:modelName(),modelNote:(document.getElementById('model-note').value||'').trim(),canvasBg:canvasBg,graphAttrs:graphAttrs,cldLoopNames:cldLoopNames,legendEntries:legendEntries.map(function(e){return Object.assign({},e);}),legendVisible:legendVisible,legendCollapsed:legendCollapsed,customSymbols:customSymbols.map(function(s){return Object.assign({},s);}),nodes:nodes.map(function(n){return Object.assign({},n,{props:Object.assign({},n.props)});}),edges:edges.map(function(e){return Object.assign({},e,{props:Object.assign({},e.props)});}),lines:lines.map(function(l){return Object.assign({},l);}),metaEdges:metaEdges.map(function(me){return Object.assign({},me);})};}
+function buildState(){return{version:'1.0',modelName:modelName(),modelNote:(document.getElementById('model-note').value||'').trim(),canvasBg:canvasBg,graphAttrs:graphAttrs,cldLoopNames:cldLoopNames,legendEntries:legendEntries.map(function(e){return Object.assign({},e);}),legendVisible:legendVisible,legendCollapsed:legendCollapsed,customSymbols:customSymbols.map(function(s){return Object.assign({},s);}),nodes:nodes.map(function(n){return stampStyle(Object.assign({},n,{props:Object.assign({},n.props)}),n,STAMP_NODE_FIELDS);}),edges:edges.map(function(e){return stampStyle(Object.assign({},e,{props:Object.assign({},e.props)}),e,STAMP_EDGE_FIELDS);}),lines:lines.map(function(l){return Object.assign({},l);}),metaEdges:metaEdges.map(function(me){return Object.assign({},me);})};}
 function cleanXmileLabel(raw){return(raw||'').replace(/^"+|"+$/g,'').replace(/^\\+|\\+$/g,'').replace(/_/g,' ').trim();}
 function xmileKey(raw){return(raw||'').replace(/^"+|"+$/g,'').replace(/^\\+|\\+$/g,'').trim().toLowerCase();}
 function toXmileName(label){return label.replace(/\s+/g,'_');}
