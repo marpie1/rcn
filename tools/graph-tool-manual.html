@@ -118,7 +118,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
       <li><a href="#s9b">9b. NRM mode</a></li>
       <li><a href="#s9c">9c. Trace mode</a></li>
       <li><a href="#s9d">9d. Wardley mode</a></li>
-      <li><a href="#s9e">9e. Legend</a></li>
+      <li><a href="#s9e">9e. Legend — the registry</a></li>
       <li><a href="#s9f">9f. OPM mode</a></li>
       <li><a href="#s9g">9g. Layers</a></li>
       <li><a href="#s9h">9h. Triples</a></li>
@@ -747,11 +747,59 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
     <!-- §9e: LEGEND -->
     <section id="s9e">
       <div class="section-pill">Analysis Modes</div>
-      <h2>9e. Legend</h2>
+      <h2>9e. Legend — the registry</h2>
       <p>
         The <strong>Legend</strong> section in the sidebar (between Graph Mode and Properties) manages
-        a color legend for the diagram. The legend can be shown as a frosted-glass overlay in the
+        the legend for the diagram. The legend can be shown as a frosted-glass overlay in the
         bottom-right corner of the canvas.
+      </p>
+      <p>
+        The legend is not just a color key that you keep in sync by hand. <strong>It is the
+        registry.</strong> A legend row defines a <em>kind</em> of thing — its fill, border, width,
+        dash. Nodes and edges then <em>follow</em> a row, and take their look from it. Change the
+        row, and every element following it changes at once. This is the intended way to style an
+        RCN drawing: you should not be hand-setting colors on twenty-six nodes.
+      </p>
+      <div class="tip">
+        A drawing a group can read has roughly <strong>6–8 kinds</strong> in it. The panel warns
+        above 8 rows, and reports how many elements are following no row at all.
+      </div>
+
+      <h3>Making elements follow a row</h3>
+      <p>
+        Select the nodes or edges you want, then click <strong>Assign selection</strong> on the row.
+        They now follow that row. A row is either a node row or an edge row (the
+        <strong>Node ⌄ / Edge ⌄</strong> picker on the row) and only assigns to its own kind — the
+        count at the right of each row tells you how many elements are following it.
+      </p>
+      <p>
+        Assigning also clears any per-element overrides, so the selection adopts the row cleanly.
+      </p>
+
+      <h3>Overriding one element without leaving the row</h3>
+      <p>
+        Following a row does not lock an element. Change a styled property on an element that
+        follows a row — its border color, say — and the tool records that as an
+        <strong>override</strong> on that element only. It keeps following the row for everything
+        else, and diverges on just the property you changed.
+      </p>
+      <p>
+        Click <strong>Clear overrides</strong> on the row to snap every follower back to the row's
+        own values.
+      </p>
+      <p>The order the tool resolves a styled value in — first match wins:</p>
+      <table class="feat-table">
+        <thead><tr><th>Order</th><th>Source</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>The element's override</td><td>"This one is deliberately different"</td></tr>
+          <tr><td>2</td><td>The legend row it follows</td><td>"This is what this kind looks like"</td></tr>
+          <tr><td>3</td><td>The element's own field</td><td>The fallback — what an untyped element has always used</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Because the row outranks the element's own field, an element that follows a row needs no
+        color of its own to look right. That matters when the file leaves the tool — see
+        <em>What exports carry</em> below.
       </p>
       <h3>Collapse and expand</h3>
       <p>
@@ -787,6 +835,32 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
         to <strong>Hide</strong> while the overlay is visible. The legend overlay is
         pointer-events-none — it does not block clicks on the canvas.
       </p>
+      <h3>What exports carry</h3>
+      <p>
+        Inside the tool, an element that follows a row needs no color of its own — the row supplies
+        it at draw time. But <strong>nothing outside this tool implements that lookup.</strong> A
+        Neo4j projection, a converter, another program, an AI assistant reading the file, or you
+        scanning the JSON by eye would all see elements with no color on them and conclude the
+        drawing was never styled.
+      </p>
+      <p>
+        So on export the tool <strong>stamps the resolved style onto each element</strong> as
+        ordinary fields, alongside the row it follows. What gets written is exactly what was on
+        screen — overrides included. This applies to Export JSON, Export URL, Snapshot, and saving
+        back to a host page.
+      </p>
+      <div class="note">
+        Stamping changes nothing about how the drawing behaves. The row still outranks those
+        stamped fields when the file is loaded again, so the legend remains the single place to
+        restyle, and undo/redo and the live diagram are untouched. The stamped values are a
+        fallback for readers that are not this tool.
+      </div>
+      <div class="warn">
+        This also repairs a subtler problem. On load, the tool fills in defaults such as
+        <code>dash: solid</code> on every edge. If a row said <em>dashed</em>, the drawing rendered
+        dashed while the file asserted solid — the file contradicted the screen. Stamping settles
+        it: the file now says what you saw.
+      </div>
       <div class="note">Legend entries and visibility are saved in the JSON export and restored on load.</div>
     </section>
 
@@ -1148,6 +1222,11 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
     <section id="s14">
       <h2>14. Export formats</h2>
       <p>All exports are in the amber <strong>Export</strong> section at the bottom of the sidebar.</p>
+      <div class="note">
+        Every data export (JSON, URL, Snapshot) <strong>stamps the resolved legend style onto each
+        element</strong> so the file is self-describing outside this tool — see
+        <a href="#s9e">9e. Legend — the registry</a>.
+      </div>
       <!-- UPDATE: add new export formats here as they are added to the tool -->
       <table class="feat-table">
         <thead><tr><th>Button</th><th>Format</th><th>Notes</th></tr></thead>

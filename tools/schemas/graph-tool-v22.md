@@ -129,6 +129,24 @@ silently vanished from every export.
 Budget: the panel warns above 8 rows and reports how many elements follow no row.
 A drawing a group can read has roughly 6–8 kinds in it.
 
+### Export stamps the resolved style onto every element (Aug 2026)
+
+The row outranks the element's own field, so **an element that follows a row needs no colour of its own to draw correctly.** That is the convenience and the trap: a file where every node carries only `type` renders perfectly here and is *entirely unstyled* to anything that does not implement `sv()` — a Neo4j projection, a converter, an LLM reading the JSON, or a person scanning it.
+
+Worse, `loadGraphJSON()` spreads defaults with `Object.assign({dash:'solid',...}, e)`, so every edge gets `dash:"solid"` written in explicitly. A row saying `dashed` still overrode it at render time, so the drawing showed dashed edges while the file asserted solid. The file **contradicted the screen**.
+
+`stampStyle()` now runs inside `buildState()`, writing each element's resolved value as a bare field: node `color`/`borderColor`/`borderWidth`/`borderDash`/`fontColor`/`fontSize`/`icon`, edge `color`/`width`/`dash`/`fontSize`/`fontColor`/`linkFamily`. It covers Export JSON, Export URL, Snapshot, and the postMessage save.
+
+Three properties worth not breaking, all verified:
+
+- **The tool is unchanged.** The row still beats a bare field on reload, so the legend stays the single point of restyle and a legend edit still repaints every follower.
+- **`ovr` still wins,** and exports carry both the override and the resolved value.
+- **`snap()` does not call `buildState()`,** so undo/redo and the live `nodes`/`edges` arrays stay clean — stamping is an export-time concern only.
+
+For a file already on disk, `tools/stamp-legend-style.js <file> --write` does the same thing. It is wired as a `Write|Edit` PostToolUse hook in `.claude/settings.json`, so anything Claude writes gets stamped automatically. It skips gitignored files (no committed baseline means no diff and no undo) and only rewrites when something changed.
+
+**If you generate graph JSON by hand, still emit the styles.** Do not rely on the hook: a file that reaches Marc by any other route wants to be self-describing on its own.
+
 ## Icons — `tools/rcn-icons.js`
 
 `node.icon` (or the row's `icon`) takes a key from the RCN house icon library, a

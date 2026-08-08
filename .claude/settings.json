@@ -1,0 +1,23 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath // empty' | { read -r f; case \"$f\" in */maps/rcn_map.html) cd \"${CLAUDE_PROJECT_DIR:-.}\" && python3 maps/build_standalone_map.py >/dev/null ;; esac; }",
+            "timeout": 60,
+            "statusMessage": "Rebuilding standalone map handout"
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath // empty' | { read -r f; case \"$f\" in *.json) cd \"${CLAUDE_PROJECT_DIR:-.}\" && { git check-ignore -q \"$f\" || { grep -q legendEntries \"$f\" 2>/dev/null && node tools/stamp-legend-style.js \"$f\" --write; }; } ;; esac; } 2>/dev/null || true",
+            "timeout": 30,
+            "statusMessage": "Stamping legend style onto graph JSON"
+          }
+        ]
+      }
+    ]
+  }
+}
