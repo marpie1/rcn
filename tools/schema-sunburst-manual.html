@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<!-- RCN Schema Sunburst — User Manual
+     Update when controls, the projection shape, or the snapshot procedure change.
+     Sections are numbered; keep the nav + TOC in sync. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN Schema Sunburst — User Manual</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#4338ca;text-decoration:none}
+a:hover{text-decoration:underline}
+.page{max-width:840px;margin:0 auto;padding:40px 24px 90px}
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:28px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:30px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569}
+.doc-nav{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#e0e7ff;color:#4338ca;border-color:#a5b4fc}
+.toc{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-bottom:36px;columns:2;column-gap:28px}
+.toc a{display:block;font-size:12.5px;padding:3px 0;color:#475569;break-inside:avoid}
+.toc a:hover{color:#4338ca;text-decoration:none}
+h2{font-size:19px;font-weight:700;color:#0f172a;margin:44px 0 12px;padding-top:10px;border-top:1px solid #e2e8f0;scroll-margin-top:16px}
+h3{font-size:14.5px;font-weight:600;color:#1e293b;margin:24px 0 7px}
+p{margin-bottom:13px;color:#334155;font-size:14px}
+ul,ol{margin:0 0 14px 22px;color:#334155;font-size:14px}
+li{margin-bottom:6px;line-height:1.55}
+code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;font-size:12.5px;color:#0f172a;white-space:nowrap}
+pre{background:#0f172a;color:#e2e8f0;border-radius:9px;padding:14px 16px;margin:14px 0 20px;overflow-x:auto;font-size:12.5px;line-height:1.6}
+pre code{background:none;border:none;color:inherit;padding:0;white-space:pre}
+kbd{background:#fff;border:1px solid #cbd5e1;border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:11px;font-family:system-ui,sans-serif;color:#0f172a}
+.tip{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#14532d}
+.note{background:#eef2ff;border:1px solid #c7d2fe;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#312e81}
+.warn{background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#713f12}
+.stop{background:#fef2f2;border:1px solid #fecaca;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#7f1d1d}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0 22px}
+th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+td{padding:8px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+td:first-child code{font-weight:600}
+.foot{margin-top:52px;padding-top:18px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-tag">RCN Toolset · Substrate Lens</div>
+    <div class="doc-title">🌀 RCN Schema Sunburst — User Manual</div>
+    <div class="doc-sub">Every control, what the picture is claiming, and how to keep it honest.</div>
+  </div>
+
+  <nav class="doc-nav">
+    <a href="schema-sunburst-intro.html">Introduction</a>
+    <a href="schema-sunburst-manual.html" class="current">User Manual</a>
+    <a href="schema-sunburst.html">Open the Tool ↗</a>
+  </nav>
+
+  <div class="toc">
+    <a href="#start">1 · Starting it</a>
+    <a href="#read">2 · Reading the wheel</a>
+    <a href="#controls">3 · The controls</a>
+    <a href="#hover">4 · Hover and pinning</a>
+    <a href="#export">5 · Export</a>
+    <a href="#url">6 · URL parameters</a>
+    <a href="#offline">7 · Offline snapshot</a>
+    <a href="#projection">8 · The projection</a>
+    <a href="#cannot">9 · What it will not show</a>
+    <a href="#trouble">10 · Troubleshooting</a>
+  </div>
+
+  <h2 id="start">1 · Starting it</h2>
+
+  <p>The Sunburst reads the substrate, so the substrate has to be up. Two things must be running: <strong>Neo4j Desktop</strong> (the <code>RCN SCHEMA</code> server) and the projection API.</p>
+
+  <pre><code>cd ~/rcn/substrate
+python3 db.py --check          # is Neo4j reachable, and what is in it
+python3 api.py                 # projections + the tools, port 8768</code></pre>
+
+  <p>Then open <code>http://localhost:8768/tools/schema-sunburst.html</code>, or follow <em>sunburst ← the vocabulary</em> from the index at <code>http://localhost:8768/</code>.</p>
+
+  <div class="warn">Claude Code has full admin over the database but <strong>cannot start or stop the DBMS.</strong> If <code>db.py --check</code> says it cannot reach the endpoint, open Neo4j Desktop and start the server by hand.</div>
+
+  <p>The tool also opens straight off disk by double-clicking the file. It then draws a baked-in snapshot rather than the live graph — see <a href="#offline">§7</a>.</p>
+
+  <h2 id="read">2 · Reading the wheel</h2>
+
+  <table>
+    <tr><th>Part</th><th>What it is</th></tr>
+    <tr><td><strong>Hub</strong></td><td>The substrate, the graph you are reading, and the concept count.</td></tr>
+    <tr><td><strong>Ring 1</strong></td><td>The eight families. Fill and the heavy radial divider both come from the <code>:Family</code> node's own palette.</td></tr>
+    <tr><td><strong>Ring 2</strong></td><td>The schema label — the merge key two drawings agree on. <code>Org</code>, <code>Problem</code>, <code>Action</code>.</td></tr>
+    <tr><td><strong>Ring 3</strong></td><td>The <strong>states</strong> of the concept — the ways it can be measured. <em>Effectiveness of ORG</em>. A concept with several states splits its ring-2 arc between them.</td></tr>
+    <tr><td><strong>Arc width</strong></td><td>By default, the <strong>source count</strong>: in how many of this graph’s source drawings the concept appears.</td></tr>
+    <tr><td><strong>Tint</strong></td><td>Each ring outward is a paler mix of the same family hue. Depth, not a separate meaning.</td></tr>
+  </table>
+
+  <div class="note"><strong>Width is the whole message — but read it against the right graph.</strong> Every other sunburst you have seen sizes arcs by a quantity: bytes, dollars, headcount. This one sizes them by <em>how many separate source drawings contain the concept</em>.<br><br>What a source <em>is</em> differs per graph, and the wheel cannot tell you which you have open. In <code>aspects16</code> the sixteen sources are <strong>topic drawings</strong>, so width means <em>cross-cutting</em> — this concept was needed in most aspects of one schema. In the <code>neo4j</code> reference the sources are <strong>people</strong>, and width there means <em>agreement</em> — the gold test. Do not carry the second reading onto the first graph.</div>
+
+  <p>A family's width is the sum of its children's, and is never stored — it is recomputed every time, so it cannot disagree with the concepts inside it.</p>
+
+  <h2 id="controls">3 · The controls</h2>
+
+  <h3>graph</h3>
+  <p>Which database to read. The same Cypher runs against all three — the selector chooses <em>which graph, never which query</em>.</p>
+  <table>
+    <tr><th>Option</th><th>What it holds</th></tr>
+    <tr><td><code>aspects16</code></td><td>The 16 <strong>topic</strong> drawings with exact provenance — <code>action</code>, <code>org</code>, <code>place</code>, and so on. 24 concepts, 71 source mentions. The default. Sources here are aspects of one schema, not separate contributors.</td></tr>
+    <tr><td><code>composite26</code></td><td>The signed EIP causal loop diagram — 25 concepts.</td></tr>
+    <tr><td><code>neo4j</code></td><td>The n=6 reference graph. Small on purpose: it is the permanent conformance test.</td></tr>
+  </table>
+
+  <h3>arcs — sources / equal</h3>
+  <ul>
+    <li><strong>sources</strong> (default) — arc width is the source count. Concepts with no recorded source still get a minimum of one, so nothing collapses to an invisible sliver.</li>
+    <li><strong>equal</strong> — every concept gets the same arc, like a classic type-hierarchy diagram. Use it once in a meeting to show what the weighting was doing, then switch back.</li>
+  </ul>
+
+  <div class="tip">Flipping between the two is the fastest way to make the point to a group. In <strong>equal</strong>, Resource looks as established as Person. In <strong>sources</strong>, it shrinks to a sliver — and someone always asks why.</div>
+
+  <h3>rings — 3 / 2</h3>
+  <p><strong>3</strong> shows family → concept → states. <strong>2</strong> stops at the concept. Most concepts have exactly one state, so for them ring 3 is only the human phrasing — but where a concept has several (<code>Affect</code> is <em>Positive</em> and <em>Negative</em>), dropping ring 3 hides real structure. Two rings is still the better shape for a slide or a printed wall sheet.</p>
+
+  <h2 id="hover">4 · Hover and pinning</h2>
+
+  <p>Labels are fitted to the wedge they sit in, and a wedge can be too thin to hold words. Rather than let text spill into a neighbour, the tool shortens it — and where nothing legible fits at all, prints a faint <code>…</code>.</p>
+
+  <p><strong>Hover is therefore not decoration; it is where the text went.</strong> Every segment carries its full content regardless of what the ring managed to print:</p>
+
+  <ul>
+    <li>the schema label</li>
+    <li>every state of the concept, in full</li>
+    <li>the family</li>
+    <li>the source count, and which sources</li>
+  </ul>
+
+  <p><strong>Click to pin</strong> the tooltip so it stays put — necessary on a touch screen, which has no hover, and useful when reading a long label without holding the mouse still. Click the same wedge again, or anywhere off the wheel, to release it.</p>
+
+  <div class="note">The tooltip is deliberately near-transparent frosted glass rather than an opaque card, so the diagram stays readable underneath the thing describing it.</div>
+
+  <h2 id="export">5 · Export</h2>
+
+  <table>
+    <tr><th>Button</th><th>What you get</th></tr>
+    <tr><td><strong>SVG</strong></td><td>Vector, ~29&nbsp;KB, with <code>font-family</code> declared on the text so labels do not un-wrap when the file is opened outside the browser. The right choice for print, for a slide, or for further editing.</td></tr>
+    <tr><td><strong>PNG</strong></td><td>Raster at 2× the on-screen size, white background. The right choice for pasting into a document or a chat.</td></tr>
+  </table>
+
+  <p>Both are named for the graph they came from — <code>rcn-schema-sunburst-aspects16.svg</code> — so an exported file always says which database it describes.</p>
+
+  <div class="warn">Exports capture the <em>current</em> toggles. An SVG saved in <strong>equal</strong> mode looks authoritative and is not showing evidence. Check the toggles before exporting anything that will outlive the meeting.</div>
+
+  <h2 id="url">6 · URL parameters</h2>
+
+  <table>
+    <tr><td><code>?db=aspects16</code></td><td>Open directly on a graph, skipping the picker. Accepts any database the API can reach.</td></tr>
+  </table>
+
+  <p>That makes a specific reading linkable — useful in a wiki page or an agenda item where you want everyone looking at the same wheel.</p>
+
+  <h2 id="offline">7 · Offline snapshot</h2>
+
+  <p>A snapshot of all three graphs is embedded in the HTML file. When <code>fetch()</code> cannot reach the API — opened over <code>file://</code>, or the server is down — the tool draws the snapshot instead and says so: the status turns red and reads <em>offline snapshot</em> with its capture date, and the footer changes to match.</p>
+
+  <div class="note">The snapshot is a convenience, not a source. <strong>If it disagrees with the live database, the live database is right.</strong> The tool never pretends a stale reading is current.</div>
+
+  <h3>Refreshing it</h3>
+  <p>After the vocabulary changes materially — a new family, a batch of new concepts — re-bake it:</p>
+
+  <pre><code>cd ~/rcn/substrate
+python3 - &lt;&lt;'EOF'
+import api, json, datetime, re
+out = {'_captured': datetime.date.today().isoformat()}
+for db in ('aspects16', 'composite26', 'neo4j'):
+    out[db] = api.vocabulary_projection(db)
+p = '../tools/schema-sunburst.html'
+src = open(p).read()
+blob = json.dumps(out, separators=(',', ':'))
+new, n = re.subn(r'/\*__FALLBACK__\*/.*?/\*__END__\*/',
+                 lambda m: '/*__FALLBACK__*/' + blob + '/*__END__*/', src, flags=re.S)
+assert n == 1
+open(p, 'w').write(new)
+print('re-baked', len(blob), 'bytes')
+EOF</code></pre>
+
+  <p>The markers <code>/*__FALLBACK__*/</code> and <code>/*__END__*/</code> exist for exactly this. Do not hand-edit the blob between them.</p>
+
+  <h2 id="projection">8 · The projection</h2>
+
+  <p>Everything the tool draws comes from one endpoint:</p>
+
+  <pre><code>GET /projection/vocabulary?db=aspects16</code></pre>
+
+  <p>It returns the substrate's standard envelope — <code>{nodes, edges}</code> in the Graph Tool's native schema — describing a tree: <code>root → family → schemaLabel → variableLabel</code>. Each node's <code>props</code> carry the layout fractions:</p>
+
+  <table>
+    <tr><th>Prop</th><th>Meaning</th></tr>
+    <tr><td><code>level</code></td><td>0 hub, 1 family, 2 schema label, 3 variable label</td></tr>
+    <tr><td><code>start</code>, <code>span</code></td><td>Position and width round the wheel, as fractions of 1</td></tr>
+    <tr><td><code>weight</code></td><td>Witness count, floored at 1</td></tr>
+    <tr><td><code>sources</code></td><td>The true count, unfloored — 0 is possible and meaningful</td></tr>
+    <tr><td><code>sourceList</code></td><td>The source drawings themselves, so a tooltip can name them</td></tr>
+    <tr><td><code>states</code></td><td>Every state of this concept. Ring 3 emits one child per entry</td></tr>
+    <tr><td><code>color</code>, <code>fill</code></td><td>Straight off the <code>:Family</code> node, which got them from <code>families.js</code></td></tr>
+  </table>
+
+  <p>Because <code>start</code> and <code>span</code> arrive precomputed, the renderer does no domain reasoning — it turns fractions into arcs. Point it at a different tree and it draws that instead.</p>
+
+  <div class="tip">A concept with no <code>:IN_FAMILY</code> edge is <strong>not</strong> dropped — it lands under a family called <code>Unfiled</code>. A missing family is a real finding about the data and has to be visible. A query that quietly returns 23 of 24 rows is the failure this substrate exists to end.</div>
+
+  <p>The envelope is also valid Graph Tool input, so the same URL opens as a radial node-link tree if you ever want to check the Sunburst against a second renderer:</p>
+
+  <pre><code>/tools/graph-tool-v22.html?url=%2Fprojection%2Fvocabulary%3Fdb%3Daspects16</code></pre>
+
+  <h2 id="cannot">9 · What it will not show</h2>
+
+  <div class="stop"><strong>Causal edges are absent by construction.</strong> A sunburst partitions a disc, so every child has exactly one parent and there is nowhere to draw an arrow that returns to its origin. The Fixes-that-Fail loop cannot appear here at all.<br><br>This is not a backlog item. If edges are ever added the geometry will accept them and the resulting picture will assert relationships it cannot actually represent. The causal reading belongs to <code>/projection/causal</code> and the Graph Tool.</div>
+
+  <p>Also absent, for the same reason — one parent each:</p>
+  <ul>
+    <li><strong>Instances.</strong> A thing that happened has a date and a place; it is not a longer name for a concept, so it is not part of this contraction.</li>
+    <li><strong>Which source drawing contributed what.</strong> The wheel sizes by <em>how many</em>; hover names them, but the geometry cannot show a concept in nine places at once. Ring 3 is already spoken for by the concept’s states.</li>
+    <li><strong>Link families.</strong> They describe edges, and there are no edges here.</li>
+  </ul>
+
+  <h2 id="trouble">10 · Troubleshooting</h2>
+
+  <table>
+    <tr><th>Symptom</th><th>Cause and fix</th></tr>
+    <tr><td>Status reads <em>offline snapshot</em> in red</td><td>The API is not answering. Start it: <code>python3 substrate/api.py</code>. You are looking at baked-in data of the stated date.</td></tr>
+    <tr><td><em>no data for &lt;db&gt;</em></td><td>That database is neither reachable nor in the snapshot. Check the name, and check Neo4j is running.</td></tr>
+    <tr><td>Endpoint 404s with <em>no projection 'vocabulary'</em></td><td>An older <code>api.py</code> is still holding port 8768 and never loaded the route. Find it with <code>ps aux | grep api.py</code>, kill it, and restart.</td></tr>
+    <tr><td>A wedge shows only <code>…</code></td><td>Working as intended — too thin for text. Hover or click it.</td></tr>
+    <tr><td>A family called <code>Unfiled</code> appears</td><td>Real finding: some concept has no <code>:IN_FAMILY</code> edge. Fix it in <code>families.js</code> and re-run <code>seed.py</code>; do not fix it in the picture.</td></tr>
+    <tr><td>Colours look wrong or grey</td><td>The <code>:Family</code> nodes are missing their palette. Re-run the seed, which reads <code>tools/families.js</code> as the one source.</td></tr>
+    <tr><td>Exported SVG has un-wrapped text</td><td>Should not happen — <code>font-family</code> is written onto the root. If it does, the export was edited by something that stripped it.</td></tr>
+  </table>
+
+  <div class="foot">
+    RCN Toolset · <code>tools/schema-sunburst.html</code> · projection <code>substrate/api.py → /projection/vocabulary</code><br>
+    Companion documents: <a href="schema-sunburst-intro.html">Introduction</a> · deck at <code>tools/rcn-schema-sunburst-intro.pptx</code> · substrate notes in <code>substrate/README.md</code>
+  </div>
+</div>
+</body>
+</html>

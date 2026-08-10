@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<!-- RCN Schema Sunburst — Introduction & Positioning
+     Update this file when the projection gains levels, when the weighting rule
+     changes, or when a comparator tool changes. The honest-limit section is
+     load-bearing: do not soften it. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN Schema Sunburst — Introduction</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#4338ca;text-decoration:none}
+a:hover{text-decoration:underline}
+.page{max-width:820px;margin:0 auto;padding:40px 24px 80px}
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:32px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:32px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569;line-height:1.5}
+.doc-meta{margin-top:14px;font-size:12px;color:#94a3b8}
+.doc-nav{display:flex;gap:12px;margin-bottom:40px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff;transition:background .15s}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#e0e7ff;color:#4338ca;border-color:#a5b4fc}
+h2{font-size:20px;font-weight:700;color:#0f172a;margin:48px 0 14px;padding-top:8px;border-top:1px solid #e2e8f0}
+h3{font-size:15px;font-weight:600;color:#1e293b;margin:28px 0 8px}
+p{margin-bottom:14px;color:#334155}
+p:last-child{margin-bottom:0}
+.lead{font-size:17px;line-height:1.7;color:#1e293b;margin-bottom:28px;padding:20px 24px;background:#eef2ff;border-left:4px solid #4338ca;border-radius:0 8px 8px 0}
+.trio{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0 30px}
+.trio-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 14px 18px;text-align:center}
+.trio-card .ic{font-size:26px;margin-bottom:8px}
+.trio-card h4{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:5px}
+.trio-card p{font-size:12px;color:#475569;margin:0;line-height:1.5}
+.trio-card.here{border-color:#a5b4fc;background:#eef2ff;box-shadow:0 2px 10px rgba(67,56,202,.12)}
+.rings{display:grid;grid-template-columns:70px 1fr;gap:0 16px;margin:20px 0 28px;font-size:13.5px}
+.rings dt{font-weight:700;color:#4338ca;padding:10px 0;border-top:1px solid #e2e8f0}
+.rings dd{padding:10px 0;border-top:1px solid #e2e8f0;color:#334155;line-height:1.55}
+.rings dt:first-of-type,.rings dd:first-of-type{border-top:none}
+.highlight-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin:20px 0 28px}
+.hl-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px}
+.hl-card h4{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:6px}
+.hl-card p{font-size:12px;color:#475569;margin:0;line-height:1.55}
+.unique-list{list-style:none;margin:12px 0 24px}
+.unique-list li{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:#334155;line-height:1.55}
+.unique-list li:last-child{border-bottom:none}
+.unique-list .badge{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#e0e7ff;color:#4338ca;border-radius:6px;padding:2px 7px;flex-shrink:0;align-self:flex-start;margin-top:2px}
+.unique-list .badge.orig{background:#f3e8ff;color:#6b21a8}
+.comparator{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-bottom:12px}
+.comparator-header{display:flex;align-items:baseline;gap:10px;margin-bottom:7px;flex-wrap:wrap}
+.comparator-name{font-size:14px;font-weight:700;color:#0f172a}
+.comparator-verdict{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.verdict-good{background:#dcfce7;color:#166534}
+.verdict-partial{background:#fef9c3;color:#854d0e}
+.verdict-diff{background:#fee2e2;color:#991b1b}
+.comparator p{font-size:13px;color:#334155;line-height:1.6;margin:0}
+.callout{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;margin:18px 0;font-size:13px;color:#713f12}
+.limit{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:16px 20px;margin:20px 0;font-size:13.5px;color:#7f1d1d;line-height:1.6}
+.limit strong{color:#991b1b}
+.positioning{background:#0f172a;color:#f1f5f9;border-radius:12px;padding:26px 30px;margin-top:40px}
+.positioning h3{color:#fff;margin-top:0}
+.positioning p{color:#cbd5e1;font-size:14px}
+.cta{display:inline-block;margin-top:8px;font-size:13px;font-weight:600;background:#4338ca;color:#fff;padding:9px 18px;border-radius:8px}
+.cta:hover{background:#3730a3;text-decoration:none}
+.foot{margin-top:48px;padding-top:18px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8}
+code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;font-size:12px;color:#0f172a}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0 22px}
+th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+td{padding:8px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-tag">RCN Toolset · Substrate Lens</div>
+    <div class="doc-title">🌀 RCN Schema Sunburst</div>
+    <div class="doc-sub">A picture of the vocabulary the neighborhood actually uses — every concept, the family it belongs to, and how far it reaches across the schema.</div>
+    <div class="doc-meta">Reads <code>/projection/vocabulary</code> from the RCN Substrate · part of the RCN family alongside the Graph Tool, the Timeline and the Map</div>
+  </div>
+
+  <nav class="doc-nav">
+    <a href="schema-sunburst-intro.html" class="current">Introduction</a>
+    <a href="schema-sunburst-manual.html">User Manual</a>
+    <a href="schema-sunburst.html">Open the Tool ↗</a>
+  </nav>
+
+  <p class="lead">We can draw <strong>cause</strong>, <strong>time</strong> and <strong>space</strong>. What we could not draw was <strong>our own words</strong> — the vocabulary itself. The substrate holds 24 concepts across 8 families, spread over 16 separate source drawings, and until now the only way to see that was to read a table. The Sunburst turns it into one image a group can point at.</p>
+
+  <h2>The fourth lens</h2>
+
+  <div class="trio">
+    <div class="trio-card"><div class="ic">🔗</div><h4>Cause</h4><p>Nodes and causal edges<br><em>Graph Tool</em></p></div>
+    <div class="trio-card"><div class="ic">⏳</div><h4>Time</h4><p>Intervals and before / meets<br><em>Timeline</em></p></div>
+    <div class="trio-card"><div class="ic">🗺️</div><h4>Space</h4><p>Parcels and jurisdictions<br><em>Polygon Map</em></p></div>
+    <div class="trio-card here"><div class="ic">🌀</div><h4>Vocabulary</h4><p>Families and concepts<br><em>This tool</em></p></div>
+  </div>
+
+  <p>Each lens reads the same substrate and answers a different question. The Sunburst answers the one that has to be settled before the others mean anything: <strong>what are we calling things, and where does each of those words actually get used?</strong></p>
+
+  <h2>Why a sunburst, and not another graph</h2>
+
+  <p>A node-link diagram is the right picture for a network and the wrong picture for a hierarchy. Draw a strict tree as nodes and arrows and you get a tangle whose shape carries no information — the layout engine's opinion, not the data's.</p>
+
+  <p>But the Composer's levels are a strict contraction: <em>zooming out merges; zooming in never invents.</em> Family, schema label and variable label are progressively longer names for the same idea, so every concept has <strong>exactly one</strong> parent. That is precisely the precondition a sunburst requires, and it was already true of our data before anyone thought to draw it this way.</p>
+
+  <dl class="rings">
+    <dt>Hub</dt><dd>The substrate itself, and which graph you are reading</dd>
+    <dt>Ring 1</dt><dd>The <strong>8 families</strong> — Setting, Institution, Aim, Doing, Outcome, Issue, Resource, Person. Colour comes from the <code>:Family</code> nodes, which carry the palette from <code>families.js</code></dd>
+    <dt>Ring 2</dt><dd>The <strong>schema label</strong> — the merge key. <code>Problem</code>, <code>Org</code>, <code>Action</code></dd>
+    <dt>Ring 3</dt><dd>The <strong>states</strong> of that concept — the ways it can be measured. <em>Seriousness of PROBLEM</em>, <em>Effectiveness of ORG</em>. A concept with several states splits its arc between them</dd>
+  </dl>
+
+  <h2>The part that is ours</h2>
+
+  <p>The form is borrowed — it is the shape of the Python Standard Type Hierarchy diagram. But that diagram gives every leaf an equal slice, because a type either exists or it does not. Our concepts carry something a type system has no equivalent of: <strong>evidence</strong>.</p>
+
+  <p>Each concept knows which of the 16 source drawings contain it. <code>Org</code> appears in nine of them. <code>Asset</code> in one. So the Sunburst sizes each arc by that source count, and the picture stops being a taxonomy and becomes a <strong>map of reach</strong>: a fat wedge is a concept that turned out to be load-bearing across most of the schema, a sliver is one that matters in a single corner of it.</p>
+
+  <div class="callout"><strong>What a “source” is depends on which graph you opened, and the difference matters.</strong> In <code>aspects16</code> the sixteen sources are <em>topic drawings</em> — <code>action</code>, <code>org</code>, <code>place</code> — so a wide arc means the concept is cross-cutting, turning up in most aspects of one schema. In the <code>neo4j</code> reference the sources are <em>people</em> (<code>merchant</code>, <code>organizer</code>), and there <code>size(c.sources) &gt; 1</code> is the gold test: two contributors reaching the same concept independently. Same mechanism, two readings — and the wheel will not tell you which one you are looking at.</div>
+
+  <h2>What it cannot do</h2>
+
+  <div class="limit">
+    <strong>There are no causal edges here, and there never can be.</strong>
+    A sunburst is a partition of a disc: every child sits inside exactly one parent, and the geometry offers nowhere to put an arrow that returns to where it started. The Fixes-that-Fail loop — Problem raising Motivation raising Action, and <code>address</code> and <code>resolve</code> closing negatively back onto Problem — has no representation in this shape.
+    <br><br>
+    That is the price of the clarity, not a gap to be filled later. The causal reading lives in <code>/projection/causal</code> and the Graph Tool, where a loop is drawable and means something. If someone proposes adding edges to the Sunburst, the geometry will accept them and the picture will lie.
+  </div>
+
+  <h2>What makes it different</h2>
+
+  <ul class="unique-list">
+    <li><span class="badge orig">Original</span><span><strong>Arc width is provenance, not size.</strong> Every sunburst in the wild encodes a quantity — file bytes, revenue, population. This one encodes how many separate source drawings contain the concept, which turns a reference diagram into a record of where a vocabulary is actually load-bearing.</span></li>
+    <li><span class="badge">Derived</span><span><strong>Nothing is stored to make the picture.</strong> Families, colours, labels and source counts all come out of the live database. There is no second copy to drift from, so the diagram cannot go stale while the data moves.</span></li>
+    <li><span class="badge">Honest</span><span><strong>The label that will not fit goes to hover.</strong> Each label is capped by the tangential room its own wedge has. What does not fit is shortened; what cannot fit at all becomes a faint ellipsis — and every segment carries its full text on hover regardless, so nothing is ever merely lost.</span></li>
+    <li><span class="badge">Dumb</span><span><strong>The renderer knows no domain.</strong> The projection emits <code>start</code> and <code>span</code> as fractions; the tool turns fractions into arcs. Point it at a different graph and it draws that instead, with no code change.</span></li>
+    <li><span class="badge">Portable</span><span><strong>Works with the server off.</strong> A snapshot of all three graphs is baked into the file, so it opens from a thumb drive as a handout — and says so, in the footer, rather than pretending to be live.</span></li>
+  </ul>
+
+  <h2>What you can see in ten seconds</h2>
+
+  <div class="highlight-grid">
+    <div class="hl-card"><h4>Where the reach is</h4><p>Person, Institution and Aim take nearly half the wheel between them. That is not a design decision — it is what being needed in two-thirds of the topic drawings looks like.</p></div>
+    <div class="hl-card"><h4>Where it is thin</h4><p>Resource is two concepts, one source each. Either the neighborhood genuinely does not think in terms of assets and power, or nobody has asked it to yet.</p></div>
+    <div class="hl-card"><h4>Whether a family is real</h4><p>A family whose children are all slivers is a category somebody proposed, not one the group uses. The wheel makes that visible without an argument about it.</p></div>
+    <div class="hl-card"><h4>Whether the vocabulary is balanced</h4><p>Eight families should carry roughly comparable weight if the schema fits the domain. Where they do not, the shape asks the question for you.</p></div>
+  </div>
+
+  <h2>Comparators</h2>
+
+  <div class="comparator">
+    <div class="comparator-header"><span class="comparator-name">Neo4j Browser / Bloom schema view</span><span class="comparator-verdict verdict-diff">Different question</span></div>
+    <p>Shows node <em>kinds</em> and the relationships between them — five boxes and some arrows. That is the meta-model, and we have it at <code>/projection/schema</code>. It cannot show the 24 concepts inside <code>:Concept</code>, because to Neo4j they are all one label.</p>
+  </div>
+
+  <div class="comparator">
+    <div class="comparator-header"><span class="comparator-name">D3 / Observable sunburst</span><span class="comparator-verdict verdict-partial">Same form, no substrate</span></div>
+    <p>The form is a solved problem and the libraries are excellent. What they do not give you is a live tree derived from a governed database, a source count to weight by, or a palette that is already the project's. Those are the whole content here; the arcs are the easy part.</p>
+  </div>
+
+  <div class="comparator">
+    <div class="comparator-header"><span class="comparator-name">Python Standard Type Hierarchy diagram</span><span class="comparator-verdict verdict-good">The direct ancestor</span></div>
+    <p>The reference this borrows its shape from, and the proof that the form carries a large vocabulary legibly at a glance. The difference is that a type hierarchy is fixed and equal-weighted; ours is provenance-weighted, and moves whenever the drawings do.</p>
+  </div>
+
+  <div class="comparator">
+    <div class="comparator-header"><span class="comparator-name">RCN Graph Tool</span><span class="comparator-verdict verdict-good">The other half</span></div>
+    <p>Not a competitor — the complement. It holds everything the Sunburst structurally cannot: direction, polarity, feedback. Between them they cover the substrate, and each is honest about which half it is showing.</p>
+  </div>
+
+  <h2>How to read it with a group</h2>
+
+  <table>
+    <tr><th>Move</th><th>What it surfaces</th></tr>
+    <tr><td>Open on <strong>sources</strong></td><td>The default. Fat means the concept appears in many of the graph’s source drawings; thin means one.</td></tr>
+    <tr><td>Flip to <strong>equal</strong></td><td>Removes the evidence. Useful once, to show what the weighting was doing.</td></tr>
+    <tr><td>Drop to <strong>2 rings</strong></td><td>Families and schema labels only — the shape for a wall or a slide.</td></tr>
+    <tr><td>Hover or click a wedge</td><td>Full labels, the states, the source count and which sources — including for wedges too thin to carry text.</td></tr>
+    <tr><td>Switch graph</td><td><code>aspects16</code> is the 16 drawings; <code>composite26</code> is the signed EIP CLD; <code>neo4j</code> is the n=6 reference.</td></tr>
+  </table>
+
+  <p>The productive question in a room is rarely "is this diagram right." It is <em>"why is that one so thin?"</em> — which is a question about the neighborhood, not about the schema.</p>
+
+  <div class="positioning">
+    <h3>The bet underneath</h3>
+    <p>A group cannot agree on causes until it agrees on words, and it cannot notice that it disagrees about words while the words are in a table. Put the vocabulary in one circle, size it by how many people actually used each term, and the disagreements become visible — and therefore discussable — before they turn into an argument about something else.</p>
+    <p style="margin-top:16px">A cave drawing of our own language.</p>
+    <a class="cta" href="schema-sunburst.html">Open the Sunburst ↗</a>
+  </div>
+
+  <div class="foot">
+    RCN Toolset · <code>tools/schema-sunburst.html</code> · projection <code>substrate/api.py → /projection/vocabulary</code><br>
+    Companion documents: <a href="schema-sunburst-manual.html">User Manual</a> · deck at <code>tools/rcn-schema-sunburst-intro.pptx</code>
+  </div>
+</div>
+</body>
+</html>

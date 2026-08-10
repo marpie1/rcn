@@ -36,6 +36,7 @@ CLD = os.path.join(BASE, 'tools', 'eip-schema-cld.json')
 ASPECTS = os.path.join(BASE, 'tools', 'eip-aspects-variabilized', '*.json')
 DB = 'composite26'
 MODE = 'EIP'
+CAUSAL = ('Influence', 'Transformation')   # claims about states, not concepts
 
 
 def aspect_sources():
@@ -82,18 +83,22 @@ def build():
     fam = read_families()
     efam = read_edge_families()
     member_of = {m: fname for fname, f in fam['families'].items() for m in f['members']}
+    # OPM Object/Process from families.js; absent means unclassified.
+    opm_of = {k: v.get('opmType') for k, v in (fam.get('concepts') or {}).items()}
     srcs = aspect_sources()
 
     ensure_db()
 
     print("wiping …")
     run("MATCH (n) WHERE n:Concept OR n:Instance OR n:Family OR n:LinkFamily "
-        "DETACH DELETE n", database=DB)
+        "OR n:Variable OR n:Aspect DETACH DELETE n", database=DB)
     for stmt in [
         "CREATE CONSTRAINT concept_id IF NOT EXISTS FOR (n:Concept) REQUIRE n.id IS UNIQUE",
         "CREATE CONSTRAINT instance_id IF NOT EXISTS FOR (n:Instance) REQUIRE n.id IS UNIQUE",
         "CREATE CONSTRAINT family_name IF NOT EXISTS FOR (n:Family) REQUIRE n.name IS UNIQUE",
         "CREATE CONSTRAINT linkfamily_name IF NOT EXISTS FOR (n:LinkFamily) REQUIRE n.name IS UNIQUE",
+        "CREATE CONSTRAINT variable_id IF NOT EXISTS FOR (n:Variable) REQUIRE n.id IS UNIQUE",
+        "CREATE CONSTRAINT aspect_name IF NOT EXISTS FOR (n:Aspect) REQUIRE n.name IS UNIQUE",
     ]:
         run(stmt, database=DB)
 
@@ -124,15 +129,29 @@ def build():
         run(f"""
             CREATE (c:Concept:{sl} {{
               id:$id, schemaLabel:$sl, variableLabel:$label, mode:$mode,
-              sources:$sources, gloss:$gloss,
+              opmType:$opm, sources:$sources, gloss:$gloss,
               w:$w, h:$h, shape:$shape}})
             WITH c MATCH (f:Family {{name:$family}}) CREATE (c)-[:IN_FAMILY]->(f)
         """, dict(id=n['id'], sl=sl, label=n.get('label', sl), mode=MODE,
-                  sources=srcs.get(sl, []),
+                  opm=opm_of.get(sl), sources=srcs.get(sl, []),
                   gloss=(n.get('props') or {}).get('_gloss', ''),
                   w=n.get('w', 144), h=n.get('h', 90),
                   shape=n.get('shape', 'rect'), family=family), database=DB)
+        # One state per concept here — the composite is a single signed CLD, so
+        # there is one authored wording. The :Variable node exists anyway, so
+        # every graph answers ring 3 the same way.
+        run("""MATCH (c:Concept {id:$cid})
+               CREATE (v:Variable {id:$vid, label:$lbl, schemaLabel:$sl,
+                                   mode:$m, sources:$src})
+               CREATE (c)-[:HAS_STATE]->(v)""",
+            dict(cid=n['id'], vid=f"{n['id']}_v0", lbl=n.get('label', sl),
+                 sl=sl, m=MODE, src=srcs.get(sl, [])), database=DB)
         loaded += 1
+    # Provenance here is DERIVED from the 16 topic drawings (see the module
+    # docstring), so the sources are topics, not people. Declared, not inferred.
+    for name in sorted({x for v in srcs.values() for x in v}):
+        run("CREATE (n:Aspect {name:$n, kind:'topic'})", dict(n=name), database=DB)
+
     print(f"concepts ({loaded}), skipped {skipped}")
 
     ids = {n['id'] for n in cld['nodes']}
@@ -146,10 +165,15 @@ def build():
             unmapped.append((e.get('id'), e.get('label')))
         src_prop = (e.get('props') or {}).get('source', '')
         e_sources = sorted({s.strip() for s in src_prop.split(',') if s.strip()})
-        res = run("""MATCH (s:Concept {id:$src}), (t:Concept {id:$tgt})
-               CREATE (s)-[:REL {id:$id, label:$label, mode:$mode,
-                 linkFamily:$lf, polarity:$pol, rel:'before', sources:$sources}]->(t)
-               RETURN 1 AS ok""",
+        q = ("""MATCH (s:Variable {id:$src + '_v0'}), (t:Variable {id:$tgt + '_v0'})
+                 CREATE (s)-[:REL {id:$id, label:$label, mode:$mode,
+                   linkFamily:$lf, polarity:$pol, rel:'before', sources:$sources}]->(t)
+                 RETURN 1 AS ok""" if lf in CAUSAL else
+             """MATCH (s:Concept {id:$src}), (t:Concept {id:$tgt})
+                 CREATE (s)-[:REL {id:$id, label:$label, mode:$mode,
+                   linkFamily:$lf, polarity:$pol, rel:'before', sources:$sources}]->(t)
+                 RETURN 1 AS ok""")
+        res = run(q,
             dict(src=e['src'], tgt=e['tgt'], id=e['id'], label=e.get('label', ''),
                  mode=MODE, lf=lf, pol=e.get('polarity', 'none'),
                  sources=e_sources), database=DB)

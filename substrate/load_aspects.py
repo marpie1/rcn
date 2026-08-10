@@ -72,24 +72,50 @@ def read_aspects():
             if not raw:
                 continue
             sl = canon(raw)
-            local[n['id']] = sl
+            # (schemaLabel, state). Mapping the id to the schema label ALONE is
+            # where 'which state did this edge touch' was thrown away: affect.json
+            # draws n51_pos --(+)--> n52 and n51_neg --(-)--> n52, and both
+            # collapsed to ('Affect','Motivation','modify'), so the negative claim
+            # lost the collision and vanished.
+            local[n['id']] = (sl, (n.get('label') or sl).strip())
             c = concepts.setdefault(sl, {
                 'schemaLabel': sl, 'variableLabel': n.get('label', sl),
+                'states': {},          # label -> the aspects that used it
                 'w': n.get('w', 110), 'h': n.get('h', 60),
                 'shape': n.get('shape', 'ellipse'), 'sources': set()})
             c['sources'].add(aspect)
-            # Prefer a variabilized label over a bare one-word concept name.
-            if len(n.get('label', '')) > len(c['variableLabel']):
-                c['variableLabel'] = n['label']
+            # EVERY DISTINCT WORDING IS KEPT, as a state of the concept.
+            #
+            # The old rule was `if len(label) > len(variableLabel)` — longest
+            # string wins, ties to whichever was seen first. That is how
+            # affect.json's "Negative AFFECT" stopped existing: it ties with
+            # "Positive AFFECT" at 15 characters, the comparison is strict, so
+            # the second one was silently discarded. Nobody would defend string
+            # length as the arbiter of which state of a concept is real.
+            #
+            # In OPM terms these are STATES of an object, and an object is
+            # expected to have several. They become :Variable nodes below.
+            lbl = (n.get('label') or sl).strip()
+            c['states'].setdefault(lbl, set()).add(aspect)
+            # variableLabel stays the PRIMARY state, chosen by the old rule, so
+            # every existing projection reads exactly what it read before. This
+            # phase only ADDS; nothing downstream changes yet.
+            if len(lbl) > len(c['variableLabel']):
+                c['variableLabel'] = lbl
         for e in d.get('edges', []):
             s, t = local.get(e.get('src')), local.get(e.get('tgt'))
             if not s or not t:
                 continue
             label = (e.get('label') or '').strip()
+            # Keyed at STATE level. For the 23 concepts with one state this is
+            # identical to keying at schema level; for Affect it is the whole
+            # difference. Where the edge finally ATTACHES is decided at write
+            # time by its relation family, not here.
             key = (s, t, label)
             props = e.get('props') or {}
             ed = edges.setdefault(key, {
-                'src': s, 'tgt': t, 'label': label,
+                'src': s[0], 'tgt': t[0],
+                'srcState': s[1], 'tgtState': t[1], 'label': label,
                 'polarity': e.get('polarity', 'none'),
                 # AN AUTHORED FAMILY BEATS A GUESSED ONE. This used to re-run
                 # suggest_family() on every load and ignore what the file said,
@@ -121,16 +147,25 @@ def ensure_db():
 def build():
     fam, efam = read_families(), read_edge_families()
     member_of = {m: f for f, d in fam['families'].items() for m in d['members']}
+    # OPM Object/Process, declared per concept in families.js. Absent means
+    # UNCLASSIFIED, never Object-by-default — the difference between "we decided
+    # this is a thing" and "nobody has said yet" is worth keeping.
+    opm_of = {k: v.get('opmType') for k, v in (fam.get('concepts') or {}).items()}
     concepts, edges = read_aspects()
     ensure_db()
 
+    # :Variable MUST be in this list. The wipe is label-scoped, so a new label
+    # that is not named here survives every rebuild and quietly accumulates —
+    # ring 3 of the sunburst would grow by 25 on each run, with counts that
+    # still look plausible.
     run("MATCH (n) WHERE n:Concept OR n:Family OR n:LinkFamily OR n:Aspect "
-        "DETACH DELETE n", database=DB)
+        "OR n:Variable DETACH DELETE n", database=DB)
     for stmt in [
         "CREATE CONSTRAINT concept_id IF NOT EXISTS FOR (n:Concept) REQUIRE n.id IS UNIQUE",
         "CREATE CONSTRAINT family_name IF NOT EXISTS FOR (n:Family) REQUIRE n.name IS UNIQUE",
         "CREATE CONSTRAINT linkfamily_name IF NOT EXISTS FOR (n:LinkFamily) REQUIRE n.name IS UNIQUE",
         "CREATE CONSTRAINT aspect_name IF NOT EXISTS FOR (n:Aspect) REQUIRE n.name IS UNIQUE",
+        "CREATE CONSTRAINT variable_id IF NOT EXISTS FOR (n:Variable) REQUIRE n.id IS UNIQUE",
     ]:
         run(stmt, database=DB)
 
@@ -145,36 +180,91 @@ def build():
             dict(n=name, g=f['gloss'], nt=f['note'], t=f['transitive'], o=i), database=DB)
 
     aspects = sorted({a for c in concepts.values() for a in c['sources']})
+    # SOURCE KIND IS DECLARED, NEVER INFERRED. Nothing in a list of strings
+    # distinguishes 'merchant' (a person) from 'action' (a topic), and guessing
+    # is what produced the claim that 16 people drew these. The loader is the
+    # only thing that actually knows, so the loader says so.
     for a in aspects:
-        run("CREATE (n:Aspect {name:$n})", dict(n=a), database=DB)
+        run("CREATE (n:Aspect {name:$n, kind:'topic'})", dict(n=a), database=DB)
 
+    var_id = {}                      # (schemaLabel, state) -> :Variable id
     for sl, c in concepts.items():
         family = member_of.get(sl)
         if not family:
             sys.exit(f"schemaLabel {sl!r} is in no family in families.js")
         run(f"""CREATE (x:Concept:{slug(sl)} {{
                   id:$id, schemaLabel:$sl, variableLabel:$vl, mode:$m,
-                  sources:$src, w:$w, h:$h, shape:$sh}})
+                  opmType:$opm, sources:$src, w:$w, h:$h, shape:$sh}})
                 WITH x MATCH (f:Family {{name:$fam}}) CREATE (x)-[:IN_FAMILY]->(f)""",
             dict(id=sl.lower(), sl=sl, vl=c['variableLabel'], m=MODE,
-                 src=sorted(c['sources']), w=c['w'], h=c['h'],
+                 opm=opm_of.get(sl), src=sorted(c['sources']), w=c['w'], h=c['h'],
                  sh=c['shape'], fam=family), database=DB)
 
+        # One :Variable per distinct wording — the states of this concept.
+        # Witnesses stay on the CONCEPT: sources here records who used this
+        # particular wording, and is NOT what the gold test counts. Widening
+        # the merge key to (schemaLabel, variableLabel) instead would split
+        # concepts two people worded differently and quietly destroy that test.
+        for j, (lbl, srcs) in enumerate(sorted(c['states'].items())):
+            var_id[(sl, lbl)] = f"{sl.lower()}_v{j}"
+            run("""MATCH (x:Concept {id:$cid})
+                   CREATE (v:Variable {id:$vid, label:$lbl, schemaLabel:$sl,
+                                       mode:$m, sources:$src})
+                   CREATE (x)-[:HAS_STATE]->(v)""",
+                dict(cid=sl.lower(), vid=f"{sl.lower()}_v{j}", lbl=lbl, sl=sl,
+                     m=MODE, src=sorted(srcs)), database=DB)
+
     unmapped = 0
+    # WHERE AN EDGE ATTACHES IS DECIDED BY WHAT KIND OF CLAIM IT IS.
+    #
+    #   causal (Influence, Transformation) -> (:Variable)-[:REL]->(:Variable)
+    #       "Coherence of PURPOSE raises Effectiveness of ORG" is a claim about
+    #       two MEASURED QUANTITIES. Positive AFFECT and Negative AFFECT push
+    #       Motivation in opposite directions; hung off the concept, only one of
+    #       those claims can survive.
+    #
+    #   everything else -> (:Concept)-[:REL]->(:Concept)
+    #       "an Org exists for a Purpose" is true however effective the org is.
+    #       Pushing it down to states would make it say something nobody meant.
+    #
+    #   unassigned -> stays on :Concept, and is COUNTED. A missing relation
+    #       family is somebody's decision still to make, not a licence to guess.
+    CAUSAL = ('Influence', 'Transformation')
+    at_state = 0
     for i, ((s, t, label), e) in enumerate(edges.items()):
         lf = e.get('linkFamily') or suggest_family(label, efam)
         if not lf:
             unmapped += 1
-        run("""MATCH (a:Concept {id:$s}), (b:Concept {id:$t})
-               CREATE (a)-[:REL {id:$id, label:$label, mode:$m, linkFamily:$lf,
-                 polarity:$pol, rel:'before', sources:$src,
-                 importedFrom:$imp}]->(b)""",
-            dict(s=s.lower(), t=t.lower(), id=f'a{i:03d}', label=label, m=MODE,
-                 lf=lf, pol=e['polarity'], src=sorted(e['sources']),
-                 imp=e.get('importedFrom')), database=DB)
+        props = dict(id=f'a{i:03d}', label=label, m=MODE, lf=lf,
+                     pol=e['polarity'], src=sorted(e['sources']),
+                     imp=e.get('importedFrom'))
+        if lf in CAUSAL:
+            sv, tv = var_id.get((e['src'], e['srcState'])), var_id.get((e['tgt'], e['tgtState']))
+            if not sv or not tv:
+                sys.exit(f"edge {label!r} names a state no concept declares: "
+                         f"{e['srcState']!r} -> {e['tgtState']!r}")
+            run("""MATCH (a:Variable {id:$s}), (b:Variable {id:$t})
+                   CREATE (a)-[:REL {id:$id, label:$label, mode:$m, linkFamily:$lf,
+                     polarity:$pol, rel:'before', sources:$src,
+                     importedFrom:$imp}]->(b)""",
+                dict(s=sv, t=tv, **props), database=DB)
+            at_state += 1
+        else:
+            # The structural CLAIM is about the concepts — but the drawing put it
+            # between two particular states, and reopening that drawing has to
+            # give back what its author drew. So the states ride along as
+            # properties. The claim is at concept level; the provenance of the
+            # stroke is not lost.
+            run("""MATCH (a:Concept {id:$s}), (b:Concept {id:$t})
+                   CREATE (a)-[:REL {id:$id, label:$label, mode:$m, linkFamily:$lf,
+                     polarity:$pol, rel:'before', sources:$src,
+                     importedFrom:$imp, srcState:$ss, tgtState:$ts}]->(b)""",
+                dict(s=e['src'].lower(), t=e['tgt'].lower(),
+                     ss=e['srcState'], ts=e['tgtState'], **props), database=DB)
 
     print(f"{len(aspects)} aspects · {len(concepts)} concepts · {len(edges)} edges "
-          f"· {unmapped} edges with no relation family")
+          f"({at_state} causal, on states; {len(edges) - at_state} structural, on concepts) "
+          f"· {unmapped} with no relation family")
     return aspects
 
 

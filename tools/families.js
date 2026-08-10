@@ -48,7 +48,9 @@ window.FAMILIES_DATA =
       "fontColor": "#000000",
       "members": [
         "ActiveGoal",
+        "CommunityFunction",
         "Ideal",
+        "LifeDomain",
         "Objective",
         "Purpose",
         "Value"
@@ -63,6 +65,7 @@ window.FAMILIES_DATA =
         "Commitment",
         "Conversation",
         "Possibility",
+        "Service",
         "Trust"
       ],
       "fill": "#f6db9e"
@@ -81,6 +84,7 @@ window.FAMILIES_DATA =
       "fontColor": "#000000",
       "members": [
         "Problem",
+        "RiskFactor",
         "SideEffect"
       ],
       "fill": "#e2c1c9"
@@ -90,6 +94,7 @@ window.FAMILIES_DATA =
       "fontColor": "#000000",
       "members": [
         "Asset",
+        "Infrastructure",
         "Power"
       ],
       "fill": "#ecccde"
@@ -108,6 +113,7 @@ window.FAMILIES_DATA =
   "concepts": {
     "Action": {
       "family": "Doing",
+      "opmType": "Process",
       "note": "the act itself."
     },
     "ActiveGoal": {
@@ -116,10 +122,12 @@ window.FAMILIES_DATA =
     },
     "Affect": {
       "family": "Person",
+      "opmType": "Object",
       "note": "part of the acting self — what is felt, ahead of what pushes."
     },
     "Asset": {
       "family": "Resource",
+      "opmType": "Object",
       "note": "accumulated and held by an Institution."
     },
     "Commitment": {
@@ -128,26 +136,32 @@ window.FAMILIES_DATA =
     },
     "Conversation": {
       "family": "Doing",
+      "opmType": "Process",
       "note": "the head of the chain that ends in Commitment."
     },
     "Culture": {
       "family": "Setting",
+      "opmType": "Object",
       "note": "a medium, not an institution — Place shapes it and it surrounds Person, as Ecology surrounds Place."
     },
     "Ecology": {
       "family": "Setting",
+      "opmType": "Object",
       "note": "a medium you are inside, alongside Place and Culture."
     },
     "Government": {
       "family": "Institution",
+      "opmType": "Object",
       "note": "an organised body. It touches Place the way Org does, from outside."
     },
     "Ideal": {
       "family": "Aim",
+      "opmType": "Object",
       "note": "something aimed at rather than something that acts."
     },
     "Motivation": {
       "family": "Person",
+      "opmType": "Object",
       "note": "inner drive — it pushes rather than being pursued, so it is not an Aim."
     },
     "Objective": {
@@ -156,14 +170,17 @@ window.FAMILIES_DATA =
     },
     "Org": {
       "family": "Institution",
+      "opmType": "Object",
       "note": "the organised body the rest of this family hangs off."
     },
     "Person": {
       "family": "Person",
+      "opmType": "Object",
       "note": "the one who acts."
     },
     "Place": {
       "family": "Setting",
+      "opmType": "Object",
       "note": "the ground the other two mediums sit on."
     },
     "Possibility": {
@@ -172,6 +189,7 @@ window.FAMILIES_DATA =
     },
     "Power": {
       "family": "Resource",
+      "opmType": "Object",
       "note": "accumulated over time and drawn on in order to act."
     },
     "Problem": {
@@ -180,6 +198,7 @@ window.FAMILIES_DATA =
     },
     "Purpose": {
       "family": "Aim",
+      "opmType": "Object",
       "note": "the most heavily determined thing aimed at."
     },
     "Result": {
@@ -188,6 +207,7 @@ window.FAMILIES_DATA =
     },
     "Role": {
       "family": "Institution",
+      "opmType": "Object",
       "note": "a slot an organised body creates. A person occupies it; they are not it."
     },
     "SideEffect": {
@@ -204,7 +224,30 @@ window.FAMILIES_DATA =
     },
     "Value": {
       "family": "Aim",
+      "opmType": "Object",
       "note": "aimed at. The only Aim that creates an Institution."
+    },
+    "CommunityFunction": {
+      "family": "Aim",
+      "note": "one of the seven things only a community can produce (McKnight & Block). An end, not a service."
+    },
+    "LifeDomain": {
+      "family": "Aim",
+      "note": "a part of what \"a good life\" is made of. Aimed at, like Value, but lived rather than held."
+    },
+    "Service": {
+      "family": "Doing",
+      "opmType": "Process",
+      "note": "the activity offered. The organised body that offers it is an Org; this is what it does."
+    },
+    "Infrastructure": {
+      "family": "Resource",
+      "opmType": "Object",
+      "note": "the record-keeping and plumbing a system runs on. Accumulated and held, like Asset."
+    },
+    "RiskFactor": {
+      "family": "Issue",
+      "note": "what harms, arriving from outside the system. An input, like Problem."
     }
   }
 };

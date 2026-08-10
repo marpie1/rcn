@@ -31,6 +31,7 @@ from db import run, BASE
 FAMILIES_JS = os.path.join(BASE, 'tools', 'families.js')
 EDGE_FAMILIES_JS = os.path.join(BASE, 'tools', 'edge-families.js')
 MODE = 'EIP'
+CAUSAL = ('Influence', 'Transformation')   # claims about states, not concepts
 
 
 def read_families():
@@ -120,11 +121,15 @@ def build():
         for m in f['members']:
             member_of[m] = fname
 
+    # OPM Object/Process, declared per concept in families.js. Absent means
+    # UNCLASSIFIED, never Object-by-default.
+    opm_of = {k: v.get('opmType') for k, v in (fam.get('concepts') or {}).items()}
+
     efam = read_edge_families()
 
     print("wiping Concept / Instance / Family / LinkFamily …")
     run("MATCH (n) WHERE n:Concept OR n:Instance OR n:Family OR n:LinkFamily "
-        "DETACH DELETE n")
+        "OR n:Variable OR n:Aspect DETACH DELETE n")
 
     # Constraints. The brief omitted these; without them nothing stops a
     # duplicate id when Stage 2 loads the 26-node composite, which would
@@ -135,6 +140,7 @@ def build():
         "CREATE CONSTRAINT instance_id IF NOT EXISTS FOR (n:Instance) REQUIRE n.id IS UNIQUE",
         "CREATE CONSTRAINT family_name IF NOT EXISTS FOR (n:Family) REQUIRE n.name IS UNIQUE",
         "CREATE CONSTRAINT linkfamily_name IF NOT EXISTS FOR (n:LinkFamily) REQUIRE n.name IS UNIQUE",
+        "CREATE CONSTRAINT variable_id IF NOT EXISTS FOR (n:Variable) REQUIRE n.id IS UNIQUE",
     ]:
         run(stmt)
 
@@ -169,9 +175,26 @@ def build():
         run(f"""
             CREATE (n:Concept:{c['schemaLabel']} {{
               id:$id, schemaLabel:$schemaLabel, variableLabel:$variableLabel,
+              opmType:$opmType,
               mode:$mode, sources:$sources, w:112, h:54, shape:'ellipse'}})
             WITH n MATCH (f:Family {{name:$family}}) CREATE (n)-[:IN_FAMILY]->(f)
-        """, dict(mode=MODE, family=family, **c))
+        """, dict(mode=MODE, family=family,
+                  opmType=opm_of.get(c['schemaLabel']), **c))
+        # The reference graph has one state per concept. It still gets a real
+        # :Variable node, so n=6 stays a conformance test for the SHAPE the
+        # other graphs use, not a simpler special case.
+        run("""MATCH (n:Concept {id:$cid})
+               CREATE (v:Variable {id:$vid, label:$lbl, schemaLabel:$sl,
+                                   mode:$m, sources:$src})
+               CREATE (n)-[:HAS_STATE]->(v)""",
+            dict(cid=c['id'], vid=f"{c['id']}_v0", lbl=c['variableLabel'],
+                 sl=c['schemaLabel'], m=MODE, src=c['sources']))
+
+    # The n=6 reference is the one graph whose sources are PEOPLE. Declaring it
+    # is what lets a lens know that size(sources) > 1 means agreement here, and
+    # only cross-cutting in aspects16.
+    for a in sorted({s for c in CONCEPTS for s in c['sources']}):
+        run("CREATE (n:Aspect {name:$n, kind:'person'})", dict(n=a))
 
     print(f"edges ({len(EDGES)}) …")
     known = set(efam['order'])
@@ -179,11 +202,21 @@ def build():
         if e['linkFamily'] not in known:
             sys.exit(f"edge {e['id']}: linkFamily {e['linkFamily']!r} "
                      f"is not in edge-families.js")
-        run("""MATCH (s:Concept {id:$src}), (t:Concept {id:$tgt})
-               CREATE (s)-[r:REL {id:$id, label:$label, mode:$mode,
-                 linkFamily:$linkFamily,
-                 polarity:$polarity, magnitude:$magnitude, rel:$rel,
-                 sources:$sources}]->(t)""", dict(mode=MODE, **e))
+        # Causal claims attach to the measured states; structural claims stay
+        # on the concepts. Same rule as load_aspects.py — the n=6 reference has
+        # to exercise the shape the real graphs use, or it tests nothing.
+        if e['linkFamily'] in CAUSAL:
+            run("""MATCH (s:Variable {id:$src + '_v0'}), (t:Variable {id:$tgt + '_v0'})
+                   CREATE (s)-[r:REL {id:$id, label:$label, mode:$mode,
+                     linkFamily:$linkFamily,
+                     polarity:$polarity, magnitude:$magnitude, rel:$rel,
+                     sources:$sources}]->(t)""", dict(mode=MODE, **e))
+        else:
+            run("""MATCH (s:Concept {id:$src}), (t:Concept {id:$tgt})
+                   CREATE (s)-[r:REL {id:$id, label:$label, mode:$mode,
+                     linkFamily:$linkFamily,
+                     polarity:$polarity, magnitude:$magnitude, rel:$rel,
+                     sources:$sources}]->(t)""", dict(mode=MODE, **e))
 
     print(f"instances ({len(INSTANCES)}) …")
     for i in INSTANCES:

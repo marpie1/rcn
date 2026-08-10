@@ -52,6 +52,13 @@ PORT = int(os.environ.get('PORT', 8768))
 RING = ("round(460 + 300 * cos(6.28318530718 * i / total))",
         "round(330 + 235 * sin(6.28318530718 * i / total))")
 
+# A concept with ONE state is named by that state — "Seriousness of PROBLEM".
+# A concept with SEVERAL has no single name, so it is named by the concept:
+# "Affect", not an arbitrary pick between Positive and Negative. The old
+# `primary` flag chose by string length, which is the same rule that lost
+# Negative AFFECT in the first place; it is gone rather than re-decorated.
+LABEL = "CASE WHEN nstates > 1 THEN n.schemaLabel ELSE n.variableLabel END"
+
 _NODE_PREAMBLE = """
 MATCH (n:Concept)
 WITH n ORDER BY n.id
@@ -59,10 +66,12 @@ WITH collect(n) AS ns, count(*) AS total
 UNWIND range(0, total - 1) AS i
 WITH ns[i] AS n, i, total
 OPTIONAL MATCH (n)-[:IN_FAMILY]->(f:Family)
+OPTIONAL MATCH (n)-[:HAS_STATE]->(_v:Variable)
+WITH n, i, total, f, count(_v) AS nstates
 """
 
 CAUSAL_NODES = _NODE_PREAMBLE + f"""
-RETURN n.id AS id, n.variableLabel AS label,
+RETURN n.id AS id, {LABEL} AS label,
        {RING[0]} AS x, {RING[1]} AS y,
        n.w AS w, n.h AS h, n.shape AS shape,
        f.fill AS color, f.color AS borderColor,
@@ -71,8 +80,31 @@ RETURN n.id AS id, n.variableLabel AS label,
 ORDER BY id
 """
 
+# THE CAUSAL LENS NOW READS STATES. A causal claim is about measured
+# quantities — "Positive AFFECT raises MOTIVATION" — so its nodes are the
+# variables, not the concepts they belong to. The STRUCTURE lens keeps reading
+# concepts, because "an Org exists for a Purpose" is a claim about the concepts
+# however they are measured. Two lenses, two levels, both true.
+VAR_NODES = """
+MATCH (v:Variable)<-[:HAS_STATE]-(n:Concept)
+WITH v, n ORDER BY v.id
+WITH collect({v:v, n:n}) AS rows, count(*) AS total
+UNWIND range(0, total - 1) AS i
+WITH rows[i].v AS v, rows[i].n AS n, i, total
+OPTIONAL MATCH (n)-[:IN_FAMILY]->(f:Family)
+RETURN v.id AS id, v.label AS label,
+       round(460 + 300 * cos(6.28318530718 * i / total)) AS x,
+       round(330 + 235 * sin(6.28318530718 * i / total)) AS y,
+       n.w AS w, n.h AS h, n.shape AS shape,
+       f.fill AS color, f.color AS borderColor,
+       {schemaLabel:n.schemaLabel, family:f.name, mode:n.mode,
+        opmType:n.opmType, concept:n.id, state:v.label,
+        gold: size(n.sources) > 1} AS props
+ORDER BY id
+"""
+
 CAUSAL_EDGES = """
-MATCH (s:Concept)-[r:REL]->(t:Concept)
+MATCH (s:Variable)-[r:REL]->(t:Variable)
 RETURN r.id AS id, s.id AS src, t.id AS tgt,
        r.label AS label, r.polarity AS polarity,
        {linkFamily:r.linkFamily, magnitude:r.magnitude, rel:r.rel,
@@ -82,7 +114,7 @@ ORDER BY id
 
 # Provenance. The federation lens: who drew what, and where two hands met.
 GOLD_NODES = _NODE_PREAMBLE + f"""
-RETURN n.id AS id, n.variableLabel AS label,
+RETURN n.id AS id, {LABEL} AS label,
        {RING[0]} AS x, {RING[1]} AS y,
        n.w AS w, n.h AS h, n.shape AS shape,
        {{sources:n.sources, gold: size(n.sources) > 1,
@@ -95,29 +127,42 @@ ORDER BY id
 # drawings and their union are the same rows read two ways — which is the
 # payoff of keeping sources as a list rather than a scalar.
 SUBGRAPH_NODES = """
-MATCH (n:Concept) WHERE $aspect IN n.sources
-WITH n ORDER BY n.id
-WITH collect(n) AS ns, count(*) AS total
+MATCH (v:Variable)<-[:HAS_STATE]-(n:Concept) WHERE $aspect IN v.sources
+WITH v, n ORDER BY n.id, v.id
+WITH collect({v:v, n:n}) AS rows, count(*) AS total
 UNWIND range(0, total - 1) AS i
-WITH ns[i] AS n, i, total
+WITH rows[i].v AS v, rows[i].n AS n, i, total
 OPTIONAL MATCH (n)-[:IN_FAMILY]->(f:Family)
-RETURN n.id AS id, n.variableLabel AS label,
+RETURN v.id AS id, v.label AS label,
        round(460 + 300 * cos(6.28318530718 * i / total)) AS x,
        round(330 + 235 * sin(6.28318530718 * i / total)) AS y,
        n.w AS w, n.h AS h, n.shape AS shape,
        f.fill AS color, f.color AS borderColor, n.schemaLabel AS schemaLabel,
-       {family:f.name, mode:n.mode, sources:n.sources,
+       {family:f.name, mode:n.mode, sources:n.sources, state:v.label,
+        opmType:n.opmType, concept:n.id,
         gold: size(n.sources) > 1, shared: size(n.sources) > 1} AS props
 ORDER BY id
 """
 
 SUBGRAPH_EDGES = """
-MATCH (s:Concept)-[r:REL]->(t:Concept) WHERE $aspect IN r.sources
-RETURN r.id AS id, s.id AS src, t.id AS tgt,
+// A drawing is drawn between STATES, so both kinds of edge are returned
+// between states. Causal edges already attach there. Structural edges attach to
+// the concepts — that is the claim they make — but each carries the states the
+// author actually drew it between, so reopening the drawing gives back the
+// author\'s own strokes rather than a reconstruction.
+MATCH (a:Variable)-[r:REL]->(b:Variable) WHERE $aspect IN r.sources
+RETURN r.id AS id, a.id AS src, b.id AS tgt,
        r.label AS label, r.polarity AS polarity,
        {linkFamily:r.linkFamily, rel:r.rel, mode:r.mode, sources:r.sources,
-        gold: size(r.sources) > 1} AS props
-ORDER BY id
+        level:'state', gold: size(r.sources) > 1} AS props
+UNION
+MATCH (sc:Concept)-[r:REL]->(tc:Concept) WHERE $aspect IN r.sources
+MATCH (sc)-[:HAS_STATE]->(a:Variable) WHERE a.label = r.srcState
+MATCH (tc)-[:HAS_STATE]->(b:Variable) WHERE b.label = r.tgtState
+RETURN r.id AS id, a.id AS src, b.id AS tgt,
+       r.label AS label, r.polarity AS polarity,
+       {linkFamily:r.linkFamily, rel:r.rel, mode:r.mode, sources:r.sources,
+        level:'concept', gold: size(r.sources) > 1} AS props
 """
 
 # Every edge label already in use, with how widely. Feeds the authoring
@@ -172,7 +217,7 @@ ORDER BY id
 """
 
 PROJECTIONS = {
-    'causal':    (CAUSAL_NODES, CAUSAL_EDGES),
+    'causal':    (VAR_NODES,    CAUSAL_EDGES),
     'structure': (CAUSAL_NODES, STRUCTURE_EDGES),
     'gold':      (GOLD_NODES,   None),
 }
@@ -186,15 +231,15 @@ PROJECTIONS = {
 # Per-concept labels (:Action, :Motivation, …) are deliberately folded away.
 # They are the SECOND label on a :Concept, present so the Neo4j Browser reads
 # well — showing 24 of them as node types would drown the five that are real.
-SCHEMA_KINDS = ['Concept', 'Family', 'LinkFamily', 'Aspect', 'Instance']
-SCHEMA_PLACE = {                       # hand-placed: five boxes read better than a ring
+SCHEMA_KINDS = ['Concept', 'Variable', 'Family', 'LinkFamily', 'Aspect', 'Instance']
+SCHEMA_PLACE = {                       # hand-placed: boxes read better than a ring
     'Concept':    (440, 300), 'Family':  (110, 150), 'LinkFamily': (110, 450),
-    'Aspect':     (780, 150), 'Instance': (780, 450),
+    'Aspect':     (780, 150), 'Instance': (780, 450), 'Variable': (440, 560),
 }
 SCHEMA_COLOR = {
     'Concept':    ('#dbeafe', '#1d4ed8'), 'Family':   ('#dcfce7', '#15803d'),
     'LinkFamily': ('#fef3c7', '#b45309'), 'Aspect':   ('#f3e8ff', '#7c3aed'),
-    'Instance':   ('#ffe4e6', '#be123c'),
+    'Instance':   ('#ffe4e6', '#be123c'), 'Variable': ('#e0e7ff', '#4338ca'),
 }
 
 
@@ -282,6 +327,160 @@ def schema_projection(database=None):
             'modelNote': 'Generated from the live database by /projection/schema. '
                          'Per-concept labels (:Action, :Motivation …) are the second '
                          'label on :Concept and are folded away here.',
+            'nodes': nodes, 'edges': edges, 'lines': []}
+
+
+# ── the VOCABULARY lens — the schema as a strict tree ─────────────────────
+# The Composer's family / schema / variable levels are a strict contraction:
+# "zooming out merges; zooming in never invents" (graph-composer.html:1100).
+# That makes them the one part of this schema that is genuinely a TREE, and a
+# tree is what a sunburst requires. The causal REL edges are deliberately
+# absent — a ring diagram has nowhere to draw a cycle, so asking it to carry
+# fixes-that-fail would produce a picture that lies. That reading stays in
+# /projection/causal, where it belongs.
+#
+# `weight` is the SOURCE COUNT — in how many of this graph's source drawings the
+# concept appears. What a source IS differs per graph and the projection must not
+# pretend otherwise: in `neo4j` they are people ('merchant', 'organizer'); in
+# `aspects16` they are the 16 TOPIC drawings, so a high count means the concept is
+# cross-cutting, NOT that many people agreed on it.
+# A family's weight is the sum of its children, never stored.
+VOCABULARY = """
+MATCH (c:Concept)
+OPTIONAL MATCH (c)-[:IN_FAMILY]->(f:Family)
+OPTIONAL MATCH (c)-[:HAS_STATE]->(v:Variable)
+WITH c, f, collect(v.label) AS states
+RETURN coalesce(f.name, 'Unfiled')  AS family,
+       coalesce(f.color, '#6b7280') AS color,
+       coalesce(f.fill,  '#e5e7eb') AS fill,
+       coalesce(f.ord, 99)          AS ord,
+       c.schemaLabel                AS schema,
+       c.opmType                    AS opmType,
+       CASE WHEN size(states) = 0
+            THEN [coalesce(c.variableLabel, c.schemaLabel)]
+            ELSE states END AS states,
+       coalesce(c.sources, [])      AS srcs,
+       size(coalesce(c.sources, [])) AS sources
+ORDER BY ord, family, schema
+"""
+
+
+def vocabulary_projection(database=None):
+    """Root → family → schemaLabel → variableLabel, in the standard envelope.
+
+    A concept with no :IN_FAMILY edge lands under 'Unfiled' rather than being
+    dropped. A missing family is a real finding about the data and has to be
+    visible; a query that quietly returns 23 of 24 rows is the exact failure
+    this substrate exists to end.
+    """
+    import math
+    rows = run(VOCABULARY, database=database)
+    cx, cy, radius = 470, 340, {1: 150, 2: 300, 3: 450}
+
+    fams, order = {}, []
+    for r in rows:
+        f = fams.get(r['family'])
+        if f is None:
+            f = fams[r['family']] = {'color': r['color'], 'fill': r['fill'],
+                                     'weight': 0, 'kids': []}
+            order.append(r['family'])
+        r['states'] = sorted(r['states'])
+        f['weight'] += max(r['sources'], 1)
+        f['kids'].append(r)
+
+    # WHAT IS A SOURCE HERE? Declared by the loader on the :Aspect registry.
+    # A lens must not infer it: nothing in a list of strings separates
+    # 'merchant' from 'action'. Unknown is a real answer and is reported as one.
+    kinds = run("MATCH (a:Aspect) RETURN DISTINCT a.kind AS k", database=database)
+    ks = {r['k'] for r in kinds if r['k']}
+    source_kind = ks.pop() if len(ks) == 1 else ('mixed' if ks else 'unknown')
+
+    total = sum(f['weight'] for f in fams.values()) or 1
+    nodes = [{'id': 'root', 'label': f"RCN Substrate\n{database or DATABASE}",
+              'x': cx, 'y': cy, 'w': 150, 'h': 60, 'shape': 'ellipse',
+              'color': '#93c5fd', 'borderColor': '#1d4ed8', 'borderWidth': 2.5,
+              'fontSize': 13, 'fontColor': '#1a1a1a',
+              'props': {'level': 0, 'weight': total, 'sourceKind': source_kind,
+                        'concepts': len(rows), 'families': len(fams)}}]
+    edges = []
+
+    def place(level, mid):                     # mid = fraction round the wheel
+        a = 2 * math.pi * mid - math.pi / 2
+        return (round(cx + radius[level] * math.cos(a)),
+                round(cy + radius[level] * math.sin(a)))
+
+    cursor = 0.0
+    for name in order:
+        f = fams[name]
+        span = f['weight'] / total
+        fid = 'fam_' + name.lower()
+        x, y = place(1, cursor + span / 2)
+        nodes.append({'id': fid, 'label': name, 'x': x, 'y': y,
+                      'w': 120, 'h': 44, 'shape': 'rounded',
+                      'color': f['fill'], 'borderColor': f['color'],
+                      'borderWidth': 3, 'fontSize': 12, 'fontColor': '#1a1a1a',
+                      'props': {'level': 1, 'family': name, 'weight': f['weight'],
+                                'start': cursor, 'span': span,
+                                'color': f['color'], 'fill': f['fill']}})
+        edges.append({'id': f'v_root_{fid}', 'src': 'root', 'tgt': fid,
+                      'label': '', 'polarity': 'none', 'width': 2,
+                      'fontSize': 10, 'color': f['color'], 'curved': False,
+                      'props': {'rel': 'CONTAINS'}})
+
+        inner = cursor
+        for r in f['kids']:
+            w = max(r['sources'], 1)
+            kspan = span * w / f['weight']
+            sid = 'sch_' + r['schema']
+            x, y = place(2, inner + kspan / 2)
+            base = {'level': 2, 'family': name, 'schemaLabel': r['schema'],
+                    'opmType': r['opmType'],
+                    'weight': w, 'sources': r['sources'], 'sourceList': r['srcs'],
+                    'states': r['states'],
+                    'start': inner, 'span': kspan,
+                    'color': f['color'], 'fill': f['fill']}
+            nodes.append({'id': sid, 'label': r['schema'], 'x': x, 'y': y,
+                          'w': 140, 'h': 40, 'shape': 'rounded',
+                          'color': f['fill'], 'borderColor': f['color'],
+                          'borderWidth': 2, 'fontSize': 11, 'fontColor': '#1a1a1a',
+                          'props': base})
+            edges.append({'id': f'v_{fid}_{sid}', 'src': fid, 'tgt': sid,
+                          'label': '', 'polarity': 'none', 'width': 1.5,
+                          'fontSize': 10, 'color': f['color'], 'curved': False,
+                          'props': {'rel': 'CONTAINS'}})
+
+            # RING 3 BRANCHES. A concept has as many states as it has ways of
+            # being measured, and they SPLIT their parent's arc — they do not
+            # each inherit it. One state therefore looks exactly as it did
+            # before, and four states look like four.
+            vspan = kspan / len(r['states'])
+            for j, label in enumerate(r['states']):
+                vid = f"var_{r['schema']}_{j}"
+                vstart = inner + j * vspan
+                x, y = place(3, vstart + vspan / 2)
+                nodes.append({'id': vid, 'label': label, 'x': x, 'y': y,
+                              'w': 190, 'h': 40, 'shape': 'rounded',
+                              'color': f['fill'], 'borderColor': f['color'],
+                              'borderWidth': 1.5, 'fontSize': 10,
+                              'fontColor': '#1a1a1a',
+                              'props': dict(base, level=3, variableLabel=label,
+                                            stateOf=r['schema'],
+                                            stateCount=len(r['states']),
+                                            start=vstart, span=vspan)})
+                edges.append({'id': f'v_{sid}_{vid}', 'src': sid, 'tgt': vid,
+                              'label': '', 'polarity': 'none', 'width': 1.5,
+                              'fontSize': 10, 'color': f['color'], 'curved': False,
+                              'props': {'rel': 'HAS_STATE'}})
+            inner += kspan
+        cursor += span
+
+    return {'version': '1.0',
+            'modelName': f"RCN Substrate vocabulary — {database or DATABASE}",
+            'modelNote': 'family → schemaLabel → state, generated from the live '
+                         'database. Arc weight is the SOURCE COUNT: in how many of the '
+                         'graph\u2019s source drawings the concept appears. Ring 3 branches '
+                         'when a concept has several states. Causal REL edges are not in '
+                         'this lens — a tree cannot hold a loop. See /projection/causal.',
             'nodes': nodes, 'edges': edges, 'lines': []}
 
 
@@ -444,6 +643,11 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._send(200, schema_projection(db or ASPECT_DB))
             except Exception as e:
                 return self._send(503, {'error': str(e)})
+        if path == '/projection/vocabulary':
+            try:
+                return self._send(200, vocabulary_projection(db or ASPECT_DB))
+            except Exception as e:
+                return self._send(503, {'error': str(e)})
         if path == '/projection/subgraphs':
             try:
                 return self._send(200, {'database': db or ASPECT_DB,
@@ -540,6 +744,7 @@ six-node reference. <b>Same query, same renderer — only the data grows.</b></p
 <h1>Rendered</h1>
 <ul>
 <li><a href="/tools/graph-tool-v22.html?url=%2Fprojection%2Fschema"><b>graph-tool ← the schema itself</b></a> — what is actually in the database, drawn from the database</li>
+<li><a href="/tools/schema-sunburst.html?db=aspects16"><b>sunburst ← the vocabulary</b></a> — family → schema → variable as rings, arc width = witness count. No causal edges: a tree cannot hold a loop</li>
 <li><a href="/tools/graph-tool-v22.html?url=%2Fprojection%2Fstructure%3Fdb%3Daspects16">graph-tool ← structure</a> — the ERD reading of the 16 drawings</li>
 <li><a href="/tools/graph-tool-v22.html?url=%2Fprojection%2Fcausal%3Fdb%3Daspects16">graph-tool ← causal</a> — the CLD reading of the 16 drawings</li>
 <li><a href="/tools/graph-tool-v22.html?url=/projection/causal">graph-tool ← causal</a> — n=6 reference</li>
