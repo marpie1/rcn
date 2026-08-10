@@ -428,10 +428,14 @@ box_txt(s, [
 ], 0.55, 3.0, 12.23, 1.65, fill=RD_LT, line=RD, size=16, top_color=RD)
 txlines(s, [
     "This is the price of the clarity, not a gap to fill later.",
-    "If edges are ever added, the geometry will accept them and the picture will lie.",
-    "The causal reading stays in /projection/causal and the Graph Tool, where a loop is drawable and means something.",
-], 0.55, 4.95, 12.2, 1.6, sizes=[19, 17, 17], bolds=[True, False, False],
-    colors=[BLACK, GREY, GREY], spacing=8)
+    "Add edges to THIS wheel and the geometry will accept them while the picture lies.",
+    "But a different wheel could carry causality: root it on one concept, put its causes in ring 1, "
+    "theirs in ring 2. That is a tree — and the same concept appearing twice is the accepted price, "
+    "exactly as it already is in the Graph Tool's driver trees.",
+    "The rule is not \u201ca sunburst cannot show influence.\u201d It is that the rings must be the "
+    "hierarchy you are actually claiming.",
+], 0.55, 4.8, 12.2, 2.0, sizes=[18, 15, 15, 15], bolds=[True, False, False, False],
+    colors=[BLACK, GREY, GREY, BLACK], spacing=5)
 foot(s, "Also absent, for the same reason: instances, which source drawing contributed what, and link families.")
 
 # ── 10 · How it is built ─────────────────────────────────────────────────────
@@ -455,7 +459,9 @@ box_txt(s, [
     "The label that will not fit goes to hover.",
     "Each label is capped by the room its own wedge has. What does not fit is shortened; what cannot fit "
     "at all becomes a faint ellipsis — and every segment carries its full text, its source list and its ring name, on hover. "
-    "Click to pin it, because a touch screen has no hover.",
+    "Click to pin it, because a touch screen has no hover. Search dims rather than filters, so "
+    "proportions never shift underfoot, and a colour toggle swaps the family reading for OPM "
+    "Object / Process.",
 ], 0.55, 4.85, 12.23, 1.65, fill=WHITE, line=SLATE, size=14, top_color=BLACK)
 foot(s, "Stress-tested at 64 concepts with deliberately punishing labels: no overflow, every label still reachable.")
 

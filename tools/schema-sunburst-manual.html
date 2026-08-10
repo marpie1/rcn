@@ -118,7 +118,25 @@ python3 api.py                 # projections + the tools, port 8768</code></pre>
     <li><strong>equal</strong> — every concept gets the same arc, like a classic type-hierarchy diagram. Use it once in a meeting to show what the weighting was doing, then switch back.</li>
   </ul>
 
+  <div class="note"><strong>The default depends on the graph, and so does the button.</strong> Source-weighting means <em>agreement</em> only where the sources are people. Each graph declares what its sources are, on its <code>:Aspect</code> registry — <code>kind:'person'</code> or <code>kind:'topic'</code> — because nothing in a list of strings distinguishes <code>merchant</code> from <code>action</code>, and inferring it is how a claim that sixteen people drew these drawings got into three documents.<br><br>On a <strong>person</strong> graph the button reads <em>sources</em> and weighting is on by default. On a <strong>topic</strong> graph it reads <em>cross-cutting</em> and equal arcs are the default, because reach is not agreement. The status line says which: <em>sources are people</em> or <em>sources are topic</em>.</div>
+
   <div class="tip">Flipping between the two is the fastest way to make the point to a group. In <strong>equal</strong>, Resource looks as established as Person. In <strong>sources</strong>, it shrinks to a sliver — and someone always asks why.</div>
+
+  <h3>find — the search box</h3>
+  <p>Matches family names, concept names and state labels, case-insensitively. The count reads <em>5 of 24</em>; it turns red at zero. <kbd>/</kbd> focuses the box from anywhere, <kbd>Esc</kbd> clears it.</p>
+  <div class="note"><strong>It dims rather than filters, deliberately.</strong> A sunburst's meaning is proportional. Remove the non-matches and every remaining arc silently re-widens, so the picture would answer a question nobody asked. Everything holds its place; only the ink changes.</div>
+
+  <h3>colour — family / OPM</h3>
+  <p>Ring 1 keeps its family colour in both modes — the families are the vocabulary and should not move under you. Rings 2 and 3 recolour:</p>
+  <table>
+    <tr><th>Fill</th><th>Meaning</th></tr>
+    <tr><td>blue</td><td><strong>Object</strong> — a thing that exists and can hold states</td></tr>
+    <tr><td>green</td><td><strong>Process</strong> — a thing that transforms objects</td></tr>
+    <tr><td>grey</td><td><strong>Unclassified</strong> — nobody has said yet</td></tr>
+  </table>
+  <p>The colours are <code>graph-tool-v22</code>'s own OPM palette, so a Process looks the same in both tools. Unclassified is deliberately <em>not</em> Object-coloured: "we decided this is a thing" and "nobody has said yet" are different facts.</p>
+  <div class="tip">The greys cluster. Issue and Outcome are almost entirely unclassified, as is the softer half of Doing — exactly where "is this a thing or a happening?" is genuinely hard. Two green wedges against fourteen blue also says this vocabulary is overwhelmingly things-in-states rather than happenings.</div>
+  <p>Classification is declared per concept in <code>tools/families.js</code>, never inferred. Eighteen of thirty are classified; twelve are left blank rather than guessed.</p>
 
   <h3>rings — 3 / 2</h3>
   <p><strong>3</strong> shows family → concept → states. <strong>2</strong> stops at the concept. Most concepts have exactly one state, so for them ring 3 is only the human phrasing — but where a concept has several (<code>Affect</code> is <em>Positive</em> and <em>Negative</em>), dropping ring 3 hides real structure. Two rings is still the better shape for a slide or a printed wall sheet.</p>
@@ -216,7 +234,7 @@ EOF</code></pre>
 
   <h2 id="cannot">9 · What it will not show</h2>
 
-  <div class="stop"><strong>Causal edges are absent by construction.</strong> A sunburst partitions a disc, so every child has exactly one parent and there is nowhere to draw an arrow that returns to its origin. The Fixes-that-Fail loop cannot appear here at all.<br><br>This is not a backlog item. If edges are ever added the geometry will accept them and the resulting picture will assert relationships it cannot actually represent. The causal reading belongs to <code>/projection/causal</code> and the Graph Tool.</div>
+  <div class="stop"><strong>Causal edges are absent by construction.</strong> A sunburst partitions a disc, so every child has exactly one parent and there is nowhere to draw an arrow that returns to its origin. The Fixes-that-Fail loop cannot appear here at all.<br><br>This is not a backlog item for <em>this</em> wheel. Add edges here and the geometry will accept them while the picture asserts relationships it cannot represent. The causal reading belongs to <code>/projection/causal</code> and the Graph Tool.<br><br><strong>A driver-tree wheel is a different matter.</strong> Root a tree on one concept, put its direct causes in ring 1, theirs in ring 2, and outward: that is a genuine tree, and the same concept appearing in several places is the accepted price — exactly as it is in the Graph Tool's <em>Effects / Causes / Both</em> driver trees. The rule is not that a sunburst cannot show influence. It is that the rings must be the hierarchy you are actually claiming: naming in this wheel, causal distance in that one. No single wheel can be both.</div>
 
   <p>Also absent, for the same reason — one parent each:</p>
   <ul>
