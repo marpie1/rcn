@@ -91,9 +91,11 @@ def build_file(aspect, database='aspects16', positions=None):
     used = {n.get('id') for n in original.get('nodes', [])}
 
     rows = run("""MATCH (c:Concept) WHERE $a IN c.sources
+                  OPTIONAL MATCH (c)-[:HAS_STATE]->(v:Variable)
                   RETURN c.schemaLabel AS sl, c.variableLabel AS label,
-                         c.w AS w, c.h AS h, c.shape AS shape
-                  ORDER BY c.id""", {'a': aspect}, database=database)
+                         collect(v.label) AS states,
+                         c.w AS w, c.h AS h, c.shape AS shape, c.id AS cid
+                  ORDER BY cid""", {'a': aspect}, database=database)
     db_by_schema = {r['sl']: r for r in rows}
 
     # ORDER IS PART OF THE DIFF. The database has no opinion about the order of
@@ -106,7 +108,20 @@ def build_file(aspect, database='aspects16', positions=None):
         if not r:
             continue                             # the concept was retracted
         node = dict(n)                           # keep id, x, y, colour, props
-        node['label'] = r['label']               # the substrate owns the label
+        # THE SUBSTRATE OWNS THE LABEL — BUT A CONCEPT HAS SEVERAL.
+        # Blindly assigning c.variableLabel is what turned "Negative AFFECT"
+        # into "Positive AFFECT". If this node's own wording is still one of
+        # the concept's states, it stays. If the concept has exactly one state,
+        # that is a rename and it is applied. Otherwise the file's wording is
+        # left alone, because nothing here can tell which state was meant.
+        states = [x for x in (r.get('states') or []) if x]
+        mine = (n.get('label') or '').strip()
+        if mine in states:
+            node['label'] = mine
+        elif len(states) == 1:
+            node['label'] = states[0]
+        elif not states:
+            node['label'] = r['label']
         node['schemaLabel'] = sl
         if positions and sl in positions:
             # The canvas moved this concept. Shift every placement of it by the
@@ -136,15 +151,35 @@ def build_file(aspect, database='aspects16', positions=None):
                       'extraLabels': [r['sl']], 'schemaLabel': r['sl']})
         ids_of[r['sl']] = [nid]
     first_of = {sl: v[0] for sl, v in ids_of.items()}
+    # state -> a file node carrying it, so a NEW edge attaches to the right
+    # placement rather than to whichever node shares the schema label.
+    by_state = {}
+    for n in nodes:
+        by_state.setdefault((n.get('label') or '').strip(), n['id'])
 
     id_schema = {n['id']: n['schemaLabel'] for n in nodes}
+    id_state = {n['id']: (n.get('label') or '').strip() for n in nodes}
     used_e = {e.get('id') for e in original.get('edges', [])}
 
-    erows = run("""MATCH (s:Concept)-[r:REL]->(t:Concept) WHERE $a IN r.sources
-                   RETURN s.schemaLabel AS src, t.schemaLabel AS tgt,
+    # Causal edges attach to :Variable, structural ones to :Concept. A drawing
+    # contains both, so both come back — and each reports the STATES it runs
+    # between, which is what routes an edge to the right one of two placements.
+    erows = run("""MATCH (sv:Variable)-[r:REL]->(tv:Variable) WHERE $a IN r.sources
+                   MATCH (sc:Concept)-[:HAS_STATE]->(sv)
+                   MATCH (tc:Concept)-[:HAS_STATE]->(tv)
+                   RETURN sc.schemaLabel AS src, tc.schemaLabel AS tgt,
+                          sv.label AS srcState, tv.label AS tgtState,
                           r.label AS label, r.polarity AS polarity,
-                          r.linkFamily AS linkFamily
-                   ORDER BY r.id""", {'a': aspect}, database=database)
+                          r.linkFamily AS linkFamily, r.id AS rid
+                   UNION
+                   MATCH (s:Concept)-[r:REL]->(t:Concept) WHERE $a IN r.sources
+                   RETURN s.schemaLabel AS src, t.schemaLabel AS tgt,
+                          coalesce(r.srcState, s.variableLabel) AS srcState,
+                          coalesce(r.tgtState, t.variableLabel) AS tgtState,
+                          r.label AS label, r.polarity AS polarity,
+                          r.linkFamily AS linkFamily, r.id AS rid
+                   """, {'a': aspect}, database=database)
+    erows.sort(key=lambda r: r['rid'] or '')
 
     # Which ORIGINAL edge does each substrate edge correspond to? Keyed on the
     # schema pair plus the verb, because that is all the substrate knows. When
@@ -154,12 +189,12 @@ def build_file(aspect, database='aspects16', positions=None):
     from collections import defaultdict, deque
     pending = defaultdict(deque)
     for i, e in enumerate(original.get('edges', [])):
-        k = (id_schema.get(e.get('src')), id_schema.get(e.get('tgt')), e.get('label', ''))
+        k = (id_state.get(e.get('src')), id_state.get(e.get('tgt')), e.get('label', ''))
         pending[k].append((i, e))
 
     ordered = []
     for r in erows:
-        k = (r['src'], r['tgt'], r['label'] or '')
+        k = (r['srcState'], r['tgtState'], r['label'] or '')
         while pending[k]:
             ordered.append((pending[k].popleft(), r))      # one per original edge
             if not pending[k]:
@@ -171,8 +206,8 @@ def build_file(aspect, database='aspects16', positions=None):
     edges, next_e = [], 0
     for prev_pair, r in ordered:
         prev = prev_pair[1] if prev_pair else None
-        s = prev['src'] if prev else first_of.get(r['src'])
-        t = prev['tgt'] if prev else first_of.get(r['tgt'])
+        s = prev['src'] if prev else (by_state.get(r['srcState']) or first_of.get(r['src']))
+        t = prev['tgt'] if prev else (by_state.get(r['tgtState']) or first_of.get(r['tgt']))
         if not s or not t:
             continue
         if prev:

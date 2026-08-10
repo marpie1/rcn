@@ -545,11 +545,21 @@ def put_subgraph(aspect, payload, database=ASPECT_DB):
         "SET c.sources = [s IN c.sources WHERE s <> $a]", kw, database=database)
     run("MATCH ()-[r:REL]->() WHERE $a IN r.sources "
         "SET r.sources = [s IN r.sources WHERE s <> $a]", kw, database=database)
+    run("MATCH (v:Variable) WHERE $a IN v.sources "
+        "SET v.sources = [s IN v.sources WHERE s <> $a]", kw, database=database)
     orphaned_e = run("MATCH ()-[r:REL]->() WHERE size(r.sources) = 0 "
                      "DELETE r RETURN count(r) AS c", database=database)[0]['c']
+    orphaned_v = run("MATCH (v:Variable) WHERE size(v.sources) = 0 "
+                     "DETACH DELETE v RETURN count(v) AS c", database=database)[0]['c']
     orphaned_n = run("MATCH (c:Concept) WHERE size(c.sources) = 0 "
                      "DETACH DELETE c RETURN count(c) AS c", database=database)[0]['c']
 
+    # A CANVAS NODE IS A STATE. Two nodes can share a schema label and be
+    # different states of it — that is the whole point of Affect — so the
+    # concept is MERGEd once and a :Variable is MERGEd per distinct wording.
+    # Setting c.variableLabel from every node in turn is what let the last one
+    # read win and erased the others.
+    vid_of = {}                      # canvas node id -> :Variable id
     for n in payload.get('nodes', []):
         schema = n.get('schemaLabel') or (n.get('props') or {}).get('schemaLabel') \
                  or n.get('label') or n.get('id')
@@ -564,19 +574,60 @@ def put_subgraph(aspect, payload, database=ASPECT_DB):
                  vl=n.get('label'), w=n.get('w', 110), h=n.get('h', 60),
                  sh=n.get('shape', 'ellipse'), a=aspect), database=database)
 
+        state = (n.get('label') or '').strip() or ''.join(str(schema).split())
+        found = run("""MATCH (c:Concept {id:$cid})-[:HAS_STATE]->(v:Variable)
+                       WHERE v.label = $st RETURN v.id AS id""",
+                    dict(cid=nid, st=state), database=database)
+        if found:
+            vid = found[0]['id']
+        else:
+            taken = {r['id'] for r in run(
+                "MATCH (c:Concept {id:$cid})-[:HAS_STATE]->(v) RETURN v.id AS id",
+                dict(cid=nid), database=database)}
+            j = 0
+            while f'{nid}_v{j}' in taken:
+                j += 1
+            vid = f'{nid}_v{j}'
+            run("""MATCH (c:Concept {id:$cid})
+                   CREATE (v:Variable {id:$vid, label:$st, schemaLabel:$sl,
+                                       mode:'EIP', sources:[]})
+                   CREATE (c)-[:HAS_STATE]->(v)""",
+                dict(cid=nid, vid=vid, st=state,
+                     sl=''.join(str(schema).split())), database=database)
+        run("""MATCH (v:Variable {id:$vid})
+               SET v.sources = CASE WHEN $a IN v.sources THEN v.sources
+                               ELSE v.sources + $a END""",
+            dict(vid=vid, a=aspect), database=database)
+        vid_of[str(n.get('id'))] = vid
+
     for e in payload.get('edges', []):
-        run("""MATCH (s:Concept {id:$src}), (t:Concept {id:$tgt})
-               MERGE (s)-[r:REL {label:$label}]->(t)
-               ON CREATE SET r.id=$id, r.mode='EIP', r.rel='before', r.sources=[]
-               SET r.polarity=$pol,
-                   r.linkFamily = coalesce($lf, r.linkFamily),
-                   r.sources = CASE WHEN $a IN r.sources THEN r.sources
-                               ELSE r.sources + $a END""",
-            dict(src=str(e.get('src', '')).lower(), tgt=str(e.get('tgt', '')).lower(),
-                 label=e.get('label', ''), id=e.get('id') or f"w_{aspect}_{e.get('src')}_{e.get('tgt')}",
-                 pol=e.get('polarity', 'none'),
-                 lf=(e.get('props') or {}).get('linkFamily'), a=aspect),
-            database=database)
+        sv, tv = vid_of.get(str(e.get('src'))), vid_of.get(str(e.get('tgt')))
+        if not sv or not tv:
+            continue                       # an edge to a node that was not sent
+        lf = (e.get('props') or {}).get('linkFamily')
+        args = dict(label=e.get('label', ''),
+                    id=e.get('id') or f"w_{aspect}_{e.get('src')}_{e.get('tgt')}",
+                    pol=e.get('polarity', 'none'), lf=lf, a=aspect, sv=sv, tv=tv)
+        if lf in CAUSAL_FAMILIES:
+            run("""MATCH (s:Variable {id:$sv}), (t:Variable {id:$tv})
+                   MERGE (s)-[r:REL {label:$label}]->(t)
+                   ON CREATE SET r.id=$id, r.mode='EIP', r.rel='before', r.sources=[]
+                   SET r.polarity=$pol,
+                       r.linkFamily = coalesce($lf, r.linkFamily),
+                       r.sources = CASE WHEN $a IN r.sources THEN r.sources
+                                   ELSE r.sources + $a END""", args, database=database)
+        else:
+            # Structural: the claim is about the concepts, but remember which
+            # states the author drew it between so the drawing reopens as drawn.
+            run("""MATCH (sc:Concept)-[:HAS_STATE]->(sv:Variable {id:$sv})
+                   MATCH (tc:Concept)-[:HAS_STATE]->(tv:Variable {id:$tv})
+                   MERGE (sc)-[r:REL {label:$label}]->(tc)
+                   ON CREATE SET r.id=$id, r.mode='EIP', r.rel='before', r.sources=[]
+                   SET r.polarity=$pol,
+                       r.linkFamily = coalesce($lf, r.linkFamily),
+                       r.srcState = sv.label, r.tgtState = tv.label,
+                       r.sources = CASE WHEN $a IN r.sources THEN r.sources
+                                   ELSE r.sources + $a END""", args, database=database)
 
     after = run("MATCH (c:Concept) WHERE $a IN c.sources RETURN count(c) AS c",
                 kw, database=database)[0]['c']
@@ -584,6 +635,7 @@ def put_subgraph(aspect, payload, database=ASPECT_DB):
             'nodesWritten': len(payload.get('nodes', [])),
             'edgesWritten': len(payload.get('edges', [])),
             'deletedLastWitnessNodes': orphaned_n,
+            'deletedLastWitnessStates': orphaned_v,
             'deletedLastWitnessEdges': orphaned_e}
 
 
