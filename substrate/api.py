@@ -502,21 +502,30 @@ ASPECT_DB = 'aspects16'   # where the 16 drawings live, with exact provenance
 
 
 def subgraph(aspect, database=ASPECT_DB):
-    nodes = run(SUBGRAPH_NODES, {'aspect': aspect}, database=database)
-    edges = run(SUBGRAPH_EDGES, {'aspect': aspect}, database=database)
-    # LAYOUT COMES FROM THE FILE, NOT THE RING. The substrate stores no
-    # coordinates by design, but a drawing opened from it should still be the
-    # arrangement its author made. The synthetic ring is the fallback for a
-    # concept the file has never placed.
-    lay = aspect_file.layout_of(aspect)
-    for n in nodes:
-        for k in [k for k, v in n.items() if v is None]:
-            del n[k]
-        xy = lay.get(n.get('schemaLabel'))
-        if xy:
-            n['x'], n['y'] = xy
-    return {'version': '1.0', 'modelName': aspect, 'subgraph': aspect,
-            'nodes': nodes, 'edges': edges, 'lines': []}
+    """One drawing, as its author drew it, carrying the substrate's content.
+
+    WHAT YOU OPEN IS WHAT A SAVE WOULD WRITE. These used to be two different
+    reconstructions and they disagreed: the projection returned one node per
+    (concept, state), but `org` PLACES `Effectiveness of ORG` twice so its
+    edges do not cross, and `commitment` places `PERSON Participation` twice.
+    Opening org therefore gave 6 nodes where the file holds 8 — and worse, the
+    merge INVENTED two self-loops, because `n0 --relate_with--> n1` runs
+    between two different nodes that share a label. Nobody drew a self-loop.
+
+    Layout was already taken from the file rather than the substrate, on the
+    principle that the substrate has no business storing where a node sits.
+    Placement and duplication are the same kind of fact, so they come from the
+    same place. The substrate owns what a node MEANS; the file owns how many
+    times it appears and where.
+
+    build_file() already merges substrate content onto file structure and is
+    the verified write path, so read and write are now one code path and
+    cannot drift apart again.
+    """
+    out = aspect_file.build_file(aspect, database)
+    out['subgraph'] = aspect
+    out.setdefault('lines', [])
+    return out
 
 
 def put_subgraph(aspect, payload, database=ASPECT_DB):
