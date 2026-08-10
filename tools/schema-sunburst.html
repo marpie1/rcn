@@ -50,6 +50,7 @@
   }
   button:hover{background:#eceae4}
   button.on{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .drv #root{width:120px}
   #q{
     font:inherit; font-size:12.5px; padding:4px 9px; border-radius:6px;
     border:1px solid #bfbdb6; background:#fff; color:var(--ink); width:150px;
@@ -102,7 +103,19 @@
       <option value="neo4j">neo4j — n=6 reference</option>
     </select>
   </span>
-  <span class="ctl">arcs
+  <span class="ctl">lens
+    <button id="lvoc" class="on" title="Family \u2192 concept \u2192 states">vocabulary</button>
+    <button id="ldrv" title="Causality unrolled into a tree from one state">drivers</button>
+  </span>
+  <span class="ctl drv" style="display:none">root
+    <input id="root" type="search" placeholder="Problem" autocomplete="off" title="A state label, a concept name, or a variable id">
+    <button id="dcau" class="on" title="What feeds this">causes</button>
+    <button id="deff" title="What this feeds">effects</button>
+    <select id="ddep" title="How many rings deep to unroll">
+      <option>2</option><option selected>3</option><option>4</option><option>5</option>
+    </select>
+  </span>
+  <span class="ctl voc">arcs
     <button id="weighted" class="on" title="Arc width = in how many of this graph's source drawings the concept appears">sources</button>
     <button id="equal" title="Every concept gets the same slice">equal</button>
   </span>
@@ -110,7 +123,7 @@
     <button id="cfam" class="on" title="Fill by family — the vocabulary reading">family</button>
     <button id="copm" title="Fill by OPM Object / Process — things vs happenings">OPM</button>
   </span>
-  <span class="ctl">rings
+  <span class="ctl voc">rings
     <button id="r3" class="on" title="family → schema → variableLabel">3</button>
     <button id="r2" title="family → schema">2</button>
   </span>
@@ -148,7 +161,8 @@ const BANDS = [[96,180],[180,306],[306,452]];   // family, schema, variable
 const TAU = Math.PI * 2;
 
 const S = { data:null, weighted:true, rings:3, db:'aspects16', live:false, stamp:'', q:'',
-            colour:'family', sourceKind:'unknown' };
+            colour:'family', sourceKind:'unknown',
+            lens:'vocabulary', root:'Problem', dir:'causes', depth:3, drivers:null };
 
 const $ = id => document.getElementById(id);
 const status = (t, err) => { const e = $('status'); e.textContent = t; e.className = err ? 'err' : ''; };
@@ -271,6 +285,7 @@ function lay(fams, weighted){
 
 // ── draw ─────────────────────────────────────────────────────────────────
 function render(){
+  if (S.lens === 'drivers') return renderDrivers();
   const wrapEl = $('wrap');
   if (!S.data){ wrapEl.innerHTML = ''; return; }
   const outer = BANDS[S.rings - 1][1];
@@ -433,6 +448,72 @@ function radial(txt, r, midFrac, size, max, maxLines, weight, room, op){
     + `${op != null && op < 1 ? ` opacity="${op}"` : ''}>${tspans}</text>`;
 }
 
+// ── the DRIVER wheel ─────────────────────────────────────────────────────
+// Same arcs, a different tree. Ring N is causal distance N from the root, so
+// the SAME concept can appear in several wedges — that is what a driver tree
+// is, and why this is a separate lens rather than a layer on the vocabulary
+// wheel, whose rings partition by naming and cannot also mean distance.
+const NET = { '+': {fill:'#dcfce7', ring:'#166534'},     // reinforcing
+              '-': {fill:'#fee2e2', ring:'#991b1b'} };   // balancing
+const DIM_D = .12;
+
+function renderDrivers(){
+  const env = S.drivers, wrapEl = $('wrap');
+  if (!env){ wrapEl.innerHTML = ''; return; }
+  const rootP = env.nodes[0].props, depth = rootP.depth;
+  const outer = 452, size = (outer + PAD) * 2, off = CX - outer - PAD;
+  const hub = 96, band = (outer - hub) / depth;
+  const parts = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${off} ${off} ${size} ${size}" `
+    + `width="${size}" height="${size}" font-family="system-ui,-apple-system,&quot;Segoe UI&quot;,sans-serif">`,
+    `<rect x="${off}" y="${off}" width="${size}" height="${size}" fill="#ffffff"/>`];
+  const Q = S.q.trim().toLowerCase();
+  const has = t => (t||'').toLowerCase().includes(Q);
+  let matches = 0, total = 0;
+
+  env.nodes.slice(1).forEach(n => {
+    const p = n.props;
+    total++;
+    const on = !Q || has(n.label) || has(p.schemaLabel) || has(p.via);
+    if (Q && on) matches++;
+    const op = on ? 1 : DIM_D;
+    const c = S.colour === 'family' ? {fill:p.fill, ring:p.color}
+                                    : (NET[p.net] || {fill:'#eceae4', ring:'#9a9890'});
+    const r0 = hub + band * (p.level - 1), r1 = hub + band * p.level;
+    parts.push(`<path class="seg" d="${arc(r0, r1, p.start, p.start + p.span)}" `
+      + `fill="${c.fill}" stroke="${p.loop ? c.ring : '#1a1a1a'}" `
+      + `stroke-width="${p.loop ? 2.2 : .9}"${p.loop ? ' stroke-dasharray="5 3"' : ''}`
+      + `${op < 1 ? ` opacity="${op}"` : ''} stroke-linejoin="round" data-tip="${esc(
+          `<span class="r">Ring ${p.level} · ${p.level === 1 ? 'direct ' : ''}`
+        + `${rootP.direction === 'causes' ? 'cause' : 'effect'}</span><b>${n.label}</b><br>`
+        + `<span class="k">via <b>${p.via || '—'}</b> (${p.polarity}) · net ${p.net}`
+        + ` · ${p.family}</span>`
+        + (p.loop ? '<br><span class="k">↺ already on this path — the loop closes here</span>' : ''))}"/>`);
+  });
+
+  env.nodes.slice(1).forEach(n => {
+    const p = n.props;
+    const on = !Q || has(n.label) || has(p.schemaLabel) || has(p.via);
+    const rm = hub + band * (p.level - .5);
+    parts.push(radial((p.loop ? '↺ ' : '') + n.label, rm, p.start + p.span / 2, 10,
+      band - 12, 3, 400, p.span * TAU * rm, on ? 1 : DIMT));
+  });
+
+  parts.push(`<circle class="seg" cx="${CX}" cy="${CY}" r="${hub}" fill="${rootP.fill}" `
+    + `stroke="${rootP.color}" stroke-width="2.5" data-tip="${esc(
+        `<span class="r">Root</span><b>${env.nodes[0].label}</b><br>`
+      + `<span class="k">${rootP.direction} · ${depth} rings · ${rootP.family}</span>`)}"/>`);
+  [env.nodes[0].label, rootP.direction, `${total} on the tree`].forEach((t, i) =>
+    parts.push(`<text x="${CX}" y="${CY}" text-anchor="middle" dy="${(i - 1) * 19 + 5}" `
+      + `font-size="${i === 0 ? 13 : 11}" font-weight="${i === 0 ? 700 : 400}" `
+      + `fill="${i === 2 ? '#33415580' : '#1a1a1a'}">${esc(t)}</text>`));
+  parts.push('</svg>');
+  wrapEl.innerHTML = parts.join('');
+  $('q').classList.toggle('hit', !!Q);
+  $('qn').textContent = Q ? `${matches} of ${total}` : '';
+  $('qn').style.color = (Q && !matches) ? '#b91c1c' : '#4338ca';
+  hookTips();
+}
+
 // ── tooltip ──────────────────────────────────────────────────────────────
 // Hover is not a nicety here — it is where a label goes when the wedge is too
 // thin to hold it, so every segment carries its FULL text whether the ring
@@ -520,6 +601,15 @@ async function load(){
   render(); foot();
 }
 function foot(){
+  if (S.lens === 'drivers'){
+    $('foot').innerHTML = S.drivers
+      ? 'Causality unrolled from one state by <code>/projection/drivers</code>. A concept may appear in '
+        + 'several wedges — that is what a driver tree is. Dashed wedges are where the loop closes: the node '
+        + 'is already on its own path, so it is shown and not followed. <code>net</code> is the sign '
+        + 'accumulated along the path, so two negatives in series read as reinforcing.'
+      : 'Type a concept or state in <b>root</b>. Needs the live substrate — unrolling is a walk, not a table.';
+    return;
+  }
   $('foot').innerHTML = S.data
     ? (S.live
         ? 'Generated live from Neo4j by <code>/projection/vocabulary</code>. '
@@ -549,6 +639,46 @@ mode('weighted', 'equal', v => S.weighted = v);
 mode('r3', 'r2', v => S.rings = v ? 3 : 2);
 mode('cfam', 'copm', v => S.colour = v ? 'family' : 'opm');
 $('db').onchange = e => { S.db = e.target.value; load(); };
+
+function setLens(l){
+  S.lens = l;
+  $('lvoc').classList.toggle('on', l === 'vocabulary');
+  $('ldrv').classList.toggle('on', l === 'drivers');
+  document.querySelectorAll('.voc').forEach(e => e.style.display = l === 'vocabulary' ? '' : 'none');
+  document.querySelectorAll('.drv').forEach(e => e.style.display = l === 'drivers' ? '' : 'none');
+  // The colour toggle means different things per lens: Object/Process is a
+  // fact about a concept; reinforcing/balancing is a fact about a PATH.
+  $('copm').textContent = l === 'drivers' ? 'net' : 'OPM';
+  $('copm').title = l === 'drivers'
+    ? 'Fill by accumulated sign — green reinforcing, red balancing'
+    : 'Fill by OPM Object / Process — things vs happenings';
+  if (l === 'drivers') loadDrivers(); else { render(); foot(); }
+}
+$('lvoc').onclick = () => setLens('vocabulary');
+$('ldrv').onclick = () => setLens('drivers');
+$('dcau').onclick = () => { S.dir='causes'; $('dcau').classList.add('on'); $('deff').classList.remove('on'); loadDrivers(); };
+$('deff').onclick = () => { S.dir='effects'; $('deff').classList.add('on'); $('dcau').classList.remove('on'); loadDrivers(); };
+$('ddep').onchange = e => { S.depth = +e.target.value; loadDrivers(); };
+$('root').addEventListener('change', e => { S.root = e.target.value.trim() || 'Problem'; loadDrivers(); });
+
+async function loadDrivers(){
+  status('unrolling…');
+  const u = `/projection/drivers?root=${encodeURIComponent(S.root)}`
+          + `&dir=${S.dir}&depth=${S.depth}&db=${encodeURIComponent(S.db)}`;
+  try {
+    const r = await fetch(u, {cache:'no-store'});
+    const env = await r.json();
+    if (!r.ok) throw new Error(env.error || ('HTTP ' + r.status));
+    S.drivers = env;
+    status(`${env.nodes.length - 1} on the tree · ${S.dir} of ${env.nodes[0].label} · ${S.depth} deep`);
+  } catch (e) {
+    S.drivers = null;
+    // A driver tree needs the live graph: the baked snapshot holds the
+    // vocabulary only, because unrolling is a walk and not a table.
+    status(S.live === false ? 'drivers need the live substrate' : String(e.message), true);
+  }
+  render(); foot();
+}
 
 $('q').addEventListener('input', e => { S.q = e.target.value; render(); });
 $('q').addEventListener('keydown', e => {

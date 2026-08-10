@@ -365,6 +365,156 @@ ORDER BY ord, family, schema
 """
 
 
+# ── the DRIVER lens — causality unrolled into a tree ──────────────────────
+# The vocabulary wheel cannot hold edges: its rings partition by NAMING, and
+# influence laid over that would assert relationships the geometry cannot
+# represent. This is a different wheel. Root it on one state, put that state's
+# direct causes in ring 1 and theirs in ring 2, and the result IS a tree —
+# the same unrolling graph-tool already does in its Effects / Causes views.
+#
+# The same concept can appear in several places. That is the accepted price of
+# a driver tree, not a defect, and it is why this is a separate projection
+# rather than a layer on the vocabulary one.
+#
+# It is worth more since causal edges moved to :Variable: a tree rooted on
+# "Positive AFFECT" and one rooted on "Negative AFFECT" are now genuinely
+# different trees. While edges hung off the concept both inherited the same
+# claim and these two wheels would have been identical.
+
+def _resolve_root(root, database):
+    """Accept a :Variable id, a state label, or a schemaLabel."""
+    for q in ("MATCH (v:Variable) WHERE v.id = $r RETURN v.id AS id, v.label AS label",
+              "MATCH (v:Variable) WHERE toLower(v.label) = toLower($r) "
+              "RETURN v.id AS id, v.label AS label",
+              "MATCH (c:Concept)-[:HAS_STATE]->(v:Variable) "
+              "WHERE toLower(c.schemaLabel) = toLower($r) "
+              "RETURN v.id AS id, v.label AS label ORDER BY v.id"):
+        hit = run(q, {'r': root}, database=database)
+        if hit:
+            return hit[0]
+    return None
+
+
+def drivers_projection(root, direction='causes', depth=3, database=None):
+    import math
+    if direction not in ('causes', 'effects'):
+        raise ValueError("direction must be 'causes' or 'effects'")
+    depth = max(1, min(int(depth), 6))
+    r0 = _resolve_root(root, database)
+    if not r0:
+        raise ValueError(f"no concept or state matching {root!r}")
+
+    step = ("MATCH (n:Variable)-[r:REL]->(v:Variable {id:$id})"
+            if direction == 'causes' else
+            "MATCH (v:Variable {id:$id})-[r:REL]->(n:Variable)")
+    step += """
+        MATCH (c:Concept)-[:HAS_STATE]->(n)
+        OPTIONAL MATCH (c)-[:IN_FAMILY]->(f:Family)
+        RETURN n.id AS id, n.label AS label, c.schemaLabel AS schema,
+               c.opmType AS opmType, coalesce(f.name,'Unfiled') AS family,
+               coalesce(f.color,'#6b7280') AS color, coalesce(f.fill,'#e5e7eb') AS fill,
+               r.label AS via, coalesce(r.polarity,'none') AS polarity,
+               r.linkFamily AS linkFamily
+        ORDER BY n.id"""
+
+    meta = run("""MATCH (c:Concept)-[:HAS_STATE]->(v:Variable {id:$id})
+                  OPTIONAL MATCH (c)-[:IN_FAMILY]->(f:Family)
+                  RETURN c.schemaLabel AS schema, c.opmType AS opmType,
+                         coalesce(f.name,'Unfiled') AS family,
+                         coalesce(f.color,'#6b7280') AS color,
+                         coalesce(f.fill,'#e5e7eb') AS fill""",
+               {'id': r0['id']}, database=database)
+    m = meta[0] if meta else {'schema': r0['label'], 'opmType': None,
+                              'family': 'Unfiled', 'color': '#6b7280', 'fill': '#e5e7eb'}
+
+    def grow(vid, level, seen, sign):
+        """Unroll one level. `seen` is the path, so a loop is SHOWN and not
+        followed — a CLD is full of cycles and a driver tree that chased them
+        would never terminate."""
+        node = {'vid': vid, 'level': level, 'kids': []}
+        if level >= depth:
+            return node
+        for row in run(step, {'id': vid}, database=database):
+            pol = row['polarity']
+            # Net sign along the path. Two negatives in series are reinforcing,
+            # which is the thing a driver tree exists to make visible.
+            nxt = sign if pol != '-' else ('-' if sign == '+' else '+')
+            kid = {'row': row, 'polarity': pol, 'net': nxt,
+                   'loop': row['id'] in seen}
+            kid.update(grow(row['id'], level + 1, seen | {row['id']}, nxt)
+                       if not kid['loop'] else
+                       {'vid': row['id'], 'level': level + 1, 'kids': []})
+            node['kids'].append(kid)
+        return node
+
+    tree = grow(r0['id'], 0, {r0['id']}, '+')
+
+    def weigh(n):
+        n['weight'] = sum(weigh(k) for k in n['kids']) if n['kids'] else 1
+        return n['weight']
+    weigh(tree)
+
+    cx, cy, hub = 470, 340, 96
+    band = (452 - hub) / depth
+    nodes, edges = [], []
+
+    def place(level, mid):
+        rr = hub + band * (level - 0.5)
+        a = 2 * math.pi * mid - math.pi / 2
+        return round(cx + rr * math.cos(a)), round(cy + rr * math.sin(a))
+
+    nodes.append({'id': 'root', 'label': r0['label'], 'x': cx, 'y': cy,
+                  'w': 150, 'h': 60, 'shape': 'ellipse', 'color': m['fill'],
+                  'borderColor': m['color'], 'borderWidth': 3, 'fontSize': 13,
+                  'fontColor': '#1a1a1a',
+                  'props': {'level': 0, 'weight': tree['weight'],
+                            'root': r0['label'], 'direction': direction,
+                            'depth': depth, 'schemaLabel': m['schema'],
+                            'family': m['family'], 'opmType': m['opmType'],
+                            'color': m['color'], 'fill': m['fill']}})
+
+    counter = [0]
+
+    def emit(node, start, span, parent_id):
+        for kid in node['kids']:
+            ks = span * kid['weight'] / max(node['weight'], 1)
+            row = kid['row']
+            counter[0] += 1
+            nid = f"d{counter[0]}"
+            x, y = place(kid['level'], start + ks / 2)
+            nodes.append({'id': nid, 'label': row['label'], 'x': x, 'y': y,
+                          'w': 170, 'h': 40, 'shape': 'rounded',
+                          'color': row['fill'], 'borderColor': row['color'],
+                          'borderWidth': 2, 'fontSize': 10, 'fontColor': '#1a1a1a',
+                          'props': {'level': kid['level'], 'start': start,
+                                    'span': ks, 'weight': kid['weight'],
+                                    'schemaLabel': row['schema'],
+                                    'family': row['family'],
+                                    'opmType': row['opmType'],
+                                    'via': row['via'], 'polarity': kid['polarity'],
+                                    'net': kid['net'], 'loop': kid['loop'],
+                                    'linkFamily': row['linkFamily'],
+                                    'color': row['color'], 'fill': row['fill']}})
+            edges.append({'id': f"de{counter[0]}", 'src': parent_id, 'tgt': nid,
+                          'label': row['via'] or '', 'polarity': kid['polarity'],
+                          'width': 2, 'fontSize': 10, 'color': row['color'],
+                          'curved': False,
+                          'props': {'rel': direction, 'net': kid['net'],
+                                    'loop': kid['loop']}})
+            emit(kid, start, ks, nid)
+            start += ks
+
+    emit(tree, 0.0, 1.0, 'root')
+    return {'version': '1.0',
+            'modelName': f"{r0['label']} — {direction} ({database or DATABASE})",
+            'modelNote': 'Causality unrolled into a tree from one state. A concept '
+                         'may appear in several places; that is what a driver tree '
+                         'is. `net` is the sign accumulated along the path — two '
+                         'negatives in series are reinforcing. A node already on '
+                         'its own path is marked loop:true and not expanded.',
+            'nodes': nodes, 'edges': edges, 'lines': []}
+
+
 def vocabulary_projection(database=None):
     """Root → family → schemaLabel → variableLabel, in the standard envelope.
 
@@ -709,6 +859,13 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._send(200, vocabulary_projection(db or ASPECT_DB))
             except Exception as e:
                 return self._send(503, {'error': str(e)})
+        if path == '/projection/drivers':
+            try:
+                return self._send(200, drivers_projection(
+                    (qs.get('root') or [''])[0], (qs.get('dir') or ['causes'])[0],
+                    (qs.get('depth') or ['3'])[0], db or ASPECT_DB))
+            except Exception as e:
+                return self._send(400, {'error': str(e)})
         if path == '/projection/subgraphs':
             try:
                 return self._send(200, {'database': db or ASPECT_DB,
