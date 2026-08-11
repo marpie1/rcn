@@ -68,20 +68,20 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
 <div class="doc-header">
   <div class="suite">SODOTO Documentation · ReLocalize Creativity Network</div>
   <h1>SODOTO — What It Is, How It Works, Where It Runs</h1>
-  <p class="lead">A federated apprenticeship credentialing system. A skill is witnessed, practiced, and taught — then cryptographically certified by a Neighborhood Development Cooperative and published to a portfolio anyone can verify in a browser, with no server call and no login.</p>
+  <p class="lead">A federated apprenticeship credentialing system. A skill is witnessed, practiced, and taught — then cryptographically certified by a Neighborhood Development Center (NDC) and published to a portfolio anyone can verify in a browser, with no server call and no login.</p>
   <div class="updated">Technical reference · current as of August 2026 · supersedes all earlier SODOTO intro/context documents</div>
 </div>
 
 <h2>What SODOTO Is</h2>
 
-<p>SODOTO issues verifiable digital credentials for practitioner skills. The credential documents not just that you have a skill, but <em>how you acquired it</em>: who showed you, who witnessed your practice, and who you subsequently taught. The chain of transmission is embedded in the credential and cryptographically signed by the issuing NDC organization.</p>
+<p>SODOTO (See One, Do One, Teach One) issues verifiable digital credentials for practitioner skills. The credential documents not just that you have a skill, but <em>how you acquired it</em>: who showed you, who witnessed your practice, and who you subsequently taught. The chain of transmission is embedded in the credential and cryptographically signed by the issuing NDC organization.</p>
 
 <p>The name comes from a medical training tradition: you observe a procedure done by an expert, you perform it yourself under supervision, and you teach it to the next learner. Each step is a <strong>gate</strong>. All three must pass before a full credential is issued.</p>
 
 <p>Two properties make it different from an ordinary certificate:</p>
 <ul>
   <li><strong>Credentials are issued by cooperatives, not individuals.</strong> The signing authority is the NDC — persistent and institutional — not dependent on any one person. A mentor's departure never invalidates what they witnessed.</li>
-  <li><strong>Verification needs no server.</strong> Anyone viewing a portfolio page can click Verify. The browser recovers the issuer's public key directly from its DID string and checks the signature. No registration, no login, no third party — permanently, for as long as the credential and its DID exist.</li>
+  <li><strong>Verification needs no server.</strong> Anyone viewing a portfolio page can click Verify. The browser recovers the issuer's public key directly from its DID (Decentralized Identifier) string and checks the signature. No registration, no login, no third party — permanently, for as long as the credential and its DID exist.</li>
 </ul>
 
 <p>SODOTO is skill-agnostic. Each NDC defines its own list of skills to credential — systems-mapping tools, health-partner practices, trades, facilitation methods, anything a cooperative wants to transmit rigorously. The three-gate machinery is the same regardless of the skill. <strong>Anything that requires training can use SODOTO.</strong></p>
@@ -190,7 +190,7 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
   <li><strong>Confirm the learner is registered.</strong> On the Registry tab, check they are listed; if not, add name, DID, FedWiki site, and portfolio slug. New entries sync to the server registry.</li>
   <li><strong>Open the contract.</strong> On the Contract tab, pick the issuing NDC, the skill, and the learner, then Open / Resume. Gate state is tracked per issuer–skill–learner.</li>
   <li><strong>Record each gate.</strong> For See One, Do One, Teach One, fill in date, mentor, both assertions, outcome, and narrative slug, then Record Attempt &amp; Write to FedWiki. The tool writes to the learner's and mentor's portfolios immediately.</li>
-  <li><strong>Sign.</strong> On the Sign tab, review the preview, choose Full (all gates complete) or Partial, enter the NDC's 64-character hex key seed, and Sign &amp; Issue. The JWT is signed in-browser with Web Crypto; the key is cleared right after and never sent anywhere.</li>
+  <li><strong>Sign.</strong> On the Sign tab, review the preview, choose Full (all gates complete) or Partial, enter the NDC's 64-character hex key seed, and Sign &amp; Issue. The JWT (JSON Web Token) is signed in-browser with Web Crypto; the key is cleared right after and never sent anywhere.</li>
   <li><strong>Badge is published automatically</strong> to the learner's portfolio and the ledger.</li>
   <li><strong>Verify.</strong> Open the portfolio, click Verify on the new badge, and confirm ✓ Verified. A failure means the key seed did not match the issuing NDC's DID.</li>
 </ol>

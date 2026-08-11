@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SODOTO Teaching Graph — Introduction</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; background: #fafaf8; }
+.page { max-width: 860px; margin: 0 auto; padding: 48px 32px 80px; }
+nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+nav a { color: #2d6a4f; text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+nav .current { color: #1a1a1a; font-weight: 500; }
+.doc-header { margin-bottom: 36px; }
+.doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 660px; }
+.updated { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #999; margin-top: 14px; }
+h2 { font-size: 19px; font-weight: 600; margin: 44px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
+p { margin-bottom: 14px; }
+ul { padding-left: 22px; margin-bottom: 14px; }
+li { margin-bottom: 5px; }
+code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f0ec; padding: 1px 5px; border-radius: 3px; }
+.big-answer { background: #ecfdf5; border: 1.5px solid #34d399; border-radius: 10px; padding: 18px 22px; margin: 20px 0 28px; font-size: 14px; }
+.big-answer strong { color: #065f46; }
+.note { background: #f0f9f4; border-left: 3px solid #2d6a4f; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0 24px; }
+.diagram-wrap { margin: 20px 0 8px; overflow-x: auto; background: white; border: 1px solid #e8e8e4; border-radius: 8px; padding: 20px; text-align: center; }
+.caption { font-size: 12px; color: #888; text-align: center; margin: 0 0 28px; font-style: italic; }
+.qa { background: #fff; border: 1px solid #e8e8e4; border-radius: 8px; padding: 4px 18px; margin: 16px 0; }
+.qa li { margin: 10px 0; }
+@media print { nav { display: none; } body { background: #fff; } .diagram-wrap { border: none; padding: 0; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav>
+  <span class="current">Teaching Graph — Intro</span>
+  <a href="sodoto-teaching-graph-manual.html">User Manual</a>
+  <a href="sodoto-intro.html">SODOTO Reference</a>
+</nav>
+
+<div class="doc-header">
+  <div class="suite">SODOTO Documentation · ReLocalize Creativity Network</div>
+  <h1>The SODOTO Teaching Graph</h1>
+  <p class="lead">A Neo4j graph that turns the teaching relationships hidden inside SODOTO (See One, Do One, Teach One) badges into something you can <em>ask questions of</em> — who taught whom, how a skill spread through the network, who mentors the most, and where every credential came from.</p>
+  <div class="updated">Introduction · August 2026</div>
+</div>
+
+<h2>What it is</h2>
+<p>Every SODOTO badge already records a small story: a learner earned a skill, a mentor witnessed them, and — at Teach One — they taught it on to a student. Each badge tells <em>one</em> story. The teaching graph gathers all of those stories into a single connected picture, so you can trace the threads <em>between</em> them: the chain of who-taught-whom to any depth, the mentors a skill flows through, the full provenance of any credential.</p>
+
+<div class="big-answer">
+<strong>The badges are the truth; the graph is a lens.</strong> Nothing depends on the graph. It is a <em>projection</em> built from the badges — you can delete it and rebuild it from the portfolios at any time, and nothing is lost. Issuing or verifying a credential never touches it.
+</div>
+
+<h2>The questions it answers</h2>
+<p>A badge answers "does this person hold this skill, and who witnessed it?" The graph answers questions that span the <em>whole network</em>:</p>
+<ul class="qa">
+  <li><strong>Teaching lineage</strong> — trace a skill back through everyone who taught it: Kerry → Marc → Noah, to any depth.</li>
+  <li><strong>Most active mentors</strong> — who has grown the most practitioners?</li>
+  <li><strong>Where a skill entered the network</strong> — the roots of a teaching tree.</li>
+  <li><strong>A person's full record</strong> — every credential they hold and everyone they taught.</li>
+  <li><strong>Skill coverage</strong> — who can do skill X, and how many gates deep.</li>
+  <li><strong>Provenance</strong> — which Neighborhood Development Center (NDC) issued a credential, over which gates, with which attestations.</li>
+</ul>
+
+<h2>The model at a glance</h2>
+<p>Five kinds of node and the relationships between them. A <strong>Person</strong> can be a mentor, a learner, or a student depending on the edge; a <strong>Credential</strong> ties a learner to a skill and an issuing organization; each completed gate becomes a <strong>GateAttempt</strong>.</p>
+
+<div class="diagram-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="43 62 874 526" style="width:100%;height:auto;max-width:740px;font-family:'IBM Plex Sans',system-ui,sans-serif" role="img" aria-label="SODOTO teaching-graph Neo4j schema."><rect x="43" y="62" width="874" height="526" fill="#ffffff"/>
+      <defs id="svg-defs"><marker id="mk000000" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#000000"/></marker><marker id="mkc53030" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#c53030"/></marker><marker id="mkc05621" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#c05621"/></marker><marker id="mkb7791f" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#b7791f"/></marker><marker id="mk276749" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#276749"/></marker><marker id="mk2b4c7e" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#2b4c7e"/></marker><marker id="mk553c9a" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#553c9a"/></marker><marker id="mk97266d" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#97266d"/></marker><marker id="mk234e52" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#234e52"/></marker><marker id="mk1a202c" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#1a202c"/></marker><marker id="mk3b82f6" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#3b82f6"/></marker><marker id="mkf59e0b" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#f59e0b"/></marker><marker id="mk8b5cf6" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#8b5cf6"/></marker><marker id="mk7c3aed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#7c3aed"/></marker></defs>
+      
+      <g id="wardley-layer"/>
+      <g id="lines-layer"/>
+      <g id="edges-layer"><g id="edge-e8" style="cursor: pointer; opacity: 1;"><path d="M235,110 L395,110" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none"><tspan x="315" y="124" font-size="10" font-style="italic" fill="#000000">TAUGHT</tspan></text></g><g id="edge-e9" style="cursor: pointer; opacity: 1;"><path d="M565,110 L725,110" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none"><tspan x="645" y="124" font-size="10" font-style="italic" fill="#000000">TAUGHT</tspan></text></g><g id="edge-e10" style="cursor: pointer; opacity: 1;"><path d="M235,330 L395,330" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none"><tspan x="315" y="344" font-size="10" font-style="italic" fill="#000000">ISSUED</tspan></text></g><g id="edge-e11" style="cursor: pointer; opacity: 1;"><path d="M480,136 L480,304" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none" transform="rotate(90.0,466.0,220.0)"><tspan x="466" y="220" font-size="10" font-style="italic" fill="#000000">HOLDS</tspan></text></g><g id="edge-e12" style="cursor: pointer; opacity: 1;"><path d="M565,330 L725,330" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none"><tspan x="645" y="344" font-size="10" font-style="italic" fill="#000000">CERTIFIES</tspan></text></g><g id="edge-e13" style="cursor: pointer; opacity: 1;"><path d="M480,356 L480,514" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none" transform="rotate(90.0,466.0,435.0)"><tspan x="466" y="435" font-size="10" font-style="italic" fill="#000000">HAS_GATE</tspan></text></g></g>
+      <g id="nodes-layer"><g id="node-n1" transform="translate(150,110)" style="cursor: move; opacity: 1;"><rect x="-85" y="-26" width="170" height="52" rx="10" fill="#bfdbfe" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="0.0">Person (Mentor)</tspan></text></g><g id="node-n2" transform="translate(480,110)" style="cursor: move; opacity: 1;"><rect x="-85" y="-26" width="170" height="52" rx="10" fill="#bfdbfe" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="0.0">Person (Learner)</tspan></text></g><g id="node-n3" transform="translate(810,110)" style="cursor: move; opacity: 1;"><rect x="-85" y="-26" width="170" height="52" rx="10" fill="#bfdbfe" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="0.0">Person (Student)</tspan></text></g><g id="node-n4" transform="translate(150,330)" style="cursor: move; opacity: 1;"><rect x="-85" y="-34" width="170" height="68" rx="10" fill="#ddd6fe" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="-8.0">Organization (issuing</tspan><tspan x="0" dy="16">NDC)</tspan></text></g><g id="node-n5" transform="translate(480,330)" style="cursor: move; opacity: 1;"><rect x="-85" y="-26" width="170" height="52" rx="10" fill="#fde68a" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="0.0">Credential {contractId}</tspan></text></g><g id="node-n6" transform="translate(810,330)" style="cursor: move; opacity: 1;"><rect x="-85" y="-23" width="170" height="46" rx="10" fill="#a7f3d0" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="0.0">Skill</tspan></text></g><g id="node-n7" transform="translate(480,540)" style="cursor: move; opacity: 1;"><rect x="-85" y="-26" width="170" height="52" rx="10" fill="#fecaca" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="0.0">GateAttempt {gate}</tspan></text></g></g>
+      <g id="triples-layer"/>
+      <g id="drag-layer"/>
+      <g id="legend-layer"/>
+    </svg></div>
+<p class="caption">The teaching graph schema. The full list of relationships — including the per-gate <code>ATTESTED</code>, <code>ASSERTED</code>, and <code>WITNESSED</code> edges not drawn here — is in the <a href="sodoto-teaching-graph-manual.html">User Manual</a>.</p>
+
+<h2>How it is built</h2>
+<p>A small script — <code>substrate/sodoto_projector.py</code> — reads the <code>sodoto-badge</code> items out of the FedWiki portfolio pages and <em>upserts</em> the nodes and edges into Neo4j. It is <strong>idempotent</strong>: keyed on each credential's <code>contractId</code>, so running it again changes nothing. You re-run it whenever you want the graph to reflect new badges. This is the RCN Substrate pattern — one Neo4j graph, and each tool is a lens that reads the layers it needs.</p>
+
+<h2>What it is not</h2>
+<ul>
+  <li><strong>Not a dependency.</strong> The issuer tool and the badge verifier never call it. It runs on the Desktop Substrate, separate from the live WikiCafe system.</li>
+  <li><strong>No debt or value.</strong> There is no <code>Debt</code> node. Debt and the three-currency settlement are a separate, standalone system (CfA-dSC — Conversations for Action / dyadic Smart Contracts) — SODOTO provenance stays purely about who taught, held, and issued what.</li>
+  <li><strong>Not the source of truth.</strong> If the graph and a badge ever disagree, the badge wins. Rebuild the graph.</li>
+</ul>
+
+<p style="margin-top:28px;font-size:13px;color:#888;">Next: the <a href="sodoto-teaching-graph-manual.html" style="color:#2d6a4f">User Manual</a> — how to run the projector and a library of ready-to-use queries.</p>
+
+</div>
+</body>
+</html>

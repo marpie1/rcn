@@ -94,16 +94,18 @@ function demoIdentity(label) {
 
 const issuer   = demoIdentity('DEMO Academy')
 const learners = [
-  { slug: 'demo-alex-rivera',  name: 'DEMO — Alex Rivera'  },
-  { slug: 'demo-sam-okafor',   name: 'DEMO — Sam Okafor'   },
-  { slug: 'demo-jules-navarro', name: 'DEMO — Jules Navarro' },
+  { slug: 'demo-alex-rivera',  name: 'DEMO Alex Rivera'  },
+  { slug: 'demo-sam-okafor',   name: 'DEMO Sam Okafor'   },
+  { slug: 'demo-jules-navarro', name: 'DEMO Jules Navarro' },
 ].map(l => ({ ...l, ...demoIdentity(l.name), portfolioSlug: l.slug + '-sodoto-portfolio' }))
 
 // ── FedWiki helpers ──────────────────────────────────────────────────────────
+// A real timestamp, not 0 — otherwise Recent Changes renders "NaN years ago".
+const SEED_DATE = Date.parse('2026-08-04T12:00:00Z')
 function itemId(s) { return crypto.createHash('sha256').update(s).digest('hex').slice(0, 16) }
 function page(title, story) {
   return { title, story, journal: [{ type: 'create', id: itemId('create::' + title),
-                                     date: 0, item: { title } }] }
+                                     date: SEED_DATE, item: { title } }] }
 }
 
 const OUT = __dirname
@@ -118,7 +120,7 @@ fs.writeFileSync(path.join(OUT, 'people-registry.json'), JSON.stringify(registry
 
 // one empty scaffolded portfolio per learner — badges get signed in by Marc ----
 for (const l of learners) {
-  const p = page(`${l.name} — SODOTO Portfolio`, [
+  const p = page(`${l.name} SODOTO Portfolio`, [
     { type: 'paragraph', id: itemId('intro::' + l.slug),
       text: `**DEMO portfolio.** This is throwaway demo data — safe to keep or delete. ` +
             `Badges signed through the issuer tool for **${l.name}** appear below.` },
@@ -127,7 +129,7 @@ for (const l of learners) {
 }
 
 // ledger — the issuer appends a row per signed badge; slug is fixed in the tool -
-const ledger = page('DEMO — SODOTO Badge Ledger', [
+const ledger = page('RCN SODOTO Ledger', [
   { type: 'paragraph', id: itemId('ledger-intro'),
     text: '**DEMO ledger.** Every badge signed in this demo is recorded here. ' +
           'Throwaway data — safe to reset.' },
@@ -135,7 +137,7 @@ const ledger = page('DEMO — SODOTO Badge Ledger', [
 fs.writeFileSync(path.join(PAGES, 'rcn-sodoto-ledger.json'), JSON.stringify(ledger) + '\n')
 
 // welcome-visitors — DEMO landing page ----------------------------------------
-const welcome = page('DEMO — SODOTO Credentialing', [
+const welcome = page('DEMO SODOTO Credentialing', [
   { type: 'paragraph', id: itemId('welcome'),
     text: 'This is the **DEMO** SODOTO credentialing wiki. Everything here is ' +
           'test data. Learner portfolios and the badge ledger are all prefixed DEMO.' },

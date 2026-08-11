@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SODOTO Teaching Graph — User Manual</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; background: #fafaf8; }
+.page { max-width: 880px; margin: 0 auto; padding: 48px 32px 80px; }
+nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 36px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+nav a { color: #2d6a4f; text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+nav .current { color: #1a1a1a; font-weight: 500; }
+.doc-header { margin-bottom: 30px; }
+.doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 31px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 660px; }
+.updated { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #999; margin-top: 14px; }
+h2 { font-size: 20px; font-weight: 600; margin: 44px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
+h3 { font-size: 15px; font-weight: 600; margin: 24px 0 6px; color: #2d6a4f; }
+p { margin-bottom: 14px; }
+ul, ol { padding-left: 22px; margin-bottom: 14px; }
+li { margin-bottom: 5px; }
+code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f0ec; padding: 1px 5px; border-radius: 3px; }
+pre { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; background: #1e2430; color: #e6edf3; padding: 14px 16px; border-radius: 8px; overflow-x: auto; margin: 8px 0 6px; line-height: 1.55; }
+pre .k { color: #79c0ff; } pre .s { color: #a5d6ff; } pre .c { color: #8b949e; font-style: italic; }
+.ans { font-size: 13px; color: #666; margin: 0 0 22px; }
+.ans::before { content: "→ "; color: #2d6a4f; font-weight: 600; }
+.toc { background: #fff; border: 1px solid #e8e8e4; border-radius: 10px; padding: 16px 22px; margin: 8px 0 28px; }
+.toc-title { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #2d6a4f; margin-bottom: 8px; }
+.toc ul { list-style: none; padding: 0; margin: 0; columns: 2; column-gap: 28px; }
+.toc li { margin-bottom: 5px; font-size: 13px; }
+.toc a { color: #2d6a4f; text-decoration: none; }
+.note { background: #f0f9f4; border-left: 3px solid #2d6a4f; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0 22px; }
+.warn { background: #fffbeb; border-left: 3px solid #d97706; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0 22px; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; font-size: 13px; }
+th { text-align: left; padding: 8px 12px; background: #f0f0ec; font-weight: 600; font-size: 12px; border: 1px solid #ddd; }
+td { padding: 8px 12px; border: 1px solid #e0e0da; vertical-align: top; }
+tr:nth-child(even) td { background: #fafaf7; }
+.step-list { list-style: none; padding: 0; counter-reset: steps; margin: 14px 0 24px; }
+.step-list > li { counter-increment: steps; padding: 10px 0 10px 44px; position: relative; border-bottom: 1px solid #f0f0ec; }
+.step-list > li:last-child { border-bottom: none; }
+.step-list > li::before { content: counter(steps); position: absolute; left: 0; top: 10px; width: 28px; height: 28px; background: #2d6a4f; color: #fff; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 28px; text-align: center; }
+.diagram-wrap { margin: 16px 0 6px; overflow-x: auto; background: white; border: 1px solid #e8e8e4; border-radius: 8px; padding: 18px; text-align: center; }
+.caption { font-size: 12px; color: #888; text-align: center; margin: 0 0 24px; font-style: italic; }
+@media (max-width: 640px) { .toc ul { columns: 1; } }
+@media print { nav { display: none; } body { background: #fff; } pre { background: #f4f4f0; color: #1a1a1a; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav>
+  <a href="sodoto-teaching-graph-intro.html">Teaching Graph — Intro</a>
+  <span class="current">User Manual</span>
+  <a href="sodoto-intro.html">SODOTO Reference</a>
+</nav>
+
+<div class="doc-header">
+  <div class="suite">SODOTO Documentation · ReLocalize Creativity Network</div>
+  <h1>Teaching Graph — User Manual</h1>
+  <p class="lead">How to build the teaching graph from your SODOTO (See One, Do One, Teach One) badges and ask it questions. Everything runs on the Desktop Substrate; you need a terminal and, optionally, the Neo4j Browser.</p>
+  <div class="updated">User manual · August 2026</div>
+</div>
+
+<div class="toc">
+  <div class="toc-title">In this manual</div>
+  <ul>
+    <li><a href="#before">Before you start</a></li>
+    <li><a href="#build">Build the graph</a></li>
+    <li><a href="#query">Two ways to query</a></li>
+    <li><a href="#schema">The schema</a></li>
+    <li><a href="#library">Query library</a></li>
+    <li><a href="#refresh">Refreshing &amp; options</a></li>
+    <li><a href="#trouble">Troubleshooting</a></li>
+  </ul>
+</div>
+
+<h2 id="before">Before you start</h2>
+<p>The graph lives on the Desktop, not on WikiCafe. You need:</p>
+<ul>
+  <li><strong>Neo4j running</strong> — the DBMS started in Neo4j Desktop (5.26.4). Reachable at <code>http://localhost:7474</code>.</li>
+  <li><strong>Credentials</strong> — <code>~/rcn/.env.neo4j</code> (gitignored) with <code>NEO4J_HTTP</code>, <code>NEO4J_USER</code>, <code>NEO4J_PASSWORD</code>, <code>NEO4J_DATABASE</code>. Already set up on Marc's machine.</li>
+  <li><strong>Badges to read</strong> — the FedWiki portfolio pages. By default the projector reads <code>~/.wiki/localhost/pages</code>; point it elsewhere with <code>--pages</code>.</li>
+</ul>
+<p>No Python packages to install — the projector and <code>db.py</code> talk to Neo4j over plain HTTP using only the standard library.</p>
+
+<h2 id="build">Build the graph</h2>
+<ol class="step-list">
+  <li><strong>See what would project (no database needed).</strong> A dry run lists every badge it found and would load — a good first sanity check.
+    <pre><span class="k">python3</span> substrate/sodoto_projector.py <span class="s">--check</span></pre>
+  </li>
+  <li><strong>Project into Neo4j.</strong> Reads the badges and upserts the graph. Idempotent — safe to run over and over.
+    <pre><span class="k">python3</span> substrate/sodoto_projector.py</pre>
+  </li>
+  <li><strong>Project and see a summary.</strong> Adds counts and a "most active mentors" readout after loading.
+    <pre><span class="k">python3</span> substrate/sodoto_projector.py <span class="s">--summary</span></pre>
+  </li>
+</ol>
+<div class="note"><strong>Idempotent.</strong> Every node and edge is <code>MERGE</code>d on a stable key (a credential on its <code>contractId</code>). Re-running after new badges are issued adds the new ones and leaves the rest exactly as they were — no duplicates.</div>
+
+<h2 id="query">Two ways to query</h2>
+<p>Once the graph is built, ask it anything in Cypher:</p>
+<h3>From the terminal</h3>
+<pre><span class="k">python3</span> substrate/db.py <span class="s">-q</span> <span class="s">"MATCH (c:Credential) RETURN count(c)"</span></pre>
+<h3>In the Neo4j Browser</h3>
+<p>Open <code>http://localhost:7474</code>, sign in, and paste a query. The Browser draws the graph visually — the nicest way to explore lineages and click around the network.</p>
+
+<h2 id="schema">The schema</h2>
+<div class="diagram-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="43 62 874 526" style="width:100%;height:auto;max-width:740px;font-family:'IBM Plex Sans',system-ui,sans-serif" role="img" aria-label="SODOTO teaching-graph Neo4j schema."><rect x="43" y="62" width="874" height="526" fill="#ffffff"/>
+      <defs id="svg-defs"><marker id="mk000000" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#000000"/></marker><marker id="mkc53030" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#c53030"/></marker><marker id="mkc05621" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#c05621"/></marker><marker id="mkb7791f" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#b7791f"/></marker><marker id="mk276749" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#276749"/></marker><marker id="mk2b4c7e" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#2b4c7e"/></marker><marker id="mk553c9a" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#553c9a"/></marker><marker id="mk97266d" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#97266d"/></marker><marker id="mk234e52" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#234e52"/></marker><marker id="mk1a202c" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#1a202c"/></marker><marker id="mk3b82f6" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#3b82f6"/></marker><marker id="mkf59e0b" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#f59e0b"/></marker><marker id="mk8b5cf6" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#8b5cf6"/></marker><marker id="mk7c3aed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#7c3aed"/></marker></defs>
+      
+      <g id="wardley-layer"/>
+      <g id="lines-layer"/>
+      <g id="edges-layer"><g id="edge-e8" style="cursor: pointer; opacity: 1;"><path d="M235,110 L395,110" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none"><tspan x="315" y="124" font-size="10" font-style="italic" fill="#000000">TAUGHT</tspan></text></g><g id="edge-e9" style="cursor: pointer; opacity: 1;"><path d="M565,110 L725,110" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none"><tspan x="645" y="124" font-size="10" font-style="italic" fill="#000000">TAUGHT</tspan></text></g><g id="edge-e10" style="cursor: pointer; opacity: 1;"><path d="M235,330 L395,330" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none"><tspan x="315" y="344" font-size="10" font-style="italic" fill="#000000">ISSUED</tspan></text></g><g id="edge-e11" style="cursor: pointer; opacity: 1;"><path d="M480,136 L480,304" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none" transform="rotate(90.0,466.0,220.0)"><tspan x="466" y="220" font-size="10" font-style="italic" fill="#000000">HOLDS</tspan></text></g><g id="edge-e12" style="cursor: pointer; opacity: 1;"><path d="M565,330 L725,330" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none"><tspan x="645" y="344" font-size="10" font-style="italic" fill="#000000">CERTIFIES</tspan></text></g><g id="edge-e13" style="cursor: pointer; opacity: 1;"><path d="M480,356 L480,514" fill="none" stroke="#000000" stroke-width="1.5" marker-end="url(#mk000000)" pointer-events="none"/><text text-anchor="middle" pointer-events="none" transform="rotate(90.0,466.0,435.0)"><tspan x="466" y="435" font-size="10" font-style="italic" fill="#000000">HAS_GATE</tspan></text></g></g>
+      <g id="nodes-layer"><g id="node-n1" transform="translate(150,110)" style="cursor: move; opacity: 1;"><rect x="-85" y="-26" width="170" height="52" rx="10" fill="#bfdbfe" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="0.0">Person (Mentor)</tspan></text></g><g id="node-n2" transform="translate(480,110)" style="cursor: move; opacity: 1;"><rect x="-85" y="-26" width="170" height="52" rx="10" fill="#bfdbfe" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="0.0">Person (Learner)</tspan></text></g><g id="node-n3" transform="translate(810,110)" style="cursor: move; opacity: 1;"><rect x="-85" y="-26" width="170" height="52" rx="10" fill="#bfdbfe" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="0.0">Person (Student)</tspan></text></g><g id="node-n4" transform="translate(150,330)" style="cursor: move; opacity: 1;"><rect x="-85" y="-34" width="170" height="68" rx="10" fill="#ddd6fe" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="-8.0">Organization (issuing</tspan><tspan x="0" dy="16">NDC)</tspan></text></g><g id="node-n5" transform="translate(480,330)" style="cursor: move; opacity: 1;"><rect x="-85" y="-26" width="170" height="52" rx="10" fill="#fde68a" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="0.0">Credential {contractId}</tspan></text></g><g id="node-n6" transform="translate(810,330)" style="cursor: move; opacity: 1;"><rect x="-85" y="-23" width="170" height="46" rx="10" fill="#a7f3d0" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="0.0">Skill</tspan></text></g><g id="node-n7" transform="translate(480,540)" style="cursor: move; opacity: 1;"><rect x="-85" y="-26" width="170" height="52" rx="10" fill="#fecaca" stroke="#000000" stroke-width="1.5"/><text text-anchor="middle" font-size="12" font-weight="500" fill="#000000" pointer-events="none"><tspan x="0" y="0.0">GateAttempt {gate}</tspan></text></g></g>
+      <g id="triples-layer"/>
+      <g id="drag-layer"/>
+      <g id="legend-layer"/>
+    </svg></div>
+<p class="caption">Nodes and the main relationships (NDC = Neighborhood Development Center). The full relationship set is in the table below.</p>
+
+<h3>Nodes</h3>
+<table>
+  <tr><th>Node</th><th>Key</th><th>Properties</th></tr>
+  <tr><td><code>Person</code></td><td><code>did</code></td><td>name — a mentor, learner, and/or student depending on the edge</td></tr>
+  <tr><td><code>Organization</code></td><td><code>did</code></td><td>name — the issuing NDC</td></tr>
+  <tr><td><code>Skill</code></td><td><code>name</code></td><td>—</td></tr>
+  <tr><td><code>Credential</code></td><td><code>contractId</code></td><td>skill, issuedAt, version, issuerDid, holderDid, contractHash, partial, learnerAttested</td></tr>
+  <tr><td><code>GateAttempt</code></td><td><code>contractId</code> + <code>gate</code></td><td>completedAt, attempts (count), learnerAttested</td></tr>
+</table>
+
+<h3>Relationships</h3>
+<table>
+  <tr><th>Edge</th><th>From → To</th><th>Meaning</th></tr>
+  <tr><td><code>TAUGHT</code></td><td>Person → Person</td><td>the source taught the target this skill (mentor→learner, and learner→student at Teach One) — the teaching lineage</td></tr>
+  <tr><td><code>ATTESTED</code></td><td>Person → Person</td><td>a mentor attested a specific gate for a learner (carries <code>gate</code>, <code>completedAt</code>)</td></tr>
+  <tr><td><code>HOLDS</code></td><td>Person → Credential</td><td>the learner holds this credential</td></tr>
+  <tr><td><code>ISSUED</code></td><td>Organization → Credential</td><td>the NDC that signed it</td></tr>
+  <tr><td><code>CERTIFIES</code></td><td>Credential → Skill</td><td>what the credential is for</td></tr>
+  <tr><td><code>HAS_GATE</code></td><td>Credential → GateAttempt</td><td>a completed gate of this credential</td></tr>
+  <tr><td><code>ASSERTED</code></td><td>Person → GateAttempt</td><td>a learner/student asserted this gate</td></tr>
+  <tr><td><code>WITNESSED</code></td><td>Person → GateAttempt</td><td>a mentor witnessed this gate</td></tr>
+</table>
+
+<h2 id="library">Query library</h2>
+<p>Copy any of these into <code>db.py -q "…"</code> or the Neo4j Browser.</p>
+
+<h3>Teaching lineage — trace who taught whom, to any depth</h3>
+<pre><span class="k">MATCH</span> path=(root:Person)-[:TAUGHT*]->(leaf:Person)
+<span class="k">WHERE NOT</span> ()-[:TAUGHT]->(root)
+<span class="k">RETURN</span> [n <span class="k">IN</span> nodes(path) | n.name] <span class="k">AS</span> chain, length(path) <span class="k">AS</span> hops
+<span class="k">ORDER BY</span> hops <span class="k">DESC</span></pre>
+<p class="ans">Every teaching chain from its origin, longest first (e.g. <code>[Kerry, Marc, Noah]</code>).</p>
+
+<h3>Most active mentors</h3>
+<pre><span class="k">MATCH</span> (m:Person)-[:TAUGHT]->(l:Person)
+<span class="k">RETURN</span> m.name <span class="k">AS</span> mentor, count(<span class="k">DISTINCT</span> l) <span class="k">AS</span> learners
+<span class="k">ORDER BY</span> learners <span class="k">DESC</span></pre>
+<p class="ans">Who has grown the most distinct practitioners.</p>
+
+<h3>Everything one person holds</h3>
+<pre><span class="k">MATCH</span> (p:Person {name:<span class="s">"Marc Pierson"</span>})-[:HOLDS]->(c:Credential)-[:CERTIFIES]->(s:Skill)
+<span class="k">RETURN</span> s.name <span class="k">AS</span> skill, c.version <span class="k">AS</span> version, c.partial <span class="k">AS</span> partial
+<span class="k">ORDER BY</span> skill</pre>
+<p class="ans">A person's full credential set, with version and whether it's partial.</p>
+
+<h3>Who taught a person — and who they taught</h3>
+<pre><span class="k">MATCH</span> (teacher:Person)-[:TAUGHT]->(:Person {name:<span class="s">"Marc Pierson"</span>})
+<span class="k">RETURN DISTINCT</span> teacher.name;
+<span class="c">// and the other direction:</span>
+<span class="k">MATCH</span> (:Person {name:<span class="s">"Marc Pierson"</span>})-[:TAUGHT]->(student:Person)
+<span class="k">RETURN DISTINCT</span> student.name</pre>
+<p class="ans">A person's mentors and the people they have taught.</p>
+
+<h3>Who can do a skill</h3>
+<pre><span class="k">MATCH</span> (p:Person)-[:HOLDS]->(c:Credential)-[:CERTIFIES]->(:Skill {name:<span class="s">"Causal Loop Diagramming"</span>})
+<span class="k">RETURN</span> p.name <span class="k">AS</span> holder, c.version <span class="k">AS</span> version, c.partial <span class="k">AS</span> partial
+<span class="k">ORDER BY</span> holder</pre>
+<p class="ans">Everyone credentialed in a given skill (with how complete).</p>
+
+<h3>Where a skill entered the network (roots of the teaching tree)</h3>
+<pre><span class="k">MATCH</span> (r:Person)-[:TAUGHT]->()
+<span class="k">WHERE NOT</span> ()-[:TAUGHT]->(r)
+<span class="k">RETURN DISTINCT</span> r.name <span class="k">AS</span> origin</pre>
+<p class="ans">The people no one taught — where teaching chains begin.</p>
+
+<h3>Provenance of a credential</h3>
+<pre><span class="k">MATCH</span> (o:Organization)-[:ISSUED]->(c:Credential {contractId:<span class="s">"sodoto-cld-rcn-2025-0001"</span>})
+<span class="k">MATCH</span> (c)-[:HAS_GATE]->(g:GateAttempt)
+<span class="k">RETURN</span> o.name <span class="k">AS</span> issuer, c.version, collect(g.gate + <span class="s">" ("</span> + g.completedAt + <span class="s">")"</span>) <span class="k">AS</span> gates</pre>
+<p class="ans">Who issued a credential and which gates it passed, with dates.</p>
+
+<h3>Learner-attested (v0.4) credentials</h3>
+<pre><span class="k">MATCH</span> (p:Person)-[:HOLDS]->(c:Credential)
+<span class="k">WHERE</span> c.learnerAttested
+<span class="k">RETURN</span> p.name <span class="k">AS</span> holder, c.skill <span class="k">AS</span> skill, c.version</pre>
+<p class="ans">Credentials the learner cryptographically signed (the v0.4 mutually-attested ones).</p>
+
+<h3>Gates that took more than one try</h3>
+<pre><span class="k">MATCH</span> (c:Credential)-[:HAS_GATE]->(g:GateAttempt)
+<span class="k">WHERE</span> g.attempts > 1
+<span class="k">RETURN</span> c.holderDid <span class="k">AS</span> learner, c.skill, g.gate, g.attempts
+<span class="k">ORDER BY</span> g.attempts <span class="k">DESC</span></pre>
+<p class="ans">Where a learner needed multiple attempts — evidence of rigor, not failure.</p>
+
+<h3>Credentials per issuing NDC</h3>
+<pre><span class="k">MATCH</span> (o:Organization)-[:ISSUED]->(c:Credential)
+<span class="k">RETURN</span> o.name <span class="k">AS</span> ndc, count(c) <span class="k">AS</span> credentials
+<span class="k">ORDER BY</span> credentials <span class="k">DESC</span></pre>
+<p class="ans">How many credentials each cooperative has issued.</p>
+
+<h2 id="refresh">Refreshing &amp; options</h2>
+<ul>
+  <li><strong>Refresh after new badges</strong> — just run the projector again. Idempotent; new credentials are added, existing ones untouched.</li>
+  <li><strong>A different wiki</strong> — <code>--pages /path/to/other/pages</code> (e.g. a copy of the WikiCafe portfolios synced to the Desktop), or set <code>WIKI_PAGES</code>.</li>
+  <li><strong>Dry run anytime</strong> — <code>--check</code> never touches Neo4j; use it to preview what a folder holds.</li>
+</ul>
+
+<h2 id="trouble">Troubleshooting</h2>
+<table>
+  <tr><th>Symptom</th><th>Fix</th></tr>
+  <tr><td>"cannot reach http://localhost:7474"</td><td>Start the DBMS in Neo4j Desktop. Confirm with <code>python3 substrate/db.py --check</code>.</td></tr>
+  <tr><td>"missing ~/rcn/.env.neo4j"</td><td>Create it with your Neo4j host/user/password/database (see <code>substrate/README.md</code>). It is gitignored — never commit it.</td></tr>
+  <tr><td>"pages folder not found"</td><td>Point <code>--pages</code> at the FedWiki pages directory that holds the portfolios.</td></tr>
+  <tr><td>The same person shows up as two nodes</td><td>That person has different Decentralized Identifiers (DIDs) across badges. The graph correctly keys people by DID — the fix is clean data: one self-custodied DID per person (see the SODOTO reference). Not a projector bug.</td></tr>
+  <tr><td>A count looks off vs. the badge count</td><td>Two badge items can share a <code>contractId</code> (the same credential on two pages); they correctly collapse to one <code>Credential</code>.</td></tr>
+</table>
+
+<div class="warn"><strong>The badges are the truth.</strong> If the graph and a portfolio ever disagree, trust the badge and rebuild the graph — it is only ever a projection.</div>
+
+<p style="margin-top:26px;font-size:13px;color:#888;">See also the <a href="sodoto-teaching-graph-intro.html" style="color:#2d6a4f">Introduction</a> and the <a href="sodoto-intro.html" style="color:#2d6a4f">SODOTO Reference</a>.</p>
+
+</div>
+</body>
+</html>
