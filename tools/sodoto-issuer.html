@@ -864,6 +864,7 @@ function buildCredentialObject(c, scope) {
       if (g.mentor)      gates[gate].mentor  = g.mentor
       if (g.student)     gates[gate].student = g.student
       if (g.learnerJwt)  gates[gate].learnerJwt = g.learnerJwt   // v0.4 — learner's own signature
+      if (g.mentorJwt)   gates[gate].mentorJwt  = g.mentorJwt    // v0.5 — mentor's own signature
       if (g.studentJwt)  gates[gate].studentJwt = g.studentJwt   // v0.4 — student's signature (TeachOne)
     }
   }
@@ -887,9 +888,15 @@ function buildCredentialObject(c, scope) {
     cred.gatesComplete = done
     cred.gatesOpen     = GATES.filter(g => !done.includes(g))
   }
-  const fullyAttested = !partial && done.length === 3 && attestTargets().every(t => !!t.jwt)
-  cred.version = fullyAttested ? '0.4' : '0.3'
-  if (fullyAttested) cred.learnerAttested = true
+  const tg = attestTargets()
+  const roleAll = r => tg.filter(t => t.role === r).every(t => !!t.jwt)
+  const done3 = !partial && done.length === 3
+  const learnerAll = roleAll('learner'), mentorAll = roleAll('mentor'), studentAll = roleAll('student')
+  // v0.5 = fully mutual (learner + mentor + student). v0.4 = learner + student, mentor missing.
+  cred.version = (done3 && learnerAll && mentorAll && studentAll) ? '0.5'
+               : (done3 && learnerAll && studentAll) ? '0.4' : '0.3'
+  cred.learnerAttested  = done3 && learnerAll && studentAll
+  cred.mutuallyAttested = done3 && learnerAll && mentorAll && studentAll
   return cred
 }
 
@@ -914,6 +921,13 @@ function attestTargets() {
       want: { contractId: c.contractId, gate, skill: c.skillSlug },
       linkParams: { contractId: c.contractId, gate, skill: c.skillSlug, skillName: skill.name, mentor: m.did, mentorName: m.name,
                     issuer: issuer.did, date: g.completedAt, assertion: done.learnerAssertion, outcome: 'complete', attempt: '1', role: 'learner', learner: learner.did }
+    })
+    out.push({
+      gate, role: 'mentor', label: `${GATE_LABELS[gate]} · mentor ${m.name}`, did: m.did, jwt: g.mentorJwt || '',
+      want: { contractId: c.contractId, gate, skill: c.skillSlug, role: 'mentor' },
+      linkParams: { contractId: c.contractId, gate, skill: c.skillSlug, skillName: skill.name, mentorName: m.name,
+                    issuer: issuer.did, date: g.completedAt, assertion: done.mentorAssertion, outcome: 'complete', attempt: '1',
+                    role: 'mentor', signer: m.did, about: learner.name, subjectDid: learner.did }
     })
     if (gate === 'TeachOne' && g.student) {
       out.push({
@@ -960,6 +974,7 @@ async function attachAttest(i) {
   if (!r.ok) { logTo('sign-log','err',`Rejected: ${r.why}`); return }
   const c = getContract()
   if (t.role === 'student') c.gates.TeachOne.studentJwt = jwt
+  else if (t.role === 'mentor') c.gates[t.gate].mentorJwt = jwt
   else c.gates[t.gate].learnerJwt = jwt
   saveState(); renderAttest(); renderSignPanel()
   logTo('sign-log','ok',`Attached ${t.label}.`)
@@ -1036,6 +1051,7 @@ async function signAndIssue() {
           skillSlug:   c.skillSlug,
           version:     cred.version,
           learnerAttested: !!cred.learnerAttested,
+          mutuallyAttested: !!cred.mutuallyAttested,
           gates:       cred.gates,
           contractId:  c.contractId,
           contractHash,

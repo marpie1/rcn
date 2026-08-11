@@ -472,8 +472,16 @@
       const isPartial = completedGates.length < 3
       const gateCount = completedGates.length + ' of 3 gates complete'
       const isV04 = cred.version === '0.4' || cred.learnerAttested === true
+      const isV05 = cred.version === '0.5' || cred.mutuallyAttested === true
 
-      // v0.4 attestation tags for the verify panel
+      // v0.4/v0.5 attestation tags for the verify panel
+      const mTag = g => {
+        if (!(cred.gates[g] && cred.gates[g].mentorJwt)) return ''
+        const ok = attestResult && attestResult.mentor && attestResult.mentor[g]
+        return ok === true  ? ' &middot; <span style="color:#2a5c3f;font-weight:600;">mentor &#x2713;</span>'
+             : ok === false ? ' &middot; <span style="color:#b91c1c;font-weight:600;">mentor &#x2717;</span>'
+             :                ' &middot; <span style="color:#8a8170;">mentor signed</span>'
+      }
       const aTag = g => {
         if (!(cred.gates[g] && cred.gates[g].learnerJwt)) return ''
         const ok = attestResult && attestResult.learner[g]
@@ -493,7 +501,7 @@
         <div class="badge-band"></div>
         <div class="badge-body">
           <div class="badge-main">
-            <div class="badge-label">SODOTO Credential${isPartial ? ' &middot; <em style="font-style:italic;font-weight:400;color:#888;">Partial</em>' : ''}${isV04 ? ' &middot; <span style="color:#2a5c3f;font-weight:600;">learner-attested</span>' : ''}</div>
+            <div class="badge-label">SODOTO Credential${isPartial ? ' &middot; <em style="font-style:italic;font-weight:400;color:#888;">Partial</em>' : ''}${isV05 ? ' &middot; <span style="color:#2a5c3f;font-weight:600;">mutually attested</span>' : isV04 ? ' &middot; <span style="color:#2a5c3f;font-weight:600;">learner-attested</span>' : ''}</div>
             <div class="badge-skill">${cred.skill}</div>
             <div class="badge-gates">
               ${allGates.map(g => {
@@ -555,7 +563,7 @@
           ${cred.gates.SeeOne && cred.gates.SeeOne.completedAt ? `
           <div class="verify-row">
             <div class="verify-row-label">See One</div>
-            <div class="verify-row-value">${cred.gates.SeeOne.completedAt} &middot; ${seeOneMentor} witnessed${aTag('SeeOne')}</div>
+            <div class="verify-row-value">${cred.gates.SeeOne.completedAt} &middot; ${seeOneMentor} witnessed${aTag('SeeOne')}${mTag('SeeOne')}</div>
           </div>` : `
           <div class="verify-row">
             <div class="verify-row-label">See One</div>
@@ -564,7 +572,7 @@
           ${cred.gates.DoOne && cred.gates.DoOne.completedAt ? `
           <div class="verify-row">
             <div class="verify-row-label">Do One</div>
-            <div class="verify-row-value">${cred.gates.DoOne.completedAt} &middot; ${doOneMentor} witnessed${aTag('DoOne')}</div>
+            <div class="verify-row-value">${cred.gates.DoOne.completedAt} &middot; ${doOneMentor} witnessed${aTag('DoOne')}${mTag('DoOne')}</div>
           </div>` : `
           <div class="verify-row">
             <div class="verify-row-label">Do One</div>
@@ -573,7 +581,7 @@
           ${cred.gates.TeachOne && cred.gates.TeachOne.completedAt ? `
           <div class="verify-row">
             <div class="verify-row-label">Teach One</div>
-            <div class="verify-row-value">${cred.gates.TeachOne.completedAt} &middot; ${teachOneMentor} verifies ${cred.skill} taught to ${teachOneStudent}${aTag('TeachOne')}${sTag()}</div>
+            <div class="verify-row-value">${cred.gates.TeachOne.completedAt} &middot; ${teachOneMentor} verifies ${cred.skill} taught to ${teachOneStudent}${aTag('TeachOne')}${mTag('TeachOne')}${sTag()}</div>
           </div>` : `
           <div class="verify-row">
             <div class="verify-row-label">Teach One</div>
@@ -609,12 +617,16 @@
     // v0.4: verify each learner attestation against the holder DID, and the
     // student attestation against the student DID — no network, same as the NDC check.
     async function verifyAttestations() {
-      const res = { learner: {}, student: null }
+      const res = { learner: {}, mentor: {}, student: null }
       for (const g of ['SeeOne','DoOne','TeachOne']) {
         const gate = cred.gates[g]
         if (gate && gate.learnerJwt) {
           try { res.learner[g] = (await verifyJWT(gate.learnerJwt, cred.holderDid)).valid }
           catch (e) { res.learner[g] = false }
+        }
+        if (gate && gate.mentorJwt && gate.mentor && gate.mentor.did) {
+          try { res.mentor[g] = (await verifyJWT(gate.mentorJwt, gate.mentor.did)).valid }
+          catch (e) { res.mentor[g] = false }
         }
       }
       const t = cred.gates.TeachOne

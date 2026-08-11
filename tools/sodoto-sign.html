@@ -130,7 +130,10 @@ const p = {
   issuer: q.get('issuer') || '', date: q.get('date') || '',
   assertion: q.get('assertion') || '', outcome: q.get('outcome') || 'complete',
   attempt: q.get('attempt') || '1', role: q.get('role') || 'learner',
-  learner: q.get('learner') || ''
+  learner: q.get('learner') || '',
+  signer: q.get('signer') || q.get('learner') || '',   // expected signer DID (this device)
+  about:  q.get('about') || '',                          // subject's display name (mentor phrasing)
+  subjectDid: q.get('subjectDid') || ''                 // DID the attestation is about
 };
 let identity = null, signedJWT = '';
 
@@ -141,11 +144,19 @@ function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const GATE_LABEL = { SeeOne:'See One', DoOne:'Do One', TeachOne:'Teach One' };
 function claimText(){
   const g = GATE_LABEL[p.gate] || p.gate || 'gate';
-  return `You're signing your <span class="skill">${esc(g)}</span> of <span class="skill">${esc(p.skillName)}</span>.`;
+  const verb = p.role === 'mentor' ? "You're attesting the" : "You're signing your";
+  return `${verb} <span class="skill">${esc(g)}</span> of <span class="skill">${esc(p.skillName)}</span>.`;
 }
 function claimDesc(){
   const who = p.mentorName ? esc(p.mentorName) : 'your mentor';
   const on  = p.date ? ' on ' + esc(p.date) : '';
+  const learner = p.about ? esc(p.about) : 'the learner';
+  if (p.role === 'mentor') {
+    if (p.gate === 'SeeOne')   return `You demonstrated this skill${on} and ${learner} observed. Signing confirms you showed it.`;
+    if (p.gate === 'DoOne')    return `You witnessed ${learner} perform this skill${on}. Signing confirms they did it.`;
+    if (p.gate === 'TeachOne') return `You witnessed ${learner} teach this skill${on}. Signing confirms they taught it.`;
+    return `Signing puts your name on this attestation, as the witnessing mentor.`;
+  }
   if (p.role === 'student')  return `You did this skill${on}, taught by ${who}. Signing confirms it really happened.`;
   if (p.gate === 'SeeOne')   return `You watched ${who} do this${on}, and you understood it. Signing confirms that.`;
   if (p.gate === 'DoOne')    return `You performed this skill yourself${on}, witnessed by ${who}. Signing confirms it.`;
@@ -156,7 +167,9 @@ function renderDetails(){
   const rows = [
     ['Skill', p.skillName], ['Gate', GATE_LABEL[p.gate] || p.gate],
     p.attempt && p.attempt !== '1' ? ['Attempt', p.attempt] : null,
-    ['Witnessed by', p.mentorName || (p.mentor ? p.mentor.slice(0,20)+'…' : '—')],
+    p.role === 'mentor'
+      ? ['Learner', p.about || '—']
+      : ['Witnessed by', p.mentorName || (p.mentor ? p.mentor.slice(0,20)+'…' : '—')],
     ['Date', p.date || '—'], ['Outcome', p.outcome]
   ].filter(Boolean);
   $('details').innerHTML = rows.map(r =>
@@ -170,7 +183,7 @@ async function onSign(){
   const btn = $('btn-sign'); btn.disabled = true; btn.textContent = 'Signing…';
   try {
     const payload = {
-      iss: identity.did, sub: identity.did, role: p.role,
+      iss: identity.did, sub: p.subjectDid || identity.did, role: p.role,
       contractId: p.contractId, gate: p.gate,
       skill: p.skill, skillName: p.skillName,
       assertion: p.assertion, outcome: p.outcome, attempt: Number(p.attempt) || 1,
@@ -207,7 +220,7 @@ function init(){
     show('stage-noid'); return;
   }
   if (!p.gate || !p.skillName) { show('stage-empty'); return; }
-  if (p.learner && p.learner !== identity.did) {
+  if (p.signer && p.signer !== identity.did) {
     const m = $('mismatch'); m.classList.remove('hidden');
     m.innerHTML = '<b>Heads up:</b> this link was made for a different identity than the one on this device. Only sign if this is really you.';
   }
