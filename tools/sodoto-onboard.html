@@ -57,6 +57,13 @@
 
   <div id="intro-fields"></div>
 
+  <div class="field"><label>Choose a passphrase</label>
+    <input id="in-pass" type="password" autocomplete="new-password" placeholder="at least 12 characters — you'll need it to recover on another device">
+    <div class="hint" id="pass-strength">&nbsp;</div>
+  </div>
+  <div class="field"><label>Confirm passphrase</label>
+    <input id="in-pass2" type="password" autocomplete="new-password" placeholder="type it again"></div>
+
   <button class="big-btn" id="btn-create">Create my identity</button>
   <div id="intro-err"></div>
 </div>
@@ -78,16 +85,14 @@
   </div>
 
   <div class="card">
-    <h2>② Your recovery key — keep this secret &amp; safe</h2>
-    <p style="font-size:14px;margin-bottom:8px">If you ever lose this device or browser, this is the only way to sign as you again. Write it down or save the file somewhere private. <b>Never share it.</b></p>
-    <div class="mono" id="seed-out"></div>
+    <h2>② Your recovery — remember your passphrase, keep your file</h2>
+    <p style="font-size:14px;margin-bottom:8px">To sign as you on another device you need <b>two things</b>: your <b>passphrase</b> (remember it) and your <b>recovery file</b> (download it below). The file is locked with your passphrase, so it's safe to keep in a password manager or the cloud — useless to anyone without your passphrase.</p>
     <div class="row">
-      <button id="copy-seed">Copy</button>
-      <button id="download-seed">Download file</button>
+      <button id="download-seed">Download recovery file</button>
     </div>
     <label class="save-check">
       <input type="checkbox" id="saved-check">
-      <span>I have saved my recovery key somewhere safe.</span>
+      <span>I've downloaded my recovery file and I'll remember my passphrase.</span>
     </label>
   </div>
 
@@ -106,11 +111,12 @@
     <p style="margin:10px 0 0">Your identity is saved on this device. Your coordinator can now register your public name. When you finish a gate, come back and sign it.</p>
   </div>
   <div class="mono" id="did-final" style="margin-top:4px"></div>
-  <button class="big-btn secondary" id="btn-review" style="margin-top:14px">Review my recovery key</button>
+  <button class="big-btn secondary" id="btn-review" style="margin-top:14px">Review my recovery file</button>
 </div>
 
 <div class="foot">SODOTO · ReLocalize Creativity Network</div>
 
+<script src="sodoto-crypto.js"></script>
 <script>
 "use strict";
 const LS_KEY = 'sodoto-identity';
@@ -180,7 +186,6 @@ function loadExisting() {
 function paintDone() {
   $('did-out').textContent = identity.did;
   $('did-final').textContent = identity.did;
-  $('seed-out').textContent = identity.seedHex;
 }
 
 // ---- actions ----
@@ -189,12 +194,16 @@ async function onCreate() {
   if (!('subtle' in (crypto || {}))) {
     $('intro-err').innerHTML = '<div class="err">This browser can\'t create secure keys. Open this page over https on a modern browser.</div>'; return;
   }
+  const pass = $('in-pass').value, pass2 = $('in-pass2').value;
+  if (!SodotoCrypto.passphraseStrength(pass).ok) { $('intro-err').innerHTML = '<div class="err">Choose a passphrase of at least 12 characters.</div>'; return; }
+  if (pass !== pass2) { $('intro-err').innerHTML = '<div class="err">The two passphrases don\'t match.</div>'; return; }
   const btn = $('btn-create'); btn.disabled = true; btn.textContent = 'Creating…';
   try {
     const { did, seedHex } = await mintIdentity();
     const nameInput = $('in-name');
+    const encrypted = await SodotoCrypto.encryptSeed(seedHex, pass);   // the portable recovery — locked with the passphrase
     identity = { did, seedHex, name: ctx.name || (nameInput ? nameInput.value.trim() : ''),
-                 site: ctx.site, slug: ctx.slug, createdAt: new Date().toISOString() };
+                 site: ctx.site, slug: ctx.slug, createdAt: new Date().toISOString(), encrypted };
     localStorage.setItem(LS_KEY, JSON.stringify(identity));
     paintDone(); show('stage-done');
   } catch (e) {
@@ -212,9 +221,10 @@ function copy(text, btn) {
 }
 
 function downloadRecovery() {
+  if (!identity.encrypted) { alert('This identity has no recovery file (created before passphrase recovery). Re-onboard to get one.'); return; }
   const payload = {
-    _what: 'SODOTO recovery key — KEEP SECRET. This is your private signing key.',
-    name: identity.name, did: identity.did, seedHex: identity.seedHex, createdAt: identity.createdAt
+    _what: 'SODOTO recovery file. Locked with your passphrase — useless without it. Keep it to restore your identity on another device.',
+    name: identity.name, did: identity.did, createdAt: identity.createdAt, recovery: identity.encrypted
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -233,12 +243,16 @@ function init() {
 
   $('btn-create').addEventListener('click', onCreate);
   $('copy-did').addEventListener('click', e => copy(identity.did, e.target));
-  $('copy-seed').addEventListener('click', e => copy(identity.seedHex, e.target));
   $('download-seed').addEventListener('click', downloadRecovery);
   $('show-did-again').addEventListener('click', () => { alert(identity.did); });
   $('saved-check').addEventListener('change', e => { $('btn-finish').disabled = !e.target.checked; });
   $('btn-finish').addEventListener('click', () => show('stage-finish'));
   $('btn-review').addEventListener('click', () => { paintDone(); $('saved-check').checked = true; $('btn-finish').disabled = false; show('stage-done'); });
+  const pin = $('in-pass'); if (pin) pin.addEventListener('input', () => {
+    const st = SodotoCrypto.passphraseStrength(pin.value);
+    $('pass-strength').textContent = pin.value ? ('strength: ' + st.label) : ' ';
+    $('pass-strength').style.color = st.ok ? '#2a5c3f' : '#8a3d0f';
+  });
 }
 init();
 </script>

@@ -45,8 +45,17 @@
 
 <!-- no identity on this device -->
 <div id="stage-noid" class="hidden">
-  <div class="err">You don't have a SODOTO identity on this device yet. Create one first, then open this link again.</div>
-  <a id="onboard-link" class="big-btn" style="text-decoration:none;text-align:center">Create my identity</a>
+  <div class="err">You don't have a SODOTO identity on this device yet.</div>
+  <div class="card">
+    <h2>Restore on this device</h2>
+    <p style="font-size:14px;margin-bottom:10px">Already have an identity? Upload your recovery file and enter your passphrase to unlock it here.</p>
+    <input type="file" id="restore-file" accept=".json,application/json" style="margin-bottom:8px;font-size:14px">
+    <input type="password" id="restore-pass" placeholder="your passphrase" autocomplete="current-password" style="width:100%;font-size:16px;padding:11px 12px;border:1px solid #c9c1b1;border-radius:8px;margin-bottom:10px">
+    <button class="big-btn" id="btn-restore">Unlock &amp; continue</button>
+    <div id="restore-err"></div>
+  </div>
+  <p style="text-align:center;color:#8a8170;font-size:14px;margin:16px 0 8px">New here?</p>
+  <a id="onboard-link" class="big-btn secondary" style="text-decoration:none;text-align:center">Create my identity</a>
 </div>
 
 <!-- nothing to sign -->
@@ -85,6 +94,7 @@
 
 <div class="foot">SODOTO · ReLocalize Creativity Network</div>
 
+<script src="sodoto-crypto.js"></script>
 <script>
 "use strict";
 const LS_KEY = 'sodoto-identity';
@@ -178,6 +188,31 @@ function renderDetails(){
 
 function loadIdentity(){ try { const raw = localStorage.getItem(LS_KEY); if (raw) identity = JSON.parse(raw); } catch(e){} }
 
+// Restore an identity on a new device from an encrypted recovery file + passphrase.
+async function onRestore(){
+  $('restore-err').innerHTML = '';
+  const file = ($('restore-file').files || [])[0];
+  const pass = $('restore-pass').value;
+  if (!file) { $('restore-err').innerHTML = '<div class="err">Choose your recovery file.</div>'; return; }
+  if (!pass)  { $('restore-err').innerHTML = '<div class="err">Enter your passphrase.</div>'; return; }
+  const btn = $('btn-restore'); btn.disabled = true; btn.textContent = 'Unlocking…';
+  try {
+    const data = JSON.parse(await file.text());
+    const blob = data.recovery || data;                       // the recovery file, or a bare blob
+    const seedHex = await SodotoCrypto.decryptSeed(blob, pass);
+    // confirm the decrypted key actually matches the DID in the file
+    const testJwt = await signJWT(seedHex, { restore: Date.now() });
+    if (!data.did || !(await selfVerify(testJwt, data.did))) {
+      throw new Error('unlocked, but the key does not match this identity');
+    }
+    localStorage.setItem(LS_KEY, JSON.stringify({ did: data.did, seedHex, name: data.name || '', encrypted: blob, restoredAt: new Date().toISOString() }));
+    location.reload();                                         // re-enter the sign flow with the identity present
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'Unlock & continue';
+    $('restore-err').innerHTML = '<div class="err">' + esc(e.message || String(e)) + '</div>';
+  }
+}
+
 async function onSign(){
   $('sign-err').innerHTML = '';
   const btn = $('btn-sign'); btn.disabled = true; btn.textContent = 'Signing…';
@@ -217,6 +252,7 @@ function init(){
     const u = new URL('sodoto-onboard.html', location.href);
     if (p.learner) u.searchParams.set('did', p.learner);
     oa.href = u.href;
+    $('btn-restore').addEventListener('click', onRestore);
     show('stage-noid'); return;
   }
   if (!p.gate || !p.skillName) { show('stage-empty'); return; }
