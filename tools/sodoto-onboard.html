@@ -49,7 +49,7 @@
 <div id="stage-intro">
   <div class="who"></div>
 
-  <p>To earn SODOTO credentials, you need an <b>identity</b> — a private key that lives only on this phone. When you finish a gate, you sign it with this key, and anyone can check the signature. No one can fake it, and no one else can make it for you.</p>
+  <p>To earn SODOTO credentials, you need an <b>identity</b> — a private key that lives only on this device. When you finish a gate, you sign it with this key, and anyone can check the signature. No one can fake it, and no one else can make it for you.</p>
 
   <div class="reassure">
     <b>This page never sends anything anywhere.</b> Your key is made right here on your device and stays here. We never see it.
@@ -79,7 +79,7 @@
 
   <div class="card">
     <h2>② Your recovery key — keep this secret &amp; safe</h2>
-    <p style="font-size:14px;margin-bottom:8px">If you ever lose this phone, this is the only way to sign as you again. Write it down or save the file somewhere private. <b>Never share it.</b></p>
+    <p style="font-size:14px;margin-bottom:8px">If you ever lose this device or browser, this is the only way to sign as you again. Write it down or save the file somewhere private. <b>Never share it.</b></p>
     <div class="mono" id="seed-out"></div>
     <div class="row">
       <button id="copy-seed">Copy</button>
@@ -92,7 +92,7 @@
   </div>
 
   <div class="danger" id="lost-note">
-    <b>If you lose both this phone and your recovery key:</b> every badge you already earned still works forever — they verify from your public name. You would just make a new identity for future gates.
+    <b>If you lose both this device and your recovery key:</b> every badge you already earned still works forever — they verify from your public name. You would just make a new identity for future gates.
   </div>
 
   <button class="big-btn" id="btn-finish" disabled>I'm done</button>
@@ -103,7 +103,7 @@
   <div class="card" style="text-align:center;padding:28px 16px">
     <div style="font-size:44px;line-height:1;margin-bottom:10px">✓</div>
     <h2 style="color:#2a5c3f">You're set up</h2>
-    <p style="margin:10px 0 0">Your identity is saved on this phone. Your coordinator can now register your public name. When you finish a gate, come back and sign it.</p>
+    <p style="margin:10px 0 0">Your identity is saved on this device. Your coordinator can now register your public name. When you finish a gate, come back and sign it.</p>
   </div>
   <div class="mono" id="did-final" style="margin-top:4px"></div>
   <button class="big-btn secondary" id="btn-review" style="margin-top:14px">Review my recovery key</button>
@@ -187,7 +187,7 @@ function paintDone() {
 async function onCreate() {
   $('intro-err').innerHTML = '';
   if (!('subtle' in (crypto || {}))) {
-    $('intro-err').innerHTML = '<div class="err">This browser can\'t create secure keys. Open this page over https on a modern phone browser.</div>'; return;
+    $('intro-err').innerHTML = '<div class="err">This browser can\'t create secure keys. Open this page over https on a modern browser.</div>'; return;
   }
   const btn = $('btn-create'); btn.disabled = true; btn.textContent = 'Creating…';
   try {
