@@ -25,5 +25,8 @@ EXPOSE 3000
 
 # FedWiki defaults data dir to ~/.wiki (= /root/.wiki in this image).
 # Mount a named volume there to persist pages across container restarts.
-# ${SECURITY_TYPE:+...} adds the flag ONLY when the env is set → unset == today.
-CMD ["sh", "-c", "wiki --port 3000 ${SECURITY_TYPE:+--security_type $SECURITY_TYPE}"]
+# Both ${VAR:+...} clauses add their flag ONLY when the env is set → with WIKI_FARM
+# and SECURITY_TYPE both unset this launches exactly as today (single-site friends).
+# Per-person DID sites (shape A) = WIKI_FARM=1 + SECURITY_TYPE=did. Proven end-to-end
+# by test/integration in wiki-security-did (7/7 against real FedWiki 0.27).
+CMD ["sh", "-c", "wiki --port 3000 ${WIKI_FARM:+--farm} ${SECURITY_TYPE:+--security_type $SECURITY_TYPE}"]
