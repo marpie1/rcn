@@ -93,6 +93,34 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(body)
             return
 
+        if self.path.split('?')[0] == '/api/tls-allow':
+            # Caddy on-demand-TLS gate: issue a cert ONLY for domains we actually
+            # host — the SODOTO base wiki host, or a provisioned per-person site
+            # (a key in ~/.wiki/config.json wikiDomains). Stops Caddy minting certs
+            # for arbitrary hostnames. Unauthenticated by design (Caddy calls it
+            # internally) and read-only; returns 200 to allow, 403 to deny.
+            from urllib.parse import urlparse, parse_qs
+            domain = parse_qs(urlparse(self.path).query).get('domain', [''])[0].strip().lower()
+            allowed = False
+            if domain:
+                base = set(d.lower() for d in [
+                    os.environ.get('WIKI_SITE', ''),
+                    os.environ.get('SODOTO_WIKI_DOMAIN', ''),
+                ] if d)
+                if domain in base:
+                    allowed = True
+                else:
+                    try:
+                        with open(os.path.expanduser('~/.wiki/config.json'), encoding='utf-8') as f:
+                            allowed = domain in (json.load(f).get('wikiDomains') or {})
+                    except (FileNotFoundError, ValueError):
+                        allowed = False
+            self.send_response(200 if allowed else 403)
+            self._cors()
+            self.end_headers()
+            self.wfile.write(b'ok' if allowed else b'no')
+            return
+
         if self.path.startswith('/api/wiki-read-page'):
             from urllib.parse import urlparse, parse_qs
             qs = parse_qs(urlparse(self.path).query)

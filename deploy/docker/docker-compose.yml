@@ -8,6 +8,9 @@ services:
       - SODOTO_PROXY_SECRET=${SODOTO_PROXY_SECRET}
       - PROXY_URL=${PROXY_URL}
       - WIKI_SITE=${WIKI_SITE}
+      # DID ownership (shape A). Leave unset for today's single-site friends deploy.
+      # Flip to 1 in the coordinated rollout: badge-sets-owner + the TLS ask gate.
+      # - SODOTO_DID_OWNERSHIP=1
     volumes:
       - wiki-data:/root/.wiki                 # shares pages with FedWiki
       - sodoto-data:/root/.sodoto             # people-registry.json
@@ -16,6 +19,12 @@ services:
   # FedWiki — hosts learner credential portfolios
   fedwiki:
     image: ghcr.io/marpie1/rcn-sodoto-wiki:latest
+    # DID ownership (shape A, per-person sites). Both UNSET == today's single-site
+    # friends launch. Flip both in the coordinated rollout (needs the wildcard DNS
+    # record + Caddy on-demand block already in the Caddyfile):
+    # environment:
+    #   - WIKI_FARM=1
+    #   - SECURITY_TYPE=did
     volumes:
       - wiki-data:/root/.wiki                 # same volume as sofi-proxy
     restart: unless-stopped

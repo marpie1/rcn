@@ -4,6 +4,15 @@
 
 {
     email {env.ACME_EMAIL}
+
+    # Shape A (per-person portfolio sites): allow on-demand TLS, but ONLY for
+    # hostnames the proxy confirms are provisioned (the ask endpoint returns 200
+    # for the base wiki host or a wikiDomains site, 403 otherwise). This is inert
+    # until the wildcard DNS record exists AND sites are provisioned — no matching
+    # request arrives before then, and unprovisioned hosts are refused a cert.
+    on_demand_tls {
+        ask http://sofi-proxy:8765/api/tls-allow
+    }
 }
 
 {env.SODOTO_DOMAIN} {
@@ -11,5 +20,16 @@
 }
 
 {env.WIKI_DOMAIN} {
+    reverse_proxy fedwiki:3000
+}
+
+# Per-person portfolio sites: *.{WIKI_DOMAIN} (e.g. alex-rivera.wiki-sodoto…).
+# TLS is minted on demand per host, gated by the ask endpoint above. Requires a
+# wildcard DNS record  *.{WIKI_DOMAIN} -> this host. Does not match {WIKI_DOMAIN}
+# itself, so the explicit block above is unaffected.
+*.{env.WIKI_DOMAIN} {
+    tls {
+        on_demand
+    }
     reverse_proxy fedwiki:3000
 }
