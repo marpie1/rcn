@@ -940,6 +940,13 @@ window.joinSession = function() {
   // Server-side cleanup: fires on any connection loss — crash, force-quit,
   // phone backgrounding — not just a clean tab close. beforeunload stays as
   // the fast path when the browser does shut down politely.
+  //
+  // DELIBERATE ASYMMETRY: the Conversation Navigator marks departed
+  // participants present:false and keeps their record, because its export has
+  // to capture the whole group. This tool removes them, because its session
+  // view is a live distribution with no group export — nothing is lost when
+  // someone leaves, and a stale dot would misreport the room. Reviewed and
+  // kept Aug 2026; do not "fix" this to match the Navigator.
   fbRefs.onDisconnect(fbRefs.ref(db, `panas/${sessionId}/${myKey}`)).remove();
 
   writeSelf({ name: myName, anonConsent: myAnonConsent, ts: Date.now() });
