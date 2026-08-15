@@ -1061,6 +1061,12 @@
   }
   .btn-secondary.danger { color: var(--accent); border-color: var(--border); }
   .btn-secondary.danger:hover { border-color: var(--accent); background: #fbe4de; }
+  .btn-secondary.danger:disabled,
+  .btn-secondary:disabled {
+    color: var(--ink3); border-color: var(--border);
+    background: var(--surface2); cursor: not-allowed; opacity: 0.6;
+  }
+  .btn-secondary.danger:disabled:hover { background: var(--surface2); border-color: var(--border); }
   .leave-note { font-size: 0.72rem; color: var(--ink3); line-height: 1.5; margin-top: 8px; }
 
   /* score on participant cards */
@@ -1108,7 +1114,7 @@
             <tr><td>Join</td><td>Enter your name and click Join. Your card appears for everyone.</td></tr>
             <tr><td>Leave</td><td>Close your tab. Your card is marked <em>left</em> and greys out, but everything you contributed stays in the session and in its export.</td></tr>
             <tr><td>Withdraw</td><td><em>Remove my input</em> in the left panel deletes your card and your contributions for good. That is the only thing that erases them.</td></tr>
-            <tr><td>End</td><td>Session data persists until someone ends it. The <strong>Session</strong> tab holds the destructive actions, fenced off from everything else: <em>Clear all model interactions</em> and <em>End session and delete all data</em>. Export first — neither can be undone.</td></tr>
+            <tr><td>End</td><td>Session data persists until someone ends it. The <strong>Session</strong> tab holds the destructive actions, fenced off from everything else. <em>End session and delete all data</em> asks you to retype the session ID before it will run, and tells you how many records will go. <em>Clear all model interactions</em> needs you to have joined. Export first — neither can be undone.</td></tr>
             <tr><td>Find it again</td><td>The Session tab lists every session you have joined, in this browser. A session stays live until ended, so this is how you get back to one. <em>Start another session</em> opens a new one in a new tab, leaving the current one running.</td></tr>
           </tbody>
         </table>
@@ -1482,8 +1488,21 @@
         <p class="sess-note">Download what you need from the Export tab first.</p>
         <button class="btn-secondary danger" style="width:100%" onclick="resetModelData()">Clear all model interactions</button>
         <p class="sess-note">Wipes every click on every model, for everyone. Participants, topics and scores are untouched.</p>
-        <button class="btn-secondary danger" style="width:100%;margin-top:10px" onclick="endSession()">End session and delete all data</button>
-        <p class="sess-note">Deletes every participant record, all topics and all model interactions. The session is gone for everyone.</p>
+        <button class="btn-secondary danger" style="width:100%;margin-top:10px" id="endArmBtn" onclick="armEndSession()">End session and delete all data</button>
+        <p class="sess-note" id="endArmNote">Deletes every participant record, all topics and all model interactions. The session is gone for everyone.</p>
+
+        <div id="endConfirm" style="display:none">
+          <p class="sess-note" id="endConfirmWarn" style="color:var(--accent)"></p>
+          <input type="text" id="endConfirmInput" placeholder="Type the session ID"
+                 autocomplete="off" spellcheck="false"
+                 style="width:100%;font-family:'DM Mono',monospace;letter-spacing:0.1em;text-transform:uppercase"
+                 oninput="checkEndConfirm(this.value)"
+                 onkeydown="if(event.key==='Enter'&&!document.getElementById('endConfirmBtn').disabled)endSession()">
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn-secondary" style="flex:1;border:1px solid var(--border)" onclick="cancelEndSession()">Cancel</button>
+            <button class="btn-secondary danger" style="flex:1" id="endConfirmBtn" disabled onclick="endSession()">Delete everything</button>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -2146,9 +2165,39 @@ window.removeMyInput = function() {
 // Clears the whole session: every participant record, the models, and the
 // topics. Writes are scoped per key by the rules, so this deletes children
 // one at a time rather than dropping the session node.
-window.endSession = function() {
+// Type-to-confirm rather than a join gate: gating on `joined` would mean
+// joining a session in order to delete it, which breaks tidying up a stranded
+// one from the recent list. Retyping the ID is stronger protection anyway, and
+// it is deliberately not a native dialog — the warning needs the live counts.
+window.armEndSession = function() {
   const n = Object.values(allParticipants).filter(p => p?.name).length;
-  if (!confirm(`End this session and delete all of its data?\n\n${n} participant record${n === 1 ? "" : "s"}, all topics and all model interactions will be permanently removed. Download the export first if you need it.\n\nThis cannot be undone.`)) return;
+  document.getElementById("endConfirmWarn").innerHTML =
+    `${n} participant record${n === 1 ? "" : "s"}, all topics and all model interactions will be permanently deleted, for everyone.`
+    + (joined ? "" : " <strong>You are not a participant in this session.</strong>")
+    + ` Type <strong>${escHtml(sessionId)}</strong> to confirm.`;
+  document.getElementById("endConfirm").style.display = "block";
+  document.getElementById("endArmBtn").style.display  = "none";
+  document.getElementById("endArmNote").style.display = "none";
+  const inp = document.getElementById("endConfirmInput");
+  inp.value = "";
+  inp.focus();
+  document.getElementById("endConfirmBtn").disabled = true;
+};
+
+window.checkEndConfirm = function(v) {
+  document.getElementById("endConfirmBtn").disabled =
+    v.trim().toUpperCase() !== String(sessionId).toUpperCase();
+};
+
+window.cancelEndSession = function() {
+  document.getElementById("endConfirm").style.display  = "none";
+  document.getElementById("endArmBtn").style.display   = "";
+  document.getElementById("endArmNote").style.display  = "";
+};
+
+window.endSession = function() {
+  const typed = document.getElementById("endConfirmInput")?.value.trim().toUpperCase();
+  if (typed !== String(sessionId).toUpperCase()) return;   // guard, not just UI state
 
   Object.keys(allParticipants).forEach(k => remove(ref(db, `sessions/${sessionId}/${k}`)));
   remove(ref(db, `topics/${sessionId}`));
@@ -2160,6 +2209,7 @@ window.endSession = function() {
   document.getElementById("nameInput").disabled = false;
   document.getElementById("joinBtn").disabled   = false;
   forgetSession(sessionId);   // nothing left to come back to
+  cancelEndSession();         // reset the confirm back to its armed state
   showMsg("joinMsg", "Session ended. All data has been deleted.", "ok");
 };
 
@@ -3271,6 +3321,10 @@ window.mClickNode = (m, id) => toggleNode(m, id);
 window.mClickEdge = (m, id) => toggleEdge(m, id);
 
 window.resetModelData = function() {
+  // Gated on joined, unlike End session: you already cannot click a model
+  // without joining, so wiping everyone's clicks without joining was simply
+  // inconsistent — and this is a mid-meeting action, so nothing is lost.
+  if (!joined) { showMsg('joinMsg', 'Join the session before clearing everyone\'s model interactions.', 'error'); return; }
   if (!confirm('Clear all model interaction counts for this session?')) return;
   remove(ref(db, `sessions/${sessionId}/models`));
   // reset local tracking so toggles start fresh
