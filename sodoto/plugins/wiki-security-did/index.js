@@ -21,6 +21,29 @@ module.exports = function (log, loga, argv) {
   const challenges = new A.ChallengeStore({ ttlMs: 2 * 60 * 1000 })
   let owner = {}
 
+  // Shape A only (per-person sites, owner_scope: site). Shared-site per-page
+  // ownership isn't implemented — fail loud rather than silently mis-authorize.
+  const scope = argv.owner_scope || 'site'
+  if (scope !== 'site') {
+    throw new Error(`wiki-security-did: owner_scope '${scope}' is not supported yet (only 'site' — shape A, per-person sites)`)
+  }
+
+  // Who may claim this (unowned) site — the badge on the portfolio is the authority
+  // (Marc's decision, Aug 2026). Resolve in order: an injected resolver (tests /
+  // custom wiring), the portfolio page file (badge holderDid), then the
+  // registry-provisioned expectDid as a fallback. '' → cannot establish a holder,
+  // so the claim is refused (fail closed).
+  function expectedHolderDid () {
+    if (typeof argv.expectedHolder === 'function') {
+      try { return argv.expectedHolder() || '' } catch (e) { return '' }
+    }
+    if (argv.portfolioPath) {
+      try { return A.holderDidFromPage(JSON.parse(fs.readFileSync(argv.portfolioPath, 'utf8'))) || '' }
+      catch (e) { return '' }
+    }
+    return owner.expectDid || ''
+  }
+
   function retrieveOwner (cb) {
     if (!idFile) { if (cb) cb(); return }
     fs.readFile(idFile, (err, data) => {
@@ -48,10 +71,14 @@ module.exports = function (log, loga, argv) {
       const body = req.body || {}
       const r = A.authenticate(challenges, { did: body.did, nonce: body.nonce, signature: body.signature })
       if (!r.ok) return res.status(401).json({ ok: false, error: r.error })
-      // Unclaimed site: claim it only if this DID is the expected holder.
+      // Unclaimed site: claim it only if this DID is the expected holder — and
+      // only if a holder can be established at all (the badge is the authority).
       if (!ownerDid()) {
-        const expected = owner.expectDid
-        if (expected && !A.canClaim(r.did, expected)) {
+        const expected = expectedHolderDid()
+        if (!expected) {
+          return res.status(403).json({ ok: false, error: 'this portfolio has no badge yet — ownership cannot be established until a badge is issued' })
+        }
+        if (!A.canClaim(r.did, expected)) {
           return res.status(403).json({ ok: false, error: 'this portfolio belongs to a different identity' })
         }
         setOwner({ name: owner.name || r.did, did: r.did })

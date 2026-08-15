@@ -108,7 +108,22 @@ function isAuthorized (sessionDid, ownerDid) {
   return !!sessionDid && !!ownerDid && sessionDid === ownerDid
 }
 
+// The badge is the authority on who owns a portfolio (Marc's decision, Aug 2026):
+// pull the holder DID from the first sodoto-badge item on the FedWiki page object.
+// Returns '' if the page has no badge yet — an unbadged portfolio has no established
+// holder, so ownership can't be claimed until a badge lands (fail closed).
+function holderDidFromPage (page) {
+  const story = (page && page.story) || []
+  for (const item of story) {
+    if (item && item.type === 'sodoto-badge') {
+      const did = item.credential && item.credential.holderDid
+      if (did) return did
+    }
+  }
+  return ''
+}
+
 module.exports = {
   b58decode, didKeyToPublicKey, verifyDidSignature, b64urlToBuffer,
-  ChallengeStore, authenticate, canClaim, isAuthorized
+  ChallengeStore, authenticate, canClaim, isAuthorized, holderDidFromPage
 }

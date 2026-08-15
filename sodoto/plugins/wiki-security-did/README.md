@@ -11,28 +11,31 @@ A FedWiki security module whose identity is a self-custodied `did:key`. It imple
 
 No password, no persona, no key on the server — the browser proves control of the private key by signing a fresh challenge.
 
-## Ownership — bound to the expected holder
+## Ownership — the badge is the authority, and it fails closed
 
-Ownership is not "first to sign in wins." Two ways to set it:
+Ownership is not "first to sign in wins." The **badge on the portfolio is the source of truth** for who may own it (its `credential.holderDid`) — Marc's decision, Aug 2026. The owner DID is established three ways, in order of precedence:
 
-- **Provisioned (recommended):** at site creation the issuer/proxy calls `setOwner({ name, did })` from the registry, so `owner.json` records the intended holder's DID up front. The person just signs in to edit.
-- **Constrained interactive claim:** if `owner.json` holds `{ name, expectDid }` (unclaimed but bound), the first sign-in **claims** it only if the signing DID equals `expectDid`; anyone else gets `403`.
+- **Set by the proxy when the badge lands (recommended, "badge-sets-owner"):** when sofi-proxy writes a badge to a portfolio it also writes `status/owner.json = { name, did: holderDid }`. Ownership is set the moment the first badge is issued; the person just signs in to edit.
+- **Resolved at claim time from the badge:** if the site is unowned, an interactive sign-in **claims** it only if the signing DID equals the holder DID read from the portfolio — via an injected `argv.expectedHolder()` resolver, or `argv.portfolioPath` (the module reads the page and pulls the badge's `holderDid`).
+- **Registry-provisioned fallback:** `owner.json` holding `{ name, expectDid }` (unclaimed but bound) — the first sign-in claims it only if the signing DID equals `expectDid`.
+
+**Fail closed:** if no holder can be established (the portfolio has no badge yet, and no `expectDid`), the claim is **refused with `403`** — an unbadged portfolio has no owner and cannot be grabbed by whoever signs in first.
 
 `owner.json` (at `argv.id`, the site's `status/owner.json`): `{ "name": "...", "did": "did:key:z..." }`.
 
 ## Interface implemented
 
-Factory `(log, loga, argv)` → `{ retrieveOwner(cb), getOwner(), setOwner(id, cb), getUser(req), isAuthorized(req), isAdmin(req), login(updateOwner), logout(), reclaim(), defineRoutes(app, cors, updateOwner) }`. `defineRoutes` registers `GET /auth/challenge`, `POST /auth/verify`, `POST /login` (== verify), `GET /logout`. Config: `argv.id` = owner file path; `argv.admin` = admin DID or array.
+Factory `(log, loga, argv)` → `{ retrieveOwner(cb), getOwner(), setOwner(id, cb), getUser(req), isAuthorized(req), isAdmin(req), login(updateOwner), logout(), reclaim(), defineRoutes(app, cors, updateOwner) }`. `defineRoutes` registers `GET /auth/challenge`, `POST /auth/verify`, `POST /login` (== verify), `GET /logout`. Config: `argv.id` = owner file path; `argv.admin` = admin DID or array; `argv.owner_scope` = `'site'` (default, and the only supported value — see below); `argv.portfolioPath` / `argv.expectedHolder` = where to read the badge holder for a constrained claim.
 
 ## Deploy
 
 1. Vendor this module into the wiki image (like `wiki-plugin-sodoto-badge`) and set `security_type` (or `--security_type`) to `did`.
-2. Provision each portfolio site's `status/owner.json` with the holder's DID from the registry (per-person sites — the recommended shape; the SCP per-patient-site provisioning is the precedent).
+2. Provision each portfolio as its **own** FedWiki site (per-person sites — shape A; the SCP per-patient-site provisioning is the precedent). Ownership is set from the badge: sofi-proxy writes `status/owner.json.did = holderDid` on badge write ("badge-sets-owner").
 3. Serve `client/signin.js` and add a "Sign in with my SODOTO key" affordance to the portfolio.
 
-Shared-site per-page ownership (`owner_scope: page`) — authorizing per page against the badge's `holderDid` — is described in the spec and not yet implemented here; the site-scoped model above is the first cut.
+`owner_scope` is **`site`** (shape A) — the module refuses any other value (fail loud, rather than silently mis-authorize). Shared-site per-page ownership (`owner_scope: page`) is described in the spec but not implemented; shape A is the deployment target.
 
 ## Testing
 
-- `npm test` — 22 checks. `test/did-auth.test.js` covers the crypto core (did:key decode, Ed25519 verify, and every rejection path: wrong key, tampered nonce, replay, expiry, unknown nonce). `test/module.test.js` covers the FedWiki interface and the sign-in flow with mock req/res, including the constrained-claim `403`.
+- `npm test` — 33 checks. `test/did-auth.test.js` covers the crypto core (did:key decode, Ed25519 verify, and every rejection path: wrong key, tampered nonce, replay, expiry, unknown nonce) plus `holderDidFromPage` (badge = the authority). `test/module.test.js` covers the FedWiki interface and the sign-in flow with mock req/res, including the constrained-claim `403`, the badge-sourced claim, the fail-closed "no badge yet → nobody claims" `403`, and the `owner_scope` guard.
 - **Not covered by unit tests** (needs a running FedWiki with `security_type=did`): the wiki server actually calling `isAuthorized` on a real page PUT, and the browser widget against live routes. The browser→server signature interop is standard RFC-8032 Ed25519 (a valid signature verifies regardless of library), and the exact `did:key` path is the one the badge plugin already verifies WebCrypto signatures through.

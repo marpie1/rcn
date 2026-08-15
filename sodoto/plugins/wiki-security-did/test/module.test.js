@@ -72,4 +72,46 @@ function signIn (sec, identity, session) {
   ok(aliceTry.vr.body.ok && sec.ownerDid() === alice.did, 'the expected holder claims it, becoming the owner')
 }
 
+// --- badge is the source of the owner: no badge → nobody can claim (fail closed);
+//     once the badge names Alice, only Alice may claim ---
+{
+  const idFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'did-')), 'owner.json')
+  let pageHolder = ''                                            // portfolio has no badge yet
+  const sec = makeModule(noop, noop, { id: idFile, expectedHolder: () => pageHolder })
+  ok(sec.ownerDid() === '', 'site starts unowned')
+
+  const early = signIn(sec, alice, {})
+  ok(early.vr.code === 403 && sec.ownerDid() === '', 'no badge yet → nobody can claim (fail closed, 403)')
+
+  pageHolder = alice.did                                         // issuer writes Alice's first badge
+  const bobTry = signIn(sec, bob, {})
+  ok(bobTry.vr.code === 403 && sec.ownerDid() === '', 'a non-holder cannot claim once the badge names Alice (403)')
+
+  const aliceTry = signIn(sec, alice, {})
+  ok(aliceTry.vr.body.ok && sec.ownerDid() === alice.did, 'the badge-named holder claims the site')
+}
+
+// --- owner sourced straight from the portfolio page file (badge holderDid) ---
+{
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'did-'))
+  const portfolioPath = path.join(dir, 'alex-rivera')
+  fs.writeFileSync(portfolioPath, JSON.stringify({ title: 'Alex Rivera', story: [
+    { type: 'sodoto-badge', credential: { holderDid: alice.did } }
+  ] }))
+  const sec = makeModule(noop, noop, { id: path.join(dir, 'owner.json'), portfolioPath })
+  const bobTry = signIn(sec, bob, {})
+  ok(bobTry.vr.code === 403, 'a stranger is refused against the page-file badge holder (403)')
+  const aliceTry = signIn(sec, alice, {})
+  ok(aliceTry.vr.body.ok && sec.ownerDid() === alice.did, 'the holder from the page-file badge claims the site')
+}
+
+// --- owner_scope guard: only shape A ('site') is supported ---
+{
+  let threw = false
+  try { makeModule(noop, noop, { id: '/tmp/x', owner_scope: 'page' }) } catch (e) { threw = /owner_scope/.test(e.message) }
+  ok(threw, "owner_scope 'page' is refused (only 'site' supported)")
+  const okSite = makeModule(noop, noop, { id: path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'did-')), 'owner.json'), owner_scope: 'site' })
+  ok(typeof okSite.isAuthorized === 'function', "owner_scope 'site' is accepted")
+}
+
 console.log(`\n${passed} checks passed.`)

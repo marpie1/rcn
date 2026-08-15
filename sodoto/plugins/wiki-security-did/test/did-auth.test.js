@@ -95,4 +95,15 @@ ok(!A.canClaim(mint().did, alice.did), 'a stranger cannot claim someone else\'s 
 ok(A.isAuthorized(alice.did, alice.did), 'the owner is authorized to write')
 ok(!A.isAuthorized(mint().did, alice.did), 'a non-owner is not authorized to write')
 
+// --- the badge is the authority on who owns a portfolio (holderDidFromPage) ---
+{
+  const page = { title: 'Alex', story: [
+    { type: 'paragraph', text: 'about me' },
+    { type: 'sodoto-badge', credential: { holderDid: alice.did, skill: 'x' } }
+  ] }
+  ok(A.holderDidFromPage(page) === alice.did, 'holderDidFromPage reads the holder DID from the page badge')
+  ok(A.holderDidFromPage({ story: [{ type: 'paragraph' }] }) === '', 'a page with no badge yields no holder (fail closed)')
+  ok(A.holderDidFromPage({}) === '' && A.holderDidFromPage(null) === '', 'a missing/empty page yields no holder')
+}
+
 console.log(`\n${passed} checks passed.`)
