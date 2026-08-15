@@ -14,12 +14,19 @@ PORT = int(os.environ.get("PORT", 8765))
 API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 PROXY_SECRET = os.environ.get('SODOTO_PROXY_SECRET', '')
 
+# DID-ownership mode (security_type=did, per-person sites). When ON, a badge write
+# also stamps that site's owner.json.did = the badge holder's DID (badge-sets-owner),
+# and the SODOTO site-provisioning endpoint is meaningful. OFF by default, so every
+# addition below is inert on today's single-site friends deployment.
+DID_OWNERSHIP = os.environ.get('SODOTO_DID_OWNERSHIP', '').strip().lower() not in ('', '0', 'false', 'no', 'off')
+
 # Operator-only endpoints — these require the proxy passphrase. Everything else
 # is reached by patient-facing tools whose users don't hold that passphrase.
 ADMIN_PATHS = {
     '/api/people-registry',
     '/api/list-patients',
     '/api/provision-patient',
+    '/api/sodoto-provision-site',
     '/api/wiki-write',
     '/api/finalize-contract',
     '/api/wiki-write-badge',
@@ -546,6 +553,83 @@ MERGE (pe)-[:PERFORMER_IN]->(c)
                 self.wfile.write(str(e).encode())
             return
 
+        if self.path == '/api/sodoto-provision-site':
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length))
+            try:
+                import re, time as _time
+                name = (body.get('name') or '').strip()
+                slug = (body.get('slug') or '').strip()
+                if not name or not slug:
+                    raise ValueError('name and slug are required')
+                if not re.match(r'^[a-z0-9][a-z0-9-]*[a-z0-9]$', slug):
+                    raise ValueError('slug must be lowercase letters, numbers, and hyphens')
+                site = os.path.basename((body.get('site') or (slug + '.localhost')).strip())
+                portfolio_slug = os.path.basename((body.get('portfolioSlug') or (slug + '-sodoto-portfolio')).strip())
+                expect_did = (body.get('did') or '').strip()   # claim-before-badge fallback only
+
+                wiki_root = os.path.expanduser('~/.wiki')
+                site_dir  = os.path.join(wiki_root, site)
+                pages_dir = os.path.join(site_dir, 'pages')
+                os.makedirs(pages_dir, exist_ok=True)
+
+                # owner.json — UNCLAIMED (no did): the badge is the authority, and
+                # badge-sets-owner stamps the did when the first badge lands. expectDid
+                # (if the caller knows the holder's DID) only lets them claim before
+                # their first badge; it is a fallback, not the source of truth.
+                owner_path = os.path.join(site_dir, 'owner.json')
+                if not os.path.exists(owner_path):
+                    owner_obj = {'name': name, 'email': slug + '@localhost', 'color': '#204630'}
+                    if expect_did:
+                        owner_obj['expectDid'] = expect_did
+                    with open(owner_path, 'w', encoding='utf-8') as f:
+                        json.dump(owner_obj, f, indent=2)
+
+                # empty scaffolded portfolio page. Title has NO em-dash so
+                # asSlug(title) == portfolio_slug (the slug bug fixed in the seed).
+                portfolio_path = os.path.join(pages_dir, portfolio_slug)
+                if not os.path.exists(portfolio_path):
+                    now_ms = int(_time.time() * 1000)
+                    pid = (re.sub(r'[^a-z0-9]', '', slug)[:16]).ljust(16, '0')
+                    title = f'{name} SODOTO Portfolio'
+                    page = {
+                        'title': title,
+                        'story': [
+                            {'type': 'paragraph', 'id': pid,
+                             'text': f'Portfolio for **{name}**. Badges appear here as gates are signed. '
+                                     f'Sign in with your SODOTO key to edit this page.'}
+                        ],
+                        'journal': [
+                            {'type': 'create', 'id': 'init', 'date': now_ms, 'item': {'title': title}}
+                        ]
+                    }
+                    with open(portfolio_path, 'w', encoding='utf-8') as f:
+                        json.dump(page, f, ensure_ascii=False, indent=2)
+
+                # config.json — farm wikiDomains entry, points the security module at owner.json
+                config_path = os.path.join(wiki_root, 'config.json')
+                needs_restart = False
+                try:
+                    with open(config_path, encoding='utf-8') as f:
+                        cfg = json.load(f)
+                except (FileNotFoundError, ValueError):
+                    cfg = {}
+                cfg.setdefault('wikiDomains', {})
+                if site not in cfg['wikiDomains']:
+                    cfg['wikiDomains'][site] = {'id': owner_path}
+                    with open(config_path, 'w', encoding='utf-8') as f:
+                        json.dump(cfg, f, ensure_ascii=False, indent=2)
+                    needs_restart = True
+
+                self.send_response(200); self._cors()
+                self.send_header('Content-Type', 'application/json'); self.end_headers()
+                self.wfile.write(json.dumps({'ok': True, 'site': site, 'portfolioSlug': portfolio_slug,
+                                             'owner': owner_path, 'needsRestart': needs_restart}).encode())
+            except Exception as e:
+                self.send_response(500); self._cors(); self.end_headers()
+                self.wfile.write(str(e).encode())
+            return
+
         if self.path == '/api/wiki-write-badge':
             length = int(self.headers.get('Content-Length', 0))
             body = self.rfile.read(length)
@@ -607,6 +691,29 @@ MERGE (pe)-[:PERFORMER_IN]->(c)
                 with open(page_path, 'w', encoding='utf-8') as f:
                     json.dump(page, f, ensure_ascii=False, indent=2)
                 print(f"  BADGE WRITE {page_path}")
+                # badge-sets-owner: in DID-ownership mode the badge is the authority
+                # on who owns this per-person site — stamp owner.json.did = holderDid
+                # the first time a badge lands. Never overwrite an existing owner DID
+                # (no hijack); a wrong/duplicate badge can't seize an owned site.
+                if DID_OWNERSHIP:
+                    try:
+                        holder_did = (badge_item.get('credential') or {}).get('holderDid')
+                        if holder_did:
+                            owner_path = os.path.expanduser(f'~/.wiki/{site}/owner.json')
+                            try:
+                                with open(owner_path, encoding='utf-8') as f:
+                                    owner_obj = json.load(f)
+                            except (FileNotFoundError, ValueError):
+                                owner_obj = {}
+                            if not owner_obj.get('did'):
+                                owner_obj['did'] = holder_did
+                                owner_obj.setdefault('name', slug.replace('-', ' ').title())
+                                os.makedirs(os.path.dirname(owner_path), exist_ok=True)
+                                with open(owner_path, 'w', encoding='utf-8') as f:
+                                    json.dump(owner_obj, f, indent=2)
+                                print(f"  BADGE-SETS-OWNER {site} -> {holder_did}")
+                    except Exception as _e:
+                        print(f"  badge-sets-owner skipped: {_e}")
                 self.send_response(200)
                 self._cors()
                 self.send_header('Content-Type', 'application/json')
