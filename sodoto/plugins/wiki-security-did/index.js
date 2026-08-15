@@ -12,6 +12,7 @@
 // module also honors owner.expectDid for a constrained interactive claim.
 
 const fs = require('fs')
+const path = require('path')
 const A = require('./lib/did-auth')
 
 module.exports = function (log, loga, argv) {
@@ -99,6 +100,16 @@ module.exports = function (log, loga, argv) {
     return function (req, res) { res.status(501).json({ ok: false, error: 'reclaim not used; prove your DID' }) }
   }
 
+  // Serve the browser sign-in widget same-origin as the wiki, so a portfolio page
+  // can <script src="/auth/signin.js"> it without a cross-origin fetch.
+  function signinJs (req, res) {
+    fs.readFile(path.join(__dirname, 'client', 'signin.js'), (err, data) => {
+      if (err) { res.statusCode = 404; res.end('signin.js not found'); return }
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+      res.end(data)
+    })
+  }
+
   function defineRoutes (app, cors, updateOwner) {
     const mw = cors || function (req, res, next) { next() }
     app.get('/auth/challenge', mw, challenge)
@@ -106,6 +117,7 @@ module.exports = function (log, loga, argv) {
     app.post('/login', mw, verify(updateOwner))
     app.get('/logout', logout())
     app.post('/auth/reclaim/', mw, reclaim())
+    app.get('/auth/signin.js', mw, signinJs)
   }
 
   return {

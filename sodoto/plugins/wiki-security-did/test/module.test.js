@@ -105,6 +105,16 @@ function signIn (sec, identity, session) {
   ok(aliceTry.vr.body.ok && sec.ownerDid() === alice.did, 'the holder from the page-file badge claims the site')
 }
 
+// --- defineRoutes registers the auth routes incl. the sign-in widget ---
+{
+  const sec = makeModule(noop, noop, { id: path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'did-')), 'owner.json') })
+  const routes = []
+  const app = { get: (p) => routes.push('GET ' + p), post: (p) => routes.push('POST ' + p) }
+  sec.defineRoutes(app, null, noop)
+  ok(routes.includes('GET /auth/challenge') && routes.includes('POST /auth/verify') && routes.includes('GET /auth/signin.js'),
+     'defineRoutes registers /auth/challenge, /auth/verify, and the /auth/signin.js widget')
+}
+
 // --- owner_scope guard: only shape A ('site') is supported ---
 {
   let threw = false

@@ -27,11 +27,15 @@ Ownership is not "first to sign in wins." The **badge on the portfolio is the so
 
 Factory `(log, loga, argv)` → `{ retrieveOwner(cb), getOwner(), setOwner(id, cb), getUser(req), isAuthorized(req), isAdmin(req), login(updateOwner), logout(), reclaim(), defineRoutes(app, cors, updateOwner) }`. `defineRoutes` registers `GET /auth/challenge`, `POST /auth/verify`, `POST /login` (== verify), `GET /logout`. Config: `argv.id` = owner file path; `argv.admin` = admin DID or array; `argv.owner_scope` = `'site'` (default, and the only supported value — see below); `argv.portfolioPath` / `argv.expectedHolder` = where to read the badge holder for a constrained claim.
 
-## Deploy
+## Deploy (ships "dark", flipped by env)
 
-1. Vendor this module into the wiki image (like `wiki-plugin-sodoto-badge`) and set `security_type` (or `--security_type`) to `did`.
-2. Provision each portfolio as its **own** FedWiki site (per-person sites — shape A; the SCP per-patient-site provisioning is the precedent). Ownership is set from the badge: sofi-proxy writes `status/owner.json.did = holderDid` on badge write ("badge-sets-owner").
-3. Serve `client/signin.js` and add a "Sign in with my SODOTO key" affordance to the portfolio.
+The wiki image (`deploy/docker/Dockerfile.fedwiki`) already vendors this module and launches with `wiki --port 3000 ${SECURITY_TYPE:+--security_type $SECURITY_TYPE}` — so with `SECURITY_TYPE` **unset** it runs exactly as today's `friends` deployment, and the module is inert. This makes the image safe to publish under WikiCafe's hourly auto-pull; nothing changes until the env is flipped.
+
+To turn on DID ownership at a coordinated moment:
+
+1. Set `SECURITY_TYPE=did` on the wiki service and `SODOTO_DID_OWNERSHIP=1` on the proxy service (compose env).
+2. Provision each portfolio as its **own** FedWiki site (per-person sites — shape A) via the proxy's `POST /api/sodoto-provision-site`; the SCP per-patient-site provisioning is the precedent. Ownership is set from the badge: sofi-proxy writes `owner.json.did = holderDid` on badge write ("badge-sets-owner"), and never overwrites an existing owner.
+3. The module serves its widget at `GET /auth/signin.js` (same-origin); add a "Sign in with my SODOTO key" affordance to the portfolio that calls `sodotoSignIn()`.
 
 `owner_scope` is **`site`** (shape A) — the module refuses any other value (fail loud, rather than silently mis-authorize). Shared-site per-page ownership (`owner_scope: page`) is described in the spec but not implemented; shape A is the deployment target.
 

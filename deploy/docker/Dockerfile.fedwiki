@@ -12,8 +12,18 @@ RUN npm install -g wiki@0.27.0
 COPY sodoto/plugins/wiki-plugin-sodoto-badge/ \
      /usr/local/lib/node_modules/wiki/node_modules/wiki-plugin-sodoto-badge/
 
+# The wiki-security-did ownership module (security_type=did, per-person sites).
+# Vendored like the badge plugin; uses only Node builtins, so no npm install.
+# PRESENT BUT INERT: the CMD below only passes --security_type when SECURITY_TYPE
+# is set, so with the env unset this image launches identically to today's friends
+# deployment. Flip to did by setting SECURITY_TYPE=did in compose at a coordinated
+# moment — safe under WikiCafe's hourly auto-pull.
+COPY sodoto/plugins/wiki-security-did/ \
+     /usr/local/lib/node_modules/wiki/node_modules/wiki-security-did/
+
 EXPOSE 3000
 
 # FedWiki defaults data dir to ~/.wiki (= /root/.wiki in this image).
 # Mount a named volume there to persist pages across container restarts.
-CMD ["wiki", "--port", "3000"]
+# ${SECURITY_TYPE:+...} adds the flag ONLY when the env is set → unset == today.
+CMD ["sh", "-c", "wiki --port 3000 ${SECURITY_TYPE:+--security_type $SECURITY_TYPE}"]
