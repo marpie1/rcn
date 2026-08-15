@@ -591,10 +591,13 @@ MERGE (pe)-[:PERFORMER_IN]->(c)
                 if not os.path.exists(portfolio_path):
                     now_ms = int(_time.time() * 1000)
                     pid = (re.sub(r'[^a-z0-9]', '', slug)[:16]).ljust(16, '0')
+                    sid = (pid[:8] + 'signin00')[:16]
                     title = f'{name} SODOTO Portfolio'
                     page = {
                         'title': title,
                         'story': [
+                            {'type': 'sodoto-signin', 'id': sid,
+                             'text': 'Sign in with your SODOTO key'},
                             {'type': 'paragraph', 'id': pid,
                              'text': f'Portfolio for **{name}**. Badges appear here as gates are signed. '
                                      f'Sign in with your SODOTO key to edit this page.'}

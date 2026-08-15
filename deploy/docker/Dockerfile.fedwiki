@@ -21,6 +21,11 @@ COPY sodoto/plugins/wiki-plugin-sodoto-badge/ \
 COPY sodoto/plugins/wiki-security-did/ \
      /usr/local/lib/node_modules/wiki/node_modules/wiki-security-did/
 
+# The on-page "Sign in with my SODOTO key" affordance (a page item). Harmless when
+# did ownership is off — it just renders a button that signs a challenge.
+COPY sodoto/plugins/wiki-plugin-sodoto-signin/ \
+     /usr/local/lib/node_modules/wiki/node_modules/wiki-plugin-sodoto-signin/
+
 EXPOSE 3000
 
 # FedWiki defaults data dir to ~/.wiki (= /root/.wiki in this image).
