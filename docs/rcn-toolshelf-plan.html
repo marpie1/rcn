@@ -1,0 +1,1240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The RCN Toolshelf</title>
+<style>
+:root {
+  --paper:      #F1F2EE;
+  --surface:    #FFFFFF;
+  --surface-2:  #E7EAE4;
+  --ink:        #171B19;
+  --ink-soft:   #5A635E;
+  --ink-faint:  #858E88;
+  --line:       #D6D9D2;
+  --line-soft:  #E4E7E0;
+  --accent:     #0E5A4B;
+  --accent-ink: #0B4237;
+  --accent-tint:#E2ECE7;
+  --live:       #0E5A4B;
+  --live-tint:  #E2ECE7;
+  --draft:      #8A5F10;
+  --draft-tint: #F3EBDA;
+  --dormant:    #6E7772;
+  --dormant-tint:#E7E9E5;
+  --shadow:     0 1px 2px rgba(23,27,25,.05), 0 8px 24px -16px rgba(23,27,25,.28);
+
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --font-body: "Avenir Next", Avenir, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "SF Mono", SFMono-Regular, "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --col: 66ch;
+  --bleed: 1040px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:      #141815;
+    --surface:    #1B211D;
+    --surface-2:  #232A25;
+    --ink:        #E8EBE6;
+    --ink-soft:   #9BA49D;
+    --ink-faint:  #78817B;
+    --line:       #2C332E;
+    --line-soft:  #242B26;
+    --accent:     #4FBFA0;
+    --accent-ink: #7FD6BC;
+    --accent-tint:#1A2A25;
+    --live:       #4FBFA0;
+    --live-tint:  #17271F;
+    --draft:      #D3A253;
+    --draft-tint: #2A2418;
+    --dormant:    #8B948E;
+    --dormant-tint:#242A26;
+    --shadow:     0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper:      #141815;
+  --surface:    #1B211D;
+  --surface-2:  #232A25;
+  --ink:        #E8EBE6;
+  --ink-soft:   #9BA49D;
+  --ink-faint:  #78817B;
+  --line:       #2C332E;
+  --line-soft:  #242B26;
+  --accent:     #4FBFA0;
+  --accent-ink: #7FD6BC;
+  --accent-tint:#1A2A25;
+  --live:       #4FBFA0;
+  --live-tint:  #17271F;
+  --draft:      #D3A253;
+  --draft-tint: #2A2418;
+  --dormant:    #8B948E;
+  --dormant-tint:#242A26;
+  --shadow:     0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.65;
+  margin: 0;
+  padding: 0 24px 96px;
+  -webkit-font-smoothing: antialiased;
+}
+
+main { max-width: var(--bleed); margin: 0 auto; }
+
+.col { max-width: var(--col); }
+
+p, ul, ol, .note, .callout, figure, table, .cards, .steps, .findings { margin: 0; }
+
+section { display: flex; flex-direction: column; gap: 20px; }
+
+.stack { display: flex; flex-direction: column; gap: 20px; }
+.stack-tight { display: flex; flex-direction: column; gap: 12px; }
+
+/* ---------- masthead ---------- */
+
+header.masthead {
+  padding: 72px 0 40px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.eyebrow .sep { color: var(--ink-faint); }
+.eyebrow .plain { color: var(--ink-faint); }
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.6rem, 6vw, 4rem);
+  line-height: 1.02;
+  letter-spacing: -.015em;
+  margin: 0;
+  text-wrap: balance;
+  max-width: 18ch;
+}
+
+.standfirst {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 2.2vw, 1.32rem);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 54ch;
+  text-wrap: pretty;
+}
+
+/* ---------- headings ---------- */
+
+h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.7rem, 3.4vw, 2.15rem);
+  line-height: 1.15;
+  letter-spacing: -.01em;
+  margin: 0;
+  text-wrap: balance;
+  max-width: 24ch;
+}
+
+h3 {
+  font-family: var(--font-body);
+  font-weight: 650;
+  font-size: 1.02rem;
+  line-height: 1.35;
+  letter-spacing: -.005em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+h4 {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0;
+}
+
+section > .col > * + *, section > .stack > * + * { }
+
+.band {
+  padding: 56px 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.band + .band { border-top: 1px solid var(--line-soft); }
+
+.band-head { display: flex; flex-direction: column; gap: 14px; }
+
+/* ---------- prose ---------- */
+
+p { text-wrap: pretty; }
+p + p { margin-top: 1em; }
+
+strong { font-weight: 650; color: var(--ink); }
+
+em { font-style: italic; }
+
+a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+a:focus-visible, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+code, .path {
+  font-family: var(--font-mono);
+  font-size: .855em;
+  background: var(--surface-2);
+  padding: .12em .38em;
+  border-radius: 3px;
+  color: var(--ink);
+}
+
+ul.prose, ol.prose { padding-left: 1.15em; display: flex; flex-direction: column; gap: 10px; }
+ul.prose li::marker { color: var(--accent); }
+ol.prose li::marker { color: var(--ink-faint); font-family: var(--font-mono); font-size: .85em; }
+
+/* ---------- thesis callout ---------- */
+
+.thesis {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-tint);
+  padding: 22px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 62ch;
+}
+.thesis p {
+  font-family: var(--font-display);
+  font-size: 1.16rem;
+  line-height: 1.5;
+  color: var(--accent-ink);
+}
+
+/* ---------- pills ---------- */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.pill::before {
+  content: "";
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  padding: 1px 5px;
+  vertical-align: 2px;
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+.pill-live    { color: var(--live);    background: var(--live-tint); }
+.pill-draft   { color: var(--draft);   background: var(--draft-tint); }
+.pill-dormant { color: var(--dormant); background: var(--dormant-tint); }
+
+/* ---------- card mockup ---------- */
+
+figure.mock {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 560px;
+}
+
+.toolcard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 20px 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--shadow);
+}
+.toolcard-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.toolcard-name {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.15;
+}
+.toolcard-what {
+  color: var(--ink-soft);
+  font-size: .93rem;
+  line-height: 1.5;
+  max-width: 44ch;
+}
+.toolcard-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line-soft);
+  margin-top: 2px;
+}
+.act {
+  font-family: var(--font-body);
+  font-size: .845rem;
+  font-weight: 550;
+  padding: 6px 12px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  background: transparent;
+  cursor: default;
+  line-height: 1.3;
+}
+.act-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+:root[data-theme="dark"] .act-primary { color: #0F1613; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .act-primary { color: #0F1613; }
+}
+
+/* ---------- pattern-page anatomy ---------- */
+
+.ppage {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  max-width: 620px;
+  overflow: hidden;
+}
+.prow {
+  display: grid;
+  grid-template-columns: 148px 1fr;
+  gap: 18px;
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--line-soft);
+  align-items: baseline;
+}
+.prow:last-child { border-bottom: 0; }
+.prow .slot {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.prow .fill { font-size: .9rem; color: var(--ink-soft); line-height: 1.5; }
+.prow.headline { background: var(--accent-tint); }
+.prow.headline .fill {
+  font-family: var(--font-display);
+  font-size: 1.06rem;
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+:root[data-theme="dark"] .prow.headline .fill { color: var(--accent-ink); }
+
+.conf {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--accent);
+  letter-spacing: .08em;
+}
+.conf .off { color: var(--ink-faint); opacity: .45; }
+
+@media (max-width: 560px) {
+  .prow { grid-template-columns: 1fr; gap: 5px; }
+}
+
+figcaption {
+  font-size: .87rem;
+  color: var(--ink-faint);
+  line-height: 1.55;
+  max-width: 56ch;
+}
+
+/* ---------- schema block ---------- */
+
+pre.schema {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.7;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 20px 22px;
+  overflow-x: auto;
+  margin: 0;
+  color: var(--ink);
+  max-width: 720px;
+}
+pre.schema .k { color: var(--accent); }
+pre.schema .c { color: var(--ink-faint); font-style: italic; }
+
+/* ---------- findings ---------- */
+
+.findings { display: flex; flex-direction: column; gap: 2px; max-width: 780px; }
+.finding {
+  display: grid;
+  grid-template-columns: 2.2ch 1fr;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line-soft);
+  align-items: baseline;
+}
+.finding:first-child { border-top: 1px solid var(--line-soft); }
+.finding .n {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.finding .body { display: flex; flex-direction: column; gap: 4px; }
+.finding .body p { font-size: .93rem; color: var(--ink-soft); line-height: 1.55; }
+.finding.worst .n { color: var(--draft); }
+
+/* ---------- risk table ---------- */
+
+.tablewrap { overflow-x: auto; max-width: 100%; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 560px;
+  font-size: .91rem;
+}
+caption {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding-bottom: 10px;
+}
+th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 0 14px 8px 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: bottom;
+}
+td {
+  padding: 11px 14px 11px 0;
+  border-bottom: 1px solid var(--line-soft);
+  vertical-align: top;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+td:first-child { color: var(--ink); }
+td.mono { font-family: var(--font-mono); font-size: .82rem; }
+td.docs { font-family: var(--font-mono); font-size: .78rem; letter-spacing: .04em; color: var(--ink-faint); white-space: nowrap; }
+td.docs .yes { color: var(--accent); }
+
+tr .risk {
+  border-left: 3px solid var(--line);
+  padding-left: 12px;
+}
+tr.r-safe  .risk { border-left-color: var(--live); }
+tr.r-check .risk { border-left-color: var(--draft); }
+tr.r-hold  .risk { border-left-color: var(--dormant); }
+
+.riskname {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.r-safe  .riskname { color: var(--live); }
+.r-check .riskname { color: var(--draft); }
+.r-hold  .riskname { color: var(--dormant); }
+
+/* ---------- shelves ---------- */
+
+.shelf {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px 0 4px;
+  border-top: 1px solid var(--line-soft);
+}
+.shelf-q {
+  font-family: var(--font-display);
+  font-size: 1.22rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+  max-width: 40ch;
+}
+.shelf-q::before {
+  content: "\201C";
+  color: var(--accent);
+}
+.shelf-q::after {
+  content: "\201D";
+  color: var(--accent);
+}
+
+/* ---------- steps ---------- */
+
+.steps { display: flex; flex-direction: column; gap: 0; max-width: 780px; counter-reset: step; }
+.step {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 18px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.step:first-child { border-top: 1px solid var(--line); }
+.step .num {
+  counter-increment: step;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  padding-top: 3px;
+}
+.step .num::before { content: counter(step, decimal-leading-zero); }
+.step .body { display: flex; flex-direction: column; gap: 6px; }
+.step .body p { font-size: .93rem; color: var(--ink-soft); }
+
+/* ---------- decision box ---------- */
+
+.decisions { display: flex; flex-direction: column; gap: 0; max-width: 780px; }
+.decision {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.decision:first-child { border-top: 1px solid var(--line); }
+.decision p { font-size: .93rem; color: var(--ink-soft); }
+.rec {
+  font-size: .87rem;
+  color: var(--accent-ink);
+  background: var(--accent-tint);
+  padding: 8px 12px;
+  border-radius: 3px;
+  align-self: flex-start;
+  max-width: 60ch;
+}
+:root[data-theme="dark"] .rec { color: var(--accent); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .rec { color: var(--accent); }
+}
+
+footer {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  font-size: .85rem;
+  color: var(--ink-faint);
+  max-width: var(--col);
+}
+
+@media (max-width: 620px) {
+  body { font-size: 16px; padding: 0 18px 64px; }
+  header.masthead { padding-top: 48px; }
+  .step { grid-template-columns: 32px 1fr; gap: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<main>
+
+<header class="masthead">
+  <div class="eyebrow">
+    <span>RCN</span><span class="sep">/</span><span>Design note</span><span class="sep">/</span><span class="plain">14 August 2026</span>
+  </div>
+  <h1>The RCN Toolshelf</h1>
+  <p class="standfirst">A storefront for RCN Tools and Methods, and a rational file layout for the repo behind it — which turn out to be the same piece of work.</p>
+</header>
+
+<section class="band">
+  <div class="band-head">
+    <h4>The argument</h4>
+    <h2>Two questions, one artifact</h2>
+  </div>
+
+  <div class="thesis">
+    <p>A storefront needs to know what tools exist, what each is for, and how to launch it. A rational file layout needs exactly the same list. Build that list once, as a file, and both problems are downstream of it.</p>
+  </div>
+
+  <div class="col stack">
+    <p>Today that knowledge lives in an 848-line <span class="path">README.md</span> that only Claude reads, and in a set of memory files that nobody else can see. Neither is a storefront, and neither survives being handed to Kerry or Chris or a new NDC.</p>
+    <p>The proposal is one machine-readable file — <span class="path">tools/catalog.json</span> — that is the source of truth. Everything else renders from it: the FedWiki site, a standalone dashboard page, and the tool section of the README. One source, several targets, no hand-syncing.</p>
+  </div>
+
+  <h4>What an entry holds</h4>
+  <pre class="schema">{
+  <span class="k">"id"</span>: "graph-tool",
+  <span class="k">"name"</span>: "RCN Graph Tool",
+  <span class="k">"what"</span>: "Draw a system as nodes and edges, then argue about it together.",
+  <span class="k">"shelf"</span>: "see-how-a-system-works",
+  <span class="k">"status"</span>: "live",              <span class="c">// live | draft | dormant</span>
+  <span class="k">"launch"</span>: "graph-tool-v22.html",
+  <span class="k">"intro"</span>:  "graph-tool-intro.html",
+  <span class="k">"manual"</span>: "graph-tool-manual.html",
+  <span class="k">"example"</span>: "examples/whatcom-homelessness-cld.json",
+  <span class="k">"deck"</span>: "decks/rcn-graph-tool-intro.pptx"
+}</pre>
+  <p class="col">Eight fields. Filling them in for every tool is the whole first pass, and it is the pass that forces the alive-or-dead call on every file in <span class="path">tools/</span>.</p>
+  <p class="col">Note what is <em>not</em> in that entry: any mention of which methods the tool belongs to. That absence is deliberate, and the reason is the most important structural decision in this plan. It is set out under <a href="#methods">Methods are first-class</a>.</p>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>Part one</h4>
+    <h2>The storefront</h2>
+  </div>
+
+  <div class="col stack">
+    <h3>The dashboard is the easy half. The missing intros are the work.</h3>
+    <p>There are roughly thirty launchable tools. <strong>Six</strong> have the full intro-and-manual triad: Conversation Navigator, Graph Composer, Issue Polygon Map, Positive Affect Score, Timeline, Schema Sunburst. The rest are missing one or both — the Graph Tool included, and it is arguably the flagship.</p>
+    <p>A storefront with twenty-four unexplained doors is worse than no storefront, because it advertises the gap. So the order matters: catalog first, dashboard second, then work steadily down the list writing intros. The dashboard makes the gap visible, which is useful pressure rather than embarrassment.</p>
+  </div>
+
+  <h4>What makes it a store and not a link list</h4>
+
+  <figure class="mock">
+    <div class="toolcard">
+      <div class="toolcard-top">
+        <span class="toolcard-name">RCN Graph Tool</span>
+        <span class="pill pill-live">Live</span>
+      </div>
+      <p class="toolcard-what">Draw a system as nodes and edges, then argue about it together. Exports to SVG, PNG and FedWiki.</p>
+      <div class="toolcard-acts">
+        <span class="act act-primary">Open the tool</span>
+        <span class="act">Why it exists</span>
+        <span class="act">Manual</span>
+        <span class="act">Open an example &rarr;</span>
+      </div>
+    </div>
+    <figcaption>The anatomy of one card. Four actions, and the fourth is the one everybody skips.</figcaption>
+  </figure>
+
+  <div class="col stack">
+    <p><strong>A tool that opens blank teaches nothing.</strong> The examples already exist and are simply unfindable — <span class="path">whatcom-homelessness-cld.json</span>, <span class="path">wardley-bicycle-production.rcn.json</span>, six <span class="path">pomr-*.json</span> files, <span class="path">education-human-becoming-cld.json</span>. Nobody outside this repo knows they are there. The Cave Drawings principle says the first click should land on a filled-in picture that a group can point at and disagree with, not an empty canvas with a toolbar.</p>
+
+    <h3>Organize the shelf by the question, not the tool type</h3>
+    <p>Categories like &ldquo;diagramming tools&rdquo; and &ldquo;mapping tools&rdquo; only help people who already know the toolkit. Someone arriving with a problem does not know they need a causal loop diagram; they know their neighborhood keeps having the same argument. The shelves below are phrased as the question the visitor actually has.</p>
+
+    <h3>FedWiki is the primary storefront <span class="tag">decided</span></h3>
+    <p>The catalog renders two targets, and both exist either way. Calling FedWiki <em>primary</em> settles three specific things.</p>
+    <p><strong>It is the address people are given.</strong> The wiki URL is what goes in decks, in email, on the map, on a card. The standalone file is what you hand to someone with no connection.</p>
+    <p><strong>New writing lands there.</strong> Someone who wants to add &ldquo;here is how we used the Graph Tool in Superior&rdquo; writes it on the wiki page, and it stays on the wiki page. The standalone <span class="path">index.html</span> stays deliberately thin — name, one line, launch link, status. A snapshot, not a mirror.</p>
+    <p><strong>Forking is the intended path, not a curiosity.</strong> Only the FedWiki version can be forked by an NDC, who keeps the six tools they actually use, annotates each with their own local example, and stays linked back to the original. That is a storefront that behaves like a network instead of a catalog, and no other hosting arrangement gives you it. Nobody forks a mirror, which is why this only pays off if FedWiki is the one people are pointed at.</p>
+    <p>The cost is real and worth naming: this arrangement needs the wiki up, and needs a person tending pages. The standalone needs neither and never rots. That is the trade you are making, and it is the same one already settled for the map — the two-file wiki version is the live site, the standalone build is explicitly a handout and explicitly not the live site.</p>
+    <p>Hosting stays Wiki Café, alongside the Conversation Navigator. Firebase remains database-only.</p>
+
+    <h3>Generated pages versus living pages</h3>
+    <p>Generated pages get overwritten; FedWiki pages are supposed to be alive and hand-edited. The line to draw: <strong>a small number of generated roster pages</strong> — the tool shelf and the method index, regenerated whenever the catalog changes — and <strong>N hand-owned pages</strong> that begin as generated stubs and thereafter belong to whoever tends them. The catalog stays authoritative only for name, launch URL, and status.</p>
+
+    <h3>Deployment shape</h3>
+    <p>The same dual-target model already settled for the map: <span class="path">tools/index.html</span> reads <span class="path">catalog.js</span> as a flat sibling so it works from <span class="path">file://</span>, and the same catalog generates the FedWiki importer bundle through the existing <span class="path">md-to-fedwiki-page.js</span>. Live site and handout, one source.</p>
+  </div>
+</section>
+
+<section class="band" id="methods">
+  <div class="band-head">
+    <h4>Part one, continued</h4>
+    <h2>Methods are first-class</h2>
+  </div>
+
+  <div class="thesis">
+    <p>A hammer is used in a lot of processes. So a tool cannot carry the sequence — it sits in a different position, doing a different job, in every method that uses it.</p>
+  </div>
+
+  <div class="col stack">
+    <p>This is the correction to my first draft, and it matters more than anything else in the plan. I had put a <code>methods</code> field on each tool. That is wrong twice over: it implies a tool belongs to a fixed set of processes, and it has nowhere to record <em>what the tool is doing there</em> or <em>what it hands to whatever comes next</em>.</p>
+    <p>The Graph Tool in a trace is drawing an incident — who did what, what followed what. The Graph Tool in a Vester run is drawing an influence matrix. Same tool, same file, entirely different job, different output, different next step. One field on the tool cannot hold that.</p>
+    <p>So sequence lives on the method. Tools and methods are many-to-many, and the join carries information of its own.</p>
+  </div>
+
+  <h4>tools/methods.json</h4>
+  <pre class="schema">{
+  <span class="k">"id"</span>: "trace-then-timeline",
+  <span class="k">"name"</span>: "Trace, then Timeline",
+  <span class="k">"confidence"</span>: null,     <span class="c">// DERIVED from SODOTO attestations — never typed</span>
+  <span class="k">"retired"</span>: null,        <span class="c">// or { when, why } — kept visible, not deleted</span>
+  <span class="k">"problem"</span>: "People remember the same events in different orders,
+              and the argument never resolves.",
+  <span class="k">"context"</span>: "After an incident, or a stretch of history people
+              recall differently.",
+  <span class="k">"completes"</span>: ["neighborhood-incident-review"],   <span class="c">// larger methods</span>
+  <span class="k">"steps"</span>: [
+    {
+      <span class="k">"tool"</span>: "graph-tool",
+      <span class="k">"does"</span>: "Draw the trace — who acted, what followed what.",
+      <span class="k">"produces"</span>: "Graph JSON, nodes carrying dates",
+      <span class="k">"handoff"</span>: "Export Wiki JSON. Dated nodes become timeline events."
+    },
+    {
+      <span class="k">"tool"</span>: "rcn-timeline",
+      <span class="k">"does"</span>: "Lay the traced events out in time and test the order.",
+      <span class="k">"produces"</span>: "Intervals with Allen relations",
+      <span class="k">"handoff"</span>: <span class="c">null  // terminal step</span>
+    }
+  ]
+}</pre>
+
+  <div class="col stack">
+    <p>The load-bearing field is <code>does</code>. It is where the hammer problem gets solved — the same tool gets a different sentence in every method, written from inside that process rather than from the tool's own point of view.</p>
+    <p><code>handoff</code> is the second one. It is the thing that is never written down anywhere today, and it is the thing that actually stops people: they finish in one tool and do not know what to carry across, or in what shape.</p>
+    <p><strong>A tool page's &ldquo;used in these methods&rdquo; list is derived</strong> — generated by scanning <span class="path">methods.json</span>, never typed by hand. Hand-maintained back-links drift the moment a method changes, and this way they cannot.</p>
+
+    <h3>The methods we already have, scattered</h3>
+    <ul class="prose">
+      <li><strong>Trace &rarr; Timeline</strong> — buried in the README as a paragraph.</li>
+      <li><strong>Rent Band Analysis</strong> — a loose markdown file in the repo root.</li>
+      <li><strong>The Vester run</strong> — module mapping worked out, spread across <span class="path">vester/</span> and notes.</li>
+      <li><strong>SODOTO issuance</strong> — the issuer guide is the closest thing to a method page that exists, and it is a good model for the format.</li>
+      <li><strong>The eVSM survey cycle</strong> — four HTML files that are stages of one process, currently presenting as four unrelated tools.</li>
+    </ul>
+    <p>You have a good deal of work on sequencing tool use already, arriving separately. That material should feed <span class="path">methods.json</span> directly rather than being reinvented from the tool side — which is the strongest argument for writing the method pages before the tool intros.</p>
+  </div>
+</section>
+
+<section class="band" id="alexander">
+  <div class="band-head">
+    <h4>The structure</h4>
+    <h2>A method is a pattern</h2>
+  </div>
+
+  <div class="col stack">
+    <p>Alexander is already the first name in this project's intellectual stack, and the structure of <em>A Pattern Language</em> turns out to describe what we just designed — closely enough that it is worth taking the rest of it rather than rediscovering it piecemeal.</p>
+    <p>One correction to the mapping first. It is tempting to read tool as pattern. That is wrong. Alexander's patterns are not instruments; they are claims about what works, each with a context, a problem, evidence, and a solution. <strong>Our methods are the patterns. Our tools are the materials a pattern calls for.</strong></p>
+    <p>The consequence is that Alexander's page format becomes the method-page template, already tested across 253 of them.</p>
+  </div>
+
+  <figure class="mock" style="max-width:620px">
+    <div class="ppage">
+      <div class="prow"><span class="slot">Picture</span><span class="fill">One image of the method being run — a real board, a real screen.</span></div>
+      <div class="prow"><span class="slot">Context &uarr;</span><span class="fill">The larger methods this one helps complete.</span></div>
+      <div class="prow headline"><span class="slot">Problem</span><span class="fill">People remember the same events in different orders, and the argument never resolves.</span></div>
+      <div class="prow"><span class="slot">Body</span><span class="fill">Why this happens, and what has been observed when it does. The evidence.</span></div>
+      <div class="prow"><span class="slot">Solution</span><span class="fill">The ordered steps — each naming a tool, what it <em>does</em> here, and the handoff.</span></div>
+      <div class="prow"><span class="slot">Diagram</span><span class="fill">The steps as a picture, built in the Graph Tool.</span></div>
+      <div class="prow"><span class="slot">Links &darr;</span><span class="fill">The smaller methods needed to complete this one.</span></div>
+    </div>
+    <figcaption>Alexander's pattern format, as the method page. The bold problem statement is the part a bare list of steps always leaves out — and the part that tells a reader whether this method is for them.</figcaption>
+  </figure>
+
+  <div class="col stack">
+    <h3>The confidence marker is earned, not declared</h3>
+    <p>Alexander marks each pattern with two asterisks, one, or none — how sure he is that it is a true invariant rather than one good way among many. He is candid about the weak ones, and the book is more trustworthy for it.</p>
+    <p>Methods carry the same mark. But a mark you type is a mark you can inflate, and within a year of generous self-assessment the field becomes decoration. So it is not typed. <strong>It is derived from SODOTO attestations</strong> — which is what SODOTO has been for all along: learning how to learn, and sharpening or discarding tools and methods as we find out.</p>
+  </div>
+
+  <div class="tablewrap">
+    <table style="min-width:640px">
+      <thead><tr><th>Mark</th><th>What it claims</th><th>The evidence that earns it</th></tr></thead>
+      <tbody>
+        <tr><td><span class="conf">&lowast;&lowast;</span></td><td>A real invariant — it survives being handed on</td><td>A <em>Teach One</em> whose learner then ran it themselves, ideally in a second NDC</td></tr>
+        <tr><td><span class="conf">&lowast;<span class="off">&lowast;</span></span></td><td>It worked, at least once, for someone</td><td>At least one <em>Do One</em></td></tr>
+        <tr><td><span class="conf"><span class="off">&lowast;&lowast;</span></span></td><td>Reasoned out, never run with a group</td><td>No attestations. The normal, publishable starting state</td></tr>
+        <tr><td><span class="pill pill-dormant">Retired</span></td><td>Tried, and it did not hold</td><td>Kept on the shelf with the date and the reason</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col stack">
+    <p>Because a star is computed from signed credentials, it cannot be talked up. And zero stars is not a failure state — most of what gets written first will honestly sit there, and saying so is the whole point.</p>
+
+    <h3>Teach One tests the method, not the person</h3>
+    <p>This is the load-bearing part. A method that only its author can run is not a method — it is a skill, with half of it living unwritten in one person's head. Alexander's criterion for a pattern is exactly that someone else can pick it up and reuse it, and <em>Teach One</em> is the moment you find out whether that is true.</p>
+    <p>The credential says a person learned something. The aggregate across credentials says the method survived transmission. Same signatures, two different readings, and the second one is new.</p>
+
+    <h3>Alexander's markers froze; ours move</h3>
+    <p><em>A Pattern Language</em> is a book, so its confidence marks were fixed at publication in 1977. He had to guess once and commit to print. Ours move — up as a method gets taught and the teaching takes, down or stale as it goes unused. A two-star method whose last attestation was three years ago is telling you something no book can say.</p>
+    <p>That is the sharpening half. <strong>Retired is the discarding half</strong>, and it stays visible on purpose: a method someone tried and abandoned is not the same as one nobody ever touched, and both would otherwise read as zero. Keeping the failure with its reason is how a group stops repeating it. Deleting it throws away the most expensive thing anyone learned.</p>
+
+    <h3>The risk that would kill this</h3>
+    <p>If recording &ldquo;we ran Trace &rarr; Timeline with the Superior group&rdquo; costs ten minutes of credential ceremony, nobody records it, every method sits at zero forever, and the shelf <em>looks</em> admirably honest while actually being empty of data. <strong>Untested and unlogged must never resolve to the same mark.</strong> The attestation for a method-run needs to be near-free — closer to the existing sign-your-gate flow than to issuing a credential — and the interface should distinguish &ldquo;no evidence&rdquo; from &ldquo;evidence of nothing happening.&rdquo;</p>
+
+    <h3>Kept separate from tool status</h3>
+    <p>A tool's live-or-draft state and a method's confidence are different facts. A shipped, polished tool can sit inside a method nobody has ever run. Conflating them would let good software vouch for an untested process, which is precisely the error the marker exists to prevent.</p>
+
+    <h3>Two edge types, not one</h3>
+    <p>Alexander's links are <em>scale containment</em> — Mosaic of Subcultures contains Community of 7000. Ours are mostly <em>sequence with a handoff</em> — trace, then timeline. Those are genuinely different relations and should not be flattened into &ldquo;related to.&rdquo;</p>
+    <p>But we need both, because some of our work does nest: the eVSM cycle <em>contains</em> four stages, and SCP contains nineteen plugins. So:</p>
+    <ul class="prose">
+      <li><code>HANDS_OFF_TO</code> — step to step, within a method. Carries the handoff description. Directed, ordered.</li>
+      <li><code>COMPLETED_BY</code> — method to smaller method. Alexander's downward link. Directed, unordered.</li>
+    </ul>
+    <p>Two typed relations plus <code>USES</code> from a step to a tool. Three edge types is about the right vocabulary size for something a group has to read.</p>
+
+    <h3>Never draw the whole graph</h3>
+    <p>The single most useful thing Alexander does structurally: with 253 patterns, he never once shows the full graph. Each pattern page shows only its immediate links up and down, and the front matter carries a handful of short example languages — a porch, a cottage — as ordered lists of pattern numbers.</p>
+    <p>That is the interface specification for the storefront, and it arrives free. Thirty tools crossed with a dozen methods is already past what anyone can read as one picture. <strong>Show the selected path, never the atlas.</strong> A method page shows its own steps and its immediate neighbours; the shelf shows short example sequences. Nothing renders the whole network, ever.</p>
+    <p>And the deepest borrowing, which is the thing you have had in mind for years: <em>a language is a selected, ordered subgraph, and selecting it is the design work.</em> A method is not a description of how the tools happen to connect. It is a choice somebody made for a particular job — which is precisely why it cannot live on the tool.</p>
+  </div>
+</section>
+
+<section class="band" id="substrate">
+  <div class="band-head">
+    <h4>The substrate</h4>
+    <h2>What Neo4j buys, and when</h2>
+  </div>
+
+  <div class="col stack">
+    <p>Worth separating two claims, because they come true at different times: Neo4j helps <em>us</em> as soon as the methods exist, and helps <em>users</em> only through a lens we build on top of it.</p>
+
+    <h3>For us, immediately</h3>
+    <ul class="prose">
+      <li><strong>The derived back-link.</strong> &ldquo;What methods use this tool&rdquo; stops being a script and becomes one hop.</li>
+      <li><strong>Impact analysis before a rename.</strong> &ldquo;If the Bias Checker becomes the Conversation Navigator, what breaks?&rdquo; — asked and answered before the rename, not after.</li>
+      <li><strong>Gap-finding.</strong> Tools that appear in no method are either undocumented or genuinely unused, and the query cannot tell you which — but it can hand you the list to decide.</li>
+      <li><strong>The confidence marker itself.</strong> For a given method, count attestations by type and by NDC: any <em>Do One</em> earns a star, a <em>Teach One</em> whose learner then ran it earns the second. This is the query that makes the mark underivable by hand and therefore trustworthy — and it runs against the SODOTO projector already on the roadmap.</li>
+      <li><strong>Staleness.</strong> Most recent attestation per method. A method nobody has run in two years is telling you something, and only a live graph can say it.</li>
+    </ul>
+
+    <h3>For users, once there is a lens</h3>
+    <p>One query justifies the whole substrate: <strong>what routes exist from what I have to what I need.</strong> Someone with a graph JSON who wants a published FedWiki page is asking for a shortest path over <code>HANDS_OFF_TO</code> edges. That is Alexander's &ldquo;make a language for your project&rdquo;, executed as a traversal, and it is the first thing in this plan that reaches past us to a person in a neighbourhood.</p>
+    <p>Two cautions, both mild. <strong>Nobody will write Cypher</strong> — the value reaches users strictly through a page that runs the query for them, which is consistent with the substrate direction already set, where tools become lenses. And <strong>the graph does not exist yet, which is the hard part.</strong> Writing a dozen honest methods is months of thinking; loading them into Neo4j is an afternoon.</p>
+
+    <h3>The files stay the source</h3>
+    <p><span class="path">catalog.json</span> and <span class="path">methods.json</span> remain the human-editable, git-diffable, <span class="path">file://</span>-readable truth. Neo4j is a projection, rebuilt from them — the same arrangement as the SODOTO projector. If the database is down, the storefront still works and the handout still opens. Nothing load-bearing sits only in the graph.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>The shelves</h4>
+    <h2>Everything in tools/, sorted by the question it answers</h2>
+    <p class="col">Statuses below are <em>proposed</em>, not established — the point of the first catalog pass is that you confirm or correct each one. Doc columns are verified from the files as they stand today.</p>
+  </div>
+
+  <div class="shelf">
+    <p class="shelf-q">How does this system actually work?</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tool</th><th>File</th><th>Docs</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>RCN Graph Tool</td><td class="mono">graph-tool-v22.html</td><td class="docs"><span class="yes">intro &middot; manual</span></td><td><span class="pill pill-live">Live</span></td></tr>
+          <tr><td>RCN Graph Composer</td><td class="mono">graph-composer.html</td><td class="docs"><span class="yes">intro &middot; manual</span></td><td><span class="pill pill-live">Live</span></td></tr>
+          <tr><td>RCN Schema Sunburst</td><td class="mono">schema-sunburst.html</td><td class="docs"><span class="yes">intro &middot; manual</span></td><td><span class="pill pill-live">Live</span></td></tr>
+          <tr><td>Vester Influence Analysis</td><td class="mono">vester/ (build step)</td><td class="docs">manual in docs/</td><td><span class="pill pill-live">Live</span></td></tr>
+          <tr><td>Stock &amp; Flow — Stella Approach</td><td class="mono">sfd-stella-approach.html</td><td class="docs">&mdash;</td><td><span class="pill pill-draft">Draft</span></td></tr>
+          <tr><td>EIP Integration Explorer</td><td class="mono">eip_integration_explorer.html</td><td class="docs">&mdash;</td><td><span class="pill pill-draft">Draft</span></td></tr>
+          <tr><td>Graph JSON &rarr; Vensim CLD</td><td class="mono">graphjson_to_vensim_cld.html</td><td class="docs">&mdash;</td><td><span class="pill pill-draft">Draft</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="shelf">
+    <p class="shelf-q">When did these things happen, relative to each other?</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tool</th><th>File</th><th>Docs</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>RCN Timeline</td><td class="mono">rcn-timeline.html</td><td class="docs"><span class="yes">intro &middot; manual</span></td><td><span class="pill pill-live">Live</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="shelf">
+    <p class="shelf-q">Where is this happening on the ground?</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tool</th><th>File</th><th>Docs</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>RCN NDC Map</td><td class="mono">maps/rcn_map.html</td><td class="docs"><span class="yes">intro &middot; manual</span></td><td><span class="pill pill-live">Live</span></td></tr>
+          <tr><td>Issue Polygon Map</td><td class="mono">issue-polygon-map.html</td><td class="docs"><span class="yes">intro &middot; manual</span></td><td><span class="pill pill-live">Live</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="shelf">
+    <p class="shelf-q">Are we kidding ourselves about this?</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tool</th><th>File</th><th>Docs</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Conversation Navigator <em>(Bias Checker)</em></td><td class="mono">bias-checker.html</td><td class="docs"><span class="yes">intro &middot; manual</span></td><td><span class="pill pill-live">Live</span></td></tr>
+          <tr><td>NRM — Neighborhood Risk Management</td><td class="mono">nrm-tripod-beta.html</td><td class="docs">md in docs/</td><td><span class="pill pill-draft">Draft</span></td></tr>
+          <tr><td>Positive Affect Score</td><td class="mono">positive-affect-score.html</td><td class="docs"><span class="yes">intro &middot; manual</span></td><td><span class="pill pill-live">Live</span></td></tr>
+          <tr><td>IBIS Map — Health Conversation</td><td class="mono">ibis-map-rcn.html</td><td class="docs">&mdash;</td><td><span class="pill pill-dormant">Example</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="shelf">
+    <p class="shelf-q">Where does the money and the value go?</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tool</th><th>File</th><th>Docs</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>eVSM Survey</td><td class="mono">evsm-svg-v3.html</td><td class="docs">&mdash;</td><td><span class="pill pill-draft">Draft</span></td></tr>
+          <tr><td>eVSM Aggregator</td><td class="mono">evsm-aggregator.html</td><td class="docs">&mdash;</td><td><span class="pill pill-draft">Draft</span></td></tr>
+          <tr><td>eVSM Respondent Report</td><td class="mono">evsm-report.html</td><td class="docs">&mdash;</td><td><span class="pill pill-draft">Draft</span></td></tr>
+          <tr><td>eVSM Excel Import / Export</td><td class="mono">evsm_excel_tool.html</td><td class="docs">&mdash;</td><td><span class="pill pill-draft">Draft</span></td></tr>
+          <tr><td>EIP Local Finance Analysis</td><td class="mono">eip_local_finance_diagram.html</td><td class="docs">&mdash;</td><td><span class="pill pill-draft">Draft</span></td></tr>
+          <tr><td>CfA-dSC Contract Creator</td><td class="mono">cfa-dsc-creator.html</td><td class="docs">handoff md</td><td><span class="pill pill-draft">Draft</span></td></tr>
+          <tr><td>Interactive Wardley Map Generator</td><td class="mono">wardley-map-generator.html</td><td class="docs">chat card</td><td><span class="pill pill-draft">Draft</span></td></tr>
+          <tr><td>Contract Creator <em>(earlier)</em></td><td class="mono">contract-creator.html</td><td class="docs">&mdash;</td><td><span class="pill pill-dormant">Superseded?</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="col"><strong>Note the four eVSM files.</strong> On the storefront these are almost certainly one entry — a method with four stages — not four cards. The catalog pass is where that call gets made.</p>
+  </div>
+
+  <div class="shelf">
+    <p class="shelf-q">How do I take care of my health and my people?</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tool</th><th>File</th><th>Docs</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>My Health Picture</td><td class="mono">my-health-picture.html</td><td class="docs">&mdash;</td><td><span class="pill pill-live">Live</span></td></tr>
+          <tr><td>My Health Choices</td><td class="mono">my-health-choices.html</td><td class="docs">&mdash;</td><td><span class="pill pill-live">Live</span></td></tr>
+          <tr><td>My Support Network</td><td class="mono">my-support-network.html</td><td class="docs">&mdash;</td><td><span class="pill pill-draft">Draft</span></td></tr>
+          <tr><td>Prepare for Your Appointment</td><td class="mono">scp-chat.html</td><td class="docs">&mdash;</td><td><span class="pill pill-draft">Draft</span></td></tr>
+          <tr><td>Patient Provisioning <em>(admin)</em></td><td class="mono">patient-admin.html</td><td class="docs">&mdash;</td><td><span class="pill pill-dormant">Back office</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="shelf">
+    <p class="shelf-q">How do we learn a skill and vouch for each other?</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tool</th><th>File</th><th>Docs</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>SODOTO Issuer</td><td class="mono">sodoto-issuer.html</td><td class="docs"><span class="yes">issuer guide</span></td><td><span class="pill pill-live">Live</span></td></tr>
+          <tr><td>Your SODOTO Identity <em>(onboarding)</em></td><td class="mono">sodoto-onboard.html</td><td class="docs"><span class="yes">intro &middot; manual in docs/</span></td><td><span class="pill pill-live">Live</span></td></tr>
+          <tr><td>Sign Your Gate</td><td class="mono">sodoto-sign.html</td><td class="docs">&mdash;</td><td><span class="pill pill-live">Live</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="shelf">
+    <p class="shelf-q">How do we write and organize this together?</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tool</th><th>File</th><th>Docs</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>MORE Outliner</td><td class="mono">more-outliner.html</td><td class="docs">manual only</td><td><span class="pill pill-live">Live</span></td></tr>
+          <tr><td>Groove Workspace</td><td class="mono">groove-workspace/ (port 3001)</td><td class="docs"><span class="yes">intro &middot; manual</span></td><td><span class="pill pill-live">Live</span></td></tr>
+          <tr><td>FedWiki Lineup &amp; Print bookmarklets</td><td class="mono">fedwiki-lineup-bookmarklet.html</td><td class="docs">&mdash;</td><td><span class="pill pill-draft">Draft</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="shelf">
+    <p class="shelf-q">Workshop — kept, but not on the shelf</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>File</th><th>What it is</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">rcn-icon-sheet.html</td><td>House icon contact sheet — a reference, not a tool</td><td><span class="pill pill-dormant">Reference</span></td></tr>
+          <tr><td class="mono">conversation_index.html</td><td>Personal LLM session index</td><td><span class="pill pill-dormant">Personal</span></td></tr>
+          <tr><td class="mono">conversation_index (old).html</td><td>Superseded copy, download-mangled name</td><td><span class="pill pill-dormant">Delete</span></td></tr>
+          <tr><td class="mono">session-builder (1).html</td><td>Session Instruction Builder, download-mangled name</td><td><span class="pill pill-dormant">Rename</span></td></tr>
+          <tr><td class="mono">checklist-test.html</td><td>Layout scratch file</td><td><span class="pill pill-dormant">Delete</span></td></tr>
+          <tr><td class="mono">sodoto-crypto-test.html</td><td>Crypto test harness</td><td><span class="pill pill-dormant">Move to tests</span></td></tr>
+          <tr><td class="mono">conversation-navigator-flow.html</td><td>Process diagram — belongs with the manual</td><td><span class="pill pill-dormant">Doc</span></td></tr>
+          <tr><td class="mono">create-rcn-graph-tool-page.html</td><td>One-off page generator</td><td><span class="pill pill-dormant">Script</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>Part two</h4>
+    <h2>Organizing the files</h2>
+    <p class="col">You asked what confuses me. Specifically, this:</p>
+  </div>
+
+  <div class="findings">
+    <div class="finding worst">
+      <span class="n">01</span>
+      <div class="body">
+        <h3>No alive-or-dead marker anywhere</h3>
+        <p><span class="path">checklist-test.html</span>, <span class="path">sodoto-crypto-test.html</span>, <span class="path">conversation_index (old).html</span>, <span class="path">evsm-svg-v3.html</span>, <span class="path">session-builder (1).html</span>. I cannot distinguish an experiment from a shipped tool without opening it. <strong>This is the single largest source of confusion — larger than the directory layout.</strong></p>
+      </div>
+    </div>
+    <div class="finding">
+      <span class="n">02</span>
+      <div class="body">
+        <h3>tools/ mixes four different kinds of thing across 157 files</h3>
+        <p>Launchable tools, their documentation, example data, and utility scripts (<span class="path">unwrap-md.js</span>, <span class="path">validate-rcn-graph.js</span>, <span class="path">brain-to-graph.py</span>, <span class="path">split-wa-health-aspects.py</span>) all sit side by side. Nothing in a filename tells me which kind I am looking at.</p>
+      </div>
+    </div>
+    <div class="finding">
+      <span class="n">03</span>
+      <div class="body">
+        <h3>Stem mismatches break any convention I infer</h3>
+        <p><span class="path">graph-tool-v22.html</span> but <span class="path">graph-tool-intro.html</span>. And the Bias Checker's files are named <span class="path">bias-checker-*</span> while every page inside them is titled &ldquo;Conversation Navigator&rdquo; — the tool was renamed and the filenames were not.</p>
+      </div>
+    </div>
+    <div class="finding">
+      <span class="n">04</span>
+      <div class="body">
+        <h3>Underscores and hyphens are mixed</h3>
+        <p><span class="path">eip_integration_explorer.html</span> next to <span class="path">issue-polygon-map.html</span>. Guessing a filename fails about half the time.</p>
+      </div>
+    </div>
+    <div class="finding">
+      <span class="n">05</span>
+      <div class="body">
+        <h3>Fifteen loose files in the repo root</h3>
+        <p>Two Python proxies, a <span class="path">.tar.gz</span>, a <span class="path">.brz</span> brain export, a stray graph JSON, a stray HTML page, and several markdown documents with no home.</p>
+      </div>
+    </div>
+    <div class="finding">
+      <span class="n">06</span>
+      <div class="body">
+        <h3>archive/ is empty, but the README says it holds old drafts</h3>
+        <p>A small thing that costs a lot: once one README claim is stale, I trust the rest of it less everywhere.</p>
+      </div>
+    </div>
+    <div class="finding">
+      <span class="n">07</span>
+      <div class="body">
+        <h3>Vendored directories dominate every search</h3>
+        <p><span class="path">vester/</span> holds 2,245 files, <span class="path">groove-workspace/</span> 1,131, <span class="path">wiki-plugin-rcn-outliner/</span> 216 — mostly <span class="path">node_modules</span>. Any repo-wide search hits dependencies before it reaches your work.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col stack">
+    <h3>What I would <em>not</em> do: a big-bang reorganization</h3>
+    <p>Several tools load their siblings by flat filename because <span class="path">file://</span> offers no alternative. The Graph Composer reads <span class="path">families.js</span> and <span class="path">graph-sets.js</span> from its own folder; the map loads <span class="path">rcn_static_data.js</span> the same way. Moving those breaks things <em>silently</em>, and no test suite can catch a broken <span class="path">file://</span> page. The blast radius is invisible, which is the worst kind.</p>
+    <p>So the moves below are ordered by value per unit of risk, and each one carries its actual risk.</p>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Proposed moves</caption>
+      <thead><tr><th class="risk">Risk</th><th>Move</th><th>Why it is worth doing</th></tr></thead>
+      <tbody>
+        <tr class="r-safe">
+          <td class="risk"><span class="riskname">Safe</span></td>
+          <td>Add <code>status</code> to every catalog entry</td>
+          <td>Zero file moves. Fixes finding 01, which is the biggest one, and gives the dashboard its shelf logic. Do this first regardless of everything else.</td>
+        </tr>
+        <tr class="r-check">
+          <td class="risk"><span class="riskname">Check links</span></td>
+          <td><span class="path">tools/examples/</span> for the sample <code>.json</code> files</td>
+          <td>Verified: only <span class="path">bgte-12-triples.json</span> is loaded by path from an actual tool. The other examples are merely <em>mentioned</em> inside manuals, so this is four link fixes and one exception. Large legibility win.</td>
+        </tr>
+        <tr class="r-check">
+          <td class="risk"><span class="riskname">Check links</span></td>
+          <td><span class="path">tools/scripts/</span> for <code>.py</code> and non-loaded <code>.js</code> utilities</td>
+          <td>Leave <span class="path">families.js</span>, <span class="path">graph-sets.js</span>, <span class="path">edge-families.js</span>, <span class="path">rcn-icons.js</span> and <span class="path">stamp-legend-style.js</span> flat — those are loaded by pages or by the settings hook.</td>
+        </tr>
+        <tr class="r-safe">
+          <td class="risk"><span class="riskname">Safe</span></td>
+          <td><span class="path">decks/</span> for the seven <code>.pptx</code> files</td>
+          <td>Nothing loads them programmatically. They are handouts and they are cluttering the tool directory.</td>
+        </tr>
+        <tr class="r-safe">
+          <td class="risk"><span class="riskname">Safe</span></td>
+          <td>Clear the repo root</td>
+          <td>Proxies into <span class="path">services/</span>; the archives and brain export into <span class="path">archive/</span>, which is sitting empty and waiting; loose markdown into <span class="path">docs/</span>.</td>
+        </tr>
+        <tr class="r-hold">
+          <td class="risk"><span class="riskname">Leave alone</span></td>
+          <td>The interdependent flat set</td>
+          <td>Tools and their intro and manual pages stay siblings. The map's two-file arrangement stays exactly as it is.</td>
+        </tr>
+        <tr class="r-hold">
+          <td class="risk"><span class="riskname">Leave alone</span></td>
+          <td>Gitignored directories</td>
+          <td><span class="path">Chase/</span> and the others have no committed baseline, so a sweep there cannot be diffed, reviewed or undone. Standing rule, unchanged.</td>
+        </tr>
+        <tr class="r-check">
+          <td class="risk"><span class="riskname">Check links</span></td>
+          <td>Fix names opportunistically, never in a sweep</td>
+          <td><span class="path">graph-tool-v22.html</span> &rarr; <span class="path">graph-tool.html</span>, and the <span class="path">bias-checker-*</span> files &rarr; <span class="path">conversation-navigator-*</span>, each when we next touch that tool for another reason.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col stack">
+    <h3>Then shrink the README to pointers</h3>
+    <p>It is doing catalog work today, which is why it is 848 lines and why it goes stale. Once the catalog exists, the README describes the shape of the repo and points at the catalog — and stops trying to be one.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>Build order</h4>
+    <h2>Where to start</h2>
+    <p class="col">This part genuinely is a sequence — each step depends on the one before it.</p>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <span class="num"></span>
+      <div class="body">
+        <h3>Draft the catalog schema and populate it for all thirty tools</h3>
+        <p>One pass, nine fields each. It forces the alive-or-dead call on every file, gives the dashboard its data, gives the FedWiki site its pages, and gives Claude the map it is currently missing. Everything else is downstream.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="num"></span>
+      <div class="body">
+        <h3>Write two method pages as prose, before any schema</h3>
+        <p>Trace &rarr; Timeline and Rent Band Analysis. Prose first and deliberately — you cannot design the methods schema until you have written two real methods and seen what they needed to say. Both were chosen because their tools are already documented, so neither page has a dead link. Fold in your existing sequencing work here.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="num"></span>
+      <div class="body">
+        <h3>Derive methods.json from those two pages</h3>
+        <p>The schema falls out of the writing rather than the writing being forced into a schema. If the <code>does</code> and <code>handoff</code> fields turn out to be the wrong shape, this is the cheap moment to find out — two pages in, not twenty.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="num"></span>
+      <div class="body">
+        <h3>Build tools/index.html against both files</h3>
+        <p>Flat-sibling <span class="path">catalog.js</span> so it runs from <span class="path">file://</span>. Shelves by question, cards with four actions, and derived &ldquo;used in&rdquo; links from the methods. A day, not a week, because the data already exists by then.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="num"></span>
+      <div class="body">
+        <h3>Make the safe moves</h3>
+        <p><span class="path">examples/</span>, <span class="path">decks/</span>, root cleanup, empty <span class="path">archive/</span> filled. Update the four manual links that name example files.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="num"></span>
+      <div class="body">
+        <h3>Publish to Wiki Café — this is the go-live</h3>
+        <p>Generate the shelf page, the method index, and the tool stubs through the existing converter, and push. From this moment the wiki is the address you hand out, the pages are hand-owned, and the two roster pages are regenerated from the catalog.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="num"></span>
+      <div class="body">
+        <h3>Write the missing tool intros, shaped by what the methods asked for</h3>
+        <p>Roughly twenty-four. By now you know what an intro has to answer, because two method pages have already demanded it — what this tool takes in, what it hands off, and in what shape. The Graph Tool's intro exists but its file stems disagree; MORE Outliner has a manual and no intro; the eVSM stages need one intro for the whole cycle rather than four.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="num"></span>
+      <div class="body">
+        <h3>Add the remaining methods</h3>
+        <p>The Vester run, SODOTO issuance, the eVSM survey cycle, and whatever else your sequencing work turns up. Each one is cheap by this point: the format is proven, the schema is stable, and the tools it names are documented.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>Settled</h4>
+    <h2>Decisions of record</h2>
+  </div>
+
+  <div class="decisions">
+    <div class="decision">
+      <h3>FedWiki is the primary storefront <span class="tag">decided</span></h3>
+      <p>The wiki site on Wiki Café is the address people are given; the standalone <span class="path">index.html</span> is a thin <span class="path">file://</span> handout, not a mirror.</p>
+      <p class="rec"><strong>What follows:</strong> forking is designed for, not tolerated. New writing about a tool belongs on its wiki page. The standalone deliberately carries less, and that is not a defect to be fixed later.</p>
+    </div>
+    <div class="decision">
+      <h3>Methods come early, and are first-class <span class="tag">decided</span></h3>
+      <p>Two method pages get written before the bulk of the tool intros, and methods live in their own file with their own ordered steps.</p>
+      <p class="rec"><strong>What follows:</strong> the tool entry has no <code>methods</code> field. Sequence and the per-step job description live on the method, because a tool does a different job in each process it appears in. Back-links on tool pages are derived, never typed.</p>
+    </div>
+  </div>
+
+  <div class="col stack">
+    <div class="decision">
+      <h3>Method pages follow Alexander's pattern format <span class="tag">decided</span></h3>
+      <p>Context, bold problem statement, body, solution, diagram, links down — plus a confidence marker on every method.</p>
+      <p class="rec"><strong>What follows:</strong> three typed edges (<code>USES</code>, <code>HANDS_OFF_TO</code>, <code>COMPLETED_BY</code>), and a hard interface rule — show the selected path, never the whole graph.</p>
+    </div>
+    <div class="decision">
+      <h3>Confidence is derived from SODOTO, never typed <span class="tag">decided</span></h3>
+      <p>A method's stars are computed from attestations: a <em>Do One</em> earns the first, a <em>Teach One</em> that takes earns the second. Zero stars is a normal, publishable state.</p>
+      <p class="rec"><strong>What follows:</strong> <code>confidence</code> is a computed field, not an authored one. Retired methods stay on the shelf with their reason. And the method-run attestation has to be near-free, or untested and unlogged collapse into the same mark and the whole signal dies.</p>
+    </div>
+  </div>
+
+  <div class="col stack">
+    <h3>Next</h3>
+    <p>Marc's sequencing work arrives 15 August. It is the seed for <span class="path">methods.json</span> rather than something to reconstruct from the tool side — a method described from inside the process is a different document from one assembled by looking at tools and guessing how they connect. On the evidence of this conversation it is likely already shaped more like a pattern language than like documentation, in which case the first job is to find its patterns rather than to impose a format on it.</p>
+  </div>
+</section>
+
+<footer>
+  <p>Fourth draft, 14 August 2026. Four decisions of record: FedWiki-primary, methods-early, the pattern-language structure, and confidence derived from SODOTO attestations rather than authored. Nothing has been built — file counts, doc coverage and load-path checks are read from the repo as it stands today, and the tool statuses remain proposals awaiting confirmation.</p>
+</footer>
+
+</main>
+</body>
+</html>
