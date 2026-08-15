@@ -38,8 +38,9 @@ for (const [site, s] of Object.entries(sites)) {
   const page = { title: `${s.name} SODOTO Portfolio`, story: [item],
     journal: [{ type: 'create', id: 'init', date: Date.now(), item: { title: `${s.name} SODOTO Portfolio` } }] }
   fs.writeFileSync(path.join(pagesDir, s.slug), JSON.stringify(page, null, 2))
-  fs.writeFileSync(path.join(pagesDir, 'welcome-visitors'),
-    JSON.stringify({ title: 'Welcome Visitors', story: [], journal: [] }))
+  // NB: no welcome-visitors page — a per-person site is greeted by its portfolio
+  // page; FedWiki falls back to its default home. Proving the site works without
+  // overloading the special welcome-visitors page.
   // CONTAINER path — the wiki sees the data at /root/.wiki
   wikiDomains[site] = { id: `/root/.wiki/${site}/owner.json` }
 }
