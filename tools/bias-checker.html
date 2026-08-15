@@ -3254,8 +3254,25 @@ function getMyClicks(modelId) {
   return myModelClicks[modelId];
 }
 
+// Every write below used to `return` silently when you had not joined, so a
+// visitor could click a model, retype a label, or type a whole Six Questions
+// answer and watch nothing happen with no explanation. Say why instead.
+let _joinNagAt = 0, _joinNagWhat = "";
+function requireJoin(what) {
+  if (joined) return true;
+  const now = Date.now();
+  // Throttle repeats of the SAME message (typing fires per keystroke), but
+  // never swallow a different one — voting should not report "mark models".
+  if (what !== _joinNagWhat || now - _joinNagAt > 2500) {
+    _joinNagAt = now;
+    _joinNagWhat = what;
+    showMsg("joinMsg", `Join the session to ${what}.`, "error");
+  }
+  return false;
+}
+
 function toggleNode(modelId, nodeId) {
-  if (!joined) return;
+  if (!requireJoin("mark models")) return;
   const mine = getMyClicks(modelId);
   const r    = ref(db, `sessions/${sessionId}/models/${modelId}/clicks/nodes/${nodeId}/${myKey}`);
   if (mine.nodes.has(nodeId)) {
@@ -3267,7 +3284,7 @@ function toggleNode(modelId, nodeId) {
   }
 }
 function toggleEdge(modelId, edgeId) {
-  if (!joined) return;
+  if (!requireJoin("mark models")) return;
   const mine = getMyClicks(modelId);
   const r    = ref(db, `sessions/${sessionId}/models/${modelId}/clicks/edges/${edgeId}/${myKey}`);
   if (mine.edges.has(edgeId)) {
@@ -3279,17 +3296,18 @@ function toggleEdge(modelId, edgeId) {
   }
 }
 function saveLabel(modelId, nodeId, text) {
-  if (!joined) return;
+  if (!requireJoin("edit model labels")) return;
   set(ref(db, `sessions/${sessionId}/models/${modelId}/labels/${nodeId}`), text || '');
 }
 function saveQLabel(nodeId, text) {
-  if (!joined) return;
+  if (!requireJoin("edit the questions")) return;
   set(ref(db, `sessions/${sessionId}/models/sixq/qlabels/${nodeId}`), text || '');
 }
 
 // Debounce helper for live text input → Firebase
 const _sqDebounce = {};
 window.sqInputA = function(aId, value) {
+  if (!requireJoin("answer the questions")) return;
   clearTimeout(_sqDebounce['a_' + aId]);
   _sqDebounce['a_' + aId] = setTimeout(() => {
     if (!joined) return;
@@ -3304,7 +3322,7 @@ window.sqKeyA = function(e, aId) {
   // Shift+Enter saves immediately and blurs
   if (e.key === 'Enter' && e.shiftKey) {
     e.preventDefault();
-    if (!joined) return;
+    if (!requireJoin("answer the questions")) return;
     set(ref(db, `sessions/${sessionId}/models/sixq/answers/${aId}/${myKey}`), e.target.value || '');
     e.target.blur();
   }
@@ -3722,7 +3740,7 @@ window.sqToggleQ = function(qId, e) {
 };
 
 window.sqVoteAnswer = function(aId, authorKey) {
-  if (!joined) return;
+  if (!requireJoin("vote on answers")) return;
   const r           = ref(db, `sessions/${sessionId}/models/sixq/votes/${aId}/${authorKey}/${myKey}`);
   const alreadyVoted = modelData.sixq?.votes?.[aId]?.[authorKey]?.[myKey];
   if (alreadyVoted) remove(r); else set(r, true);
