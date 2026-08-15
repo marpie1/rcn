@@ -7,7 +7,7 @@
       "$sessionId": {
         ".read": "$sessionId.matches(/^[A-Z0-9]{6}$/)",
         "$participantKey": {
-          ".write": "$sessionId.matches(/^[A-Z0-9]{6}$/)"
+          ".write": "auth != null && $sessionId.matches(/^[A-Z0-9]{6}$/) && ($participantKey === auth.uid || newData.val() === null || $participantKey === 'models' || $participantKey === 'modelOrder' || $participantKey === 'customModels')"
         }
       }
     },
@@ -15,7 +15,7 @@
     "topics": {
       "$sessionId": {
         ".read":  "$sessionId.matches(/^[A-Z0-9]{6}$/)",
-        ".write": "$sessionId.matches(/^[A-Z0-9]{6}$/)"
+        ".write": "auth != null && $sessionId.matches(/^[A-Z0-9]{6}$/)"
       }
     },
 
@@ -23,7 +23,7 @@
       "$sessionId": {
         ".read": "$sessionId.matches(/^[A-Z0-9]{6}$/)",
         "$participantKey": {
-          ".write": "$sessionId.matches(/^[A-Z0-9]{6}$/)"
+          ".write": "auth != null && $sessionId.matches(/^[A-Z0-9]{6}$/) && ($participantKey === auth.uid || newData.val() === null)"
         }
       }
     }

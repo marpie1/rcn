@@ -497,7 +497,7 @@ let naShown   = false;
 let history   = loadHistory();
 
 // session state (only populated in session mode)
-let db = null, fbRefs = null, sessionId = null, myKey = null, myName = null;
+let db = null, fbRefs = null, sessionId = null, myKey = null, myName = null, myUid = null;
 let joined = false, myAnonConsent = false, isNamedMode = true;
 let groupData = {};
 let myFirstScore = null;
@@ -887,16 +887,28 @@ async function bootSession(id) {
   document.getElementById('aggBody').innerHTML = `<div class="empty-note">Join to see the group.</div>`;
 
   try {
-    const [{ initializeApp }, dbMod] = await Promise.all([
+    const [{ initializeApp }, dbMod, authMod] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
       import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'),
     ]);
     fbRefs = dbMod;
-    db = dbMod.getDatabase(initializeApp(firebaseConfig));
+    const fbApp = initializeApp(firebaseConfig);
+    db = dbMod.getDatabase(fbApp);
+    // Anonymous sign-in — no account, no prompt. The uid becomes the
+    // participant key so the rules can stop anyone rewriting someone else's
+    // score, and so reopening the page resumes the same record.
+    const cred = await authMod.signInAnonymously(authMod.getAuth(fbApp));
+    myUid = cred.user.uid;
     setLive(true);
   } catch(e) {
     setLive(false);
-    showMsg('joinMsg', 'Could not reach the session server. Solo check-ins still work.', 'error');
+    const why = {
+      'auth/configuration-not-found':    'Authentication is not set up on this Firebase project',
+      'auth/operation-not-allowed':      'Anonymous sign-in is not enabled on this Firebase project',
+      'auth/admin-restricted-operation': 'Anonymous sign-in is switched off in this Firebase project',
+    }[e && e.code] || 'Could not reach the session server';
+    showMsg('joinMsg', why + ' — shared sessions are unavailable. Solo check-ins still work.', 'error');
     return;
   }
 
@@ -914,11 +926,11 @@ function setLive(ok) {
 window.joinSession = function() {
   const name = document.getElementById('nameInput').value.trim();
   if (!name) { showMsg('joinMsg', 'Enter your name first.', 'error'); return; }
-  if (!db) { showMsg('joinMsg', 'Not connected to the session server.', 'error'); return; }
+  if (!db || !myUid) { showMsg('joinMsg', 'Not signed in to the session server yet.', 'error'); return; }
   if (joined) return;
 
   myName = name;
-  myKey  = name.toLowerCase().replace(/\s+/g, '_') + '_' + generateId(3);
+  myKey  = myUid;   // stable per browser; the rules require it to match auth.uid
   joined = true;
 
   document.getElementById('nameInput').disabled = true;

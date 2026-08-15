@@ -1007,6 +1007,15 @@
   .pa-actions button { flex: 1; }
   .pa-foot { font-size: 0.75rem; color: var(--ink3); margin-top: 12px; font-style: italic; }
 
+  /* always-visible doc links in the footer — the help panel is behind a button,
+     and someone handed the URL cold should still find the docs */
+  .foot-docs { display: inline-flex; gap: 14px; flex-wrap: wrap; }
+  .foot-docs a {
+    color: var(--bg); text-decoration: none;
+    border-bottom: 1px solid var(--ink3); padding-bottom: 1px; white-space: nowrap;
+  }
+  .foot-docs a:hover { color: var(--accent2); border-bottom-color: var(--accent2); }
+
   /* departed participants */
   .p-card.is-away { opacity: 0.55; background: var(--surface2); }
   .away-tag {
@@ -1051,6 +1060,8 @@
       <div class="help-links">
         <a class="help-link-btn" href="bias-checker-intro.html" target="_blank">Introduction ↗</a>
         <a class="help-link-btn sec" href="bias-checker-manual.html" target="_blank">Full Manual ↗</a>
+        <a class="help-link-btn sec" href="conversation-navigator-flow.html" target="_blank">Process Flow ↗</a>
+        <a class="help-link-btn sec" href="rcn-bias-checker-intro.pptx">Slides (PPTX) ↓</a>
       </div>
 
       <div class="help-section">
@@ -1437,6 +1448,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, update as fbUpdate, push as fbPush, onValue, remove, onDisconnect, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInAnonymously }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 // ─── FIREBASE CONFIG ───────────────────────────────────────────────
 // Replace these values with your own from Firebase Console
@@ -1500,7 +1513,7 @@ const CONFLICTS = {
 };
 
 // ── STATE ──
-let app, db, sessionId, myName, myKey;
+let app, db, auth, myUid, sessionId, myName, myKey;
 let myIntents = new Set();
 let myBiases = new Set();
 const myModelClicks = {}; // modelId → { nodes: Set, edges: Set }
@@ -1556,14 +1569,40 @@ function generateId(len = 6) {
 
 function boot() {
   try {
-    app = initializeApp(firebaseConfig);
-    db  = getDatabase(app);
+    app  = initializeApp(firebaseConfig);
+    db   = getDatabase(app);
+    auth = getAuth(app);
     setStatus(true);
   } catch(e) {
     setStatus(false);
     showMsg("joinMsg", "Firebase connection failed. Check config values.", "error");
     return;
   }
+
+  // Anonymous sign-in: invisible to the user — no account, no prompt — but it
+  // gives every browser a stable uid, which is what lets the rules stop one
+  // participant from silently rewriting another's record. The uid persists in
+  // local storage, so reopening the page resumes the same participant.
+  const joinBtn = document.getElementById("joinBtn");
+  joinBtn.disabled = true;
+  joinBtn.textContent = "…";
+  signInAnonymously(auth)
+    .then(cred => {
+      myUid = cred.user.uid;
+      joinBtn.disabled = false;
+      joinBtn.textContent = "Join";
+    })
+    .catch(err => {
+      joinBtn.textContent = "Join";
+      setStatus(false);
+      const why = {
+        "auth/configuration-not-found":   "Authentication is not set up on this Firebase project",
+        "auth/operation-not-allowed":     "Anonymous sign-in is not enabled on this Firebase project",
+        "auth/admin-restricted-operation":"Anonymous sign-in is switched off in this Firebase project",
+        "auth/network-request-failed":    "Could not reach the sign-in server",
+      }[err.code] || ("Sign-in failed (" + err.code + ")");
+      showMsg("joinMsg", why + " — this session cannot sync.", "error");
+    });
 
   sessionId = getSessionFromUrl() || generateId();
   if (!getSessionFromUrl()) {
@@ -1612,10 +1651,13 @@ window.join = function() {
   if (!name) { showMsg("joinMsg", "Enter your name first.", "error"); return; }
   if (joined) return;
 
+  if (!myUid) { showMsg("joinMsg", "Still signing in — try again in a moment.", "error"); return; }
+
   myName = name;
-  // Reclaim the same record on a rejoin, otherwise a reconnect would leave a
-  // ghost card behind and double-count the person in stats and exports.
-  myKey  = reclaimKey(name);
+  // The uid is the participant key. It is stable per browser, so a reconnect
+  // reclaims the same record instead of leaving a ghost card behind, and the
+  // rules can require $participantKey === auth.uid to write it.
+  myKey  = myUid;
   writeRef = ref(db, "sessions/" + sessionId + "/" + myKey);
 
   joined = true;
@@ -1676,18 +1718,6 @@ function hydrateFromRecord(p) {
   renderPASummary();
 }
 
-// Participant keys are remembered per session so a reconnect resumes the same
-// record rather than creating a second one.
-function reclaimKey(name) {
-  const slot = "rcn.nav.key." + sessionId;
-  try {
-    const saved = JSON.parse(sessionStorage.getItem(slot) || "null");
-    if (saved && saved.name === name && saved.key) return saved.key;
-  } catch(e) { /* fall through to a fresh key */ }
-  const key = name.toLowerCase().replace(/\s+/g, "_") + "_" + generateId(3);
-  try { sessionStorage.setItem(slot, JSON.stringify({ name, key })); } catch(e) {}
-  return key;
-}
 
 // ── WRITE ──
 function push() {
@@ -2025,7 +2055,6 @@ window.removeMyInput = function() {
   onDisconnect(gone).cancel();
   remove(gone);
 
-  try { sessionStorage.removeItem("rcn.nav.key." + sessionId); } catch(e) {}
 
   joined = false;
   myIntents.clear();
@@ -2053,7 +2082,6 @@ window.endSession = function() {
 
   Object.keys(allParticipants).forEach(k => remove(ref(db, `sessions/${sessionId}/${k}`)));
   remove(ref(db, `topics/${sessionId}`));
-  try { sessionStorage.removeItem("rcn.nav.key." + sessionId); } catch(e) {}
 
   if (writeRef) { onDisconnect(writeRef).cancel(); writeRef = null; }
   joined = false;
@@ -5037,6 +5065,12 @@ boot();
 
 <footer style="background:var(--ink);color:var(--ink3);padding:10px 32px;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.04em;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:2px solid var(--accent)">
   <span>Conversation Navigator · ReLocalize Creativity Network</span>
+  <span class="foot-docs">
+    <a href="bias-checker-intro.html" target="_blank" rel="noopener">Introduction</a>
+    <a href="bias-checker-manual.html" target="_blank" rel="noopener">User Manual</a>
+    <a href="conversation-navigator-flow.html" target="_blank" rel="noopener">Process Flow</a>
+    <a href="rcn-bias-checker-intro.pptx">Slides</a>
+  </span>
   <span>© Marc Pierson &amp; Kerry Turner, RCN Co-Founders</span>
   <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener"
      style="color:var(--ink3);text-decoration:none;white-space:nowrap"
