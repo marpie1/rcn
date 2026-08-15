@@ -111,6 +111,8 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
       <li><a href="#s18">18. Topics tab</a></li>
       <li><a href="#s19">19. Export tab</a></li>
 
+      <li><a href="#s20">20. Clean up</a></li>
+
       <li class="sb-section-hd">Reference</li>
       <li><a href="#s16">16. Session management</a></li>
       <li><a href="#s17">17. Tips &amp; patterns</a></li>
@@ -130,7 +132,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
       <p class="doc-sub">Complete reference for all features</p>
       <!-- UPDATE: date when tool changes significantly -->
       <div class="doc-meta">
-        <span class="version-badge">June 2026</span>
+        <span class="version-badge">August 2026</span>
         <a href="bias-checker-intro.html">Introduction &amp; positioning →</a>
       </div>
     </div>
@@ -190,7 +192,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
         ending it. Anyone holding the six-character link can read the session for as long as it
         exists — end it when the group is finished.
       </p>
-      <div class="note">Session data is cleaned up from Firebase when a participant closes their browser tab. If all participants leave, the session data is gone. Download model SVGs before closing if you need them.</div>
+      <div class="note">Ending a session is now a deliberate act on the <strong>Session</strong> tab, and it is the only thing that deletes anything — see <a href="#s20">§20 Clean up</a>. Model SVGs are never included in an export, so download any you want to keep before ending.</div>
     </section>
 
     <!-- §3: JOINING -->
@@ -671,9 +673,11 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
 
       <h3>Closing a session</h3>
       <p>
-        Before closing: use the Export tab to download a FedWiki JSON of the session summary,
-        and use the Download SVG button inside any open model accordion to export model diagrams
-        with click-count annotations. Once all participants leave, the session data is gone.
+        Before ending: use the Export tab to download the FedWiki page JSON and the raw session
+        JSON, and use the Download SVG button inside any open model accordion to export model
+        diagrams with click-count annotations. Then end the session from the <strong>Session</strong>
+        tab — people leaving does not clear it, and it stays readable to anyone with the link until
+        somebody does. Full housekeeping guidance is in <a href="#s20">§20 Clean up</a>.
       </p>
 
       <h3>Large groups</h3>
@@ -748,13 +752,100 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
 
       <h3>Downloading the export</h3>
       <p>
-        Click <strong>Download FedWiki JSON</strong>. A <code>.json</code> file is downloaded
-        to your device. To import it: open the target FedWiki server, drag the file onto the
-        page, and it will create a new page with the session content.
+        <strong>Download FedWiki page JSON</strong> gives you a <code>.json</code> file to drag onto
+        any FedWiki server, where it becomes a page with the session content.
+        <strong>Download raw session JSON</strong> gives you the full state — every participant,
+        score, topic and model interaction — for archiving or your own analysis. Names are stripped
+        from the raw export when the session is anonymous, exactly as they are everywhere else.
+      </p>
+      <p>
+        Both exports include people who have already left. Nothing on this tab changes or deletes
+        anything; ending a session lives on the <strong>Session</strong> tab, and is covered in
+        <a href="#s20">§20 Clean up</a>.
       </p>
 
-      <div class="tip">Export before closing the session — the JSON is generated from live Firebase data. Once all participants leave, the session data is gone and the export can no longer be produced.</div>
-      <div class="note">The Export tab does not automatically include model SVGs. Download any model diagrams you want to keep using the Download SVG button inside each model accordion before closing the session.</div>
+      <div class="tip">You can export at any time, including after everyone has gone home — a session stays live until somebody ends it. Export before ending, though, because ending is irreversible.</div>
+      <div class="note">The exports do not include model SVGs. Download any diagrams you want to keep using the Download SVG button inside each model accordion.</div>
+    </section>
+
+    <!-- §20: CLEAN UP -->
+    <section id="s20">
+      <h2>20. Clean up</h2>
+      <p>
+        Sessions used to look after themselves: when the last person left, the data went with them.
+        That is no longer true, and deliberately so — an export has to capture everyone who took
+        part, not just whoever still had a tab open. The cost of that decision is that
+        <strong>tidying up is now a job somebody has to do</strong>. This section is that job.
+      </p>
+
+      <h3>The one rule</h3>
+      <p>
+        A session stays live, in full, until somebody ends it. Closing tabs does nothing. Everyone
+        going home does nothing. Anyone holding the six-character link can still read the whole
+        session tomorrow, next month, or next year.
+      </p>
+
+      <h3>Ending a session</h3>
+      <p>
+        Go to the <strong>Session</strong> tab. At the bottom, inside the red block, click
+        <strong>End session and delete all data</strong>. You will be asked to retype the session ID
+        before it will run, and told how many participant records are about to go. This deletes
+        every participant record, all topics and all model interactions, for everyone, permanently.
+      </p>
+      <div class="tip">Download both exports first. There is no undo, and no copy kept anywhere.</div>
+
+      <h3>End it when everyone has actually gone</h3>
+      <p>
+        If you end a session while other people still have it open, their browsers will write a
+        small empty placeholder back into the session as they disconnect. Nothing shows up in the
+        tool — placeholders have no name, so they never appear as participants — but the session is
+        not quite empty either.
+      </p>
+      <p>
+        Two ways to avoid it. Either end the session once everyone has closed their tab, which is
+        the normal case if you tidy up after the meeting rather than during it. Or, if you ended it
+        while people were still connected, reopen the session later from the list on the Session tab
+        and end it a second time. The second pass clears the placeholders and costs nothing.
+      </p>
+
+      <h3>Finding sessions you have lost</h3>
+      <p>
+        The Session tab lists every session you have joined from this browser, with its title and
+        when you were last in it. <strong>Open ↗</strong> reopens one in a new tab, which is how you
+        get back to something you meant to end and forgot.
+      </p>
+      <p>
+        The <strong>×</strong> on a row only forgets the session locally — it does not delete
+        anything. Use it for sessions somebody else has already ended. If you clear your browser
+        storage, or open a session from a different machine, the list will not have it; keep the URL
+        somewhere if a session matters.
+      </p>
+
+      <h3>Removing only your own contribution</h3>
+      <p>
+        <strong>Remove my input</strong>, at the bottom of the left panel, deletes your card and
+        everything you contributed, and nothing else. That is the only action that erases your own
+        data without touching anyone else's. Use it if you took part and would rather not be in the
+        record; use <em>End session</em> if the whole thing should go.
+      </p>
+
+      <h3>A session exists as soon as somebody opens the link</h3>
+      <p>
+        Opening a session URL creates a small amount of data even if you never join — the tool
+        stores the shared model definitions there so everyone sees the same diagrams. Sending a link
+        to ten people and having nobody join still leaves something behind. It is tiny, and ending
+        the session clears it along with everything else.
+      </p>
+
+      <h3>A reasonable habit</h3>
+      <table class="feat-table">
+        <thead><tr><th>When</th><th>Do this</th></tr></thead>
+        <tbody>
+          <tr><td>End of the meeting</td><td>Fill in Summary and Carry Forward, download both exports, and download any model SVGs you want.</td></tr>
+          <tr><td>Once everyone has closed their tabs</td><td>Open the Session tab and end the session.</td></tr>
+          <tr><td>Every so often</td><td>Glance at the session list. Anything old and still openable is a session nobody ended — open it and end it.</td></tr>
+        </tbody>
+      </table>
     </section>
 
     <div class="doc-footer">
