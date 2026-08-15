@@ -361,7 +361,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 <div id="panas-overlay">
   <div class="panas-card">
     <h3>Activation Check-in — PANAS PA-10</h3>
-    <p class="panas-intro">Rate how much you feel each word describes you <em>right now</em>, from 1 (very slightly or not at all) to 5 (extremely).</p>
+    <p class="panas-intro">For each word, indicate how much you have felt this way <em>during the past week</em>, from 1 (very slightly or not at all) to 5 (extremely).</p>
     <div class="panas-scale-labels"><span>1 — not at all</span><span>5 — extremely</span></div>
     <div id="panas-items"></div>
     <div class="panas-score-row" id="panas-score-display">0/10 words rated</div>
@@ -399,7 +399,11 @@ var navStack = ['list'];  // view history
 var showAllProblems = false;
 
 // ── PANAS constants ──────────────────────────────────────────────────────────
+// Canonical item list and crosswalk live in tools/positive-affect-score.html.
+// The bands below are calibrated for the PAST-WEEK framing, which is why this
+// tool asks for the past week and not for the moment.
 var PA10_WORDS = ['active','alert','attentive','determined','enthusiastic','excited','inspired','interested','proud','strong'];
+var PA_CROSSWALK_VERSION = '0.1-provisional-watson-clark-past-week';
 var ACT_BAND_LABELS = {1:'Learning the basics', 2:'Building awareness', 3:'Taking action', 4:'Staying the course'};
 var ACT_BAND_CLASSES = {1:'band-b1', 2:'band-b2', 3:'band-b3', 4:'band-b4'};
 var panasScores = {};
@@ -1067,7 +1071,8 @@ function submitPanas() {
   var prev = person.activation;
   var history = (prev && prev.history) ? prev.history.slice() : [];
   if (prev && prev.raw_score != null) history.push({ band: prev.band, raw_score: prev.raw_score, as_of: prev.as_of });
-  person.activation = { band: band, raw_score: raw, items: items, as_of: today(), history: history };
+  person.activation = { instrument: 'PANAS-PA-10 (past week)', crosswalk_version: PA_CROSSWALK_VERSION,
+                        band: band, raw_score: raw, items: items, as_of: today(), history: history };
   saveLocal();
   showSyncBar('Unsaved changes');
   closePanas();

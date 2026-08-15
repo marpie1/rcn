@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Positive Affect Score</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f2eb;
+    --surface: #ffffff;
+    --surface2: #edeae2;
+    --ink: #1a1814;
+    --ink2: #5a5650;
+    --ink3: #9a9690;
+    --accent: #c84b2f;
+    --accent2: #e8a020;
+    --green: #3a7d44;
+    --border: #d8d4cc;
+    --radius: 4px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--ink);
+    color: var(--bg);
+    padding: 18px 32px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    border-bottom: 3px solid var(--accent);
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  header .instrument {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--ink3);
+    letter-spacing: 0.06em;
+  }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink3); display: inline-block; }
+  .dot.live { background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .dot-label {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem;
+    letter-spacing: 0.06em; color: var(--ink3); text-transform: uppercase;
+  }
+  .help-btn {
+    background: none; border: 1px solid var(--ink3); color: var(--bg);
+    width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+    font-family: 'DM Mono', monospace; font-size: 0.8rem;
+  }
+  .help-btn:hover { border-color: var(--bg); }
+
+  /* LAYOUT */
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 24px 80px; display: grid; gap: 24px; }
+  @media (min-width: 900px) { .wrap.two-col { grid-template-columns: minmax(0,1fr) 340px; align-items: start; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+  }
+  .card + .card { margin-top: 20px; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink); font-weight: 700;
+    margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid var(--ink2);
+  }
+  .lede { font-size: 0.92rem; color: var(--ink2); margin-bottom: 16px; }
+  .lede strong { color: var(--ink); }
+
+  /* TIMEFRAME */
+  .tf-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .tf-btn {
+    flex: 1; min-width: 150px;
+    border: 1px solid var(--border); background: var(--bg);
+    border-radius: var(--radius); padding: 10px 12px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--ink2);
+    text-align: left; line-height: 1.35;
+  }
+  .tf-btn strong { display: block; color: var(--ink); font-weight: 500; }
+  .tf-btn:hover { border-color: var(--ink2); }
+  .tf-btn.selected { background: var(--ink); border-color: var(--ink); color: var(--surface2); }
+  .tf-btn.selected strong { color: #fff; }
+  .tf-note {
+    font-size: 0.78rem; color: var(--ink3); margin-top: 8px;
+    padding-left: 10px; border-left: 2px solid var(--border);
+  }
+
+  /* SCALE LEGEND */
+  .scale-legend {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 4px; margin: 16px 0 10px;
+    font-family: 'DM Mono', monospace; font-size: 0.62rem;
+    color: var(--ink3); text-align: center; line-height: 1.3;
+  }
+  .scale-legend div { padding: 6px 2px; background: var(--surface2); border-radius: var(--radius); }
+  .scale-legend b { display: block; font-size: 0.85rem; color: var(--ink2); }
+
+  /* ITEMS */
+  .item {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--surface2);
+  }
+  .item:last-child { border-bottom: none; }
+  .item-word { font-size: 0.95rem; font-weight: 500; min-width: 110px; }
+  .item-btns { display: flex; gap: 5px; }
+  .sbtn {
+    width: 38px; height: 34px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg); cursor: pointer;
+    font-family: 'DM Mono', monospace; font-size: 0.82rem; color: var(--ink2);
+  }
+  .sbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .sbtn.selected { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  /* NA SECTION */
+  .na-toggle {
+    margin-top: 14px; padding: 9px 12px; width: 100%;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); cursor: pointer; text-align: left;
+    font-family: 'DM Sans', sans-serif; font-size: 0.85rem; color: var(--ink2);
+  }
+  .na-toggle:hover { border-color: var(--ink2); }
+  #naItems { margin-top: 10px; }
+
+  /* SCORE */
+  .score-row {
+    margin-top: 16px; padding: 14px 16px;
+    background: var(--surface2); border-radius: var(--radius);
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  }
+  .score-big { font-family: 'DM Mono', monospace; font-size: 1.7rem; font-weight: 500; }
+  .score-of { font-family: 'DM Mono', monospace; font-size: 0.85rem; color: var(--ink3); }
+  .score-meta { font-size: 0.82rem; color: var(--ink2); margin-left: auto; text-align: right; }
+  .band-chip {
+    display: inline-block; padding: 3px 9px; border-radius: 12px;
+    background: var(--accent2); color: var(--ink);
+    font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.04em;
+  }
+
+  /* BUTTONS */
+  .btn-row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .btn-primary, .btn-secondary {
+    border-radius: var(--radius); padding: 10px 16px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500;
+  }
+  .btn-primary { background: var(--ink); color: var(--bg); border: 1px solid var(--ink); }
+  .btn-primary:hover { background: var(--accent); border-color: var(--accent); }
+  .btn-primary:disabled { background: var(--ink3); border-color: var(--ink3); cursor: not-allowed; }
+  .btn-secondary { background: var(--bg); color: var(--ink2); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--ink2); color: var(--ink); }
+
+  input[type="text"] {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 9px 12px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    background: var(--bg); color: var(--ink); width: 100%;
+  }
+  input[type="text"]:focus { outline: none; border-color: var(--accent); }
+
+  /* HISTORY */
+  .spark-wrap { margin: 4px 0 14px; }
+  .hist-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .hist-table th {
+    text-align: left; font-family: 'DM Mono', monospace; font-size: 0.6rem;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3);
+    padding: 6px 6px 6px 0; border-bottom: 1px solid var(--border);
+  }
+  .hist-table td { padding: 7px 6px 7px 0; border-bottom: 1px solid var(--surface2); vertical-align: top; }
+  .hist-table td.num { font-family: 'DM Mono', monospace; }
+  .hist-del {
+    background: none; border: none; color: var(--ink3);
+    cursor: pointer; font-size: 0.95rem; padding: 0 4px;
+  }
+  .hist-del:hover { color: var(--accent); }
+  .empty-note { color: var(--ink3); font-size: 0.85rem; font-style: italic; padding: 14px 0; }
+
+  /* SESSION */
+  .join-row { display: flex; gap: 8px; }
+  .join-row input { flex: 1; }
+  .share-box {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 8px 10px; font-family: 'DM Mono', monospace; font-size: 0.7rem;
+    word-break: break-all; color: var(--ink2); margin-bottom: 8px;
+  }
+  .consent-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; }
+  .consent-status { font-size: 0.75rem; color: var(--ink3); margin-top: 6px; }
+  .consent-status.open { color: var(--green); }
+
+  .agg-axis { position: relative; height: 58px; margin: 10px 0 4px; }
+  .agg-line { position: absolute; left: 0; right: 0; top: 38px; height: 1px; background: var(--border); }
+  .agg-dot {
+    position: absolute; top: 30px; width: 13px; height: 13px; margin-left: -6.5px;
+    border-radius: 50%; background: var(--accent); opacity: 0.72; border: 1px solid #fff;
+  }
+  .agg-dot.is-me { background: var(--ink); opacity: 1; }
+  .agg-mean { position: absolute; top: 22px; width: 2px; height: 30px; background: var(--ink); margin-left: -1px; }
+  .agg-tick {
+    position: absolute; top: 42px; font-family: 'DM Mono', monospace;
+    font-size: 0.6rem; color: var(--ink3); transform: translateX(-50%);
+  }
+  .agg-stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.85rem; color: var(--ink2); }
+  .agg-stats b { font-family: 'DM Mono', monospace; color: var(--ink); }
+  .agg-names { font-size: 0.78rem; color: var(--ink3); margin-top: 8px; line-height: 1.6; }
+
+  .msg { padding: 8px 10px; border-radius: var(--radius); font-size: 0.82rem; margin-top: 8px; }
+  .msg.error { background: #fbe4de; color: #8a2a14; }
+  .msg.ok { background: #e0efe2; color: #2a5c33; }
+
+  /* HELP */
+  .help-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(26,24,20,0.55);
+    z-index: 300; padding: 24px; overflow-y: auto;
+  }
+  .help-overlay.open { display: block; }
+  .help-panel {
+    max-width: 720px; margin: 0 auto; background: var(--surface);
+    border-radius: var(--radius); border: 1px solid var(--border);
+  }
+  .help-hdr {
+    display: flex; align-items: center; padding: 14px 20px;
+    border-bottom: 2px solid var(--ink2);
+  }
+  .help-hdr-title {
+    font-family: 'DM Mono', monospace; font-size: 0.75rem;
+    letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700;
+  }
+  .help-close {
+    margin-left: auto; background: none; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 5px 12px; cursor: pointer; font-size: 0.8rem;
+  }
+  .help-body { padding: 20px; }
+  .help-links { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+  .help-link-btn {
+    padding: 7px 14px; border-radius: var(--radius); text-decoration: none;
+    background: var(--ink); color: var(--bg); font-size: 0.82rem;
+  }
+  .help-link-btn.sec { background: var(--bg); color: var(--ink2); border: 1px solid var(--border); }
+  .help-section { margin-bottom: 20px; }
+  .help-section-label {
+    font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink3); font-weight: 700; margin-bottom: 8px;
+  }
+  .help-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .help-table td { padding: 6px 10px 6px 0; border-bottom: 1px solid var(--surface2); vertical-align: top; }
+  .help-table td:first-child { font-weight: 500; white-space: nowrap; width: 1%; }
+  .help-note { font-size: 0.8rem; color: var(--ink3); margin-top: 8px; font-style: italic; }
+
+  footer {
+    text-align: center; padding: 24px; font-family: 'DM Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.08em; color: var(--ink3); text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Positive Affect Score</h1>
+  <span class="instrument" id="modeDisplay">PANAS PA-10</span>
+  <div class="header-right">
+    <span class="dot" id="liveDot" style="display:none"></span>
+    <span class="dot-label" id="liveLabel" style="display:none"></span>
+    <button class="help-btn" onclick="toggleHelp()" title="Documentation">?</button>
+  </div>
+</header>
+
+<!-- ── HELP PANEL ── -->
+<div class="help-overlay" id="helpOverlay" onclick="if(event.target===this)toggleHelp()">
+  <div class="help-panel">
+    <div class="help-hdr">
+      <span class="help-hdr-title">Positive Affect Score — Docs</span>
+      <button class="help-close" onclick="toggleHelp()">Close</button>
+    </div>
+    <div class="help-body">
+
+      <div class="help-links">
+        <a class="help-link-btn" href="positive-affect-score-intro.html" target="_blank">Introduction ↗</a>
+        <a class="help-link-btn sec" href="positive-affect-score-manual.html" target="_blank">Full Manual ↗</a>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-label">What this measures</div>
+        <p style="font-size:0.88rem;color:var(--ink2)">The ten positive-affect words of the PANAS (Watson, Clark &amp; Tellegen, 1988), rated 1–5. Adding the ten ratings gives a raw score from 10 to 50. It measures felt positive engagement — not mood in general, and not anything about negative feeling unless you also rate the optional NA-10 words.</p>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-label">The timeframe decides what the score means</div>
+        <table class="help-table">
+          <tbody>
+            <tr><td>Right now</td><td><em>State</em> affect — how you feel at this moment. Moves hour to hour. Use this before and after a meeting, or to watch a day. No band is shown, because the band crosswalk is not calibrated for it.</td></tr>
+            <tr><td>Past week</td><td>Closer to a <em>trait</em> reading — your general level lately. Use this for health check-ins. A band 1–4 is shown, using the same provisional crosswalk the Shared Care Plan uses.</td></tr>
+          </tbody>
+        </table>
+        <div class="help-note">Every saved result records which timeframe you used. Do not compare a right-now score against a past-week score.</div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-label">Bands (past-week only)</div>
+        <table class="help-table">
+          <tbody>
+            <tr><td>Band 1 · 10–24</td><td>Learning the basics</td></tr>
+            <tr><td>Band 2 · 25–31</td><td>Building awareness</td></tr>
+            <tr><td>Band 3 · 32–38</td><td>Taking action</td></tr>
+            <tr><td>Band 4 · 39–50</td><td>Staying the course</td></tr>
+          </tbody>
+        </table>
+        <div class="help-note">Crosswalk version 0.1-provisional-watson-clark-past-week. These are activation bands borrowed from patient-activation practice; they are provisional and are not a clinical result.</div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-label">Solo and session modes</div>
+        <table class="help-table">
+          <tbody>
+            <tr><td>Solo</td><td>The default. Nothing leaves your browser — check-ins are kept in this browser's local storage. Export JSON or CSV to take them anywhere.</td></tr>
+            <tr><td>Session</td><td>Click <em>Start a shared session</em>. Everyone who opens the link takes the check-in and sees the group distribution and mean. Sessions are ephemeral.</td></tr>
+            <tr><td>Names</td><td>Names are visible in a session unless anyone checks <em>Make this session anonymous</em>, which makes it anonymous for everyone. The distribution and mean are always shown; who scored what is not.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+
+  <!-- ── MAIN COLUMN ── -->
+  <div>
+
+    <div class="card">
+      <div class="section-label">Timeframe</div>
+      <div class="tf-row">
+        <button class="tf-btn selected" id="tf-now" onclick="setTimeframe('now')">
+          <strong>Right now</strong>How you feel at this moment
+        </button>
+        <button class="tf-btn" id="tf-week" onclick="setTimeframe('week')">
+          <strong>During the past week</strong>How you have felt lately
+        </button>
+      </div>
+      <div class="tf-note" id="tfNote"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Rate each word</div>
+      <p class="lede">For each word, indicate how much it describes the way you feel <strong id="tfPhrase">right now</strong>.</p>
+
+      <div class="scale-legend">
+        <div><b>1</b>Very slightly or not at all</div>
+        <div><b>2</b>A little</div>
+        <div><b>3</b>Moderately</div>
+        <div><b>4</b>Quite a bit</div>
+        <div><b>5</b>Extremely</div>
+      </div>
+
+      <div id="paItems"></div>
+
+      <button class="na-toggle" id="naToggleBtn" onclick="toggleNA()">+ Optional: also rate negative feelings (NA-10)</button>
+      <div id="naItems" style="display:none"></div>
+
+      <div class="score-row">
+        <span class="score-big" id="scoreBig">—</span>
+        <span class="score-of" id="scoreOf">0 of 10 words rated</span>
+        <span class="score-meta" id="scoreMeta"></span>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="saveBtn" onclick="saveResult()" disabled>Save check-in</button>
+        <button class="btn-secondary" onclick="clearRatings()">Clear</button>
+        <button class="btn-secondary" onclick="copyResult()">Copy result</button>
+      </div>
+      <div id="saveMsg"></div>
+    </div>
+
+    <div class="card" id="historyCard">
+      <div class="section-label">Your check-ins</div>
+      <div class="spark-wrap" id="sparkWrap"></div>
+      <div id="historyBody"></div>
+      <div class="btn-row" id="histBtnRow" style="display:none">
+        <button class="btn-secondary" onclick="downloadJSON()">Download JSON</button>
+        <button class="btn-secondary" onclick="downloadCSV()">Download CSV</button>
+        <button class="btn-secondary" onclick="downloadFedWiki()">Download FedWiki page</button>
+        <button class="btn-secondary" onclick="clearHistory()">Clear all</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── SIDE COLUMN: SESSION ── -->
+  <div id="sideCol">
+
+    <div class="card" id="sessionCard">
+      <div class="section-label">Shared session</div>
+
+      <div id="soloBlock">
+        <p class="lede">This check-in is private to this browser. To take it together with a group and see the distribution, start a shared session.</p>
+        <button class="btn-primary" onclick="startSession()" style="width:100%">Start a shared session</button>
+      </div>
+
+      <div id="joinBlock" style="display:none">
+        <div class="share-box" id="shareUrl"></div>
+        <button class="btn-secondary" onclick="copyUrl()" style="width:100%;margin-bottom:14px">Copy link</button>
+        <div class="join-row">
+          <input type="text" id="nameInput" placeholder="Your name" maxlength="32">
+          <button class="btn-primary" id="joinBtn" onclick="joinSession()">Join</button>
+        </div>
+        <div id="joinMsg"></div>
+      </div>
+
+      <div id="consentBlock" style="display:none;margin-top:16px">
+        <label class="consent-toggle">
+          <input type="checkbox" id="consentCheck" onchange="toggleConsent()">
+          <span>Make this session anonymous</span>
+        </label>
+        <div class="consent-status" id="consentStatus">Open — names visible to everyone</div>
+      </div>
+    </div>
+
+    <div class="card" id="aggCard" style="display:none">
+      <div class="section-label">Group</div>
+      <div id="aggBody"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>Positive Affect Score · ReLocalize Creativity Network</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// CANONICAL PANAS DEFINITION FOR RCN
+//
+// This file is the source of truth for the item lists, the scale, and the
+// band crosswalk. Other RCN tools inline a copy of this block rather than
+// loading a shared script, because they are each deployed as a single file.
+// If you change anything below, update the copies in:
+//   tools/bias-checker.html        (Conversation Navigator — PA-10, right-now, no bands)
+//   tools/my-health-picture.html   (PA-10, past-week, bands)
+//   scp-coupler/index.html         (Shared Care Plan — PA-10 + NA-10, past-week, bands)
+//   coupler-proxy.py               (server-side crosswalk, must stay in step)
+//
+// Instrument: Watson, D., Clark, L. A., & Tellegen, A. (1988). Development and
+// validation of brief measures of positive and negative affect: The PANAS
+// scales. Journal of Personality and Social Psychology, 54(6), 1063-1070.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const PA10_WORDS = ['active','alert','attentive','determined','enthusiastic',
+                    'excited','inspired','interested','proud','strong'];
+const NA10_WORDS = ['afraid','ashamed','distressed','guilty','hostile',
+                    'irritable','jittery','nervous','scared','upset'];
+
+// Bands are calibrated for the PAST-WEEK framing only. Never apply them to a
+// right-now score — see the timeframe discussion in the manual.
+const PA_CROSSWALK_VERSION = '0.1-provisional-watson-clark-past-week';
+const PA_BAND_CROSSWALK = [[10,24,1],[25,31,2],[32,38,3],[39,50,4]];
+const PA_BAND_LABELS = {
+  1: 'Learning the basics',
+  2: 'Building awareness',
+  3: 'Taking action',
+  4: 'Staying the course',
+};
+
+function paBand(raw) {
+  for (const [lo, hi, band] of PA_BAND_CROSSWALK) if (raw >= lo && raw <= hi) return band;
+  return 1; // clamp low
+}
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+const STORE_KEY = 'rcn.positive-affect-score.history';
+
+let timeframe = 'now';        // 'now' | 'week'
+let paScores  = {};           // index 0-9 → 1-5
+let naScores  = {};
+let naShown   = false;
+let history   = loadHistory();
+
+// session state (only populated in session mode)
+let db = null, fbRefs = null, sessionId = null, myKey = null, myName = null;
+let joined = false, myAnonConsent = false, isNamedMode = true;
+let groupData = {};
+let myFirstScore = null;
+
+// ── TIMEFRAME ──────────────────────────────────────────────────────────────
+window.setTimeframe = function(tf) {
+  timeframe = tf;
+  document.getElementById('tf-now').classList.toggle('selected', tf === 'now');
+  document.getElementById('tf-week').classList.toggle('selected', tf === 'week');
+  document.getElementById('tfPhrase').textContent =
+    tf === 'now' ? 'right now' : 'during the past week';
+  document.getElementById('tfNote').textContent = tf === 'now'
+    ? 'State affect. No band is shown — the band crosswalk is calibrated for the past-week framing only.'
+    : 'A band 1–4 is shown, using the provisional crosswalk (' + PA_CROSSWALK_VERSION + ').';
+  updateScore();
+  renderHistory();
+};
+
+// ── ITEMS ──────────────────────────────────────────────────────────────────
+function renderItems() {
+  document.getElementById('paItems').innerHTML = PA10_WORDS.map((word, i) => `
+    <div class="item">
+      <span class="item-word">${cap(word)}</span>
+      <div class="item-btns" id="pa-${i}">
+        ${[1,2,3,4,5].map(v => `<button class="sbtn" onclick="setScore('pa',${i},${v})">${v}</button>`).join('')}
+      </div>
+    </div>`).join('');
+
+  document.getElementById('naItems').innerHTML = NA10_WORDS.map((word, i) => `
+    <div class="item">
+      <span class="item-word">${cap(word)}</span>
+      <div class="item-btns" id="na-${i}">
+        ${[1,2,3,4,5].map(v => `<button class="sbtn" onclick="setScore('na',${i},${v})">${v}</button>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+window.setScore = function(type, idx, val) {
+  if (type === 'pa') paScores[idx] = val; else naScores[idx] = val;
+  const group = document.getElementById(`${type}-${idx}`);
+  group.querySelectorAll('.sbtn').forEach(b => {
+    b.classList.toggle('selected', Number(b.textContent) === val);
+  });
+  updateScore();
+};
+
+window.toggleNA = function() {
+  naShown = !naShown;
+  document.getElementById('naItems').style.display = naShown ? 'block' : 'none';
+  document.getElementById('naToggleBtn').textContent = naShown
+    ? '− Hide negative feelings (NA-10)'
+    : '+ Optional: also rate negative feelings (NA-10)';
+  updateScore();
+};
+
+window.clearRatings = function() {
+  paScores = {}; naScores = {};
+  document.querySelectorAll('.sbtn').forEach(b => b.classList.remove('selected'));
+  updateScore();
+};
+
+function paRaw() { return Object.values(paScores).reduce((a,b) => a+b, 0); }
+function naRaw() { return Object.values(naScores).reduce((a,b) => a+b, 0); }
+function paComplete() { return Object.keys(paScores).length === 10; }
+function naComplete() { return Object.keys(naScores).length === 10; }
+
+function updateScore() {
+  const n    = Object.keys(paScores).length;
+  const done = n === 10;
+  const raw  = paRaw();
+
+  document.getElementById('scoreBig').textContent = done ? raw : '—';
+  document.getElementById('scoreOf').textContent  = done ? 'of 50' : `${n} of 10 words rated`;
+
+  const meta = [];
+  if (done && timeframe === 'week') {
+    const b = paBand(raw);
+    meta.push(`<span class="band-chip">Band ${b} — ${PA_BAND_LABELS[b]}</span>`);
+  }
+  if (naShown && naComplete()) meta.push(`NA-10: <b>${naRaw()}</b>/50`);
+  document.getElementById('scoreMeta').innerHTML = meta.join(' &nbsp; ');
+
+  document.getElementById('saveBtn').disabled = !done;
+}
+
+// ── SAVE ───────────────────────────────────────────────────────────────────
+function currentResult() {
+  const raw = paRaw();
+  return {
+    ts: Date.now(),
+    timeframe,
+    pa_items: PA10_WORDS.map((_, i) => paScores[i]),
+    pa_raw: raw,
+    na_items: (naShown && naComplete()) ? NA10_WORDS.map((_, i) => naScores[i]) : null,
+    na_raw:   (naShown && naComplete()) ? naRaw() : null,
+    band: timeframe === 'week' ? paBand(raw) : null,
+    crosswalk_version: timeframe === 'week' ? PA_CROSSWALK_VERSION : null,
+  };
+}
+
+window.saveResult = function() {
+  if (!paComplete()) return;
+  const result = currentResult();
+
+  history.push(result);
+  saveHistory();
+  renderHistory();
+
+  if (joined) {
+    if (myFirstScore === null) myFirstScore = result.pa_raw;
+    pushToSession(result);
+    showMsg('saveMsg', `Saved — ${result.pa_raw}/50, and shared with the session.`, 'ok');
+  } else {
+    showMsg('saveMsg', `Saved — ${result.pa_raw}/50.`, 'ok');
+  }
+};
+
+window.copyResult = function() {
+  if (!paComplete()) { showMsg('saveMsg', 'Rate all ten words first.', 'error'); return; }
+  const r = currentResult();
+  const tf = r.timeframe === 'now' ? 'right now' : 'past week';
+  let text = `Positive Affect Score (PANAS PA-10, ${tf}): ${r.pa_raw}/50`;
+  if (r.band) text += ` — Band ${r.band}, ${PA_BAND_LABELS[r.band]}`;
+  if (r.na_raw) text += ` · NA-10: ${r.na_raw}/50`;
+  navigator.clipboard.writeText(text)
+    .then(() => showMsg('saveMsg', 'Result copied.', 'ok'))
+    .catch(() => showMsg('saveMsg', 'Copy failed — ' + text, 'error'));
+};
+
+// ── HISTORY ────────────────────────────────────────────────────────────────
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
+  catch(e) { return []; }
+}
+function saveHistory() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(history)); }
+  catch(e) { showMsg('saveMsg', 'Could not write to local storage — check-in not kept.', 'error'); }
+}
+
+window.clearHistory = function() {
+  if (!history.length) return;
+  if (!confirm(`Delete all ${history.length} saved check-in${history.length > 1 ? 's' : ''}? This cannot be undone.`)) return;
+  history = [];
+  saveHistory();
+  renderHistory();
+};
+
+window.deleteEntry = function(ts) {
+  history = history.filter(h => h.ts !== ts);
+  saveHistory();
+  renderHistory();
+};
+
+function renderHistory() {
+  const body = document.getElementById('historyBody');
+  const btns = document.getElementById('histBtnRow');
+  const spark = document.getElementById('sparkWrap');
+
+  if (!history.length) {
+    body.innerHTML = `<div class="empty-note">No check-ins saved yet. Rate the ten words and click Save check-in.</div>`;
+    spark.innerHTML = '';
+    btns.style.display = 'none';
+    return;
+  }
+  btns.style.display = 'flex';
+
+  // Only chart entries matching the selected timeframe — the two are not comparable.
+  const charted = history.filter(h => h.timeframe === timeframe);
+  spark.innerHTML = charted.length > 1
+    ? sparkline(charted) +
+      `<div class="empty-note" style="padding:2px 0;font-style:normal">${charted.length} ${timeframe === 'now' ? 'right-now' : 'past-week'} check-ins${charted.length < history.length ? ` (${history.length - charted.length} on the other timeframe hidden)` : ''}</div>`
+    : '';
+
+  const rows = [...history].sort((a,b) => b.ts - a.ts).map(h => {
+    const d = new Date(h.ts);
+    const when = d.toLocaleDateString([], {month:'short', day:'numeric'}) + ' ' +
+                 d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const tf = h.timeframe === 'now' ? 'right now' : 'past week';
+    const bandCell = h.band ? `Band ${h.band} — ${PA_BAND_LABELS[h.band]}` : '—';
+    return `<tr>
+      <td>${when}</td>
+      <td>${tf}</td>
+      <td class="num">${h.pa_raw}</td>
+      <td class="num">${h.na_raw != null ? h.na_raw : '—'}</td>
+      <td>${bandCell}</td>
+      <td style="text-align:right"><button class="hist-del" onclick="deleteEntry(${h.ts})" title="Delete this check-in">×</button></td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML = `<table class="hist-table">
+    <thead><tr><th>When</th><th>Timeframe</th><th>PA</th><th>NA</th><th>Band</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
+// PA runs 10-50, so the y-axis is fixed to that range rather than to the data.
+function sparkline(entries) {
+  const pts = [...entries].sort((a,b) => a.ts - b.ts);
+  // Wide viewBox + height:auto — a tall-and-narrow box would scale to fit its
+  // height under the default preserveAspectRatio and sit centred at half width.
+  const W = 600, H = 76, PAD = 6;
+  const x = i => PAD + (pts.length === 1 ? (W - 2*PAD) / 2 : i * (W - 2*PAD) / (pts.length - 1));
+  const y = v => PAD + (50 - v) / 40 * (H - 2*PAD);
+  const path = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.pa_raw).toFixed(1)}`).join(' ');
+  const dots = pts.map((p, i) =>
+    `<circle cx="${x(i).toFixed(1)}" cy="${y(p.pa_raw).toFixed(1)}" r="3.4" fill="#c84b2f"><title>${p.pa_raw}/50 · ${new Date(p.ts).toLocaleString()}</title></circle>`
+  ).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" font-family="'DM Mono',monospace">
+    <line x1="${PAD}" y1="${y(50)}" x2="${W-PAD}" y2="${y(50)}" stroke="#d8d4cc" stroke-width="1"/>
+    <line x1="${PAD}" y1="${y(10)}" x2="${W-PAD}" y2="${y(10)}" stroke="#d8d4cc" stroke-width="1"/>
+    <text x="${W-PAD}" y="${y(50)+10}" font-size="9" fill="#9a9690" text-anchor="end">50</text>
+    <text x="${W-PAD}" y="${y(10)-4}" font-size="9" fill="#9a9690" text-anchor="end">10</text>
+    <path d="${path}" fill="none" stroke="#c84b2f" stroke-width="1.8"/>
+    ${dots}
+  </svg>`;
+}
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────
+function download(filename, text, mime) {
+  const blob = new Blob([text], { type: mime });
+  const url  = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+}
+
+window.downloadJSON = function() {
+  download(
+    'positive-affect-score-' + new Date().toISOString().slice(0,10) + '.json',
+    JSON.stringify({
+      instrument: 'PANAS PA-10 (Watson, Clark & Tellegen, 1988)',
+      pa_items: PA10_WORDS,
+      na_items: NA10_WORDS,
+      exported: new Date().toISOString(),
+      check_ins: history,
+    }, null, 2),
+    'application/json'
+  );
+};
+
+// ── FEDWIKI PAGE ───────────────────────────────────────────────────────────
+// A page JSON that drags straight into any FedWiki server. Story shape follows
+// the RCN house rules: one paragraph per item, no hard line-wrapping, headings
+// as their own items, grid data as an html table.
+function fwId() {
+  return Array.from({length:16}, () => Math.floor(Math.random()*16).toString(16)).join('');
+}
+function fwPara(text) { return { type:'paragraph', id:fwId(), text:String(text) }; }
+function fwHtml(html) { return { type:'html',      id:fwId(), text:String(html) }; }
+function fwHeading(label) { return fwHtml(`<h3>${escHtml(label)}</h3>`); }
+function fwData(headers, rows) {
+  const th = headers.map(h => `<th style="text-align:left;padding:4px 10px 4px 0;border-bottom:1px solid #ccc">${escHtml(h)}</th>`).join('');
+  const trs = rows.map(r =>
+    '<tr>' + r.map(c => `<td style="padding:3px 10px 3px 0">${escHtml(String(c))}</td>`).join('') + '</tr>'
+  ).join('');
+  return fwHtml(`<table style="font-size:0.9em;border-collapse:collapse"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`);
+}
+
+// FedWiki replays the journal to rebuild a page, so every story item needs a
+// matching add action, in order.
+function fwBuildPage(title, story) {
+  const t0 = Date.now();
+  const journal = [{ type:'create', item:{ title, story: [] }, date: t0 }];
+  let after;
+  story.forEach((it, k) => {
+    const act = { type:'add', id: it.id, item: { type: it.type, id: it.id, text: it.text }, date: t0 + k + 1 };
+    if (after) act.after = after;
+    journal.push(act);
+    after = it.id;
+  });
+  return { title, story, journal };
+}
+
+window.downloadFedWiki = function() {
+  if (!history.length) return;
+  const now   = new Date();
+  const title = 'Positive Affect Score ' + now.toISOString().slice(0,10);
+  const story = [];
+
+  story.push(fwPara(`PANAS PA-10 check-ins exported ${now.toLocaleDateString([], {year:'numeric', month:'long', day:'numeric'})}. Ten positive-affect words rated 1 to 5, giving a raw score from 10 to 50.`));
+
+  ['now','week'].forEach(tf => {
+    const rows = history.filter(h => h.timeframe === tf).sort((a,b) => a.ts - b.ts);
+    if (!rows.length) return;
+
+    story.push(fwHeading(tf === 'now' ? 'Right now' : 'During the past week'));
+    story.push(fwPara(tf === 'now'
+      ? 'State affect — how each check-in felt at that moment. No activation band applies to this framing.'
+      : `Closer to a trait reading. Bands use crosswalk version ${PA_CROSSWALK_VERSION}, which is provisional and is not a clinical result.`));
+
+    const vals  = rows.map(h => h.pa_raw);
+    const mean  = vals.reduce((a,b) => a+b, 0) / vals.length;
+    const shift = vals.length > 1 ? vals[vals.length - 1] - vals[0] : null;
+    story.push(fwPara(
+      `${rows.length} check-in${rows.length > 1 ? 's' : ''} · mean ${mean.toFixed(1)} · range ${Math.min(...vals)}–${Math.max(...vals)}` +
+      (shift !== null ? ` · ${shift >= 0 ? 'up' : 'down'} ${Math.abs(shift)} from first to last.` : '.')
+    ));
+
+    story.push(fwData(
+      ['When','PA','NA','Band'],
+      rows.map(h => [
+        new Date(h.ts).toLocaleDateString([], {year:'numeric', month:'short', day:'numeric'}) + ' ' +
+          new Date(h.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+        String(h.pa_raw),
+        h.na_raw != null ? String(h.na_raw) : '—',
+        h.band ? `Band ${h.band} — ${PA_BAND_LABELS[h.band]}` : '—',
+      ])
+    ));
+  });
+
+  story.push(fwHeading('About the instrument'));
+  story.push(fwPara('PANAS: Watson, D., Clark, L. A., & Tellegen, A. (1988). Development and validation of brief measures of positive and negative affect: The PANAS scales. Journal of Personality and Social Psychology, 54(6), 1063-1070.'));
+  story.push(fwPara('A right-now score and a past-week score are not comparable and are reported separately above. Negative affect, where recorded, is scored on its own and is never subtracted from the positive score.'));
+
+  download(
+    'positive-affect-score-' + now.toISOString().slice(0,10) + '.fedwiki.json',
+    JSON.stringify(fwBuildPage(title, story), null, 2),
+    'application/json'
+  );
+};
+
+window.downloadCSV = function() {
+  const head = ['timestamp','timeframe','pa_raw','na_raw','band','band_label',
+                ...PA10_WORDS.map(w => 'pa_' + w), ...NA10_WORDS.map(w => 'na_' + w)];
+  const rows = [...history].sort((a,b) => a.ts - b.ts).map(h => [
+    new Date(h.ts).toISOString(),
+    h.timeframe,
+    h.pa_raw,
+    h.na_raw != null ? h.na_raw : '',
+    h.band || '',
+    h.band ? PA_BAND_LABELS[h.band] : '',
+    ...(h.pa_items || []).map(v => v ?? ''),
+    ...(h.na_items || Array(10).fill('')),
+  ]);
+  const csv = [head, ...rows]
+    .map(r => r.map(c => /[",\n]/.test(String(c)) ? `"${String(c).replace(/"/g,'""')}"` : String(c)).join(','))
+    .join('\n');
+  download('positive-affect-score-' + new Date().toISOString().slice(0,10) + '.csv', csv, 'text/csv');
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SESSION MODE
+//
+// Firebase is loaded lazily, and only when ?s= is present, so solo mode works
+// offline and from file:// with no network at all. Session data lives at
+// panas/<sessionId>/<participantKey> — see database.rules.json.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyDPu8fTy6tNSxE31rpFciI_p2clE0PKQkw",
+  authDomain:        "rcn-bias-checker.firebaseapp.com",
+  databaseURL:       "https://rcn-bias-checker-default-rtdb.firebaseio.com",
+  projectId:         "rcn-bias-checker",
+  storageBucket:     "rcn-bias-checker.firebasestorage.app",
+  messagingSenderId: "2864582740",
+  appId:             "1:2864582740:web:b55bdbb09b0262ee05ddc1"
+};
+
+// Session IDs must match ^[A-Z0-9]{6}$ — the database rules reject anything else.
+function generateId(len = 6) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let out = '';
+  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
+function sessionFromUrl() {
+  const s = new URLSearchParams(location.search).get('s');
+  return (s && /^[A-Z0-9]{6}$/.test(s)) ? s : null;
+}
+
+window.startSession = function() {
+  const url = new URL(location.href);
+  url.searchParams.set('s', generateId());
+  location.href = url.toString();
+};
+
+async function bootSession(id) {
+  sessionId = id;
+  document.getElementById('modeDisplay').textContent = 'PANAS PA-10 · Session ' + sessionId;
+  document.getElementById('liveDot').style.display = '';
+  document.getElementById('liveLabel').style.display = '';
+  document.getElementById('soloBlock').style.display = 'none';
+  document.getElementById('joinBlock').style.display = 'block';
+  document.getElementById('shareUrl').textContent = location.href;
+  document.getElementById('aggCard').style.display = 'block';
+  document.getElementById('aggBody').innerHTML = `<div class="empty-note">Join to see the group.</div>`;
+
+  try {
+    const [{ initializeApp }, dbMod] = await Promise.all([
+      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js'),
+    ]);
+    fbRefs = dbMod;
+    db = dbMod.getDatabase(initializeApp(firebaseConfig));
+    setLive(true);
+  } catch(e) {
+    setLive(false);
+    showMsg('joinMsg', 'Could not reach the session server. Solo check-ins still work.', 'error');
+    return;
+  }
+
+  fbRefs.onValue(fbRefs.ref(db, 'panas/' + sessionId), snap => {
+    groupData = snap.val() || {};
+    renderGroup();
+  });
+}
+
+function setLive(ok) {
+  document.getElementById('liveDot').className = 'dot' + (ok ? ' live' : '');
+  document.getElementById('liveLabel').textContent = ok ? 'Live' : 'Offline';
+}
+
+window.joinSession = function() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) { showMsg('joinMsg', 'Enter your name first.', 'error'); return; }
+  if (!db) { showMsg('joinMsg', 'Not connected to the session server.', 'error'); return; }
+  if (joined) return;
+
+  myName = name;
+  myKey  = name.toLowerCase().replace(/\s+/g, '_') + '_' + generateId(3);
+  joined = true;
+
+  document.getElementById('nameInput').disabled = true;
+  document.getElementById('joinBtn').disabled   = true;
+  document.getElementById('consentBlock').style.display = 'block';
+
+  // Server-side cleanup: fires on any connection loss — crash, force-quit,
+  // phone backgrounding — not just a clean tab close. beforeunload stays as
+  // the fast path when the browser does shut down politely.
+  fbRefs.onDisconnect(fbRefs.ref(db, `panas/${sessionId}/${myKey}`)).remove();
+
+  writeSelf({ name: myName, anonConsent: myAnonConsent, ts: Date.now() });
+  window.addEventListener('beforeunload', () => {
+    if (myKey) fbRefs.remove(fbRefs.ref(db, `panas/${sessionId}/${myKey}`));
+  });
+};
+
+function writeSelf(obj) {
+  if (!joined || !db) return;
+  fbRefs.set(fbRefs.ref(db, `panas/${sessionId}/${myKey}`), obj);
+}
+
+function pushToSession(result) {
+  const mine = groupData[myKey] || {};
+  writeSelf({
+    name:        myName,
+    anonConsent: myAnonConsent,
+    timeframe:   result.timeframe,
+    first:       mine.first != null ? mine.first : result.pa_raw,
+    latest:      result.pa_raw,
+    na:          result.na_raw != null ? result.na_raw : null,
+    count:       (mine.count || 0) + 1,
+    ts:          Date.now(),
+  });
+}
+
+window.toggleConsent = function() {
+  myAnonConsent = document.getElementById('consentCheck').checked;
+  const mine = groupData[myKey] || {};
+  writeSelf({ ...mine, name: myName, anonConsent: myAnonConsent, ts: Date.now() });
+};
+
+function renderGroup() {
+  const el = document.getElementById('aggBody');
+  const entries = Object.entries(groupData).filter(([, p]) => p?.name);
+
+  // Anonymity is session-wide: one person opting in makes it anonymous for all.
+  const anonCount = entries.filter(([, p]) => p?.anonConsent).length;
+  isNamedMode = anonCount === 0 && entries.length > 0;
+  const status = document.getElementById('consentStatus');
+  if (entries.length === 0) {
+    status.textContent = 'Open — names visible to everyone';
+    status.className = 'consent-status open';
+  } else if (isNamedMode) {
+    status.textContent = 'Open — names visible to everyone';
+    status.className = 'consent-status open';
+  } else {
+    status.textContent = anonCount + ' participant' + (anonCount > 1 ? 's have' : ' has') +
+                         ' requested anonymity — session is anonymous';
+    status.className = 'consent-status';
+  }
+
+  const scored = entries.filter(([, p]) => typeof p.latest === 'number');
+  if (!scored.length) {
+    el.innerHTML = `<div class="empty-note">${entries.length} joined · no check-ins saved yet.</div>`;
+    return;
+  }
+
+  const vals = scored.map(([, p]) => p.latest);
+  const mean = vals.reduce((a,b) => a+b, 0) / vals.length;
+
+  // group delta: mean of latest minus mean of each person's first check-in
+  const firsts = scored.map(([, p]) => (typeof p.first === 'number' ? p.first : p.latest));
+  const meanFirst = firsts.reduce((a,b) => a+b, 0) / firsts.length;
+  const delta = mean - meanFirst;
+  const anyRetake = scored.some(([, p]) => (p.count || 1) > 1);
+
+  const pos = v => ((v - 10) / 40 * 100);
+  const dots = scored.map(([key, p]) => {
+    const tip = isNamedMode ? `${p.name}: ${p.latest}/50` : `${p.latest}/50`;
+    return `<div class="agg-dot ${key === myKey ? 'is-me' : ''}" style="left:${pos(p.latest).toFixed(1)}%" title="${escHtml(tip)}"></div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="agg-axis">
+      <div class="agg-line"></div>
+      <div class="agg-mean" style="left:${pos(mean).toFixed(1)}%" title="Mean ${mean.toFixed(1)}"></div>
+      ${dots}
+      <div class="agg-tick" style="left:0">10</div>
+      <div class="agg-tick" style="left:50%">30</div>
+      <div class="agg-tick" style="left:100%">50</div>
+    </div>
+    <div class="agg-stats">
+      <span>Mean <b>${mean.toFixed(1)}</b></span>
+      <span>Range <b>${Math.min(...vals)}–${Math.max(...vals)}</b></span>
+      <span>Checked in <b>${scored.length}/${entries.length}</b></span>
+      ${anyRetake ? `<span>Since first <b>${delta >= 0 ? '+' : ''}${delta.toFixed(1)}</b></span>` : ''}
+    </div>
+    ${isNamedMode
+      ? `<div class="agg-names">${scored.map(([, p]) =>
+          `${escHtml(p.name)} ${p.latest}${(p.count || 1) > 1 && typeof p.first === 'number'
+            ? ` <span style="color:var(--ink3)">(from ${p.first})</span>` : ''}`).join(' · ')}</div>`
+      : `<div class="agg-names">Anonymous session — distribution and mean only.</div>`}`;
+}
+
+window.copyUrl = function() {
+  navigator.clipboard.writeText(location.href)
+    .then(() => showMsg('joinMsg', 'Link copied.', 'ok'))
+    .catch(() => showMsg('joinMsg', 'Copy failed — select the link and copy it manually.', 'error'));
+};
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showMsg(elId, text, type) {
+  const el = document.getElementById(elId);
+  el.innerHTML = `<div class="msg ${type}">${escHtml(text)}</div>`;
+  setTimeout(() => { el.innerHTML = ''; }, 4000);
+}
+window.toggleHelp = function() {
+  document.getElementById('helpOverlay').classList.toggle('open');
+};
+
+// ── BOOT ───────────────────────────────────────────────────────────────────
+renderItems();
+setTimeframe('now');
+renderHistory();
+
+const urlSession = sessionFromUrl();
+if (urlSession) {
+  document.getElementById('wrap').classList.add('two-col');
+  bootSession(urlSession);
+} else {
+  document.getElementById('wrap').classList.add('two-col');
+}
+</script>
+</body>
+</html>

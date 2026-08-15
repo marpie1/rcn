@@ -928,6 +928,103 @@
   .topic-btn.done-btn { font-size: 0.75rem; }
   .topic-btn.done-btn.active { color: var(--green); }
   .topic-empty { color: var(--ink3); font-size: 0.88rem; font-style: italic; padding: 20px 0; text-align: center; }
+
+  /* POSITIVE AFFECT CHECK-IN */
+  .pa-summary {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 10px 12px; margin-bottom: 8px;
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .pa-summary .val { font-family: 'DM Mono', monospace; font-size: 1.3rem; }
+  .pa-summary .of  { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--ink3); }
+  .pa-summary .delta { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 0.78rem; }
+  .pa-summary .delta.up   { color: var(--green); }
+  .pa-summary .delta.down { color: var(--accent); }
+  .pa-none { font-size: 0.82rem; color: var(--ink3); font-style: italic; margin-bottom: 8px; }
+  .pa-na-line {
+    font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--ink3);
+    margin: -4px 0 8px 2px;
+  }
+
+  .pa-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(26,24,20,0.55);
+    z-index: 320; padding: 24px; overflow-y: auto;
+  }
+  .pa-overlay.open { display: block; }
+  .pa-panel {
+    max-width: 460px; margin: 0 auto; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .pa-hdr { display: flex; align-items: center; padding: 14px 20px; border-bottom: 2px solid var(--ink2); }
+  .pa-hdr-title {
+    font-family: 'DM Mono', monospace; font-size: 0.75rem;
+    letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700;
+  }
+  .pa-close {
+    margin-left: auto; background: none; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 5px 12px; cursor: pointer; font-size: 0.8rem;
+  }
+  .pa-body { padding: 18px 20px 20px; }
+  .pa-lede { font-size: 0.88rem; color: var(--ink2); margin-bottom: 12px; }
+  .pa-lede strong { color: var(--ink); }
+  .pa-legend {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 12px;
+    font-family: 'DM Mono', monospace; font-size: 0.58rem;
+    color: var(--ink3); text-align: center; line-height: 1.25;
+  }
+  .pa-legend div { padding: 5px 2px; background: var(--surface2); border-radius: var(--radius); }
+  .pa-legend b { display: block; font-size: 0.8rem; color: var(--ink2); }
+  .pa-item {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--surface2);
+  }
+  .pa-item:last-child { border-bottom: none; }
+  .pa-word { font-size: 0.92rem; font-weight: 500; min-width: 100px; }
+  .pa-btns { display: flex; gap: 4px; }
+  .pa-sbtn {
+    width: 36px; height: 32px; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg); cursor: pointer;
+    font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--ink2);
+  }
+  .pa-sbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .pa-sbtn.selected { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .pa-score {
+    margin-top: 14px; padding: 12px 14px; background: var(--surface2);
+    border-radius: var(--radius); display: flex; align-items: baseline; gap: 10px;
+  }
+  .pa-score .big { font-family: 'DM Mono', monospace; font-size: 1.5rem; }
+  .pa-score .of  { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--ink3); }
+  .pa-score .na  { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--ink2); }
+  .pa-na-toggle {
+    margin-top: 12px; padding: 9px 12px; width: 100%;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); cursor: pointer; text-align: left;
+    font-family: 'DM Sans', sans-serif; font-size: 0.84rem; color: var(--ink2);
+  }
+  .pa-na-toggle:hover { border-color: var(--ink2); }
+  #paNaItems { margin-top: 8px; }
+  .pa-actions { display: flex; gap: 8px; margin-top: 14px; }
+  .pa-actions button { flex: 1; }
+  .pa-foot { font-size: 0.75rem; color: var(--ink3); margin-top: 12px; font-style: italic; }
+
+  /* departed participants */
+  .p-card.is-away { opacity: 0.55; background: var(--surface2); }
+  .away-tag {
+    font-family: 'DM Mono', monospace; font-size: 0.58rem;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    background: var(--ink3); color: var(--surface);
+    border-radius: 8px; padding: 1px 7px; margin-left: 6px; vertical-align: middle;
+  }
+  .btn-secondary.danger { color: var(--accent); border-color: var(--border); }
+  .btn-secondary.danger:hover { border-color: var(--accent); background: #fbe4de; }
+  .leave-note { font-size: 0.72rem; color: var(--ink3); line-height: 1.5; margin-top: 8px; }
+
+  /* score on participant cards */
+  .p-pa {
+    display: inline-block; margin-top: 6px; padding: 2px 8px;
+    background: var(--surface2); border-radius: 10px;
+    font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--ink2);
+  }
 </style>
 </head>
 <body>
@@ -963,7 +1060,9 @@
             <tr><td>Start</td><td>Open the tool. A session ID is auto-generated and added to the URL.</td></tr>
             <tr><td>Invite</td><td>Share the URL. Anyone who opens it joins the same live session.</td></tr>
             <tr><td>Join</td><td>Enter your name and click Join. Your card appears for everyone.</td></tr>
-            <tr><td>End</td><td>Close your tab — your card is removed automatically. Sessions are ephemeral; data does not persist after all participants leave.</td></tr>
+            <tr><td>Leave</td><td>Close your tab. Your card is marked <em>left</em> and greys out, but everything you contributed stays in the session and in its export.</td></tr>
+            <tr><td>Withdraw</td><td><em>Remove my input</em> in the left panel deletes your card and your contributions for good. That is the only thing that erases them.</td></tr>
+            <tr><td>End</td><td>Session data persists until someone ends it. <em>End session and delete all data</em> on the Export tab clears every record, topic and model interaction. Export first.</td></tr>
           </tbody>
         </table>
       </div>
@@ -1019,6 +1118,21 @@
       </div>
 
       <div class="help-section">
+        <div class="help-section-label">Positive Affect Score</div>
+        <table class="help-table">
+          <tbody>
+            <tr><td>What it is</td><td>The ten positive-affect words of the PANAS (Watson, Clark &amp; Tellegen, 1988), each rated 1–5. Adding them gives a score from 10 to 50.</td></tr>
+            <tr><td>Timeframe</td><td>Always <em>right now</em> here — how you feel at this moment, not how your week has gone.</td></tr>
+            <tr><td>Take it again</td><td>Check in at the start and again at the end. The change is the number worth looking at: your card shows your own shift, and Stats shows how the whole room moved.</td></tr>
+            <tr><td>NA-10</td><td>Optional second set of ten negative-affect words, opened from inside the check-in. Scored separately and never subtracted from the positive score — the two are close to independent, and a person can be high on both.</td></tr>
+            <tr><td>No bands</td><td>Deliberately no 1–4 activation band. That crosswalk is calibrated for a past-week reading and belongs to the health tools, not to a label on someone sitting in a meeting.</td></tr>
+            <tr><td>Standalone</td><td>The same check-in with history, past-week framing, bands and export lives in <a href="positive-affect-score.html" target="_blank">Positive Affect Score ↗</a>.</td></tr>
+          </tbody>
+        </table>
+        <div class="help-note">Follows the session's identity setting: names show in open mode, distribution and mean only when the session is anonymous. Your own score is always visible to you.</div>
+      </div>
+
+      <div class="help-section">
         <div class="help-section-label">Built-in models</div>
         <table class="help-table">
           <thead><tr><th>Model</th><th>How to use it</th></tr></thead>
@@ -1046,6 +1160,41 @@
         <div class="help-note">If any participant checks the anonymous box, the session goes anonymous immediately for everyone. Uncheck to restore open mode.</div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- ── POSITIVE AFFECT CHECK-IN ── -->
+<div class="pa-overlay" id="paOverlay" onclick="if(event.target===this)closePA()">
+  <div class="pa-panel">
+    <div class="pa-hdr">
+      <span class="pa-hdr-title">Positive Affect Score — PANAS PA-10</span>
+      <button class="pa-close" onclick="closePA()">Close</button>
+    </div>
+    <div class="pa-body">
+      <p class="pa-lede">For each word, indicate how much it describes the way you feel <strong>right now</strong>. About twenty seconds.</p>
+      <div class="pa-legend">
+        <div><b>1</b>Very slightly or not at all</div>
+        <div><b>2</b>A little</div>
+        <div><b>3</b>Moderately</div>
+        <div><b>4</b>Quite a bit</div>
+        <div><b>5</b>Extremely</div>
+      </div>
+      <div id="paItems"></div>
+
+      <button class="pa-na-toggle" id="paNaToggleBtn" onclick="togglePANa()">+ Optional: also rate negative feelings (NA-10)</button>
+      <div id="paNaItems" style="display:none"></div>
+
+      <div class="pa-score">
+        <span class="big" id="paScoreBig">—</span>
+        <span class="of" id="paScoreOf">0 of 10 words rated</span>
+        <span class="na" id="paScoreNa"></span>
+      </div>
+      <div class="pa-actions">
+        <button class="btn-secondary" onclick="closePA()">Cancel</button>
+        <button class="btn-primary" id="paSaveBtn" onclick="savePA()" disabled>Save score</button>
+      </div>
+      <p class="pa-foot">Retaking it later shows the group how the room moved. Your score is visible to the session unless anyone has made it anonymous.</p>
     </div>
   </div>
 </div>
@@ -1108,9 +1257,17 @@
         </div>
       </div>
 
+      <div style="margin-top:18px">
+        <div class="section-label">Positive Affect Score</div>
+        <div id="paSummary"><div class="pa-none">Not checked in yet</div></div>
+        <button class="btn-secondary" style="width:100%" onclick="openPA()" id="paOpenBtn">Take the check-in</button>
+      </div>
+
       <div class="clear-row">
         <button class="btn-secondary" onclick="clearAll()">Clear mine</button>
+        <button class="btn-secondary danger" onclick="removeMyInput()" title="Delete your card and everything you contributed to this session">Remove my input</button>
       </div>
+      <p class="leave-note">Closing your tab keeps what you contributed — your card is marked <em>left</em> and stays in the session's export. Use <em>Remove my input</em> to delete it for good.</p>
 
     </div>
 
@@ -1250,7 +1407,12 @@
         <div class="export-preview" id="exportCarryFwdPreview"></div>
       </div>
       <hr class="export-divider">
-      <button class="btn-primary" onclick="exportFedWiki()" style="width:100%">Download FedWiki JSON</button>
+      <button class="btn-primary" onclick="exportFedWiki()" style="width:100%">Download FedWiki page JSON</button>
+      <button class="btn-secondary" onclick="exportRawJSON()" style="width:100%;margin-top:8px;border:1px solid var(--border)">Download raw session JSON</button>
+      <p class="export-note" style="margin-top:8px">The FedWiki page drags into any FedWiki server. The raw JSON is the full session state — every participant, score, topic and model interaction — for archiving or your own analysis. Both include people who have already left.</p>
+      <hr class="export-divider">
+      <button class="btn-secondary danger" onclick="endSession()" style="width:100%">End session and delete all data</button>
+      <p class="export-note" style="margin-top:8px">Session data now persists after people leave, so it stays available until you end it here. Export first — this cannot be undone.</p>
     </div>
 
     <div id="viewTopics" style="display:none">
@@ -1273,7 +1435,7 @@
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, push as fbPush, onValue, remove, serverTimestamp }
+import { getDatabase, ref, set, update as fbUpdate, push as fbPush, onValue, remove, onDisconnect, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 // ─── FIREBASE CONFIG ───────────────────────────────────────────────
@@ -1310,6 +1472,21 @@ const BIASES = [
   { id: "model",       label: "We need a model" },
 ];
 
+// ── POSITIVE AFFECT ────────────────────────────────────────────────────────
+// Copy of the canonical PA-10 item list from tools/positive-affect-score.html.
+// Kept inline because this file is deployed to Wiki Café as a single asset.
+// Right-now framing only here, and deliberately NO activation bands: the band
+// crosswalk is calibrated past-week, and labelling a person in a meeting
+// "Learning the basics" would be both wrong and insulting. Raw score and the
+// change across the session are the useful signals in a conversation.
+// NA-10 is optional and scored separately — it is never subtracted from PA.
+// Positive and negative affect are close to independent; a person can be high
+// on both at once.
+const PA10_WORDS = ['active','alert','attentive','determined','enthusiastic',
+                    'excited','inspired','interested','proud','strong'];
+const NA10_WORDS = ['afraid','ashamed','distressed','guilty','hostile',
+                    'irritable','jittery','nervous','scared','upset'];
+
 // Intent → biases that conflict with it
 const CONFLICTS = {
   learning:    ["egocentric", "backfire"],
@@ -1343,6 +1520,14 @@ let dragType  = null; // 'intent' | 'bias'
 let myAnonConsent = false;
 let isNamedMode   = true;
 const sqCollapsed = {};
+let paDraft   = {};    // modal scratch: item index 0-9 → 1-5
+let paNaDraft = {};
+let paNaShown = false;
+let myPAFirst = null;  // my first score this session
+let myPALast  = null;  // my most recent score
+let myPACount = 0;
+let myNAFirst = null;  // optional NA-10, same shape
+let myNALast  = null;
 
 // ── HELPERS ──
 // click data is stored as {participantKey: true} per node/edge
@@ -1358,8 +1543,15 @@ function getSessionFromUrl() {
   return p.get("s");
 }
 
+// Pick characters one at a time. Math.random().toString(36).slice(2, 8) can
+// return fewer than 6 characters when the random value is short — those IDs
+// fail the ^[A-Z0-9]{6}$ rule in database.rules.json and every write silently
+// no-ops, which looks like "the session just doesn't sync".
 function generateId(len = 6) {
-  return Math.random().toString(36).slice(2, 2 + len).toUpperCase();
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let out = "";
+  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
 }
 
 function boot() {
@@ -1421,7 +1613,9 @@ window.join = function() {
   if (joined) return;
 
   myName = name;
-  myKey  = name.toLowerCase().replace(/\s+/g, "_") + "_" + generateId(3);
+  // Reclaim the same record on a rejoin, otherwise a reconnect would leave a
+  // ghost card behind and double-count the person in stats and exports.
+  myKey  = reclaimKey(name);
   writeRef = ref(db, "sessions/" + sessionId + "/" + myKey);
 
   joined = true;
@@ -1434,11 +1628,66 @@ window.join = function() {
   document.getElementById("sessionShare").style.display = "block";
   document.getElementById("shareUrl").textContent = window.location.href;
 
-  push();
+  // Leaving marks you absent; it does not delete what you contributed. The
+  // session record has to survive departure or the export only captures
+  // whoever happened to still have the tab open. Deliberate removal is the
+  // "Remove my input" button. onDisconnect covers crashes and backgrounding,
+  // beforeunload is the fast path on a polite tab close.
+  // Read any existing record BEFORE writing. push() sends the whole local
+  // state, so rejoining with a fresh page would otherwise overwrite your own
+  // intents, biases and scores with empty ones — losing exactly what marking
+  // people absent was meant to preserve.
+  onValue(writeRef, snap => {
+    const prior = snap.val();
+    if (prior) hydrateFromRecord(prior);
+    onDisconnect(writeRef).update({ present: false, leftAt: Date.now() });
+    push();
+  }, { onlyOnce: true });
 
-  // cleanup on close
-  window.addEventListener("beforeunload", () => remove(writeRef));
+  window.addEventListener("beforeunload", () => {
+    if (writeRef) fbUpdate(writeRef, { present: false, leftAt: Date.now() });
+  });
 };
+
+// Restore local state from a record we are resuming.
+function hydrateFromRecord(p) {
+  (p.intents || (p.intent ? [p.intent] : [])).forEach(id => myIntents.add(id));
+  (p.biases  || []).forEach(id => myBiases.add(id));
+
+  customIntentDefs = p.customIntentDefs || [];
+  customBiasDefs   = p.customBiasDefs   || [];
+  customIntentDefs.forEach(d => { if (!intentOrder.includes(d.id)) intentOrder.push(d.id); });
+  customBiasDefs.forEach(d   => { if (!biasOrder.includes(d.id))   biasOrder.push(d.id); });
+
+  if (p.pa) {
+    myPAFirst = typeof p.pa.first    === "number" ? p.pa.first    : null;
+    myPALast  = typeof p.pa.latest   === "number" ? p.pa.latest   : null;
+    myPACount = p.pa.count || 0;
+    myNAFirst = typeof p.pa.naFirst  === "number" ? p.pa.naFirst  : null;
+    myNALast  = typeof p.pa.naLatest === "number" ? p.pa.naLatest : null;
+  }
+
+  myAnonConsent = !!p.anonConsent;
+  const cc = document.getElementById("consentCheck");
+  if (cc) cc.checked = myAnonConsent;
+
+  renderIntentGrid();
+  renderBiasChecks();
+  renderPASummary();
+}
+
+// Participant keys are remembered per session so a reconnect resumes the same
+// record rather than creating a second one.
+function reclaimKey(name) {
+  const slot = "rcn.nav.key." + sessionId;
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(slot) || "null");
+    if (saved && saved.name === name && saved.key) return saved.key;
+  } catch(e) { /* fall through to a fresh key */ }
+  const key = name.toLowerCase().replace(/\s+/g, "_") + "_" + generateId(3);
+  try { sessionStorage.setItem(slot, JSON.stringify({ name, key })); } catch(e) {}
+  return key;
+}
 
 // ── WRITE ──
 function push() {
@@ -1450,8 +1699,152 @@ function push() {
     customIntentDefs,
     customBiasDefs,
     anonConsent:      myAnonConsent,
+    pa:               (myPALast === null && myNALast === null) ? null
+                        : { first: myPAFirst, latest: myPALast, count: myPACount,
+                            naFirst: myNAFirst, naLatest: myNALast },
+    present:          true,
     ts:               Date.now()
   });
+}
+
+// ── POSITIVE AFFECT CHECK-IN ──
+// The 1-5 anchors are repeated above the NA block: it opens well below the
+// PA legend, so without this the scale is off-screen exactly when you need it.
+const PA_LEGEND_HTML = `
+  <div class="pa-legend">
+    <div><b>1</b>Very slightly or not at all</div>
+    <div><b>2</b>A little</div>
+    <div><b>3</b>Moderately</div>
+    <div><b>4</b>Quite a bit</div>
+    <div><b>5</b>Extremely</div>
+  </div>`;
+
+function paItemsHTML(words, prefix) {
+  return words.map((word, i) => `
+    <div class="pa-item">
+      <span class="pa-word">${word.charAt(0).toUpperCase() + word.slice(1)}</span>
+      <div class="pa-btns" id="${prefix}-${i}">
+        ${[1,2,3,4,5].map(v => `<button class="pa-sbtn" onclick="setPA('${prefix}',${i},${v})">${v}</button>`).join("")}
+      </div>
+    </div>`).join("");
+}
+
+window.openPA = function() {
+  if (!joined) { showMsg("joinMsg", "Join the session first.", "error"); return; }
+  paDraft   = {};
+  paNaDraft = {};
+  paNaShown = false;
+  document.getElementById("paItems").innerHTML   = paItemsHTML(PA10_WORDS, "pab");
+  document.getElementById("paNaItems").innerHTML =
+    `<p class="pa-lede" style="margin-top:10px">How much you feel each of these <strong>right now</strong>. Scored on its own — never subtracted from the positive score.</p>`
+    + PA_LEGEND_HTML + paItemsHTML(NA10_WORDS, "nab");
+  document.getElementById("paNaItems").style.display = "none";
+  document.getElementById("paNaToggleBtn").textContent = "+ Optional: also rate negative feelings (NA-10)";
+  updatePADraft();
+  document.getElementById("paOverlay").classList.add("open");
+};
+
+window.setPA = function(prefix, idx, val) {
+  (prefix === "pab" ? paDraft : paNaDraft)[idx] = val;
+  document.getElementById(`${prefix}-${idx}`).querySelectorAll(".pa-sbtn").forEach(b => {
+    b.classList.toggle("selected", Number(b.textContent) === val);
+  });
+  updatePADraft();
+};
+
+window.togglePANa = function() {
+  paNaShown = !paNaShown;
+  document.getElementById("paNaItems").style.display = paNaShown ? "block" : "none";
+  document.getElementById("paNaToggleBtn").textContent = paNaShown
+    ? "− Hide negative feelings (NA-10)"
+    : "+ Optional: also rate negative feelings (NA-10)";
+  updatePADraft();
+};
+
+function paDraftRaw(d) { return Object.values(d).reduce((a,b) => a+b, 0); }
+function paDraftComplete() { return Object.keys(paDraft).length === 10; }
+function naDraftComplete() { return paNaShown && Object.keys(paNaDraft).length === 10; }
+
+function updatePADraft() {
+  const nPa = Object.keys(paDraft).length;
+  const nNa = Object.keys(paNaDraft).length;
+  const paDone = paDraftComplete();
+  const naDone = naDraftComplete();
+
+  document.getElementById("paScoreBig").textContent = paDone ? paDraftRaw(paDraft) : "—";
+  document.getElementById("paScoreOf").textContent  = paDone ? "of 50" : `${nPa} of 10 positive words rated`;
+
+  // Report NA progress, not just a finished total — otherwise a half-filled NA
+  // block looks like it is being ignored.
+  const naEl = document.getElementById("paScoreNa");
+  if (naDone)            naEl.textContent = `NA-10: ${paDraftRaw(paNaDraft)}/50`;
+  else if (paNaShown && nNa) naEl.textContent = `NA-10: ${nNa} of 10 rated`;
+  else                   naEl.textContent = "";
+
+  // Either set can stand on its own, so either one completed enables Save.
+  document.getElementById("paSaveBtn").disabled = !(paDone || naDone);
+}
+
+window.savePA = function() {
+  const paDone = paDraftComplete();
+  const naDone = naDraftComplete();
+  if (!paDone && !naDone) return;
+
+  if (paDone) {
+    const raw = paDraftRaw(paDraft);
+    if (myPAFirst === null) myPAFirst = raw;
+    myPALast = raw;
+    myPACount++;
+  }
+  if (naDone) {
+    const naRaw = paDraftRaw(paNaDraft);
+    if (myNAFirst === null) myNAFirst = naRaw;
+    myNALast = naRaw;
+  }
+
+  // Say plainly when a started-but-unfinished set was not recorded.
+  const dropped = [];
+  if (!paDone && Object.keys(paDraft).length)   dropped.push("positive");
+  if (!naDone && paNaShown && Object.keys(paNaDraft).length) dropped.push("negative");
+
+  closePA();
+  renderPASummary();
+  push();
+
+  if (dropped.length) {
+    showMsg("joinMsg", `Saved. The ${dropped.join(" and ")} set was incomplete and was not recorded.`, "error");
+  }
+};
+
+window.closePA = function() {
+  document.getElementById("paOverlay").classList.remove("open");
+};
+
+function renderPASummary() {
+  const el  = document.getElementById("paSummary");
+  const btn = document.getElementById("paOpenBtn");
+  if (myPALast === null && myNALast === null) {
+    el.innerHTML = `<div class="pa-none">Not checked in yet</div>`;
+    btn.textContent = "Take the check-in";
+    return;
+  }
+  let html = "";
+  if (myPALast !== null) {
+    const d = myPALast - myPAFirst;
+    const deltaHTML = myPACount > 1
+      ? `<span class="delta ${d > 0 ? "up" : d < 0 ? "down" : ""}">${d > 0 ? "+" : ""}${d} since first</span>`
+      : "";
+    html += `<div class="pa-summary">
+      <span class="val">${myPALast}</span><span class="of">of 50</span>${deltaHTML}
+    </div>`;
+  }
+  if (myNALast !== null) {
+    html += myPALast === null
+      ? `<div class="pa-summary"><span class="val">${myNALast}</span><span class="of">of 50 · NA-10 only</span></div>`
+      : `<div class="pa-na-line">NA-10: ${myNALast}/50</div>`;
+  }
+  el.innerHTML = html;
+  btn.textContent = "Take it again";
 }
 
 // ── IDENTITY CONSENT ──
@@ -1611,9 +2004,64 @@ window.removeCustomBias = function(id) {
 window.clearAll = function() {
   myIntents.clear();
   myBiases.clear();
+  myPAFirst = null;
+  myPALast  = null;
+  myPACount = 0;
+  myNAFirst = null;
+  myNALast  = null;
   renderIntentGrid();
   renderBiasChecks();
+  renderPASummary();
   push();
+};
+
+// Deliberate deletion — the only thing that actually destroys your input.
+window.removeMyInput = function() {
+  if (!joined || !writeRef) return;
+  if (!confirm("Delete your card and everything you contributed to this session?\n\nThis cannot be undone, and your input will not appear in the session's export.")) return;
+
+  const gone = writeRef;
+  writeRef = null;              // stop beforeunload from resurrecting the node
+  onDisconnect(gone).cancel();
+  remove(gone);
+
+  try { sessionStorage.removeItem("rcn.nav.key." + sessionId); } catch(e) {}
+
+  joined = false;
+  myIntents.clear();
+  myBiases.clear();
+  myPAFirst = myPALast = myNAFirst = myNALast = null;
+  myPACount = 0;
+
+  document.getElementById("nameInput").disabled = false;
+  document.getElementById("nameInput").value    = "";
+  document.getElementById("joinBtn").disabled   = false;
+  document.getElementById("identitySection").style.display = "none";
+  document.getElementById("controlsSection").style.display = "none";
+  renderIntentGrid();
+  renderBiasChecks();
+  renderPASummary();
+  showMsg("joinMsg", "Your input has been removed. Join again to take part.", "ok");
+};
+
+// Clears the whole session: every participant record, the models, and the
+// topics. Writes are scoped per key by the rules, so this deletes children
+// one at a time rather than dropping the session node.
+window.endSession = function() {
+  const n = Object.values(allParticipants).filter(p => p?.name).length;
+  if (!confirm(`End this session and delete all of its data?\n\n${n} participant record${n === 1 ? "" : "s"}, all topics and all model interactions will be permanently removed. Download the export first if you need it.\n\nThis cannot be undone.`)) return;
+
+  Object.keys(allParticipants).forEach(k => remove(ref(db, `sessions/${sessionId}/${k}`)));
+  remove(ref(db, `topics/${sessionId}`));
+  try { sessionStorage.removeItem("rcn.nav.key." + sessionId); } catch(e) {}
+
+  if (writeRef) { onDisconnect(writeRef).cancel(); writeRef = null; }
+  joined = false;
+  document.getElementById("controlsSection").style.display = "none";
+  document.getElementById("identitySection").style.display = "none";
+  document.getElementById("nameInput").disabled = false;
+  document.getElementById("joinBtn").disabled   = false;
+  showMsg("joinMsg", "Session ended. All data has been deleted.", "ok");
 };
 
 // ── RENDER GROUP ──
@@ -1673,25 +2121,49 @@ function renderGroup() {
     const badgeHTML = biases.length
       ? `<div class="bias-count-badge">${biases.length}</div>` : "";
 
+    // Own score is always your own to see; others' only when the session is open.
+    const pa = p.pa;
+    let paHTML = "";
+    if (pa && (isMe || isNamedMode)) {
+      const parts = [];
+      if (typeof pa.latest === "number") {
+        const d = pa.latest - (typeof pa.first === "number" ? pa.first : pa.latest);
+        parts.push(`PA ${pa.latest}/50` + ((pa.count || 1) > 1 ? ` ${d > 0 ? "+" : ""}${d}` : ""));
+      }
+      if (typeof pa.naLatest === "number") parts.push(`NA ${pa.naLatest}/50`);
+      if (parts.length) {
+        paHTML = `<div class="p-pa" title="PANAS check-in, right now">${parts.join(" · ")}</div>`;
+      }
+    }
+
+    const away = p.present === false;
+    const awayTag = away
+      ? `<span class="away-tag" title="${p.leftAt ? 'Left ' + new Date(p.leftAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'No longer in the session'}">left</span>`
+      : "";
+
     return `
-      <div class="p-card ${isMe ? "is-me" : ""}">
+      <div class="p-card ${isMe ? "is-me" : ""} ${away ? "is-away" : ""}">
         ${badgeHTML}
         <div class="p-name">
           ${p.name}
           ${isMe ? '<span class="me-tag">you</span>' : ""}
+          ${awayTag}
         </div>
         ${intentHTML}
         <div class="p-biases">${biasesHTML}</div>
+        ${paHTML}
         ${conflictHTML}
       </div>`;
   }).join("");
 
-  setStats(entries.length, totalBiases, totalConflicts);
+  const presentCount = entries.filter(([, p]) => p.present !== false).length;
+  setStats(entries.length, totalBiases, totalConflicts, presentCount);
   if (currentPView === 'stats') renderStats();
 }
 
-function setStats(people, biases, conflicts) {
-  document.getElementById("statPeople").textContent    = people;
+function setStats(people, biases, conflicts, present) {
+  document.getElementById("statPeople").textContent    =
+    (present != null && present < people) ? `${present} of ${people}` : people;
   document.getElementById("statBiases").textContent    = biases;
   document.getElementById("statConflicts").textContent = conflicts;
 }
@@ -1856,16 +2328,23 @@ function renderStats() {
     const rows  = SQ_Q_DEFS.map(q => {
       const qVotes = votes[q.aId] || {};
       const total  = Object.values(qVotes).reduce((s, vm) => s + Object.keys(vm).length, 0);
-      return { q, total };
+      // who voted, across every answer under this question
+      const voters = Object.values(qVotes)
+        .flatMap(vm => Object.keys(vm))
+        .map(k => allParticipants[k]?.name)
+        .filter(Boolean);
+      return { q, total, voters };
     }).filter(r => r.total > 0);
     if (!rows.length) return '';
     const max = Math.max(...rows.map(r => r.total), 1);
-    return rows.map(({ q, total }) => {
+    return rows.map(({ q, total, voters }) => {
       const pct    = (total / max * 100).toFixed(1);
       const qLabel = ql[q.id] || q.defaultQ;
+      const names  = isNamedMode ? [...new Set(voters)] : [];
+      const tip    = names.length ? `${qLabel} — ${names.join(', ')}` : qLabel;
       return `
-        <div class="stats-row">
-          <div class="stats-label" title="${escHtml(qLabel)}">${escHtml(qLabel)}</div>
+        <div class="stats-row" title="${escHtml(tip)}">
+          <div class="stats-label">${escHtml(qLabel)}</div>
           <div class="stats-track"><div class="stats-bar" style="width:${pct}%;background:${q.fill||'#93c5fd'}"></div></div>
           <div class="stats-count" style="font-size:1rem;font-weight:700;color:#c84b2f">${total}</div>
         </div>`;
@@ -1951,6 +2430,94 @@ function renderStats() {
 
   const modeLabel = isNamedMode ? ' — Open' : '';
 
+  // Positive Affect: the distribution and the movement across the session are the
+  // group signal. Individual scores are named only when the session is open.
+  // Shared renderer: dots on a 10-50 axis with a mean marker.
+  function affectAxisHTML(rows, color) {
+    const pos = v => ((v - 10) / 40 * 100);
+    const vals = rows.map(r => r.value);
+    const mean = vals.reduce((a,b) => a+b, 0) / vals.length;
+    const dots = rows.map(r => `
+      <div title="${escHtml(r.tip)}" style="position:absolute;top:30px;left:${pos(r.value).toFixed(1)}%;
+        width:13px;height:13px;margin-left:-6.5px;border-radius:50%;background:${color};opacity:.72;border:1px solid #fff"></div>`).join('');
+    return { mean, html: `
+      <div style="position:relative;height:58px;margin:4px 0 6px">
+        <div style="position:absolute;left:0;right:0;top:38px;height:1px;background:var(--border)"></div>
+        <div title="Mean ${mean.toFixed(1)}" style="position:absolute;top:22px;left:${pos(mean).toFixed(1)}%;
+          width:2px;height:30px;margin-left:-1px;background:var(--ink)"></div>
+        ${dots}
+        <div style="position:absolute;top:42px;left:0;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--ink3)">10</div>
+        <div style="position:absolute;top:42px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:.6rem;color:var(--ink3)">30</div>
+        <div style="position:absolute;top:42px;left:100%;transform:translateX(-100%);font-family:'DM Mono',monospace;font-size:.6rem;color:var(--ink3)">50</div>
+      </div>` };
+  }
+
+  function paSectionHTML() {
+    // PA and NA are independent — someone may have recorded only one of them.
+    const scored   = entries.filter(p => p.pa && typeof p.pa.latest === 'number');
+    const naScoredAll = entries.filter(p => p.pa && typeof p.pa.naLatest === 'number');
+    if (!scored.length && !naScoredAll.length) return '';
+
+    let naSection = '';
+    if (naScoredAll.length) {
+      const naRows = naScoredAll.map(p => ({
+        value: p.pa.naLatest,
+        tip: (isNamedMode ? `${p.name}: ` : '') + `NA ${p.pa.naLatest}/50`,
+      }));
+      const na = affectAxisHTML(naRows, '#5a5650');
+      const naVals = naRows.map(r => r.value);
+      naSection = `
+        <div class="stats-divider">Negative Affect (NA-10)${modeLabel}</div>
+        <div class="stats-section">
+          ${na.html}
+          <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--ink2)">
+            <span>Mean <b style="font-family:'DM Mono',monospace;color:var(--ink)">${na.mean.toFixed(1)}</b></span>
+            <span>Range <b style="font-family:'DM Mono',monospace;color:var(--ink)">${Math.min(...naVals)}–${Math.max(...naVals)}</b></span>
+            <span>Recorded by <b style="font-family:'DM Mono',monospace;color:var(--ink)">${naScoredAll.length}/${total}</b></span>
+          </div>
+          <div style="font-size:.78rem;color:var(--ink3);margin-top:8px;line-height:1.6">
+            ${isNamedMode
+              ? naScoredAll.map(p => `${escHtml(p.name)} ${p.pa.naLatest}`).join(' · ')
+              : 'Anonymous session — distribution and mean only.'}
+          </div>
+          <div style="font-size:.78rem;color:var(--ink3);margin-top:6px;font-style:italic">
+            Scored separately from the positive words and never subtracted from them — a person can be high on both.
+          </div>
+        </div>`;
+    }
+    if (!scored.length) return naSection;
+
+    const vals      = scored.map(p => p.pa.latest);
+    const firsts    = scored.map(p => typeof p.pa.first === 'number' ? p.pa.first : p.pa.latest);
+    const meanFirst = firsts.reduce((a,b) => a+b, 0) / firsts.length;
+    const anyRetake = scored.some(p => (p.pa.count || 1) > 1);
+
+    const paRows = scored.map(p => ({
+      value: p.pa.latest,
+      tip: (isNamedMode ? `${p.name}: ` : '') + `PA ${p.pa.latest}/50` +
+           (typeof p.pa.naLatest === 'number' ? ` \u00b7 NA ${p.pa.naLatest}/50` : ''),
+    }));
+    const pa    = affectAxisHTML(paRows, '#c84b2f');
+    const delta = pa.mean - meanFirst;
+
+    return `
+      <div class="stats-divider">Positive Affect Score${modeLabel}</div>
+      <div class="stats-section">
+        ${pa.html}
+        <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--ink2)">
+          <span>Mean <b style="font-family:'DM Mono',monospace;color:var(--ink)">${pa.mean.toFixed(1)}</b></span>
+          <span>Range <b style="font-family:'DM Mono',monospace;color:var(--ink)">${Math.min(...vals)}\u2013${Math.max(...vals)}</b></span>
+          <span>Checked in <b style="font-family:'DM Mono',monospace;color:var(--ink)">${scored.length}/${total}</b></span>
+          ${anyRetake ? `<span>Since first <b style="font-family:'DM Mono',monospace;color:${delta >= 0 ? 'var(--green)' : 'var(--accent)'}">${delta >= 0 ? '+' : ''}${delta.toFixed(1)}</b></span>` : ''}
+        </div>
+        <div style="font-size:.78rem;color:var(--ink3);margin-top:8px;line-height:1.6">
+          ${isNamedMode
+            ? scored.map(p => `${escHtml(p.name)} ${p.pa.latest}${(p.pa.count||1) > 1 && typeof p.pa.first === 'number' ? ` (from ${p.pa.first})` : ''}`).join(' \u00b7 ')
+            : 'Anonymous session \u2014 distribution and mean only.'}
+        </div>
+      </div>` + naSection;
+  }
+
   el.innerHTML = `
     <div class="stats-2col">
       <div class="stats-section">
@@ -1962,6 +2529,7 @@ function renderStats() {
         ${barsHTML(biasCounts, allBiasDefs, null, isNamedMode ? biasNamesMap : null)}
       </div>
     </div>
+    ${paSectionHTML()}
     ${modelSections.length ? `<div class="stats-divider">Model interactions</div>${pairIntoGrid(modelSections)}` : ''}`;
 }
 
@@ -2186,8 +2754,14 @@ window.exportFedWiki = function() {
   } else if (!isNamedMode) {
     story.push(fwPara(`${pTotal} participant${pTotal > 1 ? 's' : ''} — anonymous session (one or more participants requested anonymity).`));
   } else {
-    const nameList = pEntries.map(([,p]) => p.name).join(', ');
+    const nameList = pEntries
+      .map(([,p]) => p.name + (p.present === false ? ' (left)' : ''))
+      .join(', ');
     story.push(fwPara(nameList));
+  }
+  const leftCount = pEntries.filter(([,p]) => p.present === false).length;
+  if (leftCount) {
+    story.push(fwPara(`${leftCount} of ${pTotal} had left the session by the time this was exported. Their contributions are included — leaving marks a participant absent, it does not withdraw what they said.`));
   }
 
   // Intent distribution
@@ -2223,6 +2797,52 @@ window.exportFedWiki = function() {
     .sort((a,b) => biasCounts[b.id] - biasCounts[a.id])
     .map(d => [d.label, String(biasCounts[d.id])]);
   if (biasRows.length) story.push(fwData(['Bias','Count'], biasRows));
+
+  // ── Positive Affect Score ──
+  const paScored    = pEntries.filter(([,p]) => p.pa && typeof p.pa.latest === 'number');
+  const naScoredAll = pEntries.filter(([,p]) => p.pa && typeof p.pa.naLatest === 'number');
+  if (paScored.length || naScoredAll.length) {
+    story.push(fwHeading('Positive Affect Score'));
+    story.push(fwPara(`PANAS, rated for how each person felt right now. Raw scores run 10\u201350. No activation band is assigned \u2014 the band crosswalk is calibrated for a past-week reading, not a moment in a meeting.`));
+
+    if (paScored.length) {
+      const vals      = paScored.map(([,p]) => p.pa.latest);
+      const mean      = vals.reduce((a,b) => a+b, 0) / vals.length;
+      const firsts    = paScored.map(([,p]) => typeof p.pa.first === 'number' ? p.pa.first : p.pa.latest);
+      const meanFirst = firsts.reduce((a,b) => a+b, 0) / firsts.length;
+      const delta     = mean - meanFirst;
+      const anyRetake = paScored.some(([,p]) => (p.pa.count || 1) > 1);
+      story.push(fwPara(
+        `Positive affect (PA-10): ${paScored.length} of ${pTotal} participant${pTotal > 1 ? 's' : ''} checked in. ` +
+        `Mean ${mean.toFixed(1)} \u00b7 range ${Math.min(...vals)}\u2013${Math.max(...vals)}` +
+        (anyRetake ? ` \u00b7 moved ${delta >= 0 ? '+' : ''}${delta.toFixed(1)} since the first check-in.` : '.')
+      ));
+    }
+
+    if (naScoredAll.length) {
+      const naVals = naScoredAll.map(([,p]) => p.pa.naLatest);
+      story.push(fwPara(
+        `Negative affect (NA-10): recorded by ${naScoredAll.length} of ${pTotal}. ` +
+        `Mean ${(naVals.reduce((a,b)=>a+b,0)/naVals.length).toFixed(1)} \u00b7 range ${Math.min(...naVals)}\u2013${Math.max(...naVals)}. ` +
+        `NA is scored separately and is never subtracted from PA \u2014 the two are close to independent.`
+      ));
+    }
+
+    if (isNamedMode) {
+      const rows = pEntries
+        .filter(([,p]) => p.pa && (typeof p.pa.latest === 'number' || typeof p.pa.naLatest === 'number'))
+        .map(([,p]) => [
+          p.name,
+          typeof p.pa.first  === 'number' ? String(p.pa.first)  : '\u2014',
+          typeof p.pa.latest === 'number' ? String(p.pa.latest) : '\u2014',
+          typeof p.pa.latest === 'number' ? String(p.pa.count || 1) : '\u2014',
+          typeof p.pa.naLatest === 'number' ? String(p.pa.naLatest) : '\u2014',
+        ]);
+      story.push(fwData(['Participant','PA first','PA latest','Check-ins','NA-10'], rows));
+    } else {
+      story.push(fwPara('Anonymous session \u2014 individual scores are not recorded.'));
+    }
+  }
 
   // ── Topics ──
   const topicItems = sortedTopics();
@@ -2338,6 +2958,68 @@ window.exportFedWiki = function() {
   a.click();
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(blobUrl); }, 200);
 };
+
+// Full session state, for archiving or analysis outside FedWiki. Names are
+// stripped when the session is anonymous, matching every other view.
+window.exportRawJSON = function() {
+  const now   = new Date();
+  const title = sessionTitle || ('Session ' + sessionId);
+
+  const participants = Object.entries(allParticipants)
+    .filter(([,p]) => p?.name)
+    .map(([key, p], i) => ({
+      id:      isNamedMode ? key : 'participant-' + (i + 1),
+      name:    isNamedMode ? p.name : null,
+      present: p.present !== false,
+      leftAt:  p.present === false && p.leftAt ? new Date(p.leftAt).toISOString() : null,
+      intents: p.intents || (p.intent ? [p.intent] : []),
+      biases:  p.biases || [],
+      customIntentDefs: p.customIntentDefs || [],
+      customBiasDefs:   p.customBiasDefs   || [],
+      affect: p.pa && (typeof p.pa.latest === 'number' || typeof p.pa.naLatest === 'number') ? {
+        instrument: 'PANAS',
+        timeframe:  'right now',
+        pa: typeof p.pa.latest === 'number' ? {
+          first:    typeof p.pa.first === 'number' ? p.pa.first : p.pa.latest,
+          latest:   p.pa.latest,
+          checkIns: p.pa.count || 1,
+        } : null,
+        na: typeof p.pa.naLatest === 'number' ? {
+          first:  typeof p.pa.naFirst === 'number' ? p.pa.naFirst : p.pa.naLatest,
+          latest: p.pa.naLatest,
+        } : null,
+      } : null,
+    }));
+
+  const payload = {
+    tool:      'RCN Conversation Navigator',
+    sessionId,
+    title,
+    exported:  now.toISOString(),
+    anonymous: !isNamedMode,
+    summary:      document.getElementById('exportSummary')?.value.trim()  || '',
+    carryForward: document.getElementById('exportCarryFwd')?.value.trim() || '',
+    participants,
+    topics: sortedTopics().map(t => ({ text: t.text, done: !!t.done })),
+    models: Object.fromEntries(Object.entries(modelData).map(([mid, d]) => [mid, {
+      nodes: Object.fromEntries(Object.entries(d.clicks?.nodes || {}).map(([k,v]) => [k, cntOf(v)])),
+      edges: Object.fromEntries(Object.entries(d.clicks?.edges || {}).map(([k,v]) => [k, cntOf(v)])),
+    }])),
+  };
+
+  const filename = (title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'session')
+    + '-' + now.toISOString().slice(0,10) + '.json';
+  downloadBlob(filename, JSON.stringify(payload, null, 2), 'application/json');
+};
+
+function downloadBlob(filename, text, mime) {
+  const blob    = new Blob([text], { type: mime });
+  const blobUrl = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), { href: blobUrl, download: filename });
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(blobUrl); }, 200);
+}
 
 window.switchTab = function(tab) {
   document.getElementById('viewParticipants').style.display = tab === 'participants' ? '' : 'none';
