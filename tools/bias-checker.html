@@ -1007,6 +1007,41 @@
   .pa-actions button { flex: 1; }
   .pa-foot { font-size: 0.75rem; color: var(--ink3); margin-top: 12px; font-style: italic; }
 
+  /* SESSION TAB */
+  .sess-block { padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .sess-label {
+    font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em;
+    text-transform: uppercase; font-weight: 700; color: var(--ink); margin-bottom: 8px;
+  }
+  .sess-label.danger { color: var(--accent); }
+  .sess-note { font-size: 0.8rem; color: var(--ink3); line-height: 1.5; margin: 6px 0 10px; }
+  .sess-now {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 14px; font-size: 0.88rem;
+  }
+  .sess-now .sid { font-family: 'DM Mono', monospace; font-size: 1.05rem; letter-spacing: 0.1em; }
+  .sess-now .meta { font-size: 0.78rem; color: var(--ink3); margin-top: 4px; }
+  .sess-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); margin-bottom: 6px;
+  }
+  .sess-row.current { border-color: var(--ink2); background: var(--surface2); }
+  .sess-row .rid { font-family: 'DM Mono', monospace; font-size: 0.8rem; letter-spacing: 0.08em; }
+  .sess-row .rtitle { font-size: 0.86rem; flex: 1; min-width: 0; }
+  .sess-row .rwhen { font-size: 0.72rem; color: var(--ink3); white-space: nowrap; }
+  .sess-row a.ropen {
+    font-size: 0.76rem; color: var(--accent); text-decoration: none;
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 3px 10px; white-space: nowrap;
+  }
+  .sess-row a.ropen:hover { border-color: var(--accent); }
+  .sess-row .rhere { font-size: 0.72rem; color: var(--ink3); white-space: nowrap; }
+  .sess-empty { font-size: 0.85rem; color: var(--ink3); font-style: italic; padding: 8px 0; }
+  .sess-danger {
+    margin-top: 18px; padding: 16px; border: 1.5px solid var(--accent);
+    border-radius: var(--radius); background: #fdf4f1;
+  }
+
   /* always-visible doc links in the footer — the help panel is behind a button,
      and someone handed the URL cold should still find the docs */
   .foot-docs { display: inline-flex; gap: 14px; flex-wrap: wrap; }
@@ -1073,7 +1108,8 @@
             <tr><td>Join</td><td>Enter your name and click Join. Your card appears for everyone.</td></tr>
             <tr><td>Leave</td><td>Close your tab. Your card is marked <em>left</em> and greys out, but everything you contributed stays in the session and in its export.</td></tr>
             <tr><td>Withdraw</td><td><em>Remove my input</em> in the left panel deletes your card and your contributions for good. That is the only thing that erases them.</td></tr>
-            <tr><td>End</td><td>Session data persists until someone ends it. <em>End session and delete all data</em> on the Export tab clears every record, topic and model interaction. Export first.</td></tr>
+            <tr><td>End</td><td>Session data persists until someone ends it. The <strong>Session</strong> tab holds the destructive actions, fenced off from everything else: <em>Clear all model interactions</em> and <em>End session and delete all data</em>. Export first — neither can be undone.</td></tr>
+            <tr><td>Find it again</td><td>The Session tab lists every session you have joined, in this browser. A session stays live until ended, so this is how you get back to one. <em>Start another session</em> opens a new one in a new tab, leaving the current one running.</td></tr>
           </tbody>
         </table>
       </div>
@@ -1231,7 +1267,7 @@
       <div style="margin-top:14px">
         <div class="section-label">Session Title</div>
         <input type="text" id="sessionTitleInput" placeholder="Name this session…" maxlength="80"
-          oninput="sessionTitle=this.value.trim()">
+          oninput="setSessionTitle(this.value)">
       </div>
     </div>
 
@@ -1292,6 +1328,7 @@
       <button class="tab-btn"        id="tabBtnMod"  onclick="switchTab('models')">Models</button>
       <button class="tab-btn"        id="tabBtnTop"  onclick="switchTab('topics')">Topics<span class="tab-badge" id="topicBadge" style="display:none"></span></button>
       <button class="tab-btn"        id="tabBtnExp"  onclick="switchTab('export')">Export</button>
+      <button class="tab-btn"        id="tabBtnSess" onclick="switchTab('session')">Session</button>
       <div class="tab-stats">
         <span class="stat-pill">Participants: <strong id="statPeople">0</strong></span>
         <span class="stat-pill">Active biases: <strong id="statBiases">0</strong></span>
@@ -1317,8 +1354,6 @@
     <div id="viewModels" style="display:none">
 
       <div style="display:flex;gap:8px;padding:8px 0 12px;flex-wrap:wrap;border-bottom:2px solid var(--ink2);margin-bottom:10px">
-        <button class="btn-secondary" style="border:1px solid var(--border)" onclick="resetModelData()">Reset interactions</button>
-        <button class="btn-secondary" style="border:1px solid var(--border)" onclick="newSession()">New session</button>
         <input type="file" id="graphFileInput" accept=".json" style="display:none" onchange="handleGraphFile(this)">
         <button class="btn-secondary" style="border:1px solid var(--border)" onclick="document.getElementById('graphFileInput').click()">Upload graph JSON</button>
         <div style="display:flex;align-items:center;gap:4px;flex:1;min-width:180px">
@@ -1420,10 +1455,37 @@
       <hr class="export-divider">
       <button class="btn-primary" onclick="exportFedWiki()" style="width:100%">Download FedWiki page JSON</button>
       <button class="btn-secondary" onclick="exportRawJSON()" style="width:100%;margin-top:8px;border:1px solid var(--border)">Download raw session JSON</button>
-      <p class="export-note" style="margin-top:8px">The FedWiki page drags into any FedWiki server. The raw JSON is the full session state — every participant, score, topic and model interaction — for archiving or your own analysis. Both include people who have already left.</p>
-      <hr class="export-divider">
-      <button class="btn-secondary danger" onclick="endSession()" style="width:100%">End session and delete all data</button>
-      <p class="export-note" style="margin-top:8px">Session data now persists after people leave, so it stays available until you end it here. Export first — this cannot be undone.</p>
+      <p class="export-note" style="margin-top:8px">The FedWiki page drags into any FedWiki server. The raw JSON is the full session state — every participant, score, topic and model interaction — for archiving or your own analysis. Both include people who have already left. Nothing here changes or deletes the session; ending it lives on the Session tab.</p>
+    </div>
+
+    <div id="viewSession" style="display:none">
+
+      <div class="sess-block">
+        <div class="sess-label">This session</div>
+        <div class="sess-now" id="sessNow"></div>
+      </div>
+
+      <div class="sess-block">
+        <div class="sess-label">Sessions you have joined</div>
+        <p class="sess-note">Kept in this browser only. A session stays live until somebody ends it, so this is how you find your way back to one.</p>
+        <div id="sessRecent"></div>
+      </div>
+
+      <div class="sess-block">
+        <div class="sess-label">Start another session</div>
+        <p class="sess-note">Opens a new session in a new tab. This one keeps running and stays in the list above.</p>
+        <button class="btn-secondary" style="width:100%;border:1px solid var(--border)" onclick="startAnotherSession()">Start another session ↗</button>
+      </div>
+
+      <div class="sess-danger">
+        <div class="sess-label danger">Destructive — these cannot be undone</div>
+        <p class="sess-note">Download what you need from the Export tab first.</p>
+        <button class="btn-secondary danger" style="width:100%" onclick="resetModelData()">Clear all model interactions</button>
+        <p class="sess-note">Wipes every click on every model, for everyone. Participants, topics and scores are untouched.</p>
+        <button class="btn-secondary danger" style="width:100%;margin-top:10px" onclick="endSession()">End session and delete all data</button>
+        <p class="sess-note">Deletes every participant record, all topics and all model interactions. The session is gone for everyone.</p>
+      </div>
+
     </div>
 
     <div id="viewTopics" style="display:none">
@@ -1669,6 +1731,14 @@ window.join = function() {
   // share URL
   document.getElementById("sessionShare").style.display = "block";
   document.getElementById("shareUrl").textContent = window.location.href;
+
+  rememberSession();
+  // restore the title you gave this session last time you were in it
+  const known = recentSessions().find(s => s.id === sessionId);
+  if (known && known.title && !sessionTitle) {
+    sessionTitle = known.title;
+    document.getElementById("sessionTitleInput").value = known.title;
+  }
 
   // Leaving marks you absent; it does not delete what you contributed. The
   // session record has to survive departure or the export only captures
@@ -2089,6 +2159,7 @@ window.endSession = function() {
   document.getElementById("identitySection").style.display = "none";
   document.getElementById("nameInput").disabled = false;
   document.getElementById("joinBtn").disabled   = false;
+  forgetSession(sessionId);   // nothing left to come back to
   showMsg("joinMsg", "Session ended. All data has been deleted.", "ok");
 };
 
@@ -3054,10 +3125,13 @@ window.switchTab = function(tab) {
   document.getElementById('viewModels').style.display       = tab === 'models'       ? '' : 'none';
   document.getElementById('viewTopics').style.display       = tab === 'topics'       ? '' : 'none';
   document.getElementById('viewExport').style.display       = tab === 'export'       ? '' : 'none';
+  document.getElementById('viewSession').style.display      = tab === 'session'      ? '' : 'none';
   document.getElementById('tabBtnPart').classList.toggle('active', tab === 'participants');
   document.getElementById('tabBtnMod').classList.toggle('active',  tab === 'models');
   document.getElementById('tabBtnTop').classList.toggle('active',  tab === 'topics');
   document.getElementById('tabBtnExp').classList.toggle('active',  tab === 'export');
+  document.getElementById('tabBtnSess').classList.toggle('active', tab === 'session');
+  if (tab === 'session') renderSessionTab();
   if (tab === 'export') {
     // ensure all model data is loaded before export
     ['sixq','cynefin','evsm','p15','sixhats', ...Object.keys(customGraphDefs)].forEach(m => ensureModelSub(m));
@@ -3211,11 +3285,81 @@ window.resetModelData = function() {
   });
 };
 
-window.newSession = function() {
-  if (!confirm('Start a new session? This page will reload with a fresh session ID.')) return;
+// ══════════════════════════════════════════════════
+// SESSION TAB — recent sessions, and the destructive actions
+// ══════════════════════════════════════════════════
+// Sessions now persist until somebody ends them, so walking away from one with
+// no record of its ID would strand real data in the database, live and
+// unreachable. Every session you join is remembered here, in this browser.
+const SESS_KEY = 'rcn.nav.recentSessions';
+
+function recentSessions() {
+  try { return JSON.parse(localStorage.getItem(SESS_KEY)) || []; }
+  catch(e) { return []; }
+}
+
+function rememberSession(patch) {
+  if (!sessionId) return;
+  const list = recentSessions().filter(s => s.id !== sessionId);
+  const prior = recentSessions().find(s => s.id === sessionId) || {};
+  list.unshift({ id: sessionId, title: (patch && patch.title) || prior.title || '',
+                 lastSeen: Date.now() });
+  try { localStorage.setItem(SESS_KEY, JSON.stringify(list.slice(0, 15))); } catch(e) {}
+  if (document.getElementById('viewSession')?.style.display !== 'none') renderSessionTab();
+}
+
+function forgetSession(id) {
+  try { localStorage.setItem(SESS_KEY, JSON.stringify(recentSessions().filter(s => s.id !== id))); } catch(e) {}
+  renderSessionTab();
+}
+window.forgetSession = forgetSession;
+
+function renderSessionTab() {
+  const now = document.getElementById('sessNow');
+  if (now) {
+    const people = Object.values(allParticipants).filter(p => p?.name);
+    const here   = people.filter(p => p.present !== false).length;
+    now.innerHTML = `<div class="sid">${sessionId || '—'}</div>
+      <div class="meta">${sessionTitle ? escHtml(sessionTitle) + ' · ' : ''}${people.length} participant${people.length === 1 ? '' : 's'}${people.length ? ` · ${here} still here` : ''}</div>`;
+  }
+
+  const el = document.getElementById('sessRecent');
+  if (!el) return;
+  const list = recentSessions();
+  if (!list.length) {
+    el.innerHTML = `<div class="sess-empty">No sessions remembered yet — join one and it appears here.</div>`;
+    return;
+  }
+  el.innerHTML = list.map(s => {
+    const isNow = s.id === sessionId;
+    const url = new URL(location.href);
+    url.searchParams.set('s', s.id);
+    const when = new Date(s.lastSeen).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+    return `<div class="sess-row ${isNow ? 'current' : ''}">
+      <span class="rid">${escHtml(s.id)}</span>
+      <span class="rtitle">${s.title ? escHtml(s.title) : '<span style="color:var(--ink3)">untitled</span>'}</span>
+      <span class="rwhen">${when}</span>
+      ${isNow ? '<span class="rhere">you are here</span>'
+              : `<a class="ropen" href="${escHtml(url.toString())}" target="_blank" rel="noopener">Open ↗</a>`}
+      <button class="hist-del" onclick="forgetSession('${escHtml(s.id)}')" title="Forget this session (does not delete it)">×</button>
+    </div>`;
+  }).join('');
+}
+
+// Inline handlers run in global scope, so the old oninput="sessionTitle=..."
+// was creating a global that this module never read — the typed title never
+// reached the export, which always fell back to "Session <id>".
+window.setSessionTitle = function(v) {
+  sessionTitle = v.trim();
+  rememberSession({ title: sessionTitle });
+};
+
+// Opens in a new tab: navigating away used to abandon the current session with
+// no way back to it.
+window.startAnotherSession = function() {
   const url = new URL(window.location.href);
   url.searchParams.set('s', generateId());
-  window.location.href = url.toString();
+  window.open(url.toString(), '_blank', 'noopener');
 };
 
 window.downloadModel = function(id) {
