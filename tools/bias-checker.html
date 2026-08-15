@@ -1614,6 +1614,7 @@ let dragType  = null; // 'intent' | 'bias'
 let myAnonConsent = false;
 let isNamedMode   = true;
 const sqCollapsed = {};
+let sawMyRecord = false;  // guards against a false eject in the gap before our first write lands
 let paDraft   = {};    // modal scratch: item index 0-9 → 1-5
 let paNaDraft = {};
 let paNaShown = false;
@@ -1702,6 +1703,15 @@ function boot() {
   const sessRef = ref(db, "sessions/" + sessionId);
   onValue(sessRef, snap => {
     allParticipants = snap.val() || {};
+    // If our own record vanishes while we are still joined, somebody ended the
+    // session (or removed us). Without noticing, this client would keep a live
+    // writeRef and push a full record straight back on the next interaction —
+    // resurrecting a session that was supposed to be gone — and its armed
+    // onDisconnect would recreate a stub on close.
+    if (joined && myKey) {
+      if (allParticipants[myKey]) sawMyRecord = true;
+      else if (sawMyRecord) { handleSessionEnded(); return; }
+    }
     renderGroup();
   });
 
@@ -1739,6 +1749,7 @@ window.join = function() {
   // reclaims the same record instead of leaving a ghost card behind, and the
   // rules can require $participantKey === auth.uid to write it.
   myKey  = myUid;
+  sawMyRecord = false;   // set true once our own write is visible
   writeRef = ref(db, "sessions/" + sessionId + "/" + myKey);
 
   joined = true;
@@ -1779,6 +1790,35 @@ window.join = function() {
     if (writeRef) fbUpdate(writeRef, { present: false, leftAt: Date.now() });
   });
 };
+
+// Somebody else ended the session, or removed us from it. Stand down cleanly:
+// cancel the armed onDisconnect so we do not write a stub back on close, drop
+// the writeRef so nothing can be pushed, and say what happened.
+function handleSessionEnded() {
+  sawMyRecord = false;
+  if (writeRef) { onDisconnect(writeRef).cancel(); writeRef = null; }
+  joined = false;
+
+  myIntents.clear();
+  myBiases.clear();
+  myPAFirst = myPALast = myNAFirst = myNALast = null;
+  myPACount = 0;
+  Object.keys(myModelClicks).forEach(k => {
+    myModelClicks[k].nodes.clear();
+    myModelClicks[k].edges.clear();
+  });
+
+  document.getElementById("controlsSection").style.display = "none";
+  document.getElementById("identitySection").style.display = "none";
+  document.getElementById("nameInput").disabled = false;
+  document.getElementById("joinBtn").disabled   = false;
+
+  renderIntentGrid();
+  renderBiasChecks();
+  renderPASummary();
+  renderGroup();
+  showMsg("joinMsg", "This session was ended. Anything you add now starts it fresh.", "error");
+}
 
 // Restore local state from a record we are resuming.
 function hydrateFromRecord(p) {
@@ -2140,7 +2180,8 @@ window.removeMyInput = function() {
   if (!confirm("Delete your card and everything you contributed to this session?\n\nThis cannot be undone, and your input will not appear in the session's export.")) return;
 
   const gone = writeRef;
-  writeRef = null;              // stop beforeunload from resurrecting the node
+  writeRef = null;
+  sawMyRecord = false;              // stop beforeunload from resurrecting the node
   onDisconnect(gone).cancel();
   remove(gone);
 
@@ -2204,6 +2245,7 @@ window.endSession = function() {
 
   if (writeRef) { onDisconnect(writeRef).cancel(); writeRef = null; }
   joined = false;
+  sawMyRecord = false;
   document.getElementById("controlsSection").style.display = "none";
   document.getElementById("identitySection").style.display = "none";
   document.getElementById("nameInput").disabled = false;
