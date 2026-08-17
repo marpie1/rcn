@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<!-- RCN Process Behavior Charts — Introduction & Positioning
+     Update this file when the chart vocabulary changes, when the WWHA framing
+     changes, or when the worked example is replaced with real data.
+     Sections marked UPDATE: are the most likely to need refreshing. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN Process Behavior Charts — Introduction</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#1e5f8c;text-decoration:none}
+a:hover{text-decoration:underline}
+
+.page{max-width:820px;margin:0 auto;padding:40px 24px 80px}
+
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:40px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:32px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569;line-height:1.5}
+.doc-meta{margin-top:14px;font-size:12px;color:#94a3b8}
+
+.doc-nav{display:flex;gap:12px;margin-bottom:40px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff;transition:background .15s}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#dbeafe;color:#1e4e79;border-color:#93c5fd}
+
+h2{font-size:20px;font-weight:700;color:#0f172a;margin:48px 0 14px;padding-top:8px;border-top:1px solid #e2e8f0}
+h3{font-size:15px;font-weight:600;color:#1e293b;margin:28px 0 8px}
+p{margin-bottom:14px;color:#334155}
+p:last-child{margin-bottom:0}
+strong{color:#0f172a}
+em.q{font-style:italic;color:#1e5f8c}
+
+.lead{font-size:17px;line-height:1.7;color:#1e293b;margin-bottom:28px;padding:20px 24px;background:#eff6fb;border-left:4px solid #1e5f8c;border-radius:0 8px 8px 0}
+
+.pull{font-size:19px;line-height:1.55;font-weight:600;color:#0f2f47;margin:30px 0;padding:0 0 0 20px;border-left:4px solid #d4622f}
+
+.highlight-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin:20px 0 28px}
+.hl-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px}
+.hl-card h4{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:6px}
+.hl-card p{font-size:12px;color:#475569;margin:0;line-height:1.55}
+
+.gaps-table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0 24px}
+.gaps-table th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+.gaps-table td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+.gaps-table td:first-child{font-weight:600;color:#0f172a}
+
+.warn{background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:16px 20px;margin:20px 0 28px}
+.warn h4{font-size:13px;font-weight:700;color:#854d0e;margin-bottom:6px}
+.warn p{font-size:13px;color:#713f12;margin:0 0 8px;line-height:1.6}
+.warn p:last-child{margin:0}
+
+.case{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px 22px;margin:20px 0 28px}
+.case h4{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:10px}
+.case .two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+@media(max-width:640px){.case .two{grid-template-columns:1fr}}
+.case .half{border:1px solid #e8eef4;border-radius:8px;padding:13px 15px;background:#fbfdfe}
+.case .half h5{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px}
+.case .half.a h5{color:#a33}
+.case .half.b h5{color:#2f6b45}
+.case .half p{font-size:12.5px;margin:0 0 6px;line-height:1.55}
+.case .half p:last-child{margin:0}
+.case code{background:#f1f5f9;padding:1px 5px;border-radius:4px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#0f2f47}
+
+.varbar{height:26px;border-radius:6px;overflow:hidden;display:flex;margin:12px 0 6px;border:1px solid #d9e2ea}
+.varbar div{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+
+.words{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 24px}
+.words span{font-size:13px;background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:4px 13px;color:#334155}
+.words span.na{background:#f8fafc;color:#94a3b8;text-decoration:line-through}
+
+.positioning{background:#0f172a;color:#f1f5f9;border-radius:12px;padding:28px 30px;margin-top:40px}
+.positioning h3{color:#f8fafc;font-size:16px;margin:0 0 12px}
+.positioning p{color:#cbd5e1;font-size:14px;line-height:1.7;margin:0 0 12px}
+.positioning p:last-child{margin-bottom:0}
+.positioning strong{color:#fff}
+
+.doc-footer{margin-top:48px;padding-top:20px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="doc-header">
+    <div class="doc-tag">ReLocalize Creativity Network · Open source · Free by design</div>
+    <h1 class="doc-title">Process Behavior Charts</h1>
+    <p class="doc-sub">Introduction — why measurement is not enough, and what a control chart adds</p>
+    <!-- UPDATE: date when tool changes significantly -->
+    <div class="doc-meta">Document updated: August 2026</div>
+  </div>
+
+  <nav class="doc-nav">
+    <a href="rcn-spc-intro.html" class="current">Introduction</a>
+    <a href="rcn-spc-manual.html">User Manual</a>
+    <a href="rcn-spc.html">Open the Tool ↗</a>
+  </nav>
+
+  <div class="lead">
+    <strong>Measurement gives you numbers. Measurement does not separate signal from noise.</strong>
+  </div>
+
+  <h2>The problem Statistical Process Control (SPC) charts solve</h2>
+  <p>
+    Suppose the co-op tracks referral turnaround. This month it is 8.1 days; last month it was 7.2.
+    Something got worse — or did it? The honest answer is that you cannot tell from those two numbers,
+    and no amount of additional precision in measuring them will help.
+  </p>
+  <p>
+    The question is not <em class="q">what is the number</em> but
+    <em class="q">how much does this number move due to random variation</em>.
+  </p>
+  <p>
+    In 1924, at Bell Labs Walter Shewhart solved this problem — how to distinguish random variation
+    within a process from true change in processes. Plot the numbers in time order. Compute, from the
+    point-to-point movement itself, how far the measure wanders when the process is unchanged. Draw those
+    bounds. A point outside them, or a pattern too orderly to be chance, is worth investigating.
+    Everything else is the process being itself.
+  </p>
+
+  <div class="pull">
+    Two mistakes are possible. Reacting to noise as though it were signal, and ignoring signal as though
+    it were noise. Both make things worse. A SPC chart is the only cheap way to stop doing either.
+  </div>
+
+  <h2>A SPC chart is not</h2>
+  <table class="gaps-table">
+    <tr><th style="width:24%">It is not</th><th>Because</th></tr>
+    <tr><td>A target line</td><td>Control Limits come from what the process actually <em>does</em>. A specification limit is target and it may be within the control limits or outside them.</td></tr>
+    <tr><td>A significance test</td><td>A statistical test asks whether a result could have come up by chance, and answers with odds. A control chart is not doing that, and you need no statistics at all to read one. Shewhart set the limits by asking a practical question instead: where do I draw the lines so that the least effort is wasted? Draw them too close to the middle and you spend your life chasing ordinary ups and downs that mean nothing. Draw them too far out and real changes slip past unnoticed. He settled on a distance that keeps both kinds of waste low, and a century of use across every kind of work has not improved on it. The lines mark where it starts to be worth asking what happened. They say nothing about how likely anything is.</td></tr>
+    <tr><td>A ranking</td><td>A ranking turns ordinary variation into a standing. Suppose the co-op posts a monthly list of its eight clinics ordered by referral turnaround. Someone is always last. Next month the order shuffles and someone else is last — not because anything changed at either clinic, but because these numbers move on their own. The clinic at the bottom gets scrutiny it did not earn, the clinic at the top gets credit it did not earn, and everyone learns to manage their position on the list. A chart asks a different question of each clinic: is this month different from that clinic's own history? Often the answer for all eight is no, and the ranking was measuring nothing at all.</td></tr>
+    <tr><td>A verdict on the people within the processes</td><td>Most variation belongs to the system (process), not the individuals inside it. SPC is how you find out when the measure is caused by something other than the structure of the process. You need this information before deciding whom to talk to.</td></tr>
+  </table>
+
+  <h2>The part that actually matters: rational subgrouping</h2>
+  <p>
+    How you group your numbers before charting them decides what the chart is able to find. This sounds
+    like a formatting detail. It is the whole thing.
+  </p>
+  <p>
+    Here is the everyday version. A school wants to know whether one classroom is doing something
+    different. Chart every student's score in a single pile and the ordinary spread between students is so
+    wide that no classroom could ever stand out — the differences you are hunting for are buried inside
+    the differences you are not. Compare classroom averages instead and the classrooms become the thing
+    that varies, so a genuinely different one shows up.
+  </p>
+  <p>
+    Nothing about the students changed. The grouping changed, and with it the question the chart is able
+    to answer.
+  </p>
+  <p>
+    Most software makes this choice for you and never mentions it — it simply takes five rows at a time,
+    forever. That default is a decision about what counts as normal, made by a program that knows nothing
+    about your work.
+  </p>
+  <p>
+    The rule underneath it is short. Whatever variation you put <strong>inside</strong> a group, the chart
+    treats as normal — that becomes the ruler it measures everything else against. Whatever is left
+    <strong>between</strong> groups is what the chart is able to flag.
+  </p>
+  <div class="case">
+    <div class="two">
+      <div class="half b">
+        <h5>Group by clinic</h5>
+        <p>The differences between clinics become the thing being tested. The chart can find them.</p>
+      </div>
+      <div class="half a">
+        <h5>Pool the clinics together</h5>
+        <p>Those same differences become part of the ruler. The chart can no longer see them, because you have told it they are normal.</p>
+      </div>
+    </div>
+  </div>
+  <p>
+    This is why the same numbers can produce two opposite conclusions, and why neither chart is lying.
+    Each answers the question it was asked. The grouping is how you asked it.
+  </p>
+
+  <h2>The worked case: referral turnaround at two clinics</h2>
+  <p>Twenty-four months, two clinics, one column of turnaround times from request to appointment.</p>
+  <p>
+    Pooled into one chart, the limits come out at <strong>−10.5 to 25.7 days</strong>. The data only ever
+    ranges from 3.7 to 11.8. Not one point signals. The chart says: the process is stable, predictable.
+    Because the clinics data from two processes are very divergent month to month, the calculated limits
+    are inflated enormously.
+  </p>
+  <p>
+    Subgrouped by clinic, <strong>99.4%</strong> of all the variation turns out to be <em>between</em> the
+    two clinics, not within them. North runs at 4.18 days. South runs at 10.99. Each is tight and stable
+    on its own. They are two entirely separate processes that happen to share a spreadsheet. F(1,46) = 3957.
+  </p>
+  <div class="varbar"><div style="width:99.4%;background:#d4622f">between clinics 99.4%</div><div style="width:0.6%;background:#7fa8c4"></div></div>
+  <p>
+    Shewhart called this pattern a <strong>mixture</strong>. The mixed or pooled chart is essentially useless.
+  </p>
+  <p>
+    The subgrouping panel in this tool states what fraction of the variation your grouping choice makes
+    obvious or hides.
+  </p>
+
+  <h2>Marking what you changed</h2>
+  <p>
+    The case above is a difference you did not know was there. The opposite case is just as common: a
+    change you made on purpose.
+  </p>
+  <p>
+    When the co-op adds a worker, simplifies a form, or moves a clinic, the numbers before and after are
+    not one process. Charted as one, they produce a centre line describing a level the process never ran
+    at, and limits wide enough to hide whatever happens next.
+  </p>
+  <p>
+    Take the CHW example shipped with the tool. A second community health worker joins at week 19 and
+    weekly visits rise from about 42 to about 55.
+  </p>
+  <table class="gaps-table">
+    <tr><th>Charted as</th><th>Centre line</th><th>Limits</th><th>Points flagged</th></tr>
+    <tr><td>One process, all 30 weeks</td><td>47.3</td><td>37.0 to 57.7</td><td>3</td></tr>
+    <tr><td>Change marked at week 19</td><td>41.9 then 55.5</td><td>31.7&ndash;52.1, then 46.1&ndash;64.9</td><td><strong>0</strong></td></tr>
+  </table>
+  <p>
+    <strong>Zero</strong> is the number to look at. Once the change is accounted for, each phase is stable
+    on its own — predictable before, predictable after, and the jump between them was the thing you did.
+    The single-process chart flags three weeks that were entirely ordinary for the period they belong to.
+  </p>
+  <p>
+    Click the chart where the change happened and type what it was. The note, and any link you attach to
+    the record of it, are drawn into the chart itself, so an exported or printed chart still says what
+    happened at week 19. A marked change with no reason attached is half a record.
+  </p>
+
+  <h2>The health care trap: overdispersion</h2>
+  <p>
+    Some of what the co-op measures is a share — how many out of how many. What portion of enrolled
+    members have a completed care plan, out of 1,200 enrolled.
+  </p>
+  <p>
+    There is a standard formula for how much a share like that should bounce around from month to month by
+    chance alone, and with 1,200 people in the denominator it says: hardly at all. About four percentage
+    points either side of the average, at most.
+  </p>
+  <p>
+    Real months do not behave that way. Across eighteen months, completion ranged from 52% to 72% — a
+    twenty-point spread — for entirely ordinary reasons: who was on holiday, which families moved in or
+    out, how a staffing gap happened to fall. The formula describes a world in which each of those 1,200
+    people is an independent coin flip with identical odds. People are not coin flips.
+  </p>
+  <p>Use that formula anyway and you get a chart that flags almost everything. This is that chart.</p>
+  <p><img src="spc-charts/p-naive.svg" alt="Standard share chart flagging eight of eighteen months" style="width:100%;height:auto;border:1px solid #e2e8f0;border-radius:8px"></p>
+  <p>
+    Eight of the eighteen months fall outside the limits. Taken at face value, that would mean something
+    extraordinary happened every other month for a year and a half. Nothing did.
+  </p>
+  <div class="warn">
+    <h4>What "the model is wrong" means</h4>
+    <p>
+      What is wrong is the assumption the limits were built from. A model, in this sense, is nothing more
+      than an assumption about how much a number ought to move on its own. This one assumed far too little
+      movement, so it drew the lines far too close together, and then faithfully reported every ordinary
+      month as an emergency. The chart is not finding problems in the clinics. It is finding that we
+      handed it the wrong assumption.
+    </p>
+  </div>
+  <p>
+    The fix is to stop assuming and measure it: look at how much the shares actually moved from one month
+    to the next, and set the limits from that instead. Here are the same eighteen months with that
+    correction applied.
+  </p>
+  <p><img src="spc-charts/p-laney.svg" alt="The same months with limits set from actual movement; one falls outside" style="width:100%;height:auto;border:1px solid #e2e8f0;border-radius:8px"></p>
+  <p>
+    One month now falls outside — month 1, at 52% against a lower limit of 53.4%. That is the only month
+    of the eighteen that behaved differently from the rest, and the only one where looking for a cause is
+    likely to find one. The other seven were never signals. They were the wrong limits.
+  </p>
+  <p>
+    The tool runs this check on every share chart, reports how far off the standard assumption was, and
+    applies the correction when you ask for it. If the assumption was right to begin with, the correction
+    changes nothing.
+  </p>
+
+  <h2>Four chart types</h2>
+  <p>The tool ships with four and leaves several out.</p>
+  <div class="highlight-grid">
+    <div class="hl-card"><h4>XmR</h4><p>One number per period. The workhorse; use it unless there is a specific reason not to.</p></div>
+    <div class="hl-card"><h4>p chart</h4><p>A proportion where the denominator moves every period. Limits step in and out to match.</p></div>
+    <div class="hl-card"><h4>u chart</h4><p>Counts over a varying area of opportunity, per 1,000 member-months or per 100 visits.</p></div>
+    <div class="hl-card"><h4>Run chart</h4><p>Median line, no limits. Fewer assumptions, less power. Good for very short series.</p></div>
+  </div>
+  <p>Deliberately left out:</p>
+  <div class="words">
+    <span class="na">X̄–R and X̄–S</span><span class="na">CUSUM</span><span class="na">EWMA</span>
+    <span class="na">Cp / Cpk capability</span><span class="na">ANOM</span><span class="na">funnel plots</span>
+  </div>
+  <p>
+    All are legitimate and some are excellent. They are absent because the first version of a tool should
+    be the version a board will actually read. The subgrouping panel already does the diagnostic work that
+    X̄–R and capability indices are usually reached for. If a real need appears — comparing fourteen
+    clinics at once genuinely wants a funnel plot — that is the moment to add one, not before.
+  </p>
+
+  <h2>Where this sits in the WWHA work</h2>
+  <p>
+    <!-- UPDATE: the four-aspect frame, if it changes -->
+    The Whatcom Wealth and Health work has four selected aspects: community health workers, the Shared
+    Care Plan, a RenDanHeYi cooperative structure, and this. They are not four separate projects.
+  </p>
+
+  <h2>Lineage</h2>
+  <p>
+    Shewhart at Bell Labs in the 1920s; Deming carrying it into management and into Japan; and for health
+    care specifically, <strong>Marilyn K. Hart and Robert F. Hart</strong>, whose
+    <em>Statistical Process Control for Health Care</em> (Duxbury/Thomson, 2002) is the reference this
+    tool follows where sources disagree.
+  </p>
+  <p>
+    Both are mathematicians, and they advised the major SPC software vendors on getting the arithmetic
+    right — which shows in their unusually careful treatment of the varying denominator, the case that
+    health care lives in and manufacturing textbooks treat as an afterthought.
+  </p>
+  <p>
+    The Harts worked in Whatcom County for more than a year, and Whatcom appears in the book. This is not
+    a method being imported here for the first time. It is a method coming back.
+  </p>
+
+  <h2>What to expect from adopting this</h2>
+  <p>
+    Most process measures, charted honestly, will turn out to be <strong>stable and unsatisfactory</strong>.
+    No signals, and the average is not where anyone wants it. That is the most common and most useful
+    finding, and it redirects the conversation from <em>who had a bad month</em> to
+    <strong><em>what would have to change about how we work</em></strong>.
+  </p>
+
+  <div class="positioning">
+    <h3>The charts must be readable</h3>
+    <p>
+      A picture a group can gather around, point at, and argue about without any training.
+      A control chart may be the best one ever invented for that, and it was finished in 1924.
+    </p>
+  </div>
+
+  <div class="doc-footer">
+    <span>RCN · Process Behavior Charts · Introduction</span>
+    <span><a href="rcn-spc-manual.html">User Manual →</a></span>
+  </div>
+
+</div>
+</body>
+</html>

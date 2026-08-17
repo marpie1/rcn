@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<!-- RCN Process Behavior Charts — User Manual
+     The reference document. Update alongside tools/rcn-spc.html; the formulas
+     section must stay in step with the SPC namespace in that file.
+     Sections marked UPDATE: change most often. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN Process Behavior Charts — User Manual</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#1e5f8c;text-decoration:none}
+a:hover{text-decoration:underline}
+
+.page{max-width:840px;margin:0 auto;padding:40px 24px 80px}
+
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:36px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:32px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569;line-height:1.5}
+.doc-meta{margin-top:14px;font-size:12px;color:#94a3b8}
+
+.doc-nav{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#dbeafe;color:#1e4e79;border-color:#93c5fd}
+
+.toc{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px 22px;margin-bottom:40px}
+.toc h4{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:10px}
+.toc ol{list-style:none;counter-reset:s;columns:2;column-gap:28px}
+@media(max-width:640px){.toc ol{columns:1}}
+.toc li{counter-increment:s;font-size:13px;margin-bottom:5px;break-inside:avoid}
+.toc li::before{content:counter(s) ". ";color:#94a3b8;font-variant-numeric:tabular-nums}
+
+h2{font-size:20px;font-weight:700;color:#0f172a;margin:52px 0 14px;padding-top:10px;border-top:1px solid #e2e8f0;scroll-margin-top:16px}
+h3{font-size:15px;font-weight:700;color:#1e293b;margin:28px 0 8px}
+h4{font-size:13.5px;font-weight:700;color:#334155;margin:20px 0 6px}
+p{margin-bottom:14px;color:#334155}
+p:last-child{margin-bottom:0}
+strong{color:#0f172a}
+ul,ol.body{margin:0 0 16px 22px}
+li{margin-bottom:6px;color:#334155}
+
+code{background:#eef2f6;padding:1px 5px;border-radius:4px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:#0f2f47}
+pre{background:#0f2f47;color:#e2ecf4;border-radius:8px;padding:14px 16px;overflow-x:auto;margin:12px 0 20px;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.6}
+pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+.lead{font-size:16px;line-height:1.7;color:#1e293b;margin-bottom:28px;padding:18px 22px;background:#eff6fb;border-left:4px solid #1e5f8c;border-radius:0 8px 8px 0}
+
+table.t{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0 24px}
+table.t th{text-align:left;padding:8px 11px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+table.t td{padding:8px 11px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+table.t td:first-child{font-weight:600;color:#0f172a}
+table.t.num td{font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+
+.note{background:#f0f7fc;border:1px solid #c5ddef;border-radius:9px;padding:15px 18px;margin:18px 0 26px}
+.note h4{font-size:12.5px;font-weight:700;color:#1e5f8c;margin:0 0 6px}
+.note p{font-size:13px;color:#2c4d68;margin:0 0 8px;line-height:1.6}
+.note p:last-child{margin:0}
+
+.warn{background:#fef9c3;border:1px solid #fde047;border-radius:9px;padding:15px 18px;margin:18px 0 26px}
+.warn h4{font-size:12.5px;font-weight:700;color:#854d0e;margin:0 0 6px}
+.warn p{font-size:13px;color:#713f12;margin:0 0 8px;line-height:1.6}
+.warn p:last-child{margin:0}
+
+.stop{background:#fdf0ee;border:1px solid #f0bdb3;border-radius:9px;padding:15px 18px;margin:18px 0 26px}
+.stop h4{font-size:12.5px;font-weight:700;color:#a83217;margin:0 0 6px}
+.stop p{font-size:13px;color:#7d2d1c;margin:0 0 8px;line-height:1.6}
+.stop p:last-child{margin:0}
+
+.doc-footer{margin-top:48px;padding-top:20px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="doc-header">
+    <div class="doc-tag">ReLocalize Creativity Network · Open source · Free by design</div>
+    <h1 class="doc-title">Process Behavior Charts</h1>
+    <p class="doc-sub">User Manual — loading data, choosing a chart, subgrouping, and reading what comes back</p>
+    <!-- UPDATE: date when tool changes significantly -->
+    <div class="doc-meta">Document updated: August 2026 · Matches tool version 1.0</div>
+  </div>
+
+  <nav class="doc-nav">
+    <a href="rcn-spc-intro.html">Introduction</a>
+    <a href="rcn-spc-manual.html" class="current">User Manual</a>
+    <a href="rcn-spc.html">Open the Tool ↗</a>
+  </nav>
+
+  <div class="toc">
+    <h4>Contents</h4>
+    <ol>
+      <li><a href="#start">Opening the tool</a></li>
+      <li><a href="#data">Loading data</a></li>
+      <li><a href="#choose">Choosing a chart</a></li>
+      <li><a href="#xmr">Reading an XmR chart</a></li>
+      <li><a href="#pu">Reading p and u charts</a></li>
+      <li><a href="#over">Overdispersion and Laney p′/u′</a></li>
+      <li><a href="#run">Run charts</a></li>
+      <li><a href="#sub">Rational subgrouping</a></li>
+      <li><a href="#base">Marking process changes</a></li>
+      <li><a href="#rules">Signals and the Nelson rules</a></li>
+      <li><a href="#median">Median moving range</a></li>
+      <li><a href="#export">Exporting and saving</a></li>
+      <li><a href="#clear">Clearing data</a></li>
+      <li><a href="#examples">The four worked examples</a></li>
+      <li><a href="#limits">What this tool does not do</a></li>
+      <li><a href="#formulas">Formulas and constants</a></li>
+    </ol>
+  </div>
+
+  <div class="lead">
+    The tool is one HTML file. Open it in any browser — no install, no server, no account, and nothing
+    you load ever leaves your machine. Everything below assumes you have it open beside this page.
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="start">1 · Opening the tool</h2>
+  <p>
+    Double-click <code>rcn-spc.html</code>, or drag it onto a browser window. The panel down the left side
+    runs top to bottom in the order you will actually use it: load data, pick a chart, decide on
+    subgrouping, adjust limits, export.
+  </p>
+  <p>
+    Nothing is saved automatically. Reloading the page loses your work. Use
+    <strong>Save session as JSON</strong> (§12) before you close the tab.
+  </p>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="data">2 · Loading data</h2>
+
+  <h3>The four examples</h3>
+  <p>
+    The first dropdown loads a synthetic dataset shaped like something the co-op will really collect.
+    Each one demonstrates a specific way numbers mislead. Start with <strong>Referral turnaround days</strong>.
+    Detailed walkthroughs are in §14.
+  </p>
+
+  <h3>Your own CSV</h3>
+  <p>
+    <strong>Paste CSV</strong> opens a box you can paste into; <strong>Open CSV file…</strong> reads a
+    file from disk. The first row must be column names. Numbers with <code>$</code>, <code>%</code>, or
+    thousands separators are read as numbers.
+  </p>
+  <p>
+    Rows are charted <strong>in the order they appear in the file</strong>. The tool does not sort them.
+    If your rows are not already in time order, sort them before loading — an out-of-order series produces
+    a moving range that is meaningless, and therefore limits that are meaningless.
+  </p>
+
+  <h4>Long format, not wide</h4>
+  <p>
+    One row per observation. If you have several clinics, do <em>not</em> put each clinic in its own
+    column — put a <code>clinic</code> column beside the value, so subgrouping has something to group by.
+  </p>
+  <pre><code>month,clinic,days
+2025-01,North,4.1
+2025-01,South,10.9
+2025-02,North,3.8
+2025-02,South,11.3</code></pre>
+  <p>For a proportion or a rate, give the numerator and denominator as separate columns. Never pre-compute the percentage — the tool needs the denominator to compute limits at all.</p>
+  <pre><code>month,enrolled,completed
+M01,820,426
+M02,905,498</code></pre>
+
+  <div class="stop">
+    <h4>Never load a pre-averaged column</h4>
+    <p>
+      If the number reaching you is already a monthly average of daily figures, the daily variation has
+      been thrown away and the limits you compute will be far too tight — the chart will signal
+      constantly. Get the underlying values if you possibly can. If you cannot, say so out loud when you
+      show the chart.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="choose">3 · Choosing a chart</h2>
+  <table class="t">
+    <tr><th style="width:22%">Your data</th><th style="width:16%">Chart</th><th>Example</th></tr>
+    <tr><td>One number per period</td><td><strong>XmR</strong></td><td>Turnaround days, cost per member month, visits per week, average wait</td></tr>
+    <tr><td>A count out of a total, where the total moves</td><td><strong>p chart</strong></td><td>Share of enrolled members with a completed care plan</td></tr>
+    <tr><td>A count over an area of opportunity</td><td><strong>u chart</strong></td><td>ED visits per 1,000 member-months; falls per 1,000 patient days</td></tr>
+    <tr><td>Very few points, or you want no assumptions</td><td><strong>Run chart</strong></td><td>The first eight weeks of anything</td></tr>
+  </table>
+  <div class="note">
+    <h4>When in doubt, XmR</h4>
+    <p>
+      An XmR chart on the rate itself is legitimate for almost any measure and makes no distributional
+      assumption at all. It is less powerful than a correctly specified p or u chart, and more robust than
+      an incorrectly specified one. If the p chart and the XmR chart of the same rates disagree
+      dramatically, that disagreement is itself the finding — see §6.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="xmr">4 · Reading an XmR chart</h2>
+  <p>Two charts stacked. The top plots the individual values; the bottom plots the moving range — the absolute gap between each point and the one before it.</p>
+  <table class="t">
+    <tr><th style="width:26%">Element</th><th>What it means</th></tr>
+    <tr><td>Solid blue line (CL)</td><td>The average of the values used to set the limits.</td></tr>
+    <tr><td>Dashed red lines</td><td>Natural process limits — how far this measure wanders when nothing has changed. Labelled UNPL and LNPL rather than UCL/LCL, because nothing is being controlled.</td></tr>
+    <tr><td>Red filled points</td><td>Signals. Hover for the rule and what it means; a short rule tag prints above the point.</td></tr>
+    <tr><td>Moving range chart</td><td>Read this <em>first</em>. If the moving range is out of control, the limits on the chart above were computed from an unstable estimate and cannot be trusted.</td></tr>
+  </table>
+
+  <div class="warn">
+    <h4>Why the limits are not mean ± 3 SD</h4>
+    <p>
+      The limits come from the <em>average moving range</em>, never from the standard deviation of all the
+      values. This is the most consequential detail in the whole method.
+    </p>
+    <p>
+      The standard deviation of all the values already contains any shift, trend, or outlier you are
+      trying to detect. Using it to build the limits means the signal inflates the very yardstick meant to
+      find it, and the chart goes quiet exactly when something is happening. The moving range only ever
+      looks at neighbouring pairs, so a shift halfway through the series barely affects it.
+    </p>
+    <p>
+      A spreadsheet "control chart" built on <code>=AVERAGE()±3*STDEV()</code> is not a control chart.
+      It is the single most common error in the field.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="pu">5 · Reading p and u charts</h2>
+  <p>
+    Pick the <strong>numerator</strong> (events) and the <strong>denominator</strong> (the area of
+    opportunity). For a u chart, <strong>Report rate per</strong> sets the axis units — 1,000 for
+    "per 1,000 member-months". Scaling changes the axis only; the arithmetic underneath is unaffected.
+  </p>
+  <h3>Why the limits step</h3>
+  <p>
+    The limits are recomputed at every point from that point's own denominator, so they widen where the
+    denominator is small and narrow where it is large. This produces a stepped, staircase look that
+    surprises people the first time. It is correct: a rate built on 300 member-months genuinely can wander
+    further than the same rate built on 9,000, and a chart with flat limits would call the small month a
+    signal purely for being small.
+  </p>
+  <div class="note">
+    <h4>Centre line is pooled, not averaged</h4>
+    <p>
+      The centre line is <code>Σ numerator ÷ Σ denominator</code> — not the mean of the individual rates.
+      Averaging the rates gives a small month the same weight as a large one and puts the centre line in
+      the wrong place. Some spreadsheet templates get this wrong.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="over">6 · Overdispersion and the Laney correction</h2>
+  <p>
+    This is the trap that matters most in health care, and the tool checks for it on every p and u chart.
+  </p>
+  <p>
+    A p chart assumes each period's count is binomial: same underlying probability, independent
+    observations. With a denominator of 1,200 that assumption implies a sigma of roughly 1.4 percentage
+    points. Real monthly figures for anything involving people move much more than that, for entirely
+    ordinary reasons — case mix, staffing, weather, who was on holiday.
+  </p>
+  <p>
+    When the assumption fails, the limits are far too tight and nearly every point is flagged. The chart
+    is not finding problems; it is finding that the binomial model was wrong.
+  </p>
+
+  <h3>Sigma z</h3>
+  <p>
+    The tool reports <strong>sigma z</strong> in the stats row under each p or u chart. Standardise every
+    point against its own theoretical sigma, then measure how much that standardised series actually
+    moves.
+  </p>
+  <table class="t num">
+    <tr><th>Sigma z</th><th>Reading</th><th>Do</th></tr>
+    <tr><td>≈ 1.0</td><td>The binomial or Poisson model holds.</td><td>Use the classical chart. Laney would change almost nothing.</td></tr>
+    <tr><td>&gt; 1.2</td><td>Overdispersion. Real between-period variation the model does not allow for.</td><td>Turn on Laney p′/u′. The tool says so in a red banner.</td></tr>
+    <tr><td>&lt; 0.75</td><td>Under-dispersion — points move <em>less</em> than chance permits.</td><td>Suspect the data. Usually a wrong denominator, pre-smoothing, or numbers adjusted before reporting.</td></tr>
+  </table>
+  <p>
+    With Laney on, the three-sigma half-width is multiplied by sigma z. If the data really were binomial,
+    sigma z lands near 1 and the correction does nothing — which is why it is safe to leave on when you
+    are unsure.
+  </p>
+  <div class="note">
+    <h4>The blunter alternative</h4>
+    <p>
+      Donald Wheeler's advice for the same situation is to skip attribute charts and put an
+      <strong>XmR chart on the rates</strong>. It reaches a similar place with less explaining and is a
+      perfectly defensible choice, especially with a lay audience. Laney keeps more information when the
+      denominators vary a lot; XmR is easier to defend in a room. Both are in the tool. Pick one and be
+      consistent.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="run">7 · Run charts</h2>
+  <p>
+    Median centre line, no limits, no distributional assumptions. Useful for the first handful of points,
+    before there is enough history to estimate limits honestly. The tool applies the Perla / Provost rules:
+  </p>
+  <table class="t">
+    <tr><th style="width:22%">Rule</th><th>Triggers on</th></tr>
+    <tr><td>Shift</td><td>Six or more consecutive points on the same side of the median. Points exactly on the median are skipped, not counted as either side.</td></tr>
+    <tr><td>Trend</td><td>Five or more points moving the same direction in a row.</td></tr>
+    <tr><td>Too few runs</td><td>Fewer crossings of the median than chance would produce — usually a shift or a trend already underway.</td></tr>
+    <tr><td>Too many runs</td><td>More crossings than chance allows. Often a mixture: two alternating sources (§8).</td></tr>
+  </table>
+  <p>A run chart cannot tell you a single point is unusual — it has no limits. That is the tradeoff for making no assumptions.</p>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="sub">8 · Rational subgrouping</h2>
+  <p>
+    This is the reason the tool exists, and the panel renders above the chart because the choice comes
+    before the picture.
+  </p>
+  <p>
+    Choosing a column in <strong>Subgrouping</strong> is not a display option. It is a claim about cause.
+    You are declaring that variation <em>inside</em> a group is noise — that becomes the yardstick — and
+    that anything worth detecting shows up <em>between</em> groups instead.
+  </p>
+
+  <h3>What the panel tells you</h3>
+  <table class="t">
+    <tr><th style="width:26%">Reading</th><th>Meaning</th></tr>
+    <tr><td>Sigma within</td><td>Pooled standard deviation inside the groups. This is what a chart built on this subgrouping would treat as noise.</td></tr>
+    <tr><td>Sigma overall</td><td>Standard deviation of everything, ignoring the grouping.</td></tr>
+    <tr><td>Ratio</td><td>Overall ÷ within. Near 1 means the grouping explains nothing. Large means the groups are genuinely different populations.</td></tr>
+    <tr><td>F and p</td><td>One-way analysis of variance. Is the between-group difference bigger than chance? With many observations even trivial differences reach significance, so read F alongside the share, never alone.</td></tr>
+    <tr><td>Share between / within</td><td>The orange-and-blue bar. Of all the variation present, how much lives between the groups. <strong>This is the number to act on.</strong></td></tr>
+  </table>
+
+  <h3>How to read the share</h3>
+  <table class="t">
+    <tr><th style="width:16%">Share between</th><th>What it means and what to do</th></tr>
+    <tr><td>Under 15%</td><td>The grouping explains almost nothing. Pool them; one chart is the honest picture. Note what this rules out — an intervention aimed at differences between these groups is aimed at almost nothing.</td></tr>
+    <tr><td>15–40%</td><td>Enough to matter, not the whole story. Chart it both ways. A difference this size will show up in a league table as a stable-looking ranking that is mostly noise.</td></tr>
+    <tr><td>Over 40%</td><td>These are separate processes sharing a spreadsheet. Tick <strong>Chart each subgroup separately</strong>. A pooled chart here is actively misleading.</td></tr>
+  </table>
+
+  <h3>The two failure modes to recognise</h3>
+  <h4>Mixture</h4>
+  <p>
+    Two or more different sources alternating in one series. The point-to-point movement is huge, so the
+    limits are enormous and nothing ever signals. Symptom: a chart that looks impossibly calm, with points
+    hugging neither the centre nor the limits but scattered widely inside them. The tool's Nelson rule 8
+    (eight in a row beyond one sigma) is aimed at this. The referral turnaround example is a pure case.
+  </p>
+  <h4>Stratification</h4>
+  <p>
+    The opposite. The subgroup straddles two sources in a way that inflates the <em>within</em>-group
+    estimate, making the limits too wide and the points cling to the centre line. Symptom: a chart where
+    everything sits in the middle third and nothing ever comes close to a limit. Nelson rule 7 (fifteen in
+    a row hugging the centre) catches it.
+  </p>
+  <div class="note">
+    <h4>Both look like good news</h4>
+    <p>
+      A mixture and a stratification both produce a chart with no signals. That is why "no signals" is
+      never sufficient on its own — check the subgrouping panel before you believe a quiet chart.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="base">9 · Marking process changes</h2>
+  <p>
+    When you deliberately change a process — add a worker, change a form, move a clinic — the numbers
+    before and after are not one process. Charting them as one produces a centre line describing a state
+    of affairs that never existed, and limits wide enough to hide what happened next.
+  </p>
+  <p>
+    <strong>Click the chart where the change happened.</strong> A purple marker appears, and everything
+    from that point on becomes a new phase with its own centre line and its own limits, computed only from
+    its own points. Click the same place again to remove it. You can also type row numbers into
+    <strong>New phase begins at row…</strong> — <code>19, 34</code> gives three phases — and you can mark
+    as many changes as the series really had.
+  </p>
+  <p>Three things happen at every boundary, and software that skips any of them produces a chart that looks right and is wrong:</p>
+  <ul>
+    <li>Each phase gets its own centre line and limits, from its own points only.</li>
+    <li>The run rules restart. A run of nine on one side of the centre line means nothing if it straddles a change you made on purpose.</li>
+    <li>The moving range that spans the boundary is dropped. It measures the change you already know about, and leaving it in would inflate the limits of whichever phase claimed it — the exact error the change point was drawn to avoid. It shows faded on the moving range chart and is never flagged.</li>
+  </ul>
+  <h3>Say what changed</h3>
+  <p>
+    Every change point carries a <strong>note</strong> and, optionally, a <strong>link</strong>. Type them
+    into the box that appears under the row number, or click the chart and start typing — the note field
+    takes focus straight away.
+  </p>
+  <p>
+    Both are drawn <em>into the chart itself</em>, in a numbered block below the plot. This matters: a chart
+    that leaves the tool as an SVG, a PNG, a slide, or a sheet of paper still says what happened at week 19.
+    A marked change with no reason attached is half a record — six months later nobody remembers, and the
+    phase boundary becomes an unexplainable kink in the data.
+  </p>
+  <div class="note">
+    <h4>Links are printed, not just clickable</h4>
+    <p>
+      The URL is drawn as readable text as well as being wrapped in a link, because a printed link that is
+      not spelled out is no link at all. Only <code>http://</code> and <code>https://</code> addresses become
+      links; anything else stays plain text and the field turns pink to tell you so.
+    </p>
+  </div>
+  <h3>Every phase reports its own numbers</h3>
+  <p>
+    The centre line and both limits are labelled at the right-hand end of the phase they belong to — the
+    last phase in the right margin, earlier phases just inside the plot, right-aligned against the boundary
+    and set with a white outline so they stay readable over the data. You never have to go to a table to
+    find out what the line in front of you is worth.
+  </p>
+  <div class="note">
+    <h4>On p and u charts the limits step</h4>
+    <p>
+      Because the limits move with the denominator, a limit label shows the value at that point — the last
+      point of its phase. The centre line is pooled across the phase and is exact everywhere in it.
+    </p>
+  </div>
+  <p>
+    Under the charts you get a phase table as well: where each phase runs, how many points, its centre
+    line, its limits, how many points fall outside, and what changed. A phase whose reason has not been
+    written yet says so in red.
+  </p>
+
+  <h3>Worked case — the CHW example</h3>
+  <p>A second community health worker joins at week 19 and weekly visits rise from about 42 to about 55.</p>
+  <table class="t num">
+    <tr><th>Charted as</th><th>Centre line</th><th>Limits</th><th>Points outside</th></tr>
+    <tr><td>One process, all 30 weeks</td><td>47.3</td><td>37.0 to 57.7</td><td>3</td></tr>
+    <tr><td>Change point at week 19</td><td>41.9 then 55.5</td><td>31.7–52.1, then 46.1–64.9</td><td>0</td></tr>
+  </table>
+  <div class="note">
+    <h4>Read the second row carefully — it is the whole point</h4>
+    <p>
+      <strong>Zero.</strong> Once the change is accounted for, both phases are stable on their own. The
+      process behaved predictably before, behaved predictably after, and the jump between them was the
+      thing you did — not a signal to investigate.
+    </p>
+    <p>
+      The first row is worse than useless. Its centre line of 47.3 describes a level the process never
+      ran at, and its three flagged points invite you to investigate weeks that were entirely ordinary
+      for the period they belong to.
+    </p>
+  </div>
+
+  <h3>The baseline window, and how it differs</h3>
+  <p>
+    <strong>Baseline window</strong> freezes the limits on rows 1 to N and extends them forward unchanged.
+    A dashed grey marker shows where. These two features answer opposite questions and should not be confused:
+  </p>
+  <table class="t">
+    <tr><td>Baseline window</td><td><em>Tests</em> whether later points still belong to the same process. You do not yet know that anything changed, and you are asking the chart.</td></tr>
+    <tr><td>Change point</td><td><em>Declares</em> that they do not. You already know what happened and when, and you are telling the chart.</td></tr>
+  </table>
+  <p>
+    Use a baseline when you suspect a change and want evidence: freeze on the stable stretch and see
+    whether later points break out. Use a change point when the change is a matter of record. Setting
+    change points disables the baseline field, because running both at once has no coherent meaning.
+  </p>
+  <p>
+    One discipline applies to both: choose the row from knowledge of what happened, not by trying rows
+    until the chart looks the way you want. Picking the boundary after seeing the answer is how honest
+    charting turns into decoration. Say out loud which row you used and why.
+  </p>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="rules">10 · Signals and the Nelson rules</h2>
+  <p>
+    Rule 1 — a point outside the limits — always applies. The checkbox <strong>Apply Nelson rules 2–8</strong>
+    adds the pattern rules, on by default.
+  </p>
+  <div class="scroll">
+  <table class="t">
+    <tr><th style="width:8%">Rule</th><th style="width:38%">Pattern</th><th>Usually means</th></tr>
+    <tr><td>1</td><td>One point beyond three sigma</td><td>Something specific and datable happened</td></tr>
+    <tr><td>2</td><td>Nine in a row on one side of the centre</td><td>The average has shifted</td></tr>
+    <tr><td>3</td><td>Six steadily increasing or decreasing</td><td>A trend — drift, wear, seasonal climb</td></tr>
+    <tr><td>4</td><td>Fourteen alternating up and down</td><td>Over-adjustment, or two sources taking turns</td></tr>
+    <tr><td>5</td><td>Two of three beyond two sigma, same side</td><td>A shift beginning</td></tr>
+    <tr><td>6</td><td>Four of five beyond one sigma, same side</td><td>A smaller shift</td></tr>
+    <tr><td>7</td><td>Fifteen in a row within one sigma</td><td>Stratification, or limits computed too wide</td></tr>
+    <tr><td>8</td><td>Eight in a row all beyond one sigma</td><td>A mixture of two processes</td></tr>
+  </table>
+  </div>
+  <div class="warn">
+    <h4>Extra rules are not free</h4>
+    <p>
+      Rule 1 alone gives roughly one false alarm in every 370 points. Running all eight together brings
+      that to roughly one in 90 — about four times as many false alarms. With a monthly measure and eight
+      rules, expect a spurious signal a little more than once a decade per chart; with fifteen charts on a
+      dashboard, expect one most years.
+    </p>
+    <p>
+      That is often a fair trade for the extra sensitivity. It is not free, and anyone presenting a chart
+      should know which rules were on.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="median">11 · Median moving range</h2>
+  <p>
+    On XmR charts only. Uses the median of the moving ranges instead of the average, with the constant
+    3.145 in place of 2.660.
+  </p>
+  <p>
+    Turn it on when a small number of large jumps is inflating the average moving range and widening the
+    limits so much that nothing signals. The median is barely affected by a few extreme gaps. Compare both
+    — if they agree, use the average; if they disagree sharply, you have outliers worth understanding
+    before you chart anything.
+  </p>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="export">12 · Exporting and saving</h2>
+  <table class="t">
+    <tr><th style="width:26%">Button</th><th>What you get</th></tr>
+    <tr><td>Download chart as SVG</td><td>The first chart on the page as vector art. Fonts are written as attributes, so text stays laid out correctly in Illustrator, Inkscape, and PowerPoint.</td></tr>
+    <tr><td>Download chart as PNG</td><td>The same chart rasterised at 2× for slides and documents.</td></tr>
+    <tr><td>Save session as JSON</td><td>Data plus every setting — chart type, columns, subgrouping, baseline, flags. This is the only way to preserve work.</td></tr>
+    <tr><td>Open saved session…</td><td>Restores a saved JSON exactly, including which checkboxes were ticked.</td></tr>
+  </table>
+  <p>SVG and PNG export the <em>first</em> chart rendered. To export a particular subgroup's chart, uncheck the split, filter to that subgroup, and export.</p>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="clear">13 · Clearing data</h2>
+  <p>
+    <strong>Discard all loaded data</strong> sits alone at the bottom of the panel in a marked box, well
+    away from the export buttons, and asks for confirmation. That separation is deliberate: an action that
+    destroys work should never sit beside one that saves it.
+  </p>
+  <p>There is no undo. Save the session first.</p>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="examples">14 · The four worked examples</h2>
+  <!-- UPDATE: replace these with real WWHA data when it is available -->
+  <p>All four are synthetic and shaped to teach one thing each. None contains real patient data.</p>
+
+  <h3>Referral turnaround days — the subgrouping case</h3>
+  <p>
+    Twenty-four months, two clinics, pooled into one column. Chart it as loaded, ungrouped: the limits come
+    out at <code>−10.5</code> to <code>25.7</code> days while the data only spans 3.7 to 11.8, and not a
+    single point signals. Then set Subgrouping to <code>clinic</code>: <strong>99.4%</strong> of the
+    variation is between the clinics, <code>F(1,46) = 3957</code>. Tick <strong>Chart each subgroup
+    separately</strong> and two tight, stable, entirely different processes appear — North at 4.18 days,
+    South at 10.99.
+  </p>
+  <p>The pooled chart was not merely less informative. It reported "nothing to see" about a seven-day gap between two clinics.</p>
+
+  <h3>CHW home visits per week — the baseline case</h3>
+  <p>
+    Thirty weeks, with a real program change at week 19. Chart it as loaded, then set the baseline window
+    to 18. Signals go from 3 to 11. See §9.
+  </p>
+
+  <h3>SCP completion rate — the overdispersion case</h3>
+  <p>
+    Eighteen months, denominators from 820 to 1,400. As a classical p chart, <strong>8 of 18</strong>
+    months fall outside the limits — an implausible amount of special cause. Sigma z is
+    <code>2.37</code>: the months move well over twice as much as the binomial model permits. Turn on
+    Laney p′ and <strong>1 of 18</strong> remains. That one is worth a conversation; the other seven were
+    the model failing, not the clinics.
+  </p>
+
+  <h3>ED visits per 1,000 member-months — the varying denominator case</h3>
+  <p>
+    Membership climbs from 3,200 to 9,300 member-months and falls back. Watch the limits narrow as
+    membership grows and widen as it shrinks. Nothing is wrong; that is what correct limits do. A chart
+    with fixed limits would flag the small months for being small.
+  </p>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="limits">15 · What this tool does not do</h2>
+  <p>Stated plainly, because a tool that hides its limits is worse than one that lacks features.</p>
+  <table class="t">
+    <tr><th style="width:30%">Not handled</th><th>What to do instead</th></tr>
+    <tr><td><strong>Autocorrelation</strong></td><td>Series with momentum — daily census, wait times, anything where today depends on yesterday — break the independence assumption and produce limits that are much too tight. The tool does not detect this. Sample at a longer interval, or model the series and chart the residuals in R.</td></tr>
+    <tr><td>X̄–R and X̄–S charts</td><td>Not included. The subgrouping panel does the diagnostic work these are usually reached for. If you need them, use the <code>qcc</code> package in R.</td></tr>
+    <tr><td>Rare events (g and t charts)</td><td>Days-between-events charting for things like infections or falls is not implemented. Use <code>qicharts2</code> in R.</td></tr>
+    <tr><td>Capability indices</td><td>No Cp/Cpk. They need a specification limit, and health care measures rarely have a real one.</td></tr>
+    <tr><td>Comparing many units at once</td><td>For fourteen clinics side by side, a funnel plot is the right tool and this is not it. The subgroup table gives the numbers; the picture would have to be built elsewhere.</td></tr>
+    <tr><td>Unequal group variances</td><td>The ANOVA in the subgrouping panel assumes group variances are roughly comparable. When one group is far more variable than the others, read the per-group SD column rather than trusting F.</td></tr>
+    <tr><td>Persistence</td><td>Nothing is stored. Closing the tab loses everything not exported.</td></tr>
+  </table>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 id="formulas">16 · Formulas and constants</h2>
+  <p>
+    Everything the tool computes, so it can be checked by hand or against another package. These follow
+    Hart &amp; Hart, <em>Statistical Process Control for Health Care</em> (Duxbury/Thomson, 2002).
+  </p>
+
+  <h3>XmR</h3>
+  <pre><code>mR_i   = |x_i − x_(i−1)|
+CL     = x̄
+UNPL   = x̄ + 2.660 · mR̄        LNPL = x̄ − 2.660 · mR̄
+URL    = 3.268 · mR̄             (moving range chart)
+sigma  = mR̄ / 1.128             (1.128 = d2 at n = 2)
+
+median moving range variant:
+UNPL   = x̄ + 3.145 · mR̃        URL  = 3.865 · mR̃</code></pre>
+
+  <h3>p chart</h3>
+  <pre><code>p̄       = Σd_i / Σn_i                 (pooled, not the mean of p_i)
+p_i      = d_i / n_i
+sigma_i  = √( p̄(1 − p̄) / n_i )
+UCL_i    = p̄ + 3 · sigma_i            clamped to [0, 1]</code></pre>
+
+  <h3>u chart</h3>
+  <pre><code>ū        = Σc_i / Σa_i
+u_i      = c_i / a_i
+sigma_i  = √( ū / a_i )
+UCL_i    = ū + 3 · sigma_i            LCL clamped at 0</code></pre>
+
+  <h3>Laney p′ / u′</h3>
+  <pre><code>z_i      = (p_i − p̄) / sigma_i
+sigma_z  = mR̄(z) / 1.128
+UCL_i    = p̄ + 3 · sigma_z · sigma_i</code></pre>
+
+  <h3>Subgrouping — one-way decomposition</h3>
+  <pre><code>MSB      = Σ n_j (x̄_j − x̄)² / (k − 1)
+MSW      = Σ Σ (x_ij − x̄_j)² / (N − k)
+F        = MSB / MSW        on (k − 1, N − k) degrees of freedom
+
+n0       = ( N − Σ n_j² / N ) / (k − 1)
+var_between = max(0, (MSB − MSW) / n0)
+var_within  = MSW
+share       = var_between / (var_between + var_within)</code></pre>
+  <p>The p-value comes from the regularised incomplete beta function, evaluated by continued fraction — no lookup tables, no normal approximation.</p>
+
+  <h3>Shewhart constants</h3>
+  <div class="scroll">
+  <table class="t num">
+    <tr><th>n</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th></tr>
+    <tr><td>d₂</td><td>1.128</td><td>1.693</td><td>2.059</td><td>2.326</td><td>2.534</td><td>2.704</td><td>2.847</td><td>2.970</td><td>3.078</td></tr>
+    <tr><td>d₃</td><td>0.853</td><td>0.888</td><td>0.880</td><td>0.864</td><td>0.848</td><td>0.833</td><td>0.820</td><td>0.808</td><td>0.797</td></tr>
+    <tr><td>c₄</td><td>0.7979</td><td>0.8862</td><td>0.9213</td><td>0.9400</td><td>0.9515</td><td>0.9594</td><td>0.9650</td><td>0.9693</td><td>0.9727</td></tr>
+  </table>
+  </div>
+  <p style="font-size:13px;color:#475569">
+    The XmR constants derive from these: <code>3 / d₂(2) = 3 / 1.128 = 2.660</code>, and
+    <code>3 / 0.954 = 3.145</code> for the median moving range, where 0.954 is the corresponding bias
+    factor at n = 2. Beyond n = 10, c₄ is approximated by <code>4(n−1) / (4n−3)</code>.
+  </p>
+
+  <div class="doc-footer">
+    <span>RCN · Process Behavior Charts · User Manual</span>
+    <span><a href="rcn-spc-intro.html">← Introduction</a> · <a href="rcn-spc.html">Open the Tool ↗</a></span>
+  </div>
+
+</div>
+</body>
+</html>

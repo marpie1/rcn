@@ -1,0 +1,731 @@
+{
+  "title": "Process Behavior Charts User Manual",
+  "story": [
+    {
+      "type": "markdown",
+      "text": "The tool is one HTML file. Open it in any browser — no install, no server, no account, and nothing you load ever leaves your machine.",
+      "id": "1e81bcadab9a3ebc"
+    },
+    {
+      "type": "markdown",
+      "text": "## 1 · Opening the tool",
+      "id": "88cca61375bb7252"
+    },
+    {
+      "type": "markdown",
+      "text": "Double-click `rcn-spc.html`, or drag it onto a browser window. The panel down the left side runs top to bottom in the order you will actually use it: load data, pick a chart, decide on subgrouping, adjust limits, export.",
+      "id": "8ad0cfbafbc20d76"
+    },
+    {
+      "type": "markdown",
+      "text": "Nothing is saved automatically. Reloading the page loses your work. Use **Save session as JSON** before you close the tab.",
+      "id": "c0d7029c1355a4c0"
+    },
+    {
+      "type": "markdown",
+      "text": "## 2 · Loading data",
+      "id": "1e2b737132d2fb23"
+    },
+    {
+      "type": "markdown",
+      "text": "The first dropdown loads a synthetic dataset shaped like something the co-op will really collect. Each one demonstrates a specific way numbers mislead. Start with **Referral turnaround days**.",
+      "id": "958db9fd35264159"
+    },
+    {
+      "type": "markdown",
+      "text": "**Paste CSV** opens a box you can paste into; **Open CSV file…** reads a file from disk. The first row must be column names. Numbers with `$`, `%`, or thousands separators are read as numbers.",
+      "id": "3aa3c045e529e956"
+    },
+    {
+      "type": "markdown",
+      "text": "Rows are charted **in the order they appear in the file**. The tool does not sort them. If your rows are not already in time order, sort them before loading — an out-of-order series produces a moving range that is meaningless, and therefore limits that are meaningless.",
+      "id": "b61c6a1155804348"
+    },
+    {
+      "type": "markdown",
+      "text": "### Long format, not wide",
+      "id": "d731ff783f2110ce"
+    },
+    {
+      "type": "markdown",
+      "text": "One row per observation. If you have several clinics, do *not* put each clinic in its own column — put a `clinic` column beside the value, so subgrouping has something to group by.",
+      "id": "ff161a37b0f1ce79"
+    },
+    {
+      "type": "markdown",
+      "text": "```\nmonth,clinic,days\n2025-01,North,4.1\n2025-01,South,10.9\n2025-02,North,3.8\n2025-02,South,11.3\n```",
+      "id": "d978338b57104cc1"
+    },
+    {
+      "type": "markdown",
+      "text": "For a proportion or a rate, give the numerator and denominator as separate columns. Never pre-compute the percentage — the tool needs the denominator to compute limits at all.",
+      "id": "bfed518e42635108"
+    },
+    {
+      "type": "markdown",
+      "text": "```\nmonth,enrolled,completed\nM01,820,426\nM02,905,498\n```",
+      "id": "b10f12093d25bb45"
+    },
+    {
+      "type": "markdown",
+      "text": "**Never load a pre-averaged column.** If the number reaching you is already a monthly average of daily figures, the daily variation has been thrown away and the limits you compute will be far too tight — the chart will signal constantly. Get the underlying values if you possibly can. If you cannot, say so out loud when you show the chart.",
+      "id": "5f810eda44eeb553"
+    },
+    {
+      "type": "markdown",
+      "text": "## 3 · Choosing a chart",
+      "id": "235dab472d468ef3"
+    },
+    {
+      "type": "markdown",
+      "text": "**Your data:** One number per period — **Chart:** XmR — **Example:** Turnaround days, cost per member month, visits per week, average wait",
+      "id": "09ff6d99b1481139"
+    },
+    {
+      "type": "markdown",
+      "text": "**Your data:** A count out of a total, where the total moves — **Chart:** p chart — **Example:** Share of enrolled members with a completed care plan",
+      "id": "91240f7e081a95ed"
+    },
+    {
+      "type": "markdown",
+      "text": "**Your data:** A count over an area of opportunity — **Chart:** u chart — **Example:** ED visits per 1,000 member-months; falls per 1,000 patient days",
+      "id": "4589e2f2b3d234f3"
+    },
+    {
+      "type": "markdown",
+      "text": "**Your data:** Very few points, or you want no assumptions — **Chart:** Run chart — **Example:** The first eight weeks of anything",
+      "id": "5fac563a2549759a"
+    },
+    {
+      "type": "markdown",
+      "text": "When in doubt, XmR. An XmR chart on the rate itself is legitimate for almost any measure and makes no distributional assumption at all. It is less powerful than a correctly specified p or u chart, and more robust than an incorrectly specified one. If the p chart and the XmR chart of the same rates disagree dramatically, that disagreement is itself the finding.",
+      "id": "8d0c6871969736a2"
+    },
+    {
+      "type": "markdown",
+      "text": "## 4 · Reading an XmR chart",
+      "id": "c8e091b56d329a4b"
+    },
+    {
+      "type": "markdown",
+      "text": "Two charts stacked. The top plots the individual values; the bottom plots the moving range — the absolute gap between each point and the one before it.",
+      "id": "9127b86b43352c08"
+    },
+    {
+      "type": "markdown",
+      "text": "**Element:** Solid blue line (CL) — **What it means:** The average of the values used to set the limits.",
+      "id": "53635207c1e96583"
+    },
+    {
+      "type": "markdown",
+      "text": "**Element:** Dashed red lines — **What it means:** Natural process limits — how far this measure wanders when nothing has changed. Labelled UNPL and LNPL rather than UCL/LCL, because nothing is being controlled.",
+      "id": "a159a0183d80e66f"
+    },
+    {
+      "type": "markdown",
+      "text": "**Element:** Red filled points — **What it means:** Signals. Hover for the rule and what it means; a short rule tag prints above the point.",
+      "id": "c8eecf9364481648"
+    },
+    {
+      "type": "markdown",
+      "text": "**Element:** Moving range chart — **What it means:** Read this *first*. If the moving range is out of control, the limits on the chart above were computed from an unstable estimate and cannot be trusted.",
+      "id": "c57d63330f88f897"
+    },
+    {
+      "type": "markdown",
+      "text": "### Why the limits are not mean ± 3 SD",
+      "id": "60a3eabb1d9a56d6"
+    },
+    {
+      "type": "markdown",
+      "text": "The limits come from the *average moving range*, never from the standard deviation of all the values. This is the most consequential detail in the whole method.",
+      "id": "e9cf08ef8b341f69"
+    },
+    {
+      "type": "markdown",
+      "text": "The standard deviation of all the values already contains any shift, trend, or outlier you are trying to detect. Using it to build the limits means the signal inflates the very yardstick meant to find it, and the chart goes quiet exactly when something is happening. The moving range only ever looks at neighbouring pairs, so a shift halfway through the series barely affects it.",
+      "id": "6763cbdc1e71c934"
+    },
+    {
+      "type": "markdown",
+      "text": "A spreadsheet \"control chart\" built on `=AVERAGE()±3*STDEV()` is not a control chart. It is the single most common error in the field.",
+      "id": "e42e52ff98c4cb0e"
+    },
+    {
+      "type": "markdown",
+      "text": "## 5 · Reading p and u charts",
+      "id": "b8a1224d2b9f9a3e"
+    },
+    {
+      "type": "markdown",
+      "text": "Pick the **numerator** (events) and the **denominator** (the area of opportunity). For a u chart, **Report rate per** sets the axis units — 1,000 for \"per 1,000 member-months\". Scaling changes the axis only; the arithmetic underneath is unaffected.",
+      "id": "90143009c87623ae"
+    },
+    {
+      "type": "markdown",
+      "text": "The limits are recomputed at every point from that point's own denominator, so they widen where the denominator is small and narrow where it is large. This produces a stepped, staircase look that surprises people the first time. It is correct: a rate built on 300 member-months genuinely can wander further than the same rate built on 9,000, and a chart with flat limits would call the small month a signal purely for being small.",
+      "id": "7810fad94a11d202"
+    },
+    {
+      "type": "markdown",
+      "text": "The centre line is `Σ numerator ÷ Σ denominator` — not the mean of the individual rates. Averaging the rates gives a small month the same weight as a large one and puts the centre line in the wrong place. Some spreadsheet templates get this wrong.",
+      "id": "f3e1b5b42b45c8fc"
+    },
+    {
+      "type": "markdown",
+      "text": "## 6 · Overdispersion and the Laney correction",
+      "id": "d1281c8c3eeabf45"
+    },
+    {
+      "type": "markdown",
+      "text": "A p chart assumes each period's count is binomial: same underlying probability, independent observations. With a denominator of 1,200 that assumption implies a sigma of roughly 1.4 percentage points. Real monthly figures for anything involving people move much more than that, for entirely ordinary reasons — case mix, staffing, weather, who was on holiday.",
+      "id": "c98112c5efb73bfa"
+    },
+    {
+      "type": "markdown",
+      "text": "When the assumption fails, the limits are far too tight and nearly every point is flagged. The chart is not finding problems; it is finding that the binomial model was wrong.",
+      "id": "a112a12805e5e372"
+    },
+    {
+      "type": "markdown",
+      "text": "The tool reports **sigma z** in the stats row under each p or u chart. Standardise every point against its own theoretical sigma, then measure how much that standardised series actually moves.",
+      "id": "c2238f7debef64a7"
+    },
+    {
+      "type": "markdown",
+      "text": "**Sigma z:** About 1.0 — **Reading:** The binomial or Poisson model holds. — **Do:** Use the classical chart. Laney would change almost nothing.",
+      "id": "335916b14ad39485"
+    },
+    {
+      "type": "markdown",
+      "text": "**Sigma z:** Above 1.2 — **Reading:** Overdispersion. Real between-period variation the model does not allow for. — **Do:** Turn on Laney p′/u′. The tool says so in a red banner.",
+      "id": "d590cf2222fff1d9"
+    },
+    {
+      "type": "markdown",
+      "text": "**Sigma z:** Below 0.75 — **Reading:** Under-dispersion — points move *less* than chance permits. — **Do:** Suspect the data. Usually a wrong denominator, pre-smoothing, or numbers adjusted before reporting.",
+      "id": "85b85c52fdfea9b3"
+    },
+    {
+      "type": "markdown",
+      "text": "With Laney on, the three-sigma half-width is multiplied by sigma z. If the data really were binomial, sigma z lands near 1 and the correction does nothing — which is why it is safe to leave on when you are unsure.",
+      "id": "40a1f656749bc8c0"
+    },
+    {
+      "type": "markdown",
+      "text": "Donald Wheeler's advice for the same situation is to skip attribute charts and put an **XmR chart on the rates**. It reaches a similar place with less explaining and is a perfectly defensible choice, especially with a lay audience. Laney keeps more information when the denominators vary a lot; XmR is easier to defend in a room. Both are in the tool. Pick one and be consistent.",
+      "id": "049aad5535e1097e"
+    },
+    {
+      "type": "markdown",
+      "text": "## 7 · Run charts",
+      "id": "1ed6756f75eb8965"
+    },
+    {
+      "type": "markdown",
+      "text": "Median centre line, no limits, no distributional assumptions. Useful for the first handful of points, before there is enough history to estimate limits honestly. The tool applies the Perla / Provost rules.",
+      "id": "4f04a1799e44155c"
+    },
+    {
+      "type": "markdown",
+      "text": "**Rule:** Shift — **Triggers on:** Six or more consecutive points on the same side of the median. Points exactly on the median are skipped, not counted as either side.",
+      "id": "ac2d2e471f49d3f3"
+    },
+    {
+      "type": "markdown",
+      "text": "**Rule:** Trend — **Triggers on:** Five or more points moving the same direction in a row.",
+      "id": "eb235699a51909f5"
+    },
+    {
+      "type": "markdown",
+      "text": "**Rule:** Too few runs — **Triggers on:** Fewer crossings of the median than chance would produce — usually a shift or a trend already underway.",
+      "id": "a342b4c07232d5da"
+    },
+    {
+      "type": "markdown",
+      "text": "**Rule:** Too many runs — **Triggers on:** More crossings than chance allows. Often a mixture: two alternating sources.",
+      "id": "29a75c38ba9cdcbe"
+    },
+    {
+      "type": "markdown",
+      "text": "A run chart cannot tell you a single point is unusual — it has no limits. That is the tradeoff for making no assumptions.",
+      "id": "54a514fc7f803379"
+    },
+    {
+      "type": "markdown",
+      "text": "## 8 · Rational subgrouping",
+      "id": "70c8ebd7f870bd76"
+    },
+    {
+      "type": "markdown",
+      "text": "This is the reason the tool exists, and the panel renders above the chart because the choice comes before the picture.",
+      "id": "b9ecfd3595d5671e"
+    },
+    {
+      "type": "markdown",
+      "text": "Choosing a column in **Subgrouping** is not a display option. It is a claim about cause. You are declaring that variation *inside* a group is noise — that becomes the yardstick — and that anything worth detecting shows up *between* groups instead.",
+      "id": "392ff2707fc993c9"
+    },
+    {
+      "type": "markdown",
+      "text": "**Reading:** Sigma within — **Meaning:** Pooled standard deviation inside the groups. This is what a chart built on this subgrouping would treat as noise.",
+      "id": "b3ed86ebc1af80c8"
+    },
+    {
+      "type": "markdown",
+      "text": "**Reading:** Sigma overall — **Meaning:** Standard deviation of everything, ignoring the grouping.",
+      "id": "ebe4178ce4c0973d"
+    },
+    {
+      "type": "markdown",
+      "text": "**Reading:** Ratio — **Meaning:** Overall ÷ within. Near 1 means the grouping explains nothing. Large means the groups are genuinely different populations.",
+      "id": "ad229e74fe24c8a1"
+    },
+    {
+      "type": "markdown",
+      "text": "**Reading:** F and p — **Meaning:** One-way analysis of variance. Is the between-group difference bigger than chance? With many observations even trivial differences reach significance, so read F alongside the share, never alone.",
+      "id": "77dda1aa098ee2eb"
+    },
+    {
+      "type": "markdown",
+      "text": "**Reading:** Share between and within — **Meaning:** The orange-and-blue bar. Of all the variation present, how much lives between the groups. This is the number to act on.",
+      "id": "05bbbffbed969178"
+    },
+    {
+      "type": "markdown",
+      "text": "### How to read the share",
+      "id": "ab0eb339422be7a3"
+    },
+    {
+      "type": "markdown",
+      "text": "**Share between:** Under 15% — **What it means and what to do:** The grouping explains almost nothing. Pool them; one chart is the honest picture. Note what this rules out — an intervention aimed at differences between these groups is aimed at almost nothing.",
+      "id": "2de022a7508a1686"
+    },
+    {
+      "type": "markdown",
+      "text": "**Share between:** 15 to 40% — **What it means and what to do:** Enough to matter, not the whole story. Chart it both ways. A difference this size will show up in a league table as a stable-looking ranking that is mostly noise.",
+      "id": "158e5ad18403b3ef"
+    },
+    {
+      "type": "markdown",
+      "text": "**Share between:** Over 40% — **What it means and what to do:** These are separate processes sharing a spreadsheet. Tick **Chart each subgroup separately**. A pooled chart here is actively misleading.",
+      "id": "5410555079d337f3"
+    },
+    {
+      "type": "markdown",
+      "text": "### The two failure modes to recognise",
+      "id": "d40b46f50c0fe578"
+    },
+    {
+      "type": "markdown",
+      "text": "**Mixture.** Two or more different sources alternating in one series. The point-to-point movement is huge, so the limits are enormous and nothing ever signals. Symptom: a chart that looks impossibly calm, with points scattered widely inside them. Nelson rule 8 is aimed at this. The referral turnaround example is a pure case.",
+      "id": "4721d68121879a22"
+    },
+    {
+      "type": "markdown",
+      "text": "**Stratification.** The opposite. The subgroup straddles two sources in a way that inflates the *within*-group estimate, making the limits too wide and the points cling to the centre line. Symptom: a chart where everything sits in the middle third and nothing ever comes close to a limit. Nelson rule 7 catches it.",
+      "id": "98299027c578ce12"
+    },
+    {
+      "type": "markdown",
+      "text": "Both look like good news. A mixture and a stratification both produce a chart with no signals. That is why \"no signals\" is never sufficient on its own — check the subgrouping panel before you believe a quiet chart.",
+      "id": "0986822b4bdcbe7a"
+    },
+    {
+      "type": "markdown",
+      "text": "## 9 · Marking process changes",
+      "id": "fb2282c4bbd87e0b"
+    },
+    {
+      "type": "markdown",
+      "text": "When you deliberately change a process — add a worker, change a form, move a clinic — the numbers before and after are not one process. Charting them as one produces a centre line that describes a state of affairs that never existed, and limits wide enough to hide what happened next.",
+      "id": "bdb0f8e2656122a9"
+    },
+    {
+      "type": "markdown",
+      "text": "**Click the chart where the change happened.** A purple marker appears, and everything from that point on becomes a new phase with its own centre line and its own limits, computed only from its own points. Click the same place again to remove it. You can also type row numbers into **New phase begins at row…** — `19, 34` gives three phases — and you can mark as many changes as the series really had.",
+      "id": "e06aa45daed76525"
+    },
+    {
+      "type": "markdown",
+      "text": "Three things happen at every boundary, and software that skips any of them produces a chart that looks right and is wrong.",
+      "id": "50dd191e7c54e7f8"
+    },
+    {
+      "type": "markdown",
+      "text": "- Each phase gets its own centre line and limits, from its own points only.\n- The run rules restart. A run of nine on one side of the centre line means nothing if it straddles a change you made on purpose.\n- The moving range that spans the boundary is dropped. It measures the change you already know about, and leaving it in would inflate the limits of whichever phase claimed it — the exact error the change point was drawn to avoid. It is shown faded on the moving range chart and never flagged.",
+      "id": "f0cc5d8c99887833"
+    },
+    {
+      "type": "markdown",
+      "text": "### Say what changed",
+      "id": "2c4650c065d4a575"
+    },
+    {
+      "type": "markdown",
+      "text": "Every change point carries a **note** and, optionally, a **link**. Type them into the box that appears under the row number, or click the chart and start typing — the note field takes focus straight away.",
+      "id": "542dde11eef8a20f"
+    },
+    {
+      "type": "markdown",
+      "text": "Both are drawn *into the chart itself*, in a numbered block below the plot. This matters: a chart that leaves the tool as an SVG, a PNG, a slide, or a sheet of paper still says what happened at week 19. A marked change with no reason attached is half a record — six months later nobody remembers, and the phase boundary becomes an unexplainable kink in the data.",
+      "id": "23dcdfa9012af93b"
+    },
+    {
+      "type": "markdown",
+      "text": "The link is printed as readable text as well as being clickable, because a printed link that is not spelled out is no link at all. Only `http://` and `https://` addresses are turned into links; anything else stays as plain text, and the field turns pink to tell you so.",
+      "id": "cdf07e0ae657e0a7"
+    },
+    {
+      "type": "markdown",
+      "text": "Each phase also reports its own numbers **on the chart itself**. The centre line and both limits are labelled at the right-hand end of the phase they belong to — the last phase in the right margin, earlier phases just inside the plot, right-aligned against the boundary and set with a white outline so they stay readable over the data. You never have to go to a table to find out what the line in front of you is worth.",
+      "id": "d26a64aa4d34162c"
+    },
+    {
+      "type": "markdown",
+      "text": "On p and u charts the limits step with the denominator, so a limit label shows the value at that point — the last point of its phase. The centre line is pooled across the phase and is exact everywhere in it.",
+      "id": "a899baefa9fc92b2"
+    },
+    {
+      "type": "markdown",
+      "text": "Under the charts you get a phase table as well: where each phase runs, how many points, its centre line, its limits, how many points fall outside, and what changed. A phase whose reason has not been written yet says so in red.",
+      "id": "2f639e3fc40e55c4"
+    },
+    {
+      "type": "markdown",
+      "text": "### Worked case — the CHW example",
+      "id": "d24466b4340eb271"
+    },
+    {
+      "type": "markdown",
+      "text": "A second community health worker joins at week 19 and weekly visits rise from about 42 to about 55.",
+      "id": "42445fffb89a643d"
+    },
+    {
+      "type": "markdown",
+      "text": "**Charted as:** One process, all 30 weeks — **Centre line:** 47.3 — **Limits:** 37.0 to 57.7 — **Points outside:** 3",
+      "id": "618e4fc85a168d18"
+    },
+    {
+      "type": "markdown",
+      "text": "**Charted as:** Change point at week 19 — **Centre line:** 41.9 then 55.5 — **Limits:** 31.7–52.1, then 46.1–64.9 — **Points outside:** 0",
+      "id": "ca9f96ffafdab9ff"
+    },
+    {
+      "type": "markdown",
+      "text": "Read the second row carefully, because it is the whole point. **Zero.** Once the change is accounted for, both phases are stable on their own. The process behaved predictably before, behaved predictably after, and the jump between them was the thing you did — not a signal to investigate.",
+      "id": "70cf05a5f2ac3cf3"
+    },
+    {
+      "type": "markdown",
+      "text": "The first row is worse than useless. Its centre line of 47.3 describes a level the process never actually ran at, and its three flagged points invite you to investigate weeks that were entirely ordinary for the period they belong to.",
+      "id": "23f128af6c09cc9f"
+    },
+    {
+      "type": "markdown",
+      "text": "### The baseline window, and how it differs",
+      "id": "86f036d71ef70669"
+    },
+    {
+      "type": "markdown",
+      "text": "**Baseline window** freezes the limits on rows 1 to N and extends them forward unchanged. A dashed grey marker shows where.",
+      "id": "9fb2601b406857a5"
+    },
+    {
+      "type": "markdown",
+      "text": "These two features answer opposite questions and should not be confused:",
+      "id": "8d63b0f2005692b8"
+    },
+    {
+      "type": "markdown",
+      "text": "- A **baseline window** *tests* whether later points still belong to the same process. You do not yet know that anything changed, and you are asking the chart.\n- A **change point** *declares* that they do not. You already know what happened and when, and you are telling the chart.",
+      "id": "fcb98d0333542fa6"
+    },
+    {
+      "type": "markdown",
+      "text": "So use a baseline when you suspect a change and want evidence: freeze on the stable stretch and see whether later points break out. Use a change point when the change is a matter of record. Setting change points disables the baseline field, because running both at once has no coherent meaning.",
+      "id": "6917be3efff6764b"
+    },
+    {
+      "type": "markdown",
+      "text": "One discipline applies to both: choose the row from knowledge of what happened, not by trying rows until the chart looks the way you want. Picking the boundary after seeing the answer is how honest charting turns into decoration. Say out loud which row you used and why.",
+      "id": "bdf44d1af93ed471"
+    },
+    {
+      "type": "markdown",
+      "text": "## 10 · Signals and the Nelson rules",
+      "id": "a27ed46ede7feeab"
+    },
+    {
+      "type": "markdown",
+      "text": "Rule 1 — a point outside the limits — always applies. The checkbox **Apply Nelson rules 2–8** adds the pattern rules, on by default.",
+      "id": "d1e0fa214d2a0a84"
+    },
+    {
+      "type": "markdown",
+      "text": "**Rule:** 1 — **Pattern:** One point beyond three sigma — **Usually means:** Something specific and datable happened",
+      "id": "2e214268df8f46ae"
+    },
+    {
+      "type": "markdown",
+      "text": "**Rule:** 2 — **Pattern:** Nine in a row on one side of the centre — **Usually means:** The average has shifted",
+      "id": "987d8cbb499011ff"
+    },
+    {
+      "type": "markdown",
+      "text": "**Rule:** 3 — **Pattern:** Six steadily increasing or decreasing — **Usually means:** A trend — drift, wear, seasonal climb",
+      "id": "95d924c185b613c3"
+    },
+    {
+      "type": "markdown",
+      "text": "**Rule:** 4 — **Pattern:** Fourteen alternating up and down — **Usually means:** Over-adjustment, or two sources taking turns",
+      "id": "ffd117e6c72ad06c"
+    },
+    {
+      "type": "markdown",
+      "text": "**Rule:** 5 — **Pattern:** Two of three beyond two sigma, same side — **Usually means:** A shift beginning",
+      "id": "ca1b318c736eb8e0"
+    },
+    {
+      "type": "markdown",
+      "text": "**Rule:** 6 — **Pattern:** Four of five beyond one sigma, same side — **Usually means:** A smaller shift",
+      "id": "476ae277adf1022b"
+    },
+    {
+      "type": "markdown",
+      "text": "**Rule:** 7 — **Pattern:** Fifteen in a row within one sigma — **Usually means:** Stratification, or limits computed too wide",
+      "id": "27f7a856dc9cc552"
+    },
+    {
+      "type": "markdown",
+      "text": "**Rule:** 8 — **Pattern:** Eight in a row all beyond one sigma — **Usually means:** A mixture of two processes",
+      "id": "37f4ec125331246f"
+    },
+    {
+      "type": "markdown",
+      "text": "Extra rules are not free. Rule 1 alone gives roughly one false alarm in every 370 points. Running all eight together brings that to roughly one in 90 — about four times as many false alarms. With a monthly measure and eight rules, expect a spurious signal a little more than once a decade per chart; with fifteen charts on a dashboard, expect one most years.",
+      "id": "14b2a151968664af"
+    },
+    {
+      "type": "markdown",
+      "text": "That is often a fair trade for the extra sensitivity. It is not free, and anyone presenting a chart should know which rules were on.",
+      "id": "f4384cfb916b1f1b"
+    },
+    {
+      "type": "markdown",
+      "text": "## 11 · Median moving range",
+      "id": "aefd3c7d5d55f0ff"
+    },
+    {
+      "type": "markdown",
+      "text": "On XmR charts only. Uses the median of the moving ranges instead of the average, with the constant 3.145 in place of 2.660.",
+      "id": "703d157c31d7b4ff"
+    },
+    {
+      "type": "markdown",
+      "text": "Turn it on when a small number of large jumps is inflating the average moving range and widening the limits so much that nothing signals. The median is barely affected by a few extreme gaps. Compare both — if they agree, use the average; if they disagree sharply, you have outliers worth understanding before you chart anything.",
+      "id": "6706e590b63a168c"
+    },
+    {
+      "type": "markdown",
+      "text": "## 12 · Exporting and saving",
+      "id": "4603eea149ff43d1"
+    },
+    {
+      "type": "markdown",
+      "text": "**Button:** Download chart as SVG — **What you get:** The first chart on the page as vector art. Fonts are written as attributes, so text stays laid out correctly in Illustrator, Inkscape, and PowerPoint.",
+      "id": "b487e9d22143c80d"
+    },
+    {
+      "type": "markdown",
+      "text": "**Button:** Download chart as PNG — **What you get:** The same chart rasterised at 2× for slides and documents.",
+      "id": "f52517497ec05f65"
+    },
+    {
+      "type": "markdown",
+      "text": "**Button:** Save session as JSON — **What you get:** Data plus every setting — chart type, columns, subgrouping, baseline, flags. This is the only way to preserve work.",
+      "id": "a75bdaf7fc36d51c"
+    },
+    {
+      "type": "markdown",
+      "text": "**Button:** Open saved session — **What you get:** Restores a saved JSON exactly, including which checkboxes were ticked.",
+      "id": "40ce66eaf3473b57"
+    },
+    {
+      "type": "markdown",
+      "text": "SVG and PNG export the *first* chart rendered. To export a particular subgroup's chart, uncheck the split, filter to that subgroup, and export.",
+      "id": "7a9ded43b5611f13"
+    },
+    {
+      "type": "markdown",
+      "text": "## 13 · Clearing data",
+      "id": "c3dec68c28d03895"
+    },
+    {
+      "type": "markdown",
+      "text": "**Discard all loaded data** sits alone at the bottom of the panel in a marked box, well away from the export buttons, and asks for confirmation. That separation is deliberate: an action that destroys work should never sit beside one that saves it.",
+      "id": "3a50032c896ce41f"
+    },
+    {
+      "type": "markdown",
+      "text": "There is no undo. Save the session first.",
+      "id": "53f55d5c8a4383ca"
+    },
+    {
+      "type": "markdown",
+      "text": "## 14 · The four worked examples",
+      "id": "ff06277243782bed"
+    },
+    {
+      "type": "markdown",
+      "text": "All four are synthetic and shaped to teach one thing each. None contains real patient data.",
+      "id": "9067803608661fb3"
+    },
+    {
+      "type": "markdown",
+      "text": "**Referral turnaround days — the subgrouping case.** Twenty-four months, two clinics, pooled into one column. Chart it as loaded, ungrouped: the limits come out at −10.5 to 25.7 days while the data only spans 3.7 to 11.8, and not a single point signals. Then set Subgrouping to `clinic`: 99.4% of the variation is between the clinics, F(1,46) = 3957. Tick **Chart each subgroup separately** and two tight, stable, entirely different processes appear — North at 4.18 days, South at 10.99. The pooled chart was not merely less informative. It reported \"nothing to see\" about a seven-day gap between two clinics.",
+      "id": "58403b4814161c24"
+    },
+    {
+      "type": "markdown",
+      "text": "**CHW home visits per week — the baseline case.** Thirty weeks, with a real program change at week 19. Chart it as loaded, then set the baseline window to 18. Signals go from 3 to 11.",
+      "id": "14a1c096f23df13e"
+    },
+    {
+      "type": "markdown",
+      "text": "**SCP completion rate — the overdispersion case.** Eighteen months, denominators from 820 to 1,400. As a classical p chart, 8 of 18 months fall outside the limits — an implausible amount of special cause. Sigma z is 2.37: the months move well over twice as much as the binomial model permits. Turn on Laney p′ and 1 of 18 remains. That one is worth a conversation; the other seven were the model failing, not the clinics.",
+      "id": "b484dff88c5736f8"
+    },
+    {
+      "type": "markdown",
+      "text": "**ED visits per 1,000 member-months — the varying denominator case.** Membership climbs from 3,200 to 9,300 member-months and falls back. Watch the limits narrow as membership grows and widen as it shrinks. Nothing is wrong; that is what correct limits do. A chart with fixed limits would flag the small months for being small.",
+      "id": "83620ba9f5f35edc"
+    },
+    {
+      "type": "markdown",
+      "text": "## 15 · What this tool does not do",
+      "id": "70e61cd4f08c8cd6"
+    },
+    {
+      "type": "markdown",
+      "text": "Stated plainly, because a tool that hides its limits is worse than one that lacks features.",
+      "id": "b2ea8efcade44668"
+    },
+    {
+      "type": "markdown",
+      "text": "**Not handled:** Autocorrelation — **What to do instead:** Series with momentum — daily census, wait times, anything where today depends on yesterday — break the independence assumption and produce limits that are much too tight. The tool does not detect this. Sample at a longer interval, or model the series and chart the residuals in R.",
+      "id": "c1bd36ab5daae6f5"
+    },
+    {
+      "type": "markdown",
+      "text": "**Not handled:** X̄–R and X̄–S charts — **What to do instead:** Not included. The subgrouping panel does the diagnostic work these are usually reached for. If you need them, use the `qcc` package in R.",
+      "id": "953e529b49cbdcb3"
+    },
+    {
+      "type": "markdown",
+      "text": "**Not handled:** Rare events (g and t charts) — **What to do instead:** Days-between-events charting for things like infections or falls is not implemented. Use `qicharts2` in R.",
+      "id": "4bbf6bb5a482d5a9"
+    },
+    {
+      "type": "markdown",
+      "text": "**Not handled:** Capability indices — **What to do instead:** No Cp/Cpk. They need a specification limit, and health care measures rarely have a real one.",
+      "id": "d7c6a4c0716db85d"
+    },
+    {
+      "type": "markdown",
+      "text": "**Not handled:** Comparing many units at once — **What to do instead:** For fourteen clinics side by side, a funnel plot is the right tool and this is not it. The subgroup table gives the numbers; the picture would have to be built elsewhere.",
+      "id": "11b98f0a93b80534"
+    },
+    {
+      "type": "markdown",
+      "text": "**Not handled:** Unequal group variances — **What to do instead:** The ANOVA in the subgrouping panel assumes group variances are roughly comparable. When one group is far more variable than the others, read the per-group SD column rather than trusting F.",
+      "id": "2d260441befe026e"
+    },
+    {
+      "type": "markdown",
+      "text": "**Not handled:** Persistence — **What to do instead:** Nothing is stored. Closing the tab loses everything not exported.",
+      "id": "8aa17a3d067cf757"
+    },
+    {
+      "type": "markdown",
+      "text": "## 16 · Formulas and constants",
+      "id": "db72eb12f194a3c6"
+    },
+    {
+      "type": "markdown",
+      "text": "Everything the tool computes, so it can be checked by hand or against another package. These follow Hart & Hart, *Statistical Process Control for Health Care* (Duxbury/Thomson, 2002).",
+      "id": "9f49d3144e291206"
+    },
+    {
+      "type": "markdown",
+      "text": "XmR:",
+      "id": "facee04ca124f0c5"
+    },
+    {
+      "type": "markdown",
+      "text": "```\nmR_i   = |x_i − x_(i−1)|\nCL     = x̄\nUNPL   = x̄ + 2.660 · mR̄        LNPL = x̄ − 2.660 · mR̄\nURL    = 3.268 · mR̄             (moving range chart)\nsigma  = mR̄ / 1.128             (1.128 = d2 at n = 2)\n\nmedian moving range variant:\nUNPL   = x̄ + 3.145 · mR̃        URL  = 3.865 · mR̃\n```",
+      "id": "50943c5b00058679"
+    },
+    {
+      "type": "markdown",
+      "text": "p chart:",
+      "id": "862167e7d92c84ec"
+    },
+    {
+      "type": "markdown",
+      "text": "```\np̄       = Σd_i / Σn_i                 (pooled, not the mean of p_i)\np_i      = d_i / n_i\nsigma_i  = √( p̄(1 − p̄) / n_i )\nUCL_i    = p̄ + 3 · sigma_i            clamped to [0, 1]\n```",
+      "id": "651fb00fa9a0de18"
+    },
+    {
+      "type": "markdown",
+      "text": "u chart:",
+      "id": "23f8fb372bb4caf6"
+    },
+    {
+      "type": "markdown",
+      "text": "```\nū        = Σc_i / Σa_i\nu_i      = c_i / a_i\nsigma_i  = √( ū / a_i )\nUCL_i    = ū + 3 · sigma_i            LCL clamped at 0\n```",
+      "id": "b4aa50316f077bc8"
+    },
+    {
+      "type": "markdown",
+      "text": "Laney p′ / u′:",
+      "id": "585a502ebd8b960b"
+    },
+    {
+      "type": "markdown",
+      "text": "```\nz_i      = (p_i − p̄) / sigma_i\nsigma_z  = mR̄(z) / 1.128\nUCL_i    = p̄ + 3 · sigma_z · sigma_i\n```",
+      "id": "3b9f011272da993d"
+    },
+    {
+      "type": "markdown",
+      "text": "Subgrouping, one-way decomposition:",
+      "id": "fa4f402422c6d3b0"
+    },
+    {
+      "type": "markdown",
+      "text": "```\nMSB      = Σ n_j (x̄_j − x̄)² / (k − 1)\nMSW      = Σ Σ (x_ij − x̄_j)² / (N − k)\nF        = MSB / MSW        on (k − 1, N − k) degrees of freedom\n\nn0       = ( N − Σ n_j² / N ) / (k − 1)\nvar_between = max(0, (MSB − MSW) / n0)\nvar_within  = MSW\nshare       = var_between / (var_between + var_within)\n```",
+      "id": "8d412d75ecdeda59"
+    },
+    {
+      "type": "markdown",
+      "text": "The p-value comes from the regularised incomplete beta function, evaluated by continued fraction — no lookup tables, no normal approximation.",
+      "id": "4f3f7589946347ba"
+    },
+    {
+      "type": "markdown",
+      "text": "Shewhart constants:",
+      "id": "2a51ccdae463b0f5"
+    },
+    {
+      "type": "html",
+      "id": "0625ed5a2f04cada",
+      "text": "<table style=\"width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums\">\n<tr><th style=\"padding:4px 8px;border:1px solid #ddd;text-align:left;background:#f4f4f4;font-weight:700\">n</th><th style=\"padding:4px 8px;border:1px solid #ddd;text-align:left;background:#f4f4f4;font-weight:700\">d₂</th><th style=\"padding:4px 8px;border:1px solid #ddd;text-align:left;background:#f4f4f4;font-weight:700\">d₃</th><th style=\"padding:4px 8px;border:1px solid #ddd;text-align:left;background:#f4f4f4;font-weight:700\">c₄</th></tr>\n<tr><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">2</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">1.128</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.853</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.7979</td></tr>\n<tr><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">3</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">1.693</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.888</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.8862</td></tr>\n<tr><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">4</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">2.059</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.880</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.9213</td></tr>\n<tr><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">5</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">2.326</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.864</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.9400</td></tr>\n<tr><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">6</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">2.534</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.848</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.9515</td></tr>\n<tr><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">7</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">2.704</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.833</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.9594</td></tr>\n<tr><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">8</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">2.847</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.820</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.9650</td></tr>\n<tr><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">9</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">2.970</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.808</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.9693</td></tr>\n<tr><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">10</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">3.078</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.797</td><td style=\"padding:4px 8px;border:1px solid #ddd;text-align:left\">0.9727</td></tr>\n</table>"
+    },
+    {
+      "type": "markdown",
+      "text": "The XmR constants derive from these: 3 ÷ d₂(2) = 3 ÷ 1.128 = 2.660, and 3 ÷ 0.954 = 3.145 for the median moving range, where 0.954 is the corresponding bias factor at n = 2. Beyond n = 10, c₄ is approximated by 4(n−1) ÷ (4n−3).",
+      "id": "acc058453f05bf79"
+    }
+  ],
+  "journal": []
+}

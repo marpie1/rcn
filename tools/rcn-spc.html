@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<!-- RCN Process Behavior Charts (SPC)
+     Statistical process control for the Whatcom Wealth and Health work.
+
+     Design commitments, in order of importance:
+       1. Rational subgrouping is a FIRST-CLASS, VISIBLE choice, not a hidden
+          default. The Subgrouping panel is the point of the tool.
+       2. Variable area of opportunity is the normal case in health care.
+          p and u charts get correctly stepped per-point limits, always.
+       3. Overdispersion is detected and named, not silently charted.
+       4. Few chart types. Every added chart type is vocabulary a co-op
+          board has to learn. XmR, p, u, run. That is the whole vocabulary.
+
+     Math follows Hart & Hart, Statistical Process Control for Health Care
+     (Duxbury/Thomson, 2002) where it and other sources differ. Constants and
+     formulas are named in the SPC namespace below so they can be checked.
+
+     Single file, works from file://. No dependencies, no network. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN Process Behavior Charts</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#eef2f6;color:#1e293b;line-height:1.5;font-size:14px}
+a{color:#1e5f8c;text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ── Shell ─────────────────────────────────────────────────────────────── */
+.app{display:flex;flex-direction:column;height:100vh}
+.topbar{background:#123a5a;color:#e2ecf4;padding:10px 18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;flex-shrink:0}
+.topbar h1{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.topbar .tag{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#7ba7c7;font-weight:700}
+.topbar nav{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.topbar nav a{font-size:12px;color:#c6dbea;border:1px solid #2d5c7e;border-radius:20px;padding:3px 12px}
+.topbar nav a:hover{background:#1d4d70;text-decoration:none}
+
+.main{display:flex;flex:1;min-height:0}
+.side{width:330px;flex-shrink:0;background:#fff;border-right:1px solid #d3dde6;overflow-y:auto;padding:16px}
+.canvas{flex:1;overflow-y:auto;padding:20px 24px 60px;min-width:0}
+
+/* ── Side panel ────────────────────────────────────────────────────────── */
+.grp{margin-bottom:22px}
+.grp>h3{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:9px;padding-bottom:5px;border-bottom:1px solid #e2e8f0}
+label.fld{display:block;margin-bottom:9px}
+label.fld>span{display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:3px}
+select,input[type=text],input[type=number],textarea{width:100%;font-family:inherit;font-size:13px;padding:5px 8px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#1e293b}
+select:focus,input:focus,textarea:focus{outline:2px solid #93b8d4;outline-offset:-1px;border-color:#1e5f8c}
+textarea{font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.45;resize:vertical}
+button{font-family:inherit;font-size:12px;font-weight:600;padding:6px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#334155;cursor:pointer}
+button:hover{background:#f1f5f9;border-color:#94a3b8}
+button.primary{background:#1e5f8c;border-color:#1e5f8c;color:#fff}
+button.primary:hover{background:#174c70}
+button.wide{width:100%;margin-bottom:6px}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap}
+.chk{display:flex;align-items:flex-start;gap:7px;margin-bottom:7px;font-size:12px;color:#334155;cursor:pointer}
+.chk input{margin-top:2px;flex-shrink:0}
+.hint{font-size:11px;color:#64748b;line-height:1.45;margin-top:4px}
+
+/* Destructive actions live alone, marked, at the bottom. Never beside export. */
+.danger-zone{margin-top:30px;padding:12px;border:1px dashed #e5b4b4;border-radius:8px;background:#fdf5f5}
+.danger-zone h3{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a33;margin-bottom:8px;border:0;padding:0}
+.danger-zone button{border-color:#dda;color:#a33;background:#fff;width:100%}
+.danger-zone button:hover{background:#fdeaea;border-color:#c66}
+.danger-zone .hint{color:#95575 7}
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+.card{background:#fff;border:1px solid #d9e2ea;border-radius:10px;padding:18px 20px;margin-bottom:18px}
+.card>h2{font-size:15px;font-weight:700;color:#0f2f47;margin-bottom:3px}
+.card>.sub{font-size:12px;color:#64748b;margin-bottom:14px}
+
+/* ── Verdict banners ───────────────────────────────────────────────────── */
+.verdict{border-radius:9px;padding:14px 16px;margin-bottom:14px;border:1px solid}
+.verdict h4{font-size:13px;font-weight:700;margin-bottom:5px}
+.verdict p{font-size:12.5px;line-height:1.6;margin-bottom:6px}
+.verdict p:last-child{margin-bottom:0}
+.verdict.warn{background:#fff8e6;border-color:#f0d48a;color:#6b4e08}
+.verdict.warn h4{color:#8a6300}
+.verdict.bad{background:#fdf0ee;border-color:#f0bdb3;color:#7d2d1c}
+.verdict.bad h4{color:#a83217}
+.verdict.ok{background:#eef7f0;border-color:#b8dcc2;color:#28563a}
+.verdict.ok h4{color:#2f6b45}
+.verdict.info{background:#eef4fa;border-color:#bcd4e8;color:#274a67}
+.verdict.info h4{color:#1e5f8c}
+.verdict code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
+
+/* ── Stats readout ─────────────────────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}
+.stat{background:#f6f9fb;border:1px solid #e2eaf1;border-radius:8px;padding:9px 11px}
+.stat .k{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7089a0;margin-bottom:3px}
+.stat .v{font-size:17px;font-weight:700;color:#0f2f47;font-variant-numeric:tabular-nums}
+.stat .n{font-size:10.5px;color:#7c8fa1;margin-top:1px}
+
+/* ── Signals ───────────────────────────────────────────────────────────── */
+table.sig{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+table.sig th{text-align:left;padding:6px 9px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;background:#f6f9fb;border-bottom:2px solid #e2eaf1}
+table.sig td{padding:6px 9px;border-bottom:1px solid #f0f4f8;vertical-align:top;color:#334155}
+table.sig td.pt{font-weight:700;color:#0f2f47;white-space:nowrap;font-variant-numeric:tabular-nums}
+table.sig tr.hi td{background:#fdf5f3}
+.none{font-size:12.5px;color:#64748b;font-style:italic;padding:8px 0}
+
+/* ── Subgroup comparison ───────────────────────────────────────────────── */
+.subcmp{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+@media(max-width:1100px){.subcmp{grid-template-columns:1fr}}
+.subcol{border:1px solid #e2eaf1;border-radius:9px;padding:12px 14px;background:#fbfdfe}
+.subcol h5{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#1e5f8c;margin-bottom:8px}
+.varbar{height:22px;border-radius:5px;overflow:hidden;display:flex;margin:10px 0 6px;border:1px solid #d9e2ea}
+.varbar .between{background:#d4622f}
+.varbar .within{background:#7fa8c4}
+.varbar div{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;white-space:nowrap}
+.legend2{display:flex;gap:14px;font-size:11px;color:#64748b}
+.legend2 i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+
+/* ── Change point editor ───────────────────────────────────────────────── */
+#cpList{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.cpitem{border:1px solid #e4dcee;border-radius:7px;padding:8px 9px;background:#faf8fd}
+.cphead{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.cpbadge{width:17px;height:17px;border-radius:50%;background:#7a4fa0;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cphead span{font-size:11px;font-weight:600;color:#475569;flex:1;line-height:1.3}
+.cphead button{padding:1px 7px;font-size:10.5px;border-color:#e0d0ea;color:#7a4fa0;background:#fff}
+.cphead button:hover{background:#f3ebf8;border-color:#b98fd0}
+.cpitem input{margin-bottom:5px;font-size:12px;padding:4px 7px}
+.cpitem input:last-child{margin-bottom:0}
+.cpitem input.bad{border-color:#d9a0a0;background:#fdf6f6}
+
+svg.chart{display:block;width:100%;height:auto;font-family:system-ui,sans-serif}
+svg.chart a text{text-decoration:underline}
+.charthost{overflow-x:auto}
+.empty{text-align:center;padding:60px 20px;color:#8299ac}
+.empty h2{font-size:17px;color:#4a6376;margin-bottom:8px;font-weight:600}
+.empty p{font-size:13px;max-width:520px;margin:0 auto 6px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div>
+      <div class="tag">ReLocalize Creativity Network</div>
+      <h1>Process Behavior Charts</h1>
+    </div>
+    <nav>
+      <a href="rcn-spc-intro.html">Introduction</a>
+      <a href="rcn-spc-manual.html">User Manual</a>
+    </nav>
+  </div>
+
+  <div class="main">
+
+    <!-- ── Side panel ────────────────────────────────────────────────── -->
+    <div class="side">
+
+      <div class="grp">
+        <h3>1 · Data</h3>
+        <label class="fld"><span>Load an example</span>
+          <select id="demoSel">
+            <option value="">— choose —</option>
+            <option value="turnaround">Referral turnaround days (2 clinics)</option>
+            <option value="chw">CHW home visits per week</option>
+            <option value="scp">SCP completion rate (p chart)</option>
+            <option value="ed">ED visits per 1,000 member-months (u chart)</option>
+          </select>
+        </label>
+        <div class="btnrow" style="margin-bottom:8px">
+          <button id="pasteBtn">Paste CSV</button>
+          <button id="fileBtn">Open CSV file…</button>
+          <input type="file" id="fileInput" accept=".csv,.txt" style="display:none">
+        </div>
+        <textarea id="csvBox" rows="5" placeholder="Paste CSV here, then press Load. First row is column names." style="display:none"></textarea>
+        <button id="loadCsvBtn" class="primary wide" style="display:none">Load pasted CSV</button>
+        <div class="hint" id="dataHint">No data loaded.</div>
+      </div>
+
+      <div class="grp">
+        <h3>2 · Chart</h3>
+        <label class="fld"><span>Chart type</span>
+          <select id="chartSel">
+            <option value="xmr">XmR — individual values</option>
+            <option value="p">p — proportion (varying denominator)</option>
+            <option value="u">u — rate per unit of opportunity</option>
+            <option value="run">Run chart — no limits</option>
+          </select>
+        </label>
+        <div class="hint" id="chartHint"></div>
+
+        <label class="fld" id="fldOrder"><span>Order by (the x axis)</span>
+          <select id="orderSel"></select>
+        </label>
+        <label class="fld" id="fldValue"><span>Value</span>
+          <select id="valueSel"></select>
+        </label>
+        <label class="fld" id="fldNum" style="display:none"><span>Numerator (events)</span>
+          <select id="numSel"></select>
+        </label>
+        <label class="fld" id="fldDen" style="display:none"><span>Denominator (area of opportunity)</span>
+          <select id="denSel"></select>
+        </label>
+        <label class="fld" id="fldScale" style="display:none"><span>Report rate per</span>
+          <input type="number" id="scaleInput" value="1000" min="1" step="1">
+        </label>
+      </div>
+
+      <div class="grp">
+        <h3>3 · Subgrouping</h3>
+        <label class="fld"><span>Treat as one process, or split by…</span>
+          <select id="groupSel"><option value="">One process (no subgrouping)</option></select>
+        </label>
+        <div class="hint">Choosing a column here is a claim about cause: variation <em>inside</em> a subgroup becomes noise, variation <em>between</em> subgroups becomes signal.</div>
+        <label class="chk" style="margin-top:9px"><input type="checkbox" id="splitChk"><span>Chart each subgroup separately, with its own limits</span></label>
+      </div>
+
+      <div class="grp">
+        <h3>4 · Process changes</h3>
+        <label class="fld"><span>New phase begins at row…</span>
+          <input type="text" id="cpInput" placeholder="e.g. 19, 34 — or click the chart">
+        </label>
+        <div class="hint">Mark where the process was deliberately changed. Each phase gets its own centre line and its own limits, computed only from its own points, and the run rules restart at every boundary.</div>
+        <div id="cpList"></div>
+        <button id="cpClear" class="wide" style="margin-top:8px">Clear all change points</button>
+      </div>
+
+      <div class="grp">
+        <h3>5 · Limits</h3>
+        <label class="chk"><input type="checkbox" id="medianMR"><span>Use median moving range (robust to outliers)</span></label>
+        <label class="chk"><input type="checkbox" id="laneyChk"><span>Laney p&prime;/u&prime; correction for overdispersion</span></label>
+        <label class="fld" style="margin-top:8px"><span>Baseline window — freeze limits on rows 1 to N</span>
+          <input type="number" id="baseInput" min="0" step="1" placeholder="blank = use all rows">
+        </label>
+        <div class="hint" id="baseHint">Set limits from a stable stretch, then extend them forward to test whether later points belong to the same process. This asks a different question from a change point: freezing <em>tests</em> whether later points still belong; a change point <em>declares</em> that they do not.</div>
+        <label class="chk" style="margin-top:9px"><input type="checkbox" id="nelsonChk" checked><span>Apply Nelson rules 2&ndash;8, not just points outside limits</span></label>
+      </div>
+
+      <div class="grp">
+        <h3>6 · Export</h3>
+        <button id="svgBtn" class="wide">Download chart as SVG</button>
+        <button id="pngBtn" class="wide">Download chart as PNG</button>
+        <button id="jsonBtn" class="wide">Save session as JSON</button>
+        <button id="openJsonBtn" class="wide">Open saved session…</button>
+        <input type="file" id="jsonInput" accept=".json" style="display:none">
+      </div>
+
+      <div class="danger-zone">
+        <h3>Clear</h3>
+        <button id="clearBtn">Discard all loaded data</button>
+        <div class="hint">Removes the dataset and every setting from this tab. Export first if you want to keep it.</div>
+      </div>
+
+    </div>
+
+    <!-- ── Canvas ────────────────────────────────────────────────────── -->
+    <div class="canvas" id="canvas">
+      <div class="empty">
+        <h2>Measurement gives you numbers. It does not separate signal from noise.</h2>
+        <p>Load an example from the panel on the left, or paste your own CSV.</p>
+        <p>Start with <strong>Referral turnaround days</strong> — it shows the same data telling two opposite stories depending on how it is subgrouped.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SPC — the math. Kept in one namespace so it can be checked against
+   Hart & Hart line by line. Nothing here touches the DOM.
+   ═══════════════════════════════════════════════════════════════════════ */
+const SPC = (() => {
+
+  // Shewhart constants, n = 2..10. d2 and d3 from the distribution of the
+  // relative range; c4 the unbiasing constant for the sample SD.
+  const D2 = {2:1.128,3:1.693,4:2.059,5:2.326,6:2.534,7:2.704,8:2.847,9:2.970,10:3.078};
+  const D3 = {2:0.853,3:0.888,4:0.880,5:0.864,6:0.848,7:0.833,8:0.820,9:0.808,10:0.797};
+  const C4 = {2:0.7979,3:0.8862,4:0.9213,5:0.9400,6:0.9515,7:0.9594,8:0.9650,9:0.9693,10:0.9727};
+
+  // Beyond the tabulated range c4 is well approximated by 4(n-1)/(4n-3).
+  const c4 = n => C4[n] !== undefined ? C4[n] : (4*(n-1))/(4*n-3);
+  const d2 = n => D2[n] !== undefined ? D2[n] : 3.472 - 0.0000000001; // only used n<=10
+
+  // XmR scaling constants. 3/d2(2) = 2.660 for average moving range;
+  // 3/0.954 = 3.145 for the median moving range (d4 = 0.954 at n = 2).
+  const XMR_AVG = 2.660, XMR_AVG_MR = 3.268;
+  const XMR_MED = 3.145, XMR_MED_MR = 3.865;
+
+  const mean = a => a.reduce((s,x)=>s+x,0)/a.length;
+  const median = a => { const s=[...a].sort((x,y)=>x-y), m=s.length>>1;
+                        return s.length%2 ? s[m] : (s[m-1]+s[m])/2; };
+  const sd = a => { if(a.length<2) return 0; const m=mean(a);
+                    return Math.sqrt(a.reduce((s,x)=>s+(x-m)*(x-m),0)/(a.length-1)); };
+
+  const movingRanges = a => a.slice(1).map((x,i)=>Math.abs(x-a[i]));
+
+  /* ── XmR / individuals ────────────────────────────────────────────────
+     Limits from the AVERAGE (or median) moving range — never from the
+     standard deviation of all the values. Using the global SD builds the
+     very signal you are trying to detect into the yardstick that is
+     supposed to detect it. This is the single most common error in
+     spreadsheet "control charts". */
+  function xmr(values, opts = {}) {
+    const useMedian = !!opts.medianMR;
+    const base = opts.baseline && opts.baseline > 1
+               ? values.slice(0, Math.min(opts.baseline, values.length))
+               : values;
+    const mrBase = movingRanges(base);
+    const center = mean(base);
+    const mrBar  = mrBase.length ? (useMedian ? median(mrBase) : mean(mrBase)) : 0;
+    const kX  = useMedian ? XMR_MED    : XMR_AVG;
+    const kMR = useMedian ? XMR_MED_MR : XMR_AVG_MR;
+    const sigma = mrBar / (useMedian ? 0.954 : D2[2]);  // one sigma, within-process
+    return {
+      kind: 'xmr',
+      points: values,
+      cl: center, ucl: center + kX*mrBar, lcl: center - kX*mrBar,
+      sigma,
+      mr: { points: movingRanges(values), cl: mrBar, ucl: kMR*mrBar, lcl: 0 },
+      basedOn: base.length, mrBar, usedMedian: useMedian
+    };
+  }
+
+  /* ── p chart ──────────────────────────────────────────────────────────
+     Centre line is the POOLED proportion, sum(d)/sum(n) — not the mean of
+     the individual proportions. Limits are computed per point because in
+     health care the denominator moves every period. */
+  function pChart(num, den, opts = {}) {
+    const nBase = opts.baseline && opts.baseline > 1 ? Math.min(opts.baseline, num.length) : num.length;
+    const sd_ = num.slice(0,nBase).reduce((s,x)=>s+x,0);
+    const sn_ = den.slice(0,nBase).reduce((s,x)=>s+x,0);
+    const pBar = sn_ > 0 ? sd_/sn_ : 0;
+    const pts  = num.map((d,i) => den[i] > 0 ? d/den[i] : 0);
+    const sig  = den.map(n => n > 0 ? Math.sqrt(pBar*(1-pBar)/n) : 0);
+    const sz   = laneySigmaZ(pts, pBar, sig, nBase);
+    const k    = opts.laney ? sz : 1;
+    return {
+      kind: 'p', points: pts, cl: pBar,
+      ucl: sig.map(s => Math.min(1, pBar + 3*k*s)),
+      lcl: sig.map(s => Math.max(0, pBar - 3*k*s)),
+      sigmaAt: sig.map(s => s*k), sigmaZ: sz, laney: !!opts.laney, pBar
+    };
+  }
+
+  /* ── u chart ──────────────────────────────────────────────────────────
+     Same idea for counts over a varying area of opportunity. scale lets a
+     co-op read the axis in the units it actually talks in (per 1,000
+     member-months), without changing the limit arithmetic. */
+  function uChart(count, area, opts = {}) {
+    const scale = opts.scale || 1;
+    const nBase = opts.baseline && opts.baseline > 1 ? Math.min(opts.baseline, count.length) : count.length;
+    const sc_ = count.slice(0,nBase).reduce((s,x)=>s+x,0);
+    const sa_ = area.slice(0,nBase).reduce((s,x)=>s+x,0);
+    const uBar = sa_ > 0 ? sc_/sa_ : 0;
+    const pts  = count.map((c,i) => area[i] > 0 ? c/area[i] : 0);
+    const sig  = area.map(a => a > 0 ? Math.sqrt(uBar/a) : 0);
+    const sz   = laneySigmaZ(pts, uBar, sig, nBase);
+    const k    = opts.laney ? sz : 1;
+    return {
+      kind: 'u', points: pts.map(v=>v*scale), cl: uBar*scale,
+      ucl: sig.map(s => (uBar + 3*k*s)*scale),
+      lcl: sig.map(s => Math.max(0, uBar - 3*k*s)*scale),
+      sigmaAt: sig.map(s => s*k*scale), sigmaZ: sz, laney: !!opts.laney, scale, uBar
+    };
+  }
+
+  /* ── Laney sigma-z ────────────────────────────────────────────────────
+     The overdispersion fix. Standardise every point against its own
+     binomial/Poisson sigma, then measure how much the standardised series
+     ACTUALLY moves using its average moving range. If the counts really are
+     binomial, sigma_z lands near 1 and nothing changes. If there is extra
+     between-period variation — which for large denominators there almost
+     always is — sigma_z exceeds 1 and the naive chart is throwing false
+     alarms on every point. */
+  function laneySigmaZ(pts, center, sig, nBase) {
+    const z = [];
+    for (let i = 0; i < (nBase || pts.length); i++) {
+      if (sig[i] > 0) z.push((pts[i] - center)/sig[i]);
+    }
+    if (z.length < 2) return 1;
+    const mr = movingRanges(z);
+    if (!mr.length) return 1;
+    return mean(mr)/D2[2];
+  }
+
+  /* ── Run chart ───────────────────────────────────────────────────────
+     Median centre line, no limits. Perla / Provost rules: shift of 6+ on
+     one side, trend of 5+ stepping the same direction, and too few or too
+     many runs for the number of useful observations. */
+  function runChart(values) {
+    const cl = median(values);
+    const signals = [];
+    const useful = values.filter(v => v !== cl);
+    const side = values.map(v => v > cl ? 1 : v < cl ? -1 : 0);
+
+    let start = -1, len = 0, cur = 0;
+    for (let i = 0; i <= side.length; i++) {
+      const s = side[i];
+      if (i < side.length && s !== 0 && s === cur) { len++; }
+      else {
+        if (len >= 6) signals.push({ i: start, span: len,
+          rule: 'Shift', text: `${len} consecutive points ${cur>0?'above':'below'} the median` });
+        if (i < side.length && s !== 0) { cur = s; start = i; len = 1; }
+        else { cur = 0; len = 0; }
+      }
+    }
+
+    let tStart = 0, dir = 0;
+    for (let i = 1; i < values.length; i++) {
+      const d = Math.sign(values[i] - values[i-1]);
+      if (d !== 0 && d === dir) {
+        if (i - tStart + 1 >= 5) signals.push({ i: tStart, span: i-tStart+1,
+          rule: 'Trend', text: `${i-tStart+1} points ${d>0?'rising':'falling'} in a row` });
+      } else { dir = d; tStart = i-1; }
+    }
+
+    let runs = 0, prev = 0;
+    side.forEach(s => { if (s !== 0 && s !== prev) { runs++; prev = s; } else if (s !== 0) prev = s; });
+    const nUse = useful.length;
+    if (nUse >= 10) {
+      const lo = Math.round(nUse/2 - 1.96*Math.sqrt(nUse-1)/2 + 1);
+      const hi = Math.round(nUse/2 + 1.96*Math.sqrt(nUse-1)/2 + 1);
+      if (runs < lo) signals.push({ i:0, span:values.length, rule:'Too few runs',
+        text: `${runs} runs where ${lo}–${hi} would be expected — the series is not behaving randomly` });
+      if (runs > hi) signals.push({ i:0, span:values.length, rule:'Too many runs',
+        text: `${runs} runs where ${lo}–${hi} would be expected — points are alternating more than chance allows` });
+    }
+    return { kind:'run', points: values, cl, signals, runs, nUseful: nUse };
+  }
+
+  /* ── Nelson rules 1–8 ────────────────────────────────────────────────
+     Rule 1 always applies. The rest are optional because each added rule
+     inflates the false-alarm rate: one rule gives roughly 1 in 370, all
+     eight running together give closer to 1 in 90. That is a real cost and
+     the tool states it rather than hiding it. */
+  function nelson(points, cl, sigmaAt, uclArr, lclArr, opts = {}) {
+    const n = points.length, out = [];
+    const S = i => Array.isArray(sigmaAt) ? sigmaAt[i] : sigmaAt;
+    const U = i => Array.isArray(uclArr) ? uclArr[i] : uclArr;
+    const L = i => Array.isArray(lclArr) ? lclArr[i] : lclArr;
+    const add = (i, rule, text) => out.push({ i, rule, text });
+
+    for (let i = 0; i < n; i++) {
+      if (points[i] > U(i)) add(i, 1, 'Above the upper limit');
+      else if (points[i] < L(i)) add(i, 1, 'Below the lower limit');
+    }
+    if (!opts.all) return out;
+
+    const dev = points.map((v,i) => S(i) > 0 ? (v - cl)/S(i) : 0);
+    const runOf = (test, len, rule, text) => {
+      let c = 0;
+      for (let i = 0; i < n; i++) {
+        if (test(i)) { c++; if (c >= len) add(i, rule, text); }
+        else c = 0;
+      }
+    };
+    const sameSideRun = (len, rule, text, pred) => {
+      for (const s of [1,-1]) runOf(i => Math.sign(dev[i]) === s && pred(Math.abs(dev[i])), len, rule, text);
+    };
+
+    sameSideRun(9, 2, 'Nine in a row on one side of the centre line', () => true);
+    // Rule 3: six steadily increasing or decreasing
+    for (const d of [1,-1]) {
+      let c = 1;
+      for (let i = 1; i < n; i++) {
+        if (Math.sign(points[i]-points[i-1]) === d) { c++; if (c >= 6) add(i, 3, 'Six points steadily ' + (d>0?'increasing':'decreasing')); }
+        else c = 1;
+      }
+    }
+    // Rule 4: fourteen alternating up and down
+    { let c = 1;
+      for (let i = 2; i < n; i++) {
+        const a = Math.sign(points[i-1]-points[i-2]), b = Math.sign(points[i]-points[i-1]);
+        if (a !== 0 && b !== 0 && a !== b) { c++; if (c >= 14) add(i, 4, 'Fourteen points alternating up and down'); }
+        else c = 1;
+      } }
+    const kOfM = (k, m, pred, rule, text) => {
+      for (let i = m-1; i < n; i++) {
+        let c = 0;
+        for (let j = i-m+1; j <= i; j++) if (pred(j)) c++;
+        if (c >= k) add(i, rule, text);
+      }
+    };
+    for (const s of [1,-1]) {
+      kOfM(2, 3, j => Math.sign(dev[j]) === s && Math.abs(dev[j]) > 2, 5, 'Two of three points beyond two sigma on the same side');
+      kOfM(4, 5, j => Math.sign(dev[j]) === s && Math.abs(dev[j]) > 1, 6, 'Four of five points beyond one sigma on the same side');
+    }
+    runOf(i => Math.abs(dev[i]) < 1, 15, 7, 'Fifteen points hugging the centre line — check for stratification');
+    runOf(i => Math.abs(dev[i]) > 1, 8, 8, 'Eight points in a row all beyond one sigma — check for a mixture');
+
+    const seen = new Set();
+    return out.filter(s => { const k = s.i+'|'+s.rule; if (seen.has(k)) return false; seen.add(k); return true; });
+  }
+
+  /* ── Rational subgrouping diagnostic ─────────────────────────────────
+     One-way decomposition of variance. This is the heart of the tool.
+
+       sigma_within  — pooled within-subgroup SD. What the chart calls noise.
+       sigma_total   — SD of every observation ignoring subgroups.
+       F, p          — is the between-subgroup difference bigger than chance?
+       shareBetween  — of the total variance, how much lives BETWEEN groups.
+
+     If shareBetween is large and you subgrouped by that column, you have
+     just declared the biggest thing in your data to be noise. */
+  function subgroupAnalysis(values, labels) {
+    const groups = new Map();
+    values.forEach((v,i) => {
+      const k = labels[i];
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(v);
+    });
+    const keys = [...groups.keys()];
+    const k = keys.length, N = values.length;
+    if (k < 2 || N - k < 1) return null;
+
+    const grand = mean(values);
+    let ssB = 0, ssW = 0;
+    const detail = keys.map(key => {
+      const g = groups.get(key), m = mean(g);
+      ssB += g.length * (m - grand)*(m - grand);
+      g.forEach(v => ssW += (v-m)*(v-m));
+      return { key, n: g.length, mean: m, sd: sd(g), min: Math.min(...g), max: Math.max(...g) };
+    });
+    const msB = ssB/(k-1), msW = ssW/(N-k);
+    const F = msW > 0 ? msB/msW : Infinity;
+    const p = msW > 0 ? 1 - fCDF(F, k-1, N-k) : 0;
+
+    // Expected value of MSB is sigma_within^2 + n0 * sigma_between^2
+    const n0 = (N - detail.reduce((s,d)=>s+d.n*d.n,0)/N)/(k-1);
+    const varBetween = Math.max(0, (msB - msW)/n0);
+    const varWithin  = msW;
+    const share = varBetween + varWithin > 0 ? varBetween/(varBetween+varWithin) : 0;
+
+    return {
+      k, N, detail: detail.sort((a,b)=>a.mean-b.mean),
+      sigmaWithin: Math.sqrt(msW), sigmaTotal: sd(values),
+      F, p, shareBetween: share, grand,
+      ratio: msW > 0 ? sd(values)/Math.sqrt(msW) : Infinity
+    };
+  }
+
+  /* ── F distribution, via the regularised incomplete beta ─────────────
+     Gil is an engineer; a hand-waved "looks different" would not survive
+     contact with him. Continued-fraction evaluation, Lentz's method. */
+  function logGamma(x) {
+    const c = [76.18009172947146,-86.50532032941677,24.01409824083091,
+               -1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];
+    let y = x, t = x + 5.5;
+    t -= (x+0.5)*Math.log(t);
+    let s = 1.000000000190015;
+    for (let j = 0; j < 6; j++) s += c[j]/++y;
+    return -t + Math.log(2.5066282746310005*s/x);
+  }
+  function betacf(a, b, x) {
+    const FPMIN = 1e-300, EPS = 3e-12;
+    const qab = a+b, qap = a+1, qam = a-1;
+    let c = 1, d = 1 - qab*x/qap;
+    if (Math.abs(d) < FPMIN) d = FPMIN;
+    d = 1/d;
+    let h = d;
+    for (let m = 1; m <= 300; m++) {
+      const m2 = 2*m;
+      let aa = m*(b-m)*x/((qam+m2)*(a+m2));
+      d = 1 + aa*d; if (Math.abs(d) < FPMIN) d = FPMIN;
+      c = 1 + aa/c; if (Math.abs(c) < FPMIN) c = FPMIN;
+      d = 1/d; h *= d*c;
+      aa = -(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+      d = 1 + aa*d; if (Math.abs(d) < FPMIN) d = FPMIN;
+      c = 1 + aa/c; if (Math.abs(c) < FPMIN) c = FPMIN;
+      d = 1/d;
+      const del = d*c; h *= del;
+      if (Math.abs(del-1) < EPS) break;
+    }
+    return h;
+  }
+  function betai(a, b, x) {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    const bt = Math.exp(logGamma(a+b) - logGamma(a) - logGamma(b) + a*Math.log(x) + b*Math.log(1-x));
+    return x < (a+1)/(a+b+2) ? bt*betacf(a,b,x)/a : 1 - bt*betacf(b,a,1-x)/b;
+  }
+  function fCDF(f, d1, d2) {
+    if (!isFinite(f)) return 1;
+    if (f <= 0) return 0;
+    return betai(d1/2, d2/2, d1*f/(d1*f + d2));
+  }
+
+  /* ── Change points: phases with their own limits ──────────────────────
+     Marking where a process was deliberately changed and recomputing the
+     centre line and limits on each side is standard practice — Minitab calls
+     them stages, JMP calls them phases.
+
+     Three things have to happen at a boundary, and skipping any of them
+     produces a chart that looks right and is wrong:
+
+       1. Each phase gets its own centre line and its own limits, computed
+          only from its own points.
+       2. The run rules restart. A run of nine on one side of the centre line
+          means nothing if it straddles a deliberate change — the rules are
+          applied inside each phase and never across a boundary.
+       3. The moving range that spans the boundary is excluded. It measures
+          the change you already know about, and leaving it in inflates the
+          limits of whichever phase claims it — exactly the error the change
+          point was drawn to avoid.
+
+     `cps` are 1-based row numbers: the row at which a NEW phase begins. */
+  function segments(n, cps) {
+    const cuts = [...new Set((cps || [])
+      .map(c => Math.round(c) - 1)
+      .filter(c => c > 0 && c < n))].sort((a, b) => a - b);
+    const bounds = [0, ...cuts, n];
+    const out = [];
+    for (let i = 0; i < bounds.length - 1; i++) out.push({ s: bounds[i], e: bounds[i + 1] });
+    return out;
+  }
+
+  /** Run `make` on every phase and stitch the per-point limit arrays back together. */
+  function phase(n, cps, make) {
+    const segs = segments(n, cps);
+    const cl = [], ucl = [], lcl = [], sigmaAt = [], parts = [];
+    segs.forEach(sg => {
+      const r = make(sg);
+      const pick = (v, k) => Array.isArray(v) ? v[k] : v;
+      for (let i = sg.s; i < sg.e; i++) {
+        const k = i - sg.s;
+        cl.push(r.cl);
+        ucl.push(pick(r.ucl, k));
+        lcl.push(pick(r.lcl, k));
+        sigmaAt.push(pick(r.sigmaAt !== undefined ? r.sigmaAt : r.sigma, k));
+      }
+      parts.push({ s: sg.s, e: sg.e, res: r });
+    });
+    return { segs, cl, ucl, lcl, sigmaAt, parts };
+  }
+
+  /** Nelson rules applied inside each phase, never across a boundary. */
+  function nelsonPhased(points, cl, sigmaAt, ucl, lcl, segs, opts) {
+    const out = [];
+    const cut = (a, sg) => Array.isArray(a) ? a.slice(sg.s, sg.e) : a;
+    segs.forEach(sg => {
+      nelson(points.slice(sg.s, sg.e),
+             Array.isArray(cl) ? cl[sg.s] : cl,
+             cut(sigmaAt, sg), cut(ucl, sg), cut(lcl, sg), opts)
+        .forEach(s => out.push({ ...s, i: s.i + sg.s }));
+    });
+    return out;
+  }
+
+  /** Moving ranges, with the boundary-spanning ones excluded from the limits. */
+  function mrPhased(values, cps, useMedian) {
+    const segs = segments(values.length, cps);
+    const all = movingRanges(values);          // all.length === values.length - 1
+    const skip = new Set(segs.slice(1).map(sg => sg.s - 1));  // mR that straddles a cut
+    const cl = [], ucl = [];
+    segs.forEach(sg => {
+      const own = [];
+      for (let i = sg.s; i < sg.e - 1; i++) own.push(all[i]);
+      const bar = own.length ? (useMedian ? median(own) : mean(own)) : 0;
+      const k = useMedian ? XMR_MED_MR : XMR_AVG_MR;
+      for (let i = sg.s; i < sg.e; i++) {
+        if (i - 1 >= 0 && i - 1 < all.length) { cl[i - 1] = bar; ucl[i - 1] = k * bar; }
+      }
+    });
+    for (const i of skip) { cl[i] = cl[i] ?? 0; ucl[i] = ucl[i] ?? 0; }
+    return { points: all, cl, ucl, skip };
+  }
+
+  return { xmr, pChart, uChart, runChart, nelson, subgroupAnalysis,
+           segments, phase, nelsonPhased, mrPhased,
+           mean, median, sd, movingRanges, d2, c4, D2, D3, C4, fCDF };
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Demo datasets — synthetic, WWHA-shaped. Each one is built to show one
+   specific way that numbers mislead. See the manual for what to look for.
+   ═══════════════════════════════════════════════════════════════════════ */
+const DEMOS = {
+
+  /* The star. Two clinics with genuinely different turnaround, pooled into
+     one series. Ungrouped, the alternation inflates the moving range so far
+     that the limits swallow everything and nothing signals. Subgrouped by
+     clinic, two tight and completely separate processes appear. Same data,
+     opposite conclusions — Shewhart's "mixture". */
+  turnaround: {
+    name: 'Referral turnaround days — two clinics pooled',
+    note: 'Chart it ungrouped first. Then set Subgrouping to clinic.',
+    chart: 'xmr', order: 'month', value: 'days', group: 'clinic',
+    cols: ['month','clinic','days'],
+    rows: (() => {
+      const N=[4.1,3.8,4.5,4.2,3.9,4.6,4.0,4.3,3.7,4.4,4.1,4.8,3.9,4.2,4.5,4.0,3.8,4.3,4.6,4.1,3.9,4.4,4.2,4.0];
+      const S=[10.9,11.3,10.5,11.8,10.2,11.1,10.7,11.5,10.9,11.2,10.4,11.6,10.8,11.0,10.6,11.4,10.3,11.7,10.9,11.2,10.5,11.3,10.8,11.1];
+      const M=['2024-09','2024-10','2024-11','2024-12','2025-01','2025-02','2025-03','2025-04','2025-05','2025-06','2025-07','2025-08','2025-09','2025-10','2025-11','2025-12','2026-01','2026-02','2026-03','2026-04','2026-05','2026-06','2026-07','2026-08'];
+      const out=[];
+      M.forEach((m,i)=>{ out.push([m,'North Clinic',N[i]]); out.push([m,'South Clinic',S[i]]); });
+      return out;
+    })()
+  },
+
+  /* A real, sustained shift at week 19 when a second CHW came on. With
+     limits computed from all 30 weeks the shift partly hides itself by
+     inflating the limits; set the baseline window to 18 and it is obvious. */
+  chw: {
+    name: 'CHW home visits per week',
+    note: 'Set the baseline window to 18 to freeze limits before the program change.',
+    chart: 'xmr', order: 'week', value: 'visits', group: '',
+    cols: ['week','visits'],
+    rows: [41,44,39,43,45,40,38,44,42,46,39,41,43,40,45,42,38,44,
+           53,56,52,58,55,57,54,59,53,56,55,58]
+          .map((v,i)=>['W'+String(i+1).padStart(2,'0'), v])
+  },
+
+  /* Large denominators, so the binomial sigma is tiny and a naive p chart
+     puts almost every month outside the limits. Nothing is wrong with the
+     clinics; the model is wrong. Turn on Laney p-prime. */
+  scp: {
+    name: 'Shared Care Plan completion rate',
+    note: 'Chart as p first — almost everything signals. Then turn on Laney p′.',
+    chart: 'p', order: 'month', num: 'completed', den: 'enrolled', group: '',
+    cols: ['month','enrolled','completed'],
+    rows: [[820,426],[905,498],[960,557],[1010,616],[1085,618],[1120,706],
+           [1180,779],[1240,856],[1290,826],[1330,944],[1360,925],[1400,1008],
+           [1385,970],[1350,891],[1300,819],[1240,831],[1180,838],[1100,759]]
+          .map((r,i)=>['M'+String(i+1).padStart(2,'0'), r[0], r[1]])
+  },
+
+  /* Membership nearly triples then falls back, so the limits visibly step
+     in and out. Wide where the denominator is small, narrow where it is
+     large — exactly as they should, and exactly what a fixed-limit chart
+     would get wrong. */
+  ed: {
+    name: 'ED visits per 1,000 member-months',
+    note: 'Watch the limits widen when membership is small. That is correct behaviour.',
+    chart: 'u', order: 'month', num: 'ed_visits', den: 'member_months', scale: 1000, group: '',
+    cols: ['month','member_months','ed_visits'],
+    rows: [[3200,158],[3500,162],[4100,201],[4400,209],[5200,246],[5600,281],
+           [6100,289],[6600,321],[7200,338],[7500,352],[7900,392],[8200,381],
+           [8600,401],[8900,442],[9100,430],[9300,461],[4200,199],[3800,178],
+           [3400,171],[3100,142]]
+          .map((r,i)=>['M'+String(i+1).padStart(2,'0'), r[0], r[1]])
+  }
+};
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   State
+   ═══════════════════════════════════════════════════════════════════════ */
+let DATA = null;   // { cols:[], rows:[[]] }
+let META = null;   // demo note, if a demo is loaded
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = (v, d) => {
+  if (v === null || v === undefined || !isFinite(v)) return '—';
+  if (d !== undefined) return v.toFixed(d);
+  const a = Math.abs(v);
+  return a >= 1000 ? v.toFixed(0) : a >= 10 ? v.toFixed(2) : a >= 0.01 ? v.toFixed(3) : v.toExponential(2);
+};
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CSV
+   ═══════════════════════════════════════════════════════════════════════ */
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i+1] === '"') { field += '"'; i++; } else q = false; }
+      else field += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { row.push(field); field = ''; }
+    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else if (c !== '\r') field += c;
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  const clean = rows.filter(r => r.some(f => f.trim() !== ''));
+  if (!clean.length) return null;
+  const cols = clean[0].map(c => c.trim());
+  const body = clean.slice(1).map(r => cols.map((_, i) => {
+    const raw = (r[i] ?? '').trim();
+    const num = raw === '' ? NaN : Number(raw.replace(/[$,%\s]/g, ''));
+    return raw !== '' && isFinite(num) ? num : raw;
+  }));
+  return { cols, rows: body };
+}
+
+function loadData(d, meta) {
+  DATA = d; META = meta || null;
+  const numericCols = d.cols.filter((_, i) => d.rows.some(r => typeof r[i] === 'number'));
+  fillSelect($('orderSel'), d.cols, d.cols[0]);
+  fillSelect($('valueSel'), numericCols, numericCols[0]);
+  fillSelect($('numSel'), numericCols, numericCols[numericCols.length-1]);
+  fillSelect($('denSel'), numericCols, numericCols[0]);
+  fillSelect($('groupSel'), d.cols, '', 'One process (no subgrouping)');
+  $('baseInput').value = '';
+  $('dataHint').innerHTML = `<strong>${d.rows.length}</strong> rows · ${d.cols.length} columns` +
+    (meta ? `<br><em>${esc(meta)}</em>` : '');
+  render();
+}
+
+function fillSelect(sel, opts, chosen, blankLabel) {
+  sel.innerHTML = (blankLabel ? `<option value="">${esc(blankLabel)}</option>` : '') +
+    opts.map(o => `<option value="${esc(o)}"${o === chosen ? ' selected' : ''}>${esc(o)}</option>`).join('');
+}
+
+function col(name) {
+  if (!DATA) return [];
+  const i = DATA.cols.indexOf(name);
+  return i < 0 ? [] : DATA.rows.map(r => r[i]);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Chart drawing — plain SVG, no library. Limits may be a number (constant)
+   or an array (stepped, one per point).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/** Word-wrap change point notes into SVG text lines. The URL is kept whole —
+    a broken link is worse than a line that runs slightly long. */
+function wrapCutNotes(cuts, maxW) {
+  const cpl = Math.max(28, Math.floor(maxW / 5.3));
+  const out = [];
+  cuts.forEach(c => {
+    const link = safeUrl(c.url);
+    const words = [];
+    if ((c.note || '').trim()) words.push(...c.note.trim().split(/\s+/));
+    if ((c.url  || '').trim()) { if (words.length) words.push('·'); words.push(c.url.trim()); }
+    let line = '', first = true;
+    const flush = () => { out.push({ num: first ? c.n : null, text: line, link }); line = ''; first = false; };
+    words.forEach(w => {
+      if (line && (line + ' ' + w).length > cpl) flush();
+      line = line ? line + ' ' + w : w;
+    });
+    if (line) flush();
+  });
+  return out;
+}
+function drawChart(o) {
+  const W = Math.max(760, 60 + o.points.length * 26);
+  const P = { t: 26, r: 118, b: 46, l: 62 };
+  // Annotations are laid out first, because they claim height from the canvas.
+  const noteLines = o.showNotes === false ? []
+    : wrapCutNotes((o.cuts || []).filter(c => (c.note||'').trim() || (c.url||'').trim()), W - P.l - 24);
+  const noteH = noteLines.length ? noteLines.length * 14 + 18 : 0;
+  const H = (o.height || 300) + noteH;
+  const iw = W - P.l - P.r, ih = H - P.t - P.b - noteH;
+  const n = o.points.length;
+  const at = (a, i) => Array.isArray(a) ? a[i] : a;
+
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < n; i++) {
+    for (const v of [o.points[i], at(o.ucl, i), at(o.lcl, i), o.cl]) {
+      if (v !== null && v !== undefined && isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+    }
+  }
+  if (!isFinite(lo)) { lo = 0; hi = 1; }
+  const pad = (hi - lo) * 0.12 || 1;
+  lo -= pad; hi += pad;
+  if (o.zeroFloor && lo < 0) lo = 0;
+
+  const X = i => P.l + (n === 1 ? iw/2 : (i * iw) / (n - 1));
+  const Y = v => P.t + ih - ((v - lo) / (hi - lo)) * ih;
+
+  const sigSet = new Map();
+  (o.signals || []).forEach(s => {
+    if (s.i >= 0 && s.i < n) {
+      if (!sigSet.has(s.i)) sigSet.set(s.i, []);
+      sigSet.get(s.i).push(s);
+    }
+  });
+
+  const F = 'font-family="system-ui,sans-serif"';
+  let g = '';
+
+  // y grid
+  const ticks = 5;
+  for (let t = 0; t <= ticks; t++) {
+    const v = lo + (hi - lo) * t / ticks, y = Y(v);
+    g += `<line x1="${P.l}" y1="${y.toFixed(1)}" x2="${P.l+iw}" y2="${y.toFixed(1)}" stroke="#eef2f6" stroke-width="1"/>`;
+    g += `<text x="${P.l-8}" y="${(y+4).toFixed(1)}" ${F} font-size="10" fill="#8299ac" text-anchor="end">${fmt(v)}</text>`;
+  }
+
+  // limit bands — stepped when the denominator moves
+  /* Every phase reports its own centre line and limits. Without this only the
+     last phase is labelled, and a reader has to go to the table to find out
+     what the line in front of them is worth. Interior labels sit at the right
+     end of the phase they belong to, right-aligned against the boundary, with
+     a white halo so they stay legible over the series. */
+  const phaseSpans = (o.phases && o.phases.length > 1) ? o.phases : [{ s: 0, e: n }];
+
+  const step = (arr, color, dash, label, dy) => {
+    if (arr === null || arr === undefined) return;
+    let d = '';
+    for (let i = 0; i < n; i++) {
+      const v = at(arr, i);
+      if (!isFinite(v)) continue;
+      const x0 = i === 0 ? P.l : (X(i-1) + X(i))/2;
+      const x1 = i === n-1 ? P.l+iw : (X(i) + X(i+1))/2;
+      d += `M${x0.toFixed(1)},${Y(v).toFixed(1)}L${x1.toFixed(1)},${Y(v).toFixed(1)}`;
+      if (i < n-1) {
+        const vn = at(arr, i+1);
+        if (isFinite(vn) && vn !== v) d += `L${x1.toFixed(1)},${Y(vn).toFixed(1)}`;
+      }
+    }
+    g += `<path d="${d}" fill="none" stroke="${color}" stroke-width="1.4"${dash?` stroke-dasharray="${dash}"`:''}/>`;
+
+    phaseSpans.forEach(sg => {
+      const v = at(arr, sg.e - 1);
+      if (!isFinite(v)) return;
+      if (sg.e >= n) {                      // last phase labels in the right margin
+        g += `<text x="${P.l+iw+7}" y="${(Y(v)+4).toFixed(1)}" ${F} font-size="10.5" font-weight="700" fill="${color}">${label} ${fmt(v)}</text>`;
+      } else {                              // interior phases label inside the plot
+        const xEnd = (X(sg.e-1) + X(sg.e))/2 - 5;
+        g += `<text x="${xEnd.toFixed(1)}" y="${(Y(v)+dy).toFixed(1)}" ${F} font-size="9.5" font-weight="700" fill="${color}" text-anchor="end" paint-order="stroke" stroke="#ffffff" stroke-width="3.2" stroke-linejoin="round">${label} ${fmt(v)}</text>`;
+      }
+    });
+  };
+
+  step(o.ucl, '#c0392b', '5,4', o.limitLabel || 'UNPL', -4);
+  step(o.lcl, '#c0392b', '5,4', o.limitLabel === 'UCL' ? 'LCL' : 'LNPL', 11);
+  step(o.cl,  '#1e5f8c', null, o.clLabel || 'CL', -4);
+
+  // baseline window marker
+  if (o.baselineAt && o.baselineAt > 0 && o.baselineAt < n) {
+    const x = (X(o.baselineAt-1) + X(o.baselineAt))/2;
+    g += `<line x1="${x.toFixed(1)}" y1="${P.t}" x2="${x.toFixed(1)}" y2="${P.t+ih}" stroke="#7c8fa1" stroke-width="1.2" stroke-dasharray="2,3"/>`;
+    g += `<text x="${(x+4).toFixed(1)}" y="${P.t+11}" ${F} font-size="9.5" fill="#7c8fa1">limits frozen here</text>`;
+  }
+
+  // change points — a new phase begins at each of these
+  (o.cuts || []).forEach(c => {
+    if (c.i <= 0 || c.i >= n) return;
+    const x = (X(c.i-1) + X(c.i))/2;
+    const tip = [c.note, c.url].filter(s => (s||'').trim()).join('\n') || `change ${c.n}`;
+    g += `<line x1="${x.toFixed(1)}" y1="${P.t}" x2="${x.toFixed(1)}" y2="${P.t+ih}" stroke="#7a4fa0" stroke-width="1.6" stroke-dasharray="4,3"><title>${esc(tip)}</title></line>`;
+    g += `<circle cx="${x.toFixed(1)}" cy="${P.t+7}" r="7.5" fill="#7a4fa0"><title>${esc(tip)}</title></circle>`;
+    g += `<text x="${x.toFixed(1)}" y="${P.t+10.5}" ${F} font-size="9" font-weight="700" fill="#fff" text-anchor="middle">${c.n}</text>`;
+  });
+
+  // series
+  let line = '';
+  for (let i = 0; i < n; i++) line += (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(o.points[i]).toFixed(1);
+  g += `<path d="${line}" fill="none" stroke="#41637c" stroke-width="1.6"/>`;
+
+  for (let i = 0; i < n; i++) {
+    const muted = o.muted && o.muted.has(i);
+    const sigs = muted ? null : sigSet.get(i);
+    const c = sigs ? '#c0392b' : '#41637c';
+    const r = sigs ? 5 : 3.2;
+    const note = muted ? '\nspans a change point — excluded from the limits' : '';
+    g += `<circle cx="${X(i).toFixed(1)}" cy="${Y(o.points[i]).toFixed(1)}" r="${r}" fill="${sigs?'#c0392b':'#fff'}" stroke="${c}" stroke-width="1.8"${muted?' opacity="0.3"':''}><title>${esc(o.labels[i])}: ${fmt(o.points[i])}${sigs?'\n'+sigs.map(s=>'⚠ '+s.text).join('\n'):''}${note}</title></circle>`;
+    if (sigs) g += `<text x="${X(i).toFixed(1)}" y="${(Y(o.points[i])-10).toFixed(1)}" ${F} font-size="9" font-weight="700" fill="#c0392b" text-anchor="middle">${sigs.map(s=>s.rule).filter((v,j,a)=>a.indexOf(v)===j).join(',')}</text>`;
+  }
+
+  // x labels — thinned so they never collide
+  const everyN = Math.max(1, Math.ceil(n / Math.floor(iw / 52)));
+  for (let i = 0; i < n; i++) {
+    if (i % everyN) continue;
+    g += `<text x="${X(i).toFixed(1)}" y="${P.t+ih+16}" ${F} font-size="9.5" fill="#7c8fa1" text-anchor="middle" transform="rotate(-32 ${X(i).toFixed(1)} ${P.t+ih+16})">${esc(String(o.labels[i]).slice(0,14))}</text>`;
+  }
+
+  g += `<line x1="${P.l}" y1="${P.t+ih}" x2="${P.l+iw}" y2="${P.t+ih}" stroke="#cbd5e1" stroke-width="1"/>`;
+  g += `<line x1="${P.l}" y1="${P.t}" x2="${P.l}" y2="${P.t+ih}" stroke="#cbd5e1" stroke-width="1"/>`;
+  if (o.yLabel) g += `<text x="14" y="${P.t+ih/2}" ${F} font-size="10.5" font-weight="600" fill="#64748b" text-anchor="middle" transform="rotate(-90 14 ${P.t+ih/2})">${esc(o.yLabel)}</text>`;
+  if (o.title)  g += `<text x="${P.l}" y="${P.t-10}" ${F} font-size="12" font-weight="700" fill="#0f2f47">${esc(o.title)}</text>`;
+
+  // Annotation block, inside the SVG so it survives export and print.
+  if (noteLines.length) {
+    const y0 = H - noteH + 14;
+    g += `<line x1="${P.l}" y1="${(y0-11).toFixed(1)}" x2="${W-16}" y2="${(y0-11).toFixed(1)}" stroke="#e6e0ee" stroke-width="1"/>`;
+    noteLines.forEach((ln, k) => {
+      const y = y0 + k*14;
+      if (ln.num !== null) {
+        g += `<circle cx="${P.l+7}" cy="${(y-3.5).toFixed(1)}" r="7" fill="#7a4fa0"/>`;
+        g += `<text x="${P.l+7}" y="${(y-0.5).toFixed(1)}" ${F} font-size="8.5" font-weight="700" fill="#fff" text-anchor="middle">${ln.num}</text>`;
+      }
+      const t = `<text x="${P.l+20}" y="${y.toFixed(1)}" ${F} font-size="10.5" fill="${ln.link?'#1e5f8c':'#41637c'}">${esc(ln.text)}</text>`;
+      // Printed charts need the URL readable as text; on screen it is also a link.
+      g += ln.link ? `<a href="${esc(ln.link)}" xlink:href="${esc(ln.link)}" target="_blank" rel="noopener">${t}</a>` : t;
+    });
+  }
+
+  // geometry published so a click can be mapped back to a point index
+  const clickable = o.clickable ? ` data-click="1" data-l="${P.l}" data-iw="${iw}" data-n="${n}" style="cursor:crosshair"` : '';
+  return `<div class="charthost"><svg class="chart" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"${clickable}><rect width="${W}" height="${H}" fill="#fff"/>${g}</svg></div>`;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Render
+   ═══════════════════════════════════════════════════════════════════════ */
+function render() {
+  const c = $('canvas');
+  if (!DATA) return;
+
+  const type   = $('chartSel').value;
+  const orderC = $('orderSel').value;
+  const groupC = $('groupSel').value;
+  const split  = $('splitChk').checked && groupC;
+  const baseN  = parseInt($('baseInput').value, 10) || 0;
+  const opts   = { medianMR: $('medianMR').checked, laney: $('laneyChk').checked,
+                   baseline: baseN, scale: Number($('scaleInput').value) || 1,
+                   cps: parseCps() };
+  const allRules = $('nelsonChk').checked;
+
+  const labels = col(orderC).map(String);
+  let html = '';
+
+  if (META) html += `<div class="verdict info"><h4>${esc(DEMOS[$('demoSel').value]?.name || 'Example dataset')}</h4><p>${esc(META)}</p></div>`;
+
+  // ── Subgrouping panel first: the choice precedes the chart ────────────
+  if (groupC) {
+    const vals = seriesValues(type, opts);
+    const gl = col(groupC).map(String);
+    const pairs = vals.map((v,i)=>({v, g: gl[i]})).filter(x => isFinite(x.v));
+    const an = SPC.subgroupAnalysis(pairs.map(x=>x.v), pairs.map(x=>x.g));
+    html += renderSubgroup(an, groupC, type);
+  }
+
+  // ── Charts ────────────────────────────────────────────────────────────
+  if (split) {
+    const gl = col(groupC).map(String);
+    const keys = [...new Set(gl)];
+    keys.forEach(k => {
+      const idx = gl.map((g,i)=>g===k?i:-1).filter(i=>i>=0);
+      html += renderOne(type, idx, opts, allRules, `${groupC} = ${k}`, labels);
+    });
+  } else {
+    html += renderOne(type, DATA.rows.map((_,i)=>i), opts, allRules, null, labels);
+  }
+
+  c.innerHTML = html;
+}
+
+/* ── Change points ─────────────────────────────────────────────────────────
+   A change point is a row, a note saying what changed, and optionally a link
+   to the record of it.
+
+   All three travel with the chart. The note and the URL are drawn INTO the
+   SVG, below the plot, so they survive export, printing, and pasting into a
+   document — a chart that leaves the tool still says what happened at week 19.
+   A marked change with no reason attached is half a record; six months later
+   nobody remembers, and the phase boundary becomes unexplainable. */
+let CPS = [];   // [{row, note, url}] — row is 1-based, the first row of a new phase
+
+const parseCps = () => CPS.map(c => c.row);
+
+/** Accepts bare row numbers or full objects; de-duplicates and keeps order. */
+function cpSet(list) {
+  const seen = new Map();
+  list.forEach(c => {
+    const o = typeof c === 'number' ? { row: c } : c;
+    const row = Math.round(o.row);
+    if (!isFinite(row) || row < 2) return;
+    const prev = seen.get(row) || {};
+    seen.set(row, { row,
+      note: o.note !== undefined ? o.note : (prev.note || ''),
+      url:  o.url  !== undefined ? o.url  : (prev.url  || '') });
+  });
+  CPS = [...seen.values()].sort((a, b) => a.row - b.row);
+  $('cpInput').value = CPS.map(c => c.row).join(', ');
+  renderCpList();
+  syncBaseline();
+  render();
+}
+
+/** The text field is the fast path — retyping rows keeps notes already written. */
+function cpFromInput() {
+  const rows = ($('cpInput').value || '').split(/[,\s]+/)
+    .map(s => parseInt(s, 10)).filter(v => isFinite(v) && v > 1);
+  const byRow = new Map(CPS.map(c => [c.row, c]));
+  cpSet(rows.map(r => byRow.get(r) || { row: r }));
+}
+
+/** Only http(s) is rendered as a link. Anything else stays plain text. */
+function safeUrl(u) {
+  const s = (u || '').trim();
+  return /^https?:\/\/[^\s<>"]+$/i.test(s) ? s : '';
+}
+
+function renderCpList() {
+  const host = $('cpList');
+  host.innerHTML = CPS.map((c, k) => `
+    <div class="cpitem">
+      <div class="cphead">
+        <div class="cpbadge">${k + 1}</div>
+        <span>Phase ${k + 2} starts at row ${c.row}</span>
+        <button data-act="del" data-row="${c.row}">remove</button>
+      </div>
+      <input type="text" data-act="note" data-row="${c.row}" value="${esc(c.note || '')}" placeholder="What changed? e.g. Second CHW joined">
+      <input type="text" data-act="url" data-row="${c.row}" value="${esc(c.url || '')}"
+             class="${c.url && !safeUrl(c.url) ? 'bad' : ''}" placeholder="Link to the record (optional)">
+    </div>`).join('');
+}
+
+// Typing a note must not rebuild the list — that would steal focus mid-word.
+$('cpList').addEventListener('input', e => {
+  const act = e.target.dataset.act, row = +e.target.dataset.row;
+  if (act !== 'note' && act !== 'url') return;
+  const c = CPS.find(c => c.row === row);
+  if (!c) return;
+  c[act] = e.target.value;
+  if (act === 'url') e.target.classList.toggle('bad', !!e.target.value && !safeUrl(e.target.value));
+  render();
+});
+$('cpList').addEventListener('click', e => {
+  if (e.target.dataset.act !== 'del') return;
+  cpSet(CPS.filter(c => c.row !== +e.target.dataset.row));
+});
+
+/** Turn phase boundaries into the annotated cut markers drawChart wants. */
+function cutsFor(segs) {
+  return segs.slice(1).map((s, k) => {
+    const c = CPS.find(c => c.row - 1 === s.s) || {};
+    return { i: s.s, n: k + 1, note: c.note || '', url: c.url || '' };
+  });
+}
+
+/** Freezing and phasing answer different questions; running both is incoherent. */
+function syncBaseline() {
+  const on = CPS.length > 0;
+  $('baseInput').disabled = on;
+  $('baseInput').parentElement.style.opacity = on ? '0.45' : '1';
+  $('baseHint').style.opacity = on ? '0.55' : '1';
+}
+
+/* Click a chart to toggle a change point at the nearest gap between points. */
+$('canvas').addEventListener('click', e => {
+  const svg = e.target.closest('svg[data-click]');
+  if (!svg || !DATA) return;
+  const box = svg.getBoundingClientRect();
+  const vb  = svg.viewBox.baseVal.width || box.width;
+  const x   = (e.clientX - box.left) * (vb / box.width);
+  const L = +svg.dataset.l, iw = +svg.dataset.iw, n = +svg.dataset.n;
+  if (n < 2) return;
+  // nearest boundary: round to the gap, clamp so a phase always has a point
+  const row = Math.min(n, Math.max(2, Math.round((x - L) / iw * (n - 1)) + 1));
+  const near = CPS.find(c => Math.abs(c.row - row) <= 1);
+  cpSet(near ? CPS.filter(c => c !== near) : [...CPS, { row }]);
+  if (!near) {                       // focus the new note field, ready to type
+    const box = $('cpList').querySelector(`input[data-act="note"][data-row="${row}"]`);
+    if (box) box.focus();
+  }
+});
+
+function seriesValues(type, opts) {
+  if (type === 'p') {
+    const num = col($('numSel').value), den = col($('denSel').value);
+    return num.map((d,i) => den[i] > 0 ? d/den[i] : NaN);
+  }
+  if (type === 'u') {
+    const num = col($('numSel').value), den = col($('denSel').value);
+    return num.map((c_,i) => den[i] > 0 ? (c_/den[i])*(opts.scale||1) : NaN);
+  }
+  return col($('valueSel').value).map(Number);
+}
+
+function renderOne(type, idx, opts, allRules, titleSuffix, allLabels) {
+  const labels = idx.map(i => allLabels[i]);
+  const title  = titleSuffix ? `${chartName(type)} — ${titleSuffix}` : chartName(type);
+  // Change points are positions in the series as loaded. Splitting by subgroup
+  // reorders the rows, so a row number no longer means anything — drop them.
+  const cps    = titleSuffix ? [] : (opts.cps || []);
+  const phased = cps.length > 0;
+  const base   = phased ? 0 : opts.baseline;   // a phase computes its own limits
+  let chart, extra = '', statList = [], segRows = [];
+
+  if (type === 'run') {
+    const v = idx.map(i => Number(col($('valueSel').value)[i])).filter(isFinite);
+    const segs = SPC.segments(v.length, cps);
+    const cl = [], sigs = [];
+    segs.forEach(sg => {
+      const r = SPC.runChart(v.slice(sg.s, sg.e));
+      for (let i = sg.s; i < sg.e; i++) cl.push(r.cl);
+      r.signals.forEach(s => sigs.push({ ...s, i: s.i + sg.s }));
+      segRows.push([sg, fmt(r.cl), '—', r.signals.length]);
+    });
+    chart = drawChart({ points: v, labels, cl, ucl: null, lcl: null, signals: sigs,
+      title, clLabel: 'Median', cuts: cutsFor(segs), phases: segs, clickable: true,
+      yLabel: $('valueSel').value, height: 290 });
+    statList = [['Median', fmt(cl[0])], ['Phases', segs.length], ['Points', v.length]];
+    extra = signalTable(sigs, labels, 'Run chart rules (Perla)');
+
+  } else if (type === 'p' || type === 'u') {
+    const num   = idx.map(i => Number(col($('numSel').value)[i]));
+    const den   = idx.map(i => Number(col($('denSel').value)[i]));
+    const scale = type === 'u' ? (opts.scale || 1) : 1;
+    const pts   = num.map((c_, i) => den[i] > 0 ? (c_ / den[i]) * scale : 0);
+    const ph = SPC.phase(num.length, cps, sg =>
+      (type === 'p' ? SPC.pChart : SPC.uChart)(
+        num.slice(sg.s, sg.e), den.slice(sg.s, sg.e), { ...opts, baseline: base }));
+    const sigs = SPC.nelsonPhased(pts, ph.cl, ph.sigmaAt, ph.ucl, ph.lcl, ph.segs, { all: allRules });
+    const sz = Math.max(...ph.parts.map(p => p.res.sigmaZ).filter(isFinite));
+    chart = drawChart({ points: pts, labels, cl: ph.cl, ucl: ph.ucl, lcl: ph.lcl,
+      signals: sigs, title, limitLabel: 'UCL', zeroFloor: true, clickable: true,
+      cuts: cutsFor(ph.segs), phases: ph.segs, baselineAt: base, height: 300,
+      yLabel: type === 'p' ? 'proportion' : `per ${opts.scale}` });
+    ph.parts.forEach(p => segRows.push([{ s: p.s, e: p.e }, fmt(p.res.cl),
+      'σz ' + fmt(p.res.sigmaZ, 2),
+      sigs.filter(s => s.rule === 1 && s.i >= p.s && s.i < p.e).length]));
+    statList = [
+      ['Centre line', phased ? ph.segs.length + ' phases' : fmt(ph.cl[0])],
+      ['Sigma z', fmt(sz, 2), sz > 1.2 ? 'overdispersed' : 'binomial holds'],
+      ['Points signalling', sigs.filter(s=>s.rule===1).length + ' of ' + pts.length],
+      ['Limits', opts.laney ? 'Laney ' + (type==='p'?'p′':'u′') : 'classical ' + type]
+    ];
+    extra = overdispersionVerdict({ sigmaZ: sz, laney: opts.laney }, type)
+          + signalTable(sigs, labels, 'Signals');
+
+  } else {
+    const v = idx.map(i => Number(col($('valueSel').value)[i])).filter(isFinite);
+    const ph = SPC.phase(v.length, cps, sg =>
+      SPC.xmr(v.slice(sg.s, sg.e), { medianMR: opts.medianMR, baseline: base }));
+    const sigs = SPC.nelsonPhased(v, ph.cl, ph.sigmaAt, ph.ucl, ph.lcl, ph.segs, { all: allRules });
+    const cuts = cutsFor(ph.segs);
+    chart = drawChart({ points: v, labels, cl: ph.cl, ucl: ph.ucl, lcl: ph.lcl,
+      signals: sigs, title, cuts, phases: ph.segs, clickable: true, baselineAt: base,
+      height: 300, yLabel: $('valueSel').value });
+
+    const mrr = SPC.mrPhased(v, cps, opts.medianMR);
+    const mrSigs = mrr.points.map((val, i) =>
+      (!mrr.skip.has(i) && val > mrr.ucl[i]) ? { i, rule:1, text:'Moving range above its limit' } : null
+    ).filter(Boolean);
+    chart += drawChart({ points: mrr.points, labels: labels.slice(1), cl: mrr.cl,
+      ucl: mrr.ucl, lcl: 0, signals: mrSigs, title: 'Moving range', zeroFloor: true,
+      height: 200, limitLabel: 'URL', yLabel: 'mR', muted: mrr.skip,
+      showNotes: false, cuts: cuts.map(c => ({ ...c, i: c.i - 1 })),
+      phases: ph.segs.map(sg => ({ s: sg.s, e: sg.e - 1 })).filter(sg => sg.e > sg.s) });
+
+    ph.parts.forEach(p => segRows.push([{ s: p.s, e: p.e }, fmt(p.res.cl),
+      fmt(p.res.lcl) + ' to ' + fmt(p.res.ucl),
+      sigs.filter(s => s.rule === 1 && s.i >= p.s && s.i < p.e).length]));
+    statList = [
+      ['Centre line', phased ? ph.segs.length + ' phases' : fmt(ph.cl[0])],
+      ['Sigma (within)', fmt(ph.sigmaAt[0]), opts.medianMR ? 'from median mR' : 'mR̄ / 1.128'],
+      ['Limits', phased ? 'per phase' : fmt(ph.lcl[0]) + ' to ' + fmt(ph.ucl[0])],
+      ['Points signalling', sigs.filter(s=>s.rule===1).length + ' of ' + v.length]
+    ];
+    extra = signalTable(sigs.concat(mrSigs.map(s=>({...s, text:'mR: '+s.text}))), labels, 'Signals');
+  }
+
+  const hint = titleSuffix && (opts.cps || []).length
+    ? `<div class="verdict warn"><h4>Change points are off while subgroups are split</h4><p>They are row positions in the series as loaded, and splitting reorders the rows. Untick <strong>Chart each subgroup separately</strong> to use them.</p></div>`
+    : '';
+
+  return `<div class="card"><h2>${esc(title)}</h2>` +
+    `<div class="sub">${esc(chartBlurb(type))}${phased ? ' · Click the chart to add or remove a change point.' : ' · Click the chart to mark where the process changed.'}</div>` +
+    hint + chart +
+    `<div class="stats">${statList.map(s=>`<div class="stat"><div class="k">${esc(s[0])}</div><div class="v">${esc(String(s[1]))}</div>${s[2]?`<div class="n">${esc(s[2])}</div>`:''}</div>`).join('')}</div>` +
+    (phased ? phaseTable(segRows, labels, type) : '') + extra + '</div>';
+}
+
+/** Per-phase readout — the whole point of marking a change. */
+function phaseTable(rows, labels, type) {
+  const head = type === 'run' ? 'Median' : 'Centre line';
+  const third = type === 'run' ? '' : (type === 'p' || type === 'u' ? 'Dispersion' : 'Limits');
+  const body = rows.map((r, k) => {
+    const [sg, cl, mid, sig] = r;
+    const c = CPS.find(c => c.row - 1 === sg.s);
+    const link = c && safeUrl(c.url);
+    const why = k === 0 ? '<span style="color:#94a3b8">baseline</span>'
+      : (c && (c.note || '').trim() ? esc(c.note) : '<span style="color:#c0392b">— not yet described —</span>')
+        + (link ? ` <a href="${esc(link)}" target="_blank" rel="noopener">link</a>` : '');
+    return `<tr><td class="pt">Phase ${k+1}</td><td>${esc(labels[sg.s] ?? '#'+(sg.s+1))} – ${esc(labels[sg.e-1] ?? '#'+sg.e)}</td><td>${sg.e - sg.s}</td><td>${esc(cl)}</td><td>${esc(String(mid))}</td><td>${sig}</td><td>${why}</td></tr>`;
+  }).join('');
+  return `<table class="sig" style="margin-top:14px"><thead><tr><th>Phase</th><th>From – to</th><th>n</th><th>${esc(head)}</th><th>${esc(third)}</th><th>Outside</th><th>What changed</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function chartName(t) {
+  return { xmr:'XmR chart', p:'p chart', u:'u chart', run:'Run chart' }[t];
+}
+function chartBlurb(t) {
+  return {
+    xmr: 'Individual values with limits from the average moving range — never from the standard deviation of all the values.',
+    p:   'Proportion with limits recomputed at every point, because the denominator moves.',
+    u:   'Count over a varying area of opportunity. Limits widen where the denominator is small; that is correct.',
+    run: 'Median centre line, no limits. Fewer assumptions, less power.'
+  }[t];
+}
+
+function overdispersionVerdict(res, type) {
+  const sz = res.sigmaZ;
+  if (!isFinite(sz)) return '';
+  if (sz > 1.2 && !res.laney) {
+    return `<div class="verdict bad"><h4>These limits are almost certainly too tight</h4>
+      <p>Sigma z is <code>${fmt(sz,2)}</code>. The points move about <strong>${fmt(sz,1)}&times;</strong> more than the ${type==='p'?'binomial':'Poisson'} model says they can. With denominators this large, the classical ${type} chart will flag nearly every period as special cause when nothing unusual has happened.</p>
+      <p>This is <em>overdispersion</em>, and it is the normal condition for health care rates with big populations. Turn on the <strong>Laney ${type==='p'?'p′':'u′'}</strong> correction in the Limits panel.</p></div>`;
+  }
+  if (sz > 1.2 && res.laney) {
+    return `<div class="verdict ok"><h4>Laney correction applied</h4>
+      <p>Sigma z of <code>${fmt(sz,2)}</code> means there was real between-period variation beyond the ${type==='p'?'binomial':'Poisson'} model. The limits above are widened by that factor, so what remains outside them is worth investigating.</p></div>`;
+  }
+  if (sz < 0.75) {
+    return `<div class="verdict warn"><h4>Points are moving less than chance allows</h4>
+      <p>Sigma z is <code>${fmt(sz,2)}</code>. Under-dispersion usually means the denominator is wrong, the data has been smoothed or averaged before it reached you, or the numbers are being adjusted before reporting.</p></div>`;
+  }
+  return '';
+}
+
+function signalTable(sigs, labels, heading) {
+  if (!sigs.length) return `<div style="margin-top:14px"><div class="k" style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b">${esc(heading)}</div><div class="none">No signals. This process is behaving predictably — which is a finding, not a failure.</div></div>`;
+  const rows = sigs.slice().sort((a,b)=>a.i-b.i).map(s =>
+    `<tr class="hi"><td class="pt">${esc(labels[s.i] ?? ('#'+(s.i+1)))}</td><td>${esc(String(s.rule))}</td><td>${esc(s.text)}</td></tr>`).join('');
+  return `<table class="sig"><thead><tr><th>${esc(heading==='Run chart rules (Perla)'?'Starting at':'Point')}</th><th>Rule</th><th>What it means</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* The subgrouping panel — the reason this tool exists. */
+function renderSubgroup(an, colName, type) {
+  if (!an) return `<div class="verdict warn"><h4>Not enough to compare</h4><p>Subgrouping by <code>${esc(colName)}</code> needs at least two groups with more than one observation between them.</p></div>`;
+
+  const pct = Math.round(an.shareBetween * 100);
+  const sig = an.p < 0.05;
+  const cls = pct >= 40 ? 'bad' : pct >= 15 ? 'warn' : 'ok';
+
+  let verdict;
+  if (pct >= 40 && sig) {
+    verdict = `<h4>${pct}% of all the variation is <em>between</em> ${esc(colName)}s — not within them</h4>
+      <p>These are not one process. They are ${an.k} processes that happen to share a spreadsheet. Pooling them into a single chart makes the limits wide enough to hide everything real, and comparing the pooled average to a target tells you nothing about any actual ${esc(colName)}.</p>
+      <p>Tick <strong>Chart each subgroup separately</strong> in the Subgrouping panel. If instead you subgroup <em>by</em> ${esc(colName)} and chart the pooled series, you have just declared the largest effect in your data to be noise.</p>`;
+  } else if (pct >= 15) {
+    verdict = `<h4>${pct}% of the variation is between ${esc(colName)}s</h4>
+      <p>Enough to matter, not enough to be the whole story. Chart both ways and see which reading survives. A difference this size will show up in a league table as a ranking every quarter, and the ranking will reshuffle on noise.</p>`;
+  } else {
+    verdict = `<h4>${esc(colName)} explains almost none of the variation (${pct}%)</h4>
+      <p>Whatever is moving this measure, it is not which ${esc(colName)} the observation came from. Pooling them is legitimate, and a single chart is the honest picture.</p>
+      <p>Note what this rules out: any intervention aimed at differences between ${esc(colName)}s is aimed at ${pct}% of the problem.</p>`;
+  }
+
+  const bar = `<div class="varbar">
+      <div class="between" style="width:${Math.max(pct,3)}%">${pct >= 12 ? 'between ' + pct + '%' : ''}</div>
+      <div class="within" style="width:${Math.max(100-pct,3)}%">${100-pct >= 12 ? 'within ' + (100-pct) + '%' : ''}</div>
+    </div>
+    <div class="legend2"><span><i style="background:#d4622f"></i>between ${esc(colName)}s</span><span><i style="background:#7fa8c4"></i>within a ${esc(colName)}</span></div>`;
+
+  const rows = an.detail.map(d =>
+    `<tr><td class="pt">${esc(d.key)}</td><td>${d.n}</td><td>${fmt(d.mean)}</td><td>${fmt(d.sd)}</td><td>${fmt(d.min)} – ${fmt(d.max)}</td></tr>`).join('');
+
+  return `<div class="card"><h2>Subgrouping by ${esc(colName)}</h2>
+    <div class="sub">Choosing a subgroup is a claim about cause, not a display option. Here is what that claim costs.</div>
+    <div class="verdict ${cls}">${verdict}</div>
+    ${bar}
+    <div class="stats">
+      <div class="stat"><div class="k">Sigma within</div><div class="v">${fmt(an.sigmaWithin)}</div><div class="n">pooled, what the chart calls noise</div></div>
+      <div class="stat"><div class="k">Sigma overall</div><div class="v">${fmt(an.sigmaTotal)}</div><div class="n">ignoring ${esc(colName)}</div></div>
+      <div class="stat"><div class="k">Ratio</div><div class="v">${fmt(an.ratio,2)}×</div><div class="n">overall ÷ within</div></div>
+      <div class="stat"><div class="k">F(${an.k-1}, ${an.N-an.k})</div><div class="v">${fmt(an.F,2)}</div><div class="n">p ${an.p < 0.0001 ? '< 0.0001' : '= ' + fmt(an.p,4)}</div></div>
+    </div>
+    <table class="sig" style="margin-top:14px"><thead><tr><th>${esc(colName)}</th><th>n</th><th>Mean</th><th>SD</th><th>Range</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Export
+   ═══════════════════════════════════════════════════════════════════════ */
+function firstSVG() {
+  const s = document.querySelector('#canvas svg.chart');
+  if (!s) { alert('Nothing to export yet — load some data first.'); return null; }
+  return s;
+}
+function download(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function svgText(s) {
+  const c = s.cloneNode(true);
+  c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  // Fonts must be attributes, not CSS, or text un-wraps outside the browser.
+  c.querySelectorAll('text').forEach(t => {
+    if (!t.getAttribute('font-family')) t.setAttribute('font-family', 'system-ui,sans-serif');
+  });
+  return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(c);
+}
+
+$('svgBtn').onclick = () => {
+  const s = firstSVG(); if (!s) return;
+  download(new Blob([svgText(s)], { type: 'image/svg+xml' }), 'rcn-spc-chart.svg');
+};
+$('pngBtn').onclick = () => {
+  const s = firstSVG(); if (!s) return;
+  const w = +s.getAttribute('width'), h = +s.getAttribute('height'), k = 2;
+  const img = new Image();
+  img.onload = () => {
+    const cv = document.createElement('canvas');
+    cv.width = w*k; cv.height = h*k;
+    const cx = cv.getContext('2d');
+    cx.fillStyle = '#fff'; cx.fillRect(0,0,cv.width,cv.height);
+    cx.drawImage(img, 0, 0, cv.width, cv.height);
+    cv.toBlob(b => download(b, 'rcn-spc-chart.png'), 'image/png');
+  };
+  img.onerror = () => alert('Could not rasterise the chart. The SVG export always works.');
+  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgText(s))));
+};
+$('jsonBtn').onclick = () => {
+  if (!DATA) { alert('Nothing to save yet.'); return; }
+  const state = { format:'rcn-spc/1', saved:new Date().toISOString(), data:DATA, note:META,
+    changePoints: CPS,
+    settings: ['chartSel','orderSel','valueSel','numSel','denSel','groupSel','scaleInput','baseInput']
+      .reduce((o,id)=>(o[id]=$(id).value,o),{}),
+    flags: ['splitChk','medianMR','laneyChk','nelsonChk'].reduce((o,id)=>(o[id]=$(id).checked,o),{}) };
+  download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}), 'rcn-spc-session.json');
+};
+$('openJsonBtn').onclick = () => $('jsonInput').click();
+$('jsonInput').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const s = JSON.parse(r.result);
+      if (!s.data || !s.data.cols) throw new Error('not an RCN SPC session');
+      loadData(s.data, s.note);
+      Object.entries(s.settings || {}).forEach(([k,v]) => { if ($(k)) $(k).value = v; });
+      Object.entries(s.flags || {}).forEach(([k,v]) => { if ($(k)) $(k).checked = v; });
+      syncFields();
+      cpSet(Array.isArray(s.changePoints) ? s.changePoints
+            : (s.settings && s.settings.cpInput ? s.settings.cpInput.split(/[,\s]+/).map(Number) : []));
+    } catch (err) { alert('Could not read that file: ' + err.message); }
+  };
+  r.readAsText(f);
+  e.target.value = '';
+};
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Wiring
+   ═══════════════════════════════════════════════════════════════════════ */
+function syncFields() {
+  const t = $('chartSel').value;
+  const rate = t === 'p' || t === 'u';
+  $('fldValue').style.display = rate ? 'none' : 'block';
+  $('fldNum').style.display   = rate ? 'block' : 'none';
+  $('fldDen').style.display   = rate ? 'block' : 'none';
+  $('fldScale').style.display = t === 'u' ? 'block' : 'none';
+  $('laneyChk').parentElement.style.opacity = rate ? '1' : '0.45';
+  $('laneyChk').disabled = !rate;
+  $('medianMR').parentElement.style.opacity = t === 'xmr' ? '1' : '0.45';
+  $('medianMR').disabled = t !== 'xmr';
+  $('chartHint').textContent = chartBlurb(t);
+}
+
+$('demoSel').onchange = e => {
+  const d = DEMOS[e.target.value];
+  if (!d) return;
+  loadData({ cols: d.cols, rows: d.rows.map(r => [...r]) }, d.note);
+  $('chartSel').value = d.chart;
+  syncFields();
+  if (d.order) $('orderSel').value = d.order;
+  if (d.value) $('valueSel').value = d.value;
+  if (d.num)   $('numSel').value   = d.num;
+  if (d.den)   $('denSel').value   = d.den;
+  if (d.scale) $('scaleInput').value = d.scale;
+  $('groupSel').value = d.group || '';
+  $('splitChk').checked = false;
+  $('laneyChk').checked = false;
+  $('baseInput').value = '';
+  cpSet([]);
+};
+
+$('pasteBtn').onclick = () => {
+  const shown = $('csvBox').style.display !== 'none';
+  $('csvBox').style.display = shown ? 'none' : 'block';
+  $('loadCsvBtn').style.display = shown ? 'none' : 'block';
+  if (!shown) $('csvBox').focus();
+};
+$('loadCsvBtn').onclick = () => {
+  const d = parseCSV($('csvBox').value);
+  if (!d || !d.rows.length) { alert('Could not read that as CSV. First row should be column names.'); return; }
+  loadData(d, null);
+  $('csvBox').style.display = 'none';
+  $('loadCsvBtn').style.display = 'none';
+};
+$('fileBtn').onclick = () => $('fileInput').click();
+$('fileInput').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const d = parseCSV(r.result);
+    if (!d || !d.rows.length) { alert('Could not read that file as CSV.'); return; }
+    loadData(d, f.name);
+  };
+  r.readAsText(f);
+  e.target.value = '';
+};
+
+$('chartSel').onchange = () => { syncFields(); render(); };
+['orderSel','valueSel','numSel','denSel','groupSel','scaleInput','baseInput']
+  .forEach(id => { $(id).onchange = render; $(id).oninput = render; });
+$('cpInput').oninput = cpFromInput;
+$('cpClear').onclick = () => cpSet([]);
+['splitChk','medianMR','laneyChk','nelsonChk'].forEach(id => $(id).onchange = render);
+
+$('clearBtn').onclick = () => {
+  if (!DATA) return;
+  if (!confirm('Discard the loaded dataset and all settings in this tab?\n\nThis cannot be undone. Save the session as JSON first if you want to keep it.')) return;
+  DATA = null; META = null;
+  $('demoSel').value = ''; $('csvBox').value = ''; CPS = []; renderCpList(); syncBaseline();
+  $('dataHint').textContent = 'No data loaded.';
+  $('canvas').innerHTML = `<div class="empty"><h2>Cleared.</h2><p>Load an example or paste a CSV to start again.</p></div>`;
+};
+
+syncFields();
+syncBaseline();
+</script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+{
+  "title": "Process Behavior Charts Introduction",
+  "story": [
+    {
+      "type": "markdown",
+      "text": "Measurement gives you numbers. Measurement does not separate signal from noise.",
+      "id": "171561c12f191e33"
+    },
+    {
+      "type": "markdown",
+      "text": "## The problem Statistical Process Control (SPC) charts solve",
+      "id": "ba7c6bb712706142"
+    },
+    {
+      "type": "markdown",
+      "text": "Suppose the co-op tracks referral turnaround. This month it is 8.1 days; last month it was 7.2. Something got worse — or did it? The honest answer is that you cannot tell from those two numbers, and no amount of additional precision in measuring them will help.",
+      "id": "3b5e06c0e6e707ba"
+    },
+    {
+      "type": "markdown",
+      "text": "The question is not *what is the number* but *how much does this number move due to random variation*.",
+      "id": "5aba11449d9a34b7"
+    },
+    {
+      "type": "markdown",
+      "text": "In 1924, at Bell Labs Walter Shewhart solved this problem — how to distinguish random variation within a process from true change in processes. Plot the numbers in time order. Compute, from the point-to-point movement itself, how far the measure wanders when the process is unchanged. Draw those bounds. A point outside them, or a pattern too orderly to be chance, is worth investigating. Everything else is the process being itself.",
+      "id": "fa8f374c38b9e1d5"
+    },
+    {
+      "type": "markdown",
+      "text": "Two mistakes are possible. Reacting to noise as though it were signal, and ignoring signal as though it were noise. Both make things worse. A SPC chart is the only cheap way to stop doing either.",
+      "id": "6fff4c52e7e7970e"
+    },
+    {
+      "type": "markdown",
+      "text": "## A SPC chart is not",
+      "id": "783443fbd00ae98f"
+    },
+    {
+      "type": "markdown",
+      "text": "**It is not:** A target line — **Because:** Control Limits come from what the process actually *does*. A specification limit is target and it may be within the control limits or outside them.",
+      "id": "e9c2c37c8e603bd1"
+    },
+    {
+      "type": "markdown",
+      "text": "**It is not:** A significance test — **Because:** A statistical test asks whether a result could have come up by chance, and answers with odds. A control chart is not doing that, and you need no statistics at all to read one. Shewhart set the limits by asking a practical question instead: where do I draw the lines so that the least effort is wasted? Draw them too close to the middle and you spend your life chasing ordinary ups and downs that mean nothing. Draw them too far out and real changes slip past unnoticed. He settled on a distance that keeps both kinds of waste low, and a century of use across every kind of work has not improved on it. The lines mark where it starts to be worth asking what happened. They say nothing about how likely anything is.",
+      "id": "39f20e687ac539d0"
+    },
+    {
+      "type": "markdown",
+      "text": "**It is not:** A ranking — **Because:** A ranking turns ordinary variation into a standing. Suppose the co-op posts a monthly list of its eight clinics ordered by referral turnaround. Someone is always last. Next month the order shuffles and someone else is last — not because anything changed at either clinic, but because these numbers move on their own. The clinic at the bottom gets scrutiny it did not earn, the clinic at the top gets credit it did not earn, and everyone learns to manage their position on the list. A chart asks a different question of each clinic: is this month different from that clinic's own history? Often the answer for all eight is no, and the ranking was measuring nothing at all.",
+      "id": "e83ed038870ee609"
+    },
+    {
+      "type": "markdown",
+      "text": "**It is not:** A verdict on the people within the processes — **Because:** Most variation belongs to the system (process), not the individuals inside it. SPC is how you find out when the measure is caused by something other than the structure of the process. You need this information before deciding whom to talk to.",
+      "id": "d2e6f191c48c0a65"
+    },
+    {
+      "type": "markdown",
+      "text": "## The part that actually matters: rational subgrouping",
+      "id": "86d6fa25b0069dbc"
+    },
+    {
+      "type": "markdown",
+      "text": "How you group your numbers before charting them decides what the chart is able to find. This sounds like a formatting detail. It is the whole thing.",
+      "id": "2fcf7616f5b99dfd"
+    },
+    {
+      "type": "markdown",
+      "text": "Here is the everyday version. A school wants to know whether one classroom is doing something different. Chart every student's score in a single pile and the ordinary spread between students is so wide that no classroom could ever stand out — the differences you are hunting for are buried inside the differences you are not. Compare classroom averages instead and the classrooms become the thing that varies, so a genuinely different one shows up.",
+      "id": "cfbfe8bda782f78b"
+    },
+    {
+      "type": "markdown",
+      "text": "Nothing about the students changed. The grouping changed, and with it the question the chart is able to answer.",
+      "id": "333ce8ccc7626fde"
+    },
+    {
+      "type": "markdown",
+      "text": "Most software makes this choice for you and never mentions it — it simply takes five rows at a time, forever. That default is a decision about what counts as normal, made by a program that knows nothing about your work.",
+      "id": "147a0f0ff7b17de3"
+    },
+    {
+      "type": "markdown",
+      "text": "The rule underneath it is short. Whatever variation you put *inside* a group, the chart treats as normal — that becomes the ruler it measures everything else against. Whatever is left *between* groups is what the chart is able to flag.",
+      "id": "150f141eaa52b654"
+    },
+    {
+      "type": "markdown",
+      "text": "Group by clinic, and the differences between clinics become the thing being tested. The chart can find them.",
+      "id": "1f3d90b3dc359fab"
+    },
+    {
+      "type": "markdown",
+      "text": "Pool the clinics together, and those same differences become part of the ruler. The chart can no longer see them, because you have told it they are normal.",
+      "id": "4465f804dbb4809f"
+    },
+    {
+      "type": "markdown",
+      "text": "This is why the same numbers can produce two opposite conclusions, and why neither chart is lying. Each answers the question it was asked. The grouping is how you asked it.",
+      "id": "c8cb81d96f9bd4bd"
+    },
+    {
+      "type": "markdown",
+      "text": "## The worked case: referral turnaround at two clinics",
+      "id": "e70755aeff597863"
+    },
+    {
+      "type": "markdown",
+      "text": "Twenty-four months, two clinics, one column of turnaround times from request to appointment.",
+      "id": "0a5f783b454a0ac9"
+    },
+    {
+      "type": "markdown",
+      "text": "Pooled into one chart, the limits come out at **−10.5 to 25.7 days**. The data only ever ranges from 3.7 to 11.8. Not one point signals. The chart says: the process is stable, predictable. Because the clinics data from two processes are very divergent month to month, the calculated limits are inflated enormously.",
+      "id": "38e3e54b84dde84a"
+    },
+    {
+      "type": "markdown",
+      "text": "Subgrouped by clinic, **99.4%** of all the variation turns out to be *between* the two clinics, not within them. North runs at 4.18 days. South runs at 10.99. Each is tight and stable on its own. They are two entirely separate processes that happen to share a spreadsheet. F(1,46) = 3957.",
+      "id": "2e34a277c83434ef"
+    },
+    {
+      "type": "markdown",
+      "text": "Shewhart called this pattern a **mixture**. The mixed or pooled chart is essentially useless.",
+      "id": "3809abe2696cc2e5"
+    },
+    {
+      "type": "markdown",
+      "text": "The subgrouping panel in this tool states what fraction of the variation your grouping choice makes obvious or hides.",
+      "id": "aced9f492025e351"
+    },
+    {
+      "type": "markdown",
+      "text": "## Marking what you changed",
+      "id": "8c6569ef14042bd3"
+    },
+    {
+      "type": "markdown",
+      "text": "The case above is a difference you did not know was there. The opposite case is just as common: a change you made on purpose.",
+      "id": "f444b6bc5c3c6425"
+    },
+    {
+      "type": "markdown",
+      "text": "When the co-op adds a worker, simplifies a form, or moves a clinic, the numbers before and after are not one process. Charted as one, they produce a centre line describing a level the process never ran at, and limits wide enough to hide whatever happens next.",
+      "id": "5d4e81048211f391"
+    },
+    {
+      "type": "markdown",
+      "text": "Take the CHW example shipped with the tool. A second community health worker joins at week 19 and weekly visits rise from about 42 to about 55.",
+      "id": "c381528a782585c1"
+    },
+    {
+      "type": "markdown",
+      "text": "**Charted as:** One process, all 30 weeks — **Centre line:** 47.3 — **Limits:** 37.0 to 57.7 — **Points flagged:** 3",
+      "id": "dd3c3675dbafa7fe"
+    },
+    {
+      "type": "markdown",
+      "text": "**Charted as:** Change marked at week 19 — **Centre line:** 41.9 then 55.5 — **Limits:** 31.7–52.1, then 46.1–64.9 — **Points flagged:** 0",
+      "id": "cd060a5a6d08ab4b"
+    },
+    {
+      "type": "markdown",
+      "text": "Zero is the number to look at. Once the change is accounted for, each phase is stable on its own — predictable before, predictable after, and the jump between them was the thing you did. The single-process chart flags three weeks that were entirely ordinary for the period they belong to.",
+      "id": "e20b81242ac7c6ba"
+    },
+    {
+      "type": "markdown",
+      "text": "Click the chart where the change happened and type what it was. The note, and any link you attach to the record of it, are drawn into the chart itself, so an exported or printed chart still says what happened at week 19. A marked change with no reason attached is half a record.",
+      "id": "e4dab83a21ed670a"
+    },
+    {
+      "type": "markdown",
+      "text": "## The health care trap: overdispersion",
+      "id": "f64584aeb28305e8"
+    },
+    {
+      "type": "markdown",
+      "text": "Some of what the co-op measures is a share — how many out of how many. What portion of enrolled members have a completed care plan, out of 1,200 enrolled.",
+      "id": "45936858aaf5d172"
+    },
+    {
+      "type": "markdown",
+      "text": "There is a standard formula for how much a share like that should bounce around from month to month by chance alone, and with 1,200 people in the denominator it says: hardly at all. About four percentage points either side of the average, at most.",
+      "id": "8cddcddc60187fdd"
+    },
+    {
+      "type": "markdown",
+      "text": "Real months do not behave that way. Across eighteen months, completion ranged from 52% to 72% — a twenty-point spread — for entirely ordinary reasons: who was on holiday, which families moved in or out, how a staffing gap happened to fall. The formula describes a world in which each of those 1,200 people is an independent coin flip with identical odds. People are not coin flips.",
+      "id": "ea60bcc4c5ecf269"
+    },
+    {
+      "type": "markdown",
+      "text": "Use that formula anyway and you get a chart that flags almost everything. This is that chart.",
+      "id": "94f56f3855e23743"
+    },
+    {
+      "type": "html",
+      "id": "b0766cf0b6c16d3a",
+      "text": "<svg viewBox=\"0 0 580 250\" xmlns=\"http://www.w3.org/2000/svg\" style=\"width:100%;height:auto;max-width:580px\"><rect width=\"580\" height=\"250\" fill=\"#fff\"/><line x1=\"48\" y1=\"210.0\" x2=\"476\" y2=\"210.0\" stroke=\"#e8ecec\" stroke-width=\"1\"/><text x=\"41\" y=\"213.5\" font-family=\"system-ui,sans-serif\" font-size=\"10\" fill=\"#7d8f96\" text-anchor=\"end\">48%</text><line x1=\"48\" y1=\"163.5\" x2=\"476\" y2=\"163.5\" stroke=\"#e8ecec\" stroke-width=\"1\"/><text x=\"41\" y=\"167.0\" font-family=\"system-ui,sans-serif\" font-size=\"10\" fill=\"#7d8f96\" text-anchor=\"end\">56%</text><line x1=\"48\" y1=\"117.0\" x2=\"476\" y2=\"117.0\" stroke=\"#e8ecec\" stroke-width=\"1\"/><text x=\"41\" y=\"120.5\" font-family=\"system-ui,sans-serif\" font-size=\"10\" fill=\"#7d8f96\" text-anchor=\"end\">64%</text><line x1=\"48\" y1=\"70.5\" x2=\"476\" y2=\"70.5\" stroke=\"#e8ecec\" stroke-width=\"1\"/><text x=\"41\" y=\"74.0\" font-family=\"system-ui,sans-serif\" font-size=\"10\" fill=\"#7d8f96\" text-anchor=\"end\">72%</text><line x1=\"48\" y1=\"24.0\" x2=\"476\" y2=\"24.0\" stroke=\"#e8ecec\" stroke-width=\"1\"/><text x=\"41\" y=\"27.5\" font-family=\"system-ui,sans-serif\" font-size=\"10\" fill=\"#7d8f96\" text-anchor=\"end\">80%</text><path d=\"M48.0,80.8L60.6,80.8L60.6,82.2M60.6,82.2L85.8,82.2L85.8,83.0M85.8,83.0L110.9,83.0L110.9,83.7M110.9,83.7L136.1,83.7L136.1,84.6M136.1,84.6L161.3,84.6L161.3,85.0M161.3,85.0L186.5,85.0L186.5,85.6M186.5,85.6L211.6,85.6L211.6,86.2M211.6,86.2L236.8,86.2L236.8,86.7M236.8,86.7L262.0,86.7L262.0,87.0M262.0,87.0L287.2,87.0L287.2,87.3M287.2,87.3L312.4,87.3L312.4,87.6M312.4,87.6L337.5,87.6L337.5,87.5M337.5,87.5L362.7,87.5L362.7,87.2M362.7,87.2L387.9,87.2L387.9,86.8M387.9,86.8L413.1,86.8L413.1,86.2M413.1,86.2L438.2,86.2L438.2,85.6M438.2,85.6L463.4,85.6L463.4,84.7M463.4,84.7L476.0,84.7\" fill=\"none\" stroke=\"#b03a26\" stroke-width=\"1.4\" stroke-dasharray=\"5,4\"/><path d=\"M48.0,138.8L60.6,138.8L60.6,137.4M60.6,137.4L85.8,137.4L85.8,136.6M85.8,136.6L110.9,136.6L110.9,135.9M110.9,135.9L136.1,135.9L136.1,135.0M136.1,135.0L161.3,135.0L161.3,134.6M161.3,134.6L186.5,134.6L186.5,134.0M186.5,134.0L211.6,134.0L211.6,133.4M211.6,133.4L236.8,133.4L236.8,132.9M236.8,132.9L262.0,132.9L262.0,132.6M262.0,132.6L287.2,132.6L287.2,132.3M287.2,132.3L312.4,132.3L312.4,132.0M312.4,132.0L337.5,132.0L337.5,132.1M337.5,132.1L362.7,132.1L362.7,132.4M362.7,132.4L387.9,132.4L387.9,132.8M387.9,132.8L413.1,132.8L413.1,133.4M413.1,133.4L438.2,133.4L438.2,134.0M438.2,134.0L463.4,134.0L463.4,134.8M463.4,134.8L476.0,134.8\" fill=\"none\" stroke=\"#b03a26\" stroke-width=\"1.4\" stroke-dasharray=\"5,4\"/><line x1=\"48\" y1=\"109.8\" x2=\"476\" y2=\"109.8\" stroke=\"#1f5c7a\" stroke-width=\"1.4\"/><text x=\"482\" y=\"88.2\" font-family=\"system-ui,sans-serif\" font-size=\"10\" font-weight=\"700\" fill=\"#b03a26\">upper limit</text><text x=\"482\" y=\"138.3\" font-family=\"system-ui,sans-serif\" font-size=\"10\" font-weight=\"700\" fill=\"#b03a26\">lower limit</text><text x=\"482\" y=\"113.3\" font-family=\"system-ui,sans-serif\" font-size=\"10\" font-weight=\"700\" fill=\"#1f5c7a\">average 65%</text><path d=\"M48.0,187.0L73.2,169.2L98.4,151.8L123.5,134.5L148.7,157.9L173.9,122.6L199.1,105.3L224.2,87.8L249.4,116.8L274.6,76.4L299.8,93.7L324.9,70.5L350.1,81.9L375.3,105.4L400.5,122.8L425.6,99.5L450.8,76.2L476.0,87.9\" fill=\"none\" stroke=\"#41637c\" stroke-width=\"1.3\" opacity=\".65\"/><circle cx=\"48.0\" cy=\"187.0\" r=\"4.2\" fill=\"#b03a26\" stroke=\"#b03a26\" stroke-width=\"1.6\"/><circle cx=\"73.2\" cy=\"169.2\" r=\"4.2\" fill=\"#b03a26\" stroke=\"#b03a26\" stroke-width=\"1.6\"/><circle cx=\"98.4\" cy=\"151.8\" r=\"4.2\" fill=\"#b03a26\" stroke=\"#b03a26\" stroke-width=\"1.6\"/><circle cx=\"123.5\" cy=\"134.5\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"148.7\" cy=\"157.9\" r=\"4.2\" fill=\"#b03a26\" stroke=\"#b03a26\" stroke-width=\"1.6\"/><circle cx=\"173.9\" cy=\"122.6\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"199.1\" cy=\"105.3\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"224.2\" cy=\"87.8\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"249.4\" cy=\"116.8\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"274.6\" cy=\"76.4\" r=\"4.2\" fill=\"#b03a26\" stroke=\"#b03a26\" stroke-width=\"1.6\"/><circle cx=\"299.8\" cy=\"93.7\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"324.9\" cy=\"70.5\" r=\"4.2\" fill=\"#b03a26\" stroke=\"#b03a26\" stroke-width=\"1.6\"/><circle cx=\"350.1\" cy=\"81.9\" r=\"4.2\" fill=\"#b03a26\" stroke=\"#b03a26\" stroke-width=\"1.6\"/><circle cx=\"375.3\" cy=\"105.4\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"400.5\" cy=\"122.8\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"425.6\" cy=\"99.5\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"450.8\" cy=\"76.2\" r=\"4.2\" fill=\"#b03a26\" stroke=\"#b03a26\" stroke-width=\"1.6\"/><circle cx=\"476.0\" cy=\"87.9\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><text x=\"48.0\" y=\"225\" font-family=\"system-ui,sans-serif\" font-size=\"9.5\" fill=\"#7d8f96\" text-anchor=\"middle\">month 1</text><text x=\"173.9\" y=\"225\" font-family=\"system-ui,sans-serif\" font-size=\"9.5\" fill=\"#7d8f96\" text-anchor=\"middle\">month 6</text><text x=\"324.9\" y=\"225\" font-family=\"system-ui,sans-serif\" font-size=\"9.5\" fill=\"#7d8f96\" text-anchor=\"middle\">month 12</text><text x=\"476.0\" y=\"225\" font-family=\"system-ui,sans-serif\" font-size=\"9.5\" fill=\"#7d8f96\" text-anchor=\"middle\">month 18</text><text x=\"48\" y=\"15\" font-family=\"system-ui,sans-serif\" font-size=\"11.5\" font-weight=\"700\" fill=\"#14202b\">Care plan completion — standard share chart</text><text x=\"48\" y=\"244\" font-family=\"system-ui,sans-serif\" font-size=\"10\" fill=\"#7d8f96\">Red = flagged as a special cause. Eight of eighteen months.</text></svg>"
+    },
+    {
+      "type": "markdown",
+      "text": "Eight of the eighteen months fall outside the limits. Taken at face value, that would mean something extraordinary happened every other month for a year and a half. Nothing did.",
+      "id": "1552c5a971b59c39"
+    },
+    {
+      "type": "markdown",
+      "text": "What is wrong is the assumption the limits were built from — and that is what \"the model is wrong\" means here. A model, in this sense, is nothing more than an assumption about how much a number ought to move on its own. This one assumed far too little movement, so it drew the lines far too close together, and then faithfully reported every ordinary month as an emergency. The chart is not finding problems in the clinics. It is finding that we handed it the wrong assumption.",
+      "id": "f8eecdb87a520661"
+    },
+    {
+      "type": "markdown",
+      "text": "The fix is to stop assuming and measure it: look at how much the shares actually moved from one month to the next, and set the limits from that instead. Here are the same eighteen months with that correction applied.",
+      "id": "25aa4c44311d8928"
+    },
+    {
+      "type": "html",
+      "id": "30f048ea159eccd6",
+      "text": "<svg viewBox=\"0 0 580 250\" xmlns=\"http://www.w3.org/2000/svg\" style=\"width:100%;height:auto;max-width:580px\"><rect width=\"580\" height=\"250\" fill=\"#fff\"/><line x1=\"48\" y1=\"210.0\" x2=\"476\" y2=\"210.0\" stroke=\"#e8ecec\" stroke-width=\"1\"/><text x=\"41\" y=\"213.5\" font-family=\"system-ui,sans-serif\" font-size=\"10\" fill=\"#7d8f96\" text-anchor=\"end\">48%</text><line x1=\"48\" y1=\"163.5\" x2=\"476\" y2=\"163.5\" stroke=\"#e8ecec\" stroke-width=\"1\"/><text x=\"41\" y=\"167.0\" font-family=\"system-ui,sans-serif\" font-size=\"10\" fill=\"#7d8f96\" text-anchor=\"end\">56%</text><line x1=\"48\" y1=\"117.0\" x2=\"476\" y2=\"117.0\" stroke=\"#e8ecec\" stroke-width=\"1\"/><text x=\"41\" y=\"120.5\" font-family=\"system-ui,sans-serif\" font-size=\"10\" fill=\"#7d8f96\" text-anchor=\"end\">64%</text><line x1=\"48\" y1=\"70.5\" x2=\"476\" y2=\"70.5\" stroke=\"#e8ecec\" stroke-width=\"1\"/><text x=\"41\" y=\"74.0\" font-family=\"system-ui,sans-serif\" font-size=\"10\" fill=\"#7d8f96\" text-anchor=\"end\">72%</text><line x1=\"48\" y1=\"24.0\" x2=\"476\" y2=\"24.0\" stroke=\"#e8ecec\" stroke-width=\"1\"/><text x=\"41\" y=\"27.5\" font-family=\"system-ui,sans-serif\" font-size=\"10\" fill=\"#7d8f96\" text-anchor=\"end\">80%</text><path d=\"M48.0,41.1L60.6,41.1L60.6,44.4M60.6,44.4L85.8,44.4L85.8,46.3M85.8,46.3L110.9,46.3L110.9,47.9M110.9,47.9L136.1,47.9L136.1,50.1M136.1,50.1L161.3,50.1L161.3,51.0M161.3,51.0L186.5,51.0L186.5,52.5M186.5,52.5L211.6,52.5L211.6,53.9M211.6,53.9L236.8,53.9L236.8,55.0M236.8,55.0L262.0,55.0L262.0,55.8M262.0,55.8L287.2,55.8L287.2,56.4M287.2,56.4L312.4,56.4L312.4,57.2M312.4,57.2L337.5,57.2L337.5,56.9M337.5,56.9L362.7,56.9L362.7,56.2M362.7,56.2L387.9,56.2L387.9,55.2M387.9,55.2L413.1,55.2L413.1,53.9M413.1,53.9L438.2,53.9L438.2,52.5M438.2,52.5L463.4,52.5L463.4,50.5M463.4,50.5L476.0,50.5\" fill=\"none\" stroke=\"#b03a26\" stroke-width=\"1.4\" stroke-dasharray=\"5,4\"/><path d=\"M48.0,178.5L60.6,178.5L60.6,175.2M60.6,175.2L85.8,175.2L85.8,173.3M85.8,173.3L110.9,173.3L110.9,171.7M110.9,171.7L136.1,171.7L136.1,169.5M136.1,169.5L161.3,169.5L161.3,168.6M161.3,168.6L186.5,168.6L186.5,167.1M186.5,167.1L211.6,167.1L211.6,165.7M211.6,165.7L236.8,165.7L236.8,164.6M236.8,164.6L262.0,164.6L262.0,163.7M262.0,163.7L287.2,163.7L287.2,163.1M287.2,163.1L312.4,163.1L312.4,162.4M312.4,162.4L337.5,162.4L337.5,162.6M337.5,162.6L362.7,162.6L362.7,163.3M362.7,163.3L387.9,163.3L387.9,164.3M387.9,164.3L413.1,164.3L413.1,165.7M413.1,165.7L438.2,165.7L438.2,167.1M438.2,167.1L463.4,167.1L463.4,169.1M463.4,169.1L476.0,169.1\" fill=\"none\" stroke=\"#b03a26\" stroke-width=\"1.4\" stroke-dasharray=\"5,4\"/><line x1=\"48\" y1=\"109.8\" x2=\"476\" y2=\"109.8\" stroke=\"#1f5c7a\" stroke-width=\"1.4\"/><text x=\"482\" y=\"54.0\" font-family=\"system-ui,sans-serif\" font-size=\"10\" font-weight=\"700\" fill=\"#b03a26\">upper limit</text><text x=\"482\" y=\"172.6\" font-family=\"system-ui,sans-serif\" font-size=\"10\" font-weight=\"700\" fill=\"#b03a26\">lower limit</text><text x=\"482\" y=\"113.3\" font-family=\"system-ui,sans-serif\" font-size=\"10\" font-weight=\"700\" fill=\"#1f5c7a\">average 65%</text><path d=\"M48.0,187.0L73.2,169.2L98.4,151.8L123.5,134.5L148.7,157.9L173.9,122.6L199.1,105.3L224.2,87.8L249.4,116.8L274.6,76.4L299.8,93.7L324.9,70.5L350.1,81.9L375.3,105.4L400.5,122.8L425.6,99.5L450.8,76.2L476.0,87.9\" fill=\"none\" stroke=\"#41637c\" stroke-width=\"1.3\" opacity=\".65\"/><circle cx=\"48.0\" cy=\"187.0\" r=\"4.2\" fill=\"#b03a26\" stroke=\"#b03a26\" stroke-width=\"1.6\"/><circle cx=\"73.2\" cy=\"169.2\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"98.4\" cy=\"151.8\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"123.5\" cy=\"134.5\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"148.7\" cy=\"157.9\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"173.9\" cy=\"122.6\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"199.1\" cy=\"105.3\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"224.2\" cy=\"87.8\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"249.4\" cy=\"116.8\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"274.6\" cy=\"76.4\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"299.8\" cy=\"93.7\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"324.9\" cy=\"70.5\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"350.1\" cy=\"81.9\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"375.3\" cy=\"105.4\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"400.5\" cy=\"122.8\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"425.6\" cy=\"99.5\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"450.8\" cy=\"76.2\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><circle cx=\"476.0\" cy=\"87.9\" r=\"3\" fill=\"#fff\" stroke=\"#41637c\" stroke-width=\"1.6\"/><text x=\"48.0\" y=\"225\" font-family=\"system-ui,sans-serif\" font-size=\"9.5\" fill=\"#7d8f96\" text-anchor=\"middle\">month 1</text><text x=\"173.9\" y=\"225\" font-family=\"system-ui,sans-serif\" font-size=\"9.5\" fill=\"#7d8f96\" text-anchor=\"middle\">month 6</text><text x=\"324.9\" y=\"225\" font-family=\"system-ui,sans-serif\" font-size=\"9.5\" fill=\"#7d8f96\" text-anchor=\"middle\">month 12</text><text x=\"476.0\" y=\"225\" font-family=\"system-ui,sans-serif\" font-size=\"9.5\" fill=\"#7d8f96\" text-anchor=\"middle\">month 18</text><text x=\"48\" y=\"15\" font-family=\"system-ui,sans-serif\" font-size=\"11.5\" font-weight=\"700\" fill=\"#14202b\">The same eighteen months — limits set from actual movement</text><text x=\"48\" y=\"244\" font-family=\"system-ui,sans-serif\" font-size=\"10\" fill=\"#7d8f96\">One month falls outside: month 1, at 52% against a lower limit of 53.4%.</text></svg>"
+    },
+    {
+      "type": "markdown",
+      "text": "One month now falls outside — month 1, at 52% against a lower limit of 53.4%. That is the only month of the eighteen that behaved differently from the rest, and the only one where looking for a cause is likely to find one. The other seven were never signals. They were the wrong limits.",
+      "id": "bca149a52e911069"
+    },
+    {
+      "type": "markdown",
+      "text": "The tool runs this check on every share chart, reports how far off the standard assumption was, and applies the correction when you ask for it. If the assumption was right to begin with, the correction changes nothing.",
+      "id": "4d035acf668117af"
+    },
+    {
+      "type": "markdown",
+      "text": "## Four chart types",
+      "id": "0ec5715ab288a52a"
+    },
+    {
+      "type": "markdown",
+      "text": "The tool ships with four and leaves several out.",
+      "id": "e6b64f706de38de1"
+    },
+    {
+      "type": "markdown",
+      "text": "- **XmR** — one number per period. The workhorse; use it unless there is a specific reason not to.\n- **p chart** — a proportion where the denominator moves every period. Limits step in and out to match.\n- **u chart** — counts over a varying area of opportunity, per 1,000 member-months or per 100 visits.\n- **Run chart** — median line, no limits. Fewer assumptions, less power. Good for very short series.",
+      "id": "5341fc8f1df36c51"
+    },
+    {
+      "type": "markdown",
+      "text": "Deliberately left out: X̄–R and X̄–S, CUSUM, EWMA, Cp/Cpk capability, ANOM, and funnel plots.",
+      "id": "e9762b38eb8d1438"
+    },
+    {
+      "type": "markdown",
+      "text": "All are legitimate and some are excellent. They are absent because the first version of a tool should be the version a board will actually read. The subgrouping panel already does the diagnostic work that X̄–R and capability indices are usually reached for. If a real need appears — comparing fourteen clinics at once genuinely wants a funnel plot — that is the moment to add one, not before.",
+      "id": "db56b6ddfc90cbca"
+    },
+    {
+      "type": "markdown",
+      "text": "## Where this sits in the WWHA work",
+      "id": "70b1977986635c38"
+    },
+    {
+      "type": "markdown",
+      "text": "The Whatcom Wealth and Health work has four selected aspects: community health workers, the Shared Care Plan, a RenDanHeYi cooperative structure, and this. They are not four separate projects.",
+      "id": "bc648d705b964b1a"
+    },
+    {
+      "type": "markdown",
+      "text": "## Lineage",
+      "id": "2a547671d8b6db53"
+    },
+    {
+      "type": "markdown",
+      "text": "Shewhart at Bell Labs in the 1920s; Deming carrying it into management and into Japan; and for health care specifically, **Marilyn K. Hart and Robert F. Hart**, whose *Statistical Process Control for Health Care* (Duxbury/Thomson, 2002) is the reference this tool follows where sources disagree.",
+      "id": "52c089fd94959bc8"
+    },
+    {
+      "type": "markdown",
+      "text": "Both are mathematicians, and they advised the major SPC software vendors on getting the arithmetic right — which shows in their unusually careful treatment of the varying denominator, the case that health care lives in and manufacturing textbooks treat as an afterthought.",
+      "id": "ad5c6249eedff914"
+    },
+    {
+      "type": "markdown",
+      "text": "The Harts worked in Whatcom County for more than a year, and Whatcom appears in the book. This is not a method being imported here for the first time. It is a method coming back.",
+      "id": "5fb0a49a6adbad58"
+    },
+    {
+      "type": "markdown",
+      "text": "## What to expect from adopting this",
+      "id": "f858d91668ae811f"
+    },
+    {
+      "type": "markdown",
+      "text": "Most process measures, charted honestly, will turn out to be **stable and unsatisfactory**. No signals, and the average is not where anyone wants it. That is the most common and most useful finding, and it redirects the conversation from *who had a bad month* to _**what would have to change about how we work**_.",
+      "id": "1e31193fcf9c87a7"
+    },
+    {
+      "type": "markdown",
+      "text": "The SPC charts must be readable: a picture a group can gather around, point at, and argue about without any training. A control chart may be the best one ever invented for that, and it was finished in 1924.",
+      "id": "0d7ee6cd5ad29256"
+    }
+  ],
+  "journal": []
+}

@@ -10,6 +10,7 @@ Chat-Claude has no live access to `~/rcn`. Its schema knowledge is *recall of pa
 | `tools/rcn-timeline.html` | [rcn-timeline.md](rcn-timeline.md) | timeline model JSON |
 | `tools/issue-polygon-map.html` | [issue-polygon-map.md](issue-polygon-map.md) | GeoJSON FeatureCollection |
 | `tools/graph-composer.html` | [graph-composer.md](graph-composer.md) — its own sidecars, detail levels, export loss | native graph JSON, plus `families.js` + `graph-sets.js` |
+| `tools/rcn-spc.html` | [rcn-spc.md](rcn-spc.md) — CSV shape, why pooled ≠ averaged, designing demo data | **CSV** in, session JSON out |
 | the substrate projections | [../../substrate/ROUND-TRIP.md](../../substrate/ROUND-TRIP.md) | same native graph JSON, served over HTTP |
 
 Plus one file that is **not** a schema but explains where a tool came from: [ward-graph.md](ward-graph.md) — Ward Cunningham's `Graph` class, the `pages/mock-graph-data/` originals, and the live FedWiki pipeline the Composer reimplements. Read it before changing composition or node identity.
