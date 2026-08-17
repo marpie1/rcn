@@ -6,6 +6,89 @@ Convention: dated entries, newest at top. Three sections per entry: DID / LEARNE
 
 ---
 
+## 2026-08-17 — Session 7 (Claude Code): the Chat-authoring workflow in the docs
+
+Audit of whether the Claude-Chat Wardley workflow and Rent Band Analysis had reached the intro, the manual, and the deck. One of three.
+
+### DID
+- Manual: already thorough (§9d, four steps, axis warning, troubleshooting table). Gave its two new subsections anchors and renamed the contents entry to "9d. Wardley mode — Chat authoring, rent bands", since nothing in the sidebar hinted the section had grown.
+- Intro: split one overloaded Wardley card into three — Wardley mode, Wardley maps written by Claude Chat, Rent Band Analysis. Chat authoring is about how content arrives, not about a mode, and it was buried as the middle paragraph of a card doing three jobs.
+- Deck (`docs/make_graph_tool_intro_pptx.py`): two new slides — Wardley/RBA, and the four-step Chat workflow with the axis trap in a dark strip at the foot. 15 slides to 17. Rebuilt and rendered to PDF to check for overflow.
+- Modes slide said "Eight analytical modes" and listed eight; the tool has LOP and SFD as well. Added LOP from Marc's own intro copy and dropped the count from the title rather than assert a number I could not stand behind.
+
+### LEARNED
+1. **A card that gains a third paragraph has become three cards.** The Wardley card was carrying the grid, the authoring workflow, and a whole analytic method. Length is the symptom; the cure is asking what each paragraph is really about — two of those three were not about Wardley mode at all.
+2. **Docs drift in a pattern worth naming.** The manual was complete, the intro was a line, the deck had nothing. Effort tracks proximity to the code: the manual is edited while building, the deck is a separate build step nobody remembers. Assume the deck is the stale one and check it first.
+3. **A count in a slide title is a maintenance liability.** "Eight analytical modes" was wrong before this session started and would have gone wrong again at the next mode. Removing the number costs nothing and cannot rot.
+4. **Render the deck, always.** python-pptx reports nothing when text overflows its box. Keynote needs to be running before the AppleScript export — a cold `tell application` fails with -600 and no file.
+
+### OPEN
+- [ ] **SFD mode is undocumented everywhere** — not in the intro, not in the manual, not in the deck, though the button is in the tool. The largest doc gap found in this audit and out of scope for it
+- [ ] The intro is a flat grid of 23 cards with no grouping; modes, authoring paths, and export features all read at the same weight. Worth a pass at structure rather than more cards
+- [ ] Chat authoring is Wardley-only today. If the card pattern generalises to CLD or EIP, the intro card and the deck slide both need rewording away from "Wardley maps"
+
+---
+
+## 2026-08-11 — Session 6 (Claude Code): Wardley maps from Claude Chat
+
+Marc's Chat session produced a bicycle-production map that would not load. Handed off as an auto-load debugging task; it was neither an auto-load problem nor a debugging one.
+
+### DID
+- Diagnosed the real break. Chat emitted the bare `{title, query, components, dependencies}` shape, which the Graph Tool did not recognise, and the generator has no paste-JSON button at all — so the handoff's stated fallback did not exist. Separately, Chat wrote the evolution axis the standard way (commodity right) while the generator's format runs the other way, so the map would have rendered mirrored even if it had loaded.
+- Found `exportForRCN()` already present in the claude.ai artifact copy of the generator and absent from `tools/wardley-map-generator.html`. Ported just that function, since the two copies have deliberately diverged (the repo one hides the AI banner for `file://`, the artifact one needs `window.claude`).
+- `tools/graph-tool-v22.html`: bare shape now loads **if** it declares `axis`; generator imports now carry `evolution`/`visibility`; `w`/`h` default on load; unpositioned nodes get gridded with a toast instead of NaN.
+- `tools/wardley-chat-to-rcn.js` — converter with an explicit `--axis`, which prints the leftmost and rightmost component by name so a mirrored map is caught at the command line.
+- `tools/wardley-chat-card.md` — the card a user pastes into Chat.
+- `tools/wardley-bicycle-production.rcn.json` — Marc's map, converted, validator-clean, verified rendering.
+- Validator: x/y optional when `evolution`/`visibility` are present in Wardley mode; w/h demoted to a warning; both rolled up so a correct file no longer draws nine warnings.
+- Manual §9d gained "Building a map with Claude Chat" with a troubleshooting table; intro and schema doc updated.
+
+### LEARNED
+1. **Refusing to guess is a feature, and it belongs at the door.** Two axis conventions, both 0–1, both called the evolution axis, running opposite ways. No heuristic separates them — a map is not more likely to be one than the other. The tool now declines to load a bare file that does not say, with the two options in the toast. Cheaper than any amount of cleverness, and it teaches the convention on first contact.
+2. **The failure the user reports is rarely the failure.** The handoff spent four hypotheses on canvas timing and `DOMContentLoaded`. The map could not have rendered correctly under any of them, because the data was mirrored and the shape was unreadable. Reproduce before theorising.
+3. **Make the target forgiving before writing the instructions.** The context card got shorter every time the loader got more tolerant. Defaulting `w`/`h` and deriving `x`/`y` cut a Wardley node from twelve fields to four — and four fields is a thing an LLM gets right every time, with no card at all.
+4. **Nine identical warnings teach people to skip warnings.** A three-node file written exactly as instructed drew nine. Rolled up to one, plus a `note` line for the case that is correct rather than merely tolerable.
+5. **A converter should read its own output back in the user's terms.** `--axis` prints "most Genesis: E-bike Powertrain / most Commodity: Global Container Shipping". That single line catches the mirror before anything is opened, which is three steps earlier than a screenshot would.
+6. **Two copies of a tool diverging on purpose is not the same as one being stale.** The Downloads generator was a superset by function count, which argued for overwriting. It was also the artifact build, with the AI-unavailable banner shown and `window.claude` calls the local copy cannot make. Diff the intent, not the line count.
+
+### OPEN
+- [ ] Both generator copies call model ids that predate the Claude 5 family (`claude-sonnet-4-20250514` local, `claude-sonnet-4-6` artifact). The AI-generate path only works inside claude.ai anyway, so this is dormant, not broken
+- [ ] `justifyPositionInline()` was not ported — it calls the artifact-only completion API and cannot work on `file://`
+- [ ] Consider a paste-JSON path in the generator, so a Chat file can be opened there for visual editing without a round trip through the Graph Tool
+- [ ] The card asks Chat for RCN native JSON; worth testing whether a long conversation drifts back to the bare shape, and whether the axis line survives that drift
+
+---
+
+## 2026-08-10 — Session 5 (Claude Code): Rent Band Analysis in the Graph Tool
+
+Build A of `Rent-Band-Analysis-Method.md` v1.2 Part 5 — renderer, schema, validator. Deviations are logged in that document as Part 7; this entry is what the session learned.
+
+### DID
+- Read the handoff and the method doc, ran the spec's own Step 0 discovery, and reported three wrong premises before writing code: Wardley mode already existed inside the Graph Tool (so the consolidation question was settled by the spec's own rule), the validator is at `tools/validate-rcn-graph.js` not `rcn-graph-json/scripts/`, and the example did not in fact fail the current validator.
+- `tools/graph-tool-v22.html`: RBA fields on nodes (`evolution`, `visibility`, `shadow`, `pinnedBy`, `pressure`); rent band, shadow node, pin glyph, pressure arrow, rent label rendered in Wardley mode; hover annotations; `<title>` injection so the annotations survive SVG export; `mode` persisted in `buildState()` and honoured on load.
+- `tools/validate-rcn-graph.js`: all of Step 4's rules plus a bare-`R#` pin warning and a `--cld` cross-check flag.
+- `tools/rba-hospital-pricing.rcn.json`: the worked example, reconciled — validator-clean, 0 warnings.
+- Verified in the browser at real zoom: load, render, hover the arrow and the pin, drag a node and confirm the write-back, export and diff. Round-trip preserves every RBA field.
+- Copied the method doc into `~/rcn` (it was only in Downloads) and appended Part 7.
+
+### LEARNED
+1. **Two axis conventions can agree on the field name and disagree on the direction.** The method's `evolution` runs 0=Genesis→1=Commodity; the tool's `wardleyX`, inherited from the generator, runs 1=Genesis. Both are 0–1, both are "the evolution axis", and nothing in either document says which way. Read the *comparables* to settle it: airline fares and LASIK at 0.95 are fully commodity, so 1 is commodity. A spec that names a range without naming its direction has not specified the axis.
+2. **Two copies of a position always drift.** The example carried `x`/`y` and `evolution`/`visibility` disagreeing by ~200px. Pick the copy that carries meaning, derive the other, and write it back on edit — otherwise the bands render somewhere the nodes are not.
+3. **An identifier assigned in detection order is not an identifier.** `pinnedBy: ["R2"]` looked stable and is not: CLD loop labels renumber whenever the graph is edited. Every cross-file reference in this toolset needs the same audit.
+4. **A 1.8px line is not a hover target.** The pressure arrow's whole job is to carry the annotation that separates pinning from immaturity, and it was effectively unreachable until it got a transparent hit band. The tool already knew this — every edge carries one — and the lesson did not transfer on its own.
+5. **The prettiest bug was a band edge.** A rent band drawn centre-to-centre cuts a hard line down the middle of the shadow box and the eye reads two boxes. Nothing was numerically wrong; it only showed up in a screenshot at real zoom.
+6. **The handoff's confident claims about disk state were mostly wrong, and cheap to check.** Three of them, five minutes of `ls` and `grep`. Step 0 of that spec exists for a reason and it earned its place.
+
+### OPEN
+- [ ] Step 3 — editor UI: node inspector "add shadow position", drag the ghost horizontally with y locked, fields for basis, rent object, pinnedBy, forces and resistance entries
+- [ ] Confirm the coral/teal palette (`#e2725b` / `#2a9d8f` / `#8c3520` text) — the method says check with Marc
+- [ ] The example's `visibility` values order the value chain upside down relative to its own px layout; kept as written, needs Marc's call
+- [ ] FedWiki half of Step 5: pin glyph linking to its loop page, rent object into the node's page — needs a FedWiki-side design decision, since the tool's wiki path emits an SVG ghost page, not per-node pages
+- [ ] `modelName()` strips every non-alphanumeric character before `buildState()` stores it, so an em dash in a diagram title is lost on export. Pre-existing, affects every saved file, fix is to sanitize at filename time only
+- [ ] Decide whether `wardley-map-generator.html` retires now that RBA lives in the Graph Tool
+
+---
+
 ## 2026-07-28/29 — Sessions 3–4 (Claude Code): the RCN Substrate
 
 One Neo4j graph carrying every layer; the diagram tools become lenses over it. Full reference: `substrate/ROUND-TRIP.md` and `substrate/README.md`.

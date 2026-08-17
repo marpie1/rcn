@@ -1,8 +1,8 @@
 # Graph Tool v22 — native JSON schema
 
-Verified against `tools/graph-tool-v22.html`, **2026-07-29** (post substrate
-round-trip work; previously 2026-07-25, post legend-as-registry and icon-node
-work; earlier baseline was commit `5d1c70c`).
+Verified against `tools/graph-tool-v22.html`, **2026-08-16** (post LOP mode;
+previously 2026-07-29, post substrate round-trip work; 2026-07-25, post
+legend-as-registry and icon-node work; earlier baseline was commit `5d1c70c`).
 Derived from `loadGraphJSON()` (import), `buildState()` (export), `makeNode()`
 (defaults), and `shapeHTML()` (rendering).
 
@@ -269,10 +269,16 @@ property in their place.
 `buildState()` (line ~4330) emits **exactly** these, and nothing else:
 
 ```
-version  modelName  modelNote  canvasBg  graphAttrs  cldLoopNames
+version  mode  modelName  modelNote  canvasBg  graphAttrs  cldLoopNames
 legendEntries  legendVisible  legendCollapsed  customSymbols
-nodes  edges  lines  metaEdges
+nodes  edges  lines  metaEdges  lopBands
 ```
+
+(`mode` was added Aug 2026 with Rent Band Analysis. It is one of
+`select node edge freeline arrow cld eip nrm opm sfd lop trace wardley`, and the
+tool switches to it on load. Set it whenever the diagram is only legible in one
+mode — a Wardley map opened in Basic mode loses its grid and its rent bands.
+`meta.mode` is read as a fallback.)
 
 (`legendEntries` now carries the registry — see "The legend IS the registry".)
 
@@ -463,3 +469,130 @@ changes nothing it was given.
 `?url=` accepts a projection path, e.g.
 `?url=/projection/subgraph/role`, and loading that way records which drawing it
 is so `→ Substrate` replaces the right one.
+
+## Rent Band Analysis additions (2026-08-10)
+
+Optional per-node fields, additive, ignored outside Wardley mode. Full method: `~/rcn/Rent-Band-Analysis-Method.md`. Worked example: `tools/rba-hospital-pricing.rcn.json`. Validate with `node tools/validate-rcn-graph.js map.json [--cld loops.json]` before handing a file to anyone.
+
+```json
+{
+  "id": "hospital_pricing",
+  "label": "Hospital Pricing",
+  "x": 333, "y": 466, "w": 150, "h": 60,
+  "evolution": 0.35,
+  "visibility": 0.30,
+  "shadow": {
+    "evolution": 0.85,
+    "basis": "RAND 5.1 hospital price transparency study; RBP spreads; LASIK and airline comparables",
+    "rent": { "label": "≈ $1,850 / employee / yr", "unit": "employee", "period": "year",
+              "basis": "TPA-billed vs reference-based pricing spread, WWHA 2025", "asOf": "2026-Q2" }
+  },
+  "pinnedBy": ["R2 Discount Kabuki"],
+  "pressure": {
+    "forces": ["CMS price transparency rule", "Self-funded employer demand"],
+    "resistance": [{ "loop": "R2 Discount Kabuki", "mechanism": "Contracted rebate architectures",
+                     "annualCost": "≈$4.2B / yr sector" }]
+  }
+}
+```
+
+### The four things that will bite you
+
+**`evolution` runs 0 = Genesis → 1 = Commodity.** Increasing rightward, the standard Wardley direction. The tool's internal `wardleyX` and the Wardley Map Generator's export run the *opposite* way (1 = Genesis); the conversion happens inside the tool and never appears in a file. Write the method's direction. A shadow should therefore have a *higher* `evolution` than its node — the validator warns when it doesn't, because that is the signature of a crossed convention.
+
+**`evolution`/`visibility` beat `x`/`y`.** In Wardley mode the pixel pair is recomputed from the 0–1 pair on load, and written back from the canvas when a drag ends. Write both if you like — but if they disagree, the 0–1 pair wins, so do not tune a layout in pixels and expect it to survive.
+
+**`pinnedBy` takes loop NAMES, not `R#`/`B#` labels.** Those labels are assigned in loop-detection order and renumber whenever the CLD is edited, so `"R2"` silently comes to mean a different loop. Use the name from `cldLoopNames` — `"R2 Discount Kabuki"`. The validator warns on any bare label.
+
+**Set `"mode": "wardley"`.** None of this renders in any other mode.
+
+### What the validator insists on
+
+Errors: `shadow` without a numeric `evolution` in [0,1], on the node or on the shadow; `shadow.rent` missing `label` or `basis`. Warnings: no `shadow.basis` (the shadow is an argued inference, not decoration); no `rent.asOf`; a shadow at or left of its node; a `resistance` entry whose `loop` is not in `pinnedBy`, or that names no mechanism or annual cost; `pressure` on a node with no `shadow` (the arrow is drawn inside the band, so it will not render); RBA fields present while `mode` is not `wardley`.
+
+`resistors` is accepted as an alias for `resistance` and warned. Legacy `pressure: true` still renders a bare, unannotated arrow.
+
+## Wardley maps written by Claude Chat (2026-08-11)
+
+Full workflow: `tools/graph-tool-manual.html` §9d "Building a map with Claude Chat". The card a user pastes into Chat is `tools/wardley-chat-card.md`. Worked example: `tools/wardley-bicycle-production.rcn.json`.
+
+### The minimum a Wardley node needs
+
+```json
+{ "id": "drivetrain", "label": "Drivetrain", "evolution": 0.78, "visibility": 0.62 }
+```
+
+With `"mode": "wardley"` at the top level, `x`/`y` are derived from `evolution`/`visibility` on load and written back on export, and `w`/`h` default to 108×46. Write `w`/`h` when a long label needs the room; do not write `x`/`y` at all.
+
+### Three input shapes now load
+
+| Shape | Recognised by | Axis |
+|---|---|---|
+| Native `{nodes, edges}` | `nodes` + `edges` | already normalised — `evolution` is 0=Genesis→1=Commodity |
+| Generator export `{aiOriginal, userEdited}` | either wrapper key | implied `genesis-right`, flipped on import |
+| Bare `{title, query, components, dependencies}` | top-level `components` | **must declare** `"axis"` or the load is refused |
+
+The bare shape is what an LLM writes if you don't hand it the card, because it is the format the Wardley Map Generator documents. It carries `x` 0–1 with no statement of direction, and the two conventions in play run opposite ways: `commodity-right` (standard, and what Chat writes) versus `genesis-right` (the generator's internal format). Guessing wrong mirrors the map and every commodity lands in Genesis, looking entirely deliberate. So the tool refuses rather than guesses, and `tools/wardley-chat-to-rcn.js --axis …` converts with the direction stated.
+
+### Loader changes that removed two silent failures
+
+Missing `w`/`h` used to give a NaN radius and paint the node as a bare floating label with no error — the single most common defect in an LLM-written file. They are defaulted now. A node with no position of any kind is placed on a grid with a toast saying how many, rather than sitting at NaN and painting nothing.
+
+## Presentation view (2026-08-12)
+
+The tool has a presentation view — `P` or the **⛶ Present** button hides every control and gives the whole fullscreen window to the graph. It writes nothing to the file: there is no `presenting` key, and a top-level one you invent is discarded on the next export like any other unknown top-level key.
+
+It changes two things about how a file meant to be *shown* should be written.
+
+Set `mode` if the diagram is only legible in one. Presentation view hides the mode buttons, so whatever mode the file loads in is the mode the room sees, and there is no way to switch without leaving the presentation.
+
+Put the detail in `note` and `props`, not in longer labels. Hover tooltips are the one detail channel that survives into presentation view — the sidebar Properties panel does not — so a node whose backing evidence lives in `note` and whose sources live in URL-valued `props` can be interrogated in front of a room, while the same content crammed into `label` just makes the box big.
+
+## Linkage of Processes — LOP mode (2026-08-16)
+
+Deming's organization-as-a-system diagram, in the vocabulary of *The Improvement Guide* (Langley, Moen, Nolan, Nolan, Norman, Provost) and *Quality as an Organizational Strategy* (Norman, Provost, Moen et al.). Set `"mode": "lop"` — the four labelled bands the map is drawn on only render in that mode, and a linkage map read in Basic mode loses its whole layout argument.
+
+Optional fields, all additive; every other mode ignores them and they round-trip because import and export `Object.assign` the whole node or edge.
+
+| Field | On | Values |
+|---|---|---|
+| `lopType` | node | `purpose` `leadership` `redesign` `supplier` `process` `subprocess` `output` `customer` `need` `support` `measure` `research` |
+| `lopNum` | node | integer, key processes only — position in the flow |
+| `props.owner` | node | who owns this key process |
+| `props.measure` | node | how this key process is measured |
+| `lopLink` | edge | `flow` `supplies` `serves` `supports` `informs` `requires` `guides` |
+| `lopBands` | file | boolean, whether the band guide draws |
+
+Bands are the y-axis of the layout, and a map that ignores them is hard to read. Place nodes inside them:
+
+| Band | y range | Types belonging to it |
+|---|---|---|
+| Aim · Leadership · Design and redesign | 20–150 | `purpose` `leadership` `redesign` |
+| Value-added system | 160–480 | `supplier` `process` `subprocess` `output` `customer` `need` |
+| Support processes | 490–600 | `support` |
+| Information · Measures · Customer research | 610–730 | `measure` `research` |
+
+The value band reads left to right across x 20–1220 in four columns: suppliers (to x≈212), key processes (to x≈764), products and services (to x≈980), customers and needs (to x=1220).
+
+Style each typed node the way the tool does, so the file is self-describing rather than relying on the mode to paint it:
+
+```json
+{ "id": "k2", "lopType": "process", "lopNum": 2, "label": "Agree a Shared Care Plan",
+  "x": 480, "y": 250, "w": 154, "h": 54, "shape": "rounded",
+  "color": "#dbeafe", "borderColor": "#1d4ed8", "borderWidth": 2, "fontColor": "#1e3a8a",
+  "props": { "owner": "Care coordinator", "measure": "% members with a current plan" } }
+```
+
+Fills and borders by type: purpose `#fecdd3`/`#be123c`, leadership `#fee2e2`/`#b91c1c`, redesign `#ffe4e6`/`#be123c` (ellipse), supplier `#e2e8f0`/`#475569` (rect), process `#dbeafe`/`#1d4ed8`, subprocess `#eff6ff`/`#60a5fa`, output `#dcfce7`/`#15803d` (barrel), customer `#fef3c7`/`#b45309` (rect), need `#fef9c3`/`#ca8a04` (dashed border), support `#ede9fe`/`#7c3aed`, measure `#ccfbf1`/`#0f766e` (cylinder), research `#cffafe`/`#0891b2` (ellipse).
+
+Linkage styles: `flow` `#1d4ed8` width 3 solid straight; `supplies` `#475569` width 2 solid straight; `serves` `#15803d` width 2.5 solid straight; `supports` `#7c3aed` width 1.5 dotted curved; `informs` `#0f766e` width 2 dashed curved; `requires` `#ca8a04` width 1.5 dashed curved; `guides` `#be123c` width 1.5 solid curved.
+
+Three things the tool checks, and a hand-written file should satisfy before you hand it over:
+
+- **Every key process has an owner and a measure.** The List of Processes exists to expose the ones that don't.
+- **Every need is attached to a customer** as well as to the process that must meet it. A need with no customer is nobody's.
+- **Something informs.** At least one `informs` linkage returning to `redesign` or to a process. Without it the drawing is a pipeline, not a system, which is the single point Deming's diagram was drawn to make.
+
+`lopNum` should follow the `flow` chain, not the x-coordinate — the tool's Renumber does a topological walk of the flow linkages. Number by hand the same way, or leave `lopNum` off and let the person running the tool press Renumber.
+
+Worked example: `tools/lop-whatcom-coop.rcn.json`. Exports: LOP→CSV (the List of Processes), LOP→MD (purpose, customers and needs, the list, and the linkage check), LOP→Cypher (`:LOP:KeyProcess` nodes, `FLOWS_TO`/`INFORMS`/`SUPPORTS` relationships).

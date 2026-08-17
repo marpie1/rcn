@@ -1,0 +1,185 @@
+{
+  "version": "1.0",
+  "mode": "wardley",
+  "modelName": "Pinning Example - Hospital Pricing",
+  "modelNote": "Rent Band Analysis example. Three pinned components (Discount Kabuki, Profitable Blindness, Broker Loyalty) with two unpinned commodity comparables (airline fares, LASIK).\n\nRBA extensions per Rent-Band-Analysis-Method.md v1.2 Part 5: evolution, visibility, shadow, pinnedBy, pressure. evolution runs 0=Genesis to 1=Commodity; x/y are derived from evolution/visibility on load and written back on drag.\n\nSource: chat session 2026-08-10. Reconciled against the validator 2026-08-10.",
+  "canvasBg": "#f9f9f7",
+  "nodes": [
+    {
+      "id": "broker_advisory",
+      "label": "Broker Advisory",
+      "x": 388,
+      "y": 582,
+      "w": 150,
+      "h": 60,
+      "shape": "rect",
+      "color": "#FEE2E2",
+      "borderColor": "#000000",
+      "borderWidth": 2,
+      "fontColor": "#000000",
+      "evolution": 0.42,
+      "visibility": 0.1,
+      "shadow": {
+        "evolution": 0.78,
+        "basis": "Fiduciary RIA advisory market; Consumers' Checkbook comparators; direct-pay concierge advisory pricing"
+      },
+      "pinnedBy": ["R1 Broker Loyalty"],
+      "pressure": {
+        "forces": [
+          "CAA §202 fiduciary disclosure",
+          "Employer plan sponsor duty (ERISA)",
+          "Fiduciary RIAs entering benefits advisory"
+        ],
+        "resistance": [
+          {
+            "loop": "R1 Broker Loyalty",
+            "mechanism": "Carrier override commissions and retention bonuses",
+            "annualCost": "≈$4B / yr sector"
+          },
+          {
+            "loop": "R1 Broker Loyalty",
+            "mechanism": "Contingent bonus programs tied to book placement",
+            "annualCost": "≈$1.2B / yr sector"
+          }
+        ]
+      }
+    },
+    {
+      "id": "hospital_pricing",
+      "label": "Hospital Pricing",
+      "x": 333,
+      "y": 466,
+      "w": 150,
+      "h": 60,
+      "shape": "rect",
+      "color": "#FEE2E2",
+      "borderColor": "#000000",
+      "borderWidth": 2,
+      "fontColor": "#000000",
+      "evolution": 0.35,
+      "visibility": 0.3,
+      "shadow": {
+        "evolution": 0.85,
+        "basis": "RAND 5.1 hospital price transparency study; reference-based pricing spreads; LASIK and airline comparables",
+        "rent": {
+          "label": "≈ $1,850 / employee / yr",
+          "unit": "employee",
+          "period": "year",
+          "basis": "Spread between TPA-billed rates and reference-based pricing, WWHA 2025 claims data",
+          "asOf": "2026-Q2"
+        }
+      },
+      "pinnedBy": ["R2 Discount Kabuki"],
+      "pressure": {
+        "forces": [
+          "CMS Hospital Price Transparency rule",
+          "Self-funded employer buyer demand",
+          "RBP TPAs (6 Degrees, ClaimDoc, Homestead) entering market"
+        ],
+        "resistance": [
+          {
+            "loop": "R2 Discount Kabuki",
+            "mechanism": "Contracted rebate architectures with brokers and PBMs",
+            "annualCost": "≈$4.2B / yr sector"
+          },
+          {
+            "loop": "R2 Discount Kabuki",
+            "mechanism": "Chargemaster-shrouded discount kabuki",
+            "annualCost": "≈$1.8B / yr sector"
+          }
+        ]
+      }
+    },
+    {
+      "id": "claims_data",
+      "label": "Claims Data",
+      "x": 255,
+      "y": 321,
+      "w": 150,
+      "h": 60,
+      "shape": "rect",
+      "color": "#FEE2E2",
+      "borderColor": "#000000",
+      "borderWidth": 2,
+      "fontColor": "#000000",
+      "evolution": 0.25,
+      "visibility": 0.55,
+      "shadow": {
+        "evolution": 0.8,
+        "basis": "ERISA fiduciary demand for claims access (Owens v. Anthem, Kraft Heinz v. Aetna); direct-contract data flows; Medicare public claims"
+      },
+      "pinnedBy": ["R5 Profitable Blindness"],
+      "pressure": {
+        "forces": [
+          "ERISA fiduciary discovery orders",
+          "CAA §201 broker/consultant disclosure",
+          "Plaintiff bar activity"
+        ],
+        "resistance": [
+          {
+            "loop": "R5 Profitable Blindness",
+            "mechanism": "ASO contract clauses restricting claims data access",
+            "annualCost": "≈$800M / yr sector legal + IT"
+          },
+          {
+            "loop": "R5 Profitable Blindness",
+            "mechanism": "Trade-secret assertion over network pricing",
+            "annualCost": "≈$500M / yr sector"
+          }
+        ]
+      }
+    },
+    {
+      "id": "airline_fares",
+      "label": "Airline Fare Pricing",
+      "x": 801,
+      "y": 466,
+      "w": 150,
+      "h": 60,
+      "shape": "rect",
+      "color": "#DBEAFE",
+      "borderColor": "#000000",
+      "borderWidth": 2,
+      "fontColor": "#000000",
+      "evolution": 0.95,
+      "visibility": 0.3
+    },
+    {
+      "id": "lasik_pricing",
+      "label": "LASIK Pricing",
+      "x": 778,
+      "y": 408,
+      "w": 150,
+      "h": 60,
+      "shape": "rect",
+      "color": "#DBEAFE",
+      "borderColor": "#000000",
+      "borderWidth": 2,
+      "fontColor": "#000000",
+      "evolution": 0.92,
+      "visibility": 0.4
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "src": "broker_advisory",
+      "tgt": "hospital_pricing",
+      "color": "#000000",
+      "width": 2,
+      "fontSize": 10,
+      "curved": false
+    },
+    {
+      "id": "e2",
+      "src": "hospital_pricing",
+      "tgt": "claims_data",
+      "color": "#000000",
+      "width": 2,
+      "fontSize": 10,
+      "curved": false
+    }
+  ],
+  "lines": [],
+  "metaEdges": []
+}

@@ -84,7 +84,7 @@ p:last-child{margin-bottom:0}
     <h1 class="doc-title">RCN Graph Diagramming Tool</h1>
     <p class="doc-sub">Introduction — what it is, what it does, and why it exists</p>
     <!-- UPDATE: version and date when tool version changes -->
-    <div class="doc-meta">Tool version: v22 &nbsp;·&nbsp; Document updated: June 13 2026</div>
+    <div class="doc-meta">Tool version: v22 &nbsp;·&nbsp; Document updated: August 17 2026</div>
   </div>
 
   <!-- ── NAV ─────────────────────────────────────────────────── -->
@@ -168,7 +168,15 @@ p:last-child{margin-bottom:0}
     </div>
     <div class="hl-card">
       <h4>Wardley mode</h4>
-      <p>Renders the graph on a Wardley Map grid — evolution axis (Genesis → Custom → Product → Commodity) across the bottom, value chain (Invisible → Visible) on the left. Import a Wardley Map Generator JSON export and the mode activates automatically.</p>
+      <p>Renders the graph on a Wardley Map grid — evolution axis (Genesis → Custom → Product → Commodity) across the bottom, value chain (Invisible → Visible) on the left. Positions carry meaning, so auto-layout is disabled here; a node's <code>evolution</code> and <code>visibility</code> are the source of truth and the tool writes your dragging back into them.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Wardley maps written by Claude Chat</h4>
+      <p>Paste <code>wardley-chat-card.md</code> into a Claude Chat conversation, say what you want mapped, save the JSON it hands back, drag it in. A node needs four fields — label, id, evolution, visibility — so there is little for a language model to get wrong, and a validator catches the rest before you open anything. Correcting Chat's positions by dragging is the actual analysis.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Rent Band Analysis</h4>
+      <p>Adds a second claim to a Wardley map: not only where a component is, but where it lands once someone stops paying to hold it back. A dashed shadow node marks the forecast position, a translucent band spans the gap carrying the rent figure, a pin names the causal loop holding it, and a pressure arrow lists on hover the forces pushing and the mechanisms — with annual costs — holding back. Hover text survives into SVG export, so a printed map still answers "says who, and when".</p>
     </div>
     <div class="hl-card">
       <h4>Legend</h4>
@@ -177,6 +185,12 @@ p:last-child{margin-bottom:0}
     <div class="hl-card">
       <h4>OPM mode</h4>
       <p>Object Process Methodology (ISO 19450). Ten structural and procedural link types — including Classification-Instantiation — with an auto-suggesting relationship picker. OPL sentences generated automatically from every typed edge. Export as plain-text OPL, Neo4j Cypher, or CSV triples.</p>
+    </div>
+    <div class="hl-card">
+      <h4>LOP mode — Linkage of Processes</h4>
+      <p>Deming's organization-as-a-system diagram, in the vocabulary of <em>The Improvement Guide</em> and <em>Quality as an Organizational Strategy</em> (Langley, Moen, Nolan, Nolan, Norman, Provost; Norman, Provost, Moen). Four labelled bands — aim and leadership, the value-added chain, support processes, information — with suppliers on the left and customers on the right.</p>
+      <p>Twelve node types and seven typed linkages, and the linkage type is <strong>read from what you connected</strong> rather than chosen from a menu: a supplier into a process supplies, a measure into design informs. Key processes number themselves in flow order, and each carries an owner and a measure that appear in a live <strong>List of Processes</strong> beside the map — the numbered table both books pair with the picture.</p>
+      <p><strong>Check linkage</strong> reads the map back against what the books ask of it: a process with no owner or no measure, a customer with no stated need, and above all a map where no information returns anywhere — a pipeline rather than a system. Export the picture as SVG or PNG, the list as CSV or markdown, the whole thing as Neo4j Cypher.</p>
     </div>
     <div class="hl-card">
       <h4>Layers</h4>
@@ -193,6 +207,10 @@ p:last-child{margin-bottom:0}
     <div class="hl-card">
       <h4>Sequential-add hotkeys</h4>
       <p>Press <strong>e</strong> to enter sticky Edge mode — the tool stays in Edge mode after each edge is drawn, ready for the next. Press <strong>n</strong> for sticky Node mode. Escape exits back to Select. Clicking the toolbar buttons keeps the original one-shot behavior.</p>
+    </div>
+    <div class="hl-card">
+      <h4>Presentation view</h4>
+      <p>Press <strong>P</strong> or click <strong>⛶ Present</strong> and every control disappears — toolbar, sidebar, search box, mode banners, hint strip — leaving the whole fullscreen window to the graph, refitted to the new space. What stays is what belongs to the picture: the legend, the EIP columns, CLD loop labels, hover tooltips, and the propagation and trace animation controls, so a loop can be walked through live in front of a room. Nothing is read-only; the controls are hidden, not disabled. Escape returns you to exactly the pan and zoom you left.</p>
     </div>
     <div class="hl-card">
       <h4>Share, print &amp; archive</h4>
@@ -435,8 +453,8 @@ p:last-child{margin-bottom:0}
     <p>
       The RCN Graph Tool occupies a unique position: it is the only free, open source, single-file
       browser tool that treats a graph diagram as simultaneously a Neo4j data model, a Causal Loop
-      Diagram, a Tripod Beta risk analysis, an ISO 19450 OPM process model, a Wardley Map, a pathway
-      trace, and an RDF-style reifiable triple graph — all without leaving the browser. These are
+      Diagram, a Tripod Beta risk analysis, an ISO 19450 OPM process model, a Deming linkage-of-processes
+      map, a Wardley Map, a pathway trace, and an RDF-style reifiable triple graph — all without leaving the browser. These are
       not separate modes with separate data: they are the same graph, examined from different
       angles depending on what you need to know.
     </p>

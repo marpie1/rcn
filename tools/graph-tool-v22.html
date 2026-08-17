@@ -114,6 +114,32 @@ commitIpe() must NOT be called from onCanvasDown — it triggers renderAll()
   which destroys elements mid-event, breaking all subsequent hit-testing.
   The textarea blur event handles commit when clicking away.
 
+── FITTING AND EXPORT ───────────────────────────────────────────────
+
+zoomFit() measures contentBounds(), NOT node x/y/w/h. The drawing is bigger
+than its nodes: icon-node captions print below the box, extraLabels below that,
+edge labels sit off the line, and the Wardley grid, LOP bands and free lines are
+not nodes at all. Fitting to node geometry cropped all of it — and since SVG and
+PNG export the CURRENT VIEW, whatever Fit cropped was missing from the file too.
+Measured before the fix: Wardley mode lost 249px, LOP mode 61px.
+
+contentBounds() unions getBBox() over the six pan/zoom-transformed layers only
+(lop, wardley, lines, edges, nodes, triples). getBBox on a <g> reports its
+children in the g's own coordinate space, i.e. graph coordinates before the
+transform, so no un-transforming is needed. #legend-layer and the OPM symbol
+chart are deliberately untransformed screen furniture — measuring them here
+would mix coordinate systems.
+
+The reserve is 40 SCREEN pixels, not graph units. Padding the content box in
+graph units and then scaling it shrank the margin exactly when it mattered most
+(40 units renders as 19px at zoom 0.47), and because the old fit centred on the
+NODE box, whichever side carried more non-node content — captions hang below,
+edge labels sit to the right — got squeezed. Measured before the fix: federation
+161px left vs 254px right, money-and-performance bottom margin -30px. Margins
+are now symmetric and 40px on the limiting axis at any zoom.
+
+Export still captures the current view by design. Press Fit first.
+
 ── DEFAULT STYLES ───────────────────────────────────────────────────
 
 New nodes: fill='#ffffff' (pure white), fontColor/borderColor='#000000' (pure black)
@@ -178,6 +204,42 @@ Exports: OPM→Cypher and OPM→CSV buttons appear in export section while in OP
 
 prevGraphMode: global that stores 'opm' when switching opm→edge. Cleared on any
   non-edge mode switch. Checked in onCanvasUp to decide whether to show picker.
+
+── LOP MODE (Linkage of Processes — Deming / API) ───────────────────
+
+Peer mode to CLD/EIP/NRM/OPM/SFD. Button LOP, crimson (#be123c).
+
+Layout guide: #lop-layer is an SVG <g> BEHIND everything, pan/zoom transformed,
+  redrawn by renderLOPLayer() from renderAll(). Four bands + four column labels
+  in the value band + the consumer-research return arrow, which is routed AROUND
+  the outside of the band stack — a diagonal through the middle reads as a
+  linkage, which it is not. Being inside the SVG, it exports with the drawing.
+  Bands draw only in LOP mode (same rule as the Wardley grid).
+
+Data model:
+  node.lopType  purpose|leadership|redesign|supplier|process|subprocess|
+                output|customer|need|support|measure|research
+  node.lopNum   process number, key processes only, set by lopRenumber()
+  node.props.owner / node.props.measure   the two List of Processes fields —
+                deliberately props, not bare fields, so they are searchable and
+                every exporter carries them out
+  edge.lopLink  flow|supplies|serves|supports|informs|requires|guides
+  state.lopBands  band visibility, persisted in buildState/loadGraphJSON
+
+Typed edges WITHOUT a picker: +Edge from LOP mode sets prevGraphMode='lop', and
+  onCanvasUp calls applyLOPEdge(), which infers the linkage from the two node
+  types (lopInferLink) and styles it. The pair of types almost always determines
+  what the arrow carries; the panel lets you override. Contrast OPM, where the
+  same pair is genuinely ambiguous and a picker is the right answer.
+
+lopRenumber() numbers in FLOW order, not x order: Kahn's algorithm over the
+  'flow' linkages with left-to-right as the tie-break, cycles appended after.
+  A chain that wraps to a second row still reads 1-2-3-4-5. lopProcesses()
+  then sorts by lopNum so the list follows the badges.
+
+Nodes carry their own resolved style (lopStyleNode writes color/border/shape),
+  so there is no render-time colour branch for LOP the way there is for EIP and
+  NRM, and the exported JSON is self-describing.
 
 ── CLD NODE LOOPS POPUP (April 25 2026) ─────────────────────────────
 
@@ -534,6 +596,145 @@ edge-direction docs", alongside unrelated map and timeline changes. So if you
 are hunting for when Routes appeared: code here, docs in cb4560d, and neither
 commit message says so.)
 
+── PRESENTATION VIEW (Aug 12 2026) ──────────────────────────────────
+
+`body.presenting` is the whole mechanism. One CSS block hides #topbar,
+#right-col, #search-bar, #canvas-hint, #edge-hint, #curve-hint and every mode
+banner; #main then fills the 100vh #app on its own. Kept visible on purpose:
+legend overlay, EIP columns, CLD loop labels, #cld-controls and the trace
+controls — a presenter walks a CLD live, so the animation controls are part of
+the picture, not part of the chrome.
+
+The banner rules need !important. setMode() sets banner visibility with inline
+`style.display='block'`, and an inline style beats a plain class rule.
+
+#prop-tooltip HAD TO MOVE OUT OF #right-col. The hover tooltip — notes,
+properties, source links, Vester badge labels, everything showObjTooltip draws
+— was authored as the last child of the sidebar. It is position:fixed, so
+nesting never affected where it appeared and nobody had reason to notice. But
+display:none on an ancestor hides its whole subtree regardless of position, so
+hiding the sidebar silently killed hover across the entire presentation. It now
+sits at #app level. Keep it out of any container that presentation view hides.
+
+The `no hover` checkbox lives in the sidebar, so it cannot be toggled while
+presenting — it is a before-you-present setting. Left alone (the default),
+hover works throughout.
+
+enterPresent() also requests fullscreen on documentElement. That request needs
+real user activation: it works on a genuine click, and it is silently refused
+when enterPresent() is called from the console or from an automated (CDP)
+click. The CSS half still applies either way, which is why fullscreen is
+best-effort and never gated on.
+
+Two zoomFit() calls on enter — one at double-rAF, one at 420ms. Hiding the
+sidebar resizes the canvas immediately, but fullscreen resizes it again a beat
+later, and only the second fit sees the final size.
+
+pan/zoom is saved on enter and restored on exit, because entering auto-fits and
+would otherwise destroy the working view. Exit also fires a synthetic 'resize'
+so renderLegendSVG/renderEIPStatement/positionEIPOverlay reposition.
+
+Exit paths, all converging on exitPresent(): the corner pill, Esc (checked
+first in the keydown handler and returning early, so it does not also run the
+usual Escape → setMode('select')), the P toggle, and fullscreenchange —
+F11 or the browser's own Esc drops fullscreen without touching our flag, so
+that listener puts the two back in sync.
+
+TESTING NOTE: zoomFit() is rAF-based, and rAF does not fire in a hidden tab.
+Driving this from the extension with the tab backgrounded shows "the fit did
+not run" — it did not, and neither would any other fit in this file. Take a
+screenshot (which foregrounds the tab) before judging a fit.
+
+── OPM LINK SYMBOLS NOW MATCH OPM (Aug 13 2026) ─────────────────────
+
+The ten OPM link symbols were invented here and never checked. Aggregation
+drew a UML hollow DIAMOND (OPM has no diamond); agent drew a plain arrowhead;
+consumption and result both drew a filled circle, which is the agent symbol;
+generalization, classification, exhibition and invocation carried dashes that
+mean nothing in OPM. Anyone who knows OPM would have read the diagrams wrong.
+
+Corrected against OPCAT 3.0 manual figs. 14–15 (the Symbol/Name/OPL/Allowed
+source-to-destination table) and checked against OPCloud 9.2.0:
+
+  AP          filled triangle          GS   hollow triangle
+  EC          triangle in a triangle   CI   triangle with a dot
+  Agent       filled circle            Instrument  hollow circle
+  Consumption arrowhead                Result      arrowhead
+  Effect      DOUBLE-headed arrow      Invocation  zigzag (lightning) arrow
+
+The four structural relations are one family of four triangles differing only
+by their contents — that is the thing to teach, and it is why a diamond was
+such a bad borrowing. Marker placement did not change: the triangle belongs at
+the refineable end, we draw refinee → refineable, so marker-end is correct.
+
+Effect is the only double-headed link, so edges gained `opmMarkerStart` and the
+renderer sets marker-start from getOPMStartMarkerId (a clone with
+orient="auto-start-reverse").
+
+Colour is ours and stays: OPM draws every link black and assigns link colour no
+meaning, so per-type colour is free legibility. The invented DASHES are gone,
+because in OPM a dashed line is not one of these relations.
+
+loadGraphJSON upgrades old files: an edge whose opmMarker still equals the OLD
+default for its linkType (OPM_LEGACY_MARKERS) gets the correct symbol and loses
+its opmDash; an edge whose marker was set by hand is left alone. Note the
+limit — a hand-set marker that happens to equal the old default is upgraded
+too, and cannot be distinguished.
+
+buildOPMMarker() was split out of getOPMMarkerId() so the SYMBOL REFERENCE in
+the sidebar (Link symbols, OPM mode) draws its chips from the same geometry the
+canvas uses. A reference chart that can drift from the thing it describes is
+worse than no chart. The manual's §9f symbol table is static SVG and CAN drift —
+if you change a marker here, change that table too.
+
+The same chart also goes ON THE CANVAS: renderOPMChart() draws it into
+<g id="opm-symbols-chart">, a sibling of legend-layer and likewise NOT in
+applyT()'s transform list, so it is anchored to the viewport rather than the
+diagram — it does not pan or zoom away, and being inside the SVG it exports
+with the drawing. Bottom-left, because the legend owns bottom-right and the
+hint strip owns the centre. Toggle: "On canvas" beside the Link symbols title.
+
+zoomFit() takes a 300px left inset while that chart is on, and adds the inset
+back into pan.x. Without it, Fit uses the full width and tucks the left column
+of the diagram underneath the chart — which is what it did on the first try.
+
+Deliberately NOT persisted in the file: it is a view toggle like ?± Gaps, so
+exports carry it only if it is on when you export. Persisting it would mean a
+new top-level key, and buildState() silently drops unknown ones.
+
+── EC READS "CHARACTERIZES", NOT "EXHIBITS" (Aug 12 2026) ───────────
+
+The OPM exhibition-characterization edge is drawn feature → exhibitor (the
+picker asks you to start at the attribute). Its canvas label used to be
+"exhibits", which reads backwards along that arrow: the canvas said "Seating
+Capacity exhibits Restaurant" while generateOPL correctly printed "Restaurant
+exhibits Seating Capacity" — the drawing contradicted the OPL panel beside it.
+
+Fixed by changing the WORD, not the direction: OPM_DISPLAY_LABELS.EC and the
+picker's `opl` preview string are now "characterizes". ISO 19450 §3.4 defines
+an attribute as an object that characterizes a thing other than itself, so the
+two readings are the relation's own two names. generateOPL and OPM_TGT_SUBJECT
+are untouched — the sentence still says exhibits with the target as subject.
+
+Flipping the edge instead was considered and rejected: every saved diagram
+encodes feature → exhibitor, and nothing in the file says which convention it
+was drawn under, so a flip would silently invert diagrams already on disk.
+
+loadGraphJSON migrates old files: linkType 'EC' with label exactly 'exhibits'
+is relabelled on load. Narrow on purpose — a hand-edited label is left alone.
+
+Note the same trap elsewhere in the picker: Instrument and Consumption use
+"is required by" / "is consumed by", which read along the arrow, while their
+OPL sentences start with the process. Three of the four structural relations
+and two of the procedural ones have this tail/head split. It is the single
+most confusing thing about OPM notation and worth saying out loud in any UI.
+
+Certified against ISO/PAS 19450 §3.4/§3.20/§3.21/§3.61/§3.62, the OPCAT 3.0
+manual's structural-links table, and live OPCloud 9.2.0 output ("Variable A
+exhibits Variable B, as well as Process C", with the converse printed as the
+possessive "Variable B of Variable A"). Docs updated in the same pass: manual
+§9f, deck slide 7, and the new FedWiki page docs/opm-relationships.md.
+
 ── DECISIONS LOG MAINTENANCE ────────────────────────────────────────
 
 This block lives at the top of the HTML file as an HTML comment (invisible to browser).
@@ -747,6 +948,7 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
 .opm-swatch:hover{filter:brightness(.94)}
 .opm-swatch.active{border-color:#1e293b}
 #sfd-banner{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#b45309;color:#fff;font-size:11px;font-weight:500;padding:4px 14px;border-radius:20px;pointer-events:none;display:none;z-index:15;white-space:nowrap}
+#lop-banner{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#be123c;color:#fff;font-size:11px;font-weight:500;padding:4px 14px;border-radius:20px;pointer-events:none;display:none;z-index:15;white-space:nowrap}
 .sfd-palette{padding:8px 12px;border-bottom:1px solid #f1f5f9}
 .sfd-palette-title{font-size:10px;color:#64748b;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
 .sfd-swatch{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;border:1.5px solid transparent;margin-bottom:3px;transition:background .1s}
@@ -764,6 +966,16 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
 .opm-pick-confirm{font-size:12px;padding:5px 14px;border-radius:6px;cursor:pointer;border:1px solid #0f766e;background:#0f766e;color:#fff}
 .opm-pick-cancel{font-size:12px;padding:5px 14px;border-radius:6px;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#1e293b}
 #opl-panel{padding:8px 12px;border-bottom:1px solid #e2e8f0;flex-shrink:0;display:none}
+/* OPM link-symbol reference — shown with the rest of OPM mode */
+#opm-symbols-panel{padding:8px 12px;border-bottom:1px solid #e2e8f0;flex-shrink:0;display:none}
+#opm-symbols-body{margin-top:5px}
+.opm-sym-group{font-size:9.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin:7px 0 3px}
+.opm-sym-group:first-child{margin-top:2px}
+.opm-sym-row{display:flex;align-items:center;gap:7px;padding:2px 0;cursor:help}
+.opm-sym-chip{flex-shrink:0;width:54px;height:16px;display:flex;align-items:center}
+.opm-sym-text{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.opm-sym-text b{font-size:10.5px;font-weight:600;color:#1e293b}
+.opm-sym-text i{font-size:10px;color:#64748b;font-style:italic}
 .opl-panel-title{font-size:10px;font-weight:700;color:#0f766e;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
 .opl-sentence{font-size:11px;color:#1e293b;padding:2px 0;line-height:1.5;border-bottom:1px solid #f1f5f9}
 .vs-badge-scale{transform-box:fill-box;transform-origin:0 0;transition:transform 0.13s ease;}
@@ -806,6 +1018,25 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
 .ct-btn.active{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
 /* ── BG SECTION ───────────────────────────────────────── */
 #bg-section{padding:5px 8px;border-bottom:1px solid #e2e8f0;flex-shrink:0}
+/* ── PRESENTATION VIEW ────────────────────────────────── */
+body.presenting #topbar,
+body.presenting #right-col,
+body.presenting #search-bar,
+body.presenting #canvas-hint,
+body.presenting #edge-hint,
+body.presenting #curve-hint,
+body.presenting #cld-banner,
+body.presenting #eip-banner,
+body.presenting #nrm-banner,
+body.presenting #opm-banner,
+body.presenting #sfd-banner,
+body.presenting #lop-banner,
+body.presenting #trace-banner,
+body.presenting #wardley-banner{display:none!important}
+#present-exit{position:absolute;top:10px;right:10px;z-index:60;display:none;align-items:center;gap:7px;background:rgba(255,255,255,0.55);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);border:1px solid rgba(0,0,0,0.08);color:#475569;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;cursor:pointer;opacity:.3;transition:opacity .2s}
+#present-exit:hover{opacity:1}
+#present-exit .pe-key{font-size:10px;font-weight:500;color:#64748b;border:1px solid rgba(0,0,0,0.15);border-radius:4px;padding:0 4px}
+body.presenting #present-exit{display:flex}
 </style>
 </head>
 <body>
@@ -858,6 +1089,10 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
     <button class="tb-btn" onclick="minimizeCrossings()" title="Reduce edge crossings by swapping node positions (Undo restores)">Untangle</button>
     <button class="tb-btn" onclick="zoomFit()">Fit</button>
   </div>
+  <div class="tb-sep"></div>
+  <div class="tg">
+    <button class="tb-btn" id="btn-present" onclick="togglePresent()" title="Presentation view — hide every control and give the whole window to the graph (P &middot; Esc to leave)">&#9974; Present</button>
+  </div>
 </div>
 <div id="main">
   <div id="canvas-wrap">
@@ -869,12 +1104,15 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
       <defs id="svg-defs"></defs>
       <g id="rubber-layer"></g>
       <g id="wardley-layer"></g>
+      <g id="lop-layer"></g>
       <g id="lines-layer"></g>
       <g id="edges-layer"></g>
       <g id="nodes-layer"></g>
       <g id="triples-layer"></g>
       <g id="drag-layer"></g>
+      <g id="eip-statement-layer"></g>
       <g id="legend-layer"></g>
+      <g id="opm-symbols-chart"></g>
     </svg>
     <div id="search-bar">
       <span style="font-size:13px;color:#64748b">&#9906;</span>
@@ -888,9 +1126,11 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
     <div id="nrm-banner">NRM Mode — Neighborhood Risk Management</div>
     <div id="opm-banner">OPM Mode — use +Edge to draw typed relationships</div>
     <div id="sfd-banner">SFD Mode — place Stocks, Flows &amp; Auxiliaries</div>
+    <div id="lop-banner">LOP Mode — Linkage of Processes</div>
     <div id="trace-banner">Trace Mode — select edges, assign T1–T4, then ▶ to animate</div>
     <div id="routes-panel" onmousedown="event.stopPropagation()"></div>
     <div id="wardley-banner">Wardley Mode — Genesis · Custom · Product · Commodity</div>
+    <div id="present-exit" onclick="exitPresent()" title="Leave presentation view">Leave presentation <span class="pe-key">Esc</span></div>
     <div id="canvas-hint">dbl-click node = edit &middot; click &amp; hold node = highlight its edges &middot; alt+drag = pan &middot; ctrl/pinch+scroll = zoom &middot; drag empty = select box &middot; Del = remove</div>
     <div id="legend-overlay">
       <div id="legend-overlay-title">Legend</div>
@@ -954,6 +1194,7 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
         <button class="tb-btn" id="btn-wardley" onclick="setMode('wardley')" style="border-color:#0369a1;color:#0369a1">Wardley</button>
         <button class="tb-btn" id="btn-opm" onclick="setMode('opm')" style="border-color:#0f766e;color:#0f766e">OPM</button>
         <button class="tb-btn" id="btn-sfd" onclick="setMode('sfd')" style="border-color:#b45309;color:#b45309">SFD</button>
+        <button class="tb-btn" id="btn-lop" onclick="setMode('lop')" style="border-color:#be123c;color:#be123c" title="Linkage of Processes — Deming / API organization-as-a-system map">LOP</button>
       </div>
       <div id="drive-tree-section" style="display:none;margin-top:5px;padding-top:4px;border-top:1px solid #f1f5f9">
         <div style="font-size:10px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Driver Trees</div>
@@ -1001,6 +1242,13 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
         </div>
         <div style="font-size:10px;color:#64748b;text-align:center;margin-top:2px">Space to pause/resume</div>
       </div>
+    </div>
+    <div id="opm-symbols-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+        <div class="opl-panel-title" style="margin-bottom:0;cursor:pointer;flex:1" onclick="toggleOPMSymbols()" title="The ten OPM link symbols, drawn exactly as this canvas draws them">Link symbols <span id="opm-symbols-icon" style="font-style:normal;opacity:.6">▶</span></div>
+        <button class="tb-btn" id="btn-opm-chart" onclick="toggleOPMChart()" style="font-size:10px;border-color:#0f766e;color:#0f766e" title="Put the symbol chart on the canvas, where a room can see it — it exports with the diagram">On canvas</button>
+      </div>
+      <div id="opm-symbols-body" style="display:none"></div>
     </div>
     <div id="opl-panel">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;cursor:pointer" onclick="toggleOPLPanel()">
@@ -1076,12 +1324,18 @@ g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
         <button class="tb-btn" id="btn-opm-cypher" title="Export OPM diagram as Neo4j Cypher with typed nodes and OPL-labeled relationships" style="background:transparent;border-color:transparent;color:#0f766e;display:none" onclick="exportOPMCypher()">OPM&#x2192;Cypher</button>
         <button class="tb-btn" id="btn-opm-csv" title="Export OPM triples as CSV (source, linkType, target, opl)" style="background:transparent;border-color:transparent;color:#0f766e;display:none" onclick="exportOPMCSV()">OPM&#x2192;CSV</button>
         <button class="tb-btn" id="btn-opm-opl" title="Export OPM diagram as OPL (Object-Process Language) plain text" style="background:transparent;border-color:transparent;color:#0f766e;display:none" onclick="exportOPMOPL()">OPM&#x2192;OPL</button>
+        <button class="tb-btn" id="btn-lop-csv" title="Export the numbered List of Processes as CSV — number, process, owner, measure, who it receives from and delivers to" style="background:transparent;border-color:transparent;color:#be123c;display:none" onclick="exportLOPCSV()">LOP&#x2192;CSV</button>
+        <button class="tb-btn" id="btn-lop-md" title="Export purpose, customers and needs, the List of Processes and the linkage check as markdown" style="background:transparent;border-color:transparent;color:#be123c;display:none" onclick="exportLOPMarkdown()">LOP&#x2192;MD</button>
+        <button class="tb-btn" id="btn-lop-cypher" title="Export the linkage map as Neo4j Cypher — typed :LOP nodes and typed linkages" style="background:transparent;border-color:transparent;color:#be123c;display:none" onclick="exportLOPCypher()">LOP&#x2192;Cypher</button>
         <button class="tb-btn" id="btn-sfd-xmile" title="Export SFD as XMILE — opens in Vensim or Insightmaker for simulation" style="background:transparent;border-color:transparent;color:#b45309;display:none" onclick="exportSFDXMILE()">SFD&#x2192;XMILE</button>
       </div>
     </div>
-    <div id="prop-tooltip"></div>
   </div>
 </div>
+<!-- Lives at body level, NOT inside #right-col: it is position:fixed, so nesting
+     never mattered for placement, but presentation view hides #right-col and a
+     display:none ancestor would take the hover tooltip down with it. -->
+<div id="prop-tooltip"></div>
 <div id="tree-view">
   <div id="tree-toolbar">
     <button class="tb-btn" onclick="closeTreeView()" style="flex-shrink:0">← Back</button>
@@ -1176,6 +1430,7 @@ var edgesLayer=document.getElementById('edges-layer');
 var linesLayer=document.getElementById('lines-layer');
 var dragLayer=document.getElementById('drag-layer');
 var wardleyLayer=document.getElementById('wardley-layer');
+var lopLayer=document.getElementById('lop-layer');
 var rubberLayer=document.getElementById('rubber-layer');
 var triplesLayer=document.getElementById('triples-layer');
 var svgDefs=document.getElementById('svg-defs');
@@ -2085,10 +2340,143 @@ function renderWardleyLayer(){
   // Evolution axis label
   var ex=(WM_X1+WM_X2)/2,ey=WM_Y2+36;
   s+='<text x="'+ex+'" y="'+ey+'" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#9ca3af">Evolution →</text>';
+  s+=rbaMarkup();
   wardleyLayer.innerHTML=s;
+  rbaAttachHovers();
 }
 function enterWardley(){renderWardleyLayer();}
 function exitWardley(){while(wardleyLayer.firstChild)wardleyLayer.removeChild(wardleyLayer.firstChild);}
+
+// ── RENT BAND ANALYSIS (RBA) ─────────────────────────────────────────────
+// Rent-Band-Analysis-Method.md v1.2 — Part 3 (notation) and Part 5 (spec).
+// Optional per-node fields. Additive: every other mode ignores them, and they
+// survive a round-trip because buildState Object.assigns the whole node.
+//
+//   evolution   0–1  position on the evolution axis
+//   visibility  0–1  position on the value chain
+//   shadow      {evolution, basis, rent:{label,unit,period,basis,asOf}}
+//   pinnedBy    [loop, …]   the CLD loops holding the pin
+//   pressure    {forces:[…], resistance:[{mechanism,loop,annualCost,basis}]}
+//
+// TWO AXIS CONVENTIONS, DO NOT CONFLATE THEM. The tool's own wardleyX (and the
+// generator JSON it was built to import) runs 1=Genesis → 0=Commodity. The
+// method's `evolution` runs the standard direction, 0=Genesis → 1=Commodity,
+// which is what makes "shadow right of node" mean "further evolved" and what
+// the validator's shadow>node rule assumes. Convert at the boundary — rbaX()
+// and rbaEvFromX() are the only two places that know about the flip.
+//
+// POSITION HAS ONE SOURCE OF TRUTH. In Wardley mode evolution/visibility win:
+// n.x/n.y are derived from them on load and written back from them on drag.
+// The example file arrived with both copies disagreeing by 200px, which is
+// what two independent copies of a position always eventually do.
+//
+// `resistors` is accepted as an alias for `resistance` (the handoff and the
+// method disagree; the method's `resistance` is canonical on write). Legacy
+// `pressure:true` still renders a bare arrow with no annotation.
+var RBA_CORAL='#e2725b',RBA_CORAL_TEXT='#8c3520',RBA_TEAL='#2a9d8f';
+function rbaNum(v){return typeof v==='number'&&isFinite(v);}
+function rbaClamp01(v){return v<0?0:v>1?1:v;}
+function rbaX(ev){return wmX(1-rbaClamp01(ev));}
+function rbaEvFromX(x){return rbaClamp01((x-WM_X1)/WM_W);}
+function rbaVisFromY(y){return rbaClamp01(1-(y-WM_Y1)/WM_H);}
+function rbaResistance(p){if(!p||p===true)return[];var r=p.resistance||p.resistors;return Array.isArray(r)?r:[];}
+function rbaForces(p){if(!p||p===true)return[];return Array.isArray(p.forces)?p.forces:[];}
+function rbaPins(n){return Array.isArray(n.pinnedBy)?n.pinnedBy.filter(Boolean):[];}
+function rbaHasShadow(n){return !!(n.shadow&&rbaNum(n.shadow.evolution)&&rbaNum(n.evolution));}
+function rbaHasAny(n){return rbaHasShadow(n)||rbaPins(n).length>0||!!n.pressure;}
+// evolution/visibility → px. Run after any load while in Wardley mode.
+function wardleyApplyPositions(){nodes.forEach(function(n){if(rbaNum(n.evolution))n.x=rbaX(n.evolution);if(rbaNum(n.visibility))n.y=wmY(rbaClamp01(n.visibility));});}
+// px → evolution/visibility. Run when a drag ends in Wardley mode, so the
+// position the user just chose survives as meaning and not only as pixels.
+function wardleyWriteBack(){nodes.forEach(function(n){n.evolution=+rbaEvFromX(n.x).toFixed(3);n.visibility=+rbaVisFromY(n.y).toFixed(3);});}
+
+function rbaMarkup(){
+  var s='';
+  nodes.forEach(function(n){
+    if(n.layer&&n.layer.trim()&&hiddenLayers[n.layer.trim()])return;
+    if(!rbaHasAny(n))return;
+    var hh=n.h/2,y=n.y,pins=rbaPins(n);
+    if(rbaHasShadow(n)){
+      var x0=n.x,xs=rbaX(n.shadow.evolution);
+      // The band encloses both boxes rather than running centre-to-centre: a
+      // band that stops at the shadow's centre draws a hard edge straight down
+      // the middle of the shadow, and it reads as two boxes.
+      var bx=Math.min(x0,xs)-n.w/2-4,bw=Math.abs(xs-x0)+n.w+8,mid=(x0+xs)/2;
+      // rent band — the gap itself, rendered as an object you can point at
+      s+='<rect id="rba-band-'+n.id+'" data-rba="band" data-node="'+n.id+'" x="'+bx.toFixed(1)+'" y="'+(y-hh-6).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+(n.h+12).toFixed(1)+'" rx="8" fill="'+RBA_CORAL+'" fill-opacity="0.25" stroke="none" style="cursor:help"/>';
+      // shadow node — the forecast position, dashed, no fill
+      s+='<g id="rba-shadow-'+n.id+'" data-rba="shadow" data-node="'+n.id+'" transform="translate('+xs.toFixed(1)+','+y.toFixed(1)+')" style="cursor:help">'+shapeHTML(n,'none',RBA_TEAL,2,'dashed')+'</g>';
+      // rent figure at the band midpoint
+      var rent=n.shadow.rent;
+      if(rent&&rent.label)s+='<text id="rba-rent-'+n.id+'" data-rba="rent" data-node="'+n.id+'" x="'+mid.toFixed(1)+'" y="'+(y-2).toFixed(1)+'" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="'+RBA_CORAL_TEXT+'" style="cursor:help">'+escX(rent.label)+'</text>';
+      // pressure arrow — inside the band, aimed at the forecast
+      // arrow lives in the open gap between the two boxes, not under them
+      if(n.pressure&&Math.abs(xs-x0)-n.w>36){
+        var dir=xs>=x0?1:-1,ay=y+14;
+        var ax1=x0+dir*(n.w/2+8),ax2=xs-dir*(n.w/2+8);
+        // transparent hit band first — a 1.8px dashed line cannot be hovered,
+        // same reason every edge in this tool carries one
+        s+='<g id="rba-pressure-'+n.id+'" data-rba="pressure" data-node="'+n.id+'" style="cursor:help">'
+          +'<line x1="'+ax1.toFixed(1)+'" y1="'+ay.toFixed(1)+'" x2="'+ax2.toFixed(1)+'" y2="'+ay.toFixed(1)+'" stroke="transparent" stroke-width="18"/>'
+          +'<line x1="'+ax1.toFixed(1)+'" y1="'+ay.toFixed(1)+'" x2="'+ax2.toFixed(1)+'" y2="'+ay.toFixed(1)+'" stroke="'+RBA_TEAL+'" stroke-width="1.8" stroke-dasharray="5 3" marker-end="url(#'+getMarkerId(RBA_TEAL)+')" pointer-events="none"/>'
+          +'</g>';
+      }
+    }
+    // pin glyph — stem and head above the pinned node, carrying its loop refs
+    if(pins.length){
+      var py=y-hh-2;
+      s+='<g id="rba-pin-'+n.id+'" data-rba="pin" data-node="'+n.id+'" style="cursor:help">'
+        +'<rect x="'+(n.x-8).toFixed(1)+'" y="'+(py-24).toFixed(1)+'" width="'+(24+pins.join(', ').length*5.6).toFixed(1)+'" height="26" fill="transparent"/>'
+        +'<line x1="'+n.x.toFixed(1)+'" y1="'+py.toFixed(1)+'" x2="'+n.x.toFixed(1)+'" y2="'+(py-13).toFixed(1)+'" stroke="'+RBA_CORAL+'" stroke-width="1.8"/>'
+        +'<circle cx="'+n.x.toFixed(1)+'" cy="'+(py-16).toFixed(1)+'" r="4.5" fill="'+RBA_CORAL+'"/>'
+        +'<text x="'+(n.x+8).toFixed(1)+'" y="'+(py-12).toFixed(1)+'" font-family="system-ui,sans-serif" font-size="10" font-weight="600" fill="'+RBA_CORAL_TEXT+'">'+escX(pins.join(', '))+'</text>'
+        +'</g>';
+    }
+  });
+  return s;
+}
+
+// Hover text, shared by the live tooltip and the SVG export's <title> elements —
+// one function so a printed map says exactly what the screen says.
+function rbaTipLines(n,kind){
+  var out=[];
+  if(kind==='band'||kind==='shadow'||kind==='rent'){
+    out.push('Forecast position — when the pinning investment stops, competition locates this component here.');
+    if(n.shadow&&n.shadow.basis)out.push('Basis: '+n.shadow.basis);
+    else out.push('Basis: (none recorded — the shadow is an argued inference, not decoration)');
+    var r=n.shadow&&n.shadow.rent;
+    if(r){
+      if(r.label)out.push('Rent: '+r.label);
+      if(r.basis)out.push('Rent basis: '+r.basis);
+      if(r.asOf)out.push('As of: '+r.asOf);
+    }
+  }else if(kind==='pressure'){
+    var f=rbaForces(n.pressure),res=rbaResistance(n.pressure);
+    if(!f.length&&!res.length)out.push('Evolutionary pressure, unannotated.');
+    if(f.length){out.push('Forces pushing right:');f.forEach(function(x){out.push('  • '+x);});}
+    if(res.length){out.push('Mechanisms holding left:');res.forEach(function(x){out.push('  • '+[x.mechanism||'(unnamed)',x.loop?'['+x.loop+']':'',x.annualCost?'— '+x.annualCost:''].filter(Boolean).join(' '));});}
+  }else if(kind==='pin'){
+    out.push('Pinned by: '+rbaPins(n).join(', '));
+    out.push('The map shows where the dam is; the CLD shows the machinery holding it closed.');
+  }
+  return out;
+}
+function rbaAttachHovers(){
+  Array.prototype.slice.call(wardleyLayer.querySelectorAll('[data-rba]')).forEach(function(el){
+    var kind=el.getAttribute('data-rba'),n=nodeById(el.getAttribute('data-node'));
+    if(!n)return;
+    el.addEventListener('mouseenter',function(ev){rbaShowTip(rbaTipLines(n,kind),ev);});
+    el.addEventListener('mousemove',moveTooltip);
+    el.addEventListener('mouseleave',hideTooltip);
+  });
+}
+function rbaShowTip(lines,ev){
+  if(!noteTooltipsEnabled||!lines.length){hideTooltip();return;}
+  if(!_ttEl){_ttEl=document.getElementById('prop-tooltip');_ttEl.addEventListener('mouseenter',function(){clearTimeout(_ttHideTimer);});_ttEl.addEventListener('mouseleave',function(){_ttHideTimer=setTimeout(function(){if(_ttEl)_ttEl.style.display='none';},80);});}
+  clearTimeout(_ttHideTimer);
+  _ttEl.innerHTML=lines.map(function(l){return escH(l);}).join('<br>');
+  _ttEl.style.display='block';moveTooltip(ev);
+}
 
 // ── LEGEND ───────────────────────────────────────────────────────────────
 // The legend is the REGISTRY, not a caption. A row defines a style; nodes and
@@ -2344,7 +2732,78 @@ function renderLegendSVG(){
 }
 function toggleLegendCollapsed(){legendCollapsed=!legendCollapsed;renderLegendSVG();}
 
-window.addEventListener('resize',function(){renderLegendSVG();});
+// ── THE EIP STATEMENT ────────────────────────────────────────────────
+// Marc's one-line framing of the stage. It answers the question a newcomer
+// has on first sight, so it belongs ON the drawing, not in the toolbar:
+// these sketches get printed and taped to the wall of a room, and anything
+// living in HTML chrome is missing by the time the group is looking at it.
+// Same reason the legend moved into the SVG. Drawn in its own layer, which
+// is NOT pan/zoom transformed and IS cloned by buildExportSVG().
+var EIP_STATEMENT='We all always live in the real world (E) and the political world of laws (P) while we solve problems together (I).';
+var EIP_TOKEN_COLORS={'(E)':'#15803d','(I)':'#7c3aed','(P)':'#1d4ed8'};
+
+function renderEIPStatement(){
+  var layer=document.getElementById('eip-statement-layer');
+  if(!layer)return;
+  while(layer.firstChild)layer.removeChild(layer.firstChild);
+  if(mode!=='eip')return;
+
+  var _r=svgEl.getBoundingClientRect();
+  var vw=Math.round(_r.width)||svgEl.clientWidth||900;
+  var PAD=13, FS=14, LH=20, MARGIN=16;
+  // Sits below the E/I/P column labels (top:10px) so the two never collide.
+  var TOP=40;
+  var maxTextW=Math.min(660,vw-MARGIN*2-PAD*2);
+  if(maxTextW<160)return;   // too narrow to say anything legibly
+
+  // Wrap by estimated advance width — no measuring pass, and the sentence is
+  // fixed, so an approximation that errs narrow is fine.
+  var words=EIP_STATEMENT.split(' '), lines=[], cur=[], curW=0;
+  var charW=FS*0.505;
+  words.forEach(function(w){
+    var ww=(w.length+1)*charW;
+    if(cur.length&&curW+ww>maxTextW){lines.push(cur);cur=[];curW=0;}
+    cur.push(w);curW+=ww;
+  });
+  if(cur.length)lines.push(cur);
+
+  var textW=0;
+  lines.forEach(function(l){textW=Math.max(textW,l.join(' ').length*charW);});
+  var boxW=Math.min(maxTextW,textW)+PAD*2;
+  var boxH=PAD*2+lines.length*LH-(LH-FS);
+
+  var body='';
+  lines.forEach(function(lineWords,i){
+    var dy=(i===0)?(PAD+FS):LH;
+    body+='<tspan x="'+PAD+'" dy="'+dy+'">';
+    lineWords.forEach(function(w,j){
+      var lead=(j?' ':'');
+      var col=EIP_TOKEN_COLORS[w.replace(/[.,]$/,'')];
+      if(col){
+        var trail=/[.,]$/.test(w)?w.slice(-1):'';
+        body+=escX(lead)+'<tspan fill="'+col+'" font-weight="700">'
+            + escX(w.slice(0,w.length-trail.length))+'</tspan>'+escX(trail);
+      }else{
+        body+=escX(lead+w);
+      }
+    });
+    // Trailing space on every line but the last: invisible (the next tspan
+    // resets x) but it keeps textContent readable for copy, search and export.
+    if(i<lines.length-1)body+=' ';
+    body+='</tspan>';
+  });
+
+  var g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('transform','translate('+MARGIN+','+TOP+')');
+  g.setAttribute('pointer-events','none');
+  g.innerHTML='<rect x="0" y="0" width="'+boxW.toFixed(1)+'" height="'+boxH.toFixed(1)+'" rx="8" '
+            + 'fill="rgba(255,255,255,0.92)" stroke="rgba(0,0,0,0.14)" stroke-width="1"/>'
+            + '<text font-family="system-ui,sans-serif" font-size="'+FS+'" font-weight="500" '
+            + 'fill="#0f172a" y="0">'+body+'</text>';
+  layer.appendChild(g);
+}
+
+window.addEventListener('resize',function(){renderLegendSVG();renderOPMChart();renderEIPStatement();});
 
 // Kept for call-site compatibility; the legend now lives in the SVG.
 function renderLegendOverlay(){
@@ -2821,13 +3280,558 @@ function exportNRMCypher(){
   toast('NRM Cypher downloaded');
 }
 
+// ── LOP MODE (Linkage of Processes — Deming / API) ─────────────────────────
+// Sources: Langley, Moen, Nolan, Nolan, Norman, Provost, "The Improvement Guide"
+// 2nd ed. (the organization-as-a-system flow diagram, after Deming's 1950 Japan
+// diagram); Norman, Provost, Moen et al., "Quality as an Organizational Strategy"
+// (Activity 2, View the organization as a system — Linkage of Processes + the
+// numbered List of Processes with owners and measures).
+//
+// The map answers four questions in one picture:
+//   What is the aim?  Who are the customers and what do they need?
+//   Which processes produce it, in what order, owned by whom, measured how?
+//   How does what we learn get back into design and redesign?
+//
+// Bands are the layout guide, not data: a node's lopType names its band, and
+// "Snap to bands" moves it there. Nothing is forced — you can draw anywhere.
+var LOP_X1=20,LOP_X2=1220;
+var LOP_BANDS={
+  aim:    {label:'AIM · LEADERSHIP · DESIGN AND REDESIGN', y1:20, y2:150, fill:'#fff1f2', line:'#fecdd3', text:'#9f1239'},
+  value:  {label:'VALUE-ADDED SYSTEM', y1:160, y2:480, fill:'#f8fafc', line:'#e2e8f0', text:'#334155'},
+  support:{label:'SUPPORT PROCESSES', y1:490, y2:600, fill:'#faf5ff', line:'#e9d5ff', text:'#6b21a8'},
+  info:   {label:'INFORMATION · MEASURES · CUSTOMER RESEARCH', y1:610, y2:730, fill:'#f0fdfa', line:'#ccfbf1', text:'#0f766e'}
+};
+// Columns read left→right inside the value band, the SIPOC reading of the map.
+var LOP_COLS=[
+  {label:'Suppliers', x1:0, x2:0.16},
+  {label:'Key processes', x1:0.16, x2:0.62},
+  {label:'Products & services', x1:0.62, x2:0.80},
+  {label:'Customers & needs', x1:0.80, x2:1.0}
+];
+var LOP_NODE_TYPES=[
+  {type:'purpose',   label:'Purpose (Aim)',     band:'aim',     group:'Aim & Leadership', shape:'rounded', color:'#fecdd3', border:'#be123c', fontColor:'#4c0519', w:240, h:56, hint:'no aim, no system'},
+  {type:'leadership',label:'Leadership Process',band:'aim',     group:'Aim & Leadership', shape:'rounded', color:'#fee2e2', border:'#b91c1c', fontColor:'#450a0a', w:150, h:48, hint:'plan, allocate, govern'},
+  {type:'redesign',  label:'Design & Redesign', band:'aim',     group:'Aim & Leadership', shape:'ellipse', color:'#ffe4e6', border:'#be123c', fontColor:'#4c0519', w:160, h:58, hint:'where learning re-enters'},
+  {type:'supplier',  label:'Supplier',          band:'value',   group:'Value-added flow', shape:'rect',    color:'#e2e8f0', border:'#475569', fontColor:'#0f172a', w:132, h:48, hint:'materials, people, information'},
+  {type:'process',   label:'Key Process',       band:'value',   group:'Value-added flow', shape:'rounded', color:'#dbeafe', border:'#1d4ed8', fontColor:'#1e3a8a', w:154, h:54, hint:'numbered · owner · measure'},
+  {type:'subprocess',label:'Sub-process',       band:'value',   group:'Value-added flow', shape:'rounded', color:'#eff6ff', border:'#60a5fa', fontColor:'#1e3a8a', w:132, h:44, hint:'a step inside a key process'},
+  {type:'output',    label:'Product / Service', band:'value',   group:'Value-added flow', shape:'barrel',  color:'#dcfce7', border:'#15803d', fontColor:'#14532d', w:144, h:50, hint:'what the system delivers'},
+  {type:'customer',  label:'Customer',          band:'value',   group:'Value-added flow', shape:'rect',    color:'#fef3c7', border:'#b45309', fontColor:'#78350f', w:144, h:50, hint:'who receives it'},
+  {type:'need',      label:'Need',              band:'value',   group:'Value-added flow', shape:'rounded', color:'#fef9c3', border:'#ca8a04', fontColor:'#713f12', w:144, h:46, hint:'what that customer needs', borderDash:'dashed'},
+  {type:'support',   label:'Support Process',   band:'support', group:'Support',          shape:'rounded', color:'#ede9fe', border:'#7c3aed', fontColor:'#4c1d95', w:154, h:48, hint:'enables without touching the product'},
+  {type:'measure',   label:'Measure',           band:'info',    group:'Information',      shape:'cylinder',color:'#ccfbf1', border:'#0f766e', fontColor:'#134e4a', w:132, h:54, hint:'one of the family of measures'},
+  {type:'research',  label:'Customer Research', band:'info',    group:'Information',      shape:'ellipse', color:'#cffafe', border:'#0891b2', fontColor:'#164e63', w:158, h:54, hint:'Deming: consumer research'}
+];
+// A linkage is typed by what it carries. Style says which; the legend spells it out.
+var LOP_LINKS=[
+  {id:'flow',     label:'flows to', color:'#1d4ed8', width:3,   dash:'solid',  curved:false, rel:'FLOWS_TO', hint:'product or service moves on'},
+  {id:'supplies', label:'supplies', color:'#475569', width:2,   dash:'solid',  curved:false, rel:'SUPPLIES', hint:'supplier provides input'},
+  {id:'serves',   label:'serves',   color:'#15803d', width:2.5, dash:'solid',  curved:false, rel:'SERVES',   hint:'output reaches the customer'},
+  {id:'supports', label:'supports', color:'#7c3aed', width:1.5, dash:'dotted', curved:true,  rel:'SUPPORTS', hint:'support process enables a key process'},
+  {id:'informs',  label:'informs',  color:'#0f766e', width:2,   dash:'dashed', curved:true,  rel:'INFORMS',  hint:'information and feedback return'},
+  {id:'requires', label:'requires', color:'#ca8a04', width:1.5, dash:'dashed', curved:true,  rel:'REQUIRES', hint:'a need the process must meet'},
+  {id:'guides',   label:'guides',   color:'#be123c', width:1.5, dash:'solid',  curved:true,  rel:'GUIDES',   hint:'aim or leadership sets direction'}
+];
+var lopActiveType=null;
+var lopBandsOn=true;
+var lopFindings=null;   // null until Check linkage is run
+
+function lopTypeDef(t){for(var i=0;i<LOP_NODE_TYPES.length;i++)if(LOP_NODE_TYPES[i].type===t)return LOP_NODE_TYPES[i];return null;}
+function lopLinkDef(id){for(var i=0;i<LOP_LINKS.length;i++)if(LOP_LINKS[i].id===id)return LOP_LINKS[i];return null;}
+function lopTypeLabel(t){var d=lopTypeDef(t);return d?d.label:t;}
+
+// Frame the whole band stack, so a fresh map opens showing the guide it is drawn
+// on. Only when nothing is typed yet — never yank the view out from under work.
+function lopFitBands(){
+  function doFit(){
+    var W=svgEl.clientWidth||900,H=svgEl.clientHeight||600;
+    if(W<10){requestAnimationFrame(function(){requestAnimationFrame(doFit);});return;}
+    var pad=54,minX=LOP_X1-pad,maxX=LOP_X2+pad,minY=LOP_BANDS.aim.y1-pad,maxY=LOP_BANDS.info.y2+pad+40;
+    zoom=Math.min(W/(maxX-minX),H/(maxY-minY),1.4);
+    pan.x=W/2-((minX+maxX)/2)*zoom;pan.y=H/2-((minY+maxY)/2)*zoom;
+    applyT();
+  }
+  requestAnimationFrame(function(){requestAnimationFrame(doFit);});
+}
+function enterLOP(){
+  updateLOPBanner();
+  if(!nodes.some(function(n){return!!n.lopType;}))lopFitBands();
+  ['btn-lop-csv','btn-lop-md','btn-lop-cypher'].forEach(function(id){var b=document.getElementById(id);if(b)b.style.display='';});
+  renderAll();buildPanel();
+}
+function exitLOP(){
+  document.getElementById('lop-banner').style.display='none';
+  lopActiveType=null;svgEl.style.cursor='default';
+  ['btn-lop-csv','btn-lop-md','btn-lop-cypher'].forEach(function(id){var b=document.getElementById(id);if(b)b.style.display='none';});
+  renderAll();buildPanel();
+}
+function updateLOPBanner(){
+  var b=document.getElementById('lop-banner');
+  b.textContent=lopActiveType?
+    ('LOP — click canvas to place '+lopTypeLabel(lopActiveType)):
+    'LOP Mode — Linkage of Processes: aim, customers, the processes between them';
+  b.style.display='block';
+}
+
+// ── bands (drawn in SVG so they survive PNG and SVG export) ────────────────
+function renderLOPLayer(){
+  while(lopLayer.firstChild)lopLayer.removeChild(lopLayer.firstChild);
+  if(mode!=='lop'||!lopBandsOn)return;
+  var W=LOP_X2-LOP_X1,s='';
+  Object.keys(LOP_BANDS).forEach(function(k){
+    var b=LOP_BANDS[k],h=b.y2-b.y1;
+    s+='<rect x="'+LOP_X1+'" y="'+b.y1+'" width="'+W+'" height="'+h+'" rx="10" fill="'+b.fill+'" stroke="'+b.line+'" stroke-width="1.5"/>';
+    s+='<text x="'+(LOP_X1+14)+'" y="'+(b.y1+16)+'" font-family="system-ui,sans-serif" font-size="10" font-weight="700" letter-spacing="1.2" fill="'+b.text+'" opacity=".75">'+b.label+'</text>';
+  });
+  // column guides, value band only
+  var v=LOP_BANDS.value;
+  LOP_COLS.forEach(function(c,i){
+    var x1=LOP_X1+c.x1*W,x2=LOP_X1+c.x2*W;
+    if(i>0)s+='<line x1="'+x1+'" y1="'+(v.y1+22)+'" x2="'+x1+'" y2="'+(v.y2-6)+'" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3 5"/>';
+    s+='<text x="'+((x1+x2)/2)+'" y="'+(v.y1+34)+'" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-weight="600" letter-spacing=".6" fill="#94a3b8">'+c.label.toUpperCase()+'</text>';
+  });
+  // Deming's consumer-research return, drawn as a guide. It runs OUTSIDE the band
+  // stack — a diagonal across the middle reads as a linkage, which it is not.
+  var i2=LOP_BANDS.info.y2,a1=LOP_BANDS.aim.y1,ax=LOP_X2-60,rx=LOP_X2+26,lx=LOP_X1-26,ay=a1+34;
+  s+='<path d="M '+ax+' '+(i2-10)+' H '+(rx-14)+' Q '+rx+' '+(i2-10)+' '+rx+' '+(i2+4)+' V '+(i2+34)+' Q '+rx+' '+(i2+48)+' '+(rx-14)+' '+(i2+48)+' H '+(lx+14)+' Q '+lx+' '+(i2+48)+' '+lx+' '+(i2+34)+' V '+(ay+14)+' Q '+lx+' '+ay+' '+(lx+14)+' '+ay+' H '+(LOP_X1-2)+'" fill="none" stroke="#5eead4" stroke-width="2" stroke-dasharray="7 6" opacity=".85"/>';
+  s+='<polygon points="'+(LOP_X1+8)+','+ay+' '+(LOP_X1-4)+','+(ay-6)+' '+(LOP_X1-4)+','+(ay+6)+'" fill="#5eead4" opacity=".85"/>';
+  s+='<text x="'+((LOP_X1+LOP_X2)/2)+'" y="'+(i2+44)+'" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-style="italic" fill="#0f766e" opacity=".85">what customers experience \u2192 design and redesign</text>';
+  lopLayer.innerHTML=s;
+}
+function lopToggleBands(){lopBandsOn=!lopBandsOn;renderLOPLayer();buildPanel();}
+function lopSnapToBands(){
+  snap();var moved=0;
+  nodes.forEach(function(n){
+    var t=lopTypeDef(n.lopType);if(!t)return;
+    var b=LOP_BANDS[t.band];
+    var top=b.y1+n.h/2+30,bot=b.y2-n.h/2-8;
+    if(bot<top)bot=top;
+    if(n.y<top){n.y=top;moved++;}
+    else if(n.y>bot){n.y=bot;moved++;}
+  });
+  renderAll();buildPanel();
+  toast(moved?('Moved '+moved+' node'+(moved===1?'':'s')+' into band'):'Every typed node is already in its band');
+}
+
+// ── placing and typing ────────────────────────────────────────────────────
+function lopStyleNode(n,t){
+  n.lopType=t.type;n.color=t.color;n.borderColor=t.border;n.fontColor=t.fontColor;
+  n.shape=t.shape;n.borderWidth=t.type==='process'?2:1.5;n.borderDash=t.borderDash||'solid';
+  n.w=t.w;n.h=t.h;
+}
+function applyLOPToNewNode(n){
+  var t=lopTypeDef(lopActiveType);if(!t)return;
+  lopStyleNode(n,t);n.label=t.label;
+  if(t.type==='process'){n.props=n.props||{};if(!('owner'in n.props))n.props.owner='';if(!('measure'in n.props))n.props.measure='';}
+  autoSize(n);
+}
+function setNodeLOPType(id,type){
+  snap();var n=nodeById(id);if(!n)return;
+  var t=lopTypeDef(type);if(!t)return;
+  lopStyleNode(n,t);
+  if(type!=='process')delete n.lopNum;
+  else{n.props=n.props||{};if(!('owner'in n.props))n.props.owner='';if(!('measure'in n.props))n.props.measure='';}
+  autoSize(n);renderAll();buildPanel();
+}
+function lopSetNodeProp(id,key,val){
+  var n=nodeById(id);if(!n)return;
+  snap();n.props=n.props||{};n.props[key]=val;
+  lopFindings=null;renderAll();buildPanel();
+}
+
+// ── linkages ──────────────────────────────────────────────────────────────
+// Inference beats a picker here: on a linkage map the pair of node types almost
+// always determines what the arrow carries. Change it in the panel when it doesn't.
+function lopInferLink(s,t){
+  if(s==='measure'||s==='research')return'informs';
+  if(t==='redesign'||t==='measure'||t==='research')return'informs';
+  if(s==='purpose'||s==='leadership'||s==='redesign')return'guides';
+  if(s==='need'||t==='need')return'requires';
+  if(s==='support')return'supports';
+  if(s==='supplier')return'supplies';
+  if(s==='output'||t==='customer')return'serves';
+  return'flow';
+}
+function lopStyleEdge(e,def){
+  e.lopLink=def.id;e.color=def.color;e.width=def.width;e.dash=def.dash;e.curved=def.curved;
+  getMarkerId(e.color);
+}
+function applyLOPEdge(srcId,tgtId){
+  var src=nodeById(srcId),tgt=nodeById(tgtId);if(!src||!tgt)return;
+  snap();
+  var def=lopLinkDef(lopInferLink(src.lopType,tgt.lopType))||LOP_LINKS[0];
+  var e=Object.assign({id:'e'+nextId++,src:srcId,tgt:tgtId,label:'',props:{}},DEF_EDGE);
+  lopStyleEdge(e,def);
+  edges.push(e);selectEdgeId(e.id,false);
+  lopFindings=null;
+  renderAll();buildPanel();
+  toast('Linkage: '+src.label+' '+def.label+' '+tgt.label);
+}
+function setEdgeLOPLink(id,linkId){
+  snap();var e=edgeById(id);if(!e)return;
+  var def=lopLinkDef(linkId);if(!def)return;
+  lopStyleEdge(e,def);lopFindings=null;renderAll();buildPanel();
+}
+function lopToggleLinkLabels(){
+  snap();
+  var anyLabelled=edges.some(function(e){return e.lopLink&&e.label;});
+  edges.forEach(function(e){
+    if(!e.lopLink)return;
+    if(anyLabelled)e.label='';
+    else{var d=lopLinkDef(e.lopLink);e.label=d?d.label:'';}
+  });
+  renderAll();buildPanel();
+  toast(anyLabelled?'Linkage labels off':'Linkage labels on');
+}
+
+// ── numbering and the List of Processes ───────────────────────────────────
+function lopProcesses(){
+  return nodes.filter(function(n){return n.lopType==='process';})
+    .sort(function(a,b){return((a.lopNum||9999)-(b.lopNum||9999))||(a.x-b.x)||(a.y-b.y);});
+}
+// Number in the order the work flows, not the order it happens to be drawn: a
+// chain that wraps to a second row still numbers 1-2-3-4-5 down the chain.
+// Kahn's algorithm over the flow linkages, left-to-right as the tie-break, and
+// anything caught in a loop is appended in drawing order rather than dropped.
+function lopFlowOrder(ps){
+  var byId={},indeg={},adj={};
+  ps.forEach(function(n){byId[n.id]=n;indeg[n.id]=0;adj[n.id]=[];});
+  edges.forEach(function(e){
+    if(e.lopLink!=='flow'||e.src===e.tgt)return;
+    if(!byId[e.src]||!byId[e.tgt])return;
+    if(adj[e.src].indexOf(e.tgt)>=0)return;
+    adj[e.src].push(e.tgt);indeg[e.tgt]++;
+  });
+  var ready=ps.filter(function(n){return indeg[n.id]===0;}),out=[],seen={};
+  while(ready.length){
+    ready.sort(function(a,b){return(a.x-b.x)||(a.y-b.y);});
+    var n=ready.shift();
+    if(seen[n.id])continue;
+    seen[n.id]=true;out.push(n);
+    adj[n.id].forEach(function(t){if(--indeg[t]===0)ready.push(byId[t]);});
+  }
+  ps.forEach(function(n){if(!seen[n.id])out.push(n);});
+  return out;
+}
+function lopRenumber(){
+  snap();var ps=lopFlowOrder(nodes.filter(function(n){return n.lopType==='process';}).sort(function(a,b){return(a.x-b.x)||(a.y-b.y);}));
+  ps.forEach(function(n,i){n.lopNum=i+1;});
+  lopFindings=null;renderAll();buildPanel();
+  toast(ps.length?('Numbered '+ps.length+' key processes in flow order'):'No key processes to number');
+}
+function lopNodeOverlay(n){
+  if(n.lopType!=='process'||!n.lopNum)return'';
+  var cx=(-n.w/2+3).toFixed(1),cy=(-n.h/2+3).toFixed(1);
+  return'<circle cx="'+cx+'" cy="'+cy+'" r="10" fill="#1d4ed8" stroke="#ffffff" stroke-width="1.5" pointer-events="none"/>'
+    +'<text x="'+cx+'" y="'+(-n.h/2+7).toFixed(1)+'" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#ffffff" pointer-events="none">'+n.lopNum+'</text>';
+}
+// Neighbours of a process, by linkage direction — the SIPOC row behind each line.
+function lopIn(n,linkIds){
+  return edges.filter(function(e){return e.tgt===n.id&&(!linkIds||linkIds.indexOf(e.lopLink)>=0);})
+    .map(function(e){var s=nodeById(e.src);return s?s.label:'';}).filter(Boolean);
+}
+function lopOut(n,linkIds){
+  return edges.filter(function(e){return e.src===n.id&&(!linkIds||linkIds.indexOf(e.lopLink)>=0);})
+    .map(function(e){var t=nodeById(e.tgt);return t?t.label:'';}).filter(Boolean);
+}
+function lopNeedsOf(c){
+  return edges.map(function(e){
+    var o=e.src===c.id?nodeById(e.tgt):(e.tgt===c.id?nodeById(e.src):null);
+    return(o&&o.lopType==='need')?o.label:'';
+  }).filter(Boolean);
+}
+function lopRows(){
+  return lopProcesses().map(function(n){
+    return{
+      no:n.lopNum||'',
+      name:n.label,
+      owner:(n.props&&n.props.owner||'').trim(),
+      measure:(n.props&&n.props.measure||'').trim(),
+      suppliers:lopIn(n,['flow','supplies']).join('; '),
+      customers:lopOut(n,['flow','serves']).join('; '),
+      support:lopIn(n,['supports']).join('; '),
+      needs:lopIn(n,['requires']).join('; ')
+    };
+  });
+}
+
+// ── linkage check ─────────────────────────────────────────────────────────
+// Every finding is something one of the two books asks of a system diagram.
+function lopCheck(){
+  var out=[],byType={};
+  nodes.forEach(function(n){if(n.lopType)(byType[n.lopType]=byType[n.lopType]||[]).push(n);});
+  var typed=nodes.filter(function(n){return!!n.lopType;});
+  if(!typed.length){lopFindings=[{level:'gap',text:'Nothing typed yet. Place nodes from the palette above.'}];return;}
+  var purposes=byType.purpose||[];
+  if(!purposes.length)out.push({level:'gap',text:'No Purpose. Deming: without an aim there is no system.'});
+  else if(purposes.length>1)out.push({level:'warn',text:purposes.length+' Purpose nodes — a system has one aim.'});
+  var procs=byType.process||[];
+  if(!procs.length)out.push({level:'gap',text:'No key processes. The linkage map is the chain of value-added processes.'});
+  if(procs.some(function(n){return!n.lopNum;}))out.push({level:'warn',text:'Some key processes are unnumbered — run Renumber so the map and the list agree.'});
+  procs.forEach(function(n){
+    if(!(n.props&&(n.props.owner||'').trim()))out.push({level:'gap',text:'“'+n.label+'” has no owner.',id:n.id});
+    if(!(n.props&&(n.props.measure||'').trim()))out.push({level:'gap',text:'“'+n.label+'” has no measure.',id:n.id});
+    var deg=edges.filter(function(e){return e.src===n.id||e.tgt===n.id;}).length;
+    if(!deg)out.push({level:'gap',text:'“'+n.label+'” is linked to nothing — an unlinked process is not part of the system.',id:n.id});
+  });
+  if(!(byType.customer||[]).length)out.push({level:'gap',text:'No customer. Who receives what this system produces?'});
+  if(!(byType.need||[]).length)out.push({level:'warn',text:'No needs stated. QOS asks what each customer needs, not only who they are.'});
+  (byType.customer||[]).forEach(function(n){
+    if(!lopNeedsOf(n).length)out.push({level:'warn',text:'“'+n.label+'” has no stated need — who they are is not what they need.',id:n.id});
+  });
+  (byType.need||[]).forEach(function(n){
+    var attached=edges.some(function(e){
+      var o=e.src===n.id?nodeById(e.tgt):(e.tgt===n.id?nodeById(e.src):null);
+      return!!o&&o.lopType==='customer';
+    });
+    if(!attached)out.push({level:'warn',text:'Need “'+n.label+'” is not attached to a customer — whose need is it?',id:n.id});
+  });
+  if(!(byType.supplier||[]).length)out.push({level:'warn',text:'No suppliers. Deming’s diagram starts with them.'});
+  if(!(byType.output||[]).length)out.push({level:'warn',text:'No product or service node — what does the chain deliver?'});
+  if(!edges.some(function(e){return e.lopLink==='informs';}))
+    out.push({level:'gap',text:'No information linkage returns. Without feedback the map is a pipeline, not a system.'});
+  if(!(byType.redesign||[]).length)
+    out.push({level:'warn',text:'No Design & Redesign node — nowhere for what you learn to re-enter.'});
+  (byType.support||[]).forEach(function(n){
+    if(!edges.some(function(e){return e.src===n.id&&e.lopLink==='supports';}))
+      out.push({level:'warn',text:'Support process “'+n.label+'” supports nothing.',id:n.id});
+  });
+  (byType.measure||[]).concat(byType.research||[]).forEach(function(n){
+    if(!edges.some(function(e){return e.src===n.id;}))
+      out.push({level:'warn',text:'“'+n.label+'” feeds nothing back.',id:n.id});
+  });
+  (byType.output||[]).forEach(function(n){
+    if(!edges.some(function(e){return e.src===n.id;}))
+      out.push({level:'warn',text:'“'+n.label+'” never reaches a customer.',id:n.id});
+  });
+  lopFindings=out;
+}
+function lopRunCheck(){
+  lopCheck();buildPanel();
+  var gaps=lopFindings.filter(function(f){return f.level==='gap';}).length;
+  toast(lopFindings.length?(gaps+' gap'+(gaps===1?'':'s')+', '+(lopFindings.length-gaps)+' to consider'):'Linkage complete — nothing missing');
+}
+
+// ── legend: make the drawing readable away from the tool ──────────────────
+function lopBuildLegend(){
+  snap();
+  var used={},usedLinks={};
+  nodes.forEach(function(n){if(n.lopType)used[n.lopType]=true;});
+  edges.forEach(function(e){if(e.lopLink)usedLinks[e.lopLink]=true;});
+  legendEntries=legendEntries.filter(function(r){return String(r.id||'').indexOf('lop_')!==0;});
+  LOP_NODE_TYPES.forEach(function(t){
+    if(!used[t.type])return;
+    legendEntries.push({id:'lop_'+t.type,kind:'node',label:t.label,color:t.color,borderColor:t.border,borderWidth:t.type==='process'?2:1.5});
+  });
+  LOP_LINKS.forEach(function(l){
+    if(!usedLinks[l.id])return;
+    legendEntries.push({id:'lop_link_'+l.id,kind:'edge',label:l.label+' — '+l.hint,color:l.color,width:l.width,dash:l.dash});
+  });
+  legendVisible=true;
+  normaliseLegend();buildLegendSection();renderLegendOverlay();renderAll();
+  toast('Legend rebuilt from the kinds in use');
+}
+
+// ── exports ───────────────────────────────────────────────────────────────
+function lopCSVCell(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function exportLOPCSV(){
+  var rows=[['No','Process','Owner','Measure','Receives from','Delivers to','Supported by','Needs served']];
+  lopRows().forEach(function(r){rows.push([r.no,r.name,r.owner,r.measure,r.suppliers,r.customers,r.support,r.needs]);});
+  download(dlName('lop-processes.csv'),'text/csv',rows.map(function(r){return r.map(lopCSVCell).join(',');}).join('\n'));
+  toast('List of Processes downloaded');
+}
+function exportLOPMarkdown(){
+  var mn=modelName();
+  var purpose=nodes.filter(function(n){return n.lopType==='purpose';}).map(function(n){return n.label;}).join(' / ');
+  var L=['# '+mn+(/linkage/i.test(mn)?'':' — Linkage of Processes'),''];
+  if(purpose)L.push('**Purpose (aim of the system):** '+purpose,'');
+  var custs=nodes.filter(function(n){return n.lopType==='customer';});
+  if(custs.length){
+    L.push('## Customers and needs','');
+    custs.forEach(function(c){
+      var needs=lopNeedsOf(c);
+      L.push('- **'+c.label+'** — '+(needs.length?needs.join('; '):'no need stated yet'));
+    });
+    var loose=nodes.filter(function(n){
+      return n.lopType==='need'&&!edges.some(function(e){
+        var o=e.src===n.id?nodeById(e.tgt):(e.tgt===n.id?nodeById(e.src):null);
+        return!!o&&o.lopType==='customer';
+      });
+    });
+    if(loose.length)L.push('','Needs not yet attached to a customer: '+loose.map(function(n){return n.label;}).join('; '));
+    L.push('');
+  }
+  L.push('## List of Processes','');
+  L.push('| No | Process | Owner | Measure | Receives from | Delivers to |');
+  L.push('|---|---|---|---|---|---|');
+  lopRows().forEach(function(r){
+    L.push('| '+[r.no,r.name,r.owner||'—',r.measure||'—',r.suppliers||'—',r.customers||'—'].join(' | ')+' |');
+  });
+  L.push('');
+  var sup=nodes.filter(function(n){return n.lopType==='support';});
+  if(sup.length){L.push('## Support processes','');sup.forEach(function(n){L.push('- '+n.label+(lopOut(n,['supports']).length?' — supports '+lopOut(n,['supports']).join('; '):''));});L.push('');}
+  var meas=nodes.filter(function(n){return n.lopType==='measure'||n.lopType==='research';});
+  if(meas.length){L.push('## Information the system collects about itself','');meas.forEach(function(n){L.push('- '+n.label+(lopOut(n).length?' — informs '+lopOut(n).join('; '):''));});L.push('');}
+  lopCheck();
+  if(lopFindings&&lopFindings.length){
+    L.push('## Linkage check','');
+    lopFindings.forEach(function(f){L.push('- '+(f.level==='gap'?'**gap** — ':'consider — ')+f.text);});
+    L.push('');
+  }
+  download(dlName('lop.md'),'text/markdown',L.join('\n'));
+  toast('Linkage summary downloaded');
+}
+function exportLOPCypher(){
+  var mn=modelName()||'Linkage of Processes';
+  var labelMap={purpose:'Purpose',leadership:'LeadershipProcess',redesign:'DesignRedesign',supplier:'Supplier',
+    process:'KeyProcess',subprocess:'SubProcess',output:'ProductService',customer:'Customer',need:'Need',
+    support:'SupportProcess',measure:'Measure',research:'CustomerResearch'};
+  var L=['// Linkage of Processes — '+mn,
+    '// Generated '+new Date().toISOString().slice(0,10),
+    '// Deming / API organization-as-a-system diagram (The Improvement Guide; Quality as an Organizational Strategy)',''];
+  nodes.forEach(function(n){
+    if(!n.lopType)return;
+    var lbl=labelMap[n.lopType]||'Element';
+    var props={name:n.label,lop_type:n.lopType};
+    if(n.lopNum)props.process_no=n.lopNum;
+    if(n.props)Object.keys(n.props).forEach(function(k){if(k&&!(k in props)&&String(n.props[k]).trim())props[k]=n.props[k];});
+    if(n.note&&n.note.trim())props.note=n.note.trim();
+    var ps=Object.keys(props).map(function(k){
+      var v=props[k];
+      return'  '+k+': '+(typeof v==='number'?v:JSON.stringify(String(v)));
+    }).join(',\n');
+    L.push('CREATE (n'+n.id+':LOP:'+lbl+' {\n'+ps+'\n})');
+  });
+  L.push('');
+  edges.forEach(function(e){
+    var s=nodeById(e.src),t=nodeById(e.tgt);
+    if(!s||!t||!s.lopType||!t.lopType)return;
+    var def=lopLinkDef(e.lopLink)||lopLinkDef(lopInferLink(s.lopType,t.lopType));
+    var rel=def?def.rel:'LINKED_TO';
+    var ep=[];
+    if(e.label&&e.label.trim())ep.push('label: '+JSON.stringify(e.label.trim()));
+    if(e.note&&e.note.trim())ep.push('note: '+JSON.stringify(e.note.trim()));
+    L.push('CREATE (n'+e.src+')-[:'+rel+(ep.length?' {'+ep.join(', ')+'}':'')+']->(n'+e.tgt+')');
+  });
+  download(dlName('lop-cypher.cypher'),'text/plain',L.join('\n'));
+  toast('LOP Cypher downloaded');
+}
+
+// ── right-panel UI ────────────────────────────────────────────────────────
+function buildLOPPalette(){
+  var div=document.createElement('div');
+  div.className='nrm-palette';
+  var title=document.createElement('div');
+  title.className='nrm-palette-title';
+  title.textContent='Linkage of Processes';
+  div.appendChild(title);
+  ['Aim & Leadership','Value-added flow','Support','Information'].forEach(function(g){
+    var shown=false;
+    LOP_NODE_TYPES.forEach(function(t){
+      if(t.group!==g)return;
+      if(!shown){var gh=document.createElement('div');gh.className='nrm-group-hd';gh.textContent=g;div.appendChild(gh);shown=true;}
+      var sw=document.createElement('div');
+      sw.className='nrm-swatch'+(lopActiveType===t.type?' active':'');
+      sw.style.background=t.color;sw.style.color=t.fontColor;
+      sw.style.border='1.5px solid '+(lopActiveType===t.type?'#1e293b':t.border);
+      sw.title=t.hint+' — click, then click the canvas';
+      sw.innerHTML='<span style="font-weight:600">'+t.label+'</span>';
+      sw.onclick=(function(tt){return function(){
+        lopActiveType=(lopActiveType===tt.type)?null:tt.type;
+        svgEl.style.cursor=lopActiveType?'crosshair':'default';
+        updateLOPBanner();buildPanel();
+      };})(t);
+      div.appendChild(sw);
+    });
+  });
+  var tools=document.createElement('div');
+  tools.style.cssText='display:flex;flex-wrap:wrap;gap:4px;padding:8px 0 2px';
+  tools.innerHTML='<button class="tb-btn" style="font-size:10px" onclick="lopRenumber()" title="Number the key processes left to right, so the map and the List of Processes agree">1–2–3 Renumber</button>'
+    +'<button class="tb-btn" style="font-size:10px" onclick="lopSnapToBands()" title="Move each typed node into the band its type belongs to">Snap to bands</button>'
+    +'<button class="tb-btn'+(lopBandsOn?' active':'')+'" style="font-size:10px" onclick="lopToggleBands()" title="Show or hide the band guide">Bands</button>'
+    +'<button class="tb-btn" style="font-size:10px" onclick="lopToggleLinkLabels()" title="Write the linkage verb on every typed arrow, or clear them all">Link labels</button>'
+    +'<button class="tb-btn" style="font-size:10px" onclick="lopBuildLegend()" title="Rebuild the legend from the node and linkage kinds actually used">Build legend</button>';
+  div.appendChild(tools);
+  var hint=document.createElement('div');
+  hint.style.cssText='font-size:10px;color:#94a3b8;padding:6px 0 0;line-height:1.6';
+  hint.innerHTML='Click a type, then click the canvas to place it.<br>Use <b>+Edge</b> to link — the linkage type is read from the two node types, and you can change it in the panel.';
+  div.appendChild(hint);
+  return div;
+}
+function buildLOPProcessList(){
+  var div=document.createElement('div');
+  var rows=lopRows(),procNodes=lopProcesses();
+  var html='<div class="section-hd" style="background:#eff6ff;color:#1d4ed8">List of Processes <span style="font-size:10px;color:#60a5fa">'+rows.length+'</span></div>';
+  if(!rows.length){
+    html+='<div style="padding:8px 12px;font-size:11px;color:#94a3b8">Place <b>Key Process</b> nodes and they appear here with their owner and measure.</div>';
+  }else{
+    html+='<div style="padding:4px 10px 8px">';
+    rows.forEach(function(r,i){
+      var n=procNodes[i];
+      html+='<div style="border:1px solid #e2e8f0;border-radius:6px;padding:5px 6px;margin-bottom:5px;background:#fff">'
+        +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+        +'<span style="background:#1d4ed8;color:#fff;font-size:10px;font-weight:700;border-radius:9px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center">'+(r.no||'–')+'</span>'
+        +'<span style="font-size:12px;font-weight:600;color:#1e293b;flex:1;cursor:pointer" onclick="selectNodeId(\''+n.id+'\',false);buildPanel()" title="Select on the canvas">'+escH(r.name)+'</span></div>'
+        +'<div class="prop-kv-row" style="padding:0 0 3px"><span style="font-size:10px;color:#64748b;width:52px;flex-shrink:0">Owner</span>'
+        +'<input value="'+escH(r.owner)+'" placeholder="who owns it" style="flex:1;font-size:11px;padding:2px 4px;border:1px solid '+(r.owner?'#e2e8f0':'#fca5a5')+';border-radius:4px;min-width:0" onchange="lopSetNodeProp(\''+n.id+'\',\'owner\',this.value)"/></div>'
+        +'<div class="prop-kv-row" style="padding:0"><span style="font-size:10px;color:#64748b;width:52px;flex-shrink:0">Measure</span>'
+        +'<input value="'+escH(r.measure)+'" placeholder="how we know it is working" style="flex:1;font-size:11px;padding:2px 4px;border:1px solid '+(r.measure?'#e2e8f0':'#fca5a5')+';border-radius:4px;min-width:0" onchange="lopSetNodeProp(\''+n.id+'\',\'measure\',this.value)"/></div>'
+        +'</div>';
+    });
+    html+='</div>';
+  }
+  html+='<div style="padding:0 10px 8px;display:flex;gap:4px"><button class="tb-btn" style="font-size:10px;flex:1" onclick="lopRunCheck()">Check linkage</button></div>';
+  if(lopFindings){
+    if(!lopFindings.length){
+      html+='<div style="padding:0 12px 10px;font-size:11px;color:#15803d">Nothing missing — aim, customers, owners, measures and feedback are all in place.</div>';
+    }else{
+      html+='<div style="padding:0 10px 10px">';
+      lopFindings.forEach(function(f){
+        var col=f.level==='gap'?'#b91c1c':'#b45309',bg=f.level==='gap'?'#fef2f2':'#fffbeb';
+        html+='<div style="font-size:11px;color:'+col+';background:'+bg+';border-radius:5px;padding:4px 6px;margin-bottom:3px;line-height:1.45'+(f.id?';cursor:pointer':'')+'"'
+          +(f.id?' onclick="selectNodeId(\''+f.id+'\',false);buildPanel()"':'')+'>'+escH(f.text)+'</div>';
+      });
+      html+='</div>';
+    }
+  }
+  div.innerHTML=html;
+  return div;
+}
+function buildLOPNodeSection(n){
+  var div=document.createElement('div');
+  var btns=LOP_NODE_TYPES.map(function(t){
+    return'<button class="tb-btn'+(n.lopType===t.type?' active':'')+'" style="font-size:10px" onclick="setNodeLOPType(\''+n.id+'\',\''+t.type+'\')">'+t.label+'</button>';
+  }).join('');
+  var html='<div class="section-hd" style="background:#fff1f2;color:#be123c">Linkage element</div>'
+    +'<div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:4px;flex-wrap:wrap">'+btns+'</div>';
+  if(n.lopType==='process'){
+    html+='<div class="prop-row"><div class="prop-label">Owner</div><input class="prop-input" placeholder="who owns this process" value="'+escH((n.props&&n.props.owner)||'')+'" onchange="lopSetNodeProp(\''+n.id+'\',\'owner\',this.value)"/></div>'
+      +'<div class="prop-row"><div class="prop-label">Measure</div><input class="prop-input" placeholder="e.g. days from referral to first visit" value="'+escH((n.props&&n.props.measure)||'')+'" onchange="lopSetNodeProp(\''+n.id+'\',\'measure\',this.value)"/></div>'
+      +'<div style="padding:4px 12px 6px;font-size:10px;color:#94a3b8">Process '+(n.lopNum?('#'+n.lopNum):'unnumbered — run Renumber')+'</div>';
+  }
+  div.innerHTML=html;
+  return div;
+}
+function buildLOPEdgeSection(e){
+  var div=document.createElement('div');
+  var src=nodeById(e.src),tgt=nodeById(e.tgt);
+  var btns=LOP_LINKS.map(function(l){
+    return'<button class="tb-btn'+(e.lopLink===l.id?' active':'')+'" style="font-size:10px;border-color:'+l.color+';color:'+l.color+'" title="'+l.hint+'" onclick="setEdgeLOPLink(\''+e.id+'\',\''+l.id+'\')">'+l.label+'</button>';
+  }).join('');
+  var def=lopLinkDef(e.lopLink);
+  div.innerHTML='<div class="section-hd" style="background:#fff1f2;color:#be123c">Linkage</div>'
+    +(def&&src&&tgt?'<div style="padding:5px 12px;font-size:11px;color:#475569;font-style:italic">'+escH(src.label)+' <b style="color:'+def.color+';font-style:normal">'+def.label+'</b> '+escH(tgt.label)+'</div>':'')
+    +'<div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:4px;flex-wrap:wrap">'+btns+'</div>';
+  return div;
+}
+
 // ── OPM MODE (Object-Process Methodology — ISO 19450) ──────────────────────
 
 var OPM_VALID_LINKS={
   'Object\u2192Object':[
     {id:'AP',          label:'Aggregation-Participation',     opl:'is part of',                  hint:'Part\u2192Whole: Is this a part of?',                    def:false},
     {id:'GS',          label:'Generalization-Specialization', opl:'is a type of',                hint:'Specific\u2192General: Is this a type of?',              def:false},
-    {id:'EC',          label:'Exhibition-Characterization',   opl:'exhibits',                    hint:'Attribute\u2192Object: Does this object exhibit this?',   def:false},
+    {id:'EC',          label:'Exhibition-Characterization',   opl:'characterizes',               hint:'Feature\u2192Exhibitor: does this thing HAVE that as a feature?', def:false},
     {id:'CI',          label:'Classification-Instantiation',  opl:'is an instance of',           hint:'Instance\u2192Class: Is this a specific instance of?',   def:false},
   ],
   'Object\u2192Process':[
@@ -2845,16 +3849,30 @@ var OPM_VALID_LINKS={
 };
 
 var OPM_EDGE_STYLES={
-  AP:         {stroke:'#555555',dash:null,   opmMarker:'diamond-hollow'},
-  GS:         {stroke:'#555555',dash:'6 3',  opmMarker:'triangle-hollow'},
-  EC:         {stroke:'#555555',dash:'3 3',  opmMarker:'triangle-hollow'},
-  CI:         {stroke:'#555555',dash:'6 3',  opmMarker:'triangle-filled'},
-  Agent:      {stroke:'#2563eb',dash:null,   opmMarker:'arrow'},
+  // Symbols follow OPM/OPCloud (OPCAT 3.0 manual figs. 14–15, verified against
+  // OPCloud 9.2.0). The four structural relations are FOUR TRIANGLES that differ
+  // only by what is inside; the procedural ones are the lollipop family. Colour
+  // is ours — OPM draws every link black, and per-type colour costs nothing
+  // because OPM gives link colour no meaning. Dashes are gone: they were
+  // invented here, and in OPM a dashed line is not one of these relations.
+  AP:         {stroke:'#555555',dash:null,   opmMarker:'triangle-filled'},
+  GS:         {stroke:'#555555',dash:null,   opmMarker:'triangle-hollow'},
+  EC:         {stroke:'#555555',dash:null,   opmMarker:'triangle-in-triangle'},
+  CI:         {stroke:'#555555',dash:null,   opmMarker:'triangle-dot'},
+  Agent:      {stroke:'#2563eb',dash:null,   opmMarker:'circle-filled'},
   Instrument: {stroke:'#7c3aed',dash:null,   opmMarker:'circle-hollow'},
-  Consumption:{stroke:'#dc2626',dash:null,   opmMarker:'circle-filled'},
-  Result:     {stroke:'#16a34a',dash:null,   opmMarker:'circle-filled'},
-  Effect:     {stroke:'#d97706',dash:'4 2',  opmMarker:'arrow'},
-  Invocation: {stroke:'#0891b2',dash:'8 4',  opmMarker:'arrow'},
+  Consumption:{stroke:'#dc2626',dash:null,   opmMarker:'arrow'},
+  Result:     {stroke:'#16a34a',dash:null,   opmMarker:'arrow'},
+  Effect:     {stroke:'#d97706',dash:null,   opmMarker:'arrow', opmMarkerStart:'arrow'},
+  Invocation: {stroke:'#0891b2',dash:null,   opmMarker:'zigzag-arrow'},
+};
+// What each type used to draw, before the symbols were checked against OPM.
+// Read ONLY by loadGraphJSON, to tell an untouched old edge (upgrade it) from
+// one whose marker somebody set by hand (leave it alone). Never draw from this.
+var OPM_LEGACY_MARKERS={
+  AP:'diamond-hollow', GS:'triangle-hollow', EC:'triangle-hollow', CI:'triangle-filled',
+  Agent:'arrow', Instrument:'circle-hollow', Consumption:'circle-filled',
+  Result:'circle-filled', Effect:'arrow', Invocation:'arrow'
 };
 
 var OPM_REL_LABELS={
@@ -2866,7 +3884,11 @@ var OPM_REL_LABELS={
 var OPM_DISPLAY_LABELS={
   AP:'is part of',
   GS:'is a type of',
-  EC:'exhibits',
+  // "characterizes", not "exhibits": the edge runs feature → exhibitor, and
+  // "exhibits" reads the other way. The OPL sentence still says exhibits, with
+  // the target as subject (see generateOPL / OPM_TGT_SUBJECT). ISO 19450 §3.4:
+  // an attribute is an object that CHARACTERIZES a thing other than itself.
+  EC:'characterizes',
   CI:'is an instance of',
   Agent:'handles',
   Instrument:'required by',
@@ -2963,6 +3985,7 @@ function exitOPM(){
   opmActiveType=null;
   cancelOPMPicker();
   document.getElementById('opl-panel').style.display='none';
+  var symP=document.getElementById('opm-symbols-panel');if(symP)symP.style.display='none';
   var btn=document.getElementById('btn-opm-cypher');if(btn)btn.style.display='none';
   var btn2=document.getElementById('btn-opm-csv');if(btn2)btn2.style.display='none';
   var btn3=document.getElementById('btn-opm-opl');if(btn3)btn3.style.display='none';
@@ -3152,7 +4175,8 @@ function applyOPMEdge(srcId,tgtId,linkId){
   var e=Object.assign({id:'e'+nextId++,src:srcId,tgt:tgtId,label:'',props:{}},DEF_EDGE,{curved:isCurved});
   if(linkId){
     var st=OPM_EDGE_STYLES[linkId];
-    if(st){e.color=st.stroke;if(st.dash)e.opmDash=st.dash;e.opmMarker=st.opmMarker;}
+    if(st){e.color=st.stroke;if(st.dash)e.opmDash=st.dash;e.opmMarker=st.opmMarker;
+      if(st.opmMarkerStart)e.opmMarkerStart=st.opmMarkerStart;else delete e.opmMarkerStart;}
     e.linkType=linkId;
     e.opl=generateOPL(src.label,linkId,tgt.label);
     e.label=OPM_DISPLAY_LABELS[linkId]||linkId;
@@ -3169,6 +4193,12 @@ function getOPMMarkerId(markerType,color){
   var key=markerType+'-'+color.replace(/[^a-fA-F0-9]/g,'');
   if(opmMarkerCache[key])return opmMarkerCache[key];
   var id='opmm-'+key;opmMarkerCache[key]=id;
+  svgDefs.appendChild(buildOPMMarker(markerType,color,id));return id;
+}
+// The marker geometry lives HERE and nowhere else. The symbol reference in the
+// sidebar draws itself by calling this, so the chart a reader consults and the
+// arrowhead on the canvas cannot drift apart.
+function buildOPMMarker(markerType,color,id){
   var m=document.createElementNS('http://www.w3.org/2000/svg','marker');
   m.setAttribute('id',id);m.setAttribute('markerWidth','10');m.setAttribute('markerHeight','10');m.setAttribute('orient','auto');
   if(markerType==='circle-hollow'){
@@ -3192,11 +4222,180 @@ function getOPMMarkerId(markerType,color){
     m.setAttribute('viewBox','0 0 10 10');m.setAttribute('refX','10');m.setAttribute('refY','5');
     var p3=document.createElementNS('http://www.w3.org/2000/svg','polygon');
     p3.setAttribute('points','0,1 10,5 0,9');p3.setAttribute('fill',color);p3.setAttribute('stroke',color);p3.setAttribute('stroke-width','1.5');m.appendChild(p3);
+  }else if(markerType==='triangle-in-triangle'){
+    // Exhibition-characterization: a small solid triangle inside an outlined one.
+    m.setAttribute('viewBox','0 0 12 12');m.setAttribute('refX','12');m.setAttribute('refY','6');
+    m.setAttribute('markerWidth','12');m.setAttribute('markerHeight','12');
+    var pOut=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    pOut.setAttribute('points','0,0.5 12,6 0,11.5');pOut.setAttribute('fill','#fff');
+    pOut.setAttribute('stroke',color);pOut.setAttribute('stroke-width','1.4');m.appendChild(pOut);
+    var pIn=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    pIn.setAttribute('points','3.2,3.6 8.2,6 3.2,8.4');pIn.setAttribute('fill',color);m.appendChild(pIn);
+  }else if(markerType==='triangle-dot'){
+    // Classification-instantiation: an outlined triangle with a solid dot inside.
+    m.setAttribute('viewBox','0 0 12 12');m.setAttribute('refX','12');m.setAttribute('refY','6');
+    m.setAttribute('markerWidth','12');m.setAttribute('markerHeight','12');
+    var tOut=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    tOut.setAttribute('points','0,0.5 12,6 0,11.5');tOut.setAttribute('fill','#fff');
+    tOut.setAttribute('stroke',color);tOut.setAttribute('stroke-width','1.4');m.appendChild(tOut);
+    var dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('cx','4.6');dot.setAttribute('cy','6');dot.setAttribute('r','1.9');
+    dot.setAttribute('fill',color);m.appendChild(dot);
+  }else if(markerType==='zigzag-arrow'){
+    // Invocation: OPM draws the whole link as a lightning zigzag. A marker can
+    // only own the end, so the zigzag lives in the head and reads at a glance.
+    m.setAttribute('viewBox','0 0 14 12');m.setAttribute('refX','14');m.setAttribute('refY','6');
+    m.setAttribute('markerWidth','13');m.setAttribute('markerHeight','12');
+    var zz=document.createElementNS('http://www.w3.org/2000/svg','path');
+    zz.setAttribute('d','M0,9.5 L4.2,4.6 L6.6,7.2 L10.6,2.2');zz.setAttribute('fill','none');
+    zz.setAttribute('stroke',color);zz.setAttribute('stroke-width','1.6');
+    zz.setAttribute('stroke-linecap','round');zz.setAttribute('stroke-linejoin','round');m.appendChild(zz);
+    var zh=document.createElementNS('http://www.w3.org/2000/svg','path');
+    zh.setAttribute('d','M14,1 L8.6,2.6 L11.4,5.6 Z');zh.setAttribute('fill',color);m.appendChild(zh);
   }else{
     m.setAttribute('viewBox','0 0 10 10');m.setAttribute('refX','10');m.setAttribute('refY','5');
     var p3=document.createElementNS('http://www.w3.org/2000/svg','path');
     p3.setAttribute('d','M0,1 L10,5 L0,9 Z');p3.setAttribute('fill',color);m.appendChild(p3);
   }
+  return m;
+}
+// ── OPM SYMBOL REFERENCE ────────────────────────────────────────────────────
+// Twelve rows: the ten links this tool draws, in OPM's own two families, each
+// showing the symbol as the canvas draws it, the sentence it generates, and the
+// question to ask yourself when choosing it. Built from OPM_EDGE_STYLES and
+// buildOPMMarker so it cannot describe a symbol the tool no longer draws.
+var OPM_SYMBOL_ROWS=[
+  {group:'Structural — true over time'},
+  {id:'AP',         name:'Aggregation-participation',   opl:'Whole consists of Part',      ask:'Is it made of them?'},
+  {id:'EC',         name:'Exhibition-characterization', opl:'Exhibitor exhibits Feature',  ask:'Does it HAVE this as a feature?'},
+  {id:'GS',         name:'Generalization-specialization',opl:'Specific is a General',      ask:'Is it a kind of?'},
+  {id:'CI',         name:'Classification-instantiation',opl:'Instance is an instance of Class', ask:'Is it this particular one?'},
+  {group:'Procedural — happen in time'},
+  {id:'Agent',      name:'Agent',      opl:'Agent handles Process',      ask:'Is it a person or group DOING it?'},
+  {id:'Instrument', name:'Instrument', opl:'Process requires Instrument',ask:'Is it used but not used up?'},
+  {id:'Consumption',name:'Consumption',opl:'Process consumes Object',    ask:'Is it used up?'},
+  {id:'Result',     name:'Result',     opl:'Process yields Object',      ask:'Does it come into existence?'},
+  {id:'Effect',     name:'Effect',     opl:'Process affects Object',     ask:'Does it survive but change?'},
+  {id:'Invocation', name:'Invocation', opl:'Process A invokes Process B',ask:'Does finishing one start the next?'}
+];
+// A self-contained chip: its own <defs>, so it can sit in ordinary HTML.
+function opmSymbolChip(linkId){
+  var st=OPM_EDGE_STYLES[linkId];if(!st)return '';
+  var NS='http://www.w3.org/2000/svg';
+  var svg=document.createElementNS(NS,'svg');
+  svg.setAttribute('width','54');svg.setAttribute('height','16');svg.setAttribute('viewBox','0 0 54 16');
+  var defs=document.createElementNS(NS,'defs');
+  var mid='chip-'+linkId+'-e';
+  defs.appendChild(buildOPMMarker(st.opmMarker,st.stroke,mid));
+  var line=document.createElementNS(NS,'line');
+  line.setAttribute('x1',st.opmMarkerStart?'12':'2');line.setAttribute('y1','8');
+  line.setAttribute('x2','40');line.setAttribute('y2','8');
+  line.setAttribute('stroke',st.stroke);line.setAttribute('stroke-width','1.8');
+  line.setAttribute('marker-end','url(#'+mid+')');
+  if(st.opmMarkerStart){
+    var sid='chip-'+linkId+'-s';
+    var sm=buildOPMMarker(st.opmMarkerStart,st.stroke,sid);
+    sm.setAttribute('orient','auto-start-reverse');defs.appendChild(sm);
+    line.setAttribute('marker-start','url(#'+sid+')');
+  }
+  svg.appendChild(defs);svg.appendChild(line);
+  return svg.outerHTML;
+}
+function renderOPMSymbolTable(){
+  var host=document.getElementById('opm-symbols-body');if(!host)return;
+  host.innerHTML=OPM_SYMBOL_ROWS.map(function(r){
+    if(r.group)return '<div class="opm-sym-group">'+escH(r.group)+'</div>';
+    return '<div class="opm-sym-row" title="'+escH(r.ask)+'">'
+         + '<span class="opm-sym-chip">'+opmSymbolChip(r.id)+'</span>'
+         + '<span class="opm-sym-text"><b>'+escH(r.name)+'</b><i>'+escH(r.opl)+'</i></span></div>';
+  }).join('');
+}
+// ── SYMBOL CHART ON THE CANVAS ──────────────────────────────────────────────
+// The sidebar reference is for the person drawing. This one is for the room:
+// it renders into the SVG, so it is there in the projector and travels into the
+// SVG/PNG export with the diagram. Anchored to the viewport like the legend, so
+// it does not pan or zoom away, and drawn from the same OPM_EDGE_STYLES.
+var opmChartOn=false;
+function toggleOPMChart(){
+  opmChartOn=!opmChartOn;
+  var b=document.getElementById('btn-opm-chart');
+  if(b)b.classList.toggle('active',opmChartOn);
+  renderOPMChart();
+  toast(opmChartOn?'Symbol chart on canvas — exports with the diagram':'Symbol chart hidden');
+}
+function renderOPMChart(){
+  var layer=document.getElementById('opm-symbols-chart');if(!layer)return;
+  while(layer.firstChild)layer.removeChild(layer.firstChild);
+  if(!opmChartOn||mode!=='opm')return;
+  var NS='http://www.w3.org/2000/svg';
+  var PAD=12, ROW=19, GAP=15, TITLE=20, W=268, CHIP=58;
+  var rowsH=OPM_SYMBOL_ROWS.reduce(function(a,r){return a+(r.group?GAP:ROW);},0);
+  var H=PAD*2+TITLE+rowsH;
+  var _r=svgEl.getBoundingClientRect();
+  var vh=Math.round(_r.height)||svgEl.clientHeight||600;
+  var g=document.createElementNS(NS,'g');
+  // bottom-left: the legend owns bottom-right, the hint strip owns the centre
+  g.setAttribute('transform','translate(20,'+Math.max(52,vh-H-20)+')');
+  var box=document.createElementNS(NS,'rect');
+  box.setAttribute('width',String(W));box.setAttribute('height',String(H));
+  box.setAttribute('rx','8');box.setAttribute('fill','rgba(255,255,255,0.94)');
+  box.setAttribute('stroke','rgba(0,0,0,0.14)');box.setAttribute('stroke-width','1');
+  g.appendChild(box);
+  var t=document.createElementNS(NS,'text');
+  t.setAttribute('x',String(PAD));t.setAttribute('y',String(PAD+11));
+  t.setAttribute('font-family','system-ui,sans-serif');t.setAttribute('font-size','10');
+  t.setAttribute('font-weight','700');t.setAttribute('letter-spacing','0.06em');
+  t.setAttribute('fill','#475569');t.textContent='OPM LINK SYMBOLS';g.appendChild(t);
+  var y=PAD+TITLE+4;
+  OPM_SYMBOL_ROWS.forEach(function(r){
+    if(r.group){
+      var gt=document.createElementNS(NS,'text');
+      gt.setAttribute('x',String(PAD));gt.setAttribute('y',String(y+8));
+      gt.setAttribute('font-family','system-ui,sans-serif');gt.setAttribute('font-size','8.5');
+      gt.setAttribute('font-weight','700');gt.setAttribute('letter-spacing','0.05em');
+      gt.setAttribute('fill','#94a3b8');gt.textContent=r.group.toUpperCase();
+      g.appendChild(gt);y+=GAP;return;
+    }
+    var st=OPM_EDGE_STYLES[r.id];if(!st){y+=ROW;return;}
+    var ln=document.createElementNS(NS,'line');
+    ln.setAttribute('x1',String(PAD+(st.opmMarkerStart?10:0)));ln.setAttribute('y1',String(y+5));
+    ln.setAttribute('x2',String(PAD+CHIP-14));ln.setAttribute('y2',String(y+5));
+    ln.setAttribute('stroke',st.stroke);ln.setAttribute('stroke-width','1.8');
+    ln.setAttribute('marker-end','url(#'+getOPMMarkerId(st.opmMarker,st.stroke)+')');
+    if(st.opmMarkerStart)ln.setAttribute('marker-start','url(#'+getOPMStartMarkerId(st.opmMarkerStart,st.stroke)+')');
+    g.appendChild(ln);
+    var nm=document.createElementNS(NS,'text');
+    nm.setAttribute('x',String(PAD+CHIP+10));nm.setAttribute('y',String(y+3));
+    nm.setAttribute('font-family','system-ui,sans-serif');nm.setAttribute('font-size','10');
+    nm.setAttribute('font-weight','600');nm.setAttribute('fill','#1e293b');
+    nm.textContent=r.name;g.appendChild(nm);
+    var op=document.createElementNS(NS,'text');
+    op.setAttribute('x',String(PAD+CHIP+10));op.setAttribute('y',String(y+12));
+    op.setAttribute('font-family','system-ui,sans-serif');op.setAttribute('font-size','9');
+    op.setAttribute('font-style','italic');op.setAttribute('fill','#64748b');
+    op.textContent=r.opl;g.appendChild(op);
+    y+=ROW;
+  });
+  layer.appendChild(g);
+}
+
+function toggleOPMSymbols(){
+  var b=document.getElementById('opm-symbols-body'),i=document.getElementById('opm-symbols-icon');
+  if(!b)return;var open=b.style.display!=='none';
+  b.style.display=open?'none':'block';if(i)i.textContent=open?'▶':'▼';
+  if(!open)renderOPMSymbolTable();
+}
+
+// Same shapes, pointed the other way, for the tail of a double-headed link.
+var opmStartMarkerCache={};
+function getOPMStartMarkerId(markerType,color){
+  var key=markerType+'-'+color.replace(/[^a-fA-F0-9]/g,'');
+  if(opmStartMarkerCache[key])return opmStartMarkerCache[key];
+  var id='opmms-'+key;opmStartMarkerCache[key]=id;
+  var base=document.getElementById(getOPMMarkerId(markerType,color));
+  var m=base.cloneNode(true);
+  m.setAttribute('id',id);
+  m.setAttribute('orient','auto-start-reverse');
   svgDefs.appendChild(m);return id;
 }
 function initOPMMarkers(){
@@ -3216,6 +4415,10 @@ function toggleOPLPanel(){
 function updateOPLPanel(){
   var panel=document.getElementById('opl-panel');
   var div=document.getElementById('opl-sentences');
+  // The symbol reference rides with OPM mode — it is useful before there is a
+  // single edge to generate a sentence from, which is exactly when you need it.
+  var sym=document.getElementById('opm-symbols-panel');
+  if(sym)sym.style.display=(mode==='opm')?'block':'none';
   if(mode!=='opm'){panel.style.display='none';return;}
   var sentences=edges.filter(function(e){return e.opl&&e.opl.trim();}).map(function(e){return e.opl;});
   if(!sentences.length){panel.style.display='none';return;}
@@ -4150,7 +5353,10 @@ function symbolsNodeOverlay(n){
   return out;
 }
 
-document.addEventListener('keydown',function(ev){var inI=document.activeElement&&['INPUT','TEXTAREA'].indexOf(document.activeElement.tagName)>=0;if((ev.ctrlKey||ev.metaKey)&&ev.key==='z'&&!ev.shiftKey){ev.preventDefault();undo();}if((ev.ctrlKey||ev.metaKey)&&(ev.key==='y'||(ev.key==='z'&&ev.shiftKey))){ev.preventDefault();redo();}if(!inI&&(ev.key==='Delete'||ev.key==='Backspace'))deleteSelected();if((ev.ctrlKey||ev.metaKey)&&ev.key==='c'&&!inI){ev.preventDefault();copySelection();}
+document.addEventListener('keydown',function(ev){var inI=document.activeElement&&['INPUT','TEXTAREA'].indexOf(document.activeElement.tagName)>=0;
+if(!inI&&ev.key==='Escape'&&presenting){ev.preventDefault();exitPresent();return;}
+if(!inI&&(ev.key==='p'||ev.key==='P')&&!ev.ctrlKey&&!ev.metaKey&&!ev.altKey){ev.preventDefault();togglePresent();return;}
+if((ev.ctrlKey||ev.metaKey)&&ev.key==='z'&&!ev.shiftKey){ev.preventDefault();undo();}if((ev.ctrlKey||ev.metaKey)&&(ev.key==='y'||(ev.key==='z'&&ev.shiftKey))){ev.preventDefault();redo();}if(!inI&&(ev.key==='Delete'||ev.key==='Backspace'))deleteSelected();if((ev.ctrlKey||ev.metaKey)&&ev.key==='c'&&!inI){ev.preventDefault();copySelection();}
 if(!inI&&(ev.ctrlKey||ev.metaKey)&&ev.key==='d'){ev.preventDefault();duplicateSelected();}if(!inI&&(ev.ctrlKey||ev.metaKey)&&ev.key==='a'){ev.preventDefault();selectAll();}if(!inI&&ev.key==='Escape'){var opmPk=document.getElementById('opm-picker');if(opmPk&&opmPk.style.display!=='none'){cancelOPMPicker();return;}if(mode==='cld'){clearPropagation();hidePropPopup();}else{setMode('select');clearEdgeDrag();clearSel();}}
 if(!inI&&ev.key===' '){ev.preventDefault();if(mode==='cld'&&propAnimSteps.length){propAnimPaused=!propAnimPaused;if(!propAnimPaused)runPropAnimStep();}if(mode==='trace'&&traceAnimSteps.length){traceAnimPaused=!traceAnimPaused;if(!traceAnimPaused)runTraceAnimStep();}}
 if(!inI&&ev.key==='e'&&!ev.ctrlKey&&!ev.metaKey){ev.preventDefault();stickyEdge=true;setMode('edge');}
@@ -4161,9 +5367,10 @@ function setAllStraight(on){if(on){document.getElementById('chk-curved').checked
 function syncCC(){if(!edges.length)return;document.getElementById('chk-curved').checked=edges.every(function(e){return e.curved;});document.getElementById('chk-straight').checked=edges.every(function(e){return !e.curved;});}
 function svgPt(cx,cy){var r=svgEl.getBoundingClientRect();return{x:(cx-r.left-pan.x)/zoom,y:(cy-r.top-pan.y)/zoom};}
 function toScreen(sx,sy){return{x:sx*zoom+pan.x,y:sy*zoom+pan.y};}
-function applyT(){var t='translate('+pan.x+','+pan.y+') scale('+zoom+')';nodesLayer.setAttribute('transform',t);edgesLayer.setAttribute('transform',t);linesLayer.setAttribute('transform',t);wardleyLayer.setAttribute('transform',t);triplesLayer.setAttribute('transform',t);renderCLDOverlay();}function setMode(m){var prev=mode;mode=m;if(m!=='edge')stickyEdge=false;if(m!=='node')stickyNode=false;['select','node','edge','freeline','arrow','cld','eip','nrm','opm','sfd','trace','wardley'].forEach(function(k){var b=document.getElementById('btn-'+k);if(b)b.classList.toggle('active',k===m);});var bb=document.getElementById('btn-basic');if(bb)bb.classList.toggle('active',m==='select'||m==='node'||m==='edge');svgEl.style.cursor=(m==='node'||m==='freeline'||m==='arrow')?'crosshair':'default';document.getElementById('edge-hint').style.display=m==='edge'?'block':'none';if(m!=='edge')clearEdgeDrag();if(m!=='freeline'&&m!=='arrow'){freeDraw=null;while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);}if(m==='edge'&&prev==='opm')prevGraphMode='opm';else if(m==='edge'&&prev==='sfd')prevGraphMode='sfd';else if(m!=='edge')prevGraphMode=null;if(m==='cld'){document.getElementById('cld-banner').style.display='block';document.getElementById('cld-mode-opts').style.display='block';enterCLD();}else{document.getElementById('cld-banner').style.display='none';document.getElementById('cld-mode-opts').style.display='none';if(prev==='cld')exitCLD();}if(m==='eip'){enterEIP();}else if(prev==='eip'){exitEIP();}if(m==='nrm'){enterNRM();}else if(prev==='nrm'){exitNRM();}
+function applyT(){var t='translate('+pan.x+','+pan.y+') scale('+zoom+')';nodesLayer.setAttribute('transform',t);edgesLayer.setAttribute('transform',t);linesLayer.setAttribute('transform',t);wardleyLayer.setAttribute('transform',t);lopLayer.setAttribute('transform',t);triplesLayer.setAttribute('transform',t);renderCLDOverlay();}function setMode(m){var prev=mode;mode=m;if(m!=='edge')stickyEdge=false;if(m!=='node')stickyNode=false;['select','node','edge','freeline','arrow','cld','eip','nrm','opm','sfd','lop','trace','wardley'].forEach(function(k){var b=document.getElementById('btn-'+k);if(b)b.classList.toggle('active',k===m);});var bb=document.getElementById('btn-basic');if(bb)bb.classList.toggle('active',m==='select'||m==='node'||m==='edge');svgEl.style.cursor=(m==='node'||m==='freeline'||m==='arrow')?'crosshair':'default';document.getElementById('edge-hint').style.display=m==='edge'?'block':'none';if(m!=='edge')clearEdgeDrag();if(m!=='freeline'&&m!=='arrow'){freeDraw=null;while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);}if(m==='edge'&&prev==='opm')prevGraphMode='opm';else if(m==='edge'&&prev==='sfd')prevGraphMode='sfd';else if(m==='edge'&&prev==='lop')prevGraphMode='lop';else if(m!=='edge')prevGraphMode=null;if(m==='cld'){document.getElementById('cld-banner').style.display='block';document.getElementById('cld-mode-opts').style.display='block';enterCLD();}else{document.getElementById('cld-banner').style.display='none';document.getElementById('cld-mode-opts').style.display='none';if(prev==='cld')exitCLD();}if(m==='eip'){enterEIP();}else if(prev==='eip'){exitEIP();}if(m==='nrm'){enterNRM();}else if(prev==='nrm'){exitNRM();}
 if(m==='opm'){enterOPM();}else if(prev==='opm'){exitOPM();}
 if(m==='sfd'){document.getElementById('sfd-banner').style.display='block';enterSFD();}else{document.getElementById('sfd-banner').style.display='none';if(prev==='sfd')exitSFD();}
+if(m==='lop'){enterLOP();}else if(prev==='lop'){exitLOP();}
 if(m==='trace'){document.getElementById('trace-banner').style.display='block';document.getElementById('trace-mode-opts').style.display='block';enterTrace();}else{document.getElementById('trace-banner').style.display='none';document.getElementById('trace-mode-opts').style.display='none';if(prev==='trace')exitTrace();}
 if(m==='wardley'){document.getElementById('wardley-banner').style.display='block';enterWardley();}else{document.getElementById('wardley-banner').style.display='none';if(prev==='wardley')exitWardley();}}
 function clearEdgeDrag(){edgeDrag={active:false,srcId:null};while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);}
@@ -4188,7 +5395,7 @@ default:return'<ellipse cx="0" cy="0" rx="'+hw+'" ry="'+hh+'" fill="'+fill+'" st
 function darken(hex){var r=parseInt(hex.slice(1,3),16)||0,g=parseInt(hex.slice(3,5),16)||0,b=parseInt(hex.slice(5,7),16)||0;return'rgb('+Math.max(0,r-75)+','+Math.max(0,g-75)+','+Math.max(0,b-75)+')';}
 function onSearch(v){searchTerm=v.trim().toLowerCase();renderAll();var m=searchTerm?nodes.filter(nMatch).length:0;document.getElementById('search-count').textContent=searchTerm?(m+' match'+(m===1?'':'es')):'';;}
 function nMatch(n){if(!searchTerm)return false;if(n.label.toLowerCase().indexOf(searchTerm)>=0)return true;if(n.extraLabels&&n.extraLabels.some(function(el){return el.toLowerCase().indexOf(searchTerm)>=0;}))return true;return Object.keys(n.props||{}).some(function(k){return k.toLowerCase().indexOf(searchTerm)>=0||String(n.props[k]).toLowerCase().indexOf(searchTerm)>=0;});}
-function renderAll(){while(edgesLayer.firstChild)edgesLayer.removeChild(edgesLayer.firstChild);while(nodesLayer.firstChild)nodesLayer.removeChild(nodesLayer.firstChild);while(linesLayer.firstChild)linesLayer.removeChild(linesLayer.firstChild);while(triplesLayer.firstChild)triplesLayer.removeChild(triplesLayer.firstChild);renderWardleyLayer();edges.forEach(renderEdge);nodes.forEach(renderNode);lines.forEach(renderLine);renderTripleDots();renderCLDOverlay();renderLegendSVG();buildLayerFilter();}
+function renderAll(){while(edgesLayer.firstChild)edgesLayer.removeChild(edgesLayer.firstChild);while(nodesLayer.firstChild)nodesLayer.removeChild(nodesLayer.firstChild);while(linesLayer.firstChild)linesLayer.removeChild(linesLayer.firstChild);while(triplesLayer.firstChild)triplesLayer.removeChild(triplesLayer.firstChild);renderWardleyLayer();renderLOPLayer();edges.forEach(renderEdge);nodes.forEach(renderNode);lines.forEach(renderLine);renderTripleDots();renderCLDOverlay();renderLegendSVG();renderOPMChart();renderEIPStatement();buildLayerFilter();}
 function renderNode(n){autoSize(n);if(n.layer&&n.layer.trim()&&hiddenLayers[n.layer.trim()])return;var isSel=selected.nodes.indexOf(n.id)>=0,isMatch=searchTerm&&nMatch(n),isDim=searchTerm&&!isMatch;var fill=sv(n,'color')||'#93c5fd';
 // EIP mode: override fill if node has an EIP column
 if(mode==='eip'){var ec=eipColorForNode(n);if(ec)fill=ec;else{var autoCol=eipColForX(n.x);fill=EIP_COLS[autoCol].color;}}
@@ -4204,7 +5411,7 @@ var lblHTML='<text text-anchor="middle" font-size="'+fs+'" font-weight="'+(nIcon
 if(n.extraLabels&&n.extraLabels.length){var elY=startY+lines.length*llh+2;var elFS=Math.max(8,Math.round(fs*0.72)),elDY=elFS+2;lblHTML+='<text text-anchor="middle" font-size="'+elFS+'" font-style="italic" fill="'+fc+'" opacity=".7" pointer-events="none">';n.extraLabels.forEach(function(el,ei){lblHTML+='<tspan x="0"'+(ei===0?' y="'+elY.toFixed(1)+'"':' dy="'+elDY+'"')+'>:'+escX(el)+'</tspan>';});lblHTML+='</text>';}
 // note indicator dot
 var hasNote=(n.note&&n.note.trim().length>0)||Object.keys(n.props||{}).length>0;var noteIndicator=hasNote?'<circle cx="'+(n.w/2-4)+'" cy="'+(-n.h/2+4)+'" r="4" fill="#f59e0b" stroke="#fff" stroke-width="1" pointer-events="none"/>':'';
-var g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('id','node-'+n.id);g.setAttribute('transform','translate('+n.x+','+n.y+')');g.style.cursor=mode==='edge'?'crosshair':'move';g.style.opacity=isDim?'0.22':'1';g.innerHTML=shapeHTML(n,fill,stroke,sw)+iconHTML+(isSel?'<ellipse cx="0" cy="0" rx="'+(n.w/2+7)+'" ry="'+(n.h/2+7)+'" fill="none" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4 3" opacity=".5"/>':'')+(isMatch?'<ellipse cx="0" cy="0" rx="'+(n.w/2+8)+'" ry="'+(n.h/2+8)+'" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity=".7"/>':'')+lblHTML+noteIndicator+traceNodeOverlay(n)+cldNodeOverlay(n)+symbolsNodeOverlay(n);
+var g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('id','node-'+n.id);g.setAttribute('transform','translate('+n.x+','+n.y+')');g.style.cursor=mode==='edge'?'crosshair':'move';g.style.opacity=isDim?'0.22':'1';g.innerHTML=shapeHTML(n,fill,stroke,sw)+iconHTML+(isSel?'<ellipse cx="0" cy="0" rx="'+(n.w/2+7)+'" ry="'+(n.h/2+7)+'" fill="none" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4 3" opacity=".5"/>':'')+(isMatch?'<ellipse cx="0" cy="0" rx="'+(n.w/2+8)+'" ry="'+(n.h/2+8)+'" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity=".7"/>':'')+lblHTML+noteIndicator+lopNodeOverlay(n)+traceNodeOverlay(n)+cldNodeOverlay(n)+symbolsNodeOverlay(n);
 // Vester symbol badge — real hover listeners
 if(n.symbols&&n.symbols.length){var _bsvgs=g.querySelectorAll('[data-vs-label]');for(var _bi=0;_bi<_bsvgs.length;_bi++){(function(bsvg){var lbl=bsvg.getAttribute('data-vs-label');bsvg.addEventListener('mouseenter',function(ev){_vsBadgeHover=true;if(!_ttEl)_ttEl=document.getElementById('prop-tooltip');clearTimeout(_ttHideTimer);_ttEl.innerHTML='<span>'+escH(lbl)+'</span>';_ttEl.style.display='block';moveTooltip(ev);ev.stopPropagation();});bsvg.addEventListener('mouseleave',function(){_vsBadgeHover=false;hideTooltip();});})(_bsvgs[_bi]);}}
 // resize handles on single selected node
@@ -4254,7 +5461,10 @@ g.style.opacity=effectiveDim?'0.15':'1';var hit=document.createElementNS('http:/
 if(e.sfdFlow){path.setAttribute('stroke-width',String(isSel?7:5));path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');}
 // dash style (matchQuery overrides)
 var edgeDash=sv(e,'dash')||'solid';if(e.matchQuery){path.setAttribute('stroke-dasharray','6 3');}else if(e.opmDash){path.setAttribute('stroke-dasharray',e.opmDash);}else if(edgeDash==='dashed'){path.setAttribute('stroke-dasharray','8 5');}else if(edgeDash==='dotted'){path.setAttribute('stroke-dasharray','2 4');}
-if((e.arrowDir||'end')!=='none')path.setAttribute('marker-end','url(#'+mId+')');path.setAttribute('pointer-events','none');g.appendChild(path);if(e.curved&&src.id!==tgt.id&&(isSel||isCurveDrag)&&ep&&!ep.selfLoop){var cpx=ep.cpx,cpy=ep.cpy;var handle=document.createElementNS('http://www.w3.org/2000/svg','circle');handle.setAttribute('cx',String(cpx));handle.setAttribute('cy',String(cpy));handle.setAttribute('r','5');handle.setAttribute('fill',hasUserCP?'#3b82f6':'rgba(59,130,246,0.3)');handle.setAttribute('stroke','#3b82f6');handle.setAttribute('stroke-width','1');handle.setAttribute('pointer-events','none');g.appendChild(handle);var dl1=document.createElementNS('http://www.w3.org/2000/svg','line');dl1.setAttribute('x1',String(ep.srcPt.x));dl1.setAttribute('y1',String(ep.srcPt.y));dl1.setAttribute('x2',String(cpx));dl1.setAttribute('y2',String(cpy));dl1.setAttribute('stroke','rgba(59,130,246,0.3)');dl1.setAttribute('stroke-width','1');dl1.setAttribute('stroke-dasharray','3 3');dl1.setAttribute('pointer-events','none');g.appendChild(dl1);var dl2=document.createElementNS('http://www.w3.org/2000/svg','line');dl2.setAttribute('x1',String(ep.tgtPt.x));dl2.setAttribute('y1',String(ep.tgtPt.y));dl2.setAttribute('x2',String(cpx));dl2.setAttribute('y2',String(cpy));dl2.setAttribute('stroke','rgba(59,130,246,0.3)');dl2.setAttribute('stroke-width','1');dl2.setAttribute('stroke-dasharray','3 3');dl2.setAttribute('pointer-events','none');g.appendChild(dl2);}
+if((e.arrowDir||'end')!=='none')path.setAttribute('marker-end','url(#'+mId+')');
+// OPM's effect link is double-headed — the only link here that owns both ends.
+if(e.opmMarkerStart)path.setAttribute('marker-start','url(#'+getOPMStartMarkerId(e.opmMarkerStart,col)+')');
+path.setAttribute('pointer-events','none');g.appendChild(path);if(e.curved&&src.id!==tgt.id&&(isSel||isCurveDrag)&&ep&&!ep.selfLoop){var cpx=ep.cpx,cpy=ep.cpy;var handle=document.createElementNS('http://www.w3.org/2000/svg','circle');handle.setAttribute('cx',String(cpx));handle.setAttribute('cy',String(cpy));handle.setAttribute('r','5');handle.setAttribute('fill',hasUserCP?'#3b82f6':'rgba(59,130,246,0.3)');handle.setAttribute('stroke','#3b82f6');handle.setAttribute('stroke-width','1');handle.setAttribute('pointer-events','none');g.appendChild(handle);var dl1=document.createElementNS('http://www.w3.org/2000/svg','line');dl1.setAttribute('x1',String(ep.srcPt.x));dl1.setAttribute('y1',String(ep.srcPt.y));dl1.setAttribute('x2',String(cpx));dl1.setAttribute('y2',String(cpy));dl1.setAttribute('stroke','rgba(59,130,246,0.3)');dl1.setAttribute('stroke-width','1');dl1.setAttribute('stroke-dasharray','3 3');dl1.setAttribute('pointer-events','none');g.appendChild(dl1);var dl2=document.createElementNS('http://www.w3.org/2000/svg','line');dl2.setAttribute('x1',String(ep.tgtPt.x));dl2.setAttribute('y1',String(ep.tgtPt.y));dl2.setAttribute('x2',String(cpx));dl2.setAttribute('y2',String(cpy));dl2.setAttribute('stroke','rgba(59,130,246,0.3)');dl2.setAttribute('stroke-width','1');dl2.setAttribute('stroke-dasharray','3 3');dl2.setAttribute('pointer-events','none');g.appendChild(dl2);}
 if(e.delay&&ep&&!ep.selfLoop){var _dT=e.delayT!==undefined?e.delayT:0.25;var ddx=ep.tgtPt.x-ep.srcPt.x,ddy=ep.tgtPt.y-ep.srcPt.y,al=Math.sqrt(ddx*ddx+ddy*ddy)||100;var dg=document.createElementNS('http://www.w3.org/2000/svg','g');dg.setAttribute('pointer-events','none');[-0.5,0.5].forEach(function(of){var dpt2=ptAtT(e,_dT+(5*of)/al),nx=-dpt2.ty,ny=dpt2.tx;var ln=document.createElementNS('http://www.w3.org/2000/svg','line');ln.setAttribute('x1',String(dpt2.x+nx*10));ln.setAttribute('y1',String(dpt2.y+ny*10));ln.setAttribute('x2',String(dpt2.x-nx*10));ln.setAttribute('y2',String(dpt2.y-ny*10));ln.setAttribute('stroke',col);ln.setAttribute('stroke-width',String(sw));ln.setAttribute('stroke-linecap','round');dg.appendChild(ln);});var dptC=ptAtT(e,_dT);var dhr=document.createElementNS('http://www.w3.org/2000/svg','circle');dhr.setAttribute('cx',String(dptC.x));dhr.setAttribute('cy',String(dptC.y));dhr.setAttribute('r','14');dhr.setAttribute('fill','transparent');dhr.setAttribute('stroke','none');dhr.setAttribute('pointer-events','all');dhr.style.cursor='move';dhr.addEventListener('mousedown',function(ev){ev.stopPropagation();edgeMarkDrag={edgeId:e.id,mark:'delay',moved:false};});g.appendChild(dhr);g.appendChild(dg);}
 var _eTxt=edgeDisplayText(e);var hasL=!!_eTxt;if(hasL){var _horiz=e.labelHoriz!==undefined?e.labelHoriz:globalLabelHoriz;var _wrap=e.labelWrap!==undefined?e.labelWrap:globalLabelWrap;var rawLblLines=_eTxt.split('\n');var lblLines=_wrap?[].concat.apply([],rawLblLines.map(function(l){return wrapLabel(l,16);})):rawLblLines;var lLineH=fs+2;var lTotalH=lblLines.length*lLineH;var lStartY=ly-(lTotalH-lLineH)/2;var lpt=ptAtT(e,_lT);var ang=_horiz?0:(Math.atan2(lpt.ty,lpt.tx)*180/Math.PI);if(ang>90)ang-=180;if(ang<-90)ang+=180;var rot=ang?'rotate('+ang.toFixed(1)+','+lx.toFixed(1)+','+ly.toFixed(1)+')':'';var txt=document.createElementNS('http://www.w3.org/2000/svg','text');txt.setAttribute('text-anchor','middle');txt.setAttribute('pointer-events','none');if(rot)txt.setAttribute('transform',rot);lblLines.forEach(function(line,i){var ts=document.createElementNS('http://www.w3.org/2000/svg','tspan');ts.setAttribute('x',String(lx));ts.setAttribute('y',String(lStartY+i*lLineH));ts.setAttribute('font-size',String(fs));ts.setAttribute('font-style','italic');ts.setAttribute('fill',e.fontColor||col);ts.textContent=line;txt.appendChild(ts);});g.appendChild(txt);var lMaxLen=Math.max.apply(null,lblLines.map(function(l){return l.length;}));var lw=Math.max(60,lMaxLen*fs*.65);var lhr=document.createElementNS('http://www.w3.org/2000/svg','rect');lhr.setAttribute('x',String(lx-lw/2));lhr.setAttribute('y',String(lStartY-lLineH/2));lhr.setAttribute('width',String(lw));lhr.setAttribute('height',String(lTotalH+4));lhr.setAttribute('fill','transparent');lhr.setAttribute('stroke','none');lhr.setAttribute('pointer-events','all');lhr.style.cursor='move';lhr.addEventListener('mousedown',function(ev){ev.stopPropagation();edgeMarkDrag={edgeId:e.id,mark:'label',moved:false};});if(rot)lhr.setAttribute('transform',rot);g.appendChild(lhr);}
 // note indicator dot on edges
@@ -4619,6 +5829,17 @@ if(mode==='opm'&&opmActiveType){
     updateOPMBanner();buildPanel();return;
   }
 }
+// LOP mode: click canvas to place typed node if type is active
+if(mode==='lop'&&lopActiveType){
+  var hitExisting=false;
+  for(var i=nodes.length-1;i>=0;i--)if(nodeHit(nodes[i],pt.x,pt.y)){hitExisting=true;break;}
+  if(!hitExisting){
+    snap();var ln=makeNode(pt.x,pt.y);applyLOPToNewNode(ln);
+    selectNodeId(ln.id,false);
+    lopActiveType=null;svgEl.style.cursor='default';
+    lopFindings=null;updateLOPBanner();buildPanel();return;
+  }
+}
 // SFD mode: click canvas to place typed node if type is active
 if(mode==='sfd'&&sfdActiveType){
   var hitExisting=false;
@@ -4679,13 +5900,14 @@ function onCanvasUp(ev){
   if(lineEndpointDrag){lineEndpointDrag=null;renderAll();buildPanel();return;}
   if(lineMarkDrag){lineMarkDrag=null;return;}
   if(lineBodyDrag){lineBodyDrag=null;renderAll();buildPanel();return;}
-  if(curveDrag){curveDrag=null;document.getElementById('curve-hint').style.display='none';svgEl.style.cursor='default';renderAll();return;}if(dragging){dragging=null;renderAll();return;}if(panStart){panStart=null;return;}if(rubberBand){var rx=Math.min(rubberBand.sx,rubberBand.ex),ry=Math.min(rubberBand.sy,rubberBand.ey),rw=Math.abs(rubberBand.ex-rubberBand.sx),rh=Math.abs(rubberBand.ey-rubberBand.sy);while(rubberLayer.firstChild)rubberLayer.removeChild(rubberLayer.firstChild);if(rw>5||rh>5){var sel=nodes.filter(function(n){return n.x>=rx&&n.x<=rx+rw&&n.y>=ry&&n.y<=ry+rh;}).map(function(n){return n.id;});if(sel.length){selected.nodes=selected.nodes.concat(sel.filter(function(id){return selected.nodes.indexOf(id)<0;}));renderAll();buildPanel();}}rubberBand=null;return;}
+  if(curveDrag){curveDrag=null;document.getElementById('curve-hint').style.display='none';svgEl.style.cursor='default';renderAll();return;}if(dragging){if(mode==='wardley'&&dragging.moved)wardleyWriteBack();dragging=null;renderAll();return;}if(panStart){panStart=null;return;}if(rubberBand){var rx=Math.min(rubberBand.sx,rubberBand.ex),ry=Math.min(rubberBand.sy,rubberBand.ey),rw=Math.abs(rubberBand.ex-rubberBand.sx),rh=Math.abs(rubberBand.ey-rubberBand.sy);while(rubberLayer.firstChild)rubberLayer.removeChild(rubberLayer.firstChild);if(rw>5||rh>5){var sel=nodes.filter(function(n){return n.x>=rx&&n.x<=rx+rw&&n.y>=ry&&n.y<=ry+rh;}).map(function(n){return n.id;});if(sel.length){selected.nodes=selected.nodes.concat(sel.filter(function(id){return selected.nodes.indexOf(id)<0;}));renderAll();buildPanel();}}rubberBand=null;return;}
   if((mode==='freeline'||mode==='arrow')&&freeDraw&&freeDraw.active){while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);var pt2=svgPt(ev.clientX,ev.clientY);if(ev.shiftKey){var _sa=snapAngle(freeDraw.x1,freeDraw.y1,pt2.x,pt2.y);pt2.x=_sa.x;pt2.y=_sa.y;}var dx2=pt2.x-freeDraw.x1,dy2=pt2.y-freeDraw.y1;if(Math.sqrt(dx2*dx2+dy2*dy2)>5){snap();var newL={id:'l'+nextId++,x1:freeDraw.x1,y1:freeDraw.y1,x2:pt2.x,y2:pt2.y,color:'#000000',width:1.5,dash:'solid',arrowhead:freeDraw.arrowhead,label:''};lines.push(newL);selectLineId(newL.id,false);}freeDraw=null;setMode('select');return;}
-  if(mode==='edge'&&edgeDrag.active){while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);var pt=svgPt(ev.clientX,ev.clientY),done=false;var wasOPM=prevGraphMode==='opm';var wasSFD=prevGraphMode==='sfd';var savedSrcId=edgeDrag.srcId;edgeDrag={active:false,srcId:null};prevGraphMode=null;
+  if(mode==='edge'&&edgeDrag.active){while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);var pt=svgPt(ev.clientX,ev.clientY),done=false;var wasOPM=prevGraphMode==='opm';var wasSFD=prevGraphMode==='sfd';var wasLOP=prevGraphMode==='lop';var savedSrcId=edgeDrag.srcId;edgeDrag={active:false,srcId:null};prevGraphMode=null;
   // check triple dots as targets first
   for(var ti=edges.length-1;ti>=0;ti--){if(edges[ti].isTriple&&tripleHit(edges[ti],pt.x,pt.y)){snap();var me={id:'m'+nextId++,src:savedSrcId,tgt:edges[ti].tripleId,label:'',type:'meta'};metaEdges.push(me);selected={nodes:[],edges:[me.id],lines:[],triples:[]};done=true;toast('Meta-edge created → '+edges[ti].tripleId);break;}}
   if(!done){for(var i=nodes.length-1;i>=0;i--){if(nodeHit(nodes[i],pt.x,pt.y)&&nodes[i].id!==savedSrcId){
     if(wasOPM){showOPMLinkPicker(savedSrcId,nodes[i].id);}
+    else if(wasLOP){applyLOPEdge(savedSrcId,nodes[i].id);}
     else if(wasSFD){
       var srcN=nodeById(savedSrcId),tgtN=nodes[i];
       var srcIsEp=sfdIsFlowEndpoint(srcN),tgtIsEp=sfdIsFlowEndpoint(tgtN);
@@ -4711,7 +5933,7 @@ function onCanvasUp(ev){
     }
     else{snap();var isCurved=document.getElementById('chk-curved').checked||!document.getElementById('chk-straight').checked;var e=Object.assign({id:'e'+nextId++,src:savedSrcId,tgt:nodes[i].id,label:'',props:{}},DEF_EDGE,{curved:isCurved});edges.push(e);selectEdgeId(e.id,false);}
     done=true;break;}}if(!done)toast('Drop on a target node (or triple dot) to create edge');}
-  renderAll();buildPanel();setMode(wasOPM?'opm':wasSFD?'sfd':(done&&stickyEdge?'edge':'select'));}}
+  renderAll();buildPanel();setMode(wasOPM?'opm':wasSFD?'sfd':wasLOP?'lop':(done&&stickyEdge?'edge':'select'));}}
 function clearLongPress(){clearTimeout(longPressTimer);longPressTimer=null;if(longPressActive){longPressActive=false;longPressNodeId=null;renderAll();}}
 function onNodeDown(ev,id){
   if(checkDblTap(id,function(){var n=nodeById(id);if(n)openNodeEditor(n);}))return;
@@ -4994,7 +6216,91 @@ function minimizeCrossings(){
 }
 function setBgColor(c){canvasBg=c;document.getElementById('canvas-wrap').style.background=c;var p=document.getElementById('canvas-bg-picker');if(p&&p.value!==c)p.value=c;}
 function gridLayout(){if(!nodes.length)return;snap();var W=svgEl.clientWidth||600,H=svgEl.clientHeight||480,cols=Math.ceil(Math.sqrt(nodes.length)),padX=80,padY=70,cellW=(W-padX*2)/Math.max(cols-1,1),cellH=(H-padY*2)/Math.max(Math.ceil(nodes.length/cols)-1,1);nodes.forEach(function(n,i){n.x=(padX+(i%cols)*cellW-pan.x)/zoom;n.y=(padY+Math.floor(i/cols)*cellH-pan.y)/zoom;});renderAll();}
-function zoomFit(){if(!nodes.length){pan={x:0,y:0};zoom=1;applyT();return;}function doFit(){var W=svgEl.clientWidth||500,H=svgEl.clientHeight||400;if(W<10){requestAnimationFrame(function(){requestAnimationFrame(doFit);});return;}var pad=40,minX=Math.min.apply(null,nodes.map(function(n){return n.x-(n.w||108)/2;}))-pad,maxX=Math.max.apply(null,nodes.map(function(n){return n.x+(n.w||108)/2;}))+pad,minY=Math.min.apply(null,nodes.map(function(n){return n.y-(n.h||46)/2;}))-pad,maxY=Math.max.apply(null,nodes.map(function(n){return n.y+(n.h||46)/2;}))+pad;zoom=Math.min(W/(maxX-minX||1),H/(maxY-minY||1),2.4);pan.x=W/2-((minX+maxX)/2)*zoom;pan.y=H/2-((minY+maxY)/2)*zoom;applyT();}requestAnimationFrame(function(){requestAnimationFrame(doFit);});}
+// ── FITTING ───────────────────────────────────────────────────────────────
+// A drawing is bigger than its nodes. Icon nodes print their caption BELOW the
+// box; extraLabels sit below that; edge labels sit off the line; and free lines,
+// the Wardley grid and the LOP band guide are not nodes at all. Fitting to node
+// x/y/w/h cropped every one of those silently — and because SVG and PNG export
+// the current view, whatever Fit cropped was also missing from the exported file.
+// That is how six diagrams came back framed to the window instead of the drawing.
+//
+// getBBox() on a layer <g> reports the union of its rendered children in the g's
+// OWN coordinate system — graph coordinates, before the pan/zoom transform this
+// function is computing — so it is exactly the number needed and wants no
+// un-transforming. Hidden layers drop out for free: renderNode skips them, so
+// they are not in the DOM to be measured.
+//
+// Only the six pan/zoom-transformed layers count. #legend-layer and the OPM
+// symbol chart are deliberately NOT transformed — they are screen furniture —
+// so measuring them here would mix two coordinate systems.
+function contentBounds(){
+  var layers=[lopLayer,wardleyLayer,linesLayer,edgesLayer,nodesLayer,triplesLayer];
+  var x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity,found=false;
+  for(var i=0;i<layers.length;i++){
+    var L=layers[i];
+    if(!L||!L.firstChild)continue;
+    var b;try{b=L.getBBox();}catch(e){continue;}
+    if(!b||(!b.width&&!b.height))continue;
+    x1=Math.min(x1,b.x);y1=Math.min(y1,b.y);
+    x2=Math.max(x2,b.x+b.width);y2=Math.max(y2,b.y+b.height);found=true;
+  }
+  if(found)return{x1:x1,y1:y1,x2:x2,y2:y2};
+  if(!nodes.length)return null;
+  // Fallback to node geometry — all the tool could see before — for the case
+  // where the layers have not rendered yet.
+  return{
+    x1:Math.min.apply(null,nodes.map(function(n){return n.x-(n.w||108)/2;})),
+    y1:Math.min.apply(null,nodes.map(function(n){return n.y-(n.h||46)/2;})),
+    x2:Math.max.apply(null,nodes.map(function(n){return n.x+(n.w||108)/2;})),
+    y2:Math.max.apply(null,nodes.map(function(n){return n.y+(n.h||46)/2;}))
+  };
+}
+function zoomFit(){function doFit(){var W=svgEl.clientWidth||500,H=svgEl.clientHeight||400;if(W<10){requestAnimationFrame(function(){requestAnimationFrame(doFit);});return;}
+var b=contentBounds();
+if(!b){pan={x:0,y:0};zoom=1;applyT();return;}
+// The on-canvas symbol chart occupies the bottom-left, so fitting into the full
+// width would tuck part of the diagram underneath it. Reserve its column.
+var inset=(opmChartOn&&mode==='opm')?300:0;W=W-inset;
+// The margin is reserved in SCREEN pixels, not graph units. Padding the content
+// box in graph units and then scaling it made the margin shrink exactly when it
+// was needed most: 40 graph units renders as 19px at zoom 0.47, so the bigger
+// the drawing the tighter its export sat against the frame.
+var padPx=40,cw=(b.x2-b.x1)||1,ch=(b.y2-b.y1)||1;
+zoom=Math.min((W-2*padPx)/cw,(H-2*padPx)/ch,2.4);
+pan.x=inset+W/2-((b.x1+b.x2)/2)*zoom;pan.y=H/2-((b.y1+b.y2)/2)*zoom;applyT();}requestAnimationFrame(function(){requestAnimationFrame(doFit);});}
+// ── PRESENTATION VIEW ────────────────────────────────────────────────
+// Hides every control (topbar, right column, hints, mode banners) so the
+// window is nothing but the graph. Legend, EIP columns, loop labels and the
+// CLD/trace animation controls stay — they are part of the picture.
+// Enter: Present button or P. Leave: Esc, the corner pill, or leaving fullscreen.
+var presenting=false,presentSavedView=null;
+function fireResize(){var ev;try{ev=new Event('resize');}catch(e){ev=document.createEvent('Event');ev.initEvent('resize',true,true);}window.dispatchEvent(ev);}
+function togglePresent(){if(presenting)exitPresent();else enterPresent();}
+function enterPresent(){
+  if(presenting)return;
+  presenting=true;
+  presentSavedView={x:pan.x,y:pan.y,z:zoom};
+  document.body.classList.add('presenting');
+  var el=document.documentElement;
+  try{if(el.requestFullscreen){var p=el.requestFullscreen();if(p&&p.catch)p.catch(function(){});}else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();}catch(e){}
+  requestAnimationFrame(function(){requestAnimationFrame(function(){fireResize();zoomFit();});});
+  // Fullscreen resizes the window a beat after the class lands — fit again once it settles.
+  setTimeout(function(){if(presenting){fireResize();zoomFit();}},420);
+  toast('Presentation view — Esc to leave');
+}
+function exitPresent(){
+  if(!presenting)return;
+  presenting=false;
+  document.body.classList.remove('presenting');
+  try{if(document.fullscreenElement&&document.exitFullscreen){var p=document.exitFullscreen();if(p&&p.catch)p.catch(function(){});}else if(document.webkitFullscreenElement&&document.webkitExitFullscreen)document.webkitExitFullscreen();}catch(e){}
+  var v=presentSavedView;presentSavedView=null;
+  requestAnimationFrame(function(){requestAnimationFrame(function(){if(v){pan.x=v.x;pan.y=v.y;zoom=v.z;applyT();}fireResize();});});
+  setTimeout(function(){if(!presenting)fireResize();},420);
+}
+// F11 or the browser's own Esc can drop fullscreen without touching our flag.
+function onFsChange(){if(presenting&&!document.fullscreenElement&&!document.webkitFullscreenElement)exitPresent();}
+document.addEventListener('fullscreenchange',onFsChange);
+document.addEventListener('webkitfullscreenchange',onFsChange);
 function forceLayout(){if(!nodes.length)return;if(simulation)simulation.stop();snap();var N=nodes.length,spread=Math.max(600,N*80);nodes.forEach(function(n){n.x=(Math.random()-.5)*spread;n.y=(Math.random()-.5)*spread;});var d3n=nodes.map(function(n){return{id:n.id,x:n.x,y:n.y};});var d3l=edges.map(function(e){return{source:e.src,target:e.tgt};});var linkDist=Math.max(100,Math.min(220,2800/Math.max(N,1)));var charge=-Math.max(200,Math.min(700,60000/Math.max(N,1)));if(N<=30){simulation=d3.forceSimulation(d3n).force('link',d3.forceLink(d3l).id(function(d){return d.id;}).distance(linkDist).strength(0.5)).force('charge',d3.forceManyBody().strength(charge)).force('center',d3.forceCenter(0,0)).force('collision',d3.forceCollide().radius(function(d){var n=nodeById(d.id);return n?Math.max(n.w,n.h)/2+6:55;})).on('tick',function(){d3n.forEach(function(d){var n=nodeById(d.id);if(n){n.x=d.x;n.y=d.y;}});renderAll();}).on('end',function(){zoomFit();toast('Layout complete — '+N+' nodes');});}else{toast('Running layout for '+N+' nodes...');var sim=d3.forceSimulation(d3n).force('link',d3.forceLink(d3l).id(function(d){return d.id;}).distance(linkDist).strength(0.5)).force('charge',d3.forceManyBody().strength(charge)).force('center',d3.forceCenter(0,0)).force('collision',d3.forceCollide().radius(function(d){var n=nodeById(d.id);return n?Math.max(n.w,n.h)/2+6:55;})).stop();for(var t=0;t<400;t++)sim.tick();sim.stop();d3n.forEach(function(d){var n=nodeById(d.id);if(n){n.x=d.x;n.y=d.y;}});renderAll();zoomFit();setTimeout(function(){toast('Layout complete — '+N+' nodes');},400);}}
 // ── TYPED COLOUR FIELDS (Hex + R/G/B) ────────────────────────────────
 // Every Custom colour row carries editable Hex and R/G/B inputs. They are
@@ -5196,6 +6502,20 @@ if(mode==='opm'){
   buildSelectionPanel(opmPC,sN,sE);
   pc.appendChild(opmPC);
   updateOPLPanel();return;
+}
+// LOP mode: palette + List of Processes + selection details
+if(mode==='lop'){
+  pc.innerHTML='';
+  pc.appendChild(buildLOPPalette());
+  if(sN.length===1&&!sE.length&&sN[0].lopType)pc.appendChild(buildLOPNodeSection(sN[0]));
+  if(sE.length===1&&!sN.length)pc.appendChild(buildLOPEdgeSection(sE[0]));
+  pc.appendChild(buildLOPProcessList());
+  if(sN.length||sE.length){
+    var lopPC=document.createElement('div');
+    buildSelectionPanel(lopPC,sN,sE);
+    pc.appendChild(lopPC);
+  }
+  return;
 }
 // EIP mode: always show palette at top, then selection details below
 if(mode==='eip'){
@@ -5526,7 +6846,10 @@ function sLLC_all(c){snap();(selected.lines||[]).forEach(function(id){var l=line
 function sLFC_all(c){snap();(selected.lines||[]).forEach(function(id){var l=lineById(id);if(l){if(c===null||c===undefined)delete l.fontColor;else l.fontColor=c;}});renderAll();buildPanel();}
 function resetLineLabelPos(){snap();(selected.lines||[]).forEach(function(id){var l=lineById(id);if(l)delete l.labelT;});renderAll();buildPanel();}
 function setLineLabel(id,val){snap();var l=lineById(id);if(l){l.label=val;renderAll();}}
-function buildState(){return{version:'1.0',modelName:modelName(),modelNote:(document.getElementById('model-note').value||'').trim(),canvasBg:canvasBg,graphAttrs:graphAttrs,cldLoopNames:cldLoopNames,legendEntries:legendEntries.map(function(e){return Object.assign({},e);}),legendVisible:legendVisible,legendCollapsed:legendCollapsed,customSymbols:customSymbols.map(function(s){return Object.assign({},s);}),nodes:nodes.map(function(n){return stampStyle(Object.assign({},n,{props:Object.assign({},n.props)}),n,STAMP_NODE_FIELDS);}),edges:edges.map(function(e){return stampStyle(Object.assign({},e,{props:Object.assign({},e.props)}),e,STAMP_EDGE_FIELDS);}),lines:lines.map(function(l){return Object.assign({},l);}),metaEdges:metaEdges.map(function(me){return Object.assign({},me);})};}
+// `mode` is persisted because Wardley/RBA files are unreadable in the wrong
+// mode — the grid vanishes and the rent bands go with it. Every other mode
+// tolerated being forgotten; this one does not.
+function buildState(){return{version:'1.0',mode:mode,modelName:modelName(),modelNote:(document.getElementById('model-note').value||'').trim(),canvasBg:canvasBg,graphAttrs:graphAttrs,cldLoopNames:cldLoopNames,legendEntries:legendEntries.map(function(e){return Object.assign({},e);}),legendVisible:legendVisible,lopBands:lopBandsOn,legendCollapsed:legendCollapsed,customSymbols:customSymbols.map(function(s){return Object.assign({},s);}),nodes:nodes.map(function(n){return stampStyle(Object.assign({},n,{props:Object.assign({},n.props)}),n,STAMP_NODE_FIELDS);}),edges:edges.map(function(e){return stampStyle(Object.assign({},e,{props:Object.assign({},e.props)}),e,STAMP_EDGE_FIELDS);}),lines:lines.map(function(l){return Object.assign({},l);}),metaEdges:metaEdges.map(function(me){return Object.assign({},me);})};}
 function cleanXmileLabel(raw){return(raw||'').replace(/^"+|"+$/g,'').replace(/^\\+|\\+$/g,'').replace(/_/g,' ').trim();}
 function xmileKey(raw){return(raw||'').replace(/^"+|"+$/g,'').replace(/^\\+|\\+$/g,'').trim().toLowerCase();}
 function toXmileName(label){return label.replace(/\s+/g,'_');}
@@ -5760,19 +7083,42 @@ if(ln&&ln.indexOf(':')>=0){var parts=ln.split(':').map(function(p){return p.trim
 function parseMatch(cy){snap();var vm={};var ms=cy.replace(/RETURN[\s\S]*/i,'');var re=/\((`[^`]+`|\w+)(?:\s*:\s*(`[^`]+`|\w+))?\s*(?:\{[^}]*\})?\)\s*-\[(?:`[^`]+`|\w*)?\s*:?\s*(`[^`]+`|\w*)(?:\{[^}]*\})?\s*\]->\s*\((`[^`]+`|\w+)(?:\s*:\s*(`[^`]+`|\w+))?\s*(?:\{[^}]*\})?\)/gi,m;while((m=re.exec(ms))!==null){var sv=unquote(m[1]),sl=m[2]?unquote(m[2]):null,rel=m[3]?unquote(m[3]):'',tv=unquote(m[4]),tl=m[5]?unquote(m[5]):null;if(!vm[sv]){var n=makeNode(100,100,(sl?sv+':'+sl:sv),'#c4b5fd','rounded');vm[sv]=n.id;}if(!vm[tv]){var n=makeNode(100,100,(tl?tv+':'+tl:tv),'#c4b5fd','rounded');vm[tv]=n.id;}edges.push({id:'e'+nextId++,src:vm[sv],tgt:vm[tv],label:rel,props:{},color:'#8b5cf6',width:1.5,fontSize:10,curved:false,matchQuery:true,polarity:'none',delay:false});}gridLayout();renderAll();zoomFit();toast('MATCH pattern imported');}
 function translateArrows(raw){var result={nodes:[],edges:[]};var idMap={};var aN=raw.nodes||[],aR=raw.relationships||[];var xs=aN.map(function(n){return(n.position||{}).x||0;}),ys=aN.map(function(n){return(n.position||{}).y||0;});var minX=xs.length?Math.min.apply(null,xs):0,minY=ys.length?Math.min.apply(null,ys):0,maxX=xs.length?Math.max.apply(null,xs):0,maxY=ys.length?Math.max.apply(null,ys):0;var scale=Math.min(700/(maxX-minX||1),460/(maxY-minY||1),1.5);aN.forEach(function(an){var nid='n'+nextId++;idMap[an.id]=nid;var pos=an.position||{},x=((pos.x||0)-minX)*scale+80,y=((pos.y||0)-minY)*scale+80;var style=an.style||{},color=style['node-color']||'#93c5fd';if(!/^#[0-9a-fA-F]{3,6}$/.test(color))color='#93c5fd';var radius=parseFloat(style['radius']||style['node-size']||50),w=Math.round(Math.max(60,radius*2.2)),h=Math.round(Math.max(36,radius*1.2));var label=an.caption||(an.labels&&an.labels[0])||'Node';var n={id:nid,label:label,x:Math.round(x),y:Math.round(y),w:w,h:h,shape:'ellipse',color:color,fontColor:'auto',props:{},extraLabels:[],fontSize:DEF_NFS};var props=an.properties||{};Object.keys(props).forEach(function(k){n.props[k]=String(props[k]);});if(an.labels&&an.labels.length>0)n.extraLabels=an.labels.slice();autoSize(n);result.nodes.push(n);});aR.forEach(function(ar){var srcId=idMap[ar.fromId],tgtId=idMap[ar.toId];if(!srcId||!tgtId)return;var eid='e'+nextId++;var style=ar.style||{},color=style['arrow-color']||DEF_EDGE.color;if(!/^#[0-9a-fA-F]{3,6}$/.test(color))color=DEF_EDGE.color;var fontSize=parseInt(style['font-size']||DEF_EDGE.fontSize,10)||DEF_EDGE.fontSize,width=parseFloat(style['line-width']||DEF_EDGE.width)||DEF_EDGE.width;var e={id:eid,src:srcId,tgt:tgtId,label:ar.type||'',props:{},color:color,width:Math.min(width,8),fontSize:Math.min(fontSize,20),curved:false,polarity:'none',delay:false};var props=ar.properties||{};Object.keys(props).forEach(function(k){e.props[k]=String(props[k]);});result.edges.push(e);});return result;}
 function loadGraphJSON(text){var raw;try{raw=JSON.parse(text);}catch(e){toast('Invalid JSON');return;}
-// Wardley Map export detection
-var wardleyData=raw.userEdited||raw.aiOriginal;
+// Wardley Map detection — two shapes.
+//   {aiOriginal, userEdited}  the Wardley Map Generator's "Export Map Data"
+//   {title, query, components, dependencies}  the bare shape an LLM writes
+// The second one has no fixed axis direction, and that is not guessable: the
+// generator puts Genesis at x=1, everyone else (and every textbook) puts
+// Commodity there. Guessing wrong mirrors the whole map and every commodity
+// lands in Genesis, which looks deliberate. So a bare file must SAY, and a
+// generator export is known by where it came from.
+var wardleyData=raw.userEdited||raw.aiOriginal||((raw.components&&raw.dependencies!==undefined)?raw:null);
 if(wardleyData&&wardleyData.components){
+  var fromGenerator=!!(raw.userEdited||raw.aiOriginal);
+  var wAxis=raw.axis||wardleyData.axis||(fromGenerator?'genesis-right':null);
+  if(!wAxis){
+    toast('Wardley file needs an "axis" key: "commodity-right" (standard) or "genesis-right" (generator)');
+    return;
+  }
+  if(wAxis!=='commodity-right'&&wAxis!=='genesis-right'){
+    toast('Unknown axis "'+wAxis+'" — use "commodity-right" or "genesis-right"');
+    return;
+  }
   snap();nodes=[];edges=[];lines=[];nextId=1;selected={nodes:[],edges:[],lines:[]};
-  var CW=900,CH=700,PAD=60;
   var nameToId={};
   wardleyData.components.forEach(function(c){
+    // Normalise to the RCN convention on the way in and store it: evolution
+    // 0=Genesis → 1=Commodity, visibility 1=visible. x/y are derived from
+    // those, never the other way round.
+    var ev=rbaClamp01(wAxis==='genesis-right'?1-(+c.x||0):(+c.x||0));
+    var vis=rbaClamp01(+c.y||0);
     var n={
       id:'n'+nextId++,
       label:c.name||'Node',
       extraLabels:[],
-      x:PAD+(1-c.x)*(CW-PAD*2),
-      y:PAD+(1-c.y)*(CH-PAD*2),
+      evolution:+ev.toFixed(3),
+      visibility:+vis.toFixed(3),
+      x:rbaX(ev),
+      y:wmY(vis),
       w:108,h:46,
       shape:'rounded',
       color:c.color||'#93c5fd',
@@ -5788,15 +7134,56 @@ if(wardleyData&&wardleyData.components){
     edges.push(Object.assign({},DEF_EDGE,{id:'e'+nextId++,src:src,tgt:tgt,label:'',props:{}}));
   });
   if(wardleyData.title)document.getElementById('model-name').value=wardleyData.title;
+  // the query is the analytic question the map answers — keep it
+  var _wq=wardleyData.query||raw.query;
+  if(_wq)document.getElementById('model-note').value=_wq;
+  renderModelNote();
   nextId=nodes.length+edges.length+1;
   selected={nodes:[],edges:[],lines:[],triples:[]};syncCC();setMode('wardley');autoDeriveLegend();renderAll();zoomFit();
-  toast('Wardley import: '+nodes.length+' nodes, '+edges.length+' edges');
+  toast('Wardley import ('+wAxis+'): '+nodes.length+' nodes, '+edges.length+' edges');
   return;
 }
-var isArrows=raw.relationships!==undefined||(raw.nodes&&raw.nodes[0]&&raw.nodes[0].position!==undefined);var isNative=raw.nodes&&raw.edges!==undefined;if(!isArrows&&!isNative){toast('Unrecognised JSON');return;}snap();if(isArrows){var conv=translateArrows(raw);nodes=conv.nodes;edges=conv.edges;toast('Arrows import: '+nodes.length+' nodes');}else{nodes=raw.nodes.map(function(n){return Object.assign({fontSize:DEF_NFS,fontColor:'auto',borderColor:'',borderWidth:1.5,borderDash:'solid',note:'',extraLabels:[]},n,{props:n.props||{},extraLabels:n.extraLabels||[]});});edges=raw.edges.map(function(e){var out=Object.assign({dash:'solid',note:''},e,{props:e.props||{},polarity:e.polarity||'none',delay:!!e.delay});if(out.trace&&!out.traces){out.traces=[out.trace];}if(!out.traces)out.traces=[];delete out.trace;return out;});if(raw.modelName)document.getElementById('model-name').value=raw.modelName;if(raw.canvasBg)setBgColor(raw.canvasBg);if(raw.graphAttrs)graphAttrs=raw.graphAttrs;nodes.forEach(autoSize);toast('Loaded '+nodes.length+' nodes');}lines=(raw.lines||[]).map(function(l){return Object.assign({color:'#000000',width:1.5,dash:'solid',arrowhead:'none',label:''},l);});var ids=nodes.map(function(n){return+String(n.id).replace(/\D/g,'')||0;}).concat(edges.map(function(e){return+String(e.id).replace(/\D/g,'')||0;})).concat(lines.map(function(l){return+String(l.id).replace(/\D/g,'')||0;}));nextId=(ids.length?Math.max.apply(null,ids):0)+1;selected={nodes:[],edges:[],lines:[],triples:[]};edges.forEach(function(e){if(e.color)getMarkerId(e.color);if(e.opmMarker&&e.color)getOPMMarkerId(e.opmMarker,e.color);});metaEdges=(raw.metaEdges||[]).map(function(me){return Object.assign({},me);});if(raw.cldLoopNames)cldLoopNames=raw.cldLoopNames;requestAnimationFrame(function(){renderLegendSVG();});
-if(raw.legendEntries){legendEntries=raw.legendEntries;legendVisible=!!raw.legendVisible;legendCollapsed=!!raw.legendCollapsed;normaliseLegend();legendEntries.forEach(function(r){if((r.kind||'node')==='edge'&&r.color)getMarkerId(r.color);});buildLegendSection();renderLegendOverlay();}var _mn=document.getElementById('model-note');_mn.value=raw.modelNote||'';renderModelNote();// update nextTripleNum based on loaded triples
+var isArrows=raw.relationships!==undefined||(raw.nodes&&raw.nodes[0]&&raw.nodes[0].position!==undefined);var isNative=raw.nodes&&raw.edges!==undefined;if(!isArrows&&!isNative){toast('Unrecognised JSON');return;}snap();if(isArrows){var conv=translateArrows(raw);nodes=conv.nodes;edges=conv.edges;toast('Arrows import: '+nodes.length+' nodes');}else{nodes=raw.nodes.map(function(n){return Object.assign({fontSize:DEF_NFS,fontColor:'auto',borderColor:'',borderWidth:1.5,borderDash:'solid',note:'',extraLabels:[]},n,{props:n.props||{},extraLabels:n.extraLabels||[]});});edges=raw.edges.map(function(e){var out=Object.assign({dash:'solid',note:''},e,{props:e.props||{},polarity:e.polarity||'none',delay:!!e.delay});if(out.trace&&!out.traces){out.traces=[out.trace];}if(!out.traces)out.traces=[];delete out.trace;
+// Files written before Aug 12 2026 carry the EC edge label "exhibits", which reads
+// backwards along an edge drawn feature → exhibitor. Only the WORD was wrong, so
+// relabel and leave src/tgt and the OPL alone — flipping the edge instead would
+// silently invert the meaning of every diagram already on disk.
+if(out.linkType==='EC'&&out.label==='exhibits')out.label='characterizes';
+// Same vintage: the OPM link symbols were invented here (a UML diamond for
+// aggregation, arrows for agent) before anyone checked them against OPM. An
+// edge still carrying the OLD default for its type gets the correct symbol;
+// one whose marker was changed by hand is left exactly as drawn.
+if(out.linkType&&OPM_LEGACY_MARKERS[out.linkType]===out.opmMarker&&OPM_EDGE_STYLES[out.linkType]){
+  out.opmMarker=OPM_EDGE_STYLES[out.linkType].opmMarker;
+  if(OPM_EDGE_STYLES[out.linkType].opmMarkerStart)out.opmMarkerStart=OPM_EDGE_STYLES[out.linkType].opmMarkerStart;
+  delete out.opmDash;
+}
+return out;});if(raw.modelName)document.getElementById('model-name').value=raw.modelName;if(raw.canvasBg)setBgColor(raw.canvasBg);if(raw.graphAttrs)graphAttrs=raw.graphAttrs;
+// w/h defaults. autoSize only ever GROWS these, so a file written without them
+// used to give a NaN radius and paint the node as a bare floating label — the
+// single most common thing an LLM-written file gets wrong, and it failed
+// silently. Default them the same way makeNode() does.
+nodes.forEach(function(n){if(!isFinite(n.w)||n.w<=0)n.w=108;if(!isFinite(n.h)||n.h<=0)n.h=46;});
+nodes.forEach(autoSize);toast('Loaded '+nodes.length+' nodes');}lines=(raw.lines||[]).map(function(l){return Object.assign({color:'#000000',width:1.5,dash:'solid',arrowhead:'none',label:''},l);});var ids=nodes.map(function(n){return+String(n.id).replace(/\D/g,'')||0;}).concat(edges.map(function(e){return+String(e.id).replace(/\D/g,'')||0;})).concat(lines.map(function(l){return+String(l.id).replace(/\D/g,'')||0;}));nextId=(ids.length?Math.max.apply(null,ids):0)+1;selected={nodes:[],edges:[],lines:[],triples:[]};edges.forEach(function(e){if(e.color)getMarkerId(e.color);if(e.opmMarker&&e.color)getOPMMarkerId(e.opmMarker,e.color);});metaEdges=(raw.metaEdges||[]).map(function(me){return Object.assign({},me);});if(raw.cldLoopNames)cldLoopNames=raw.cldLoopNames;requestAnimationFrame(function(){renderLegendSVG();});
+if(raw.legendEntries){legendEntries=raw.legendEntries;legendVisible=!!raw.legendVisible;legendCollapsed=!!raw.legendCollapsed;normaliseLegend();legendEntries.forEach(function(r){if((r.kind||'node')==='edge'&&r.color)getMarkerId(r.color);});buildLegendSection();renderLegendOverlay();}if(raw.lopBands!==undefined)lopBandsOn=!!raw.lopBands;var _mn=document.getElementById('model-note');_mn.value=raw.modelNote||'';renderModelNote();// update nextTripleNum based on loaded triples
 var tNums=edges.filter(function(e){return e.tripleId;}).map(function(e){return parseInt(e.tripleId.slice(1))||0;});nextTripleNum=(tNums.length?Math.max.apply(null,tNums):0)+1;
 customSymbols=(raw.customSymbols||[]).map(function(s){return Object.assign({},s);});_vsAddMode=false;
+// Mode restore. `meta.mode` is honoured too: files written before buildState
+// persisted a mode carry it there, and a top-level meta block is dropped on
+// export, so reading it is the only chance to see it.
+var _lm=raw.mode||(raw.meta&&raw.meta.mode);
+if(_lm&&_lm!==mode)setMode(_lm);
+// Same reason: rescue a meta title/notes into the two fields that persist,
+// rather than let them evaporate on the next export.
+if(raw.meta){var _mnEl=document.getElementById('model-name');if(!raw.modelName&&raw.meta.name&&_mnEl)_mnEl.value=raw.meta.name;if(!raw.modelNote&&raw.meta.notes)document.getElementById('model-note').value=raw.meta.notes;renderModelNote();}
+if(mode==='wardley')wardleyApplyPositions();
+// Last resort for anything still unplaced. In Wardley mode evolution/visibility
+// have just supplied x/y, so this only catches a file that gave neither — and a
+// node at NaN paints nothing at all, with no error. Visible and draggable beats
+// absent and silent.
+var _unplaced=nodes.filter(function(n){return !isFinite(n.x)||!isFinite(n.y);});
+if(_unplaced.length){_unplaced.forEach(function(n,i){n.x=90+(i%6)*170;n.y=90+Math.floor(i/6)*100;});
+  toast(_unplaced.length+' node(s) had no position — placed on a grid, drag them where they belong');}
 syncCC();renderAll();zoomFit();}
 function importMerge(){modalMode='merge';document.getElementById('modal-title').textContent='Merge Graph';document.getElementById('modal-desc').textContent='Paste a graph.json to merge into the current graph. Nodes with matching labels (case-insensitive) will not be duplicated. Layout will be reset to Dagre TB.';document.getElementById('modal-ta').style.display='';document.getElementById('modal-ta').value='';document.getElementById('modal-ta').readOnly=false;document.getElementById('modal-ta').placeholder='{"version":"1.0","nodes":[...],"edges":[...]}';document.getElementById('modal-ok').style.display='';document.getElementById('modal-ok').textContent='Merge';var body=document.getElementById('modal-body');body.innerHTML='';body.appendChild(makeDZ('or drag a .json file','.json',function(txt){document.getElementById('modal-ta').value=txt;}));document.getElementById('modal-bg').classList.add('show');}
 function mergeGraphJSON(text){
@@ -6322,6 +7709,11 @@ var bg=document.createElementNS('http://www.w3.org/2000/svg','rect');bg.setAttri
 // inject <title> elements so browsers show note+props on hover
 nodes.forEach(function(n){var g=clone.querySelector('#node-'+n.id);if(!g)return;var parts=[];if(n.note&&n.note.trim())parts.push('📌 '+n.note.trim());Object.keys(n.props||{}).forEach(function(k){if(k)parts.push(k+': '+n.props[k]);});if(!parts.length)return;var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=parts.join('\n');g.insertBefore(t,g.firstChild);});
 edges.forEach(function(e){var g=clone.querySelector('#edge-'+e.id);if(!g)return;var parts=[];if(e.opl&&e.opl.trim())parts.push('OPL: '+e.opl.trim());if(e.note&&e.note.trim())parts.push('📌 '+e.note.trim());Object.keys(e.props||{}).forEach(function(k){if(k)parts.push(k+': '+e.props[k]);});if(!parts.length)return;var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=parts.join('\n');g.insertBefore(t,g.firstChild);});
+// RBA annotations. The method requires the hover text to survive export, so a
+// printed rent band still answers "says who, and when" — same rbaTipLines the
+// live tooltip uses, emitted as <title>.
+// (no 'rent' — a <title> child inside a <text> element renders as label text)
+nodes.forEach(function(n){['band','shadow','pressure','pin'].forEach(function(k){var el=clone.querySelector('#rba-'+k+'-'+n.id);if(!el)return;var lines=rbaTipLines(n,k);if(!lines.length)return;var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=lines.join('\n');el.insertBefore(t,el.firstChild);});});
 return clone;}
 function exportSVG(){var clone=buildExportSVG();var str=new XMLSerializer().serializeToString(clone);download(dlName('svg'),'image/svg+xml',str);toast('Downloaded '+dlName('svg'));}
 function sendToWikiSVG(){

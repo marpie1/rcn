@@ -256,6 +256,7 @@
                 <button class="btn-primary" onclick="startBlankMap()">📝 Start Blank Map</button>
                 <button class="btn-secondary" onclick="resetToAI()">Reset to AI Version</button>
                 <button class="btn-success" onclick="exportData()">Export Map Data</button>
+                <button class="btn-success" onclick="exportForRCN()" style="background: #6a1b9a;" title="Download as RCN Graph Tool v22 native JSON. Evolution axis is inverted to the standard Wardley direction (Genesis left) on the way out.">→ RCN Graph JSON</button>
                 <button class="btn-success" onclick="exportAsPNG()">Export as PNG</button>
                 <button class="btn-success" onclick="exportAsSVG()">Export as SVG</button>
                 <button class="btn-success" onclick="exportWithWardleyFramePNG()">🗺️ Export Frame PNG</button>
@@ -1051,6 +1052,121 @@ IMPORTANT RULES:
             a.click();
             document.body.removeChild(a);
 
+            URL.revokeObjectURL(url);
+        }
+
+        // Export RCN Graph Tool v22 native JSON. Ported from the claude.ai artifact
+        // copy of this generator, 2026-08-10 — it was the only place it existed.
+        // The axis flip lives here: this generator's x is 1 at Genesis, RCN's
+        // evolution is 0 at Genesis, so evolution = 1 - x. Get that backwards and
+        // the map renders mirrored with every commodity sitting in Genesis.
+        function exportForRCN() {
+            if (!wardleyData) {
+                showError('Please generate or create a map first.');
+                return;
+            }
+
+            // Build slug ids from component names, with collision handling.
+            const usedIds = new Set();
+            const nameToId = {};
+            for (const comp of wardleyData.components) {
+                let base = (comp.name || 'node').toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '_')
+                    .replace(/^_+|_+$/g, '') || 'node';
+                let id = base;
+                let suffix = 2;
+                while (usedIds.has(id)) {
+                    id = base + '_' + suffix;
+                    suffix++;
+                }
+                usedIds.add(id);
+                nameToId[comp.name] = id;
+            }
+
+            const nodes = wardleyData.components.map(comp => {
+                const evolution  = Math.max(0, Math.min(1, 1 - comp.x));
+                const visibility = Math.max(0, Math.min(1, comp.y));
+                const canvasX    = evolution * 780 + 60;
+                const canvasY    = (1 - visibility) * 580 + 60;
+                return {
+                    fontSize: 12,
+                    fontColor: '#000000',
+                    borderColor: '#000000',
+                    borderWidth: 2,
+                    borderDash: 'solid',
+                    note: comp.comment || '',
+                    extraLabels: [],
+                    id: nameToId[comp.name],
+                    label: comp.name,
+                    x: canvasX,
+                    y: canvasY,
+                    w: 150,
+                    h: 60,
+                    shape: 'rect',
+                    color: comp.color || '#DBEAFE',
+                    evolution: evolution,
+                    visibility: visibility,
+                    props: {}
+                };
+            });
+
+            const edges = [];
+            let edgeIdx = 1;
+            for (const dep of (wardleyData.dependencies || [])) {
+                const src = nameToId[dep[0]];
+                const tgt = nameToId[dep[1]];
+                if (!src || !tgt) continue;
+                edges.push({
+                    dash: 'solid',
+                    note: '',
+                    id: 'e' + edgeIdx,
+                    src: src,
+                    tgt: tgt,
+                    color: '#000000',
+                    width: 2,
+                    curved: false,
+                    props: {},
+                    polarity: 'none',
+                    delay: false,
+                    traces: []
+                });
+                edgeIdx++;
+            }
+
+            const payload = {
+                version: '1.0',
+                mode: 'wardley',
+                modelName: wardleyData.title || 'Wardley Map',
+                modelNote: (wardleyData.query ? wardleyData.query + '\n\n' : '') +
+                    'Exported from Interactive Wardley Map Generator on ' +
+                    new Date().toISOString().slice(0, 10) + '. ' +
+                    'Evolution axis inverted from Generator convention (Genesis right) to standard Wardley (Genesis left). ' +
+                    'Canvas coords: x = evolution*780+60, y = (1-visibility)*580+60.',
+                canvasBg: '#ffffff',
+                graphAttrs: {},
+                cldLoopNames: {},
+                legendEntries: [],
+                legendVisible: false,
+                legendCollapsed: false,
+                customSymbols: [],
+                nodes: nodes,
+                edges: edges,
+                lines: [],
+                metaEdges: []
+            };
+
+            const dataStr = JSON.stringify(payload, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const slug = ((wardleyData.title || 'wardley-map')
+                .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')) || 'wardley-map';
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = slug + '-rcn.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
 

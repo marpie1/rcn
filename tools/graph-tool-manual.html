@@ -117,11 +117,12 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
       <li><a href="#s9">9. EIP mode</a></li>
       <li><a href="#s9b">9b. NRM mode</a></li>
       <li><a href="#s9c">9c. Trace mode</a></li>
-      <li><a href="#s9d">9d. Wardley mode</a></li>
+      <li><a href="#s9d">9d. Wardley mode — Chat authoring, rent bands</a></li>
       <li><a href="#s9e">9e. Legend — the registry</a></li>
       <li><a href="#s9f">9f. OPM mode</a></li>
       <li><a href="#s9g">9g. Layers</a></li>
       <li><a href="#s9h">9h. Triples</a></li>
+      <li><a href="#s9i">9i. LOP mode — linkage of processes</a></li>
       <li><a href="#s10">10. Driver trees</a></li>
 
       <li class="sb-section-hd">Layout &amp; Search</li>
@@ -153,7 +154,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
       <!-- UPDATE: version badge and date when tool version changes -->
       <div class="doc-meta">
         <span class="version-badge">v22</span>
-        Updated July 8 2026 &nbsp;·&nbsp;
+        Updated August 16 2026 &nbsp;·&nbsp;
         <a href="graph-tool-intro.html">Introduction &amp; comparisons →</a>
       </div>
     </div>
@@ -191,9 +192,16 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
           <tr><td>Zoom</td><td>Scroll wheel</td></tr>
           <tr><td>Fit to view</td><td>Click <strong>Fit</strong> button in the sidebar</td></tr>
           <tr><td>Background color</td><td><strong>BG</strong> color picker in the sidebar — includes presets (off-white, white, light blue, grey, dark)</td></tr>
+          <tr><td>Presentation view</td><td><strong>⛶ Present</strong> button in the toolbar, or press <kbd>P</kbd>. Leave with <kbd>Esc</kbd> or the corner pill.</td></tr>
         </tbody>
       </table>
       <p>Background color is preserved in JSON export, URL export, SVG, and PNG.</p>
+
+      <h3>Presentation view</h3>
+      <p>Presentation view hands the whole window to the graph. The toolbar, the right-hand sidebar, the search box, the mode banners and the bottom hint strip all disappear, the browser goes fullscreen, and the graph is fitted to the new space. What stays is what belongs to the picture: the legend, the EIP columns, CLD loop labels, the hover tooltips (notes, properties and clickable source links), and the propagation and trace animation controls — so a CLD can be walked through live in front of a room, and any node can be hovered to show what stands behind it.</p>
+      <p>Nothing is read-only. Nodes still drag, edges still draw, double-click still edits — the controls are hidden, not disabled.</p>
+      <p>The one thing to set <em>before</em> you present is the <strong>no hover</strong> checkbox in the Properties header, since the sidebar that holds it is hidden while presenting. Leave it unchecked (the default) and hovering a node or edge shows its note, its properties and any source links, which is usually what you want in front of a room.</p>
+      <p>Entering fits the graph to the window; leaving puts your previous pan and zoom back exactly as it was, so presenting never costs you the view you were working in. Any panning or zooming done <em>during</em> the presentation is discarded on exit for the same reason.</p>
     </section>
 
     <!-- §3: MODEL NAME -->
@@ -541,6 +549,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
           <tr><td><strong>NRM</strong></td><td>Neighborhood Risk Management / Tripod Beta. Activates a typed node palette — click a type, click the canvas to place a pre-colored, pre-labeled node.</td></tr>
           <tr><td><strong>Trace</strong></td><td>Pathway animation. Assign edges to named paths (T1–T4) and animate each path in sequence. Edges can belong to multiple traces.</td></tr>
           <tr><td><strong>Wardley</strong></td><td>Renders a Wardley Map grid behind the graph — evolution axis (Genesis → Commodity) across the bottom, value chain (Invisible → Visible) on the left. Auto-activates when importing a Wardley Map Generator JSON.</td></tr>
+          <tr><td><strong>LOP</strong></td><td>Linkage of Processes — Deming's organization-as-a-system diagram, in the vocabulary of <em>The Improvement Guide</em> and <em>Quality as an Organizational Strategy</em>. Four labelled bands, twelve node types, seven typed linkages inferred from what you connect, a numbered List of Processes with owner and measure, and a linkage check. Export as LOP→CSV, LOP→MD or LOP→Cypher.</td></tr>
           <tr><td><strong>OPM</strong></td><td>Object Process Methodology (ISO 19450). Place Objects and Processes, then use + Edge to draw typed relationships. A picker suggests valid link types based on what you connected. OPL sentences are auto-generated and shown in the collapsible OPL panel. Export as OPM→OPL (plain text), OPM→Cypher, or OPM→CSV.</td></tr>
         </tbody>
       </table>
@@ -742,6 +751,107 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
         </tbody>
       </table>
       <div class="note">Dagre auto-layout is disabled in Wardley mode — it would scramble the positional meaning. Move nodes manually to adjust their evolution/visibility position.</div>
+
+      <h3 id="s9d-chat">Building a map with Claude Chat</h3>
+      <p>
+        Chat writes the map, the Graph Tool draws it. Four steps, and the only one
+        that needs care is the third.
+      </p>
+      <ol>
+        <li>Open <code>tools/wardley-chat-card.md</code>, copy everything below the rule, paste it into a new Claude Chat conversation, then say what you want mapped.</li>
+        <li>Chat replies with one <code>json</code> block. Save it as <code>yourmap.json</code>.</li>
+        <li>Check it: <code>node tools/validate-rcn-graph.js yourmap.json</code>. Fix anything it calls an ERROR; warnings are advice.</li>
+        <li>In the Graph Tool, <strong>IMPORT → JSON</strong>, drag the file in, Load. It switches to Wardley mode by itself.</li>
+      </ol>
+      <p>
+        Then drag. Chat's positions are a first draft and correcting them is the
+        actual analysis — the tool writes your corrections back into
+        <code>evolution</code> and <code>visibility</code> when you export.
+      </p>
+
+      <div class="note">
+        <strong>The axis direction is the one thing that goes badly wrong.</strong> Two
+        conventions are in circulation and they run opposite ways. The RCN
+        convention, which is the standard one, is <code>evolution: 0</code> at
+        Genesis rising to <code>1</code> at Commodity. The Wardley Map Generator's
+        own internal format is the reverse — <code>x = 1</code> means Genesis. Get
+        it backwards and every commodity renders in Genesis, which looks completely
+        deliberate and is completely wrong. The tool refuses to guess: a bare
+        <code>{title, components, dependencies}</code> file must carry
+        <code>"axis": "commodity-right"</code> or <code>"axis": "genesis-right"</code>
+        or it will not load.
+      </div>
+
+      <h4>If Chat gives you the bare shape instead</h4>
+      <p>
+        Left to itself, Chat tends to write <code>{title, query, components, dependencies}</code>
+        — the Wardley Map Generator's format, with <code>x</code>/<code>y</code> from 0 to 1.
+        That loads too, as long as the file says which way its axis runs. Add one line:
+      </p>
+      <pre><code>{ "title": "...", "axis": "commodity-right", "components": [...], "dependencies": [...] }</code></pre>
+      <p>
+        Or convert it, which also gives you a file the validator can check:
+      </p>
+      <pre><code>node tools/wardley-chat-to-rcn.js yourmap.json --axis commodity-right</code></pre>
+      <p>
+        The converter prints the leftmost and rightmost component by name when it
+        finishes. Read that line — if the thing you know is a pure commodity comes
+        out on the left, re-run with the other <code>--axis</code>. A generator export
+        (<code>Export Map Data</code>, the <code>aiOriginal</code>/<code>userEdited</code>
+        shape) needs no flag; it is known to be <code>genesis-right</code>.
+      </p>
+
+      <h4>What Chat only needs to write</h4>
+      <p>
+        Four fields per node and three per edge. The tool derives pixel positions from
+        <code>evolution</code>/<code>visibility</code> and defaults the box size, so
+        neither has to be written:
+      </p>
+      <pre><code>{ "id": "drivetrain", "label": "Drivetrain", "evolution": 0.78, "visibility": 0.62 }
+{ "id": "e1", "src": "rideable_bicycle", "tgt": "drivetrain" }</code></pre>
+      <p>
+        <code>tools/wardley-bicycle-production.rcn.json</code> is a complete worked
+        example — 14 components, converted from a real Chat session.
+      </p>
+
+      <table class="feat-table">
+        <thead><tr><th>What you see</th><th>What happened</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>"Unrecognised JSON"</td><td>Bare <code>components</code> shape with no <code>axis</code>, or a file that is neither shape</td><td>Add <code>"axis"</code>, or run the converter</td></tr>
+          <tr><td>Map is mirrored — commodities in Genesis</td><td>Wrong axis direction</td><td>Re-run the converter with the other <code>--axis</code></td></tr>
+          <tr><td>Nodes are bare floating labels</td><td>Old file with no <code>w</code>/<code>h</code></td><td>Fixed — the tool now defaults 108×46 on load</td></tr>
+          <tr><td>Edges load but nothing draws</td><td>Chat used <code>from</code>/<code>to</code></td><td>Rename to <code>src</code>/<code>tgt</code>; the validator catches this</td></tr>
+          <tr><td>Grid is missing, map looks like a plain diagram</td><td>No <code>"mode": "wardley"</code> in the file</td><td>Add it, or click <strong>Wardley</strong> under GRAPH MODE</td></tr>
+          <tr><td>Nodes stacked in a corner</td><td>No position of any kind</td><td>The tool grids them and says so — drag them out</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="s9d-rba">Rent Band Analysis</h3>
+      <p>
+        Rent Band Analysis (RBA) adds a second claim to a Wardley map: not only where a component
+        <em>is</em>, but where it <em>will be</em> when someone stops paying to hold it back. See
+        <code>Rent-Band-Analysis-Method.md</code> for the method; this is what the tool draws.
+      </p>
+      <table class="feat-table">
+        <thead><tr><th>Element</th><th>Node field</th><th>What it claims</th></tr></thead>
+        <tbody>
+          <tr><td>Solid coral node</td><td><code>evolution</code>, <code>visibility</code></td><td>The component's actual position. Both run 0–1; evolution is 0 at Genesis and 1 at Commodity.</td></tr>
+          <tr><td>Dashed teal box</td><td><code>shadow.evolution</code>, <code>shadow.basis</code></td><td>The forecast position — where competition locates this component once the pinning stops. Hover for the evidence it rests on.</td></tr>
+          <tr><td>Translucent coral band</td><td><code>shadow.rent</code></td><td>The gap, as a measurable object. The rent figure sits at the band's midpoint; hover for its basis and as-of date.</td></tr>
+          <tr><td>Pin above the node</td><td><code>pinnedBy</code></td><td>The CLD loops holding the pin. Use loop <em>names</em>, not R#/B# labels — those renumber whenever the CLD is edited.</td></tr>
+          <tr><td>Dashed teal arrow</td><td><code>pressure</code></td><td>Evolutionary pressure being actively resisted. Hover for the forces pushing right and the mechanisms holding left, each with its loop and its annual cost.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Hover text is emitted as SVG <code>&lt;title&gt;</code> on export, so a printed or federated map
+        still answers "says who, and when".
+      </p>
+      <div class="note">In Wardley mode <code>evolution</code> and <code>visibility</code> are the source of truth: <code>x</code>/<code>y</code> are recomputed from them when a file loads, and written back from the canvas when you finish dragging a node. Drag to correct a position — the file follows.</div>
+      <p>
+        Run <code>node validate-rcn-graph.js yourmap.json</code> before loading. It checks the RBA
+        fields and says what is missing; add <code>--cld loops.json</code> to check every pin against
+        a real CLD. <code>tools/rba-hospital-pricing.rcn.json</code> is a complete worked example.
+      </p>
     </section>
 
     <!-- §9e: LEGEND -->
@@ -907,13 +1017,85 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
       <h3>Link types</h3>
       <p>Ten link types from ISO 19450, grouped by relationship context. The picker shows only the types valid for the source and target node types you connected.</p>
 
+      <h4>The link symbols</h4>
+      <p>
+        These are OPM's own symbols, matched to the OPCAT/OPCloud drawings (OPCAT 3.0 manual figures 14–15,
+        checked against OPCloud 9.2.0). The four structural relations are <strong>four triangles</strong> that
+        differ only in what sits inside; the procedural ones are the lollipop family. The same chart is built
+        into the tool, in two places, both drawing themselves from the same code the canvas uses so neither can
+        describe a symbol the tool no longer draws:
+      </p>
+      <ul>
+        <li><strong>Link symbols</strong> in the sidebar (OPM mode) — for the person drawing. Click the title to
+        open it; hover a row for the question to ask when choosing that link.</li>
+        <li><strong>On canvas</strong> — the button beside it puts the chart into the bottom-left of the drawing
+        itself, for the room. It is part of the SVG, so it travels into the SVG and PNG exports with the diagram,
+        and <strong>Fit</strong> reserves its column so no node ends up hidden underneath it.</li>
+      </ul>
+      <p>
+        Colour is ours, not OPM's. OPM draws every link black and gives link colour no meaning, so colouring by
+        type costs nothing and makes a crowded diagram readable. Line <em>style</em> is a different matter — the
+        tool used to dash some of these, which OPM does not, and those dashes are gone.
+      </p>
+      <table class="feat-table">
+        <thead><tr><th style="width:76px">Symbol</th><th>Relation</th><th>The sentence it generates</th><th>Ask yourself</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><svg width="56" height="16" viewBox="0 0 56 16" aria-label="filled triangle"><line x1="2" y1="8" x2="40" y2="8" stroke="#555555" stroke-width="1.8"/><polygon points="40,3 54,8 40,13" fill="#555555"/></svg></td>
+            <td>Aggregation-participation</td><td>Whole <strong>consists of</strong> Part</td><td>Is it made of them?</td>
+          </tr>
+          <tr>
+            <td><svg width="56" height="16" viewBox="0 0 56 16" aria-label="triangle inside a triangle"><line x1="2" y1="8" x2="40" y2="8" stroke="#555555" stroke-width="1.8"/><polygon points="40,2 55,8 40,14" fill="#ffffff" stroke="#555555" stroke-width="1.4"/><polygon points="44,5.4 50,8 44,10.6" fill="#555555"/></svg></td>
+            <td>Exhibition-characterization</td><td>Exhibitor <strong>exhibits</strong> Feature</td><td>Does it HAVE this as a feature?</td>
+          </tr>
+          <tr>
+            <td><svg width="56" height="16" viewBox="0 0 56 16" aria-label="hollow triangle"><line x1="2" y1="8" x2="40" y2="8" stroke="#555555" stroke-width="1.8"/><polygon points="40,2 55,8 40,14" fill="#ffffff" stroke="#555555" stroke-width="1.4"/></svg></td>
+            <td>Generalization-specialization</td><td>Specific <strong>is a</strong> General</td><td>Is it a kind of?</td>
+          </tr>
+          <tr>
+            <td><svg width="56" height="16" viewBox="0 0 56 16" aria-label="triangle with a dot"><line x1="2" y1="8" x2="40" y2="8" stroke="#555555" stroke-width="1.8"/><polygon points="40,2 55,8 40,14" fill="#ffffff" stroke="#555555" stroke-width="1.4"/><circle cx="45.6" cy="8" r="2.2" fill="#555555"/></svg></td>
+            <td>Classification-instantiation</td><td>Instance <strong>is an instance of</strong> Class</td><td>Is it this particular one?</td>
+          </tr>
+          <tr>
+            <td><svg width="56" height="16" viewBox="0 0 56 16" aria-label="filled circle"><line x1="2" y1="8" x2="42" y2="8" stroke="#2563eb" stroke-width="1.8"/><circle cx="46" cy="8" r="4.6" fill="#2563eb"/></svg></td>
+            <td>Agent</td><td>Agent <strong>handles</strong> Process</td><td>Is it a person or group DOING it?</td>
+          </tr>
+          <tr>
+            <td><svg width="56" height="16" viewBox="0 0 56 16" aria-label="hollow circle"><line x1="2" y1="8" x2="42" y2="8" stroke="#7c3aed" stroke-width="1.8"/><circle cx="46" cy="8" r="4.6" fill="#ffffff" stroke="#7c3aed" stroke-width="1.6"/></svg></td>
+            <td>Instrument</td><td>Process <strong>requires</strong> Instrument</td><td>Is it used but not used up?</td>
+          </tr>
+          <tr>
+            <td><svg width="56" height="16" viewBox="0 0 56 16" aria-label="arrowhead"><line x1="2" y1="8" x2="41" y2="8" stroke="#dc2626" stroke-width="1.8"/><polygon points="41,3.4 54,8 41,12.6" fill="#dc2626"/></svg></td>
+            <td>Consumption</td><td>Process <strong>consumes</strong> Object</td><td>Is it used up?</td>
+          </tr>
+          <tr>
+            <td><svg width="56" height="16" viewBox="0 0 56 16" aria-label="arrowhead"><line x1="2" y1="8" x2="41" y2="8" stroke="#16a34a" stroke-width="1.8"/><polygon points="41,3.4 54,8 41,12.6" fill="#16a34a"/></svg></td>
+            <td>Result</td><td>Process <strong>yields</strong> Object</td><td>Does it come into existence?</td>
+          </tr>
+          <tr>
+            <td><svg width="56" height="16" viewBox="0 0 56 16" aria-label="double-headed arrow"><line x1="15" y1="8" x2="41" y2="8" stroke="#d97706" stroke-width="1.8"/><polygon points="41,3.4 54,8 41,12.6" fill="#d97706"/><polygon points="15,3.4 2,8 15,12.6" fill="#d97706"/></svg></td>
+            <td>Effect</td><td>Process <strong>affects</strong> Object</td><td>Does it survive but change?</td>
+          </tr>
+          <tr>
+            <td><svg width="56" height="16" viewBox="0 0 56 16" aria-label="zigzag arrow"><line x1="2" y1="8" x2="34" y2="8" stroke="#0891b2" stroke-width="1.8"/><path d="M34,12.4 L38.6,6.6 L41.4,9.8 L46,3.6" fill="none" stroke="#0891b2" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><polygon points="54,2.2 47.6,4.2 50.9,7.6" fill="#0891b2"/></svg></td>
+            <td>Invocation</td><td>Process A <strong>invokes</strong> Process B</td><td>Does finishing one start the next?</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Two symbols carry a warning worth repeating. The <strong>effect</strong> link is the only double-headed one
+        — if you find yourself reaching for it often, the states probably matter and a consumption/result pair on
+        specific states says more. And the four triangles all sit at the <em>refineable</em> end (whole, exhibitor,
+        general, class), which in this tool is the arrowhead, because we draw refinee → refineable.
+      </p>
+
       <h4>Structural relations (Object → Object)</h4>
       <table class="feat-table">
         <thead><tr><th>OPL phrase on edge</th><th>Formal name</th><th>Meaning</th></tr></thead>
         <tbody>
           <tr><td><strong>is part of</strong></td><td>Aggregation-Participation</td><td>Part → Whole. "Engine is part of Car."</td></tr>
           <tr><td><strong>is a type of</strong></td><td>Generalization-Specialization</td><td>Specific class → General class. "Restaurant is a type of On Street Business."</td></tr>
-          <tr><td><strong>exhibits</strong></td><td>Exhibition-Characterization</td><td>Attribute → Object. "Seating Capacity exhibits Restaurant."</td></tr>
+          <tr><td><strong>characterizes</strong></td><td>Exhibition-Characterization</td><td>Feature → Exhibitor. "Seating Capacity characterizes Restaurant." The OPL sentence says it the other way — <em>"Restaurant exhibits Seating Capacity."</em> — because a thing exhibits its features, and a feature characterizes the thing. ISO 19450 §3.4 and §3.20; verified against OPCloud 9.2.0, which prints the converse as a possessive ("Seating Capacity <em>of</em> Restaurant"). A feature that is an object is an <em>attribute</em>; one that is a process is an <em>operation</em>. This is the only structural relation that allows all four object/process combinations.</td></tr>
           <tr><td><strong>is an instance of</strong></td><td>Classification-Instantiation</td><td>Individual → Class. "Bantam Restaurant is an instance of Restaurant."</td></tr>
         </tbody>
       </table>
@@ -941,8 +1123,11 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
       <div class="tip">
         The four structural relations cover different kinds of "is related to":
         <strong>is part of</strong> (composition), <strong>is a type of</strong> (class hierarchy),
-        <strong>exhibits</strong> (attribute), <strong>is an instance of</strong> (individual in a class).
+        <strong>characterizes</strong> (feature), <strong>is an instance of</strong> (individual in a class).
         Being forced to choose among them clarifies thinking that diagrams with unlabeled lines leave ambiguous.
+        All four are drawn the same way — from the refinee (part, feature, specific, instance) to the refineable
+        (whole, exhibitor, general, class) — and three of the four phrases read along that arrow. Watch the fourth:
+        the OPL for exhibition-characterization starts at the arrowhead.
       </div>
 
       <h3>OPL sentences panel</h3>
@@ -1076,6 +1261,174 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
 
       <div class="tip">Triples are most useful in knowledge-graph and governance work — attach a "contested" or "under review" annotation to a specific causal link, connect an intervention node to the relationship it targets, or record which agreement governs which dependency.</div>
     </section>
+
+    <!-- §9i: LOP MODE -->
+    <section id="s9i">
+      <div class="section-pill">Analysis Modes</div>
+      <h2>9i. LOP mode — Linkage of Processes</h2>
+      <p>
+        LOP mode draws the diagram Deming put on the blackboard in Japan in 1950: <strong>the organization
+        viewed as a system</strong>. Suppliers on the left, the chain of value-added processes across the
+        middle, customers on the right, and — the part that makes it a system rather than a pipeline —
+        information about what customers actually experience flowing back into design and redesign.
+      </p>
+      <p>
+        The vocabulary follows two books: <em>The Improvement Guide</em> (Langley, Moen, Nolan, Nolan,
+        Norman, Provost) and <em>Quality as an Organizational Strategy</em> (Norman, Provost, Moen and
+        colleagues at API), where the linkage of processes is the centrepiece of Activity 2, "view the
+        organization as a system." Both books pair the picture with a numbered <strong>List of Processes</strong>
+        naming who owns each process and how it is measured. This mode keeps the picture and the list in
+        one file: edit either, and the other follows.
+      </p>
+      <p>A completed map answers four questions in one image:</p>
+      <ul>
+        <li>What is the aim of this system?</li>
+        <li>Who are the customers, and what do they need?</li>
+        <li>Which processes produce it, in what order, owned by whom, measured how?</li>
+        <li>How does what we learn get back into design and redesign?</li>
+      </ul>
+
+      <h3>Entering LOP mode</h3>
+      <p>
+        Click <strong>LOP</strong> in the Graph Mode section. A crimson banner appears, and four labelled
+        <strong>bands</strong> are drawn behind the canvas. On an empty map the view frames the bands
+        automatically; on a map that already has typed nodes the view is left alone.
+      </p>
+      <table class="feat-table">
+        <thead><tr><th>Band</th><th>What belongs in it</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Aim · Leadership · Design and redesign</strong></td><td>The purpose statement, the leadership processes that plan and allocate, and the point where learning re-enters the system.</td></tr>
+          <tr><td><strong>Value-added system</strong></td><td>The chain itself, read left to right in four columns: suppliers, key processes, products and services, customers and needs.</td></tr>
+          <tr><td><strong>Support processes</strong></td><td>Everything that enables the chain without touching the product — training, IT, data, facilities.</td></tr>
+          <tr><td><strong>Information · Measures · Customer research</strong></td><td>What the system collects about itself, and what customers say. Everything here should feed something above it.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        The bands are a guide, not a constraint — you can place anything anywhere. <strong>Snap to bands</strong>
+        moves each typed node into the band its type belongs to, and <strong>Bands</strong> hides the guide
+        when you want a clean export. Because the bands are drawn inside the SVG, they survive PNG and SVG export.
+      </p>
+
+      <h3>Node types</h3>
+      <p>
+        Click a type in the palette, then click the canvas to place it. Each type arrives pre-coloured,
+        pre-shaped and pre-labelled; rename it and carry on. Select any existing node in LOP mode to
+        change its type from the panel.
+      </p>
+      <table class="feat-table">
+        <thead><tr><th>Group</th><th>Types</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Aim &amp; Leadership</strong></td>
+            <td><strong>Purpose (Aim)</strong> — why the system exists. One per map; Deming: without an aim there is no system. <strong>Leadership Process</strong> — planning, governing, allocating. <strong>Design &amp; Redesign</strong> — the oval where learning re-enters.</td>
+          </tr>
+          <tr>
+            <td><strong>Value-added flow</strong></td>
+            <td><strong>Supplier</strong> — materials, people, information coming in. <strong>Key Process</strong> — a value-added process; numbered, owned, measured. <strong>Sub-process</strong> — a step inside a key process, for when you drill down. <strong>Product / Service</strong> — what the chain delivers. <strong>Customer</strong> — who receives it. <strong>Need</strong> — what that customer needs, drawn with a dashed border.</td>
+          </tr>
+          <tr>
+            <td><strong>Support</strong></td>
+            <td><strong>Support Process</strong> — enables the chain without touching the product.</td>
+          </tr>
+          <tr>
+            <td><strong>Information</strong></td>
+            <td><strong>Measure</strong> — one member of the family of measures. <strong>Customer Research</strong> — Deming's consumer research: what people say about what they got.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Linkages</h3>
+      <p>
+        Draw a linkage the ordinary way — click <strong>+ Edge</strong>, then drag from source to target.
+        LOP mode <strong>reads the linkage type from the two node types</strong> and styles the arrow
+        accordingly; no picker interrupts you. A supplier into a process supplies; a measure into design
+        informs; a support process into a key process supports. Select the edge afterwards to change the
+        type from the panel if the inference was wrong.
+      </p>
+      <table class="feat-table">
+        <thead><tr><th>Linkage</th><th>Drawn as</th><th>What it carries</th></tr></thead>
+        <tbody>
+          <tr><td><strong>flows to</strong></td><td>thick solid blue</td><td>The product or service moves on to the next process. This is the spine of the map.</td></tr>
+          <tr><td><strong>supplies</strong></td><td>solid slate</td><td>A supplier provides an input.</td></tr>
+          <tr><td><strong>serves</strong></td><td>solid green</td><td>An output reaches a customer.</td></tr>
+          <tr><td><strong>supports</strong></td><td>dotted violet</td><td>A support process enables a key process.</td></tr>
+          <tr><td><strong>informs</strong></td><td>dashed teal</td><td>Information and feedback return. A map with none of these is a pipeline, not a system.</td></tr>
+          <tr><td><strong>requires</strong></td><td>dashed amber</td><td>A need a process must meet. Link the need to its customer as well as to the process — a need with no customer is nobody's.</td></tr>
+          <tr><td><strong>guides</strong></td><td>thin crimson</td><td>The aim or leadership setting direction.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        <strong>Link labels</strong> writes the verb on every typed arrow, and writes it off again on a
+        second click. Leave labels off for a wall-sized picture and use <strong>Build legend</strong>
+        instead; turn them on when the map will be read alone, on paper, by someone who was not in the room.
+      </p>
+
+      <h3>Numbering and the List of Processes</h3>
+      <p>
+        <strong>1–2–3 Renumber</strong> numbers the key processes <em>in flow order</em> — it walks the
+        <em>flows to</em> linkages, so a chain that wraps onto a second row still numbers 1, 2, 3, 4, 5 down
+        the chain rather than left to right across the page. Processes not reachable along the flow are
+        appended in drawing order. Each number shows as a blue badge on the node and as the row number in
+        the list.
+      </p>
+      <p>
+        Below the palette, the <strong>List of Processes</strong> shows every key process with two fields:
+        <strong>Owner</strong> and <strong>Measure</strong>. Both are stored as ordinary node properties
+        (<code>props.owner</code>, <code>props.measure</code>), so they are searchable and every exporter
+        carries them out. An empty field is outlined in red — the books treat an unowned or unmeasured
+        process as an unfinished one. Click a process name in the list to select it on the canvas.
+      </p>
+
+      <h3>Check linkage</h3>
+      <p>
+        <strong>Check linkage</strong> reads the map against what the two books ask of a system diagram and
+        lists what is missing. Red is a gap, amber is worth considering. Click a finding that names a node
+        to select it.
+      </p>
+      <ul>
+        <li>No purpose, or more than one.</li>
+        <li>A key process with no owner, no measure, or no linkages at all.</li>
+        <li>Key processes left unnumbered, so the map and the list disagree.</li>
+        <li>No customer; a customer with no stated need; a need not attached to any customer.</li>
+        <li>No suppliers, no product or service node, no Design &amp; Redesign.</li>
+        <li><strong>No information linkage returning anywhere</strong> — the one finding worth stopping for.</li>
+        <li>A support process supporting nothing; a measure feeding nothing back; an output reaching no one.</li>
+      </ul>
+      <div class="note">The check is a reading aid, not a gate. A map made in twenty minutes on a wall <em>should</em> have gaps in it — the point is that everyone can see which ones.</div>
+
+      <h3>Exports</h3>
+      <p>Three buttons appear in the Export section while LOP mode is active, alongside the usual SVG, PNG, JSON and Cypher:</p>
+      <ul>
+        <li><strong>LOP→CSV</strong> — the List of Processes as a spreadsheet: number, process, owner, measure, what it receives from, what it delivers to, what supports it, which needs it serves.</li>
+        <li><strong>LOP→MD</strong> — a markdown summary: the purpose, customers with their needs, the List of Processes as a table, support processes, the information the system collects about itself, and the current linkage check. This is the paste-into-a-document form.</li>
+        <li><strong>LOP→Cypher</strong> — Neo4j <code>CREATE</code> statements, nodes labelled <code>:LOP:KeyProcess</code>, <code>:LOP:Customer</code> and so on, relationships typed <code>FLOWS_TO</code>, <code>SUPPLIES</code>, <code>SERVES</code>, <code>SUPPORTS</code>, <code>INFORMS</code>, <code>REQUIRES</code>, <code>GUIDES</code>. Owner and measure travel as node properties.</li>
+      </ul>
+      <p>
+        <strong>Build legend</strong> fills the legend with exactly the node kinds and linkage kinds the map
+        actually uses, so an exported SVG explains itself. It replaces any legend rows it wrote before and
+        leaves your own rows alone.
+      </p>
+
+      <h3>What is stored in the file</h3>
+      <table class="feat-table">
+        <thead><tr><th>Field</th><th>On</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>lopType</code></td><td>node</td><td>One of purpose, leadership, redesign, supplier, process, subprocess, output, customer, need, support, measure, research.</td></tr>
+          <tr><td><code>lopNum</code></td><td>node</td><td>Process number, on key processes only. Set by Renumber.</td></tr>
+          <tr><td><code>props.owner</code>, <code>props.measure</code></td><td>node</td><td>The two List of Processes fields.</td></tr>
+          <tr><td><code>lopLink</code></td><td>edge</td><td>One of flow, supplies, serves, supports, informs, requires, guides.</td></tr>
+          <tr><td><code>lopBands</code></td><td>file</td><td>Whether the band guide is showing.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        All of it round-trips through JSON export and import, and switching to Basic mode preserves every
+        annotation — only the bands stop drawing. <code>tools/validate-rcn-graph.js</code> knows these fields
+        and will tell you about unknown types, untyped linkages, and processes missing an owner or a measure.
+      </p>
+
+      <div class="tip"><strong>Where to start.</strong> Purpose first, then customers and their needs on the right, then the four or five processes between suppliers and customers — most organizations have fewer key processes than they expect. Number them, then fill in owner and measure. Add measures and customer research last, and draw the <em>informs</em> arrows back to Design &amp; Redesign: that is the loop the whole picture exists to make visible. <code>tools/lop-whatcom-coop.rcn.json</code> is a worked example, and <code>tools/lop-whatcom-coop.svg</code> is what it exports to.</div>
+    </section>
+
 
     <!-- §10: DRIVER TREES -->
     <section id="s10">
@@ -1292,6 +1645,21 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
             <td>Exports an NRM causal diagram as typed Neo4j CREATE statements — nodes carry <code>:NRM</code> label plus their NRM type, and a <code>ndc_id</code> property for linking to the place_geo table. Appears whenever the graph contains NRM-typed nodes.</td>
           </tr>
           <tr>
+            <td><strong>LOP→CSV</strong></td>
+            <td>List of Processes (CSV)</td>
+            <td>The numbered List of Processes as a spreadsheet: number, process, owner, measure, what it receives from, what it delivers to, what supports it, which needs it serves. Visible only while LOP mode is active.</td>
+          </tr>
+          <tr>
+            <td><strong>LOP→MD</strong></td>
+            <td>Markdown summary</td>
+            <td>Purpose, customers with their needs, the List of Processes as a table, support processes, the information the system collects about itself, and the current linkage check. The paste-into-a-document form. Visible only while LOP mode is active.</td>
+          </tr>
+          <tr>
+            <td><strong>LOP→Cypher</strong></td>
+            <td>Neo4j Cypher (LOP)</td>
+            <td>Typed <code>:LOP</code> nodes (<code>KeyProcess</code>, <code>Customer</code>, <code>Need</code>…) and typed linkages (<code>FLOWS_TO</code>, <code>INFORMS</code>, <code>SUPPORTS</code>…), with owner and measure as node properties. Visible only while LOP mode is active.</td>
+          </tr>
+          <tr>
             <td><strong>OPM→Cypher</strong></td>
             <td>Neo4j Cypher (OPM)</td>
             <td>Exports the OPM graph as typed Neo4j CREATE statements with OPL-labeled relationships. Visible only while OPM mode is active.</td>
@@ -1324,7 +1692,8 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
           <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd></td><td>Copy selected elements as PNG image to clipboard</td></tr>
           <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd></td><td>Duplicate selected nodes</td></tr>
           <tr><td><kbd>Delete</kbd> or <kbd>Backspace</kbd></td><td>Delete selected elements (when not in a text field)</td></tr>
-          <tr><td><kbd>Escape</kbd></td><td>Return to Select mode; cancel active mode or edge drag</td></tr>
+          <tr><td><kbd>Escape</kbd></td><td>Leave presentation view if it is open; otherwise return to Select mode and cancel any active mode or edge drag</td></tr>
+          <tr><td><kbd>P</kbd></td><td>Toggle presentation view — hides every control and gives the whole window to the graph</td></tr>
           <tr><td><kbd>e</kbd></td><td>Enter sticky Edge mode — stays in Edge mode after each edge is drawn. Click empty canvas or press Escape to exit.</td></tr>
           <tr><td><kbd>n</kbd></td><td>Enter sticky Node mode — stays in Node mode after each node is placed. Click empty canvas or press Escape to exit.</td></tr>
           <tr><td><kbd>Space</kbd></td><td>Pause / resume propagation or trace animation</td></tr>
