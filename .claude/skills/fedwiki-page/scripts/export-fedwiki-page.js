@@ -63,7 +63,7 @@ const OUT   = flag('--out', null);
 
 if (!inputPath) { console.error('ERROR: no input file given'); usage(1); }
 if (!['md', 'html'].includes(TO)) { console.error('ERROR: --to must be md or html'); usage(1); }
-if (!['text', 'wiki', 'anchor'].includes(LINKS)) { console.error('ERROR: --links must be text, wiki, or anchor'); usage(1); }
+if (!['text', 'wiki', 'anchor', 'keep'].includes(LINKS)) { console.error('ERROR: --links must be text, wiki, anchor, or keep'); usage(1); }
 if (LINKS === 'wiki' && !BASE) { console.error('ERROR: --links wiki requires --base <wiki-url>'); usage(1); }
 
 /* ---------- slug (identical transform to generate-fedwiki-pages.js) ---------- */
@@ -129,6 +129,11 @@ function orderPages(list) {
 
 /* ---------- wiki-link resolution ---------- */
 function resolveWikiLinks(text, mode) {
+  // keep: leave [[Wiki Links]] exactly as they are. Required for the round trip —
+  // .md -> wiki -> .md. Every other mode is lossy in that direction: text mode
+  // reduces [[Foo]] to "Foo" with no marker left, so the link cannot be restored
+  // afterwards and a whole page's structure quietly disappears.
+  if (mode === 'keep') return text;
   return text.replace(/\[\[([^\]]+)\]\]/g, (_, title) => {
     const slug = asSlug(title);
     if (mode === 'anchor' && bundleSlugs.has(slug)) return mdLink(title, `#page-${slug}`);

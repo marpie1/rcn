@@ -6,14 +6,12 @@ The order is load-bearing. Answering What first is the standard failure, and it 
 
 ## The tools placed against them
 
-| Question | Territory | Tools |
-|---|---|---|
-| When and Where | Settings and context | RCN Map, Issue Polygon Map, RCN Timeline, [[Story Structure]] |
-| Why | Purposes, motives, beliefs | Graph Tool in CLD mode, [[Vester's Sensitivity Model]], the 14 [[Leverage Points]], BGTE |
-| Who | Roles and agency | Sofi-VSM, [[SODOTO]], CfA-dSC Contract Creator, My Support Network, [[IAD]] |
-| How as strategy | Strategies and interventions | [[Cynefin]], Graph Tool in CLD mode, EIP Integration Explorer, Vester, Graph Composer |
-| How as mechanism | Design and implementation | Graph Tool in OPM mode, Graph Tool in SFD mode, IAD, NRM Tripod Beta, Wardley Map Generator |
-| What | Outcomes and affordances | RCN Process Behavior Charts, eVSM, Positive Affect Score, Conversation Navigator, Cave Drawings |
+- **When and Where** — Settings and context. RCN Map, Issue Polygon Map, RCN Timeline, [[Story Structure]]
+- **Why** — Purposes, motives, beliefs. Graph Tool in CLD mode, [[Vester's Sensitivity Model]], the 14 [[Leverage Points]], BGTE
+- **Who** — Roles and agency. Sofi-VSM, [[SODOTO]], CfA-dSC Contract Creator, My Support Network, [[IAD]]
+- **How as strategy** — Strategies and interventions. [[Cynefin]], Graph Tool in CLD mode, EIP Integration Explorer, Vester, Graph Composer
+- **How as mechanism** — Design and implementation. Graph Tool in OPM mode, Graph Tool in SFD mode, IAD, NRM Tripod Beta, Wardley Map Generator
+- **What** — Outcomes and affordances. RCN Process Behavior Charts, eVSM, Positive Affect Score, Conversation Navigator, Cave Drawings
 
 ## Two things fall out
 

@@ -4,7 +4,7 @@ window.RCN_BUILD = {
   "builtAt": "2026-08-18",
   "builtBy": "build-catalog.js",
   "sourceHashes": {
-    "catalog.json": "bfb1f10871350701",
+    "catalog.json": "96da0ab552ce5c97",
     "methods.json": "b81662301e68fc51"
   }
 };
@@ -623,7 +623,10 @@ window.RCN_CATALOG = {
       "wardley-chat-to-rcn.js",
       "patch-wiki-pagejson.js",
       "test-timeline-solver.js",
-      "build-lineup-bookmarklet.js"
+      "build-lineup-bookmarklet.js",
+      "pull-fedwiki.js",
+      "build-catalog.js",
+      "fedwiki-lineup.js"
     ],
     "areFlatSiblingsDoNotMove": [
       "families.js",

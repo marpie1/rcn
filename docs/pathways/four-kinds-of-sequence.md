@@ -1,4 +1,4 @@
-# Four Kinds of Sequence
+# Four Kinds Of Sequence
 
 The frameworks read for [[Six Questions Five Pathways]] contain sequences of four genuinely different kinds. Flattening them into a single list of methods is the biggest error available here, because they are used at different moments and answer to different tests.
 

@@ -1,4 +1,4 @@
-# Inspiration to Implementation
+# Inspiration To Implementation
 
 **Problem:** Something needs to exist that does not exist, and the group is larger than a few friends — so the fifteen things a small group does intuitively now have to be done on purpose.
 

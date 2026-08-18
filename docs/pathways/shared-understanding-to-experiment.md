@@ -1,4 +1,4 @@
-# Shared Understanding to Experiment
+# Shared Understanding To Experiment
 
 **Problem:** The situation is genuinely complex — cause and effect are visible only in hindsight — and the group needs to intervene without pretending to predict.
 

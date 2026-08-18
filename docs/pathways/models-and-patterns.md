@@ -1,4 +1,4 @@
-# Models and Patterns
+# Models And Patterns
 
 > The approach to modeling in ReLocalize Creativity is to reveal rich perspectives and possibilities (leverage points) in particular systems — NOT to create generalized models. Our generalizations will be published as Patterns. — [[Models for Seeing Systems]]
 

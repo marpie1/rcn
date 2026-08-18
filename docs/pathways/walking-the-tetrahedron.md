@@ -1,4 +1,4 @@
-# Walking the Tetrahedron
+# Walking The Tetrahedron
 
 **Problem:** Everyone is working hard and nothing is coming of it. Something in the loop between people, ideals, organization and action is broken, and nobody can name which.
 
