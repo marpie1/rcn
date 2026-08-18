@@ -140,14 +140,15 @@ footer a{color:var(--accent)}
 
 <section class="shelf s-why" id="methods">
   <div class="shelf-head"><span class="shelf-q">Methods — how the tools get used together</span>
-    <span class="shelf-t">drafted, not yet built</span><span class="shelf-n">5</span></div>
-  <p class="mnote">A tool is a hammer; a method is a process that uses several. These five are written up but do not yet exist as pages you can open — they live in the plan below. <strong>A method is a pattern</strong>: context, problem, solution, links.</p>
+    <span class="shelf-t">drafted, not yet built</span><span class="shelf-n"></span></div>
+  <p class="mnote">A tool is a hammer; a method is a process that uses several. These are real entries in <code>methods.json</code> now, but they do not yet exist as pages you can open. <strong>A method is a pattern</strong>: context, problem, solution, links.</p>
   <div class="grid" id="methodgrid"></div>
 </section>
 
 
 <footer>
   <p>Shelved by the <strong>Six Nested Questions</strong> — when, where, why, who, how, what — because that is the order a problem is actually worked, and answering <em>what</em> first is the standard failure. A tool can sit on more than one shelf; the Graph Tool answers <em>why</em> in CLD mode and <em>how</em> in OPM and SFD modes.</p>
+  <p id="stamp"></p>
   <p>This page reads <code>catalog.js</code> as a flat sibling, so it works from a file with no server. Statuses are proposals awaiting Marc's confirmation — correct them in <code>catalog.json</code>, which is the source of truth for this page, the FedWiki site and the repo layout alike.</p>
 </footer>
 
@@ -208,7 +209,7 @@ footer a{color:var(--accent)}
     Array.prototype.forEach.call(sc.children,function(b){ b.setAttribute('aria-pressed', String(state.status===b.dataset.status)); });
     gb.setAttribute('aria-pressed', String(state.gap));
   }
-  document.getElementById('q').addEventListener('input', function(e){ state.q=e.target.value.toLowerCase().trim(); render(); });
+  document.getElementById('q').addEventListener('input', function(e){ state.q=e.target.value.toLowerCase().trim(); render(); renderMethods(); });
 
   function matches(t){
     if(state.status && t.status!==state.status) return false;
@@ -268,25 +269,44 @@ footer a{color:var(--accent)}
   }
 
 
-  var METHODS=[
-    {n:'Systemic Problem Solving',w:'A neighborhood problem resists the obvious fixes and nobody agrees what kind of problem it is. The router — it chooses the other four.',k:'diagnostic',c:1},
-    {n:'Walking the Tetrahedron',w:'Everyone is working hard and nothing comes of it. Four questions, sixteen named places to look.',k:'ontological',c:0},
-    {n:'Collective Action Assessment',w:'Something is held in common and nobody knows which parts of managing it are at risk. The only method whose output is a disagreement.',k:'diagnostic',c:0},
-    {n:'Shared Understanding to Experiment',w:'The situation is genuinely complex. Intervene without pretending to predict.',k:'production',c:1},
-    {n:'Inspiration to Implementation',w:'Something must exist that does not. The fifteen things a small group does intuitively, done on purpose.',k:'production',c:0}
-  ];
-  document.getElementById('methodgrid').innerHTML = METHODS.map(function(m){
-    var stars = m.c===2?'&starf;&starf;':(m.c===1?'&starf;&star;':'&star;&star;');
-    return '<article class="card"><div class="card-top"><span class="card-name">'+m.n+'</span>'
+  var M = (window.RCN_METHODS && window.RCN_METHODS.methods) || [];
+  var MKINDS = (window.RCN_METHODS && window.RCN_METHODS._meta.kinds) || {};
+  function stars(c){
+    if(c===null || c===undefined) return '<span title="Not yet computed from attestations.">not yet computed</span>';
+    return '<span title="Derived from SODOTO attestations, never typed. Zero stars is a normal, publishable state.">confidence '
+      + (c>=1?'&starf;':'&star;') + (c>=2?'&starf;':'&star;') + '</span>';
+  }
+  function methodCard(m){
+    return '<article class="card"><div class="card-top"><span class="card-name">'+esc(m.name)+'</span>'
       + '<span class="pill p-draft">draft</span></div>'
-      + '<p class="card-what">'+m.w+'</p>'
-      + '<div class="meta"><span class="fam">'+m.k+'</span><span class="fam" title="Confidence is derived from SODOTO attestations, never typed. Zero stars is a normal, publishable state.">confidence '+stars+'</span></div>'
+      + '<p class="card-what">'+esc(m.problem)+'</p>'
+      + '<div class="meta"><span class="fam" title="'+esc(MKINDS[m.kind]||'')+'">'+esc(m.kind)+'</span>'
+      + '<span class="fam">'+stars(m.confidence)+'</span>'
+      + (m.transmissibility?'<span class="fam" title="From the SODOTO Skills Registry. Orthogonal to confidence.">'+esc(m.transmissibility)+'</span>':'')
+      + (m.isRouter?'<span class="fam" title="Chooses which of the other pathways to enter.">the router</span>':'')
+      + '</div>'
+      + (m.steps?'<p class="card-note">'+m.steps.length+' steps · '+m.steps.filter(function(s){return s.gate;}).length+' gates · falls back to a causal loop diagram when lost</p>'
+                :'<p class="card-note">Learning order: '+esc((m.skillOrder||[]).join(' → '))+'</p>')
       + '<div class="acts"><a class="act act-primary" href="../docs/rcn-pathways.html">Read the pathway</a>'
-      + '<span class="act act-missing" title="Not yet written as its own page in methods.json.">Page not built</span></div>'
+      + '<span class="act act-missing" title="Drafted in methods.json but not yet built as its own page.">Page not built</span></div>'
       + '</article>';
-  }).join('');
+  }
+  function renderMethods(){
+    var shown = M.filter(function(m){
+      if(!state.q) return true;
+      return [m.name,m.problem,m.context,m.kind,(m.skillOrder||[]).join(' ')].join(' ').toLowerCase().indexOf(state.q)>=0;
+    });
+    document.querySelector('#methods .shelf-n').textContent = shown.length;
+    document.getElementById('methodgrid').innerHTML = shown.length
+      ? shown.map(methodCard).join('')
+      : '<p class="empty">No method matches.</p>';
+  }
 
-  syncChips(); render();
+  var b=window.RCN_BUILD;
+  document.getElementById('stamp').innerHTML = b
+    ? 'Catalog built ' + esc(b.builtAt) + ' from <code>catalog.json</code> and <code>methods.json</code> by <code>build-catalog.js</code>. If you edited either and this date looks old, run <code>node tools/build-catalog.js</code> — nothing rebuilds it for you.'
+    : '<strong>No build stamp.</strong> catalog.js was not produced by build-catalog.js and may be stale.';
+  syncChips(); render(); renderMethods();
 })();
 </script>
 </body>
