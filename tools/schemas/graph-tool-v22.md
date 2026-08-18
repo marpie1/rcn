@@ -55,6 +55,20 @@ Any unrecognised value **falls back to `ellipse` with no error** — including
 the number `0`. This is the single most likely thing to get wrong, because it
 fails silently and looks deliberate.
 
+### `cylinder` and `barrel` draw wider than their declared `w`
+
+The end-caps are painted outside the box, so a cylinder occupies visibly more horizontal space than `w` says. Nodes spaced on `w` alone will overlap, and the overlap looks like a layout bug rather than a shape property. Budget roughly an extra 15–20% of `w` on each side, or space cylinders on centres about 1.6× `w` apart. Verified 2026-08-17 by rendering three 270-wide cylinders on 480px centres, which collided.
+
+### Labels auto-wrap, and authored `\n` is ignored
+
+`label` is wrapped to fit the node; newline characters in the string are **not** honoured as line breaks. A label written as three clauses separated by `\n` renders as one long wrapped blob that overflows or shrinks, with no warning and a clean validator pass.
+
+Keep labels to one or two words wherever possible and **put the gloss in the legend row and the detail in `note`**. That is what legend-as-registry is for: the row explains the kind once, the label names the instance, and the note carries the sentence. Verified 2026-08-17 — a four-node diagram whose labels each carried name, definition and examples was unreadable until the labels were cut to a single word each.
+
+### `note` exports as an SVG `<title>` — hover works outside the tool
+
+Anything in a node's or edge's `note` is written into the exported SVG as a `<title>` child, prefixed with 📌. Browsers render that as a native tooltip, so **the same field gives hover annotations both inside the Graph Tool and in any HTML document that inlines the exported SVG**. There is no second annotation mechanism to build. Annotate every node and edge and the exported diagram carries its own commentary. Verified 2026-08-17 across four diagrams (12, 17, 24 and 23 notes).
+
 ## Edges
 
 | Field | Type | Required | Notes |
