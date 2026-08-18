@@ -32,6 +32,7 @@ A step is therefore never "now open the Graph Tool". A step is a question you ar
 - [[The Six Nested Questions]] — the shelves, and the tools placed against them
 - [[Models and Patterns]] — the particular and the general, and the move between them
 - [[The Causal Ladder]] — where to go when lost
+- [[Requisite Variety]] — Ashby, and the rule under every tool choice
 - [[Four Kinds of Sequence]] — ontological, diagnostic, production, curricular
 - [[WHO Collective Action After Ostrom]] — the thinnest shelf, built out
 - [[Three Files One Relation Each]] — where skills, pathways and tools each live

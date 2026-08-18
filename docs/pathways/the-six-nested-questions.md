@@ -4,6 +4,10 @@ The shelves are not invented. They are Marc's own frame from [[RCN Modeling Theo
 
 The order is load-bearing. Answering What first is the standard failure, and it produces solutions nobody will carry.
 
+The reason is in the colouring of [[Models for Seeing Systems]]: the questions are themselves typed by [[Cynefin]] domain, and they **descend the ordering**. Who is complex, How is complicated, What is simple, and Time, Place and Paradigm carry no fill at all.
+
+So the Six Questions are not six topics. They are a path out of disorder, which is why answering What first fails — it assumes an order nobody has established. See [[Requisite Variety]].
+
 ## The tools placed against them
 
 - **When and Where** — Settings and context. RCN Map, Issue Polygon Map, RCN Timeline, [[Story Structure]]

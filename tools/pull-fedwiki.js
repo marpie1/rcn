@@ -112,7 +112,7 @@ for (const slug of slugs) {
       const norm = s => s.replace(/href="[^"]*\/view\/([^"]+)"/g, 'href="/$1.html"')
                         .replace(/\s+(target|rel)="[^"]*"/g, '')
                         .replace(/<svg[^>]*>/, m => m.replace(/\s+(style|width|height)="[^"]*"/g, ''))
-                        .replace(/\s+/g, ' ').trim();
+                        .replace(/\s+/g, ' ').replace(/\s+>/g, '>').replace(/\s+\/>/g, '/>').trim();
       if (norm(svg) !== norm(best.body)) {
         const p = path.join(SVGDIR, `${name}.wiki.svg`);
         fs.writeFileSync(p, svg);

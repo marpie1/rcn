@@ -24,6 +24,8 @@ Model the innovation before committing to it, using [[Vester's Sensitivity Model
 
 **Gate — the numbers question:** do not move to simulation until you have earned it. Causal loop diagrams have no numbers, and Meadows warned that numbers are the weakest leverage. A simulation built before the feedback structure is understood is garbage dressed in numbers.
 
+This gate is a **domain crossing**, not merely caution. Vester's own nine steps straddle the line — the first five are typed complex, Partial Scenario and Simulation complicated. Crossing it means claiming an order you must have earned. See [[Requisite Variety]].
+
 ## 4. What actually changed?
 
 Do the experiment, then read the result honestly with Process Behavior Charts.
@@ -31,5 +33,7 @@ Do the experiment, then read the result honestly with Process Behavior Charts.
 Designed experiences and experiments are a way for humans to listen to systems as they communicate back to us.
 
 Process Behavior Charts are what separate a real change from noise. Without them a group will claim both success and failure from the same data.
+
+**Gate:** Process Behavior Charts presume the thing being measured is repeatable enough to have a voice. If the situation is still genuinely complex — every instance different, no stable process — a chart will manufacture signal out of noise, which is worse than not measuring. Establish that you are measuring a repeatable process, or read the experiment qualitatively and stay in the complex domain.
 
 **Closes to:** back into step 1 with a revised picture. The loop is the method; a single pass is not.

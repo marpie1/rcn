@@ -4,7 +4,7 @@ window.RCN_BUILD = {
   "builtAt": "2026-08-18",
   "builtBy": "build-catalog.js",
   "sourceHashes": {
-    "catalog.json": "38f884f5a103ab65",
+    "catalog.json": "7f517e8e93079bc9",
     "methods.json": "4016c3fa875147af"
   }
 };
@@ -670,7 +670,8 @@ window.RCN_CATALOG = {
       "pull-fedwiki.js",
       "build-catalog.js",
       "fedwiki-lineup.js",
-      "check-variety.js"
+      "check-variety.js",
+      "inject-diagrams.js"
     ],
     "areFlatSiblingsDoNotMove": [
       "families.js",

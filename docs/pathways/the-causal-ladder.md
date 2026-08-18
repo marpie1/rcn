@@ -19,6 +19,8 @@ This is not a gate. A gate blocks forward motion until a condition holds; this i
 
 It works because of the ladder. The sophisticated tools are built up from the grammar of system dynamics, so returning to CLD is not starting over — it is returning to the language the other tools are written in.
 
+It is also an Ashby move. **Climbing this ladder trades variety for precision** — campfire conversations and cave drawings presume almost nothing and work anywhere, while system dynamics presumes a great deal and works only where order is already established. Dropping back to a causal loop diagram **increases your regulator's variety**. See [[Requisite Variety]].
+
 ## And on experiments
 
 > Designed experiences and experiments can be seen as a way for humans to "listen to systems" as they communicate back to us. — [[Causal Models]]
