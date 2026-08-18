@@ -233,12 +233,17 @@ def wheel(sl, cx, cy, hub_r, bands, weighted=True, hub_lines=None, ring_labels=T
     hub.line.width = Pt(1.25)
     tf = hub.text_frame
     tf.word_wrap = True
+    # A shape's default text inset is ~0.1in a side, which on a small hub eats
+    # more than the word. Zero it and scale the type to the circle, or Keynote
+    # breaks "sources" mid-word — invisible in the .pptx, obvious on the slide.
+    tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+    small = hub_r < 0.6
     for i, line in enumerate(hub_lines or ['RCN', 'Substrate']):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
         p.alignment = PP_ALIGN.CENTER
         r = p.add_run()
         r.text = line
-        r.font.size = Pt(11 if i == 0 else 9)
+        r.font.size = Pt((8 if small else 11) if i == 0 else (7 if small else 9))
         r.font.bold = (i == 0)
         r.font.color.rgb = INK
         r.font.name = 'Calibri'
@@ -368,7 +373,7 @@ txt(s, "Every sunburst you have seen sizes its arcs by a quantity — bytes, dol
        "This one sizes them by how many separate source drawings contain the concept.",
     0.55, 1.9, 12.2, 0.85, size=18, color=GREY)
 wheel(s, cx=3.35, cy=4.6, hub_r=0.42, bands=[(0.42, 0.85), (0.85, 1.42)],
-      weighted=True, hub_lines=['by source'], ring_labels=False)
+      weighted=True, hub_lines=['sources'], ring_labels=False)
 wheel(s, cx=9.95, cy=4.6, hub_r=0.42, bands=[(0.42, 0.85), (0.85, 1.42)],
       weighted=False, hub_lines=['equal'], ring_labels=False)
 txt(s, "WEIGHTED BY SOURCES", 1.75, 6.25, 3.2, 0.4, size=13, bold=True,
@@ -405,12 +410,12 @@ for i, v in enumerate(["Seriousness of PROBLEM", "Frequency of PROBLEM", "Cost o
 txt(s, "Ring 3 — several variables, one parent, arcs that subdivide automatically",
     4.35, 3.95, 8.4, 0.5, size=14, italic=True, color=GREY)
 box_txt(s, [
-    "There is exactly one example today — and it is being lost.",
-    "affect.json draws BOTH “Positive AFFECT” and “Negative AFFECT” as the concept Affect. "
-    "Because the substrate merges on schema label, only one survives into the database. "
-    "The wheel shows one wedge where the file has two.",
-], 0.55, 5.0, 12.23, 1.55, fill=AMB_LT, line=AMB, size=14, top_color=AMB)
-foot(s, "The shape was ready for this before the data was. That is the useful direction for a schema to be wrong in.")
+    "There is exactly one example so far — and it was being lost.",
+    "affect.json draws BOTH “Positive AFFECT” and “Negative AFFECT” as the concept Affect. The "
+    "substrate merged on schema label, so only one ever reached the database and the wheel showed "
+    "one wedge where the file had two. A state is now a node, and both survive.",
+], 0.55, 5.0, 12.23, 1.55, fill=GRN_LT, line=GRN, size=14, top_color=GRN)
+foot(s, "The shape was ready for this before the data was — which is the useful direction for a schema to be wrong in.")
 
 # ── 9 · The honest limit ─────────────────────────────────────────────────────
 s = slide()
