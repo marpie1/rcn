@@ -22,7 +22,8 @@
     "governedBy": "Every use of every tool below is subject to the two governing models: the Social Action Tetrahedron (POIA) and Beauty/Good/Truth/Economy. 'All the models below these two must be informed by these or they will lead to no good.'",
     "familyKey": "Optional grouping for tools that ship as a product family, orthogonal to shelf.",
     "paths": "launch/intro/manual/example/deck are relative to tools/ unless they contain a slash.",
-    "generator": "catalog.js is GENERATED from this file plus methods.json by build-catalog.js. Edit this file, then run: node tools/build-catalog.js. Nothing rebuilds it for you \u2014 index.html only ever reads the generated catalog.js, because a browser will not fetch() a local .json from file://. Run `node tools/build-catalog.js --check` to fail loudly if they have diverged."
+    "generator": "catalog.js is GENERATED from this file plus methods.json by build-catalog.js. Edit this file, then run: node tools/build-catalog.js. Nothing rebuilds it for you \u2014 index.html only ever reads the generated catalog.js, because a browser will not fetch() a local .json from file://. Run `node tools/build-catalog.js --check` to fail loudly if they have diverged.",
+    "presumes": "How much ORDER a tool assumes it is being pointed at, per Cynefin: chaotic < complex < complicated < simple. Transcribed from the fill colours in Marc's 'Models for Seeing Systems'. This is Ashby: order and variety are inverse, so a tool that presumes more order presumes LESS variety. Using one above the order a situation actually has builds a regulator with insufficient requisite variety \u2014 a model that cannot absorb the system. Null means the tool is not a modelling instrument and the rule does not apply."
   },
   "tools": [
     {
@@ -38,7 +39,8 @@
       "manual": "../maps/rcn-map-manual.html",
       "example": null,
       "deck": "../maps/rcn-ndc-map.pptx",
-      "note": "Live site is two files in one flat folder \u2014 rcn_map.html plus rcn_static_data.js loaded by flat name. The standalone build is a handout, explicitly not the live site."
+      "note": "Live site is two files in one flat folder \u2014 rcn_map.html plus rcn_static_data.js loaded by flat name. The standalone build is a handout, explicitly not the live site.",
+      "presumes": "simple"
     },
     {
       "id": "issue-polygon-map",
@@ -52,7 +54,8 @@
       "intro": "issue-polygon-map-intro.html",
       "manual": "issue-polygon-map-manual.html",
       "example": null,
-      "deck": "rcn-issue-polygon-map-intro.pptx"
+      "deck": "rcn-issue-polygon-map-intro.pptx",
+      "presumes": "simple"
     },
     {
       "id": "rcn-timeline",
@@ -69,7 +72,8 @@
       "deck": "rcn-timeline-intro.pptx",
       "usedIn": [
         "trace-then-timeline"
-      ]
+      ],
+      "presumes": "complex"
     },
     {
       "id": "graph-tool",
@@ -92,7 +96,15 @@
         "systemic-problem-solving",
         "trace-then-timeline",
         "shared-understanding-to-experiment"
-      ]
+      ],
+      "presumes": "complex",
+      "modePresumes": {
+        "CLD": "complex",
+        "EIP": "complex",
+        "OPM": "complicated",
+        "SFD": "complicated",
+        "NRM": "complicated"
+      }
     },
     {
       "id": "vester",
@@ -111,7 +123,8 @@
       "note": "The only tool with a build step (Vite/React). Steps 0-5 built, through Partial Scenario simulation.",
       "usedIn": [
         "shared-understanding-to-experiment"
-      ]
+      ],
+      "presumes": "complex"
     },
     {
       "id": "schema-sunburst",
@@ -126,7 +139,8 @@
       "manual": "schema-sunburst-manual.html",
       "example": "eip-schema-cld.json",
       "deck": "rcn-schema-sunburst-intro.pptx",
-      "family": "graph"
+      "family": "graph",
+      "presumes": "complex"
     },
     {
       "id": "sodoto-issuer",
@@ -142,7 +156,8 @@
       "example": null,
       "deck": null,
       "family": "sodoto",
-      "note": "Live on Wiki Caf\u00e9. Keys never on the server \u2014 each issuer enters their seed in their own browser."
+      "note": "Live on Wiki Caf\u00e9. Keys never on the server \u2014 each issuer enters their seed in their own browser.",
+      "presumes": null
     },
     {
       "id": "sodoto-onboard",
@@ -157,7 +172,8 @@
       "manual": "../docs/sodoto-manual.html",
       "example": null,
       "deck": null,
-      "family": "sodoto"
+      "family": "sodoto",
+      "presumes": null
     },
     {
       "id": "sodoto-sign",
@@ -172,7 +188,8 @@
       "manual": null,
       "example": null,
       "deck": null,
-      "family": "sodoto"
+      "family": "sodoto",
+      "presumes": null
     },
     {
       "id": "cfa-dsc-creator",
@@ -186,7 +203,8 @@
       "intro": null,
       "manual": "../cfa-dsc-handoff.md",
       "example": null,
-      "deck": null
+      "deck": null,
+      "presumes": null
     },
     {
       "id": "my-support-network",
@@ -201,7 +219,8 @@
       "manual": null,
       "example": null,
       "deck": null,
-      "family": "my-phs"
+      "family": "my-phs",
+      "presumes": null
     },
     {
       "id": "graph-composer",
@@ -217,7 +236,8 @@
       "example": null,
       "deck": "rcn-graph-composer-intro.pptx",
       "family": "graph",
-      "note": "Reads families.js and graph-sets.js as flat siblings \u2014 .js not .json, so it works from file://. Do not move those."
+      "note": "Reads families.js and graph-sets.js as flat siblings \u2014 .js not .json, so it works from file://. Do not move those.",
+      "presumes": "complex"
     },
     {
       "id": "eip-integration-explorer",
@@ -232,7 +252,8 @@
       "manual": null,
       "example": null,
       "deck": null,
-      "note": "Underscored filename. Rename to hyphens when next touched."
+      "note": "Underscored filename. Rename to hyphens when next touched.",
+      "presumes": "complex"
     },
     {
       "id": "wardley-map-generator",
@@ -246,7 +267,8 @@
       "intro": null,
       "manual": "wardley-chat-card.md",
       "example": "wardley-bicycle-production.rcn.json",
-      "deck": null
+      "deck": null,
+      "presumes": "complicated"
     },
     {
       "id": "my-health-choices",
@@ -261,7 +283,8 @@
       "manual": "../scp-optionbox/authoring-guide.html",
       "example": null,
       "deck": null,
-      "family": "my-phs"
+      "family": "my-phs",
+      "presumes": null
     },
     {
       "id": "nrm-tripod-beta",
@@ -276,7 +299,8 @@
       "manual": "../docs/nrm-tripod-beta.md",
       "example": null,
       "deck": null,
-      "note": "Also exists as a mode inside the Graph Tool."
+      "note": "Also exists as a mode inside the Graph Tool.",
+      "presumes": "complicated"
     },
     {
       "id": "sfd-stella-approach",
@@ -291,7 +315,8 @@
       "manual": null,
       "example": null,
       "deck": null,
-      "family": "graph"
+      "family": "graph",
+      "presumes": "complicated"
     },
     {
       "id": "a3",
@@ -307,7 +332,8 @@
       "example": null,
       "deck": null,
       "embodies": "a3-problem-solving",
-      "note": "A method wearing a tool's clothes \u2014 registry skill #15. It has ordered steps and gates, so it also wants a method page, and the two should point at each other. New, from a parallel session."
+      "note": "A method wearing a tool's clothes \u2014 registry skill #15. It has ordered steps and gates, so it also wants a method page, and the two should point at each other. New, from a parallel session.",
+      "presumes": "simple"
     },
     {
       "id": "graphjson-to-vensim",
@@ -322,7 +348,8 @@
       "manual": null,
       "example": null,
       "deck": null,
-      "family": "graph"
+      "family": "graph",
+      "presumes": "complicated"
     },
     {
       "id": "eip-local-finance",
@@ -336,7 +363,8 @@
       "intro": null,
       "manual": null,
       "example": null,
-      "deck": null
+      "deck": null,
+      "presumes": "complex"
     },
     {
       "id": "rcn-spc",
@@ -354,7 +382,8 @@
       "usedIn": [
         "shared-understanding-to-experiment"
       ],
-      "note": "Arrived fully documented, with its own schema at schemas/rcn-spc.md. The pattern every tool should follow."
+      "note": "Arrived fully documented, with its own schema at schemas/rcn-spc.md. The pattern every tool should follow.",
+      "presumes": "complicated"
     },
     {
       "id": "conversation-navigator",
@@ -369,7 +398,8 @@
       "manual": "bias-checker-manual.html",
       "example": null,
       "deck": "rcn-bias-checker-intro.pptx",
-      "note": "NAMING DRIFT: every page is titled Conversation Navigator; every filename says bias-checker. The tool was renamed and the files were not. Hosted at Wiki Caf\u00e9, not Firebase."
+      "note": "NAMING DRIFT: every page is titled Conversation Navigator; every filename says bias-checker. The tool was renamed and the files were not. Hosted at Wiki Caf\u00e9, not Firebase.",
+      "presumes": "complex"
     },
     {
       "id": "positive-affect-score",
@@ -383,7 +413,8 @@
       "intro": "positive-affect-score-intro.html",
       "manual": "positive-affect-score-manual.html",
       "example": null,
-      "deck": null
+      "deck": null,
+      "presumes": "complicated"
     },
     {
       "id": "evsm",
@@ -418,7 +449,8 @@
           "launch": "evsm_excel_tool.html"
         }
       ],
-      "note": "ONE entry, not four. These are stages of a single method \u2014 registry skill #14. Needs one intro for the whole cycle, not four."
+      "note": "ONE entry, not four. These are stages of a single method \u2014 registry skill #14. Needs one intro for the whole cycle, not four.",
+      "presumes": "simple"
     },
     {
       "id": "my-health-picture",
@@ -435,7 +467,8 @@
       "example": null,
       "deck": null,
       "family": "my-phs",
-      "note": "Runs behind coupler-proxy.py on port 8766, with per-patient wiki routing."
+      "note": "Runs behind coupler-proxy.py on port 8766, with per-patient wiki routing.",
+      "presumes": null
     },
     {
       "id": "scp-chat",
@@ -450,7 +483,8 @@
       "manual": null,
       "example": null,
       "deck": null,
-      "family": "my-phs"
+      "family": "my-phs",
+      "presumes": null
     },
     {
       "id": "more-outliner",
@@ -465,7 +499,8 @@
       "manual": "more-outliner-manual.html",
       "example": null,
       "deck": null,
-      "note": "Manual but no intro \u2014 the largest documentation gap on a live tool."
+      "note": "Manual but no intro \u2014 the largest documentation gap on a live tool.",
+      "presumes": null
     },
     {
       "id": "groove",
@@ -481,7 +516,8 @@
       "manual": "groove-manual.html",
       "example": "groove-workflow.json",
       "deck": null,
-      "note": "Runs on port 3001."
+      "note": "Runs on port 3001.",
+      "presumes": null
     },
     {
       "id": "fedwiki-lineup",
@@ -495,7 +531,8 @@
       "intro": null,
       "manual": null,
       "example": null,
-      "deck": null
+      "deck": null,
+      "presumes": null
     },
     {
       "id": "rcn-icon-sheet",
@@ -510,7 +547,8 @@
       "manual": null,
       "example": null,
       "deck": null,
-      "note": "Reference, not a tool."
+      "note": "Reference, not a tool.",
+      "presumes": null
     },
     {
       "id": "patient-admin",
@@ -526,7 +564,8 @@
       "example": null,
       "deck": null,
       "family": "my-phs",
-      "note": "Back office. Not offered on the shelf."
+      "note": "Back office. Not offered on the shelf.",
+      "presumes": null
     },
     {
       "id": "ibis-map-rcn",
@@ -541,7 +580,8 @@
       "manual": null,
       "example": null,
       "deck": null,
-      "note": "An example, not a general tool."
+      "note": "An example, not a general tool.",
+      "presumes": null
     },
     {
       "id": "conversation-index",
@@ -556,7 +596,8 @@
       "manual": null,
       "example": null,
       "deck": null,
-      "note": "Personal. `conversation_index (old).html` is a download-mangled duplicate \u2014 delete it."
+      "note": "Personal. `conversation_index (old).html` is a download-mangled duplicate \u2014 delete it.",
+      "presumes": null
     },
     {
       "id": "session-builder",
@@ -571,7 +612,8 @@
       "manual": null,
       "example": null,
       "deck": null,
-      "note": "Download-mangled filename. Rename to session-builder.html."
+      "note": "Download-mangled filename. Rename to session-builder.html.",
+      "presumes": null
     },
     {
       "id": "contract-creator",
@@ -586,7 +628,8 @@
       "manual": null,
       "example": null,
       "deck": null,
-      "note": "Probably superseded by cfa-dsc-creator. Confirm, then archive."
+      "note": "Probably superseded by cfa-dsc-creator. Confirm, then archive.",
+      "presumes": null
     }
   ],
   "notOnTheShelf": {
@@ -616,7 +659,8 @@
       "build-lineup-bookmarklet.js",
       "pull-fedwiki.js",
       "build-catalog.js",
-      "fedwiki-lineup.js"
+      "fedwiki-lineup.js",
+      "check-variety.js"
     ],
     "areFlatSiblingsDoNotMove": [
       "families.js",

@@ -4,8 +4,8 @@ window.RCN_BUILD = {
   "builtAt": "2026-08-18",
   "builtBy": "build-catalog.js",
   "sourceHashes": {
-    "catalog.json": "96da0ab552ce5c97",
-    "methods.json": "b81662301e68fc51"
+    "catalog.json": "38f884f5a103ab65",
+    "methods.json": "4016c3fa875147af"
   }
 };
 window.RCN_CATALOG = {
@@ -32,7 +32,8 @@ window.RCN_CATALOG = {
     "governedBy": "Every use of every tool below is subject to the two governing models: the Social Action Tetrahedron (POIA) and Beauty/Good/Truth/Economy. 'All the models below these two must be informed by these or they will lead to no good.'",
     "familyKey": "Optional grouping for tools that ship as a product family, orthogonal to shelf.",
     "paths": "launch/intro/manual/example/deck are relative to tools/ unless they contain a slash.",
-    "generator": "catalog.js is GENERATED from this file plus methods.json by build-catalog.js. Edit this file, then run: node tools/build-catalog.js. Nothing rebuilds it for you — index.html only ever reads the generated catalog.js, because a browser will not fetch() a local .json from file://. Run `node tools/build-catalog.js --check` to fail loudly if they have diverged."
+    "generator": "catalog.js is GENERATED from this file plus methods.json by build-catalog.js. Edit this file, then run: node tools/build-catalog.js. Nothing rebuilds it for you — index.html only ever reads the generated catalog.js, because a browser will not fetch() a local .json from file://. Run `node tools/build-catalog.js --check` to fail loudly if they have diverged.",
+    "presumes": "How much ORDER a tool assumes it is being pointed at, per Cynefin: chaotic < complex < complicated < simple. Transcribed from the fill colours in Marc's 'Models for Seeing Systems'. This is Ashby: order and variety are inverse, so a tool that presumes more order presumes LESS variety. Using one above the order a situation actually has builds a regulator with insufficient requisite variety — a model that cannot absorb the system. Null means the tool is not a modelling instrument and the rule does not apply."
   },
   "tools": [
     {
@@ -48,7 +49,8 @@ window.RCN_CATALOG = {
       "manual": "../maps/rcn-map-manual.html",
       "example": null,
       "deck": "../maps/rcn-ndc-map.pptx",
-      "note": "Live site is two files in one flat folder — rcn_map.html plus rcn_static_data.js loaded by flat name. The standalone build is a handout, explicitly not the live site."
+      "note": "Live site is two files in one flat folder — rcn_map.html plus rcn_static_data.js loaded by flat name. The standalone build is a handout, explicitly not the live site.",
+      "presumes": "simple"
     },
     {
       "id": "issue-polygon-map",
@@ -62,7 +64,8 @@ window.RCN_CATALOG = {
       "intro": "issue-polygon-map-intro.html",
       "manual": "issue-polygon-map-manual.html",
       "example": null,
-      "deck": "rcn-issue-polygon-map-intro.pptx"
+      "deck": "rcn-issue-polygon-map-intro.pptx",
+      "presumes": "simple"
     },
     {
       "id": "rcn-timeline",
@@ -79,7 +82,8 @@ window.RCN_CATALOG = {
       "deck": "rcn-timeline-intro.pptx",
       "usedIn": [
         "trace-then-timeline"
-      ]
+      ],
+      "presumes": "complex"
     },
     {
       "id": "graph-tool",
@@ -102,7 +106,15 @@ window.RCN_CATALOG = {
         "systemic-problem-solving",
         "trace-then-timeline",
         "shared-understanding-to-experiment"
-      ]
+      ],
+      "presumes": "complex",
+      "modePresumes": {
+        "CLD": "complex",
+        "EIP": "complex",
+        "OPM": "complicated",
+        "SFD": "complicated",
+        "NRM": "complicated"
+      }
     },
     {
       "id": "vester",
@@ -121,7 +133,8 @@ window.RCN_CATALOG = {
       "note": "The only tool with a build step (Vite/React). Steps 0-5 built, through Partial Scenario simulation.",
       "usedIn": [
         "shared-understanding-to-experiment"
-      ]
+      ],
+      "presumes": "complex"
     },
     {
       "id": "schema-sunburst",
@@ -136,7 +149,8 @@ window.RCN_CATALOG = {
       "manual": "schema-sunburst-manual.html",
       "example": "eip-schema-cld.json",
       "deck": "rcn-schema-sunburst-intro.pptx",
-      "family": "graph"
+      "family": "graph",
+      "presumes": "complex"
     },
     {
       "id": "sodoto-issuer",
@@ -152,7 +166,8 @@ window.RCN_CATALOG = {
       "example": null,
       "deck": null,
       "family": "sodoto",
-      "note": "Live on Wiki Café. Keys never on the server — each issuer enters their seed in their own browser."
+      "note": "Live on Wiki Café. Keys never on the server — each issuer enters their seed in their own browser.",
+      "presumes": null
     },
     {
       "id": "sodoto-onboard",
@@ -167,7 +182,8 @@ window.RCN_CATALOG = {
       "manual": "../docs/sodoto-manual.html",
       "example": null,
       "deck": null,
-      "family": "sodoto"
+      "family": "sodoto",
+      "presumes": null
     },
     {
       "id": "sodoto-sign",
@@ -182,7 +198,8 @@ window.RCN_CATALOG = {
       "manual": null,
       "example": null,
       "deck": null,
-      "family": "sodoto"
+      "family": "sodoto",
+      "presumes": null
     },
     {
       "id": "cfa-dsc-creator",
@@ -196,7 +213,8 @@ window.RCN_CATALOG = {
       "intro": null,
       "manual": "../cfa-dsc-handoff.md",
       "example": null,
-      "deck": null
+      "deck": null,
+      "presumes": null
     },
     {
       "id": "my-support-network",
@@ -211,7 +229,8 @@ window.RCN_CATALOG = {
       "manual": null,
       "example": null,
       "deck": null,
-      "family": "my-phs"
+      "family": "my-phs",
+      "presumes": null
     },
     {
       "id": "graph-composer",
@@ -227,7 +246,8 @@ window.RCN_CATALOG = {
       "example": null,
       "deck": "rcn-graph-composer-intro.pptx",
       "family": "graph",
-      "note": "Reads families.js and graph-sets.js as flat siblings — .js not .json, so it works from file://. Do not move those."
+      "note": "Reads families.js and graph-sets.js as flat siblings — .js not .json, so it works from file://. Do not move those.",
+      "presumes": "complex"
     },
     {
       "id": "eip-integration-explorer",
@@ -242,7 +262,8 @@ window.RCN_CATALOG = {
       "manual": null,
       "example": null,
       "deck": null,
-      "note": "Underscored filename. Rename to hyphens when next touched."
+      "note": "Underscored filename. Rename to hyphens when next touched.",
+      "presumes": "complex"
     },
     {
       "id": "wardley-map-generator",
@@ -256,7 +277,8 @@ window.RCN_CATALOG = {
       "intro": null,
       "manual": "wardley-chat-card.md",
       "example": "wardley-bicycle-production.rcn.json",
-      "deck": null
+      "deck": null,
+      "presumes": "complicated"
     },
     {
       "id": "my-health-choices",
@@ -271,7 +293,8 @@ window.RCN_CATALOG = {
       "manual": "../scp-optionbox/authoring-guide.html",
       "example": null,
       "deck": null,
-      "family": "my-phs"
+      "family": "my-phs",
+      "presumes": null
     },
     {
       "id": "nrm-tripod-beta",
@@ -286,7 +309,8 @@ window.RCN_CATALOG = {
       "manual": "../docs/nrm-tripod-beta.md",
       "example": null,
       "deck": null,
-      "note": "Also exists as a mode inside the Graph Tool."
+      "note": "Also exists as a mode inside the Graph Tool.",
+      "presumes": "complicated"
     },
     {
       "id": "sfd-stella-approach",
@@ -301,7 +325,8 @@ window.RCN_CATALOG = {
       "manual": null,
       "example": null,
       "deck": null,
-      "family": "graph"
+      "family": "graph",
+      "presumes": "complicated"
     },
     {
       "id": "a3",
@@ -317,7 +342,8 @@ window.RCN_CATALOG = {
       "example": null,
       "deck": null,
       "embodies": "a3-problem-solving",
-      "note": "A method wearing a tool's clothes — registry skill #15. It has ordered steps and gates, so it also wants a method page, and the two should point at each other. New, from a parallel session."
+      "note": "A method wearing a tool's clothes — registry skill #15. It has ordered steps and gates, so it also wants a method page, and the two should point at each other. New, from a parallel session.",
+      "presumes": "simple"
     },
     {
       "id": "graphjson-to-vensim",
@@ -332,7 +358,8 @@ window.RCN_CATALOG = {
       "manual": null,
       "example": null,
       "deck": null,
-      "family": "graph"
+      "family": "graph",
+      "presumes": "complicated"
     },
     {
       "id": "eip-local-finance",
@@ -346,7 +373,8 @@ window.RCN_CATALOG = {
       "intro": null,
       "manual": null,
       "example": null,
-      "deck": null
+      "deck": null,
+      "presumes": "complex"
     },
     {
       "id": "rcn-spc",
@@ -364,7 +392,8 @@ window.RCN_CATALOG = {
       "usedIn": [
         "shared-understanding-to-experiment"
       ],
-      "note": "Arrived fully documented, with its own schema at schemas/rcn-spc.md. The pattern every tool should follow."
+      "note": "Arrived fully documented, with its own schema at schemas/rcn-spc.md. The pattern every tool should follow.",
+      "presumes": "complicated"
     },
     {
       "id": "conversation-navigator",
@@ -379,7 +408,8 @@ window.RCN_CATALOG = {
       "manual": "bias-checker-manual.html",
       "example": null,
       "deck": "rcn-bias-checker-intro.pptx",
-      "note": "NAMING DRIFT: every page is titled Conversation Navigator; every filename says bias-checker. The tool was renamed and the files were not. Hosted at Wiki Café, not Firebase."
+      "note": "NAMING DRIFT: every page is titled Conversation Navigator; every filename says bias-checker. The tool was renamed and the files were not. Hosted at Wiki Café, not Firebase.",
+      "presumes": "complex"
     },
     {
       "id": "positive-affect-score",
@@ -393,7 +423,8 @@ window.RCN_CATALOG = {
       "intro": "positive-affect-score-intro.html",
       "manual": "positive-affect-score-manual.html",
       "example": null,
-      "deck": null
+      "deck": null,
+      "presumes": "complicated"
     },
     {
       "id": "evsm",
@@ -428,7 +459,8 @@ window.RCN_CATALOG = {
           "launch": "evsm_excel_tool.html"
         }
       ],
-      "note": "ONE entry, not four. These are stages of a single method — registry skill #14. Needs one intro for the whole cycle, not four."
+      "note": "ONE entry, not four. These are stages of a single method — registry skill #14. Needs one intro for the whole cycle, not four.",
+      "presumes": "simple"
     },
     {
       "id": "my-health-picture",
@@ -445,7 +477,8 @@ window.RCN_CATALOG = {
       "example": null,
       "deck": null,
       "family": "my-phs",
-      "note": "Runs behind coupler-proxy.py on port 8766, with per-patient wiki routing."
+      "note": "Runs behind coupler-proxy.py on port 8766, with per-patient wiki routing.",
+      "presumes": null
     },
     {
       "id": "scp-chat",
@@ -460,7 +493,8 @@ window.RCN_CATALOG = {
       "manual": null,
       "example": null,
       "deck": null,
-      "family": "my-phs"
+      "family": "my-phs",
+      "presumes": null
     },
     {
       "id": "more-outliner",
@@ -475,7 +509,8 @@ window.RCN_CATALOG = {
       "manual": "more-outliner-manual.html",
       "example": null,
       "deck": null,
-      "note": "Manual but no intro — the largest documentation gap on a live tool."
+      "note": "Manual but no intro — the largest documentation gap on a live tool.",
+      "presumes": null
     },
     {
       "id": "groove",
@@ -491,7 +526,8 @@ window.RCN_CATALOG = {
       "manual": "groove-manual.html",
       "example": "groove-workflow.json",
       "deck": null,
-      "note": "Runs on port 3001."
+      "note": "Runs on port 3001.",
+      "presumes": null
     },
     {
       "id": "fedwiki-lineup",
@@ -505,7 +541,8 @@ window.RCN_CATALOG = {
       "intro": null,
       "manual": null,
       "example": null,
-      "deck": null
+      "deck": null,
+      "presumes": null
     },
     {
       "id": "rcn-icon-sheet",
@@ -520,7 +557,8 @@ window.RCN_CATALOG = {
       "manual": null,
       "example": null,
       "deck": null,
-      "note": "Reference, not a tool."
+      "note": "Reference, not a tool.",
+      "presumes": null
     },
     {
       "id": "patient-admin",
@@ -536,7 +574,8 @@ window.RCN_CATALOG = {
       "example": null,
       "deck": null,
       "family": "my-phs",
-      "note": "Back office. Not offered on the shelf."
+      "note": "Back office. Not offered on the shelf.",
+      "presumes": null
     },
     {
       "id": "ibis-map-rcn",
@@ -551,7 +590,8 @@ window.RCN_CATALOG = {
       "manual": null,
       "example": null,
       "deck": null,
-      "note": "An example, not a general tool."
+      "note": "An example, not a general tool.",
+      "presumes": null
     },
     {
       "id": "conversation-index",
@@ -566,7 +606,8 @@ window.RCN_CATALOG = {
       "manual": null,
       "example": null,
       "deck": null,
-      "note": "Personal. `conversation_index (old).html` is a download-mangled duplicate — delete it."
+      "note": "Personal. `conversation_index (old).html` is a download-mangled duplicate — delete it.",
+      "presumes": null
     },
     {
       "id": "session-builder",
@@ -581,7 +622,8 @@ window.RCN_CATALOG = {
       "manual": null,
       "example": null,
       "deck": null,
-      "note": "Download-mangled filename. Rename to session-builder.html."
+      "note": "Download-mangled filename. Rename to session-builder.html.",
+      "presumes": null
     },
     {
       "id": "contract-creator",
@@ -596,7 +638,8 @@ window.RCN_CATALOG = {
       "manual": null,
       "example": null,
       "deck": null,
-      "note": "Probably superseded by cfa-dsc-creator. Confirm, then archive."
+      "note": "Probably superseded by cfa-dsc-creator. Confirm, then archive.",
+      "presumes": null
     }
   ],
   "notOnTheShelf": {
@@ -626,7 +669,8 @@ window.RCN_CATALOG = {
       "build-lineup-bookmarklet.js",
       "pull-fedwiki.js",
       "build-catalog.js",
-      "fedwiki-lineup.js"
+      "fedwiki-lineup.js",
+      "check-variety.js"
     ],
     "areFlatSiblingsDoNotMove": [
       "families.js",
@@ -693,7 +737,9 @@ window.RCN_METHODS = {
       "beauty-good-truth-economy"
     ],
     "stepFields": "question (what you are now ready to ask), tool (the instrument), does (its job IN THIS METHOD), produces, handoff (what you carry on, and in what shape), gate (what must be true first).",
-    "statusNote": "Pathway pages are drafted in docs/rcn-pathways.html but not yet built as their own pages. Confidence and transmissibility marks are proposals awaiting Marc's confirmation."
+    "statusNote": "Pathway pages are drafted in docs/rcn-pathways.html but not yet built as their own pages. Confidence and transmissibility marks are proposals awaiting Marc's confirmation.",
+    "appliesWhen": "The Cynefin domain of the SITUATION a method suits — distinct from `gate`, which is about readiness rather than fit. 'disorder' means the domain is not yet known, which is why Systemic Problem Solving exists at all. 'any' marks an ontological check that holds in every domain. Curricular pathways carry null: a learning order is not fitted to a situation.",
+    "stepSituation": "Optional per-step override of the method's appliesWhen. Methods DESCEND domains as they proceed — probing is complex, measuring an outcome is complicated — so one domain per method is too coarse. The variety check prefers this when present."
   },
   "methods": [
     {
@@ -769,6 +815,9 @@ window.RCN_METHODS = {
           "produces": "A routed decision",
           "handoff": "Into one of the pathways in routesTo."
         }
+      ],
+      "appliesWhen": [
+        "disorder"
       ]
     },
     {
@@ -833,6 +882,9 @@ window.RCN_METHODS = {
           "handoff": "A tetrahedron whose four arrows all work, in service of something ugly, false or extractive, is a well-functioning machine pointed the wrong way.",
           "gate": null
         }
+      ],
+      "appliesWhen": [
+        "any"
       ]
     },
     {
@@ -887,6 +939,9 @@ window.RCN_METHODS = {
           "produces": "A staged diagnosis",
           "handoff": "Origin failures route to Systemic Problem Solving. Performance failures to Sofi-VSM. Survival failures mean conflict work first and everything else second."
         }
+      ],
+      "appliesWhen": [
+        "complex"
       ]
     },
     {
@@ -910,7 +965,8 @@ window.RCN_METHODS = {
           "does": "Climb the causal ladder in order: campfire conversation, cave drawing, then CLD.",
           "gate": null,
           "produces": "A shared causal picture",
-          "handoff": "Shared only when people who disagree can point at the same picture and say where they disagree. The criterion for a cave drawing is that it is fit for finger pointing, not that it is right."
+          "handoff": "Shared only when people who disagree can point at the same picture and say where they disagree. The criterion for a cave drawing is that it is fit for finger pointing, not that it is right.",
+          "situation": "complex"
         },
         {
           "question": "Where would a small push do the most?",
@@ -918,7 +974,8 @@ window.RCN_METHODS = {
           "does": "Work the 14 leverage points — Meadows' twelve plus Time Horizon and Awareness of Place — from the top down, not the bottom up.",
           "gate": null,
           "produces": "A ranked set of intervention points",
-          "handoff": "Parameters and numbers are the weakest places to intervene; paradigm, goals and the power to self-organize are the strongest."
+          "handoff": "Parameters and numbers are the weakest places to intervene; paradigm, goals and the power to self-organize are the strongest.",
+          "situation": "complex"
         },
         {
           "question": "What do we think will happen?",
@@ -926,16 +983,21 @@ window.RCN_METHODS = {
           "does": "Find which variables are most influential given this feedback structure — not what the numbers will be.",
           "gate": "The numbers question. Do not move to simulation until you have earned it. CLDs have no numbers, and a simulation built before the feedback structure is understood is garbage dressed in numbers.",
           "produces": "Systemic roles — active, reactive, critical, buffering",
-          "handoff": "Into a designed experiment, not a prediction."
+          "handoff": "Into a designed experiment, not a prediction.",
+          "situation": "complex"
         },
         {
           "question": "What actually changed?",
           "tool": "rcn-spc",
           "does": "Run the experiment, then read the result honestly.",
-          "gate": null,
+          "gate": "Process Behavior Charts presume the thing being measured is repeatable enough to have a voice. If the situation is still genuinely complex — every instance different, no stable process — a chart will manufacture signal out of noise, which is worse than not measuring. Establish that you are measuring a repeatable process, or read the experiment qualitatively and stay in the complex domain. Crossing here is the same crossing as the numbers gate one step earlier: you must have earned the order you are about to assume.",
           "produces": "A process behaviour chart",
-          "handoff": "Back into step 1 with a revised picture. A designed experiment is a way for humans to listen to systems as they communicate back to us. Without SPC a group will claim both success and failure from the same data."
+          "handoff": "Back into step 1 with a revised picture. A designed experiment is a way for humans to listen to systems as they communicate back to us. Without SPC a group will claim both success and failure from the same data.",
+          "situation": "complicated"
         }
+      ],
+      "appliesWhen": [
+        "complex"
       ]
     },
     {
@@ -993,6 +1055,9 @@ window.RCN_METHODS = {
           "produces": "A new pattern on the shelf",
           "handoff": "This is the move from model to pattern. Posterity is not the end of this pathway — it is the input to everyone else's Systemic Problem Solving. If we do not share the recipes, innovations will not spread fast enough to matter."
         }
+      ],
+      "appliesWhen": [
+        "complex"
       ]
     },
     {
@@ -1010,7 +1075,8 @@ window.RCN_METHODS = {
         "stock-flow-modeling",
         "system-dynamics-modeling",
         "vesters-sensitivity-modeling"
-      ]
+      ],
+      "appliesWhen": null
     },
     {
       "id": "organizational-diagnosis-pathway",
@@ -1027,7 +1093,8 @@ window.RCN_METHODS = {
         "vsm",
         "eip-stage-sketching",
         "six-context-questions"
-      ]
+      ],
+      "appliesWhen": null
     },
     {
       "id": "sense-making-pathway",
@@ -1044,7 +1111,8 @@ window.RCN_METHODS = {
         "dsrp",
         "social-action-tetrahedron",
         "social-system-tetrahedron"
-      ]
+      ],
+      "appliesWhen": null
     },
     {
       "id": "mapping-pathway",
@@ -1062,7 +1130,8 @@ window.RCN_METHODS = {
         "value-stream-mapping",
         "story-mapping",
         "arrows-diagram-graphviz"
-      ]
+      ],
+      "appliesWhen": null
     },
     {
       "id": "fedwiki-civic-practice-pathway",
@@ -1079,7 +1148,8 @@ window.RCN_METHODS = {
         "local-newspaper-fedwiki",
         "conversation-taxonomy",
         "pattern-writing"
-      ]
+      ],
+      "appliesWhen": null
     },
     {
       "id": "formal-modeling-pathway",
@@ -1095,7 +1165,8 @@ window.RCN_METHODS = {
         "object-process-methodology",
         "model-based-systems-engineering",
         "bayesian-belief-modeling"
-      ]
+      ],
+      "appliesWhen": null
     }
   ]
 };
