@@ -961,6 +961,7 @@ lens, in graph-tool's native schema.</p>
 six-node reference. <b>Same query, same renderer — only the data grows.</b></p>
 <h1>Rendered</h1>
 <ul>
+<li><a href="/substrate/substrate-intro.html"><b>Substrate — Introduction</b></a> · <a href="/substrate/substrate-manual.html">User Manual</a> — what this is, what it refuses to do, and how to run it</li>
 <li><a href="/tools/graph-tool-v22.html?url=%2Fprojection%2Fschema"><b>graph-tool ← the schema itself</b></a> — what is actually in the database, drawn from the database</li>
 <li><a href="/tools/schema-sunburst.html?db=aspects16"><b>sunburst ← the vocabulary</b></a> — family → schema → variable as rings, arc width = witness count. No causal edges: a tree cannot hold a loop</li>
 <li><a href="/tools/graph-tool-v22.html?url=%2Fprojection%2Fstructure%3Fdb%3Daspects16">graph-tool ← structure</a> — the ERD reading of the 16 drawings</li>

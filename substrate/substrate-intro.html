@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<!-- RCN Substrate — Introduction & Positioning
+     Update when a lens is added, when the model gains a level, or when the
+     ownership sentence stops being true of the code. The pitfalls section is
+     load-bearing: every entry is a bug that shipped and looked like working
+     code. Do not trim it for length. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN Substrate — Introduction</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#0e7490;text-decoration:none}
+a:hover{text-decoration:underline}
+.page{max-width:820px;margin:0 auto;padding:40px 24px 80px}
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:32px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:32px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569;line-height:1.5}
+.doc-meta{margin-top:14px;font-size:12px;color:#94a3b8}
+.doc-nav{display:flex;gap:12px;margin-bottom:40px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff;transition:background .15s}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#cffafe;color:#0e7490;border-color:#67e8f9}
+h2{font-size:20px;font-weight:700;color:#0f172a;margin:48px 0 14px;padding-top:8px;border-top:1px solid #e2e8f0}
+h3{font-size:15px;font-weight:600;color:#1e293b;margin:28px 0 8px}
+p{margin-bottom:14px;color:#334155}
+p:last-child{margin-bottom:0}
+.lead{font-size:17px;line-height:1.7;color:#1e293b;margin-bottom:28px;padding:20px 24px;background:#ecfeff;border-left:4px solid #0e7490;border-radius:0 8px 8px 0}
+.rule{background:#0f172a;color:#f1f5f9;border-radius:12px;padding:22px 26px;margin:24px 0;font-size:16px;line-height:1.6}
+.rule strong{color:#67e8f9}
+.lenses{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin:20px 0 28px}
+.lens{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:15px 17px}
+.lens h4{font-size:12.5px;font-weight:700;color:#0f172a;margin-bottom:5px;font-family:ui-monospace,monospace}
+.lens p{font-size:12px;color:#475569;margin:0;line-height:1.55}
+.levels{display:grid;grid-template-columns:96px 1fr;gap:0 16px;margin:20px 0 28px;font-size:13.5px}
+.levels dt{font-weight:700;color:#0e7490;padding:10px 0;border-top:1px solid #e2e8f0}
+.levels dd{padding:10px 0;border-top:1px solid #e2e8f0;color:#334155;line-height:1.55}
+.levels dt:first-of-type,.levels dd:first-of-type{border-top:none}
+.refuses{list-style:none;margin:12px 0 24px}
+.refuses li{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:#334155;line-height:1.55}
+.refuses li:last-child{border-bottom:none}
+.refuses .badge{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#cffafe;color:#0e7490;border-radius:6px;padding:2px 7px;flex-shrink:0;align-self:flex-start;margin-top:2px}
+.caught{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;margin-bottom:10px}
+.caught h4{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:5px}
+.caught p{font-size:12.5px;color:#475569;margin:0;line-height:1.55}
+.callout{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;margin:18px 0;font-size:13px;color:#713f12}
+.positioning{background:#0f172a;color:#f1f5f9;border-radius:12px;padding:26px 30px;margin-top:40px}
+.positioning h3{color:#fff;margin-top:0}
+.positioning p{color:#cbd5e1;font-size:14px}
+.cta{display:inline-block;margin-top:8px;font-size:13px;font-weight:600;background:#0e7490;color:#fff;padding:9px 18px;border-radius:8px}
+.cta:hover{background:#155e75;text-decoration:none}
+.foot{margin-top:48px;padding-top:18px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8}
+code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;font-size:12px;color:#0f172a}
+pre{background:#0f172a;color:#e2e8f0;border-radius:9px;padding:14px 16px;margin:14px 0 20px;overflow-x:auto;font-size:12.5px;line-height:1.6}
+pre code{background:none;border:none;color:inherit;padding:0}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0 22px}
+th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+td{padding:8px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-tag">RCN Toolset · The Substrate</div>
+    <div class="doc-title">🗄️ RCN Substrate</div>
+    <div class="doc-sub">One Neo4j graph holding every layer at once. The tools stop being applications with their own files and become lenses on the same data.</div>
+    <div class="doc-meta">Neo4j 5.26.4 Enterprise · projection layer on port 8768 · three databases, one set of queries</div>
+  </div>
+
+  <nav class="doc-nav">
+    <a href="substrate-intro.html" class="current">Introduction</a>
+    <a href="substrate-manual.html">User Manual</a>
+    <a href="../tools/schema-sunburst.html">Sunburst ↗</a>
+    <a href="README.md">README</a>
+  </nav>
+
+  <p class="lead">Every tool used to own its own file. The same concept — <em>Effectiveness of ORG</em> — lived in a graph JSON, a map, a timeline and sixteen separate drawings, and nothing anywhere could say those were the same thing. The substrate is the decision to stop having two answers to one question.</p>
+
+  <h2>The sentence everything follows from</h2>
+
+  <div class="rule">
+    <strong>The substrate owns meaning. The file owns appearance.</strong> Neither pretends to own the other, and anything derivable is computed rather than stored.
+  </div>
+
+  <p>Almost every design question answers itself from that sentence, and <strong>every bug found so far was a violation of it.</strong> That is not a slogan added afterwards — it is the test that has actually caught things.</p>
+
+  <table>
+    <tr><th>What</th><th>Lives where</th><th>Why</th></tr>
+    <tr><td>Schema label, the states of a concept, polarity, relation family, sources</td><td><strong>Neo4j</strong></td><td>Meaning. It has to merge across drawings.</td></tr>
+    <tr><td>Coordinates, colour, duplicate placements, node ids</td><td><strong>The file</strong></td><td>Appearance. It belongs to one drawing.</td></tr>
+    <tr><td>Gold, family colour, the fallback layout</td><td><strong>Nowhere</strong></td><td>Derivable. Storing it creates a second answer that can drift.</td></tr>
+  </table>
+
+  <p>The third row is the one people skip. <code>gold</code> is never stored — it is <code>size(sources) &gt; 1</code>, evaluated fresh on every request. Family colour is looked up from <code>families.js</code>. Storing either would mean two answers to one question, which is the thing this exists to end.</p>
+
+  <h2>What a lens is</h2>
+
+  <p>A projection is <strong>one named Cypher query returning one lens</strong>, in one envelope, always:</p>
+
+  <pre><code>{ "nodes": [ {id, label, props, x, y, w, h, shape} ],
+  "edges": [ {id, src, tgt, label, polarity, props} ] }</code></pre>
+
+  <p>It is the Graph Tool's own schema, declared canonical so renderers read it with zero translation. No adapters. <strong>The renderers stay dumb</strong> — they draw shapes from data and know nothing about the domain. When a lens seems to need a custom renderer, the projection is usually wrong; fix the query, not the renderer.</p>
+
+  <p>That rule paid for itself when the driver wheel was built. Its rings mean causal distance rather than naming — a completely different tree — and the Sunburst needed no new geometry at all, because the projection emits fractions and the wheel was already dumb about what they mean.</p>
+
+  <div class="lenses">
+    <div class="lens"><h4>/projection/schema</h4><p>The substrate describing itself: node kinds, their properties, the relationships between them, with live counts. Derived, so it cannot go stale.</p></div>
+    <div class="lens"><h4>/projection/causal</h4><p>The CLD reading. Its nodes are <em>states</em>, because a causal claim is about measured quantities.</p></div>
+    <div class="lens"><h4>/projection/structure</h4><p>The ERD reading — part-of, is-a, acts-in, depends-on. Deliberately unsigned.</p></div>
+    <div class="lens"><h4>/projection/gold</h4><p>The federation lens: who drew what, and where two hands met.</p></div>
+    <div class="lens"><h4>/projection/vocabulary</h4><p>Family → concept → states, as a tree. Feeds the Sunburst.</p></div>
+    <div class="lens"><h4>/projection/drivers</h4><p>Causality unrolled from one state into a tree, carrying the sign accumulated along each path.</p></div>
+    <div class="lens"><h4>/projection/subgraph/&lt;name&gt;</h4><p>One drawing, exactly as its author drew it — and exactly what a save would write.</p></div>
+  </div>
+
+  <h2>The claim being tested</h2>
+
+  <div class="callout"><strong>Only the data grows.</strong> Three databases — a six-node reference, a twenty-five-concept signed CLD, and sixteen contributor drawings — are read by <em>byte-identical</em> Cypher. <code>?db=</code> selects which graph, never which query. If a lens ever needs different queries for the bigger graph, the architecture was not proven at n=6, and we would rather know that now than at n=260.</div>
+
+  <p>The six-node reference is not a toy. It is hand-written, small enough to check by eye, and exercises every layer at once: all four vocabulary levels, the instance layer with real dates and coordinates, families, relation families, and the gold test. Its edges close the Fixes-that-Fail loop, so any change that breaks feedback structure breaks it visibly and immediately.</p>
+
+  <h2>The four levels</h2>
+
+  <dl class="levels">
+    <dt>Family</dt><dd>The eight — Setting, Institution, Aim, Doing, Outcome, Issue, Resource, Person. A node, generated from <code>families.js</code>, never a string on a concept.</dd>
+    <dt>Concept</dt><dd>The merge key. <code>Problem</code>, <code>Org</code>, <code>Action</code> — what two drawings agree on even when they word it differently.</dd>
+    <dt>State</dt><dd>A way the concept is measured. <em>Seriousness of PROBLEM</em>. A <strong>node</strong>, not a property, because a concept can have several — and in OPM terms these are exactly the states of an object.</dd>
+    <dt>Instance</dt><dd>A thing that happened, with a date, a place, and someone who reported it. <em>The backyard chicken ordinance dispute, Superior AZ, March 2026.</em></dd>
+  </dl>
+
+  <p>The first three are vocabulary — progressively longer names for the same idea. An instance is not a longer name, which is why it gets its own node, and why geometry and time intervals attach there. <em>"Seriousness of PROBLEM"</em> has no location; a chicken ordinance dispute does.</p>
+
+  <h3>Where an edge attaches, and why it matters</h3>
+
+  <p>Causal edges join states. Structural edges join concepts. That is not tidiness — it is the difference between two kinds of claim:</p>
+
+  <pre><code>(:Variable)-[:REL]->(:Variable)   causal      "Coherence of PURPOSE raises
+                                               Effectiveness of ORG"
+(:Concept) -[:REL]->(:Concept)    structural  "an Org exists for a Purpose"</code></pre>
+
+  <p>The second is true however effective the org is. Push it down to states and it says something nobody meant. The first is about measured quantities and cannot live anywhere else — one drawing records that <em>Positive AFFECT</em> raises motivation and <em>Negative AFFECT</em> lowers it, and while both hung off the concept only one of those claims could survive.</p>
+
+  <h2>What it refuses to do</h2>
+
+  <ul class="refuses">
+    <li><span class="badge">Refuses</span><span><strong>Store layout.</strong> Where a node sits belongs to a drawing, not to the shared graph. Coordinates travel file → tool → file and never pass through Neo4j.</span></li>
+    <li><span class="badge">Refuses</span><span><strong>Store what it can compute.</strong> Gold, family colour, a family's weight — all recomputed on every read, so none of them can disagree with the thing they describe.</span></li>
+    <li><span class="badge">Refuses</span><span><strong>Infer what only a human knows.</strong> Nothing in a list of strings separates <code>merchant</code> (a person) from <code>action</code> (a topic), so each loader <em>declares</em> it. Guessing put a false claim into three published documents once already.</span></li>
+    <li><span class="badge">Refuses</span><span><strong>Guess a relation family.</strong> Seventeen edges have none. They are counted and left alone, because a missing family is somebody's decision still to make.</span></li>
+    <li><span class="badge">Refuses</span><span><strong>Let one contributor delete another's work.</strong> A save retracts, then re-asserts: drop this drawing from every sources list, delete only what has no witness left, insert what was sent. Submitting an <em>empty</em> drawing deletes nothing anyone else drew.</span></li>
+    <li><span class="badge">Refuses</span><span><strong>Be edited in the Browser.</strong> Families and relation families are generated copies of <code>families.js</code> and <code>edge-families.js</code>. Editing them in Neo4j survives until the next load and then vanishes, with no error.</span></li>
+  </ul>
+
+  <h2>What it has caught</h2>
+
+  <p>Each of these shipped, looked like working code, and was found by the ownership rule. They are recorded because the pattern matters more than the individual bugs.</p>
+
+  <div class="caught"><h4>A silent success that drew nothing</h4><p>Coordinates were left out of a projection. The Graph Tool reported a clean load of 6 nodes and 7 edges and rendered an empty canvas. No error, at any layer.</p></div>
+  <div class="caught"><h4>A diff nobody would read</h4><p>The database has no opinion about the order of a set, so emitting rows in Cypher order rewrote whole files — 44 insertions for a one-character change. The writer now keeps the file's own order.</p></div>
+  <div class="caught"><h4>A merge key that did not merge</h4><p>One drawing writes <code>Active Goal</code>, another <code>ActiveGoal</code>. Unnormalised, that is one concept splitting into two nodes that never merge and never go gold. A merge key that does not normalise is not a merge key.</p></div>
+  <div class="caught"><h4>A concept that could hold only one meaning</h4><p>A state was a single property, so a drawing containing both <em>Positive</em> and <em>Negative AFFECT</em> lost one on load — and the arbiter was string length. Longest wins, ties to whichever was read first.</p></div>
+  <div class="caught"><h4>A save that would have deleted every causal edge</h4><p>When causal edges moved to states, the file writer still queried only concept-level edges. Previews of three drawings came back with <strong>zero</strong> edges. Caught by previewing all sixteen before writing anything — which is the only reason it never reached disk.</p></div>
+  <div class="caught"><h4>An invented self-loop</h4><p>A drawing places one concept twice so its edges do not cross. Collapsing those placements turned an edge between two different nodes into an edge from a node to itself. Nobody drew a self-loop; merging invented it.</p></div>
+
+  <div class="positioning">
+    <h3>The bet underneath</h3>
+    <p>A neighborhood cannot reason about itself while every tool holds a private copy of the same words. Put the meaning in one graph, keep the appearance in the files people actually drew, compute everything that can be computed, and refuse to guess the rest — and the tools stop being applications you have to reconcile and start being questions you can ask of one thing.</p>
+    <p style="margin-top:16px">Six lenses so far. The next one costs a query, not an application.</p>
+    <a class="cta" href="substrate-manual.html">Read the User Manual ↗</a>
+  </div>
+
+  <div class="foot">
+    RCN Toolset · <code>substrate/api.py</code> on port 8768 · <code>substrate/README.md</code> for the developer view<br>
+    Companion documents: <a href="substrate-manual.html">User Manual</a> · <a href="ROUND-TRIP.md">ROUND-TRIP.md</a> · deck at <code>substrate/rcn-substrate-intro.pptx</code>
+  </div>
+</div>
+</body>
+</html>

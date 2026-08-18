@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<!-- RCN Substrate — User Manual
+     Update when an endpoint, a loader, or the write-back contract changes.
+     Sections are numbered; keep the nav + TOC in sync. Every count in here
+     was checked against the live database — re-check rather than carry over. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN Substrate — User Manual</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#0e7490;text-decoration:none}
+a:hover{text-decoration:underline}
+.page{max-width:840px;margin:0 auto;padding:40px 24px 90px}
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:28px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:30px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569}
+.doc-nav{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#cffafe;color:#0e7490;border-color:#67e8f9}
+.toc{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-bottom:36px;columns:2;column-gap:28px}
+.toc a{display:block;font-size:12.5px;padding:3px 0;color:#475569;break-inside:avoid}
+.toc a:hover{color:#0e7490;text-decoration:none}
+h2{font-size:19px;font-weight:700;color:#0f172a;margin:44px 0 12px;padding-top:10px;border-top:1px solid #e2e8f0;scroll-margin-top:16px}
+h3{font-size:14.5px;font-weight:600;color:#1e293b;margin:24px 0 7px}
+p{margin-bottom:13px;color:#334155;font-size:14px}
+ul,ol{margin:0 0 14px 22px;color:#334155;font-size:14px}
+li{margin-bottom:6px;line-height:1.55}
+code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;font-size:12.5px;color:#0f172a;white-space:nowrap}
+pre{background:#0f172a;color:#e2e8f0;border-radius:9px;padding:14px 16px;margin:14px 0 20px;overflow-x:auto;font-size:12.5px;line-height:1.6}
+pre code{background:none;border:none;color:inherit;padding:0;white-space:pre}
+kbd{background:#fff;border:1px solid #cbd5e1;border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:11px;font-family:system-ui,sans-serif;color:#0f172a}
+.tip{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#14532d}
+.note{background:#ecfeff;border:1px solid #a5f3fc;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#155e75}
+.warn{background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#713f12}
+.stop{background:#fef2f2;border:1px solid #fecaca;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#7f1d1d}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0 22px}
+th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+td{padding:8px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+td:first-child code{font-weight:600}
+.foot{margin-top:52px;padding-top:18px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-tag">RCN Toolset · The Substrate</div>
+    <div class="doc-title">🗄️ RCN Substrate — User Manual</div>
+    <div class="doc-sub">Running it, every endpoint, the round trip, and what to do when it argues with you.</div>
+  </div>
+
+  <nav class="doc-nav">
+    <a href="substrate-intro.html">Introduction</a>
+    <a href="substrate-manual.html" class="current">User Manual</a>
+    <a href="../tools/schema-sunburst.html">Sunburst ↗</a>
+    <a href="README.md">README</a>
+  </nav>
+
+  <div class="toc">
+    <a href="#start">1 · Starting it</a>
+    <a href="#graphs">2 · The three graphs</a>
+    <a href="#lenses">3 · The lenses</a>
+    <a href="#roundtrip">4 · The round trip</a>
+    <a href="#safety">5 · Why a save cannot destroy work</a>
+    <a href="#loaders">6 · The loaders</a>
+    <a href="#change">7 · Changing the vocabulary</a>
+    <a href="#never">8 · Things that are never correct</a>
+    <a href="#trouble">9 · Troubleshooting</a>
+  </div>
+
+  <h2 id="start">1 · Starting it</h2>
+
+  <p>Two things must be running: <strong>Neo4j Desktop</strong> (the <code>RCN SCHEMA</code> server) and the projection API.</p>
+
+  <pre><code>cd ~/rcn/substrate
+
+python3 db.py --check          # is Neo4j reachable, and what is in it
+python3 api.py                 # projections + the tools, port 8768</code></pre>
+
+  <p>Then <code>http://localhost:8768/</code> lists every projection and the rendered views. The API also <em>serves the tools</em>, so everything is one origin and CORS never arises.</p>
+
+  <div class="warn">Claude Code has full admin over the database but <strong>cannot start or stop the DBMS.</strong> If <code>db.py --check</code> cannot reach the endpoint, open Neo4j Desktop and start the server by hand.</div>
+
+  <p>Credentials live in <code>~/rcn/.env.neo4j</code>, mode 600 and gitignored. There is no driver dependency — <code>db.py</code> talks Cypher over HTTP with the standard library only, so the substrate has no install step.</p>
+
+  <h2 id="graphs">2 · The three graphs</h2>
+
+  <p><code>?db=</code> selects <strong>which graph, never which query.</strong> All three are read by byte-identical Cypher, and that is the architectural claim being tested.</p>
+
+  <table>
+    <tr><th>Database</th><th>Contents</th><th>Sources are</th></tr>
+    <tr><td><code>neo4j</code></td><td>The n=6 reference. 6 concepts, 6 states, 7 edges (5 causal, 2 structural), 2 instances. Hand-written in <code>seed.py</code>.</td><td><strong>people</strong> — <code>merchant</code>, <code>organizer</code></td></tr>
+    <tr><td><code>composite26</code></td><td>The signed EIP CLD. 25 concepts, 25 states, 57 edges (12 causal, 45 structural).</td><td><strong>topics</strong></td></tr>
+    <tr><td><code>aspects16</code></td><td>The 16 aspect drawings with exact provenance. 24 concepts, 25 states, 70 edges (20 causal, 50 structural), 17 with no relation family.</td><td><strong>topics</strong></td></tr>
+  </table>
+
+  <div class="note"><strong>What a source <em>is</em> differs per graph, and no lens may infer it.</strong> Nothing in a list of strings separates <code>merchant</code> from <code>action</code>. Each loader declares it on the <code>:Aspect</code> registry as <code>kind:'person'</code> or <code>kind:'topic'</code>. Only on a person graph does <code>size(sources) &gt; 1</code> mean agreement; on a topic graph a high count means the concept is <strong>cross-cutting</strong>.</div>
+
+  <div class="tip">The two big graphs disagree about one thing, and it is worth knowing before the counts confuse you: <code>composite26</code> holds <code>Affect</code> as <strong>two concepts</strong>, where <code>aspects16</code> holds one concept with two states. That is why 25 concepts there and 24 here describe the same vocabulary.</div>
+
+  <h2 id="lenses">3 · The lenses</h2>
+
+  <p>Every projection returns the same envelope — the Graph Tool's native schema, so renderers read it with no translation. Note edges use <code>src</code>/<code>tgt</code>, never <code>from</code>/<code>to</code>.</p>
+
+  <table>
+    <tr><th>Endpoint</th><th>What it answers</th></tr>
+    <tr><td><code>/projection/schema</code></td><td>The substrate describing itself — node kinds, their properties, the relationships between them, with live counts. Derived, so it cannot go stale.</td></tr>
+    <tr><td><code>/projection/causal</code></td><td>The CLD reading. Its nodes are <strong>states</strong>, because a causal claim is about measured quantities.</td></tr>
+    <tr><td><code>/projection/structure</code></td><td>The ERD reading — part-of, is-a, acts-in, depends-on. Polarity is deliberately emitted as <code>none</code>: a structural relation is not the kind of statement that has a sign.</td></tr>
+    <tr><td><code>/projection/gold</code></td><td>The federation lens: who drew what, and where two hands met.</td></tr>
+    <tr><td><code>/projection/vocabulary</code></td><td>Family → concept → states as a tree. Feeds the Sunburst. Carries <code>start</code>/<code>span</code> fractions so the renderer stays dumb.</td></tr>
+    <tr><td><code>/projection/drivers</code></td><td>Causality unrolled from one state. <code>?root=X&amp;dir=causes|effects&amp;depth=N</code>. Carries <code>net</code>, the sign accumulated along the path, and marks a node already on its own path as <code>loop</code> rather than following it.</td></tr>
+    <tr><td><code>/projection/subgraphs</code></td><td>The sixteen drawings, with concept and edge counts.</td></tr>
+    <tr><td><code>/projection/subgraph/&lt;name&gt;</code></td><td>One drawing — <strong>exactly what a save would write</strong>.</td></tr>
+  </table>
+
+  <p>A subgraph is <strong>not stored</strong>. <code>WHERE 'org' IN c.sources</code> <em>is</em> the drawing. The sixteen and their union are the same rows read two ways, which is the payoff of keeping <code>sources</code> as a list rather than a scalar — and it means nothing is duplicated to make both readings work.</p>
+
+  <h2 id="roundtrip">4 · The round trip</h2>
+
+  <pre><code>tools/graph-tool-v22.html?url=/projection/subgraph/org   →  edit  →  "→ Substrate"</code></pre>
+
+  <p>Loading by that URL records which drawing this is, so saving replaces the right one without being asked. <strong>Both stores move together</strong>, always:</p>
+
+  <pre><code>PUT  /subgraph/org           the database
+POST /subgraph/org/file      tools/eip-aspects-variabilized/org.json</code></pre>
+
+  <p>Saving to the database alone would leave the file saying something else, and the next loader run would silently revert the edit. The file stays canonical so git keeps the history of a governance-grade artifact; the database is always rebuildable from disk.</p>
+
+  <div class="note"><strong>Layout never passes through Neo4j.</strong> It travels file → tool → file. The substrate stores no coordinates by design, so a drawing that has never been placed gets a deterministic fallback ring — the ring is the fallback, not the answer.</div>
+
+  <p><code>GET /subgraph/&lt;name&gt;/file</code> previews the JSON without writing it. Writing is a <code>POST</code>, because a <code>GET</code> that changes the world is a <code>GET</code> something will eventually prefetch.</p>
+
+  <div class="tip"><strong>Order is part of the diff.</strong> The database has no opinion about the order of a set, so emitting rows in Cypher order once rewrote whole files — 44 insertions for a one-character change, and a diff nobody reads. The writer keeps the file's own node and edge order, its ids, coordinates, colours and untouched props. Fixing one polarity now produces one changed line.</div>
+
+  <h2 id="safety">5 · Why a save cannot destroy work</h2>
+
+  <p><code>PUT</code> retracts, then re-asserts:</p>
+
+  <ol>
+    <li>drop this drawing from every <code>sources</code> list</li>
+    <li>delete only what is left with <strong>no witness at all</strong></li>
+    <li>upsert what was sent, carrying this drawing's name</li>
+  </ol>
+
+  <p>A concept another drawing also contains keeps its other witnesses and survives step 2. One contributor cannot delete another's work, even by saving an empty canvas. Gold recomputes for free, because it was never stored.</p>
+
+  <div class="tip">Verified rather than asserted: submitting an <strong>empty</strong> <code>org</code> drawing deletes <strong>0 concepts and 0 states</strong> — all had other witnesses — and retires only the 6 edges that no other drawing had. Reading all sixteen drawings and writing them back unchanged leaves 24 concepts / 25 states / 20 causal / 50 structural exactly as they were.</div>
+
+  <h2 id="loaders">6 · The loaders</h2>
+
+  <table>
+    <tr><th>Script</th><th>Builds</th></tr>
+    <tr><td><code>seed.py</code></td><td>The n=6 reference, from literals in the file itself.</td></tr>
+    <tr><td><code>load_composite.py</code></td><td><code>composite26</code>, from <code>tools/eip-schema-cld.json</code>.</td></tr>
+    <tr><td><code>load_aspects.py</code></td><td><code>aspects16</code>, from the sixteen files in <code>tools/eip-aspects-variabilized/</code>.</td></tr>
+  </table>
+
+  <p>All three wipe and rebuild, so <strong>the migration is always just re-running the loader.</strong> Nothing needs converting in place, because nothing originates in Neo4j. Constraints are created in code with <code>IF NOT EXISTS</code>, so there is no schema step to remember.</p>
+
+  <div class="warn"><strong>The wipes are label-scoped, not global.</strong> If you add a new node label, it must be named in all three wipe clauses or it survives every rebuild and silently accumulates — with counts that still look plausible. This is the single easiest way to corrupt the substrate, and it produces no error.</div>
+
+  <h2 id="change">7 · Changing the vocabulary</h2>
+
+  <table>
+    <tr><th>To change…</th><th>Edit</th><th>Then</th></tr>
+    <tr><td>Which family a concept belongs to</td><td><code>tools/families.js</code> → <code>families[…].members</code></td><td>re-run the loaders</td></tr>
+    <tr><td>A family's colour or legend order</td><td><code>tools/families.js</code></td><td>re-run the loaders</td></tr>
+    <tr><td>Object / Process classification</td><td><code>tools/families.js</code> → <code>concepts[…].opmType</code></td><td>re-run the loaders</td></tr>
+    <tr><td>The relation families</td><td><code>tools/edge-families.js</code></td><td>re-run the loaders</td></tr>
+    <tr><td>A drawing's content</td><td>the Graph Tool, then <em>→ Substrate</em></td><td>nothing — both stores move together</td></tr>
+  </table>
+
+  <p><code>families.js</code> is read by <code>graph-composer.html</code> in a browser <em>and</em> by all three Python loaders. It is the highest-leverage file in the toolset: a syntax error there breaks the Composer and the substrate at once.</p>
+
+  <p><code>opmType</code> is declared, never derived. Eighteen of thirty concepts are classified; twelve are deliberately left blank, because <em>"we decided this is a thing"</em> and <em>"nobody has said yet"</em> are different facts and the second one should look like itself.</p>
+
+  <h2 id="never">8 · Things that are never correct</h2>
+
+  <div class="stop">
+    <strong>Editing <code>:Family</code> or <code>:LinkFamily</code> in the Neo4j Browser.</strong> They are generated copies of <code>families.js</code> and <code>edge-families.js</code>. An edit survives until the next loader run and then vanishes, with no error and no trace. Vocabulary changes rarely and deliberately, so it belongs under version control where it gets history, diff, review and rollback — none of which Neo4j gives a node edited in place.
+  </div>
+
+  <p>Also never correct:</p>
+  <ul>
+    <li><strong>Storing anything derivable.</strong> Gold, family colour, a family's weight. Two answers to one question is the failure this exists to end.</li>
+    <li><strong>Storing coordinates.</strong> Layout belongs to a drawing.</li>
+    <li><strong>Inferring what a source is.</strong> Declare it on the <code>:Aspect</code> registry.</li>
+    <li><strong>Assigning a relation family to make a count tidy.</strong> Seventeen edges have none; they are counted and left alone.</li>
+    <li><strong>Normalising an author's verb.</strong> The edge merge key includes the raw label. <code>constitute</code> and <code>constitutes</code> drifting apart is fixed by suggesting existing spellings while typing, not by rewriting what somebody wrote.</li>
+  </ul>
+
+  <h2 id="trouble">9 · Troubleshooting</h2>
+
+  <table>
+    <tr><th>Symptom</th><th>Cause and fix</th></tr>
+    <tr><td><em>cannot reach</em> from <code>db.py --check</code></td><td>Neo4j Desktop is not running the <code>RCN SCHEMA</code> server. Start it by hand.</td></tr>
+    <tr><td>A projection 404s with <em>no projection '…'</em></td><td>An older <code>api.py</code> is holding port 8768 and never loaded the route. <code>lsof -ti tcp:8768 | xargs kill -9</code>, then restart. <code>pkill -f api.py</code> does not always match it.</td></tr>
+    <tr><td>A tool loads cleanly and draws nothing</td><td>Almost always missing <code>x</code>/<code>y</code>. A node with no coordinates gets a NaN centre, paints nothing, and still reports a successful load.</td></tr>
+    <tr><td>A concept appears twice and never goes gold</td><td>The merge key did not normalise — <code>Active Goal</code> versus <code>ActiveGoal</code>. Fix the spelling in the drawing; <code>canon()</code> handles spaces.</td></tr>
+    <tr><td>Counts grow on every loader run</td><td>A node label is missing from the wipe clauses. See §6.</td></tr>
+    <tr><td>A saved edit reverts on the next load</td><td>Only the database was written, not the file. Both stores must move together.</td></tr>
+    <tr><td>A drawing opens with fewer nodes than its file</td><td>Should no longer happen — <code>subgraph()</code> and the file writer are one code path. If it does, that path has been split again.</td></tr>
+    <tr><td>Family colours are grey</td><td>The <code>:Family</code> nodes lost their palette. Re-run the loaders, which read <code>families.js</code> as the one source.</td></tr>
+  </table>
+
+  <div class="foot">
+    RCN Toolset · <code>substrate/api.py</code> on port 8768<br>
+    Companion documents: <a href="substrate-intro.html">Introduction</a> · <a href="README.md">README.md</a> · <a href="ROUND-TRIP.md">ROUND-TRIP.md</a> · deck at <code>substrate/rcn-substrate-intro.pptx</code>
+  </div>
+</div>
+</body>
+</html>
