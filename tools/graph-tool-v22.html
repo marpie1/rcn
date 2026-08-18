@@ -7716,6 +7716,29 @@ edges.forEach(function(e){var g=clone.querySelector('#edge-'+e.id);if(!g)return;
 nodes.forEach(function(n){['band','shadow','pressure','pin'].forEach(function(k){var el=clone.querySelector('#rba-'+k+'-'+n.id);if(!el)return;var lines=rbaTipLines(n,k);if(!lines.length)return;var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=lines.join('\n');el.insertBefore(t,el.firstChild);});});
 return clone;}
 function exportSVG(){var clone=buildExportSVG();var str=new XMLSerializer().serializeToString(clone);download(dlName('svg'),'image/svg+xml',str);toast('Downloaded '+dlName('svg'));}
+// Enrich every text element as an internal wiki link (Ward's "Enrich Any SVG" pattern).
+// Shared by BOTH wiki exports so the slug rule lives in exactly one place — it is the
+// rule that decides which page a click lands on, so it must not drift between paths.
+// Every text is linked, deliberately: in FedWiki a ghost page is an invitation, not
+// clutter, and links precede pages. Safe to call once per export — buildExportSVG()
+// rebuilds from nodes/edges state, so a clone is never already enriched.
+function enrichSVGLinks(clone){
+  Array.prototype.slice.call(clone.querySelectorAll('text')).forEach(function(textEl){
+    var tspans=Array.prototype.slice.call(textEl.querySelectorAll('tspan'));
+    var title=(tspans.length?tspans.map(function(s){return s.textContent;}).join(' '):textEl.textContent).trim().replace(/\s+/g,' ');
+    if(!title)return;
+    var slug=title.replace(/\s/g,'-').replace(/[^A-Za-z0-9-]/g,'').toLowerCase();
+    if(!slug)return;
+    var anchor=document.createElementNS('http://www.w3.org/2000/svg','a');
+    anchor.setAttribute('class','internal');
+    anchor.setAttribute('data-title',title);
+    anchor.setAttribute('href','/'+slug+'.html');
+    textEl.parentElement.appendChild(anchor);
+    textEl.parentElement.removeChild(textEl);
+    anchor.appendChild(textEl);
+  });
+  return clone;
+}
 function sendToWikiSVG(){
   var mn=modelName();
   var note=(document.getElementById('model-note')?document.getElementById('model-note').value||'':'').trim();
@@ -7725,20 +7748,7 @@ function sendToWikiSVG(){
   clone.setAttribute('viewBox','0 0 '+W+' '+H);
   clone.setAttribute('style','width:100%;height:auto');
   ['onmousedown','onmousemove','onmouseup','ondblclick','onclick'].forEach(function(ev){clone.removeAttribute(ev);});
-  // Enrich text elements as internal wiki links (Ward's "Enrich Any SVG" pattern)
-  Array.prototype.slice.call(clone.querySelectorAll('text')).forEach(function(textEl){
-    var tspans=Array.prototype.slice.call(textEl.querySelectorAll('tspan'));
-    var title=(tspans.length?tspans.map(function(s){return s.textContent;}).join(' '):textEl.textContent).trim().replace(/\s+/g,' ');
-    if(!title)return;
-    var slug=title.replace(/\s/g,'-').replace(/[^A-Za-z0-9-]/g,'').toLowerCase();
-    var anchor=document.createElementNS('http://www.w3.org/2000/svg','a');
-    anchor.setAttribute('class','internal');
-    anchor.setAttribute('data-title',title);
-    anchor.setAttribute('href','/'+slug+'.html');
-    textEl.parentElement.appendChild(anchor);
-    textEl.parentElement.removeChild(textEl);
-    anchor.appendChild(textEl);
-  });
+  enrichSVGLinks(clone);
   var svgStr=new XMLSerializer().serializeToString(clone);
   var t=Date.now();
   var page={
@@ -7782,6 +7792,11 @@ function sendToWikiItem(){
   clone.removeAttribute('onmouseup');
   clone.removeAttribute('ondblclick');
   clone.removeAttribute('onclick');
+  // Item export is enriched too, so a plugin item is clickable AND editable — you no
+  // longer choose between the two. graphJSON still rides along, so "Edit in Graph
+  // Tool ↗" keeps working. Forward-only: items saved before this stay unenriched
+  // until re-saved.
+  enrichSVGLinks(clone);
   var svgString=new XMLSerializer().serializeToString(clone);
   window.opener.postMessage({toolType:'rcn-graph',action:'saveGraph',graphJSON:buildState(),svgString:svgString},'*');
   window.opener.focus();
