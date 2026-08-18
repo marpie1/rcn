@@ -44,3 +44,11 @@ A step is therefore never "now open the Graph Tool". A step is a question you ar
 - [[Collective Action Assessment]] — the only method whose output is a disagreement
 - [[Shared Understanding to Experiment]] — for genuinely complex situations
 - [[Inspiration to Implementation]] — the long arc, ending in a pattern
+
+## About these pages
+
+Fourteen pages, generated once from markdown and imported here. **From now on this wiki is the authoritative copy** — edit freely, fork, split a page, reorder, add your own.
+
+Edits come back to the repository by opening a lineup in the order you want and pulling it, so the ordering you choose here is itself information and is preserved.
+
+Two things do not round-trip and are best edited repo-side: the diagrams, which are graph JSON in the RCN Graph Tool, and anything that wants to be a grid table — FedWiki has no table type, so a table is reshaped either way and a list survives intact.
