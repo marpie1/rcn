@@ -14,9 +14,11 @@ Almost every design question in this system answers itself from that sentence, a
 
 | what | lives where | why |
 |---|---|---|
-| `schemaLabel` (the merge key), `variableLabel`, `polarity`, `linkFamily`, `sources`, `mode` | **Neo4j** | meaning — it must merge across drawings |
-| `x`, `y`, `color`, `fontSize`, duplicate placements, node ids (`n0`…), instance props | **the file** | appearance — it belongs to one drawing |
+| `schemaLabel` (the merge key), the `:Variable` states of a concept, `polarity`, `linkFamily`, `sources`, `opmType`, `mode` | **Neo4j** | meaning — it must merge across drawings |
+| `x`, `y`, `color`, `fontSize`, **duplicate placements**, node ids (`n0`…), instance props | **the file** | appearance — it belongs to one drawing |
 | `gold`, family colour, the fallback ring layout | **nowhere** — computed at read time | derivable, so storing it would create a second answer that can drift |
+
+**Which state an edge runs between is meaning, not appearance** — and the two kinds of edge attach at different levels because they make different claims. A causal edge joins `(:Variable)-[:REL]->(:Variable)`, because "Coherence of PURPOSE raises Effectiveness of ORG" is about measured quantities. A structural edge joins `(:Concept)-[:REL]->(:Concept)`, because "an Org exists for a Purpose" is true however effective the org is — but it carries `srcState`/`tgtState` so the drawing still reopens between the nodes its author drew.
 
 The third row is the one people skip. `gold` is never stored: it is `size(sources) > 1`, evaluated fresh on every request. Family colour is looked up from `families.js`. Storing either would mean two answers to one question.
 
@@ -137,7 +139,7 @@ Each of these shipped, was caught, and is now guarded. They are recorded because
 
 1. **`x`/`y` omitted from the projection.** graph-tool reported a clean load of 6 nodes and 7 edges and drew nothing. The brief's contract omits `x`/`y`; the schema doc requires them. Trust the schema doc.
 2. **Row order churned the file.** The database has no opinion about the order of a set, so emitting rows in Cypher order rewrote whole files — 44 insertions for a one-character change. A diff that size does not get reviewed. The writer keeps the file's own node and edge order.
-3. **Duplicate placements collapsed.** `org` draws `Effectiveness of ORG` twice so its edges do not cross. Merging by `schemaLabel` is right — it is one concept — but write-back emitted the merged count and would have cut the file from 8 nodes to 6. Duplication belongs to the drawing.
+3. **Duplicate placements collapsed.** `org` draws `Effectiveness of ORG` twice so its edges do not cross. Merging by `schemaLabel` is right — it is one concept — but write-back emitted the merged count and would have cut the file from 8 nodes to 6. Duplication belongs to the drawing. **The read path had the same bug for longer:** `/projection/subgraph/org` returned 6 nodes where the file holds 8, and collapsing the two placements INVENTED a self-loop, because `n0 --relate_with--> n1` runs between two different nodes that share a label. Fixed by making `subgraph()` delegate to `build_file()`, so read and write are one code path and cannot disagree again.
 4. **Layout was not preserved in either direction.** Opening from the substrate gave the synthetic ring, and rearranging then saving discarded the new arrangement. Fixed by overlaying the file's coordinates on read and sending the canvas arrangement on write.
 5. **A new drawing was invisible.** `PUT` wrote real content but created no `:Aspect` node, so nothing listed it — present in the data, absent from every tool. `PUT` now merges the `:Aspect`.
 6. **The merge key did not normalise.** One drawing writes `Active Goal`, another `ActiveGoal`. `families.js` warned about exactly this. Unnormalised, that is one concept splitting into two nodes that never merge and never go gold. **A merge key that does not normalise is not a merge key.**
@@ -146,6 +148,14 @@ Each of these shipped, was caught, and is now guarded. They are recorded because
    override → legend row → top-level field. So `Aa Text: family` rendered blank
    on every graph loaded from the substrate, and `?± Gaps` flagged structural
    edges it should have skipped. No error either time.
+9. **A concept could hold only one state.** `variableLabel` was a single property, so `affect.json` — which draws both *Positive AFFECT* and *Negative AFFECT* — lost one on load. The arbiter was `len(label) > len(variableLabel)`: longest string wins, ties to whichever was read first. States are now `:Variable` nodes.
+
+10. **And the loss went deeper than labels.** The file draws `n51_pos --(+)--> n52` and `n51_neg --(-)--> n52` — opposite claims about motivation — and both collapsed to `('Affect','Motivation','modify')`, so the negative one lost the collision and reached no database. Causal edges now attach to states.
+
+11. **The write path fell a step behind the read path.** After causal edges moved, `build_file` still queried only `(:Concept)-[:REL]->(:Concept)` — so previews of the `affect`, `motivation` and `problem` drawings came back with **zero edges**, and saving any of them would have written a file with every causal stroke removed. Caught by previewing all 16 before writing anything, which is the only reason it never reached disk.
+
+12. **Source kind was inferred instead of declared.** Nothing in a list of strings separates `merchant` from `action`, and reading the sixteen topic drawings as sixteen contributors put a false claim into three published documents. Each loader now declares `kind` on the `:Aspect` registry.
+
 7. **Verb drift split relations.** `constitute` and `constitutes` are two edges, `Org → Role`, one signed and one not. The edge merge key includes the raw verb. The fix was deliberately *not* to normalise labels — that rewrites what an author wrote — but to suggest existing spellings while typing.
 
 ---
