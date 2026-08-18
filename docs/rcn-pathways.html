@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Six Questions, Four Pathways</title>
+<style>
+:root {
+  --paper:#F1F2EE; --surface:#FFFFFF; --surface-2:#E7EAE4;
+  --ink:#171B19; --ink-soft:#5A635E; --ink-faint:#858E88;
+  --line:#D6D9D2; --line-soft:#E4E7E0;
+  --accent:#0E5A4B; --accent-ink:#0B4237; --accent-tint:#E2ECE7;
+  --gate:#8A5F10; --gate-tint:#F3EBDA;
+  --crown:#6B4C9A; --crown-tint:#EDE7F5;
+  --shadow:0 1px 2px rgba(23,27,25,.05), 0 8px 24px -16px rgba(23,27,25,.28);
+  --q-when:#4A6FA5; --q-why:#0E5A4B; --q-who:#A0522D; --q-how:#6B5B95; --q-what:#8A5F10;
+  --font-display:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --font-body:"Avenir Next",Avenir,"Segoe UI",system-ui,-apple-system,sans-serif;
+  --font-mono:"SF Mono",SFMono-Regular,"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --col:66ch; --bleed:1060px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#141815; --surface:#1B211D; --surface-2:#232A25;
+    --ink:#E8EBE6; --ink-soft:#9BA49D; --ink-faint:#78817B;
+    --line:#2C332E; --line-soft:#242B26;
+    --accent:#4FBFA0; --accent-ink:#7FD6BC; --accent-tint:#1A2A25;
+    --gate:#D3A253; --gate-tint:#2A2418;
+    --crown:#B49BE0; --crown-tint:#241E33;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+    --q-when:#7FA3D8; --q-why:#4FBFA0; --q-who:#D68B5E; --q-how:#A594D0; --q-what:#D3A253;
+  }
+}
+:root[data-theme="dark"] {
+  --paper:#141815; --surface:#1B211D; --surface-2:#232A25;
+  --ink:#E8EBE6; --ink-soft:#9BA49D; --ink-faint:#78817B;
+  --line:#2C332E; --line-soft:#242B26;
+  --accent:#4FBFA0; --accent-ink:#7FD6BC; --accent-tint:#1A2A25;
+  --gate:#D3A253; --gate-tint:#2A2418;
+  --crown:#B49BE0; --crown-tint:#241E33;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  --q-when:#7FA3D8; --q-why:#4FBFA0; --q-who:#D68B5E; --q-how:#A594D0; --q-what:#D3A253;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.65;margin:0;padding:0 24px 96px;-webkit-font-smoothing:antialiased}
+main{max-width:var(--bleed);margin:0 auto}
+.col{max-width:var(--col)}
+p,ul,ol,figure,table{margin:0}
+p+p{margin-top:1em}
+p{text-wrap:pretty}
+section{display:flex;flex-direction:column;gap:20px}
+.stack{display:flex;flex-direction:column;gap:20px}
+header.masthead{padding:72px 0 40px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:22px}
+.eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);display:flex;gap:12px;flex-wrap:wrap;align-items:baseline}
+.eyebrow .plain{color:var(--ink-faint)}
+h1{font-family:var(--font-display);font-weight:600;font-size:clamp(2.6rem,6vw,4rem);line-height:1.02;letter-spacing:-.015em;margin:0;text-wrap:balance;max-width:18ch}
+.standfirst{font-family:var(--font-display);font-size:clamp(1.1rem,2.2vw,1.32rem);line-height:1.5;color:var(--ink-soft);max-width:56ch;text-wrap:pretty}
+h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.15rem);line-height:1.15;letter-spacing:-.01em;margin:0;text-wrap:balance;max-width:26ch}
+h3{font-family:var(--font-body);font-weight:650;font-size:1.02rem;line-height:1.35;margin:0;text-wrap:balance}
+h4{font-family:var(--font-mono);font-weight:500;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint);margin:0}
+.band{padding:56px 0 8px;display:flex;flex-direction:column;gap:28px}
+.band+.band{border-top:1px solid var(--line-soft)}
+.band-head{display:flex;flex-direction:column;gap:14px}
+strong{font-weight:650;color:var(--ink)}
+a{color:var(--accent);text-underline-offset:2px}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+code,.path{font-family:var(--font-mono);font-size:.855em;background:var(--surface-2);padding:.12em .38em;border-radius:3px;color:var(--ink)}
+ul.prose,ol.prose{padding-left:1.15em;display:flex;flex-direction:column;gap:10px}
+ul.prose li::marker{color:var(--accent)}
+
+blockquote.marc{border-left:3px solid var(--accent);background:var(--accent-tint);padding:20px 24px;margin:0;max-width:62ch;display:flex;flex-direction:column;gap:10px}
+blockquote.marc p{font-family:var(--font-display);font-size:1.1rem;line-height:1.5;color:var(--accent-ink)}
+blockquote.marc cite{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-style:normal;color:var(--accent)}
+blockquote.crown{border-left-color:var(--crown);background:var(--crown-tint)}
+blockquote.crown p{color:var(--crown)}
+blockquote.crown cite{color:var(--crown)}
+
+.tablewrap{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;min-width:600px;font-size:.91rem}
+th{text-align:left;font-family:var(--font-mono);font-weight:500;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);padding:0 14px 8px 0;border-bottom:1px solid var(--line);vertical-align:bottom}
+td{padding:12px 14px 12px 0;border-bottom:1px solid var(--line-soft);vertical-align:top;line-height:1.5;color:var(--ink-soft)}
+td:first-child{color:var(--ink)}
+td.mono{font-family:var(--font-mono);font-size:.8rem}
+
+/* crown — the two governing models */
+.crowns{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;max-width:820px}
+.crowncard{border:1px solid var(--crown);border-radius:4px;background:var(--surface);padding:20px 22px;display:flex;flex-direction:column;gap:12px}
+.crowncard .lab{font-family:var(--font-mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--crown)}
+.crowncard .nm{font-family:var(--font-display);font-size:1.3rem;font-weight:600;line-height:1.15}
+.crowncard ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:7px}
+.crowncard li{font-size:.9rem;color:var(--ink-soft);display:grid;grid-template-columns:5.5em 1fr;gap:10px}
+.crowncard li b{color:var(--ink);font-weight:650;font-size:.86rem}
+
+/* ladder */
+.ladder{display:flex;flex-direction:column;gap:0;max-width:820px}
+.rung{display:grid;grid-template-columns:26px 1fr;gap:16px;padding:14px 0;border-bottom:1px solid var(--line-soft);align-items:baseline}
+.rung:first-child{border-top:1px solid var(--line)}
+.rung .r{font-family:var(--font-mono);font-size:11px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+.rung .rb{display:flex;flex-direction:column;gap:3px}
+.rung .rn{font-size:.98rem;color:var(--ink);font-weight:600}
+.rung .rd{font-size:.89rem;color:var(--ink-soft);line-height:1.5}
+
+/* pathway */
+.pathway{border:1px solid var(--line);border-radius:4px;background:var(--surface);max-width:820px;overflow:hidden;box-shadow:var(--shadow)}
+.pw-head{padding:20px 24px 18px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px;background:var(--surface-2)}
+.pw-kind{font-family:var(--font-mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent)}
+.pw-name{font-family:var(--font-display);font-size:1.45rem;font-weight:600;line-height:1.15}
+.pw-prob{font-size:.93rem;color:var(--ink-soft);line-height:1.5;max-width:58ch}
+.pw-meta{display:flex;gap:14px;flex-wrap:wrap;padding-top:6px;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint)}
+.pw-meta b{color:var(--ink-soft);font-weight:500}
+.conf{color:var(--accent);letter-spacing:.1em}
+.conf .off{color:var(--ink-faint);opacity:.45}
+.pstep{display:grid;grid-template-columns:34px 1fr;gap:16px;padding:18px 24px;border-bottom:1px solid var(--line-soft)}
+.pstep:last-child{border-bottom:0}
+.pstep .n{font-family:var(--font-mono);font-size:11px;color:var(--ink-faint);font-variant-numeric:tabular-nums;padding-top:4px}
+.pstep .body{display:flex;flex-direction:column;gap:7px;min-width:0}
+.pq{font-family:var(--font-display);font-size:1.09rem;font-weight:600;line-height:1.3;color:var(--ink)}
+.ptool{font-family:var(--font-mono);font-size:.78rem;letter-spacing:.05em;color:var(--accent);text-transform:uppercase}
+.pnote{font-size:.9rem;color:var(--ink-soft);line-height:1.5}
+.pgate{font-size:.84rem;color:var(--gate);background:var(--gate-tint);border-left:2px solid var(--gate);padding:7px 11px;align-self:flex-start;max-width:56ch;line-height:1.45}
+.pgate b{color:var(--gate);font-weight:650}
+.pbranch{font-size:.87rem;color:var(--ink-soft);background:var(--surface-2);padding:8px 12px;border-radius:3px;align-self:flex-start;max-width:58ch}
+
+/* six-question rail */
+.qrail{display:flex;flex-direction:column;gap:0;max-width:820px}
+.qrow{display:grid;grid-template-columns:118px 1fr;gap:18px;padding:15px 0;border-bottom:1px solid var(--line-soft);align-items:baseline}
+.qrow:first-child{border-top:1px solid var(--line)}
+.qname{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:500}
+.qbody{display:flex;flex-direction:column;gap:4px}
+.qterr{font-size:.93rem;color:var(--ink)}
+.qtools{font-size:.87rem;color:var(--ink-soft);line-height:1.5}
+.qwhen{color:var(--q-when)}.qwhy{color:var(--q-why)}.qwho{color:var(--q-who)}.qhow{color:var(--q-how)}.qwhat{color:var(--q-what)}
+
+.kinds{display:flex;flex-direction:column;gap:0;max-width:820px}
+.kind{padding:20px 0;border-bottom:1px solid var(--line-soft);display:flex;flex-direction:column;gap:7px}
+.kind:first-child{border-top:1px solid var(--line)}
+.kind p{font-size:.93rem;color:var(--ink-soft)}
+.kind .ex{font-family:var(--font-mono);font-size:.78rem;letter-spacing:.05em;color:var(--accent);text-transform:uppercase}
+
+footer{margin-top:56px;padding-top:24px;border-top:1px solid var(--line);font-size:.85rem;color:var(--ink-faint);max-width:var(--col)}
+@media (max-width:620px){
+  body{font-size:16px;padding:0 18px 64px}
+  header.masthead{padding-top:48px}
+  .pstep{grid-template-columns:26px 1fr;gap:11px;padding:16px 16px}
+  .qrow{grid-template-columns:1fr;gap:5px}
+  .pw-head{padding:16px 16px 14px}
+  .crowncard li{grid-template-columns:1fr;gap:2px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+
+<header class="masthead">
+  <div class="eyebrow">
+    <span>RCN</span><span class="plain">/</span><span>Methods</span><span class="plain">/</span><span class="plain">17 August 2026 &middot; second draft</span>
+  </div>
+  <h1>Six Questions, Four Pathways</h1>
+  <p class="standfirst">Nineteen frameworks read together. What governs all of them, what is invariant across them, the four pathways worth writing first, and what it means for how the tools are shelved.</p>
+</header>
+
+<section class="band">
+  <div class="band-head">
+    <h4>Above everything else</h4>
+    <h2>Two models govern the use of all the others</h2>
+  </div>
+
+  <blockquote class="marc crown">
+    <p>Beauty is the basis for using all the models. That is why I put it at the top along with the most general model of humans taking action together: the Social Action Tetrahedron. <strong>All the models below these two must be informed by these or they will lead to no good.</strong></p>
+    <cite>Models for Seeing Systems</cite>
+  </blockquote>
+
+  <div class="col stack">
+    <p>This is a precondition, not a pathway — and it is the correction that matters most to my first draft. I had the tetrahedron as one diagnostic among four, sitting beside the others. It does not sit beside them. It sits above them, together with Beauty&nbsp;Good&nbsp;Truth&nbsp;Economy, and the claim attached is an ethical one: a model used without these will lead to no good.</p>
+    <p>Every pathway in this document runs underneath these two.</p>
+  </div>
+
+  <div class="crowns">
+    <div class="crowncard">
+      <span class="lab">Social Action Tetrahedron · POIA</span>
+      <span class="nm">What humans taking action together are made of</span>
+      <ul>
+        <li><b>Persons</b> who aspire, participate, perform</li>
+        <li><b>Ideals</b> that motivate, inspire, guide</li>
+        <li><b>Orgs</b> that prioritize, facilitate, enrol</li>
+        <li><b>Action</b> that realizes, teaches, engages</li>
+      </ul>
+    </div>
+    <div class="crowncard">
+      <span class="lab">Social System Tetrahedron · BGTE</span>
+      <span class="nm">What makes the use of a model come to good</span>
+      <ul>
+        <li><b>Beauty</b> aesthetics, passion</li>
+        <li><b>Good</b> ethics</li>
+        <li><b>Truth</b> ecology</li>
+        <li><b>Economy</b> surplus</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col stack">
+    <p>BGTE is not decorative and it is not a values statement bolted on the front. In Neighborhood Systems Patterns it feeds <em>all six</em> of the questions directly, and it feeds Stories, which feed Body-Mood-Language. It is upstream of the whole apparatus.</p>
+    <p>Practically, this means every method page carries a line most method documentation never has: <strong>what would make running this beautiful, good, true and economical — and what would make running it none of those.</strong> A method that passes its gates and fails BGTE has not succeeded.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>The spine</h4>
+    <h2>One structure runs through everything below</h2>
+  </div>
+
+  <div class="col stack">
+    <p>Under the two governing models, one structure appears in nearly every framework: <strong>the Six Nested Questions — When, Where, Why, Who, How, What.</strong></p>
+    <p>They are the ordered chain in Neighborhood Systems Patterns (<code>5&rarr;6&rarr;7&rarr;8&rarr;9&rarr;10</code>: Time &rarr; Place &rarr; Paradigm &rarr; Politics &rarr; Design &rarr; Implementation). They are the first node of Another Sequence of Tools. They are what Story Structure exists to answer in narrative form. They are the tag on every one of the 15 Ps. They are your extension of Meadows, with Time and Place added to contextualize the twelve leverage points. And in RCN Modeling Theory you say it outright:</p>
+  </div>
+
+  <blockquote class="marc">
+    <p>The Story Structure diagram places the modeling tools not in a linear sequence but in a topology organized around the Six Questions. This is the most important organizational insight in the conversation.</p>
+    <cite>RCN Modeling Theory, April 2026</cite>
+  </blockquote>
+
+  <div class="col stack">
+    <p>So the shelves for the storefront are not something to invent. <strong>You already have them.</strong> My earlier proposal — shelve tools by &ldquo;the question the visitor is facing&rdquo; — was the right instinct pointed at a made-up list. This is the list.</p>
+    <p>And the constraint that governs how every pathway is written:</p>
+  </div>
+
+  <blockquote class="marc">
+    <p>The sequence is not a pipeline. It is a progression of question types, and the tools are matched to questions.</p>
+    <cite>RCN Modeling Theory — &ldquo;the most important caveat&rdquo;</cite>
+  </blockquote>
+
+  <div class="col stack">
+    <p>A step is therefore never &ldquo;now open the Graph Tool.&rdquo; A step is <em>a question you are now ready to ask</em>, with a tool named as the instrument that answers it.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>The shelves</h4>
+    <h2>Your map of tools by question, filled in</h2>
+    <p class="col">Your table from RCN Modeling Theory, with the actual RCN tools placed against it. Where a tool exists but is undocumented it still belongs on the shelf — the shelf is the demand, not the supply.</p>
+  </div>
+
+  <div class="qrail">
+    <div class="qrow"><span class="qname qwhen">When / Where</span><div class="qbody"><span class="qterr">Settings and context</span><span class="qtools">RCN Map · Issue Polygon Map · RCN Timeline · Story Structure · culture, world view, point of view</span></div></div>
+    <div class="qrow"><span class="qname qwhy">Why</span><div class="qbody"><span class="qterr">Purposes, motives, beliefs</span><span class="qtools">Graph Tool (CLD mode) · Vester Sensitivity Model · the 14 Leverage Points · BGTE · Social Action Tetrahedron</span></div></div>
+    <div class="qrow"><span class="qname qwho">Who</span><div class="qbody"><span class="qterr">Roles and agency</span><span class="qtools">Sofi-VSM · SODOTO · CfA-dSC Contract Creator · My Support Network · IAD</span></div></div>
+    <div class="qrow"><span class="qname qhow">How &mdash; strategy</span><div class="qbody"><span class="qterr">Strategies and interventions</span><span class="qtools">Cynefin · Graph Tool (CLD) · EIP Integration Explorer · Vester · Sofi-VSM · Graph Composer</span></div></div>
+    <div class="qrow"><span class="qname qhow">How &mdash; mechanism</span><div class="qbody"><span class="qterr">Design and implementation</span><span class="qtools">Graph Tool (OPM mode) · Graph Tool (SFD mode) · IAD · NRM Tripod Beta · Wardley Map Generator</span></div></div>
+    <div class="qrow"><span class="qname qwhat">What</span><div class="qbody"><span class="qterr">Outcomes and affordances</span><span class="qtools">RCN SPC · eVSM suite · Positive Affect Score · Conversation Navigator · Cave Drawings</span></div></div>
+  </div>
+
+  <div class="col stack">
+    <p>Two things fall out. The <strong>What</strong> shelf is where the newest tool landed — SPC arrived fully documented and is exactly a What-shelf instrument: it tells you whether an outcome really changed or whether you are reading noise. And the <strong>Who</strong> shelf is the thinnest in documentation despite holding SODOTO, contracts and Sofi-VSM — a real gap, because Who is where self-organizing actually happens.</p>
+    <p>One tool sits on several shelves. The Graph Tool answers Why in CLD mode, How-strategy in EIP mode and How-mechanism in OPM and SFD modes. That is not untidiness — it is the hammer point again, and it is why shelving is a property in the catalog rather than a folder on disk.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>The two layers</h4>
+    <h2>Models are particular; patterns are general</h2>
+  </div>
+
+  <blockquote class="marc">
+    <p>The approach to modeling in ReLocalize Creativity is to reveal rich perspectives and possibilities (leverage points) in particular systems — <strong>NOT</strong> to create generalized models. Our generalizations will be published as Patterns.</p>
+    <cite>Models for Seeing Systems</cite>
+  </blockquote>
+
+  <div class="col stack">
+    <p>This is the cleanest statement of the whole architecture and it arrived independently of anything we designed last week. It draws a hard line:</p>
+    <ul class="prose">
+      <li><strong>A model is a particular.</strong> This neighbourhood, this hospital's pricing, this coop's finances — drawn to reveal leverage in <em>that</em> system, and not expected to travel.</li>
+      <li><strong>A pattern is the generalization</strong>, abstracted from particulars and published so someone else can use it.</li>
+    </ul>
+    <p>Which settles a question the toolshelf plan left slightly loose. The example files sitting in <span class="path">tools/</span> — <span class="path">whatcom-homelessness-cld.json</span>, <span class="path">rba-hospital-pricing.rcn.json</span>, the <span class="path">pomr-*.json</span> set — are <strong>models</strong>. The method pages are <strong>patterns</strong>. An example is not decoration on a method page; it is the particular the general was abstracted from, and the link between them should be explicit in both directions.</p>
+    <p>It also names the act that connects the two layers. Step 16 of the 15 Ps — Posterity, Pattern Language, the one you colour orange for danger — <em>is</em> the move from the left column to the right. That is not a coda on the production pathway. It is the mechanism by which the shelf grows.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>The grammar</h4>
+    <h2>The causal ladder, and where to go when lost</h2>
+    <p class="col">Causal Models sets out the history of causal representation as a ladder of increasing sophistication — and then, more usefully, gives a rule for climbing back down it.</p>
+  </div>
+
+  <div class="ladder">
+    <div class="rung"><span class="r">01</span><div class="rb"><span class="rn">Conversation</span><span class="rd">The most primitive causal model — the one that arises in talk, before any drawing. Campfire Conversations.</span></div></div>
+    <div class="rung"><span class="r">02</span><div class="rb"><span class="rn">Drawing</span><span class="rd">Diagrams or paintings, &ldquo;fit for finger pointing and conversations.&rdquo; Cave Drawings — and note that the criterion is pointing, not accuracy.</span></div></div>
+    <div class="rung"><span class="r">03</span><div class="rb"><span class="rn">Causal Loop Diagram</span><span class="rd">&ldquo;A huge leap designed in the 20th century.&rdquo; The primary language.</span></div></div>
+    <div class="rung"><span class="r">04</span><div class="rb"><span class="rn">Stock and Flow</span><span class="rd">Where the numbers enter — and only here.</span></div></div>
+    <div class="rung"><span class="r">05</span><div class="rb"><span class="rn">System Dynamics</span><span class="rd">The grammar itself. &ldquo;A language to understand real world systems.&rdquo;</span></div></div>
+    <div class="rung"><span class="r">06</span><div class="rb"><span class="rn">Everything built on that grammar</span><span class="rd">VSM · Sofi · Process Maps · Linkage Mapping · Value Stream Mapping · A3 Problem Solving</span></div></div>
+  </div>
+
+  <blockquote class="marc">
+    <p>Whenever we get mixed up and confused using our more sophisticated tools and methods, then we should go back and &ldquo;diagram our sentences&rdquo; in system dynamics, especially the primary language of causal loop diagramming.
+    </p>
+    <cite>Causal Models</cite>
+  </blockquote>
+
+  <div class="col stack">
+    <p><strong>This is a third schema element, and it is not a gate.</strong> A gate blocks forward motion until a condition holds. This is a <em>recovery</em> — a return path available from anywhere, at any depth, when the group has lost the thread. Every method should declare one, and for RCN the default is the same: drop back to a causal loop diagram and diagram your sentences.</p>
+    <p>The reason it works is on the ladder above. The sophisticated tools are built up from the grammar of system dynamics, so returning to CLD is not starting over — it is returning to the language the other tools are written in.</p>
+    <p>One more line from that page earns a place in Pathway 3: <em>designed experiences and experiments can be seen as a way for humans to listen to systems as they communicate back to us.</em> That is the justification for running an experiment rather than a simulation, and it is a better sentence than any I would write for it.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>The distinction that matters</h4>
+    <h2>Four kinds of sequence, not one</h2>
+    <p class="col">The sources contain sequences of four genuinely different kinds. Flattening them into a single list of &ldquo;methods&rdquo; is the biggest error available here, because they are used at different moments and answer to different tests.</p>
+  </div>
+
+  <div class="kinds">
+    <div class="kind">
+      <h3>Ontological — what is true of ethical collective action</h3>
+      <p>Not performed. A claim about how persons, ideals, organizations and actions necessarily relate, and about what makes their relating come to good. You check yourself against it and find which relation has failed.</p>
+      <span class="ex">Social Action Tetrahedron · BGTE · Optimum Sequence · AIC</span>
+    </div>
+    <div class="kind">
+      <h3>Diagnostic — what to do when you are stuck</h3>
+      <p>A routing procedure. Takes an unclear situation and returns a <em>type</em>, a <em>scale</em>, and a decision about which production sequence to enter. The kind people most need and the kind least often written down.</p>
+      <span class="ex">Systemic Problem Solving · Cynefin · Six Nested Questions · Six Thinking Hats · DSRP</span>
+    </div>
+    <div class="kind">
+      <h3>Production — getting a thing built, delivered and taught</h3>
+      <p>Ordered work with resources, handoffs and deliverables. These look like conventional method documentation and are the least transferable — each is fitted to a domain.</p>
+      <span class="ex">15 Ps · Another Sequence of Tools · Vester SensiMod · System Discovery Process</span>
+    </div>
+    <div class="kind">
+      <h3>Curricular — the order in which a person learns the skills</h3>
+      <p>The fourth kind, and the one I missed in the first draft. A learning progression is not a work progression: CLD &rarr; Stock Flow &rarr; System Dynamics &rarr; Vester is how you <em>acquire</em> the practice, and nobody would run a project in that order. This is the kind SODOTO actually certifies.</p>
+      <span class="ex">The six pathways already in the SODOTO Skills Registry · Systems Curriculum's four levels</span>
+    </div>
+  </div>
+
+  <div class="col stack">
+    <p>All four are patterns in Alexander's sense, at different scales, connected through <code>COMPLETED_BY</code>. The diagnostic pathway <em>selects</em> a production pathway. The curricular pathways say who is qualified to run either. The ontological frame is what all of it is checked against.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>Already built</h4>
+    <h2>The registry exists, and it is half the catalog</h2>
+  </div>
+
+  <div class="col stack">
+    <p>The SODOTO Skills Registry, version 0.1, dated 1 March 2026, sits on Models for Seeing Systems. Thirty-one skills, a status key, and one real credential already issued: <strong>Causal Loop Diagramming — Active — first mentor Kerry Turner, first credential Marc Pierson, 10 December 2025.</strong></p>
+    <p>Two consequences, one good and one urgent.</p>
+
+    <h3>The good one: the confidence machinery is not speculative</h3>
+    <p>Last week's decision — that a method's confidence mark derives from SODOTO attestations rather than being typed — was designed against a system that already exists and has already issued a credential. There is a live teaching chain with exactly one link in it. That is a real first star, not a hypothetical.</p>
+    <p>And your status key measures something my stars do not:</p>
+  </div>
+
+  <div class="tablewrap">
+    <table style="min-width:620px">
+      <thead><tr><th>Axis</th><th>Question it answers</th><th>Values</th><th>Derived from</th></tr></thead>
+      <tbody>
+        <tr><td>Confidence</td><td>Does this method hold?</td><td class="mono">&lowast;&lowast; · &lowast; · none · retired</td><td>Do One / Teach One attestations on the method</td></tr>
+        <tr><td>Transmissibility</td><td>Can this method be taught?</td><td class="mono">Active · Ready · Candidate</td><td>Whether its constituent skills have mentors and chains</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col stack">
+    <p>These are orthogonal and both are needed. A method can be well-proven and untransmissible — it works, but only you can run it because no skill in it has a mentor. Or highly transmissible and unproven — everyone could learn it, nobody has tested it. Collapsing them would hide exactly the failure each is built to expose. You invented the second axis five months ago; keeping both is the right answer.</p>
+
+    <h3>The urgent one: a third index is forming</h3>
+    <p>This registry, <span class="path">tools/schemas/README.md</span> in the repo, and the proposed <span class="path">catalog.json</span> are three places recording overlapping facts about the same set of practices. That is precisely the drift the catalog exists to prevent, and the registry is the most developed of the three — so it should be the seed, not the casualty.</p>
+    <p>The clean split: <strong>the registry holds skills</strong> (what a person can be certified in), <strong><span class="path">methods.json</span> holds pathways</strong> (ordered uses of tools), <strong><span class="path">catalog.json</span> holds tools</strong> (what you can launch). A method names the skills it requires; skills are certified; tools are opened. Three files, one relation each, no overlap.</p>
+
+    <h3>Six curricular pathways, already written</h3>
+    <p>The registry's own Observations section names six, and they are ready to become method pages with no further work beyond the pattern format:</p>
+    <ul class="prose">
+      <li><strong>Systems Dynamics</strong> — CLD &rarr; Stock Flow &rarr; System Dynamics &rarr; Vester</li>
+      <li><strong>Organizational Diagnosis</strong> — Sofi-VSM &rarr; VSM &rarr; EIP Stage Sketching &rarr; Six Context Questions</li>
+      <li><strong>Sense-Making</strong> — Cynefin &rarr; DSRP &rarr; Social Action Tetrahedron &rarr; Social System Tetrahedron</li>
+      <li><strong>Mapping</strong> — Process &rarr; Linkage &rarr; Value Stream &rarr; Story &rarr; Arrows</li>
+      <li><strong>FedWiki Civic Practice</strong> — FedWiki &rarr; Local Newspaper &rarr; Conversation Taxonomy &rarr; Pattern Writing</li>
+      <li><strong>Formal Modeling</strong> — OPM/OPCloud &rarr; Model-based Systems Engineering &rarr; Bayesian Belief Modeling</li>
+    </ul>
+    <p>Note where the Sense-Making pathway ends: at the two governing models. The curriculum already teaches toward the crown.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>Pathway one — the router</h4>
+    <h2>Systemic Problem Solving</h2>
+    <p class="col">Yours, nearly verbatim from your own page, and the most valuable single thing in the set — because it is the pathway that chooses the other pathways.</p>
+  </div>
+
+  <div class="pathway">
+    <div class="pw-head">
+      <span class="pw-kind">Diagnostic · routes to every other pathway</span>
+      <span class="pw-name">Systemic Problem Solving</span>
+      <p class="pw-prob">A neighbourhood problem keeps resisting the obvious fixes, and nobody agrees on what kind of problem it even is.</p>
+      <div class="pw-meta">
+        <span><b>Confidence</b> <span class="conf">&lowast;<span class="off">&lowast;</span></span></span>
+        <span><b>Transmissibility</b> Candidate</span>
+        <span><b>Fallback</b> drop to CLD</span>
+      </div>
+    </div>
+
+    <div class="pstep"><span class="n">01</span><div class="body">
+      <span class="pq">Will a rule of thumb do?</span>
+      <span class="ptool">no tool — judgement</span>
+      <p class="pnote">Try the handy heuristics first. Most things are not systems problems and should not be treated as one.</p>
+      <p class="pgate"><b>Gate:</b> proceed only when the simple heuristics have actually failed. Entering the full pathway on a problem that did not need it is how these methods get a reputation for ceremony.</p>
+    </div></div>
+
+    <div class="pstep"><span class="n">02</span><div class="body">
+      <span class="pq">What is connected to what?</span>
+      <span class="ptool">pen and paper &rarr; RCN Graph Tool</span>
+      <p class="pnote">Draw the problem situation. Name the nodes <em>and</em> the connections. Start on paper — move to the Graph Tool only once something interesting shows up. The drawing exists to be argued with, not to be correct.</p>
+      <p class="pbranch"><strong>Hands off:</strong> a graph JSON with named nodes and named edges. Everything downstream reads this. This is also the rung you return to from anywhere.</p>
+    </div></div>
+
+    <div class="pstep"><span class="n">03</span><div class="body">
+      <span class="pq">What kind of problem is each part of this?</span>
+      <span class="ptool">Cynefin</span>
+      <p class="pnote">Type each <em>subgraph</em> separately — simple, complicated, complex, chaotic, disordered. A neighbourhood problem is almost never one type throughout, and the parts want different treatment.</p>
+      <p class="pbranch"><strong>Routes to:</strong> Complicated &rarr; design and engineering tools, Pathway&nbsp;4. Complex &rarr; leverage and safe-to-fail experiments, Pathway&nbsp;3. Chaotic &rarr; act first, stabilise, retype.</p>
+    </div></div>
+
+    <div class="pstep"><span class="n">04</span><div class="body">
+      <span class="pq">When, Where, Why, Who, How, and only then What?</span>
+      <span class="ptool">Six Nested Questions · with key stakeholders</span>
+      <p class="pnote">Two to four hours, with the people who actually hold the situation. The order is load-bearing: answering What first is the standard failure, and it produces solutions nobody will carry.</p>
+      <p class="pgate"><b>Gate:</b> the stakeholders must be in the room. Run alone, this step produces a document rather than a shared understanding, and the pathway depends on the second thing.</p>
+    </div></div>
+
+    <div class="pstep"><span class="n">05</span><div class="body">
+      <span class="pq">Where is our power, and are we using all three kinds?</span>
+      <span class="ptool">AIC — Appreciate · Influence · Control</span>
+      <p class="pnote">Equal time in three conversations: appreciating the whole situation, weighing the diverse valuations stakeholders hold, and designing production and control. Your own note is the operative one — <em>the magic is in keeping attention on all three domains, so that the most power possible can be applied.</em></p>
+      <p class="pbranch"><strong>Reads as:</strong> Appreciate &harr; Ideals, Influence &harr; Persons, Control &harr; Org and Action — the governing tetrahedron's vertices, and the three sources of legitimate power from Empowering Change Agents.</p>
+    </div></div>
+
+    <div class="pstep"><span class="n">06</span><div class="body">
+      <span class="pq">Would running this be beautiful, good, true and economical?</span>
+      <span class="ptool">BGTE check</span>
+      <p class="pnote">The crown check, before committing. Not a formality: a plan that is efficient and ugly, or effective and untrue to the ecology it sits in, fails here and should not proceed on the strength of having passed everything else.</p>
+    </div></div>
+
+    <div class="pstep"><span class="n">07</span><div class="body">
+      <span class="pq">Which pathway do we now enter, and who has the standing to run it?</span>
+      <span class="ptool">routes onward · registry check</span>
+      <p class="pnote">The output is not a solution. It is a typed, scaled, shared understanding, a choice of production pathway, and a check of whether anyone present is certified in the skills that pathway needs.</p>
+    </div></div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>Pathway two — the crown, applied</h4>
+    <h2>Walking the Tetrahedron</h2>
+    <p class="col">Four questions anyone can ask untrained, and sixteen named places to look when the answer is no. This is not one diagnostic among several — it is the governing model used as a check, and the strongest Cave Drawing in the whole set.</p>
+  </div>
+
+  <div class="pathway">
+    <div class="pw-head">
+      <span class="pw-kind">Ontological · the crown used as a check</span>
+      <span class="pw-name">Walking the Tetrahedron</span>
+      <p class="pw-prob">Everyone is working hard and nothing is coming of it. Something in the loop between people, ideals, organization and action is broken, and nobody can name which.</p>
+      <div class="pw-meta">
+        <span><b>Confidence</b> <span class="conf"><span class="off">&lowast;&lowast;</span></span></span>
+        <span><b>Transmissibility</b> Candidate (POIA, #8)</span>
+        <span><b>Time</b> under an hour</span>
+      </div>
+    </div>
+
+    <div class="pstep"><span class="n">01</span><div class="body">
+      <span class="pq">Do the persons here actually aspire to the ideal?</span>
+      <span class="ptool">Person &rarr; Ideal · <em>Aspires to</em></span>
+      <p class="pnote">If no: the quality to look at is <strong>Aspiration of Persons</strong>. Nothing downstream can be fixed by better organizing. Check whether the ideal was ever theirs, or was handed to them.</p>
+    </div></div>
+    <div class="pstep"><span class="n">02</span><div class="body">
+      <span class="pq">Does that ideal inspire an organization into being?</span>
+      <span class="ptool">Ideal &rarr; Org · <em>Inspires</em></span>
+      <p class="pnote">If no: <strong>Power of Inspiration of Org</strong>. An ideal held privately that has produced no standing arrangement to pursue it stalls exactly here.</p>
+    </div></div>
+    <div class="pstep"><span class="n">03</span><div class="body">
+      <span class="pq">Does the organization facilitate action?</span>
+      <span class="ptool">Org &rarr; Action · <em>Facilitates</em></span>
+      <p class="pnote">If no: <strong>Quality of Facilitation</strong>. The commonest failure in practice — an organization exists, meets, and produces no action it has made easier.</p>
+    </div></div>
+    <div class="pstep"><span class="n">04</span><div class="body">
+      <span class="pq">Does the action realize the originating ideal?</span>
+      <span class="ptool">Action &rarr; Ideal · <em>Realizes</em></span>
+      <p class="pnote">If no: <strong>Ideals Realized</strong>. Work is happening but has drifted from what it was for. The loop never closes, and people burn out without knowing why.</p>
+      <p class="pgate"><b>Note the shape:</b> these four are the thick arrows in your diagram — the optimum sequence is literally the heavy path. The other eight relations are the repair vocabulary, not the diagnosis.</p>
+    </div></div>
+    <div class="pstep"><span class="n">05</span><div class="body">
+      <span class="pq">Is the action teaching the organization anything?</span>
+      <span class="ptool">Action &rarr; Org · <em>Teaches</em> &rarr; Organizational Learning</span>
+      <p class="pnote">Outside the optimum loop, checked last, and it decides whether any of this compounds. Its quality-name in the first diagram is <strong>Organizational Learning</strong> — SODOTO's Teach One at the scale of an institution, sitting inside the frame independently of SODOTO.</p>
+    </div></div>
+    <div class="pstep"><span class="n">06</span><div class="body">
+      <span class="pq">And does the whole of it come to good?</span>
+      <span class="ptool">BGTE</span>
+      <p class="pnote">The second half of the crown. A tetrahedron whose four arrows all work, in service of something ugly, false, or extractive, is a well-functioning machine pointed the wrong way.</p>
+    </div></div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>Pathway three — for complex problems</h4>
+    <h2>Shared Understanding to Experiment</h2>
+    <p class="col">Your four-step System Discovery Process from Leverage Points, with the 14 leverage points as the search space and the numbers question as an explicit gate.</p>
+  </div>
+
+  <div class="pathway">
+    <div class="pw-head">
+      <span class="pw-kind">Production · entered from Pathway 1 when Cynefin says complex</span>
+      <span class="pw-name">Shared Understanding to Experiment</span>
+      <p class="pw-prob">The situation is genuinely complex — cause and effect visible only in hindsight — and the group needs to intervene without pretending to predict.</p>
+      <div class="pw-meta">
+        <span><b>Confidence</b> <span class="conf">&lowast;<span class="off">&lowast;</span></span></span>
+        <span><b>Transmissibility</b> Active via CLD (#1)</span>
+        <span><b>Fallback</b> drop to CLD</span>
+      </div>
+    </div>
+
+    <div class="pstep"><span class="n">01</span><div class="body">
+      <span class="pq">Do we see the same system?</span>
+      <span class="ptool">Campfire Conversation &rarr; Cave Drawing &rarr; Graph Tool (CLD)</span>
+      <p class="pnote">Climb the ladder in order. Shared understanding is shared only when people who disagree can point at the same picture and say where they disagree — which is why the criterion for a Cave Drawing is that it is fit for finger pointing, not that it is right.</p>
+    </div></div>
+    <div class="pstep"><span class="n">02</span><div class="body">
+      <span class="pq">Where would a small push do the most?</span>
+      <span class="ptool">14 Leverage Points (Meadows + Time + Place)</span>
+      <p class="pnote">Work up the list, not down it. Parameters and numbers are the weakest places to intervene; paradigm, goals and the power to self-organize are the strongest. Your Time Horizon and Awareness of Place sit at the top with world view, feeding goals directly.</p>
+    </div></div>
+    <div class="pstep"><span class="n">03</span><div class="body">
+      <span class="pq">What do we think will happen?</span>
+      <span class="ptool">Vester Sensitivity Model · SFD mode</span>
+      <p class="pnote">Model the innovation before committing to it: which variables are most influential given this feedback structure — not what the numbers will be.</p>
+      <p class="pgate"><b>Gate — the numbers question:</b> do not move to simulation until you have earned it. CLDs have no numbers, and Meadows warned that numbers are the weakest leverage. A simulation built before the feedback structure is understood is garbage dressed in numbers.</p>
+    </div></div>
+    <div class="pstep"><span class="n">04</span><div class="body">
+      <span class="pq">What actually changed?</span>
+      <span class="ptool">RCN SPC · Positive Affect Score</span>
+      <p class="pnote">Do the experiment, then read the result honestly. In your words, a designed experiment is a way for humans to <em>listen to systems as they communicate back to us</em>. SPC is what separates a real change from noise — without it a group will claim both success and failure from the same data.</p>
+      <p class="pbranch"><strong>Closes to:</strong> back into step 1 with a revised picture. The loop is the method; a single pass is not.</p>
+    </div></div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>Pathway four — the long arc</h4>
+    <h2>Inspiration to Implementation</h2>
+    <p class="col">The 15 Ps, running from a private sensation to a pattern someone else can reuse. The only one of the four that terminates outside itself.</p>
+  </div>
+
+  <div class="pathway">
+    <div class="pw-head">
+      <span class="pw-kind">Production · the full arc, months to years</span>
+      <span class="pw-name">Inspiration to Implementation</span>
+      <p class="pw-prob">Something needs to exist that does not, and the group is larger than a few friends — so the fifteen things a small group does intuitively must now be done on purpose.</p>
+      <div class="pw-meta">
+        <span><b>Confidence</b> <span class="conf">&lowast;<span class="off">&lowast;</span></span></span>
+        <span><b>Transmissibility</b> Candidate (#11)</span>
+      </div>
+    </div>
+
+    <div class="pstep"><span class="n">01</span><div class="body">
+      <span class="pq">What do we notice, and what might it become?</span>
+      <span class="ptool">Private — Perception · Possibility · Purpose · Passion</span>
+      <p class="pnote">Sensation before language. Your warning is the important part: these four are easily missed or discounted precisely because they are not yet in words, and a group that skips them builds something nobody wants.</p>
+    </div></div>
+    <div class="pstep"><span class="n">02</span><div class="body">
+      <span class="pq">Who will commit, who will we bring in, what do we decide?</span>
+      <span class="ptool">Public — Promise · Political Action · Policy</span>
+      <p class="pnote">Promise is an embodied commitment, even if only to oneself. Political action is repeating the first five in each other person. Policy is the organization deciding to act.</p>
+      <p class="pgate"><b>Gate:</b> no program without a promise. Planning entered before anyone has committed produces plans nobody owns.</p>
+    </div></div>
+    <div class="pstep"><span class="n">03</span><div class="body">
+      <span class="pq">How will the work be organized and resourced?</span>
+      <span class="ptool">Planning — Program · Project · Process</span>
+      <p class="pnote">Programs carry the resources, projects carry the sub-plans, processes create a reliable sequence for producing the goods or services.</p>
+    </div></div>
+    <div class="pstep"><span class="n">04</span><div class="body">
+      <span class="pq">Does it get made, bought, delivered and kept safe?</span>
+      <span class="ptool">Production — Product · Persuade · Purchase · Provide · Protect</span>
+      <p class="pnote">Protect includes maintenance, disposal, recycling, and the liabilities of failure — which is where most well-meant neighbourhood projects quietly stop.</p>
+    </div></div>
+    <div class="pstep"><span class="n">05</span><div class="body">
+      <span class="pq">What is universal here that someone else could use?</span>
+      <span class="ptool">Posterity — Pattern Writing (registry #23)</span>
+      <p class="pnote">Abstract what is general and hand it on. You colour this one orange for danger: if we do not share the recipes, innovations will not spread fast enough to matter.</p>
+      <p class="pbranch"><strong>Closes the whole system:</strong> this is the move from model to pattern. It writes a new page onto the shelf, and Posterity is therefore not the end of this pathway — it is the input to everyone else's Pathway 1.</p>
+    </div></div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>Consequences</h4>
+    <h2>What this changes in the plan</h2>
+  </div>
+
+  <div class="col stack">
+    <h3>The shelves are the Six Questions, under the crown</h3>
+    <p>Replacing the eight I proposed. A tool may sit on several shelves, so shelving is a catalog property rather than a folder. Above the shelves sit the two governing models, which are not a shelf — they are the condition on using anything from any shelf.</p>
+
+    <h3>methods.json gains three fields</h3>
+    <p><code>question</code> on every step, because the sequence is a progression of question types and the tool is the instrument, not the point. A step without a question is a tool instruction, and tool instructions belong in a manual.</p>
+    <p><code>gate</code> on steps that have one — what must be true before this step is legitimate. Four appear above: the heuristics must have failed; the stakeholders must be in the room; no program without a promise; the numbers gate before simulation.</p>
+    <p><code>fallback</code> on the method — where you go when lost. Not a gate, a recovery, available from any depth. For most RCN methods the answer is the same and it comes from you: drop back to a causal loop diagram and diagram your sentences.</p>
+
+    <h3>Two status axes, not one</h3>
+    <p>Confidence (does it hold?) from method attestations, and Transmissibility (can it be taught?) from the registry's Active / Ready / Candidate. Orthogonal, both needed, and the second one you had five months before I proposed the first.</p>
+
+    <h3>A third relation between methods</h3>
+    <p><code>ROUTES_TO</code>, alongside <code>HANDS_OFF_TO</code> and <code>COMPLETED_BY</code> — a conditional branch where a diagnostic outcome selects the next pathway. Cynefin's typing is exactly this, and it is not containment.</p>
+
+    <h3>Three files, one relation each</h3>
+    <p>The SODOTO Skills Registry holds <strong>skills</strong> — what a person can be certified in. <span class="path">methods.json</span> holds <strong>pathways</strong> — ordered uses of tools. <span class="path">catalog.json</span> holds <strong>tools</strong> — what you can launch. A method names the skills it requires; skills are certified; tools are opened. The registry is the most developed of the three and should seed the others, not be replaced by them.</p>
+
+    <h3>And on organizing the files</h3>
+    <p>Tools stay flat in <span class="path">tools/</span> for the <span class="path">file://</span> reasons already established. But the two-layer split gives the rest of it an obvious shape: <span class="path">methods/</span> at the repo root, as first-class as <span class="path">tools/</span>, because methods are the other half of the offer and burying them under <span class="path">docs/</span> would say the opposite; and <span class="path">models/</span> for the particulars now scattered through <span class="path">tools/</span> as loose <span class="path">.rcn.json</span> files, each linked to the pattern it was abstracted into. Patterns generalize models — the directory layout should be able to say which.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="band-head">
+    <h4>Open</h4>
+    <h2>Five questions back to you</h2>
+  </div>
+
+  <div class="col stack">
+    <ul class="prose">
+      <li><strong>Two front doors, or one?</strong> On Models for Seeing Systems you write &ldquo;consider starting with DSRP&rdquo;; Systemic Problem Solving is your own described practice. I read those as two doors for two visitors — DSRP for someone learning, Systemic Problem Solving for someone with a problem in front of them. If that is right, the storefront needs both entrances and should say which is which.</li>
+      <li><strong>Is BGTE a check or a lens?</strong> I have placed it as a check at the end of Pathways 1 and 2. But &ldquo;beauty is the basis for using all the models&rdquo; might mean it belongs at the <em>start</em> of every pathway rather than the end — asked before the work rather than of the result.</li>
+      <li><strong>Where does Another Sequence of Tools sit?</strong> Its spine overlaps Pathways 1 and 3 but is longer and more specific. It may be a fifth pathway, or the EIP-flavoured version of Pathway 4.</li>
+      <li><strong>Six Thinking Hats.</strong> De Bono's programs are themselves sequences of hats, often emergent. That makes it a method that generates methods, which the schema cannot hold. Pathway, facilitation instrument inside step 5 of Pathway 1, or something else?</li>
+      <li><strong>The marks.</strong> One star each for Pathways 1 and 3, none for 2 and 4; transmissibility read off the registry. These are the first marks on the board and they set the calibration for everything after — correct them now while it is cheap.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p>Read from nineteen sources: the Tetrahedron SVG; Optimum Sequence Tetrahedron; Another Sequence of Tools; 15 Ps; Vester's Sensitivity Model; Models for Seeing Systems; Causal Models; and the thirteen-page lineup — Six Thinking Hats, RCN Tools, Exploring Meadows &amp; Ostrom, Leverage Points, Neighborhood Systems Patterns, Systemic Problem Solving, When Do You Need the Numbers, Systems Curriculum, RCN Modeling Theory, Twenty Essays, Empowering Change Agents, IAD, Story Structure. Companion to the RCN Toolshelf plan. Nothing built — the pathways are drafts for the method pages; the confidence and transmissibility marks are proposals.</p>
+</footer>
+
+</main>
+</body>
+</html>
