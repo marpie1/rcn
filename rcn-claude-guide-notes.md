@@ -20,10 +20,11 @@ Audit of whether the Claude-Chat Wardley workflow and Rent Band Analysis had rea
 1. **A card that gains a third paragraph has become three cards.** The Wardley card was carrying the grid, the authoring workflow, and a whole analytic method. Length is the symptom; the cure is asking what each paragraph is really about — two of those three were not about Wardley mode at all.
 2. **Docs drift in a pattern worth naming.** The manual was complete, the intro was a line, the deck had nothing. Effort tracks proximity to the code: the manual is edited while building, the deck is a separate build step nobody remembers. Assume the deck is the stale one and check it first.
 3. **A count in a slide title is a maintenance liability.** "Eight analytical modes" was wrong before this session started and would have gone wrong again at the next mode. Removing the number costs nothing and cannot rot.
-4. **Render the deck, always.** python-pptx reports nothing when text overflows its box. Keynote needs to be running before the AppleScript export — a cold `tell application` fails with -600 and no file.
+4. **Check the memory before calling something a gap.** SFD was logged here as the biggest documentation hole in the tool. It is deliberately undocumented until it works, which was already written down. An absence with a reason behind it looks identical to neglect from the outside.
+5. **Render the deck, always.** python-pptx reports nothing when text overflows its box. Keynote needs to be running before the AppleScript export — a cold `tell application` fails with -600 and no file.
 
 ### OPEN
-- [ ] **SFD mode is undocumented everywhere** — not in the intro, not in the manual, not in the deck, though the button is in the tool. The largest doc gap found in this audit and out of scope for it
+- SFD is undocumented ON PURPOSE, not by neglect — Marc, Aug 16 2026: it is unfinished, and docs wait for the lookup-curve UI and the simulation piece. Not a gap. Do not offer to write them. Noted here because this audit briefly recorded it as the opposite
 - [ ] The intro is a flat grid of 23 cards with no grouping; modes, authoring paths, and export features all read at the same weight. Worth a pass at structure rather than more cards
 - [ ] Chat authoring is Wardley-only today. If the card pattern generalises to CLD or EIP, the intro card and the deck slide both need rewording away from "Wardley maps"
 
