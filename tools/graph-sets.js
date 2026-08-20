@@ -67,6 +67,21 @@ window.GRAPH_SETS_DATA =
         "role.json",
         "solution.json"
       ]
+    },
+    {
+      "name": "WA Health as Network",
+      "dir": "wa-health-aspects",
+      "note": "The eight sub-networks of tools/wa-health-as-network.json, split back out of the one canvas its OmniGraffle source overlaid them on. Not an invented decomposition -- edge colour said which sub-network an edge belonged to and the SVG named them in its own key. 134 node slots across 97 actors, so 21 actors bridge two or more; the Community Coach-Navigator is in all seven drawn ones, which is the diagram's argument. Undirected and unsigned: an actor map, not a causal model.",
+      "files": [
+        "triple-play-spine.json",
+        "person-family-network.json",
+        "medical-sector-network.json",
+        "social-services-network.json",
+        "government-payer-network.json",
+        "ach-system-governance.json",
+        "adverse-childhood-events.json",
+        "infrastructure-clusters.json"
+      ]
     }
   ]
 };

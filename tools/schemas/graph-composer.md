@@ -105,12 +105,25 @@ window.GRAPH_SETS_DATA =
 the previous one, so the levels are strictly nested and a coarser view is a
 genuine **contraction** of a finer one.
 
-| Level | Merge key | Reads as | All 16 EIP aspects |
-|---|---|---|---|
-| `family` | family lookup | `Doing` | 8 nodes / 54 edges |
-| `schema` | `schemaLabel` | `Action` | 24 / 63 |
-| `variable` | + `label` | `Effectiveness of ACTION` | 25 / 64 |
-| `instance` | + `props.name` | + the named case | 25 / 64 |
+| Level | Merge key | Reads as | All 16 EIP aspects | WA Health, all 8 |
+|---|---|---|---|---|
+| `family` | family lookup | `Doing` | 8 nodes / 54 edges | 6 / 20 |
+| `schema` | `schemaLabel` | `Action` | 24 / 63 | 8 / 25 |
+| `variable` | + `label` | `Effectiveness of ACTION` | 25 / 64 | 92 / 155 |
+| `instance` | + `props.name` | + the named case | 25 / 64 | 96 / 156 |
+
+> ⚠ **The EIP edge counts above are stale.** Measured 2026-08-08 by counting
+> rendered `g.edge` groups: `8 / 28`, `24 / 57`, `25 / 58`, `25 / 58`. The node
+> counts are right; only the edge counts disagree. Confirmed pre-existing and not
+> caused by the `families.js` additions — the committed and extended sidecars
+> produce identical numbers. Most likely the original figures counted model edges
+> before Graphviz folds parallel ones. Re-derive before quoting.
+
+The WA Health column is the first **non-EIP** set, and it is the one that shows
+`variable` and `instance` doing different work: five labels occur twice in that
+source, so `variable` merges them by words and `instance` separates the four that
+are genuinely distinct circles by `props.name`. On the EIP set those two levels
+are identical because every `props.name` is still `"?"`.
 
 - `composite(concepts, level)` (line 1134) takes the level, so **switching level
   re-composites** — it is not a relabelling.
