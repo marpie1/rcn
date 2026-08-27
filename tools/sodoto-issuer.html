@@ -74,7 +74,7 @@
   <h2>People Registry <a href="sodoto-issuer-guide.html#registry" target="_blank" rel="noopener" style="float:right;font-size:12px;font-weight:400;color:#2a6b5a;text-decoration:none;" title="What is this tab and how do I use it?">? Guide ↗</a></h2>
   <table id="people-table">
     <thead><tr>
-      <th>Name</th><th>Slug</th><th>Site</th><th>DID (last 12)</th><th>Portfolio Slug</th><th></th>
+      <th>Name</th><th>Slug</th><th>Site</th><th>DID (last 12)</th><th>Portfolio Slug</th><th>Own site</th><th></th>
     </tr></thead>
     <tbody id="people-tbody"></tbody>
   </table>
@@ -693,17 +693,15 @@ async function submitGateAttempt() {
     if (evidencedBy) attempt.evidencedBy = evidencedBy
   }
 
-  // Persist to contract state
-  c.gates[gate].attempts.push(attempt)
-  if (outcomeVal === 'complete') {
-    c.gates[gate].completedAt = date
-    c.gates[gate].mentor = { name: mentor.name, did: mentor.did, portfolio: mentor.portfolioSlug }
-    if (gate === 'TeachOne' && studentData) c.gates[gate].student = attempt.student
-  }
-  saveState()
+  // ── Write to FedWiki, then persist ──────────────────────────────────────
+  // The wiki is the record; contract state is only a local cache of it. This
+  // used to save first and write afterwards, with every write wrapped in a
+  // catch that merely logged — so a batch that failed end to end still left
+  // the UI reporting "Attempt N recorded" with nothing on the wiki at all.
+  const warnings = []
 
-  // ── Write to FedWiki ────────────────────────────────────────────────────
-  // 1. Learner portfolio
+  // 1. Learner portfolio — the load-bearing write. Without it there is no
+  //    attempt to speak of, so a failure here aborts before anything is saved.
   logTo('gate-log','dim',`Writing to ${learner.name}'s portfolio (${learner.portfolioSlug})…`)
   const learnerItemId = 'gate-' + uid()
   try {
@@ -712,7 +710,11 @@ async function submitGateAttempt() {
       items: [{ type: 'html', id: learnerItemId, text: buildGateHTML({ gate, attemptN, date, mentor, mentorAssertion, learnerAssertion, outcome: outcomeVal, skillName: skill.name, narrativeSlug }) }]
     })
     logTo('gate-log','ok',`  Learner portfolio: ${learnerItemId}`)
-  } catch (e) { logTo('gate-log','err',`  Learner portfolio error: ${e.message}`) }
+  } catch (e) {
+    logTo('gate-log','err',`  Learner portfolio error: ${e.message}`)
+    logTo('gate-log','err',`\nNothing recorded. ${learner.name}'s portfolio on ${learner.site} could not be written, so the attempt was not saved. Fix the write and record it again.`)
+    return
+  }
 
   // 2. Mentor portfolio — into a single "Mentoring Log" section so entries fold
   //    together instead of orphaning under whatever heading is last on the page.
@@ -720,7 +722,10 @@ async function submitGateAttempt() {
   try {
     await updateMentoringLogSection(mentor.site, mentor.portfolioSlug, {
       learner, skillName: skill.name, gate, attemptN, date, outcome: outcomeVal, narrativeSlug })
-  } catch (e) { logTo('gate-log','err',`  Mentor portfolio error: ${e.message}`) }
+  } catch (e) {
+    warnings.push(`mentor portfolio (${mentor.portfolioSlug} on ${mentor.site}): ${e.message}`)
+    logTo('gate-log','err',`  Mentor portfolio error: ${e.message}`)
+  }
 
   // 3. Narrative stub (only if page doesn't exist)
   logTo('gate-log','dim',`Checking narrative stub: ${narrativeSlug}…`)
@@ -743,7 +748,10 @@ async function submitGateAttempt() {
     } else {
       logTo('gate-log','dim',`  Narrative page exists — skipped`)
     }
-  } catch (e) { logTo('gate-log','err',`  Narrative stub error: ${e.message}`) }
+  } catch (e) {
+    warnings.push(`narrative stub (${narrativeSlug}): ${e.message}`)
+    logTo('gate-log','err',`  Narrative stub error: ${e.message}`)
+  }
 
   // 4. If TeachOne with student, write to student portfolio
   if (gate === 'TeachOne' && studentData) {
@@ -755,10 +763,27 @@ async function submitGateAttempt() {
         items: [{ type: 'html', id: studentItemId, text: buildStudentHTML({ date, teacherName: learner.name, teacherPortfolioSlug: learner.portfolioSlug, skillName: skill.name, attemptN, narrativeSlug }) }]
       })
       logTo('gate-log','ok',`  Student portfolio: ${studentItemId}`)
-    } catch (e) { logTo('gate-log','err',`  Student portfolio error: ${e.message}`) }
+    } catch (e) {
+      warnings.push(`student portfolio (${studentData.portfolioSlug} on ${studentData.site}): ${e.message}`)
+      logTo('gate-log','err',`  Student portfolio error: ${e.message}`)
+    }
   }
 
-  logTo('gate-log','ok',`\nGate attempt ${attemptN} recorded.`)
+  // Persist to contract state — the learner's portfolio has the attempt now.
+  c.gates[gate].attempts.push(attempt)
+  if (outcomeVal === 'complete') {
+    c.gates[gate].completedAt = date
+    c.gates[gate].mentor = { name: mentor.name, did: mentor.did, portfolio: mentor.portfolioSlug }
+    if (gate === 'TeachOne' && studentData) c.gates[gate].student = attempt.student
+  }
+  saveState()
+
+  if (warnings.length) {
+    logTo('gate-log','err',`\nGate attempt ${attemptN} recorded, but ${warnings.length} secondary write${warnings.length > 1 ? 's' : ''} failed:`)
+    for (const w of warnings) logTo('gate-log','err',`  · ${w}`)
+  } else {
+    logTo('gate-log','ok',`\nGate attempt ${attemptN} recorded.`)
+  }
   renderGateTabs(); renderAttemptHistory(); renderGateStatusChips(); renderSignPanel()
 }
 
@@ -1114,8 +1139,10 @@ async function signAndIssue() {
 
 async function updateStudentsTaughtSection(site, portfolioSlug, skillName, studentData, date) {
   const page = await wikiRead(site, portfolioSlug)
-  if (!page) { logTo('sign-log','err',`Could not read ${portfolioSlug} for Students Taught`); return }
-  const story = page.story || []
+  // As in updateMentoringLogSection: a missing page is created by the
+  // wiki-add-items call at the tail, so don't abort before reaching it.
+  if (!page) logTo('sign-log','dim',`  ${portfolioSlug} doesn't exist yet — creating it.`)
+  const story = page?.story || []
   const headerText = `Students Taught — ${skillName}`
 
   let headerIdx = -1
@@ -1165,9 +1192,12 @@ async function updateStudentsTaughtSection(site, portfolioSlug, skillName, stude
 // portfolio, so they fold as their own section instead of orphaning under
 // whatever heading happens to be last on the page. Mirrors updateStudentsTaughtSection.
 async function updateMentoringLogSection(site, portfolioSlug, { learner, skillName, gate, attemptN, date, outcome, narrativeSlug }) {
+  // A portfolio page that doesn't exist yet is not an error — wiki-add-items
+  // below creates it. Bailing out here is what left a first-time mentor with
+  // no page at all: the one write that would have created it never ran.
   const page = await wikiRead(site, portfolioSlug)
-  if (!page) { logTo('gate-log','err',`Could not read ${portfolioSlug} for Mentoring Log`); return }
-  const story = page.story || []
+  if (!page) logTo('gate-log','dim',`  ${portfolioSlug} doesn't exist yet — creating it.`)
+  const story = page?.story || []
 
   let headerIdx = -1
   for (let i = 0; i < story.length; i++) {
@@ -1310,11 +1340,56 @@ function downloadCredential() {
 
 // ─── Rendering ────────────────────────────────────────────────────────────────
 
-// Public URL of a portfolio page on the wiki. On WikiCafe, WIKI_SITE is the wiki
-// domain, so it's https://<domain>/view/<slug>; locally it's localhost:3000.
-function wikiPageUrl(slug) {
-  const base = WIKI_SITE.includes('.') ? 'https://' + WIKI_SITE : 'http://' + WIKI_SITE + ':3000'
+// Public URL of a page on a wiki. Takes the site explicitly: a person's pages
+// live on *their* site, which is not always the issuer's WIKI_SITE. Passing the
+// global here is what made off-host people link to a page that was never
+// written there. A dotted site is a real domain; a bare one is local dev.
+function wikiPageUrl(site, slug) {
+  const host = site || WIKI_SITE
+  const base = host.includes('.') ? 'https://' + host : 'http://' + host + ':3000'
   return base + '/view/' + slug
+}
+
+// Shape A per-person site: <slug>.<wiki host>. Caddy serves these off the
+// wildcard, and /api/tls-allow only mints a cert once the site is provisioned.
+function personalSite(slug) {
+  return WIKI_SITE.includes('.') ? `${slug}.${WIKI_SITE}` : `${slug}.localhost`
+}
+
+// Give one person a site of their own: their portfolio and their own account of
+// the journey, on a site they own. owner.json is written UNCLAIMED — the badge
+// is the authority, and badge-sets-owner stamps the DID when the first badge
+// lands, so nobody can seize a site by signing in first.
+async function provisionPersonSite(slug) {
+  const p = personBySlug(slug)
+  el('registry-log').style.display = 'block'
+  if (!p) { logTo('registry-log','err',`No such person: ${slug}`); return }
+
+  const site = personalSite(slug)
+  if (p.site === site) { logTo('registry-log','dim',`${p.name} already has ${site}.`); return }
+
+  logTo('registry-log','dim',`Provisioning ${site} for ${p.name}…`)
+  let res
+  try {
+    res = await wikiPost('/api/sodoto-provision-site', {
+      name: p.name, slug: p.slug, site, portfolioSlug: p.portfolioSlug, did: p.did
+    })
+  } catch (e) {
+    logTo('registry-log','err',`  Provisioning failed: ${e.message}`)
+    logTo('registry-log','err',`  ${p.name} is unchanged — still on ${p.site}.`)
+    return
+  }
+
+  // Only move them once the site exists, so a failure never strands a person on
+  // a host that was never created — the failure mode that hid all day today.
+  p.site = res.site || site
+  saveState()
+  renderPeople(); rebuildPeopleSelects()
+  logTo('registry-log','ok',`  ${p.name} → ${p.site}`)
+  logTo('registry-log','dim',`  portfolio: ${res.portfolioSlug} · owner file: ${res.owner}`)
+  if (res.needsRestart) {
+    logTo('registry-log','err',`  FedWiki must be restarted before ${p.site} will answer.`)
+  }
 }
 
 function renderPeople() {
@@ -1322,10 +1397,16 @@ function renderPeople() {
   tbody.innerHTML = ''
   for (const p of people) {
     const canRemove = !SEED_PEOPLE.find(s => s.slug === p.slug)
-    const nameCell = `<a href="${wikiPageUrl(p.portfolioSlug)}" target="_blank" rel="noopener" style="color:#2a6b5a;text-decoration:underline;">${p.name}</a>`
+    const nameCell = `<a href="${wikiPageUrl(p.site, p.portfolioSlug)}" target="_blank" rel="noopener" style="color:#2a6b5a;text-decoration:underline;">${p.name}</a>`
+    // Shape A: each person gets their own site, so they own it and can write
+    // their own account of the journey. Already-provisioned people just say so.
+    const ownCell = p.site === personalSite(p.slug)
+      ? `<span style="font-size:11px;color:#2a5c3f;" title="${p.site}">✓ own site</span>`
+      : `<button class="small" onclick="provisionPersonSite('${p.slug}')" title="Create ${personalSite(p.slug)} — a site this person owns">Provision</button>`
     const tr = document.createElement('tr')
     tr.innerHTML = `<td class="name">${nameCell}</td><td>${p.slug}</td><td>${p.site}</td>`
       + `<td title="${p.did}">…${p.did.slice(-12)}</td><td>${p.portfolioSlug}</td>`
+      + `<td>${ownCell}</td>`
       + `<td>${canRemove ? `<button class="small danger" onclick="removePerson('${p.slug}')">×</button>` : ''}</td>`
     tbody.appendChild(tr)
   }
