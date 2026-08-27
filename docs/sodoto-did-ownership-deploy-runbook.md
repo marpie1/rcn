@@ -29,7 +29,9 @@ Nothing here changes verification — badges stay verifiable client-side with no
 
 4. **Provision the cohort's per-person sites.** For each learner, `POST /api/sodoto-provision-site` (admin, bearer token) with `{ name, slug, site, did? }`, where `site = {slug}.{WIKI_DOMAIN}` (the full prod hostname). This creates the site's `owner.json` (unclaimed), an empty portfolio page carrying the sign-in button, and the `wikiDomains` entry. Migrate existing demo portfolios the same way (each becomes its own site; badges move with it).
 
-5. **Flip the env and restart.** In `docker-compose.yml`, uncomment: proxy `SODOTO_DID_OWNERSHIP=1`; fedwiki `WIKI_FARM=1` and `SECURITY_TYPE=did`. Then `docker compose up -d`. The wiki restart is required so the farm reads the new `wikiDomains` (the farm reads them at startup — any later provisioning also needs a wiki restart to be served).
+5. **Turn on farm + did, and restart.** Proxy: `SODOTO_DID_OWNERSHIP=1`. Wiki: `WIKI_FARM=1` and `SECURITY_TYPE=did`. Then `docker compose up -d`. The wiki restart is required so the farm reads the new `wikiDomains` (the farm reads them at startup — any later provisioning also needs a wiki restart to be served).
+
+   **If the deployment overrides `command:`** — as a Swarm stack file typically does — those two wiki env vars are read by nothing, because the override replaces the image CMD that expands them. Pass the flags instead: `command: ["wiki","--farm","--port","3000","--security_type","did"]`. The proxy's `SODOTO_DID_OWNERSHIP` is a plain env read and is unaffected either way. **WikiCafe already runs farm + did this way (confirmed Aug 27 2026)** — check what is actually running before assuming a site is still on the single-site friends path.
 
 6. **Verify (browser, on a real per-person site):**
    - Open `https://{slug}.{WIKI_DOMAIN}` — the portfolio shows the "Sign in with my SODOTO key" button; the cert was issued on demand.

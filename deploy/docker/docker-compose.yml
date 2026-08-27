@@ -19,12 +19,21 @@ services:
   # FedWiki — hosts learner credential portfolios
   fedwiki:
     image: ghcr.io/marpie1/rcn-sodoto-wiki:latest
-    # DID ownership (shape A, per-person sites). Both UNSET == today's single-site
-    # friends launch. Flip both in the coordinated rollout (needs the wildcard DNS
-    # record + Caddy on-demand block already in the Caddyfile):
+    # DID ownership (shape A, per-person sites). Both UNSET == single-site friends
+    # launch. Flip both to turn it on (needs the wildcard DNS record + the Caddy
+    # on-demand block already in the Caddyfile):
     # environment:
     #   - WIKI_FARM=1
     #   - SECURITY_TYPE=did
+    #
+    # These env vars work ONLY through the image's CMD, which expands them into
+    # flags. Overriding `command:` here replaces that CMD outright and the env
+    # vars then do nothing — silently. If you override the command, pass the
+    # flags directly instead: command: ["wiki","--farm","--port","3000",
+    # "--security_type","did"]. WikiCafe deploys this way (Docker Swarm), which
+    # is why its stack file sets neither var and is nonetheless running farm +
+    # did. Whichever route: after ANY site provisioning the wiki must restart,
+    # because the farm reads wikiDomains only at startup.
     volumes:
       - wiki-data:/root/.wiki                 # same volume as sofi-proxy
     restart: unless-stopped

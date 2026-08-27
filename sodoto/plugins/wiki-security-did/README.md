@@ -27,13 +27,15 @@ Ownership is not "first to sign in wins." The **badge on the portfolio is the so
 
 Factory `(log, loga, argv)` → `{ retrieveOwner(cb), getOwner(), setOwner(id, cb), getUser(req), isAuthorized(req), isAdmin(req), login(updateOwner), logout(), reclaim(), defineRoutes(app, cors, updateOwner) }`. `defineRoutes` registers `GET /auth/challenge`, `POST /auth/verify`, `POST /login` (== verify), `GET /logout`. Config: `argv.id` = owner file path; `argv.admin` = admin DID or array; `argv.owner_scope` = `'site'` (default, and the only supported value — see below); `argv.portfolioPath` / `argv.expectedHolder` = where to read the badge holder for a constrained claim.
 
-## Deploy (ships "dark", flipped by env)
+## Deploy (off by default; turned on per deployment)
 
-The wiki image (`deploy/docker/Dockerfile.fedwiki`) already vendors this module and launches with `wiki --port 3000 ${SECURITY_TYPE:+--security_type $SECURITY_TYPE}` — so with `SECURITY_TYPE` **unset** it runs exactly as today's `friends` deployment, and the module is inert. This makes the image safe to publish under WikiCafe's hourly auto-pull; nothing changes until the env is flipped.
+The wiki image (`deploy/docker/Dockerfile.fedwiki`) already vendors this module and launches with `wiki --port 3000 ${SECURITY_TYPE:+--security_type $SECURITY_TYPE}` — so with `SECURITY_TYPE` **unset** it runs as a `friends` deployment and the module is inert. That makes the image safe to publish under WikiCafe's hourly auto-pull; nothing changes on its own.
 
-To turn on DID ownership at a coordinated moment:
+**Status: LIVE on WikiCafe since Aug 2026.** It runs as a Docker Swarm stack whose `command:` passes `--farm --security_type did` directly, with `SODOTO_DID_OWNERSHIP=1` on the proxy. A `command:` override replaces the image CMD, so the `SECURITY_TYPE` expansion above never runs — the env var is not what turned it on there, and setting it would have done nothing. Read the running command, not the env, to tell whether a deployment has this on.
 
-1. Set `SECURITY_TYPE=did` on the wiki service and `SODOTO_DID_OWNERSHIP=1` on the proxy service (compose env).
+To turn on DID ownership elsewhere:
+
+1. Set `SECURITY_TYPE=did` on the wiki service and `SODOTO_DID_OWNERSHIP=1` on the proxy service (compose env) — **or**, if that service overrides `command:`, add `--security_type did` (and `--farm`) to the command itself.
 2. Provision each portfolio as its **own** FedWiki site (per-person sites — shape A) via the proxy's `POST /api/sodoto-provision-site`; the SCP per-patient-site provisioning is the precedent. Ownership is set from the badge: sofi-proxy writes `owner.json.did = holderDid` on badge write ("badge-sets-owner"), and never overwrites an existing owner.
 3. The module serves its widget at `GET /auth/signin.js` (same-origin); add a "Sign in with my SODOTO key" affordance to the portfolio that calls `sodotoSignIn()`.
 

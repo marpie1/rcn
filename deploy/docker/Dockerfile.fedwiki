@@ -14,10 +14,12 @@ COPY sodoto/plugins/wiki-plugin-sodoto-badge/ \
 
 # The wiki-security-did ownership module (security_type=did, per-person sites).
 # Vendored like the badge plugin; uses only Node builtins, so no npm install.
-# PRESENT BUT INERT: the CMD below only passes --security_type when SECURITY_TYPE
-# is set, so with the env unset this image launches identically to today's friends
-# deployment. Flip to did by setting SECURITY_TYPE=did in compose at a coordinated
-# moment — safe under WikiCafe's hourly auto-pull.
+# Off by default: the CMD below only passes --security_type when SECURITY_TYPE is
+# set, so with the env unset this image launches as a single-site friends
+# deployment. Turn it on with SECURITY_TYPE=did, or with an explicit --security_type
+# flag if you override the command (see the CMD note below).
+# LIVE ON WIKICAFE since Aug 2026, via command-line flags rather than these env
+# vars — do not assume a deployment is running "inert" just because they're unset.
 COPY sodoto/plugins/wiki-security-did/ \
      /usr/local/lib/node_modules/wiki/node_modules/wiki-security-did/
 
@@ -31,7 +33,15 @@ EXPOSE 3000
 # FedWiki defaults data dir to ~/.wiki (= /root/.wiki in this image).
 # Mount a named volume there to persist pages across container restarts.
 # Both ${VAR:+...} clauses add their flag ONLY when the env is set → with WIKI_FARM
-# and SECURITY_TYPE both unset this launches exactly as today (single-site friends).
+# and SECURITY_TYPE both unset this launches as a single-site friends deployment.
 # Per-person DID sites (shape A) = WIKI_FARM=1 + SECURITY_TYPE=did. Proven end-to-end
 # by test/integration in wiki-security-did (7/7 against real FedWiki 0.27).
+#
+# CAUTION: this expansion is the ONLY thing that reads those two env vars. A
+# `command:` in compose (or a Swarm stack file) REPLACES this CMD wholesale, and
+# the env vars then do nothing at all — with no warning. If you override the
+# command, pass the flags yourself:
+#   command: ["wiki","--farm","--port","3000","--security_type","did"]
+# WikiCafe runs it that way, which is why its stack sets neither var and is
+# nonetheless in farm + did mode.
 CMD ["sh", "-c", "wiki --port 3000 ${WIKI_FARM:+--farm} ${SECURITY_TYPE:+--security_type $SECURITY_TYPE}"]
