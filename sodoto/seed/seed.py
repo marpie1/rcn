@@ -11,6 +11,12 @@ simply leaves SEED_DEMO unset and is never touched.
 Idempotent: only writes a file that is absent. It never overwrites an existing
 page, registry, or owner file — so re-running on an already-seeded (or
 operator-edited) site is a no-op, and real content is never clobbered.
+
+The one exception is repair_localhost_sites(), which rewrites the dev-default
+'localhost' site on existing registry entries to WIKI_SITE. Absent-only left
+those people pointing at a site this host does not serve, which silently broke
+their portfolio writes. It touches nothing else, and leaves real remote sites
+(federation) alone.
 """
 import json
 import os
@@ -26,6 +32,48 @@ SEED_DEMO    = os.environ.get('SEED_DEMO', '').strip().lower() in ('1', 'true', 
 def truthy_exit(msg):
     print(f"[seed] {msg}")
     sys.exit(0)
+
+
+def repair_localhost_sites(registry_dest):
+    """Point people still on the dev-default 'localhost' at the site we serve.
+
+    The absent-only rule below protects operator-edited data, but it also meant a
+    registry written once on localhost kept that site forever: every later boot
+    skipped the whole file. Those people's portfolios were then written to a site
+    this host does not serve, so their pages silently never appeared.
+
+    This is deliberately narrow, not a re-stamp. Only the literal 'localhost'
+    placeholder is corrected, and only when we serve something else. A person
+    whose site is another NDC's real domain is federation, not staleness, and is
+    left strictly alone.
+    """
+    if WIKI_SITE == 'localhost':
+        return 0
+    try:
+        with open(registry_dest, encoding='utf-8') as f:
+            registry = json.load(f)
+    except (OSError, ValueError) as e:
+        print(f"[seed] could not read registry to repair sites: {e}")
+        return 0
+
+    people = registry.get('people', [])
+    stale = [p for p in people if p.get('site') == 'localhost']
+    if not stale:
+        return 0
+    for person in stale:
+        person['site'] = WIKI_SITE
+
+    tmp = registry_dest + '.tmp'
+    try:
+        with open(tmp, 'w', encoding='utf-8') as f:
+            json.dump(registry, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, registry_dest)   # atomic — never a half-written registry
+    except OSError as e:
+        print(f"[seed] could not write repaired registry: {e}")
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        return 0
+    return len(stale)
 
 
 def main():
@@ -48,6 +96,9 @@ def main():
     registry_dest = os.path.join(SODOTO_ROOT, 'people-registry.json')
     if os.path.exists(registry_dest):
         skipped.append('people-registry.json')
+        repaired = repair_localhost_sites(registry_dest)
+        if repaired:
+            wrote.append(f"repaired site on {repaired} person/people (localhost → {WIKI_SITE})")
     else:
         with open(registry_src, encoding='utf-8') as f:
             registry = json.load(f)

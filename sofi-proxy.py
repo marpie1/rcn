@@ -34,7 +34,14 @@ ADMIN_PATHS = {
     '/api/wiki-add-items',
 }
 eVSM_DIR = os.path.dirname(os.path.abspath(__file__))
-WIKI_PAGES_DIR = os.path.expanduser('~/.wiki/localhost/pages')
+
+# The site this deployment actually serves. Same env var and same default as
+# sodoto/seed/seed.py, so the two agree about where pages live. This was
+# hardcoded to 'localhost', which is right in dev and wrong everywhere else:
+# on a real domain /api/wiki-write dropped pages into ~/.wiki/localhost/pages,
+# a directory FedWiki never serves, and the write "succeeded" into a void.
+WIKI_SITE = os.environ.get('WIKI_SITE', 'localhost')
+WIKI_PAGES_DIR = os.path.expanduser(f'~/.wiki/{WIKI_SITE}/pages')
 PEOPLE_REGISTRY_FILE = os.path.expanduser('~/.sodoto/people-registry.json')
 
 class Handler(BaseHTTPRequestHandler):
@@ -82,7 +89,7 @@ class Handler(BaseHTTPRequestHandler):
             # The issuer tool asks the operator for the passphrase instead.
             cfg = {
                 'proxyUrl':     os.environ.get('PROXY_URL', 'http://localhost:8765'),
-                'wikiSite':     os.environ.get('WIKI_SITE', 'localhost'),
+                'wikiSite':     WIKI_SITE,
                 'authRequired': bool(PROXY_SECRET),
             }
             body = json.dumps(cfg).encode()
@@ -802,7 +809,14 @@ MERGE (pe)-[:PERFORMER_IN]->(c)
                 site  = os.path.basename(payload['site'])
                 slug  = os.path.basename(payload['slug'])
                 items = payload['items']
-                page_path = os.path.expanduser(f'~/.wiki/{site}/pages/{slug}')
+                # Create the site's pages dir if it isn't there yet, the same way
+                # wiki-write-page does. Without this, adding an item to a page on
+                # a site this host has never served fails with FileNotFoundError
+                # on the write, not the read — so the fallback below looked like
+                # it worked and the request still 500'd.
+                pages_dir = os.path.expanduser(f'~/.wiki/{site}/pages')
+                os.makedirs(pages_dir, exist_ok=True)
+                page_path = os.path.join(pages_dir, slug)
                 now_ms = int(time.time() * 1000)
                 try:
                     with open(page_path, 'r', encoding='utf-8') as f:
