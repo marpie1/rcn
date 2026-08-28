@@ -796,11 +796,11 @@ function buildGateHTML({ gate, attemptN, date, mentor, mentorAssertion, learnerA
   return `<p style='font-family:sans-serif;font-size:12px;margin:2px 0;'>`
     + `<span style='color:${color};font-weight:700;'>${mark} ${skillName} — ${GATE_LABELS[gate]} (attempt ${attemptN})</span>`
     + ` · <strong>Date:</strong> ${date}`
-    + ` · <strong>Mentor:</strong> <a class='sodoto-pagelink' href='/${mentor.portfolioSlug}.html' data-page-name='${mentor.portfolioSlug}' style='color:#2a6b5a;cursor:pointer;'>${mentor.name}</a>`
+    + ` · <strong>Mentor:</strong> ${pageLink(mentor.portfolioSlug, mentor.name, 'color:#2a6b5a;cursor:pointer;')}`
     + ` · <strong>Mentor says:</strong> ${mentorAssertion}`
     + ` · <strong>Learner says:</strong> ${learnerAssertion}`
     + ` · <strong>Outcome:</strong> ${outcome}`
-    + ` · <a class='sodoto-pagelink' href='/${narrativeSlug}.html' data-page-name='${narrativeSlug}' style='color:#555;font-size:11px;cursor:pointer;'>${narrativeSlug}</a></p>`
+    + ` · ${pageLink(narrativeSlug, narrativeSlug, 'color:#555;font-size:11px;cursor:pointer;')}</p>`
 }
 
 function buildMentorHTML({ gate, attemptN, date, learner, mentorAssertion, learnerAssertion, outcome, skillName, narrativeSlug }) {
@@ -808,20 +808,20 @@ function buildMentorHTML({ gate, attemptN, date, learner, mentorAssertion, learn
   const color = done ? '#2a5c3f' : '#8b5e00'
   const mark  = done ? '✓' : '○'
   return `<p style='font-family:sans-serif;font-size:12px;margin:2px 0;'>`
-    + `<span style='color:${color};font-weight:700;'>${mark} Mentored <a class='sodoto-pagelink' href='/${learner.portfolioSlug}.html' data-page-name='${learner.portfolioSlug}' style='color:#2a6b5a;cursor:pointer;'>${learner.name}</a> — ${skillName} ${GATE_LABELS[gate]} (attempt ${attemptN})</span>`
+    + `<span style='color:${color};font-weight:700;'>${mark} Mentored ${pageLink(learner.portfolioSlug, learner.name, 'color:#2a6b5a;cursor:pointer;')} — ${skillName} ${GATE_LABELS[gate]} (attempt ${attemptN})</span>`
     + ` · <strong>Date:</strong> ${date}`
     + ` · <strong>Mentor says:</strong> ${mentorAssertion}`
     + ` · <strong>Learner says:</strong> ${learnerAssertion}`
     + ` · <strong>Outcome:</strong> ${outcome}`
-    + ` · <a class='sodoto-pagelink' href='/${narrativeSlug}.html' data-page-name='${narrativeSlug}' style='color:#555;font-size:11px;cursor:pointer;'>${narrativeSlug}</a></p>`
+    + ` · ${pageLink(narrativeSlug, narrativeSlug, 'color:#555;font-size:11px;cursor:pointer;')}</p>`
 }
 
 function buildStudentHTML({ date, teacherName, teacherPortfolioSlug, skillName, attemptN, narrativeSlug }) {
   return `<p style='font-family:sans-serif;font-size:12px;margin:2px 0;'>`
     + `<strong>See One (observed teaching) — ${skillName}</strong>`
-    + ` · <strong>Teacher:</strong> <a class='sodoto-pagelink' href='/${teacherPortfolioSlug}.html' data-page-name='${teacherPortfolioSlug}' style='color:#2a6b5a;cursor:pointer;'>${teacherName}</a>`
+    + ` · <strong>Teacher:</strong> ${pageLink(teacherPortfolioSlug, teacherName, 'color:#2a6b5a;cursor:pointer;')}`
     + ` · <strong>Date:</strong> ${date}`
-    + ` · <a class='sodoto-pagelink' href='/${narrativeSlug}.html' data-page-name='${narrativeSlug}' style='color:#555;font-size:11px;cursor:pointer;'>${narrativeSlug}</a></p>`
+    + ` · ${pageLink(narrativeSlug, narrativeSlug, 'color:#555;font-size:11px;cursor:pointer;')}</p>`
 }
 
 // ─── Crypto ───────────────────────────────────────────────────────────────────
@@ -1151,7 +1151,7 @@ async function updateStudentsTaughtSection(site, portfolioSlug, skillName, stude
   }
 
   const studentLink = studentData.portfolio
-    ? `<a class='sodoto-pagelink' href='/${studentData.portfolio}.html' data-page-name='${studentData.portfolio}' style='color:#2a6b5a;text-decoration:underline;cursor:pointer;'>${studentData.name}</a>`
+    ? `${pageLink(studentData.portfolio, studentData.name, 'color:#2a6b5a;text-decoration:underline;cursor:pointer;')}`
     : studentData.name
   const newRow = `<tr style='border-bottom:1px solid #ede8e0;'>`
     + `<td style='padding:4px 8px 4px 0;'>${studentLink}</td>`
@@ -1205,9 +1205,9 @@ async function updateMentoringLogSection(site, portfolioSlug, { learner, skillNa
   }
 
   const learnerLink = learner.portfolioSlug
-    ? `<a class='sodoto-pagelink' href='/${learner.portfolioSlug}.html' data-page-name='${learner.portfolioSlug}' style='color:#2a6b5a;text-decoration:underline;cursor:pointer;'>${learner.name}</a>`
+    ? `${pageLink(learner.portfolioSlug, learner.name, 'color:#2a6b5a;text-decoration:underline;cursor:pointer;')}`
     : learner.name
-  const narrLink = `<a class='sodoto-pagelink' href='/${narrativeSlug}.html' data-page-name='${narrativeSlug}' style='color:#555;cursor:pointer;'>${narrativeSlug}</a>`
+  const narrLink = `${pageLink(narrativeSlug, narrativeSlug, 'color:#555;cursor:pointer;')}`
   const mark = outcome === 'complete' ? '✓' : '○'
   const newRow = `<tr style='border-bottom:1px solid #ede8e0;'>`
     + `<td style='padding:4px 8px 4px 0;font-size:13px;'>${learnerLink}</td>`
@@ -1268,10 +1268,10 @@ async function updateLedgerTable(skillName, learner, issuer, cred, date) {
     : issuer.label.split(' ·')[0]
   const mentorPortfolio = seeOneMentor?.portfolio || ''
   const mentorCell = mentorPortfolio
-    ? `<a class='sodoto-pagelink' href='/${mentorPortfolio}.html' data-page-name='${mentorPortfolio}' style='color:#2a6b5a;text-decoration:underline;cursor:pointer;'>${mentorName}</a>`
+    ? `${pageLink(mentorPortfolio, mentorName, 'color:#2a6b5a;text-decoration:underline;cursor:pointer;')}`
     : mentorName
   const holderCell = learner.portfolioSlug
-    ? `<a class='sodoto-pagelink' href='/${learner.portfolioSlug}.html' data-page-name='${learner.portfolioSlug}' style='color:#2a6b5a;text-decoration:underline;cursor:pointer;'>${learner.name}</a>`
+    ? `${pageLink(learner.portfolioSlug, learner.name, 'color:#2a6b5a;text-decoration:underline;cursor:pointer;')}`
     : learner.name
   const doSym = cred.gates.DoOne?.completedAt    ? '✓' : '—'
   const teSym = cred.gates.TeachOne?.completedAt ? '✓' : '—'
@@ -1390,6 +1390,24 @@ async function provisionPersonSite(slug) {
   if (res.needsRestart) {
     logTo('registry-log','err',`  FedWiki must be restarted before ${p.site} will answer.`)
   }
+}
+
+// Which site holds this page? Each person's portfolio now lives on their own
+// host, so the registry is the authority. Anything that is not a portfolio —
+// narrative stubs, the ledger — is written to WIKI_SITE.
+function portfolioSite(slug) {
+  const p = people.find(x => x.portfolioSlug === slug)
+  return p ? p.site : WIKI_SITE
+}
+
+// A link to a page that may live on someone else's site. These used to be
+// site-relative ("/chris-casillas-sodoto-portfolio.html"), which resolves
+// against whichever site the reader happens to be on — so Chris's name in
+// Marc's Mentoring Log pointed at a page on MARC's host that had never existed
+// there. Absolute, and no data-page-name: the badge plugin's in-wiki click
+// handler must not try to open a cross-site page as a local one.
+function pageLink(slug, text, style) {
+  return `<a href='${wikiPageUrl(portfolioSite(slug), slug)}' target='_blank' rel='noopener' style='${style}'>${text}</a>`
 }
 
 function renderPeople() {
