@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SODOTO Activity</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; max-width: 980px; margin: 0 auto; padding: 20px 20px 60px; background: #f8f7f4; color: #1a1208; }
+    h1 { font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 8px; margin: 0 0 4px; }
+    h3 { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; margin: 24px 0 10px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+    button { font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; padding: 7px 18px; border: 1.5px solid #000; background: #000; color: #fff; cursor: pointer; }
+    button:hover { background: #333; }
+    button.secondary { background: #fff; color: #000; }
+    button.secondary:hover { background: #f0ede8; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; padding: 5px 8px; background: #e8e4de; border: 1px solid #ccc; }
+    td { padding: 5px 8px; border: 1px solid #ddd; font-family: 'SF Mono', 'Fira Mono', monospace; vertical-align: top; }
+    td.name, td.what { font-family: system-ui, sans-serif; }
+    a { color: #2a6b5a; }
+    .hint { font-size: 11px; color: #888; margin: 2px 0 0; font-family: 'SF Mono', 'Fira Mono', monospace; }
+    .warn { background: #fdf3dc; border: 1px solid #d4a017; padding: 8px 12px; font-size: 12px; margin: 10px 0; }
+    .info { background: #e8f4ed; border: 1px solid #2a5c3f; padding: 8px 12px; font-size: 12px; margin: 10px 0; }
+    .bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 14px 0; }
+    .kind { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border: 1.5px solid; white-space: nowrap; }
+    .k-badge     { border-color: #6b4ea0; color: #6b4ea0; background: #f1ecf9; }
+    .k-gate      { border-color: #2a5c3f; color: #2a5c3f; background: #e8f4ed; }
+    .k-portfolio { border-color: #1a4f7a; color: #1a4f7a; background: #e7f0f7; }
+    .k-other     { border-color: #999;    color: #666; }
+    .site-status { font-size: 11px; font-family: 'SF Mono', monospace; margin: 3px 0; }
+    .site-ok  { color: #2a5c3f; }
+    .site-bad { color: #8b1a1a; font-weight: 700; }
+    .muted { color: #888; }
+    .nodate { color: #b06a00; }
+  </style>
+</head>
+<body>
+
+<h1>SODOTO Activity</h1>
+<p class="hint">Every page across every SODOTO site, newest first. Read-only.</p>
+
+<div class="bar">
+  <button onclick="load()">Refresh</button>
+  <button class="secondary" onclick="toggleOther()"><span id="other-label">Show</span> non-SODOTO pages</button>
+  <span id="summary" class="hint"></span>
+</div>
+
+<div id="derived" class="info">
+  This reads what is actually <b>on the wikis</b> — it is not a log of what the tools believe they did.
+  A write that failed leaves nothing here, which is the point: if a gate you recorded is missing below,
+  it did not reach the wiki.
+</div>
+
+<div id="sites-out"></div>
+<div id="rows-out"></div>
+
+<script>
+// ─── SODOTO Activity ─────────────────────────────────────────────────────────
+// A read-only timeline across every person's site. Deliberately derives from the
+// wikis themselves rather than from a log: a log records intent, the wikis record
+// what actually landed, and this whole tool exists because those two diverged
+// silently for weeks.
+//
+// Needs no passphrase. Every source it reads — /config, each site's
+// /system/sitemap.json — is public. The people list comes from the issuer's
+// own localStorage cache (same origin), falling back to the registry API only
+// if this browser has never run the issuer.
+
+// Served from the proxy this is same-origin. Opened as a local file it is not,
+// so fall back to the known deployment rather than fetching file:// and failing.
+// Both the proxy and FedWiki send permissive CORS, so the cross-origin reads work.
+const DEFAULT_PROXY = 'https://sodoto.ndcgroup.relocalizecreativity.net'
+let PROXY      = location.protocol.startsWith('http') ? window.location.origin : DEFAULT_PROXY
+let WIKI_SITE  = ''
+let showOther  = false
+let lastRows   = []
+
+const LS_PEOPLE = 'sodoto-people'
+const LS_SECRET = 'sodoto-proxy-secret'
+const el = id => document.getElementById(id)
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]))
+
+async function loadConfig () {
+  try {
+    const cfg = await (await fetch(PROXY + '/config')).json()
+    if (cfg.proxyUrl) PROXY     = cfg.proxyUrl
+    if (cfg.wikiSite) WIKI_SITE = cfg.wikiSite
+  } catch { /* fall through — the base site may still be reachable */ }
+}
+
+// Who exists, and where their pages live. localStorage first (the issuer caches
+// it there, same origin), then the registry API if this browser is fresh.
+async function loadPeople () {
+  try {
+    const raw = localStorage.getItem(LS_PEOPLE)
+    const arr = raw ? JSON.parse(raw) : []
+    if (Array.isArray(arr) && arr.length) return arr
+  } catch { /* fall through */ }
+  try {
+    const secret = localStorage.getItem(LS_SECRET) || ''
+    const r = await fetch(PROXY + '/api/people-registry',
+      { headers: secret ? { Authorization: `Bearer ${secret}` } : {} })
+    if (r.ok) return (await r.json()).people || []
+  } catch { /* fall through */ }
+  return []
+}
+
+const httpBase = site => site.includes('.') ? 'https://' + site : 'http://' + site + ':3000'
+
+// What kind of page is this? Derived from the slug conventions the issuer writes.
+function classify (slug) {
+  if (slug === 'rcn-sodoto-ledger')  return { kind: 'badge',     label: 'Badge ledger' }
+  if (/-sodoto-portfolio$/.test(slug)) return { kind: 'portfolio', label: 'Portfolio' }
+  const gate = slug.match(/-(see|do|teach)-one-attempt-(\d+)$/)
+  if (gate) {
+    const name = { see: 'See One', do: 'Do One', teach: 'Teach One' }[gate[1]]
+    return { kind: 'gate', label: `${name} — attempt ${gate[2]}` }
+  }
+  return { kind: 'other', label: '' }
+}
+
+async function load () {
+  el('rows-out').innerHTML = '<p class="hint">Reading every site…</p>'
+  el('sites-out').innerHTML = ''
+  await loadConfig()
+
+  const people = await loadPeople()
+  // Every distinct site: each person's, plus the base site that holds the ledger.
+  const sites = [...new Set([...(WIKI_SITE ? [WIKI_SITE] : []), ...people.map(p => p.site)].filter(Boolean))]
+  const owner = {}
+  for (const p of people) (owner[p.site] ||= []).push(p.name)
+
+  if (!sites.length) {
+    el('rows-out').innerHTML = '<div class="warn">No sites known. Open the issuer tool once in this browser, or check /config.</div>'
+    return
+  }
+
+  const rows = [], statuses = []
+  await Promise.all(sites.map(async site => {
+    try {
+      const r = await fetch(httpBase(site) + '/system/sitemap.json', { credentials: 'omit' })
+      if (!r.ok) { statuses.push({ site, ok: false, why: 'HTTP ' + r.status }); return }
+      const pages = await r.json()
+      statuses.push({ site, ok: true, n: pages.length })
+      for (const pg of pages) rows.push({ site, slug: pg.slug, title: pg.title, date: pg.date || 0 })
+    } catch (e) {
+      // A site that does not answer is reported, never quietly dropped — an
+      // absent row must never be mistaken for "nothing happened there".
+      statuses.push({ site, ok: false, why: 'no answer (not restarted, DNS, or TLS)' })
+    }
+  }))
+
+  rows.sort((a, b) => (b.date || 0) - (a.date || 0))
+  lastRows = rows
+  renderSites(statuses, owner)
+  renderRows()
+}
+
+function renderSites (statuses, owner) {
+  statuses.sort((a, b) => Number(a.ok) - Number(b.ok) || a.site.localeCompare(b.site))
+  const bad = statuses.filter(s => !s.ok)
+  el('sites-out').innerHTML = '<h3>Sites</h3>' + statuses.map(s => {
+    const who = (owner[s.site] || []).join(', ')
+    return `<div class="site-status ${s.ok ? 'site-ok' : 'site-bad'}">`
+      + (s.ok ? '✓ ' : '✗ ') + esc(s.site)
+      + (s.ok ? ` — ${s.n} page${s.n === 1 ? '' : 's'}` : ` — ${esc(s.why)}`)
+      + (who ? ` <span class="muted">(${esc(who)})</span>` : '')
+      + '</div>'
+  }).join('')
+    + (bad.length ? `<div class="warn"><b>${bad.length} site${bad.length === 1 ? '' : 's'} did not answer.</b>
+        Anything on them is missing from the timeline below — this is an incomplete picture, not an empty one.
+        A freshly provisioned site stays silent until FedWiki is restarted.</div>` : '')
+}
+
+function renderRows () {
+  const rows = showOther ? lastRows : lastRows.filter(r => classify(r.slug).kind !== 'other')
+  const hiddenN = lastRows.length - rows.length
+  el('summary').textContent = `${rows.length} page${rows.length === 1 ? '' : 's'}`
+    + (hiddenN && !showOther ? ` · ${hiddenN} non-SODOTO hidden` : '')
+
+  if (!rows.length) {
+    el('rows-out').innerHTML = '<div class="warn">Nothing to show. If you expected entries here, the writes did not land.</div>'
+    return
+  }
+
+  const body = rows.map(r => {
+    const c = classify(r.slug)
+    const when = r.date
+      ? new Date(r.date).toISOString().slice(0, 10)
+      : '<span class="nodate">no date</span>'
+    const url = httpBase(r.site) + '/view/' + r.slug
+    return `<tr>
+      <td>${when}</td>
+      <td><span class="kind k-${c.kind}">${esc(c.kind)}</span></td>
+      <td class="what">${esc(c.label)}</td>
+      <td class="name"><a href="${esc(url)}" target="_blank" rel="noopener">${esc(r.title || r.slug)}</a></td>
+      <td>${esc(r.site)}</td>
+    </tr>`
+  }).join('')
+
+  el('rows-out').innerHTML = '<h3>Timeline</h3><table><thead><tr>'
+    + '<th>Date</th><th>Kind</th><th>What</th><th>Page</th><th>Site</th>'
+    + `</tr></thead><tbody>${body}</tbody></table>`
+    + '<p class="hint">Dates come from FedWiki\'s sitemap — the page\'s last journal action, not necessarily when the gate happened.</p>'
+}
+
+function toggleOther () {
+  showOther = !showOther
+  el('other-label').textContent = showOther ? 'Hide' : 'Show'
+  renderRows()
+}
+
+document.addEventListener('DOMContentLoaded', load)
+</script>
+</body>
+</html>

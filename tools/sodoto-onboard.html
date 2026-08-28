@@ -72,7 +72,7 @@
 <div id="stage-done" class="hidden">
 
   <div class="card">
-    <h2>① Your public name — give this to your coordinator</h2>
+    <h2>① Your public name — give this to <span class="js-from">Marc Pierson</span></h2>
     <div class="mono" id="did-out"></div>
     <div class="row">
       <button id="copy-did">Copy</button>
@@ -81,7 +81,7 @@
   </div>
 
   <div class="instruct">
-    <b>Next step:</b> show this screen (or read your public name aloud) to your coordinator so they can finish signing you up. This name is safe to share — it is <i>public</i>.
+    <b>Next step:</b> show this screen (or read your public name aloud) to <span class="js-from">Marc Pierson</span> so they can finish signing you up. This name is safe to share — it is <i>public</i>.
   </div>
 
   <div class="card">
@@ -108,7 +108,7 @@
   <div class="card" style="text-align:center;padding:28px 16px">
     <div style="font-size:44px;line-height:1;margin-bottom:10px">✓</div>
     <h2 style="color:#2a5c3f">You're set up</h2>
-    <p style="margin:10px 0 0">Your identity is saved on this device. Your coordinator can now register your public name. When you finish a gate, come back and sign it.</p>
+    <p style="margin:10px 0 0">Your identity is saved on this device. <span class="js-from">Marc Pierson</span> can now register your public name. When you finish a gate, come back and sign it.</p>
   </div>
   <div class="mono" id="did-final" style="margin-top:4px"></div>
   <button class="big-btn secondary" id="btn-review" style="margin-top:14px">Review my recovery file</button>
@@ -156,7 +156,10 @@ async function mintIdentity() {
 
 // ---- context from the one-time onboarding link ----
 const q = new URLSearchParams(location.search);
-const ctx = { name: q.get('name') || '', site: q.get('site') || '', slug: q.get('slug') || q.get('portfolioSlug') || '' };
+// `from` names the person who sent this link and will register the new DID.
+// Today that is always Marc; the param keeps the page usable by another NDC.
+const ctx = { name: q.get('name') || '', site: q.get('site') || '', slug: q.get('slug') || q.get('portfolioSlug') || '', from: q.get('from') || 'Marc Pierson' };
+document.querySelectorAll('.js-from').forEach(n => { n.textContent = ctx.from });
 
 // ---- state ----
 let identity = null;   // { did, seedHex, name, site, slug, createdAt }
@@ -170,10 +173,10 @@ function renderContext() {
     box.innerHTML = '<b>Setting up identity</b>' + (ctx.name ? escapeHtml(ctx.name) : '(you)') +
                     (ctx.slug ? ' · <span style="color:#8a8170">' + escapeHtml(ctx.slug) + '</span>' : '');
   } else {
-    // no link context — let them type a name so the coordinator recognises them
+    // no link context — let them type a name so the issuer recognises them
     box.classList.add('hidden');
     $('intro-fields').innerHTML =
-      '<div class="field"><label>Your name (so your coordinator recognises you)</label>' +
+      '<div class="field"><label>Your name (so ' + escapeHtml(ctx.from) + ' recognises you)</label>' +
       '<input id="in-name" type="text" autocomplete="name" placeholder="e.g. Dana Rivera"></div>';
   }
 }
