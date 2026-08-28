@@ -166,6 +166,8 @@ code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #ee
 <p>These steps use <em>Causal Loop Diagramming</em> as a stand-in skill. Substitute whatever skill you are actually earning — the sequence is identical.</p>
 
 <ol class="step-list">
+  <li><strong>Make your identity, and keep it.</strong> You will be sent an onboarding link. It creates a private key <em>in your own browser</em> — nobody else ever holds it, not your mentor and not the server. Choose a passphrase, download the recovery file, and put both somewhere safe such as a password manager. Then send back the <em>public name</em> it shows you (it begins <code>did:key:z</code>); that part is safe to share. This key is your identity across all of RCN, and it is what makes the credentials provably yours.</li>
+  <li><strong>Get your own site.</strong> You are given a whole FedWiki site — <code>your-name.wiki-sodoto…</code> — with your portfolio on it. On your first visit, click <em>Sign in with my SODOTO key</em> to claim it. If your key was made on a different site, restore it here once using your recovery file and passphrase; after that, the browser remembers. From then on the site is yours to write on.</li>
   <li><strong>Choose a skill and find a mentor.</strong> Ask your coordinator or team who holds this credential and can witness you. That person is your mentor for all three gates.</li>
   <li><strong>Arrange your See One.</strong> Ask to observe your mentor using the skill in real work — not a demo staged for you. Watch what they actually do and why.</li>
   <li><strong>Document your See One.</strong> Right afterward, write a short narrative on a FedWiki page: what the skill involved, what you saw the mentor do, and what you now understand. Your mentor reviews it and confirms.</li>
@@ -174,7 +176,10 @@ code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #ee
   <li><strong>Document your Do One.</strong> Write what you did, what you noticed, what you would change. Your mentor adds their assessment; the coordinator records the gate.</li>
   <li><strong>Arrange your Teach One.</strong> Find a newer person who wants this credential and become their mentor for See One and Do One. Your own mentor watches you teach. The student's completed Do One is your evidence.</li>
   <li><strong>Receive your credential.</strong> Once all three gates are confirmed, the coordinator signs the badge and it appears on your portfolio. You are now eligible to mentor others in this skill.</li>
+  <li><strong>Write your own account.</strong> Each gate names a narrative page, and it is deliberately left empty — the tool records what happened, not what it meant. Sign in on your site and write it: what you tried, what you used, where you got stuck, what you would do differently. Nobody can edit that but you, and it is the part a future learner will actually read.</li>
 </ol>
+
+<div class="note"><strong>Your key, plainly.</strong> Two things unlock your identity on a new device: your <strong>recovery file</strong> and your <strong>passphrase</strong>. Keep both, keep them apart from each other if you like, but keep them. If you lose both, every badge you have already earned still works forever — they are verified from your public name, not from your key. You would simply make a new identity for future gates.</div>
 
 <div class="scenario">
   <div class="sc-label">Worked example</div>
@@ -204,12 +209,16 @@ code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #ee
 
 <ol class="step-list">
   <li><strong>Open the tool</strong> at <code>sodoto.ndcgroup.relocalizecreativity.net/tools/sodoto-issuer.html</code>. On first use it asks for the write passphrase, kept only in your browser.</li>
-  <li><strong>Registry tab —</strong> confirm the learner is listed. If not, add their name, DID (Decentralized Identifier), FedWiki site, and portfolio slug.</li>
+  <li><strong>Registry tab —</strong> confirm the learner is listed. If not, click <em>Make onboarding link</em> and send it to them. They mint their own key and send back only their public DID (Decentralized Identifier) — you never hold their private key, and you should never accept one. Paste the DID and Add to Registry.</li>
+  <li><strong>Own site column —</strong> click <strong>Provision</strong> to give them their own site. This creates the site, its portfolio page, and an owner record bound to their DID so that only they can claim it. Tell your server admin: FedWiki must be restarted before a newly provisioned site can be signed into.</li>
   <li><strong>Contract tab —</strong> pick the issuing NDC, the skill, and the learner, then Open / Resume. The tool tracks gate state per issuer–skill–learner.</li>
   <li><strong>Gate tabs —</strong> for each gate, enter the date, mentor, both assertions, outcome, and narrative slug, then Record Attempt &amp; Write to FedWiki. The badge-in-progress updates on the learner's and mentor's portfolios immediately.</li>
   <li><strong>Sign tab —</strong> review the preview, choose Full (all gates complete) or Partial, enter the NDC's 64-character hex key seed, and Sign &amp; Issue. Signing happens in your browser; the key is cleared right after and never sent to the server.</li>
   <li><strong>Verify —</strong> open the learner's portfolio and click Verify on the new badge. Confirm ✓ Verified. A failure means the key seed did not match the NDC's DID.</li>
+  <li><strong>Check the wiki itself.</strong> Open the pages the tool said it wrote and confirm the entries are there. The tool will refuse to record an attempt whose portfolio write failed, and tells you about any lesser failure — but the wiki is the record, so treat what is on it as the truth and the tool's message as a claim.</li>
 </ol>
+
+<div class="note"><strong>What you cannot do — by design.</strong> You record the gates; you do not write the learner's account of them, and you cannot edit their site. Each person owns their own site through their own key. That is the point: a credential nobody but its holder can rewrite is worth more than one an administrator can.</div>
 
 <div class="warn"><strong>Guard the NDC key seed.</strong> The 64-character hex seed is what signs on behalf of the cooperative. Keep it in a password manager or Keychain — the tool never stores it. If it is lost the NDC can no longer sign new credentials under that DID, but every credential already issued stays valid forever (it verifies from the public key inside the DID).</div>
 

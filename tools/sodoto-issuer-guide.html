@@ -77,12 +77,32 @@ or student elsewhere in the tool comes from here.</p>
 <ul>
   <li><strong>Name</strong> — links to that person's portfolio page on the wiki.</li>
   <li><strong>DID</strong> (<code>did:key:z6Mk…</code>) — their decentralized identity. A badge is issued <em>to</em> this DID, so a verifier can confirm it belongs to the right person, not just to a name anyone could type.</li>
-  <li><strong>Portfolio slug</strong> — the wiki page where their badges and history live.</li>
+  <li><strong>Site</strong> — the FedWiki host that holds their pages. Each person has their own
+    (<code>their-slug.wiki-sodoto…</code>); only the demo cast shares the base site. Links elsewhere in
+    the tool are built from this, so a wrong site here means links that point at pages which do not exist.</li>
+  <li><strong>Portfolio slug</strong> — the page on that site where their badges and history live.</li>
+  <li><strong>Own site</strong> — either <em>✓ own site</em>, or a <strong>Provision</strong> button.</li>
 </ul>
 <h3>How to use it</h3>
 <p>Add a person by entering their name (the slug and portfolio slug fill in automatically) and their DID,
 then <em>Add to registry</em>. The learner and mentor drop-downs on the Contract tab draw from this list.
 On the pilot, the demo people (all prefixed <code>DEMO —</code>) are seeded here for you.</p>
+
+<h3>Onboarding someone new</h3>
+<p>Do not ask anyone for a private key, and do not make one on their behalf. Enter their name, click
+<em>Make onboarding link</em>, and send them the link. They mint a key in their own browser, save a
+recovery file, and send back only their public DID — which is safe to share. Paste it in and
+<em>Add to registry</em>.</p>
+
+<h3>Provisioning their site</h3>
+<p><strong>Provision</strong> gives that person a site of their own: the site itself, a scaffolded portfolio
+page carrying the sign-in button, and an owner record bound to their DID so nobody else can claim it.
+The person moves to their new site only after the server confirms it exists, so a failure leaves them
+exactly where they were.</p>
+<div class="note"><strong>A restart is needed before they can sign in.</strong> FedWiki reads its list of
+sites, and each site's owner record, only when it starts. Tell whoever runs the server after you
+provision — or after anything changes a person's DID — otherwise sign-in fails with
+<em>"this portfolio belongs to a different identity"</em> even though the file on disk is correct.</div>
 
 <h2 id="contract">Contract — what is being credentialed</h2>
 <p>A contract is the unit of credentialing: <strong>one issuer, one skill, one learner</strong>. Choosing

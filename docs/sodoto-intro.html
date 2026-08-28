@@ -176,10 +176,14 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
 <table class="role-table">
   <tr><th>Person</th><th>URL</th><th>What happens in their browser</th></tr>
   <tr><td>Coordinator (issuer)</td><td><code>sodoto.ndcgroup.relocalizecreativity.net/tools/sodoto-issuer.html</code></td><td>Runs the gate workflow; enters the NDC key seed to sign. HTTPS makes Web Crypto signing available.</td></tr>
-  <tr><td>Learner / verifier</td><td><code>wiki-sodoto.ndcgroup.relocalizecreativity.net</code></td><td>Views portfolio pages; clicks Verify. The signature check runs entirely client-side — no login.</td></tr>
+  <tr><td>New learner (onboarding)</td><td><code>…/tools/sodoto-onboard.html</code>, from a link the issuer sends</td><td>Mints their own Ed25519 key in their browser, chooses a passphrase, downloads a recovery file, and sends back only their public DID. The private key never leaves the device and is never transmitted.</td></tr>
+  <tr><td>Any person, on their own site</td><td><code>&lt;their-slug&gt;.wiki-sodoto.ndcgroup.relocalizecreativity.net</code></td><td>Signs a one-time challenge with their key to claim and edit their own portfolio and write their own account. No password.</td></tr>
+  <tr><td>Verifier (anyone)</td><td>any portfolio site</td><td>Clicks Verify. The signature check runs entirely client-side — no login, no server call.</td></tr>
 </table>
 
-<div class="note"><strong>Why HTTPS matters.</strong> The browser's Web Crypto API — used for Ed25519 signing and verification — only works in a secure context (HTTPS or localhost). Because the WikiCafe deployment is HTTPS on a public domain, any coordinator can sign from their own machine. (An earlier localhost-only setup required signing on one specific machine; the WikiCafe deployment removed that limitation.)</p></div>
+<div class="note"><strong>Keys are per-device, and that has a consequence.</strong> A browser holds a key only for the site it was created on. Someone who mints their key on the tools host and then visits their own portfolio site must restore it there once, from their recovery file and passphrase — which is why that file matters from day one, not just years later. Have it saved before you need it.</div>
+
+<div class="note"><strong>Why HTTPS matters.</strong> The browser's Web Crypto API — used for Ed25519 signing and verification — only works in a secure context (HTTPS or localhost). Because the WikiCafe deployment is HTTPS on a public domain, any coordinator can sign from their own machine. (An earlier localhost-only setup required signing on one specific machine; the WikiCafe deployment removed that limitation.)</div>
 
 <h2>Issuing a Credential — Coordinator Steps</h2>
 
@@ -187,13 +191,17 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
 
 <ol class="step-list">
   <li><strong>Open the tool</strong> at <code>sodoto.ndcgroup.relocalizecreativity.net/tools/sodoto-issuer.html</code>. On first use it prompts for the write passphrase, which is kept only in that browser's local storage.</li>
-  <li><strong>Confirm the learner is registered.</strong> On the Registry tab, check they are listed; if not, add name, DID, FedWiki site, and portfolio slug. New entries sync to the server registry.</li>
+  <li><strong>Confirm the learner is registered.</strong> On the Registry tab, check they are listed. If not, click <em>Make onboarding link</em> and send it to them: they mint their own key, keep it, and send back only their public DID — you never hold it. Paste that DID and Add to Registry. New entries sync to the server registry.</li>
+  <li><strong>Give them a site of their own.</strong> In the Registry's <em>Own site</em> column, click <strong>Provision</strong>. That creates <code>&lt;their-slug&gt;.wiki-sodoto…</code>, an unclaimed owner file bound to their DID, a scaffolded portfolio with the sign-in button, and its certificate gate. FedWiki must be restarted before a newly provisioned site can be claimed — the farm reads its site list only at startup.</li>
   <li><strong>Open the contract.</strong> On the Contract tab, pick the issuing NDC, the skill, and the learner, then Open / Resume. Gate state is tracked per issuer–skill–learner.</li>
   <li><strong>Record each gate.</strong> For See One, Do One, Teach One, fill in date, mentor, both assertions, outcome, and narrative slug, then Record Attempt &amp; Write to FedWiki. The tool writes to the learner's and mentor's portfolios immediately.</li>
   <li><strong>Sign.</strong> On the Sign tab, review the preview, choose Full (all gates complete) or Partial, enter the NDC's 64-character hex key seed, and Sign &amp; Issue. The JWT (JSON Web Token) is signed in-browser with Web Crypto; the key is cleared right after and never sent anywhere.</li>
   <li><strong>Badge is published automatically</strong> to the learner's portfolio and the ledger.</li>
   <li><strong>Verify.</strong> Open the portfolio, click Verify on the new badge, and confirm ✓ Verified. A failure means the key seed did not match the issuing NDC's DID.</li>
+  <li><strong>Check the wiki, not the tool.</strong> Open the pages the write claimed to touch and confirm the entries are actually there. The tool now refuses to record an attempt whose portfolio write failed, and reports any secondary failure — but the wiki is the record, and it is the thing worth trusting.</li>
 </ol>
+
+<div class="note"><strong>The learner's half.</strong> Recording a gate writes the facts; it does not write the account. Each person signs in on their own site and writes what they did, what they used, and what they would change. The narrative page named at each gate is theirs to fill in — deliberately left empty by the tool.</div>
 
 <div class="warn"><strong>Two secrets, kept separate.</strong> (1) The <em>write passphrase</em> gates FedWiki writes and lives in the coordinator's browser storage. (2) Each NDC's <em>Ed25519 private key seed</em> — a 64-character hex string — signs credentials and must be kept in a password manager or Keychain. The tool never stores the key seed. If a seed is lost the NDC can no longer sign under that DID, but already-issued credentials remain valid forever (they verify from the public key encoded in the DID).</div>
 
@@ -209,8 +217,15 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
 </ol>
 <p>The JWT <em>is</em> the credential. If the badge renders and Verify passes, it is authentic and unmodified — with no server, no expiry, and no third party.</p>
 
+<h2>Your Own Site</h2>
+<p>Each person gets a whole FedWiki site of their own — <code>chris-casillas.wiki-sodoto.ndcgroup.relocalizecreativity.net</code> — not a page on somebody else's wiki. Their portfolio lives there, and so does whatever they write about their own learning and mentoring: what they tried, what they used, what they would do differently. The credential is the record of the gates; the site is the account of the journey.</p>
+
+<p><strong>They own it, cryptographically.</strong> To edit, a person clicks <em>Sign in with my SODOTO key</em> and signs a one-time challenge with the private key on their own device. The server checks the signature against their DID. There is no password, and no key ever reaches the server. Ownership is not "first to sign in wins": the site is provisioned <em>unclaimed</em>, bound to the person's registered DID, and the badge is the authority — when the first badge lands, the holder's DID is stamped as owner. A portfolio with no badge and no expected holder cannot be claimed at all.</p>
+
+<p>This is what makes the portfolio genuinely the person's. A mentor records the gate, but only the learner can write their side of it, and no coordinator can edit their account after the fact.</p>
+
 <h2>The Portfolio Page</h2>
-<p>Each learner has a FedWiki portfolio page that displays their badges. Pages are written by sofi-proxy into the shared volume and served by FedWiki. Each badge, rendered by the <code>sodoto-badge</code> plugin, shows the skill and issuing NDC seal, the three gate dates, mentor name(s) linked to their own portfolios, the full attempt history per gate, and a Verify button. Long badges collapse into an accordion, and the mentoring log groups attempts by learner and skill, most-recent first.</p>
+<p>The portfolio page itself displays the badges. Pages are written by sofi-proxy into the shared volume and served by FedWiki. Each badge, rendered by the <code>sodoto-badge</code> plugin, shows the skill and issuing NDC seal, the three gate dates, mentor name(s) linked to their own sites, the full attempt history per gate, and a Verify button. Long badges collapse into an accordion, and the mentoring log groups attempts by learner and skill, most-recent first.</p>
 
 <div class="note"><strong>Live demo cast.</strong> The public WikiCafe site is seeded with a clearly-labelled demo cohort (a <em>DEMO Academy</em> issuer and demo learners such as <code>demo-alex-rivera</code>) so the system can be shown end-to-end without exposing real people. Seeding is opt-in via <code>SEED_DEMO</code>, writes only files that are absent, and never overwrites real content. A production NDC simply leaves <code>SEED_DEMO</code> unset.</div>
 
@@ -226,6 +241,8 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
 
 <h3>Live now</h3>
 <div class="status-good"><strong>Hosted on WikiCafe over HTTPS.</strong> Three containers (sofi-proxy, FedWiki, Caddy) pulled from GHCR; any coordinator signs from their own browser. Nothing runs on a personal machine.</div>
+<div class="status-good"><strong>Per-person owned sites — proven end to end (Aug 28 2026).</strong> The whole chain runs: a person mints their own key, registers the DID, gets a site provisioned, claims it by signing a challenge, and edits it. FedWiki runs in farm mode with DID ownership; each site's certificate is issued on demand.</div>
+<div class="status-good"><strong>Self-custodied identity.</strong> Every participant holds their own Ed25519 key, minted on their own device, with a passphrase-encrypted recovery file. No one else ever holds it — not the mentor, not the coordinator, not the server.</div>
 <div class="status-good"><strong>Browser issuer tool.</strong> Registry → contract → gate recording → in-browser Ed25519 signing → automatic badge write and ledger update. No CLI, no git.</div>
 <div class="status-good"><strong>Client-side verification.</strong> The <code>sodoto-badge</code> plugin verifies any badge from its DID with no server call.</div>
 <div class="status-good"><strong>Plugin vendored in the repo.</strong> <code>sodoto/plugins/wiki-plugin-sodoto-badge/</code> is committed and baked into the wiki image — the repo is self-contained.</div>
@@ -234,6 +251,11 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
 <h3>Roadmap — decided Aug 2026</h3>
 <div class="status-good"><strong>Learner attestation (v0.4) — built.</strong> Cryptographic learner attestation is core to what SODOTO is: the learner signs each passing gate and the student signs their Do One, embedded in the credential (v0.4). It rests on <em>self-custody</em> — the learner mints their own Ed25519 key on their own phone, never held by the mentor; that key is the person's identity across all of RCN, not just SODOTO. In place: the onboarding / keygen page (<code>sodoto-onboard.html</code>), issuer-generated onboarding links, per-gate signing (<code>sodoto-sign.html</code>), and required-for-full collection + verification in the issuer tool. The badge shows "learner-attested" and verifies each learner and student attestation client-side.</div>
 <div class="status-good"><strong>Neo4j teaching graph (projector) — built.</strong> <code>substrate/sodoto_projector.py</code> reads badge truth from the portfolios and upserts <code>(:Person)</code>, <code>(:Organization)</code>, <code>(:Skill)</code>, <code>(:Credential)</code>, <code>(:GateAttempt)</code> and the teaching edges (TAUGHT / ATTESTED / HOLDS / ISSUED / CERTIFIES), idempotent on <code>contractId</code>. Neo4j is a queryable lens over the badges, never a dependency of issuing one; it runs on the Desktop Substrate. No debt node — that's the currency layer.</div>
+<div class="status-good"><strong>DID ownership of per-person sites — built and live.</strong> Each participant's portfolio is its own FedWiki site, owned by the person through their DID. Sign-in is a signed challenge, never a password; the badge is the authority on who owns a site, and an unbadged, unbound portfolio cannot be claimed at all. Provisioning creates the site, its unclaimed owner file, a scaffolded portfolio, and its certificate gate in one call.</div>
+
+<h3>Designed, not yet built</h3>
+<div class="note"><strong>Coordinatorless issuance (NDC auto-seal).</strong> Today a coordinator still records each gate and signs the credential — that is the running system, and this document describes it as such. The design that removes that role is specified in full and its policy engine is written and tested, but nothing calls it yet: the mentor and learner would sign each gate on their own devices, and the NDC's server would apply its seal automatically once it verified the whole attestation set and the mentor's own qualification. The prerequisite — DID authentication so people can sign on their own pages — is the piece that went live in August. See <code>docs/sodoto-ndc-auto-seal-spec.md</code>.</div>
+
 <p style="font-size:13px;color:#666;margin:12px 0 0;"><strong>Set aside:</strong> <em>Marlowe / on-chain gate execution</em> — the signature chain (mentor + NDC + learner) already provides the enforcement, so a blockchain layer is not pursued. Value settlement, if ever wanted, belongs to the separate agreements/currency system (CfA-dSC), not SODOTO — and likewise the commons <em>debt</em> node, which is part of that currency layer, not the credential.</p>
 
 <h2>The Teaching Graph (designed)</h2>

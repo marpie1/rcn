@@ -754,6 +754,18 @@ Plugin repos live at `~/rcn/scp/plugins/wiki-plugin-scp-*/`. 19 typed item plugi
 
 **Live on WikiCafe (Aug 2026):** three containers pulled from GHCR — `rcn-sodoto-proxy` (sofi-proxy: issuer tool + wiki writes, at `sodoto.ndcgroup.relocalizecreativity.net`), `rcn-sodoto-wiki` (FedWiki portfolios + badge ledger, at `wiki-sodoto.ndcgroup…`), and Caddy (HTTPS). Nothing runs on a personal machine — Marc's laptop only builds and pushes images. A labelled demo cast is seeded opt-in via `SEED_DEMO`.
 
+**Per-person owned sites — working end to end, Aug 28 2026.** The full chain runs on WikiCafe: a person mints their own key, registers the DID, gets a site provisioned, claims it by signing a one-time challenge, and edits it. Verified live — `POST /auth/verify` returned `{"ok":true,"owner":true}`. No password anywhere in that sequence.
+
+Each participant now has their own FedWiki site (`<slug>.wiki-sodoto.ndcgroup…`), not a page on a shared wiki; only the demo cast stays on the base host. `POST /api/sodoto-provision-site` creates the site, an **unclaimed** `owner.json` bound to the person's DID, a scaffolded portfolio carrying the sign-in item, and the `wikiDomains` entry. Ownership is badge-first: the holder's DID is stamped when the first badge lands, and an unbadged, unbound portfolio cannot be claimed at all (fail closed). The issuer Registry has an **Own site** column that runs this.
+
+**Deployment facts that contradict this repo's own compose file — check the running system, not the config:**
+
+- WikiCafe runs a Docker **Swarm stack**, and its `command:` override replaces the image `CMD`. `WIKI_FARM` and `SECURITY_TYPE` are therefore read by nothing there — the wiki runs `wiki --farm --security_type did` passed as flags. **Read the running command, not the env, to tell whether farm + DID ownership is on.**
+- Its ingress gates on-demand TLS with its own hourly allowlist job, so `/api/tls-allow` is unused in production and a freshly provisioned site can wait up to an hour for its certificate.
+- **Two restart rules.** FedWiki reads `config.json` `wikiDomains` *and* each site's `owner.json` only at startup. `wikiDomains` is an **allowlist**, not a set of extras — provisioning the first person site once evicted the main wiki entirely. Provisioning now always asserts the base host. Any `owner.json` change (e.g. a re-minted DID changing `expectDid`) needs a wiki bounce; `wiki-security-did` should be changed to stat the file rather than cache it. **Not yet done.**
+
+**Silent failure was the whole problem (Aug 27–28).** Blank portfolios traced to a chain of writes that failed without saying so — and the audit lines that would have shown it were never written, because Python block-buffers stdout under Docker and the image set no `PYTHONUNBUFFERED`. Fixed at both layers (`ENV` in the image *and* `sys.stdout.reconfigure(line_buffering=True)` in the proxy, so a `command:`/env override cannot lose it). The issuer now writes to FedWiki *before* saving contract state, so a failed batch can no longer report "Attempt recorded". **Verify at the wiki, not at the tool's success message.**
+
 **Human-readable docs (canonical, current):** `docs/sodoto-intro.html` (what it is / how it works / where every piece runs — with a hover-annotated hosting map), `docs/sodoto-manual.html` (role-based user manual), `tools/sodoto-issuer-guide.html` (per-tab tool help). The older `SODOTO-CLAUDE-CODE-CONTEXT.md` is Claude-onboarding notes that predate the WikiCafe deployment — trust the three HTML docs where they differ.
 
 Localhost dev orientation:
@@ -777,7 +789,9 @@ Localhost dev orientation:
 
 **Badge upsert pattern:** sofi-proxy `/api/wiki-write-badge` searches the portfolio for an existing `sodoto-badge` with matching `contractId`. If found, replaces in-place (journal `edit`). If not found, appends (journal `add`). One badge per contract — updated as gates complete.
 
-**sofi-proxy FedWiki API routes:** `GET /api/wiki-read-page`, `POST /api/wiki-write-badge`, `POST /api/wiki-update-item`, `POST /api/wiki-add-items`, `POST /api/wiki-write-page`
+**sofi-proxy FedWiki API routes:** `GET /api/wiki-read-page`, `POST /api/wiki-write-badge`, `POST /api/wiki-update-item`, `POST /api/wiki-add-items`, `POST /api/wiki-write-page`, `POST /api/sodoto-provision-site`, `GET /api/people-registry` / `POST` (same path), `GET /api/tls-allow` (Caddy ask endpoint, unauthenticated by design)
+
+**Cross-person links must name the host.** Links between people were once site-relative (`/their-slug.html`), which resolves against whichever site the *reader* is on — correct on one shared wiki, broken the moment portfolios moved to their own sites. All of them now go through `pageLink()`, which resolves the owning site from the registry; portfolio slugs belong to their person's site, anything else (narrative stubs, the ledger) to `WIKI_SITE`. `data-page-name` is dropped with them, since the badge plugin's click handler opens the named page on the *current* site.
 
 **keys.json is gitignored. Never commit it.**
 

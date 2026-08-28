@@ -357,9 +357,9 @@ txt(s7, 'Your credential belongs to you.', 0.7, 0.8, 11.9, 1.0,
 rect(s7, 3.0, 1.9, 7.3, 0.04, fill=G_LT)
 
 statements = [
-    ('It travels with you —\nno matter which NDC you work with.', 1.0, 2.2),
-    ('Anyone can verify it —\nno login, no server, no third party.', 1.0, 3.5),
-    ('It was issued by your community —\nnot a distant institution.', 1.0, 4.8),
+    ('The key is yours, made on your own device —\nno one else ever holds it.', 1.0, 2.2),
+    ('Your portfolio is your own site —\nnobody can edit your account of the work.', 1.0, 3.5),
+    ('Anyone can verify it —\nno login, no server, no third party.', 1.0, 4.8),
 ]
 for text, x, y in statements:
     txt(s7, text, x, y, 11.3, 1.1, size=24, color=G_LT, align=PP_ALIGN.CENTER)
@@ -515,18 +515,17 @@ bar(s12)
 title_txt(s12, 'What Exists Today')
 
 live = [
-    '8 credentials issued — all live, all verified',
-    '5 NDC organizations registered with signing identities',
-    'Skills registry: 8 active credentials, 23+ skills planned',
-    'Portfolio pages for Marc Pierson, Kerry Turner, Noah Williams',
+    'Live on the public web over HTTPS — nothing runs on a personal machine',
+    'Everyone holds their own key, made on their own device',
+    'Everyone owns their own site — signed in by key, no password',
     'Browser-based issuance tool — gate recording, signing, FedWiki writes',
     'Verification works entirely in the browser — no server, no blockchain',
-    'FedWiki display — badges visible to anyone with the page link',
+    '8 credentials issued and verified; 5 NDCs with signing identities',
 ]
 in_progress = [
-    'Public deployment (DigitalOcean + HTTPS) — enables multi-user access',
+    'Onboarding made simple enough to do unaided',
+    'Coordinatorless issuance — designed and tested, not yet switched on',
     'CfA-dSC contracts being connected to the credential system',
-    'Skills registry expanding as new cohorts come through',
 ]
 
 rect(s12, 0.4, 1.85, 7.8, 4.8, fill=G_BG, line=G, lw=1)
