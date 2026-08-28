@@ -7,8 +7,20 @@ Usage:
 
 Then open evsm-aggregator.html via http://localhost:8765
 """
-import os, json, hmac, urllib.request, urllib.error
+import os, json, hmac, sys, urllib.request, urllib.error
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
+
+# Line-buffer stdout so the audit lines below actually reach the logs. Python
+# block-buffers when stdout is not a terminal, so under Docker every write,
+# badge, provision and DENIED line sat in the process buffer — four site
+# provisions produced zero log output on WikiCafe. PYTHONUNBUFFERED=1 in the
+# image covers this too, but a deployment can override the env; this cannot be
+# lost. An audit line that is only flushed when the buffer fills is not an audit.
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+except AttributeError:   # pre-3.7 stream without reconfigure — env var still applies
+    pass
 
 PORT = int(os.environ.get("PORT", 8765))
 API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
@@ -619,6 +631,22 @@ MERGE (pe)-[:PERFORMER_IN]->(c)
                         owner_obj['expectDid'] = expect_did
                     with open(owner_path, 'w', encoding='utf-8') as f:
                         json.dump(owner_obj, f, indent=2)
+                elif expect_did:
+                    # The site exists but is still UNCLAIMED, and the person's DID has
+                    # changed since it was provisioned — e.g. they re-minted their key.
+                    # Refresh expectDid so they can still claim their own site. A site
+                    # with a real 'did' is claimed and is never touched: that would be
+                    # a hijack, and the badge remains the authority there.
+                    try:
+                        with open(owner_path, encoding='utf-8') as f:
+                            owner_obj = json.load(f)
+                        if not owner_obj.get('did') and owner_obj.get('expectDid') != expect_did:
+                            owner_obj['expectDid'] = expect_did
+                            with open(owner_path, 'w', encoding='utf-8') as f:
+                                json.dump(owner_obj, f, indent=2)
+                            print(f"  EXPECTDID  {site} -> {expect_did}")
+                    except (OSError, ValueError) as _e:
+                        print(f"  expectDid refresh skipped: {_e}")
 
                 # empty scaffolded portfolio page. Title has NO em-dash so
                 # asSlug(title) == portfolio_slug (the slug bug fixed in the seed).
@@ -633,7 +661,10 @@ MERGE (pe)-[:PERFORMER_IN]->(c)
                         'story': [
                             {'type': 'sodoto-signin', 'id': sid,
                              'text': 'Sign in with your SODOTO key'},
-                            {'type': 'paragraph', 'id': pid,
+                            # 'markdown', not 'paragraph': FedWiki's paragraph type
+                            # renders its text literally, so the ** here showed up
+                            # as asterisks on every provisioned portfolio.
+                            {'type': 'markdown', 'id': pid,
                              'text': f'Portfolio for **{name}**. Badges appear here as gates are signed. '
                                      f'Sign in with your SODOTO key to edit this page.'}
                         ],
@@ -653,8 +684,28 @@ MERGE (pe)-[:PERFORMER_IN]->(c)
                 except (FileNotFoundError, ValueError):
                     cfg = {}
                 cfg.setdefault('wikiDomains', {})
+                dirty = False
+
+                # wikiDomains is an ALLOWLIST, not a set of extras: once it exists,
+                # FedWiki farm serves only the hosts named in it. Provisioning the
+                # first person site therefore evicted the main wiki, which answered
+                # "Requested Wiki Does Not Exist" until Christian added it back by
+                # hand (Aug 2026). Always assert the base host so no future rewrite
+                # can knock it out again. Its owner file is status/owner.json — where
+                # plain FedWiki keeps it, and where the seeder writes it — unlike the
+                # per-person sites, whose owner.json sits at the site root.
+                if WIKI_SITE and WIKI_SITE not in cfg['wikiDomains']:
+                    cfg['wikiDomains'][WIKI_SITE] = {
+                        'id': os.path.join(wiki_root, WIKI_SITE, 'status', 'owner.json')
+                    }
+                    dirty = True
+                    print(f"  WIKIDOMAINS base host restored: {WIKI_SITE}")
+
                 if site not in cfg['wikiDomains']:
                     cfg['wikiDomains'][site] = {'id': owner_path}
+                    dirty = True
+
+                if dirty:
                     with open(config_path, 'w', encoding='utf-8') as f:
                         json.dump(cfg, f, ensure_ascii=False, indent=2)
                     needs_restart = True

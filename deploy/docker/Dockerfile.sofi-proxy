@@ -2,6 +2,13 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# Python block-buffers stdout when it is not a terminal, so under Docker the
+# proxy's audit lines — page writes, badge writes, provisioning, DENIED — sat in
+# the process buffer instead of reaching the logs. Four site provisions produced
+# zero log lines on WikiCafe (Christian, Aug 2026). An audit trail that is only
+# flushed when the buffer happens to fill is not an audit trail.
+ENV PYTHONUNBUFFERED=1
+
 # Copy all rcn files so sofi-proxy can serve them as static files
 # (.dockerignore at repo root excludes secrets and large files)
 COPY . .
