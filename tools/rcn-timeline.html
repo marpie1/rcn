@@ -93,6 +93,16 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9;color:#1e293b}
 .tb-btn{font-size:11px;padding:3px 8px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#1e293b;cursor:pointer;white-space:nowrap;line-height:1.4}
 .tb-btn:hover{background:#f1f5f9}
 .tb-btn.active{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+.tb-menu{position:relative;display:inline-block}
+.tb-drop{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:40;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,.13);padding:4px;min-width:232px}
+.tb-drop.open{display:block}
+.tb-drop-item{display:flex;align-items:baseline;gap:8px;padding:6px 9px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.tb-drop-item:hover{background:#f1f5f9}
+.tb-drop-item.active{background:#dbeafe}
+.tb-drop-name{font-size:12px;font-weight:600;color:#1e293b;flex-shrink:0;min-width:74px}
+.tb-drop-item.active .tb-drop-name{color:#1d4ed8}
+.tb-drop-hint{font-size:10.5px;color:#94a3b8;white-space:normal;line-height:1.35}
+.tb-drop-swatch{width:9px;height:9px;border-radius:2px;flex-shrink:0;align-self:center}
 .tb-btn:disabled{opacity:.4;cursor:default}
 .tb-btn:disabled:hover{background:#fff}
 a.tb-btn{text-decoration:none;display:inline-flex;align-items:center}
@@ -181,8 +191,10 @@ textarea.prop-input{resize:vertical;min-height:44px;font-family:inherit}
     <input id="model-name" class="prop-input" style="width:120px" value="Untitled timeline" title="Name of this timeline">
     <span class="tb-sep"></span>
     <button class="tb-btn" id="btn-new" title="Add a new interval at the center of the current view">+ Interval</button>
-    <button class="tb-btn" id="btn-before" title="Draw a 'before' link (loose — leaves slack): click the source interval, then the target">+ before →</button>
-    <button class="tb-btn" id="btn-meets" title="Draw a 'meets' link (rigid weld — end locked to start): click the source interval, then the target">+ meets ⊣⊢</button>
+    <span class="tb-menu" id="link-menu">
+      <button class="tb-btn" id="btn-link" title="Draw a link: pick a relation, then click the source interval and the target" aria-haspopup="true" aria-expanded="false">+ link ▾</button>
+      <div class="tb-drop" id="link-drop" role="menu"></div>
+    </span>
     <span class="tb-sep"></span>
     <input id="sentence" title="Type an assertion and press Enter — e.g. &quot;Pilot before Grant&quot;, &quot;Report = Jan 2026 .. Jun 2026&quot;, &quot;Scale-up lasts 6 months&quot;, &quot;pin Report&quot;" placeholder='say it:  "Pilot before Grant"   ·   "Report = Jan 2026 .. Jun 2026"   ·   "pin Report"'>
     <span class="tb-sep"></span>
@@ -583,7 +595,10 @@ function svgPt(e){var r=svg.getBoundingClientRect();return{x:e.clientX-r.left,y:
 
 function onIvDown(e,iv){
   e.stopPropagation();
-  if(mode==="before"||mode==="meets"){
+  /* mode is either "select" or a relation name, so test for the negative —
+     naming the relations here is what silently limited the click gesture to
+     before/meets after the other three were added. */
+  if(mode!=="select"){
     if(!linkStart){linkStart=iv.id;toast("click the target of “"+iv.label+" "+mode+" …”");}
     else{beforeChange("link");addLink(linkStart,iv.id,mode);linkStart=null;mode="select";syncModeBtns();solve();render();renderPanel();toast("link added");}
     return;
@@ -812,10 +827,62 @@ document.getElementById("sentence").addEventListener("keydown",function(e){
 
 /* ── toolbar ─────────────────────────────────────────────── */
 function toast(msg){var t=document.getElementById("toast");t.textContent=msg;t.className="show";clearTimeout(toast._t);toast._t=setTimeout(function(){t.className="";},1800);}
-function syncModeBtns(){document.getElementById("btn-before").className="tb-btn"+(mode==="before"?" active":"");document.getElementById("btn-meets").className="tb-btn"+(mode==="meets"?" active":"");}
+/* ── link menu ───────────────────────────────────────────────
+   One "+ link" control rather than a button per relation: five would crowd the
+   toolbar, and `mode` is already the relation name (onIvDown passes it straight
+   to addLink), so the menu only has to set it. Items are built from REL_META so
+   the toolbar, the panel and the canvas can never disagree about the list. */
+var linkDropOpen=false;
+function buildLinkDrop(){
+  var d=document.getElementById("link-drop");
+  d.innerHTML="";
+  REL_ORDER.forEach(function(rel){
+    var RM=REL_META[rel];
+    var it=document.createElement("div");
+    it.className="tb-drop-item"+(mode===rel?" active":"");
+    it.setAttribute("role","menuitem");
+    it.innerHTML='<span class="tb-drop-swatch" style="background:'+RM.color+'"></span>'+
+                 '<span class="tb-drop-name">'+RM.btn+'</span>'+
+                 '<span class="tb-drop-hint">'+RM.tip+'</span>';
+    it.onclick=function(){armLink(rel);};
+    d.appendChild(it);
+  });
+}
+function openLinkDrop(open){
+  linkDropOpen=(open===undefined?!linkDropOpen:!!open);
+  if(linkDropOpen)buildLinkDrop();
+  document.getElementById("link-drop").className="tb-drop"+(linkDropOpen?" open":"");
+  document.getElementById("btn-link").setAttribute("aria-expanded",linkDropOpen?"true":"false");
+}
+function armLink(rel){
+  mode=rel; linkStart=null; openLinkDrop(false); syncModeBtns();
+  toast("click source interval, then target — “A "+rel+" B”");
+  render();
+}
+function disarmLink(){mode="select";linkStart=null;openLinkDrop(false);syncModeBtns();render();}
+function syncModeBtns(){
+  var b=document.getElementById("btn-link"), armed=(mode!=="select");
+  b.className="tb-btn"+(armed?" active":"");
+  b.textContent=armed?((REL_META[mode]||{btn:mode}).btn+" ✕"):"+ link ▾";
+  b.title=armed?"Click the source interval then the target — or click here to cancel"
+               :"Draw a link: pick a relation, then click the source interval and the target";
+  if(!armed&&linkDropOpen)buildLinkDrop();
+}
+/* Close on any click that lands outside the menu. Guarding on the target here,
+   rather than calling stopPropagation() in the button's own handler, keeps this
+   independent of listener order — the button toggling the menu open and this
+   listener closing it again in the same click is exactly the race to avoid. */
+document.addEventListener("click",function(e){
+  if(linkDropOpen&&!(e.target&&e.target.closest&&e.target.closest("#link-menu")))openLinkDrop(false);
+});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&(linkDropOpen||mode!=="select"))disarmLink();});
 document.getElementById("btn-new").onclick=function(){beforeChange("add-iv");var iv=newInterval(null);selectIv(iv.id);solve();render();renderPanel();};
-document.getElementById("btn-before").onclick=function(){mode=(mode==="before"?"select":"before");linkStart=null;syncModeBtns();toast(mode==="before"?"click source interval, then target":"");render();};
-document.getElementById("btn-meets").onclick=function(){mode=(mode==="meets"?"select":"meets");linkStart=null;syncModeBtns();toast(mode==="meets"?"click source interval, then target":"");render();};
+/* Armed → the button cancels (keeps the old click-again-to-cancel habit).
+   Idle → it opens the menu. */
+document.getElementById("btn-link").addEventListener("click",function(){
+  if(mode!=="select"){disarmLink();return;}
+  openLinkDrop();
+});
 document.getElementById("btn-zin").onclick=function(){view.pxPerUnit*=1.25;render();};
 document.getElementById("btn-zout").onclick=function(){view.pxPerUnit/=1.25;render();};
 document.getElementById("btn-fit").onclick=fit;

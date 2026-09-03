@@ -14,7 +14,10 @@
  */
 var fs = require('fs'), path = require('path');
 
-var html = fs.readFileSync(path.join(__dirname, 'rcn-timeline.html'), 'utf8');
+// Optional path argument so a modified copy can be checked without touching the
+// real file — which is how you confirm a test still has teeth.
+var target = process.argv[2] || path.join(__dirname, 'rcn-timeline.html');
+var html = fs.readFileSync(target, 'utf8');
 var from = html.indexOf('var EPS=1e-6;');
 var to   = html.indexOf('/* ── rendering', from);
 if (from < 0 || to < 0) { console.error('Could not locate the solver in rcn-timeline.html'); process.exit(1); }
@@ -110,6 +113,52 @@ run('...and during expresses what was meant, moving nothing',
     [iv('RESULT',2022,2030), iv('SOLUTION',2023,2024)],
     [{from:'SOLUTION',to:'RESULT',rel:'during'}],
     {state:'RESULT:2022..2030 SOLUTION:2023..2024', issues:0});
+
+// ── link-creation gesture ───────────────────────────────────────────────
+// onIvDown decides what a click on a bar means. It used to ask
+// `mode==="before"||mode==="meets"`, which silently limited the click gesture
+// to two relations after five existed — the other three were reachable only
+// from the panel or the sentence box. Test the gesture for every relation.
+var gFrom = html.indexOf('function onIvDown');
+var gTo   = html.indexOf('function startHandle', gFrom);
+if (gFrom < 0 || gTo < 0) { console.error('Could not locate onIvDown'); process.exit(1); }
+var mode = 'select', linkStart = null, drag = null, uidN = 0;
+function nid(p){ return p + (++uidN); }
+function toast(){} function beforeChange(){} function syncModeBtns(){}
+function render(){} function renderPanel(){} function selectIv(){}
+function cloneModel(){ return JSON.parse(JSON.stringify(M)); }
+function svgPt(){ return {x:0,y:0}; } function xt(){ return 0; }
+function addLink(fromId,toId,rel){
+  if(fromId===toId)return null;
+  for(var i=0;i<M.links.length;i++){var L=M.links[i];if(L.from===fromId&&L.to===toId){L.rel=rel;return L;}}
+  var lk={id:nid("lk"),from:fromId,to:toId,rel:rel,who:"",note:"",conf:0.8};
+  M.links.push(lk);return lk;
+}
+eval(html.slice(gFrom, gTo));   // defines onIvDown
+
+function gesture(rel){
+  M.intervals=[iv('A',0,2), iv('B',10,20)]; M.links=[];
+  mode=rel; linkStart=null;
+  var ev={stopPropagation:function(){}};
+  onIvDown(ev, M.intervals[0]);            // click source
+  var latched = linkStart===M.intervals[0].id;
+  onIvDown(ev, M.intervals[1]);            // click target
+  var made = M.links.length===1 && M.links[0].rel===rel &&
+             M.links[0].from==='A' && M.links[0].to==='B';
+  var reset = (mode==='select' && linkStart===null);
+  var ok = latched && made && reset;
+  console.log(`${ok?'  PASS':'X FAIL'}  gesture: arm "${rel}" then click two bars`);
+  if(!ok) console.log(`         latched=${latched} made=${made} modeReset=${reset} links=${JSON.stringify(M.links.map(l=>l.rel))}`);
+  ok?pass++:fail++;
+}
+REL_ORDER.forEach(gesture);
+
+// a click in select mode must NOT create a link
+M.intervals=[iv('A',0,2), iv('B',10,20)]; M.links=[]; mode='select'; linkStart=null;
+onIvDown({stopPropagation:function(){}}, M.intervals[0]);
+var selOk = M.links.length===0 && linkStart===null;
+console.log(`${selOk?'  PASS':'X FAIL'}  gesture: select mode does not create links`);
+selOk?pass++:fail++;
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail?1:0);
