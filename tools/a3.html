@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<!--
+═══════════════════════════════════════════════════════════════════
+  RCN A3 — Cindy Jimmerson's A3 problem solving, for WWHA
+  Single HTML file, no dependencies. Plain DOM.
+═══════════════════════════════════════════════════════════════════
+
+WHAT THIS IS
+  Jimmerson's A3 (A3 Problem Solving for Healthcare, 2007), not the generic
+  Toyota/Shook A3. Her version is a ONE-PAGE 11x17 CONVERSATION, written in
+  pencil by the person who does the work, about ONE problem seen ONCE at the
+  gemba. It is not a report and not a project plan.
+
+  Left side = what IS (investigation).  Right side = what SHOULD BE (response).
+  The page is read left to right, top to bottom, and it has to fit.
+
+THE THREE THINGS THIS TOOL REFUSES TO LET YOU BLUR
+
+  1. A PROBLEM IS A GAP.  Her definition: the difference between what is
+     supposed to happen and what actually happens. So the Problem box is three
+     fields, not one textarea. If you cannot fill the first two you do not yet
+     have a problem, you have a complaint.
+
+  2. ROOT CAUSE IS A BROKEN PROCESS, NEVER A PERSON.  The 5 Whys chain warns
+     when a why lands on someone forgetting, failing, or not caring. That is
+     the point at which most A3s in healthcare quietly stop being useful.
+
+  3. COUNTERMEASURES, NOT SOLUTIONS.  A countermeasure is a specific change to
+     the work, tried, measured, and kept or dropped. The word "solution"
+     implies you are done. Each countermeasure points back at the why it
+     answers, so the right side cannot drift free of the left.
+
+WHAT FITS ON THE PAGE IS THE POINT
+  The sheet is a fixed 1632 x 1056 px (17in x 11in at 96dpi) and prints 1:1.
+  Text that runs past its box would be silently clipped on paper, so every
+  field self-checks and shows an overflow badge on screen. Say it shorter —
+  that constraint is hers, not the tool's.
+
+DRAWINGS, NOT PROSE
+  Current Condition and Target Condition are DRAWINGS in her method — small
+  value stream sketches with storm bursts on them. Both slots take a pasted
+  image, a dropped file, or an SVG/PNG exported from graph-tool-v22.html.
+  A page whose Current Condition is a paragraph is not an A3.
+
+STORM BURSTS
+  Every problem seen while observing gets a burst. ONE of them is what this A3
+  is about; the rest are named and left as candidate A3s so they are not lost.
+  When VSM mode lands in graph-tool-v22.html, `source.map` / `source.burstId`
+  are where a burst clicked on a value stream map will arrive.
+
+JUST DO IT
+  Her escape hatch. A problem you can fix this morning does not get an A3.
+  The flag marks a page that should have been a five-minute fix.
+
+FOLLOW-UP IS A MEASURE OVER TIME
+  measure / baseline / target / check date / actual. Days-to-contact and
+  counts belong on a run chart — hand the measure to tools/rcn-spc.html rather
+  than declaring victory from two numbers.
+
+FILE  .a3.rcn.json  {version, kind:"rcn.a3", ...}  — family idiom, matches the
+  other tools/*.rcn.json files. Autosaves to localStorage on every edit.
+
+DEFERRED
+  Storm-burst handoff from VSM mode (needs the mode first); A3 board / list of
+  many A3s; FedWiki page JSON (export Markdown and run it through
+  .claude/skills/fedwiki-page/scripts/md-to-fedwiki-page.js).
+═══════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RCN A3 — Jimmerson</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#e2e8f0;color:#1e293b;font-size:13px}
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* ── toolbar ─────────────────────────────────────────────── */
+header{display:flex;align-items:center;gap:10px;padding:7px 14px;background:#fff;
+  border-bottom:1px solid #cbd5e1;flex-shrink:0;flex-wrap:wrap}
+.brand{font-weight:700;font-size:14px;letter-spacing:.02em;white-space:nowrap}
+.brand span{font-weight:400;color:#64748b;font-size:11px}
+.sep{width:1px;height:20px;background:#e2e8f0}
+.btn{font:inherit;font-size:11px;padding:4px 9px;border:1px solid #cbd5e1;border-radius:5px;
+  background:#f8fafc;color:#334155;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#f1f5f9;border-color:#94a3b8}
+.btn.primary{border-color:#0f766e;color:#0f766e;background:#f0fdfa}
+.btn.danger{border-color:#dc2626;color:#dc2626;background:#fef2f2}
+.doclink{font-size:11px;color:#64748b;text-decoration:none;padding:3px 7px;border:1px solid #e2e8f0;
+  border-radius:5px;background:#f8fafc;white-space:nowrap}
+.grow{flex:1}
+#zoomlbl{font-size:11px;color:#64748b;min-width:38px;text-align:right}
+
+/* ── sheet frame ─────────────────────────────────────────── */
+#wrap{flex:1;overflow:auto;padding:22px;display:flex;justify-content:center;align-items:flex-start}
+/* zoom, not transform: it reflows, so scrollbars, hit-testing and the
+   clientHeight the overflow check reads all stay honest. */
+#sheet{width:1632px;height:1056px;background:#fff;padding:26px 28px;
+  box-shadow:0 3px 18px rgba(15,23,42,.18);display:flex;flex-direction:column;gap:10px;
+  font-size:12.5px;line-height:1.45}
+
+/* ── page header block ───────────────────────────────────── */
+#hdr{border-bottom:2.5px solid #1e293b;padding-bottom:8px;display:flex;
+  align-items:flex-end;gap:16px;flex-shrink:0}
+#hdr .ttl{flex:1}
+#hdr .ttl .lbl{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:#64748b;font-weight:700}
+#title{width:100%;border:none;font:inherit;font-size:25px;font-weight:700;color:#0f172a;
+  padding:1px 2px;background:transparent;outline:none;border-bottom:1px dashed transparent}
+#title:hover,#title:focus{border-bottom-color:#cbd5e1;background:#f8fafc}
+.meta{display:grid;grid-template-columns:auto auto;gap:2px 8px;font-size:10.5px;align-items:center}
+.meta label{color:#64748b;text-align:right;white-space:nowrap}
+.meta input{border:none;border-bottom:1px dashed #cbd5e1;font:inherit;font-size:10.5px;
+  padding:1px 3px;width:215px;background:transparent;outline:none}
+.meta input:focus{background:#f8fafc;border-bottom-color:#0f766e}
+#statuswrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+#status{font:inherit;font-size:10.5px;padding:3px 6px;border:1px solid #cbd5e1;border-radius:4px;background:#fff}
+.jdi{display:flex;align-items:center;gap:4px;font-size:10px;color:#b45309;white-space:nowrap}
+
+/* ── two columns ─────────────────────────────────────────── */
+#cols{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:14px;min-height:0}
+.col{display:flex;flex-direction:column;gap:9px;min-height:0}
+.side{font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:#94a3b8;font-weight:700;
+  border-bottom:1px solid #e2e8f0;padding-bottom:2px;flex-shrink:0}
+
+/* ── a box ───────────────────────────────────────────────── */
+.box{border:1.4px solid #475569;border-radius:3px;display:flex;flex-direction:column;
+  min-height:0;overflow:hidden;background:#fff}
+.box>h2{background:#f1f5f9;border-bottom:1px solid #cbd5e1;padding:3px 8px;font-size:10.5px;
+  font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#334155;
+  display:flex;align-items:center;gap:7px;flex-shrink:0}
+.box>h2 .n{background:#334155;color:#fff;border-radius:50%;width:15px;height:15px;
+  display:inline-flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0}
+.box>h2 .hint{font-weight:400;text-transform:none;letter-spacing:0;color:#94a3b8;
+  font-size:10px;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.box>h2 .tools{margin-left:auto;display:flex;gap:4px;flex-shrink:0}
+.mini{font:inherit;font-size:9.5px;padding:1px 5px;border:1px solid #cbd5e1;border-radius:3px;
+  background:#fff;color:#475569;cursor:pointer}
+.mini:hover{background:#f1f5f9}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;padding:6px 8px;gap:5px;overflow:hidden}
+
+/* fields */
+textarea,.cell{font:inherit;font-size:12px;line-height:1.42;border:none;outline:none;
+  resize:none;background:transparent;color:#1e293b;width:100%}
+textarea{flex:1;min-height:0;overflow:auto}
+textarea::placeholder,.cell::placeholder{color:#cbd5e1;font-style:italic}
+textarea:focus,.cell:focus{background:#f8fafc}
+.over{outline:1.5px solid #dc2626;outline-offset:1px}
+.overbadge{position:absolute;right:4px;bottom:2px;background:#dc2626;color:#fff;font-size:8.5px;
+  padding:0 4px;border-radius:2px;pointer-events:none}
+.fieldwrap{position:relative;display:flex;flex-direction:column;flex:1;min-height:0}
+
+/* ── problem: the gap ────────────────────────────────────── */
+.gap-row{display:flex;flex-direction:column;flex:1;min-height:0}
+.gap-row+.gap-row{border-top:1px dotted #cbd5e1;padding-top:3px;margin-top:3px}
+.gap-lbl{font-size:9px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:#64748b;flex-shrink:0}
+.gap-row.the-gap{background:#fffbeb;margin:3px -8px -6px;padding:4px 8px 6px;border-top:1.4px solid #f59e0b}
+.gap-row.the-gap .gap-lbl{color:#b45309}
+
+/* ── drawing slot ────────────────────────────────────────── */
+.draw{flex:3;min-height:0;border:1.5px dashed #cbd5e1;border-radius:3px;background:#fcfdfe;
+  display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer}
+.draw.has{border-style:solid;border-color:#e2e8f0;background:#fff;cursor:default}
+.draw.drag{border-color:#0f766e;background:#f0fdfa}
+.draw img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.draw .ph{text-align:center;color:#94a3b8;font-size:10.5px;line-height:1.6;padding:8px;pointer-events:none}
+.draw .ph b{display:block;color:#64748b;font-size:11.5px;margin-bottom:2px}
+.draw .rm{position:absolute;top:3px;right:3px;display:none}
+.draw.has:hover .rm{display:block}
+
+/* ── storm bursts ────────────────────────────────────────── */
+.bursts{flex:2;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:2px}
+.burst{display:flex;align-items:center;gap:5px;font-size:11px;padding:1px 0}
+.burst .mark{width:15px;height:15px;flex-shrink:0;cursor:pointer}
+.burst .cell{flex:1;border-bottom:1px dotted #f1f5f9;padding:1px 2px}
+.burst.chosen .cell{font-weight:700;color:#b45309}
+.burst .x{opacity:0;border:none;background:none;color:#94a3b8;cursor:pointer;font-size:12px;padding:0 3px}
+.burst:hover .x{opacity:1}
+
+/* ── 5 whys ──────────────────────────────────────────────── */
+.whys{flex:1;min-height:0;display:flex;flex-direction:column;gap:1px;overflow:auto}
+.why{display:flex;align-items:flex-start;gap:6px;font-size:11.5px}
+.why .k{font-size:9px;font-weight:700;color:#94a3b8;width:34px;flex-shrink:0;padding-top:3px;
+  text-align:right;letter-spacing:.04em}
+.why .cell{border-bottom:1px dotted #e2e8f0;padding:2px}
+.why.blame .cell{background:#fef2f2}
+#blamewarn{display:none;font-size:9.5px;color:#b91c1c;background:#fef2f2;border-left:2.5px solid #dc2626;
+  padding:3px 6px;line-height:1.35;flex-shrink:0}
+/* The chain has to land somewhere. The root cause is the conclusion of the
+   left side and the thing the right side answers, so it reads as a result. */
+#rootbox{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:3px;padding:3px 6px 4px;
+  flex:0 0 62px;display:flex;flex-direction:column;margin-top:4px}
+#rootbox .gap-lbl{color:#15803d}
+#rootbox textarea{font-weight:600;color:#14532d}
+
+/* ── tables ──────────────────────────────────────────────── */
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;color:#64748b;font-weight:700;
+  text-align:left;border-bottom:1px solid #cbd5e1;padding:1px 3px;white-space:nowrap}
+td{border-bottom:1px dotted #e2e8f0;padding:0;vertical-align:top}
+td .cell{padding:2px 3px;font-size:11px}
+.tblwrap{flex:1;min-height:0;overflow:auto}
+.rowx{opacity:0;border:none;background:none;color:#94a3b8;cursor:pointer;font-size:12px;padding:0 2px}
+tr:hover .rowx{opacity:1}
+td.narrow{width:78px}
+td.tiny{width:52px}
+td.num{width:20px;font-size:9px;color:#94a3b8;text-align:center;padding-top:3px}
+select.cell{font-size:10.5px;border:none;background:transparent;cursor:pointer}
+
+/* ── follow-up ───────────────────────────────────────────── */
+.fu{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:2px 7px;align-items:center;flex-shrink:0}
+.fu label{font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:#64748b;
+  font-weight:700;text-align:right;white-space:nowrap}
+.fu .cell{border-bottom:1px dotted #cbd5e1;padding:2px 3px}
+.fu .wide{grid-column:2/5}
+#spchint{font-size:9.5px;color:#0f766e;font-style:italic;flex-shrink:0;margin-top:auto}
+
+/* ── toast ───────────────────────────────────────────────── */
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(60px);
+  background:#0f172a;color:#fff;padding:8px 16px;border-radius:6px;font-size:12px;
+  opacity:0;transition:.22s;pointer-events:none;z-index:60}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── modal ───────────────────────────────────────────────── */
+#mbg{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;
+  justify-content:center;z-index:50}
+#mbox{background:#fff;border-radius:8px;padding:20px;width:520px;max-width:92vw}
+#mbox h3{font-size:14px;margin-bottom:8px}
+#mbox p{font-size:12px;color:#475569;line-height:1.5;margin-bottom:10px}
+#mbox textarea{border:1px solid #cbd5e1;border-radius:5px;padding:8px;height:180px;font-family:ui-monospace,monospace;font-size:11px;flex:none;width:100%}
+.mrow{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+
+/* ── print: exactly one 11x17 landscape page ─────────────── */
+@media print{
+  @page{size:17in 11in;margin:0}
+  body{background:#fff}
+  header,#toast,#mbg,.hint,.rm,.rowx,.burst .x,#spchint{display:none!important}
+  #app{height:auto;overflow:visible}
+  #wrap{padding:0;overflow:visible;display:block}
+  #sheet{box-shadow:none;width:17in;height:11in;padding:.34in .38in;zoom:1!important}
+  textarea,.cell{overflow:hidden}
+  .draw{border-color:#cbd5e1}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<header>
+  <div class="brand">RCN A3 <span>· Jimmerson</span></div>
+  <div class="sep"></div>
+  <a class="doclink" href="a3-intro.html" target="_blank">Introduction</a>
+  <a class="doclink" href="a3-manual.html" target="_blank">User Manual</a>
+  <div class="sep"></div>
+  <button class="btn" onclick="zoomBy(-1)">−</button>
+  <span id="zoomlbl">fit</span>
+  <button class="btn" onclick="zoomBy(1)">+</button>
+  <button class="btn" onclick="setZoom(0)">Fit</button>
+  <div class="sep"></div>
+  <button class="btn primary" onclick="saveJSON()">Save .a3.rcn.json</button>
+  <button class="btn" onclick="openLoad()">Load…</button>
+  <button class="btn" onclick="exportMD()">Markdown</button>
+  <button class="btn" onclick="window.print()">Print / PDF</button>
+  <div class="grow"></div>
+  <button class="btn" onclick="loadDemo()">Demo</button>
+  <div class="sep"></div>
+  <button class="btn danger" onclick="newA3()">New — clear page</button>
+</header>
+
+<div id="wrap"><div id="sheet">
+
+  <!-- ══ header block ══ -->
+  <div id="hdr">
+    <div class="ttl">
+      <div class="lbl">Theme — the problem in one line</div>
+      <input id="title" placeholder="e.g. Referral from clinic visit to first CHW contact">
+    </div>
+    <div class="meta">
+      <label>Written by</label><input id="m-owner" placeholder="the person who does the work">
+      <label>Observed</label><input id="m-who" placeholder="one patient, one time">
+      <label>Where</label><input id="m-where" placeholder="at the gemba">
+      <label>When</label><input id="m-when" placeholder="Aug 12 2026, 9:40">
+    </div>
+    <div id="statuswrap">
+      <select id="status">
+        <option value="draft">Draft</option>
+        <option value="testing">Countermeasure in test</option>
+        <option value="confirmed">Effect confirmed</option>
+        <option value="dropped">Dropped</option>
+      </select>
+      <label class="jdi"><input type="checkbox" id="jdi"> Just do it — no A3 needed</label>
+    </div>
+  </div>
+
+  <!-- ══ two sides ══ -->
+  <div id="cols">
+
+    <!-- ───── LEFT: what is ───── -->
+    <div class="col">
+      <div class="side">Left side — what is happening</div>
+
+      <div class="box" style="flex:.85">
+        <h2><span class="n">1</span>Background<span class="hint">why this, why now — one or two lines</span></h2>
+        <div class="body"><div class="fieldwrap"><textarea id="f-background" placeholder="Who is affected and why this stream was worth an hour of watching."></textarea></div></div>
+      </div>
+
+      <div class="box" style="flex:3.5">
+        <h2><span class="n">2</span>Current Condition
+          <span class="hint">a drawing of what you saw — not a paragraph</span>
+          <span class="tools"><button class="mini" onclick="pickImage('current')">Add drawing…</button></span>
+        </h2>
+        <div class="body">
+          <div class="draw" id="draw-current" data-slot="current">
+            <div class="ph"><b>Drop, paste, or click to add the sketch</b>
+              Hand-drawn and photographed, or SVG/PNG exported from the graph tool.<br>Storm bursts belong on the drawing.</div>
+            <button class="mini rm" onclick="clearImage(event,'current')">Remove</button>
+          </div>
+          <input class="cell" id="f-current-caption" placeholder="Caption — what the drawing shows, and the times you recorded" style="font-size:10.5px;color:#64748b;border-bottom:1px dotted #e2e8f0;padding:1px 2px">
+          <div class="gap-lbl" style="margin-top:2px">Storm bursts — every problem seen. Click the burst to mark the one this A3 is about.</div>
+          <div class="bursts" id="bursts"></div>
+          <button class="mini" style="align-self:flex-start" onclick="addBurst()">+ storm burst</button>
+        </div>
+      </div>
+
+      <div class="box" style="flex:1.9">
+        <h2><span class="n">3</span>Problem Statement<span class="hint">a problem is a gap, so both halves are required</span></h2>
+        <div class="body" style="gap:0">
+          <div class="gap-row">
+            <div class="gap-lbl">What is supposed to happen</div>
+            <div class="fieldwrap"><textarea id="f-supposed" placeholder="The standard, the policy, the promise made to the patient."></textarea></div>
+          </div>
+          <div class="gap-row">
+            <div class="gap-lbl">What actually happened</div>
+            <div class="fieldwrap"><textarea id="f-actual" placeholder="What you watched happen, once, with times."></textarea></div>
+          </div>
+          <div class="gap-row the-gap">
+            <div class="gap-lbl">The gap — this is the problem</div>
+            <div class="fieldwrap"><textarea id="f-gap" placeholder="The difference between the two, in a number if you have one."></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="box" style="flex:2.2">
+        <h2><span class="n">4</span>Root Cause<span class="hint">ask why until you reach something you can change</span></h2>
+        <div class="body">
+          <div class="whys" id="whys"></div>
+          <div id="blamewarn"></div>
+          <div id="rootbox">
+            <div class="gap-lbl">Root cause</div>
+            <div class="fieldwrap"><textarea id="f-rootcause" placeholder="The condition in the work that produced the gap — what the countermeasures must change."></textarea></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── RIGHT: what should be ───── -->
+    <div class="col">
+      <div class="side">Right side — what should be happening</div>
+
+      <div class="box" style="flex:3.1">
+        <h2><span class="n">5</span>Target Condition
+          <span class="hint">draw the flow as it will be, with the burst gone</span>
+          <span class="tools"><button class="mini" onclick="pickImage('target')">Add drawing…</button></span>
+        </h2>
+        <div class="body">
+          <div class="draw" id="draw-target" data-slot="target">
+            <div class="ph"><b>Drop, paste, or click to add the sketch</b>
+              The same stream redrawn — same notation, fewer steps.</div>
+            <button class="mini rm" onclick="clearImage(event,'target')">Remove</button>
+          </div>
+          <div class="fieldwrap" style="flex:1"><textarea id="f-target-text" placeholder="What is different, said plainly: who does what, when, instead of what."></textarea></div>
+        </div>
+      </div>
+
+      <div class="box" style="flex:1.85">
+        <h2><span class="n">6</span>Countermeasures
+          <span class="hint">changes to the work — each one answers a why</span>
+          <span class="tools"><button class="mini" onclick="addCM()">+ row</button></span>
+        </h2>
+        <div class="body"><div class="tblwrap"><table id="cm-tbl">
+          <thead><tr><th style="width:20px"></th><th>Countermeasure</th><th class="tiny">Answers</th><th style="width:16px"></th></tr></thead>
+          <tbody></tbody></table></div></div>
+      </div>
+
+      <div class="box" style="flex:2">
+        <h2><span class="n">7</span>Implementation Plan
+          <span class="hint">what · who · by when — a name, not a department</span>
+          <span class="tools"><button class="mini" onclick="addPlan()">+ row</button></span>
+        </h2>
+        <div class="body"><div class="tblwrap"><table id="plan-tbl">
+          <thead><tr><th style="width:20px"></th><th>What</th><th class="narrow">Who</th><th class="narrow">By when</th><th class="tiny">Status</th><th style="width:16px"></th></tr></thead>
+          <tbody></tbody></table></div></div>
+      </div>
+
+      <div class="box" style="flex:1.7">
+        <h2><span class="n">8</span>Test &amp; Follow-up<span class="hint">how we will know it worked — and when we look</span></h2>
+        <div class="body">
+          <div class="fu">
+            <label>Measure</label><input class="cell wide" id="f-measure" placeholder="e.g. days from referral to first CHW contact">
+            <label>Baseline</label><input class="cell" id="f-baseline" placeholder="what it is now">
+            <label>Target</label><input class="cell" id="f-ftarget" placeholder="what good looks like">
+            <label>Check on</label><input class="cell" id="f-checkdate" placeholder="a date, not 'ongoing'">
+            <label>Actual</label><input class="cell" id="f-fuactual" placeholder="filled in after">
+          </div>
+          <div class="fieldwrap" style="flex:1;margin-top:3px"><textarea id="f-effects" placeholder="Effect confirmation — what actually changed, kept or dropped, and what we learned."></textarea></div>
+          <div id="spchint">Counts and days go on a run chart — hand this measure to the SPC tool rather than judging it from two numbers.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div></div>
+</div>
+
+<div id="toast"></div>
+
+<div id="mbg"><div id="mbox">
+  <h3 id="mtitle">Load an A3</h3>
+  <p id="mtext">Drop a <code>.a3.rcn.json</code> file below, or paste its contents. This replaces the page you are looking at.</p>
+  <textarea id="mta" placeholder="paste .a3.rcn.json here…"></textarea>
+  <div class="mrow">
+    <button class="btn" onclick="closeModal()">Cancel</button>
+    <button class="btn" onclick="pickFile()">Choose file…</button>
+    <button class="btn primary" onclick="doLoad()">Load</button>
+  </div>
+</div></div>
+
+<script>
+"use strict";
+
+/* ═══ model ═══════════════════════════════════════════════ */
+function blank(){
+  return {
+    version:"1.0", kind:"rcn.a3",
+    title:"", status:"draft", jdi:false,
+    owner:"", observed:{who:"",where:"",when:""},
+    background:"",
+    current:{image:"",caption:"",bursts:[]},
+    problem:{supposed:"",actual:"",gap:""},
+    whys:["","","","",""],
+    rootcause:"",
+    target:{image:"",text:""},
+    countermeasures:[],
+    plan:[],
+    followup:{measure:"",baseline:"",target:"",checkdate:"",actual:""},
+    effects:"",
+    source:{map:"",burstId:""}    /* where a VSM storm burst will arrive */
+  };
+}
+var M=blank();
+var uid=0;
+function nid(p){return p+(++uid)+"_"+Math.random().toString(36).slice(2,6);}
+
+/* ═══ helpers ═════════════════════════════════════════════ */
+function $(id){return document.getElementById(id);}
+function toast(msg){var t=$("toast");t.textContent=msg;t.className="show";
+  clearTimeout(toast._t);toast._t=setTimeout(function(){t.className="";},1900);}
+function dl(name,blob){var u=URL.createObjectURL(blob);var a=document.createElement("a");
+  a.href=u;a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(u);},1000);}
+function slug(){return (M.title||"a3").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,54)||"a3";}
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+/* ═══ overflow watch ══════════════════════════════════════
+   Paper clips silently. Every field that can grow past its box gets checked
+   after each edit and on every relayout, and says so on screen while there is
+   still time to say it shorter. */
+function checkOverflow(el){
+  if(!el)return;
+  var over=el.scrollHeight>el.clientHeight+1;
+  el.classList.toggle("over",over);
+  var wrap=el.parentNode;
+  if(!wrap||!wrap.classList.contains("fieldwrap"))return;
+  var badge=wrap.querySelector(".overbadge");
+  if(over&&!badge){badge=document.createElement("div");badge.className="overbadge";
+    badge.textContent="too long for the page";wrap.appendChild(badge);}
+  else if(!over&&badge)wrap.removeChild(badge);
+}
+function checkAllOverflow(){
+  var els=document.querySelectorAll("#sheet textarea");
+  for(var i=0;i<els.length;i++)checkOverflow(els[i]);
+}
+
+/* ═══ field wiring ════════════════════════════════════════
+   Each simple field declares where it lives in the model. One list, so adding
+   a field is one line and export/import/render stay in step. */
+var FIELDS=[
+  ["title",            function(v){M.title=v;},            function(){return M.title;}],
+  ["m-owner",          function(v){M.owner=v;},            function(){return M.owner;}],
+  ["m-who",            function(v){M.observed.who=v;},     function(){return M.observed.who;}],
+  ["m-where",          function(v){M.observed.where=v;},   function(){return M.observed.where;}],
+  ["m-when",           function(v){M.observed.when=v;},    function(){return M.observed.when;}],
+  ["f-background",     function(v){M.background=v;},       function(){return M.background;}],
+  ["f-current-caption",function(v){M.current.caption=v;},  function(){return M.current.caption;}],
+  ["f-supposed",       function(v){M.problem.supposed=v;}, function(){return M.problem.supposed;}],
+  ["f-actual",         function(v){M.problem.actual=v;},   function(){return M.problem.actual;}],
+  ["f-gap",            function(v){M.problem.gap=v;},      function(){return M.problem.gap;}],
+  ["f-rootcause",      function(v){M.rootcause=v;},        function(){return M.rootcause;}],
+  ["f-target-text",    function(v){M.target.text=v;},      function(){return M.target.text;}],
+  ["f-measure",        function(v){M.followup.measure=v;}, function(){return M.followup.measure;}],
+  ["f-baseline",       function(v){M.followup.baseline=v;},function(){return M.followup.baseline;}],
+  ["f-ftarget",        function(v){M.followup.target=v;},  function(){return M.followup.target;}],
+  ["f-checkdate",      function(v){M.followup.checkdate=v;},function(){return M.followup.checkdate;}],
+  ["f-fuactual",       function(v){M.followup.actual=v;},  function(){return M.followup.actual;}],
+  ["f-effects",        function(v){M.effects=v;},          function(){return M.effects;}]
+];
+FIELDS.forEach(function(f){
+  var el=$(f[0]);
+  el.addEventListener("input",function(){f[1](el.value);checkOverflow(el);autosave();});
+});
+$("status").addEventListener("change",function(){M.status=this.value;autosave();});
+$("jdi").addEventListener("change",function(){M.jdi=this.checked;autosave();});
+
+function paintFields(){
+  FIELDS.forEach(function(f){$(f[0]).value=f[2]()||"";});
+  $("status").value=M.status||"draft";
+  $("jdi").checked=!!M.jdi;
+}
+
+/* ═══ storm bursts ════════════════════════════════════════
+   Her rule: every problem seen gets named, and exactly one of them is what
+   this page is about. The rest are candidate A3s — naming them is how they
+   survive the walk back to the desk. */
+function addBurst(text,chosen){
+  M.current.bursts.push({id:nid("b"),text:text||"",chosen:!!chosen});
+  renderBursts();autosave();
+  var last=$("bursts").lastChild;if(last)last.querySelector(".cell").focus();
+}
+function chooseBurst(id){
+  M.current.bursts.forEach(function(b){b.chosen=(b.id===id)?!b.chosen:false;});
+  renderBursts();autosave();
+}
+function delBurst(id){
+  M.current.bursts=M.current.bursts.filter(function(b){return b.id!==id;});
+  renderBursts();autosave();
+}
+function burstSVG(on){
+  /* the storm burst itself — a jagged star, filled when this is the chosen one */
+  var pts="7.5,0 9.2,4.6 13.6,2.6 12.4,7.3 15,10.4 10.6,11.3 11,15 7.5,12.6 4,15 4.4,11.3 0,10.4 2.6,7.3 1.4,2.6 5.8,4.6";
+  return '<svg viewBox="0 0 15 15" width="15" height="15"><polygon points="'+pts+'" fill="'+(on?"#f59e0b":"#fff")+'" stroke="'+(on?"#b45309":"#94a3b8")+'" stroke-width="1"/></svg>';
+}
+function renderBursts(){
+  var host=$("bursts");host.innerHTML="";
+  M.current.bursts.forEach(function(b){
+    var row=document.createElement("div");
+    row.className="burst"+(b.chosen?" chosen":"");
+    row.innerHTML='<span class="mark" title="mark as the problem this A3 is about">'+burstSVG(b.chosen)+'</span>'+
+      '<input class="cell" placeholder="what went wrong here">'+
+      '<button class="x" title="remove">&times;</button>';
+    var inp=row.querySelector(".cell");inp.value=b.text;
+    inp.addEventListener("input",function(){b.text=inp.value;autosave();});
+    row.querySelector(".mark").onclick=function(){chooseBurst(b.id);};
+    row.querySelector(".x").onclick=function(){delBurst(b.id);};
+    host.appendChild(row);
+  });
+}
+
+/* ═══ 5 whys ══════════════════════════════════════════════
+   The blame check is the whole reason this is not five plain textareas.
+   Jimmerson is emphatic: a why that lands on a person forgetting or failing
+   has stopped short of the process that let it happen. */
+var BLAME=/\b(forgot|forgets|forgetful|didn'?t (?:remember|bother|care|check|look|do)|failed to|fails to|lazy|careless|carelessness|negligen\w*|not paying attention|wasn'?t paying attention|human error|didn'?t follow|doesn'?t follow|ignored|incompeten\w*|bad attitude|doesn'?t care|training issue|needs (?:more )?training|needs to be (?:more careful|retrained)|should have (?:known|remembered|checked))\b/i;
+function renderWhys(){
+  var host=$("whys");host.innerHTML="";
+  var ph=["Why did the gap happen?","Why is that?","And why is that?","Why?","Why? — stop when you reach something you can change"];
+  M.whys.forEach(function(w,i){
+    var row=document.createElement("div");row.className="why";
+    row.innerHTML='<span class="k">Why '+(i+1)+'</span><input class="cell" placeholder="'+esc(ph[i])+'">';
+    var inp=row.querySelector(".cell");inp.value=w;
+    inp.addEventListener("input",function(){M.whys[i]=inp.value;flagBlame();autosave();});
+    host.appendChild(row);
+  });
+  flagBlame();
+}
+function flagBlame(){
+  var rows=$("whys").children,hits=[];
+  for(var i=0;i<rows.length;i++){
+    var bad=BLAME.test(M.whys[i]||"");
+    rows[i].classList.toggle("blame",bad);
+    if(bad)hits.push(i+1);
+  }
+  var w=$("blamewarn");
+  if(hits.length){
+    w.style.display="block";
+    w.textContent="Why "+hits.join(" and ")+" names a person, not a process. Ask once more: what about the work made that the easy thing to do?";
+  } else w.style.display="none";
+}
+
+/* ═══ tables ══════════════════════════════════════════════ */
+function addCM(text,why){
+  M.countermeasures.push({id:nid("c"),text:text||"",why:why||""});
+  renderCM();autosave();
+}
+function renderCM(){
+  var tb=$("cm-tbl").tBodies[0];tb.innerHTML="";
+  M.countermeasures.forEach(function(c,i){
+    var tr=document.createElement("tr");
+    tr.innerHTML='<td class="num">'+(i+1)+'</td>'+
+      '<td><input class="cell" placeholder="change the work so the gap cannot recur"></td>'+
+      '<td class="tiny"><input class="cell" placeholder="why 3"></td>'+
+      '<td><button class="rowx" title="remove">&times;</button></td>';
+    var cells=tr.querySelectorAll(".cell");
+    cells[0].value=c.text;cells[1].value=c.why;
+    cells[0].addEventListener("input",function(){c.text=cells[0].value;autosave();});
+    cells[1].addEventListener("input",function(){c.why=cells[1].value;autosave();});
+    tr.querySelector(".rowx").onclick=function(){
+      M.countermeasures=M.countermeasures.filter(function(x){return x.id!==c.id;});renderCM();autosave();};
+    tb.appendChild(tr);
+  });
+}
+var PLAN_STATUS=["","planned","doing","done","dropped"];
+function addPlan(what,who,when,status){
+  M.plan.push({id:nid("p"),what:what||"",who:who||"",when:when||"",status:status||""});
+  renderPlan();autosave();
+}
+function renderPlan(){
+  var tb=$("plan-tbl").tBodies[0];tb.innerHTML="";
+  M.plan.forEach(function(p,i){
+    var tr=document.createElement("tr");
+    var opts=PLAN_STATUS.map(function(s){return '<option value="'+s+'">'+(s||"—")+'</option>';}).join("");
+    tr.innerHTML='<td class="num">'+(i+1)+'</td>'+
+      '<td><input class="cell" placeholder="one concrete step"></td>'+
+      '<td class="narrow"><input class="cell" placeholder="a name"></td>'+
+      '<td class="narrow"><input class="cell" placeholder="a date"></td>'+
+      '<td class="tiny"><select class="cell">'+opts+'</select></td>'+
+      '<td><button class="rowx" title="remove">&times;</button></td>';
+    var ins=tr.querySelectorAll("input.cell"),sel=tr.querySelector("select");
+    ins[0].value=p.what;ins[1].value=p.who;ins[2].value=p.when;sel.value=p.status||"";
+    ins[0].addEventListener("input",function(){p.what=ins[0].value;autosave();});
+    ins[1].addEventListener("input",function(){p.who=ins[1].value;autosave();});
+    ins[2].addEventListener("input",function(){p.when=ins[2].value;autosave();});
+    sel.addEventListener("change",function(){p.status=sel.value;autosave();});
+    tr.querySelector(".rowx").onclick=function(){
+      M.plan=M.plan.filter(function(x){return x.id!==p.id;});renderPlan();autosave();};
+    tb.appendChild(tr);
+  });
+}
+
+/* ═══ drawings ════════════════════════════════════════════
+   Three doors, because people arrive with the picture in three different
+   states: a phone photo of a pencil sketch, an SVG the graph tool just wrote,
+   or a screenshot on the clipboard. */
+function slotEl(slot){return $("draw-"+slot);}
+function slotModel(slot){return slot==="current"?M.current:M.target;}
+function renderImage(slot){
+  var el=slotEl(slot),src=slotModel(slot).image;
+  var img=el.querySelector("img");
+  if(src){
+    if(!img){img=document.createElement("img");el.insertBefore(img,el.firstChild);}
+    img.src=src;el.classList.add("has");
+  } else {
+    if(img)el.removeChild(img);
+    el.classList.remove("has");
+  }
+}
+function setImage(slot,dataURI){slotModel(slot).image=dataURI;renderImage(slot);autosave();}
+function clearImage(ev,slot){ev.stopPropagation();setImage(slot,"");toast("Drawing removed");}
+function readFileToSlot(file,slot){
+  if(!file)return;
+  if(!/^image\//.test(file.type)&&!/\.svg$/i.test(file.name)){toast("That is not an image file");return;}
+  var r=new FileReader();
+  r.onload=function(){setImage(slot,r.result);toast("Drawing added");};
+  r.readAsDataURL(file);
+}
+function pickImage(slot){
+  var inp=document.createElement("input");
+  inp.type="file";inp.accept="image/*,.svg";
+  inp.onchange=function(){readFileToSlot(inp.files[0],slot);};
+  inp.click();
+}
+["current","target"].forEach(function(slot){
+  var el=slotEl(slot);
+  el.addEventListener("click",function(){if(!slotModel(slot).image)pickImage(slot);});
+  el.addEventListener("dragover",function(e){e.preventDefault();el.classList.add("drag");});
+  el.addEventListener("dragleave",function(){el.classList.remove("drag");});
+  el.addEventListener("drop",function(e){
+    e.preventDefault();el.classList.remove("drag");
+    readFileToSlot(e.dataTransfer.files[0],slot);
+  });
+});
+/* paste: an image on the clipboard goes to whichever slot was last clicked */
+var lastSlot="current";
+["current","target"].forEach(function(s){slotEl(s).addEventListener("mousedown",function(){lastSlot=s;});});
+document.addEventListener("paste",function(e){
+  var t=e.target.tagName;
+  if(t==="INPUT"||t==="TEXTAREA")return;
+  var items=(e.clipboardData||{}).items||[];
+  for(var i=0;i<items.length;i++){
+    if(items[i].type.indexOf("image")===0){
+      readFileToSlot(items[i].getAsFile(),lastSlot);
+      e.preventDefault();return;
+    }
+  }
+});
+
+/* ═══ zoom / fit ══════════════════════════════════════════ */
+var SHEET_W=1632,SHEET_H=1056,zoom=0;  /* 0 = auto-fit */
+function applyZoom(){
+  var wrap=$("wrap"),z=zoom;
+  if(!z){
+    var aw=wrap.clientWidth-44,ah=wrap.clientHeight-44;
+    z=Math.min(aw/SHEET_W,ah/SHEET_H,1);
+  }
+  $("sheet").style.zoom=z;
+  $("zoomlbl").textContent=zoom?Math.round(z*100)+"%":"fit";
+  requestAnimationFrame(checkAllOverflow);
+}
+function setZoom(z){zoom=z;applyZoom();}
+function zoomBy(dir){
+  var cur=zoom|| Math.min(($("wrap").clientWidth-44)/SHEET_W,($("wrap").clientHeight-44)/SHEET_H,1);
+  setZoom(Math.max(.25,Math.min(2,cur+dir*.1)));
+}
+window.addEventListener("resize",applyZoom);
+
+/* ═══ persistence ═════════════════════════════════════════ */
+var LS="rcn.a3.autosave";
+function autosave(){
+  clearTimeout(autosave._t);
+  autosave._t=setTimeout(function(){
+    try{localStorage.setItem(LS,JSON.stringify(M));}catch(e){/* quota: image-heavy page */}
+  },350);
+}
+function saveJSON(){
+  dl(slug()+".a3.rcn.json",new Blob([JSON.stringify(M,null,2)],{type:"application/json;charset=utf-8"}));
+  toast("Downloaded "+slug()+".a3.rcn.json");
+}
+function adopt(o){
+  var b=blank();
+  if(!o||typeof o!=="object")throw new Error("Not an A3 object.");
+  M={
+    version:"1.0",kind:"rcn.a3",
+    title:o.title||"",status:o.status||"draft",jdi:!!o.jdi,
+    owner:o.owner||"",
+    observed:Object.assign(b.observed,o.observed||{}),
+    background:o.background||"",
+    current:Object.assign(b.current,o.current||{}),
+    problem:Object.assign(b.problem,o.problem||{}),
+    whys:(o.whys||[]).concat(["","","","",""]).slice(0,5),
+    rootcause:o.rootcause||"",
+    target:Object.assign(b.target,o.target||{}),
+    countermeasures:(o.countermeasures||[]).map(function(c){return{id:c.id||nid("c"),text:c.text||"",why:c.why||""};}),
+    plan:(o.plan||[]).map(function(p){return{id:p.id||nid("p"),what:p.what||"",who:p.who||"",when:p.when||"",status:p.status||""};}),
+    followup:Object.assign(b.followup,o.followup||{}),
+    effects:o.effects||"",
+    source:Object.assign(b.source,o.source||{})
+  };
+  M.current.bursts=(M.current.bursts||[]).map(function(x){
+    return{id:x.id||nid("b"),text:x.text||"",chosen:!!x.chosen};});
+  renderAll();
+}
+function renderAll(){
+  paintFields();renderBursts();renderWhys();renderCM();renderPlan();
+  renderImage("current");renderImage("target");
+  applyZoom();requestAnimationFrame(checkAllOverflow);
+}
+
+/* ═══ load modal ══════════════════════════════════════════ */
+function openLoad(){$("mta").value="";$("mbg").style.display="flex";}
+function closeModal(){$("mbg").style.display="none";}
+$("mbg").addEventListener("click",function(e){if(e.target===$("mbg"))closeModal();});
+function pickFile(){
+  var inp=document.createElement("input");inp.type="file";inp.accept=".json,application/json";
+  inp.onchange=function(){
+    var f=inp.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(){$("mta").value=r.result;doLoad();};
+    r.readAsText(f);
+  };
+  inp.click();
+}
+function doLoad(){
+  var txt=$("mta").value.trim();
+  if(!txt){toast("Nothing to load");return;}
+  var o;
+  try{o=JSON.parse(txt);}catch(e){toast("That is not valid JSON");return;}
+  try{adopt(o);}catch(e){toast(e.message);return;}
+  closeModal();autosave();toast("Loaded "+(M.title||"A3"));
+}
+$("mta").addEventListener("dragover",function(e){e.preventDefault();});
+$("mta").addEventListener("drop",function(e){
+  e.preventDefault();var f=e.dataTransfer.files[0];if(!f)return;
+  var r=new FileReader();r.onload=function(){$("mta").value=r.result;doLoad();};r.readAsText(f);
+});
+
+/* ═══ new ═════════════════════════════════════════════════
+   Its own place at the far end of the toolbar, marked, and it asks — clearing
+   a page someone spent an hour observing is not an undo away. */
+/* Empty starter rows are not work. Asking "are you sure?" over a page nobody
+   has typed in yet trains people to click through the one prompt that matters. */
+function isDirty(){
+  function any(s){return !!(s&&String(s).trim());}
+  if(any(M.title)||any(M.owner)||any(M.background)||any(M.rootcause)||any(M.effects))return true;
+  if(any(M.problem.supposed)||any(M.problem.actual)||any(M.problem.gap))return true;
+  if(any(M.target.text)||M.target.image||M.current.image||any(M.current.caption))return true;
+  if(M.whys.some(any))return true;
+  if(M.current.bursts.some(function(b){return any(b.text);}))return true;
+  if(M.countermeasures.some(function(c){return any(c.text);}))return true;
+  if(M.plan.some(function(p){return any(p.what)||any(p.who)||any(p.when);}))return true;
+  return Object.keys(M.followup).some(function(k){return any(M.followup[k]);});
+}
+function newA3(){
+  if(isDirty()&&!confirm("Clear this page and start a new A3?\n\nSave it first if you want to keep it — this cannot be undone."))return;
+  M=blank();renderAll();autosave();toast("New A3");
+}
+
+/* ═══ markdown out ════════════════════════════════════════
+   House style: one line per paragraph, no hard wrapping, so it ports straight
+   to FedWiki through md-to-fedwiki-page.js with no reflow step. */
+function exportMD(){
+  var L=[],p=M.problem,f=M.followup;
+  function sec(h,body){if(body&&String(body).trim()){L.push("## "+h);L.push("");L.push(String(body).trim());L.push("");}}
+  L.push("# "+(M.title||"Untitled A3"));L.push("");
+  var head=[];
+  if(M.owner)head.push("**Written by** "+M.owner);
+  if(M.observed.who)head.push("**Observed** "+M.observed.who);
+  if(M.observed.where)head.push("**Where** "+M.observed.where);
+  if(M.observed.when)head.push("**When** "+M.observed.when);
+  head.push("**Status** "+(M.status||"draft"));
+  if(M.jdi)head.push("**Just do it** — this did not need an A3");
+  L.push(head.join(" · "));L.push("");
+  sec("Background",M.background);
+
+  L.push("## Current Condition");L.push("");
+  if(M.current.image)L.push("*(drawing on the A3 sheet"+(M.current.caption?" — "+M.current.caption:"")+")*");
+  else if(M.current.caption)L.push(M.current.caption);
+  L.push("");
+  if(M.current.bursts.length){
+    L.push("Storm bursts seen:");L.push("");
+    M.current.bursts.forEach(function(b){
+      L.push("- "+(b.chosen?"**":"")+(b.text||"(unnamed)")+(b.chosen?"** — this A3":""));});
+    L.push("");
+  }
+  L.push("## Problem Statement");L.push("");
+  L.push("**What is supposed to happen.** "+(p.supposed||"—"));L.push("");
+  L.push("**What actually happened.** "+(p.actual||"—"));L.push("");
+  L.push("**The gap.** "+(p.gap||"—"));L.push("");
+
+  L.push("## Root Cause");L.push("");
+  var anyWhy=M.whys.some(function(w){return w&&w.trim();});
+  if(anyWhy){M.whys.forEach(function(w,i){if(w&&w.trim())L.push("- Why "+(i+1)+": "+w.trim());});L.push("");}
+  if(M.rootcause){L.push(M.rootcause);L.push("");}
+
+  L.push("## Target Condition");L.push("");
+  if(M.target.image)L.push("*(drawing on the A3 sheet)*"),L.push("");
+  if(M.target.text){L.push(M.target.text);L.push("");}
+
+  if(M.countermeasures.length){
+    L.push("## Countermeasures");L.push("");
+    M.countermeasures.forEach(function(c,i){
+      L.push((i+1)+". "+(c.text||"—")+(c.why?" *(answers "+c.why+")*":""));});
+    L.push("");
+  }
+  if(M.plan.length){
+    L.push("## Implementation Plan");L.push("");
+    L.push("| What | Who | By when | Status |");
+    L.push("|---|---|---|---|");
+    M.plan.forEach(function(x){
+      L.push("| "+(x.what||"")+" | "+(x.who||"")+" | "+(x.when||"")+" | "+(x.status||"")+" |");});
+    L.push("");
+  }
+  L.push("## Test and Follow-up");L.push("");
+  L.push("**Measure** "+(f.measure||"—")+" · **Baseline** "+(f.baseline||"—")+" · **Target** "+(f.target||"—")+" · **Check on** "+(f.checkdate||"—")+" · **Actual** "+(f.actual||"—"));
+  L.push("");
+  sec("Effect Confirmation",M.effects);
+
+  dl(slug()+".md",new Blob([L.join("\n")],{type:"text/markdown;charset=utf-8"}));
+  toast("Downloaded "+slug()+".md");
+}
+
+/* ═══ demo ════════════════════════════════════════════════
+   A WWHA-shaped observation: one referral, one patient, watched end to end.
+   Deliberately a page where the root cause is a routing decision nobody owns,
+   not a person who dropped something. */
+function loadDemo(){
+  if(isDirty()&&!confirm("Replace this page with the demo A3?\n\nSave it first if you want to keep it."))return;
+  adopt({
+    title:"Referral from clinic visit to first CHW contact",
+    status:"testing",
+    owner:"R. Alvarez, CHW",
+    observed:{who:"one patient, one referral, followed end to end",where:"Family Care clinic + CHW agency office",when:"Aug 12 2026, 9:40"},
+    background:"Whatcom Wealth and Health promises members that a community health worker makes contact within two business days of a clinic referral. Members are telling us it takes over a week. This is one referral, watched from the exam room to the first phone call.",
+    current:{
+      caption:"Nine steps, three handoffs, two systems that do not talk. Elapsed 9 days; work actually done, 22 minutes.",
+      bursts:[
+        {id:"b1",text:"Referral leaves the EHR as paper because the CHW agency has no access",chosen:false},
+        {id:"b2",text:"Fax lands in a shared inbox nobody owns — 7 days sitting",chosen:true},
+        {id:"b3",text:"CHW re-keys demographics already in the EHR (6 min)",chosen:false},
+        {id:"b4",text:"No acknowledgment back to the clinic, so nobody knows it stalled",chosen:false}
+      ]
+    },
+    problem:{
+      supposed:"A CHW contacts the member within 2 business days of the referral being placed.",
+      actual:"Referral placed Aug 12. Printed, faxed, and sat unopened in a shared inbox until Aug 21. First contact Aug 21 — day 9.",
+      gap:"7 business days late. The member missed two medication refills inside that window."
+    },
+    whys:[
+      "The CHW did not call until day 9.",
+      "The referral was not seen until day 9.",
+      "It arrived by fax into a shared inbox that no one person opens.",
+      "Fax is the only route, because the CHW agency has no account in the clinic EHR.",
+      "No one owns the referral between the two organizations — it is nobody's until someone picks it up."
+    ],
+    rootcause:"The referral has no owner while it is in transit between two organizations, and no route that either organization can see into.",
+    target:{
+      text:"Referral placed in the EHR posts to a shared secure list both organizations can see. A named CHW is on triage duty each morning, opens the list at 9:00, acknowledges within the day, and the acknowledgment is visible back in the clinic. Ownership never drops."
+    },
+    countermeasures:[
+      {id:"c1",text:"Shared secure referral list, visible to clinic and CHW agency, replacing the fax",why:"why 4"},
+      {id:"c2",text:"Named CHW on morning triage duty — a rotating name on the board, not 'the team'",why:"why 3"},
+      {id:"c3",text:"Acknowledgment posts back to the clinic the same day, so a stall is visible to the sender",why:"why 5"}
+    ],
+    plan:[
+      {id:"p1",what:"Agree the shared list and who may see it (BAA check)",who:"R. Alvarez + clinic manager",when:"Aug 22",status:"done"},
+      {id:"p2",what:"Stand up the list and load the open backlog",who:"J. Okafor",when:"Aug 26",status:"doing"},
+      {id:"p3",what:"Post the triage rota for four weeks",who:"CHW supervisor",when:"Aug 26",status:"planned"},
+      {id:"p4",what:"Watch the next 20 referrals and chart days-to-contact",who:"R. Alvarez",when:"Sep 23",status:"planned"}
+    ],
+    followup:{measure:"days from referral placed to first CHW contact",baseline:"9 days (this observation)",target:"2 days or fewer",checkdate:"Sep 23 2026",actual:""},
+    effects:"To be filled in after 20 referrals. Keep the countermeasure only if the run chart shows the shift holding, not because the first few looked good."
+  });
+  autosave();toast("Demo A3 loaded");
+}
+
+/* ═══ boot ════════════════════════════════════════════════ */
+(function boot(){
+  var saved=null;
+  try{saved=localStorage.getItem(LS);}catch(e){}
+  if(saved){
+    try{adopt(JSON.parse(saved));return;}catch(e){/* fall through to a blank page */}
+  }
+  M=blank();
+  M.current.bursts=[{id:nid("b"),text:"",chosen:false}];
+  M.countermeasures=[{id:nid("c"),text:"",why:""}];
+  M.plan=[{id:nid("p"),what:"",who:"",when:"",status:""},{id:nid("p"),what:"",who:"",when:"",status:""}];
+  renderAll();
+})();
+</script>
+</body>
+</html>

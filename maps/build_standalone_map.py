@@ -10,6 +10,7 @@ icons). Map tiles always need the network — no web map can bundle those.
 Run:    python3 maps/build_standalone_map.py
 Output: maps/rcn_map_standalone.html
 """
+import datetime
 import json
 import os
 import sys
@@ -22,6 +23,14 @@ ISSUE_DIR = os.path.normpath(os.path.join(HERE, '..', 'tools', 'issue-data'))
 
 TAG          = '<script src="rcn_static_data.js"></script>'
 ISSUE_TAG    = 'var BUNDLED_ISSUES = null;'   # sentinel in rcn_map.html
+STAMP_TAG    = 'var BUILD_STAMP = null;'      # sentinel in rcn_map.html
+DOCS_TAG     = 'var DOCS_BASE = null;'        # sentinel in rcn_map.html
+
+# Where the Intro / Manual / Slides files live for a handout that travels alone.
+# The live page's relative links work because its siblings sit beside it in the
+# same flat FedWiki asset folder; a standalone has no siblings, so it points here.
+# Override with RCN_DOCS_BASE=... if the asset folder ever moves.
+DOCS_BASE_DEFAULT = 'https://ndcgroup.relocalizecreativity.net/assets/NDC/'
 
 
 def build_bundled_issues():
@@ -79,6 +88,20 @@ def main():
         out = out.replace(ISSUE_TAG, 'var BUNDLED_ISSUES = ' + js + ';')
         n_issues = len(bundled['index'])
 
+    # Stamp the build date so a handout says on its face how old it is. The live
+    # page keeps the null sentinel and shows nothing.
+    if STAMP_TAG not in out:
+        sys.exit('ERROR: could not find the BUILD_STAMP sentinel in rcn_map.html')
+    stamp = datetime.date.today().isoformat()
+    out = out.replace(STAMP_TAG, "var BUILD_STAMP = '{}';".format(stamp), 1)
+
+    # Point the sidebar's Intro / Manual / Slides links at the hosted copies, since
+    # a handout has no sibling files to resolve its relative links against.
+    if DOCS_TAG not in out:
+        sys.exit('ERROR: could not find the DOCS_BASE sentinel in rcn_map.html')
+    docs_base = os.environ.get('RCN_DOCS_BASE', DOCS_BASE_DEFAULT)
+    out = out.replace(DOCS_TAG, "var DOCS_BASE = {};".format(json.dumps(docs_base)), 1)
+
     with open(OUT, 'w', encoding='utf-8') as f:
         f.write(out)
 
@@ -86,6 +109,8 @@ def main():
     print('  source html:  {:,} bytes'.format(len(html)))
     print('  inlined data: {:,} bytes'.format(len(data)))
     print('  bundled issues: {}'.format(n_issues))
+    print('  build stamp:  {}'.format(stamp))
+    print('  docs base:    {}'.format(docs_base))
     print('  output:       {:,} bytes'.format(len(out)))
     print('Upload rcn_map_standalone.html on its own — no rcn_static_data.js needed.')
 

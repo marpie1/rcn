@@ -1,0 +1,478 @@
+{
+  "title": "What Is Worth Taking From ReThink Health",
+  "story": [
+    {
+      "type": "markdown",
+      "text": "The ReThink Health Dynamics model is a system dynamics simulation of a regional health system, built in Vensim by Jack Homer, Gary Hirsch and John Sterman under Bobby Milstein, for the Fannie E. Rippel Foundation. It won the System Dynamics Society's Applications Award. It has been calibrated for more than ten regions, and a national-average configuration called \"Anytown USA\" is free to use online. We went looking at it for [[Whatcom Wealth and Health]] and this page records what came back.",
+      "id": "702b2c13abaee56b"
+    },
+    {
+      "type": "markdown",
+      "text": "The short answer: take the parameters, not the model.",
+      "id": "32364dea2664e28a"
+    },
+    {
+      "type": "markdown",
+      "text": "## Why we are not rebuilding it",
+      "id": "b90cf18cc6e782be"
+    },
+    {
+      "type": "markdown",
+      "text": "The model's own accounting, from page 2 of its reference guide: about 1,000 constants, 12 X-Y lookup functions, 4,400 calculated output elements, 27 data time series for validation, and somewhere between 34 and 38 exogenous trends depending on which page you read. The Vensim equation listing runs from page 98 to page 265. The population is subscripted into ten segments — three age bands crossed with insured or uninsured, crossed with advantaged or disadvantaged — and most population, utilization and cost variables are calculated per segment and then rolled up.",
+      "id": "afb50f0ceb435c2b"
+    },
+    {
+      "type": "markdown",
+      "text": "That is not a tool gap we can close. It is a multi-year modelling programme with a professional modelling team, and it is exactly the kind of undertaking Homer does for a living.",
+      "id": "3a5fd3cb9e494396"
+    },
+    {
+      "type": "markdown",
+      "text": "There is a second reason, which matters more. Even a perfect copy would hand us Anytown. Those thousand constants are calibrated to US national survey data — NSCH, BRFSS, NHANES, NAMCS, MEPS, the American Hospital Association survey. Whatcom numbers are not in there. Copying the model would give us a very sophisticated way to describe the average American county.",
+      "id": "953a411d4c1d8de0"
+    },
+    {
+      "type": "markdown",
+      "text": "## The shape of it",
+      "id": "4f9db027bebe3eaf"
+    },
+    {
+      "type": "markdown",
+      "text": "The model's own overview diagram carries roughly sixty nodes with arrows crossing in every direction. It is a reference for modellers. It is not an image a group can point at and argue about, which is the standard we hold ourselves to — see [[Cave Drawings]].",
+      "id": "2d153a8081f9df55"
+    },
+    {
+      "type": "markdown",
+      "text": "So we redrew it at fifteen nodes. The redraw is in the repository as tools/rth-overview-cave-drawing.rcn.json, openable in the [[RCN Graph Tool]].",
+      "id": "3b6d1cf02f9457d9"
+    },
+    {
+      "type": "markdown",
+      "text": "Read it as one counterclockwise circulation. Along the top runs the causal spine: disadvantage raises risk exposure, risk raises chronic illness, illness produces acute episodes, episodes and illness together drive care utilization, and utilization drives cost. On the right, cost becomes savings measured against a benchmark. Savings flow left into a fund. The fund pushes up into four families of intervention. The interventions push up into the spine. Then round again.",
+      "id": "50e0d828b9323a2f"
+    },
+    {
+      "type": "markdown",
+      "text": "Three feedback loops close the picture, and all three are vicious. Rising cost pushes employers to drop coverage, which cuts insurance coverage. Rising cost drives personal indebtedness, which raises disadvantage. And chronic illness causes disability, which also raises disadvantage. These loops are why the system does not drift back toward health on its own.",
+      "id": "b953225b0f19f807"
+    },
+    {
+      "type": "markdown",
+      "text": "## The twenty-three interventions",
+      "id": "fbd5aac02f013754"
+    },
+    {
+      "type": "markdown",
+      "text": "The model offers 23 interventions, which fall into five groups. The model itself distinguishes \"upstream\" from \"downstream\" because catalytic funds can be restricted to one or the other.",
+      "id": "0d205f89a682123c"
+    },
+    {
+      "type": "markdown",
+      "text": "- Upstream, acting on risk before it becomes illness: enable healthier behaviours; reduce environmental hazards; reduce crime; create student pathways to advantage; create family pathways to advantage.\n- Care quality: improve routine preventive and chronic physical illness care; improve care for chronic mental illness; support self-care.\n- Provider capacity and efficiency: prevent hospital-acquired infections; redesign primary care practices for efficiency; recruit primary care providers for general offices and clinics; recruit primary care providers for FQHC clinics; improve hospital efficiency.\n- Care delivery redesign: offer pre-visit consultation for non-urgent episodes; create patient-centred medical homes; coordinate health care; reform medical malpractice; improve post-discharge care; expand reduced-intensity end-of-life care.\n- Payment and funding: expand value-based payments; expand global payments; obtain catalytic funds; capture and reinvest savings.",
+      "id": "4f8a7710f79400b0"
+    },
+    {
+      "type": "markdown",
+      "text": "Each one carries a calibrated effect size, a stated minimum and maximum for sensitivity testing, a program cost, and literature citations. That is the portable part. Those numbers are usable as priors in a model of any size, in any tool, without importing a line of Vensim.",
+      "id": "e0467aba66ad9d62"
+    },
+    {
+      "type": "markdown",
+      "text": "## Six things to know before quoting any of it",
+      "id": "3c47287405b7da0c"
+    },
+    {
+      "type": "markdown",
+      "text": "**Upstream is slow by construction.** Environmental hazards, crime, and student pathways all carry five-year time constants to full effect, and family pathways three years. Every clinical and delivery intervention implements in one year. Judge a scenario on a short horizon and downstream work wins on timing alone, regardless of merit. This is a property of the clock, not of the value.",
+      "id": "d1c7ff4263af8a03"
+    },
+    {
+      "type": "markdown",
+      "text": "**Two interventions cost nothing.** Value-based payment and global payment have no program cost in the model at all. Free levers look extraordinarily attractive in any return-on-investment comparison, and that should be said out loud whenever these numbers enter an argument.",
+      "id": "cc3f2b225a24f520"
+    },
+    {
+      "type": "markdown",
+      "text": "**Malpractice reform is a placeholder.** Homer set its effect at exactly ten per cent of care coordination's. It is in the model for completeness, not as a lever anyone should reach for.",
+      "id": "b5f01985437a4c48"
+    },
+    {
+      "type": "markdown",
+      "text": "**Medical homes create a shortage.** The model explicitly warns that pulling patients toward primary care can produce a primary care shortage for some population segments unless it is paired with recruitment or practice redesign. This is the clearest case in the whole table that interventions must be combined rather than chosen singly.",
+      "id": "88fb64ed35abc4b2"
+    },
+    {
+      "type": "markdown",
+      "text": "**Gains erode.** If funding ceases and accumulated funds deplete, the model erodes gains made to date and eventually erodes them entirely. There is also a nonlinearity worth knowing: if accumulated funds exceed six years of desired spending the captured savings fraction starts to be cut back, and beyond fifteen years it is cut to zero. Any result has to be presented alongside its funding-duration assumption.",
+      "id": "3fd320dc28da45d1"
+    },
+    {
+      "type": "markdown",
+      "text": "**\"Student pathways\" is really one program.** More than ninety per cent of the cost and more than half the projected impact in that line comes from the Carrera Adolescent program alone. Treat it as shorthand for Carrera plus two minor additions, not as a general category estimate.",
+      "id": "a0968a116419c97a"
+    },
+    {
+      "type": "markdown",
+      "text": "## Two calibration facts",
+      "id": "02257e0cae5f7b78"
+    },
+    {
+      "type": "markdown",
+      "text": "All dollar figures in the model are 2010 dollars. They need inflation adjustment before they go anywhere near 2026 planning, and medical care inflation has run well above general CPI across that span. Adjust deliberately and state which index was used.",
+      "id": "4daf7bd8f3f85a81"
+    },
+    {
+      "type": "markdown",
+      "text": "Anytown is close to Whatcom scale. It is calibrated as exactly one-thousandth of the US population, about 309,000 people at the 2000 base year. Whatcom County is roughly 226,000. Same order of magnitude, Whatcom about three-quarters the size. Per-capita figures transfer with reasonable confidence. Absolute totals need scaling by roughly 0.73.",
+      "id": "e0383e15f0f47c57"
+    },
+    {
+      "type": "markdown",
+      "text": "## Where the details are",
+      "id": "abdb19f017fdcec8"
+    },
+    {
+      "type": "markdown",
+      "text": "Every constant, with its baseline, minimum, maximum and sources, is extracted in the repository at docs/rth-intervention-parameters.md.",
+      "id": "b4525dc7e60f8dd5"
+    },
+    {
+      "type": "markdown",
+      "text": "The source document is the Reference Guide for the ReThink Health Dynamics Simulation Model, Model Version 3v, November 2018, edited February 2020, prepared by Jack Homer for the Fannie E. Rippel Foundation. It is public at https://rethinkarchive.rippel.org/wp-content/uploads/2019/09/ReThink-Health-Dynamics-Reference-Guide-v3v-Nov-2018-1.pdf and needs no account.",
+      "id": "a4e1557fd6d19bb7"
+    },
+    {
+      "type": "markdown",
+      "text": "The Anytown simulator itself is at https://forio.com/app/rippel/rethink-health/login.html and does need one. Access is a separate matter and not required for anything on this page.",
+      "id": "d85529f66764032b"
+    }
+  ],
+  "journal": [
+    {
+      "type": "create",
+      "item": {
+        "title": "What Is Worth Taking From ReThink Health",
+        "story": []
+      },
+      "date": 1787161585690
+    },
+    {
+      "type": "add",
+      "id": "702b2c13abaee56b",
+      "item": {
+        "type": "markdown",
+        "id": "702b2c13abaee56b",
+        "text": "The ReThink Health Dynamics model is a system dynamics simulation of a regional health system, built in Vensim by Jack Homer, Gary Hirsch and John Sterman under Bobby Milstein, for the Fannie E. Rippel Foundation. It won the System Dynamics Society's Applications Award. It has been calibrated for more than ten regions, and a national-average configuration called \"Anytown USA\" is free to use online. We went looking at it for [[Whatcom Wealth and Health]] and this page records what came back."
+      },
+      "date": 1787161585691
+    },
+    {
+      "type": "add",
+      "id": "32364dea2664e28a",
+      "item": {
+        "type": "markdown",
+        "id": "32364dea2664e28a",
+        "text": "The short answer: take the parameters, not the model."
+      },
+      "date": 1787161585692,
+      "after": "702b2c13abaee56b"
+    },
+    {
+      "type": "add",
+      "id": "b90cf18cc6e782be",
+      "item": {
+        "type": "markdown",
+        "id": "b90cf18cc6e782be",
+        "text": "## Why we are not rebuilding it"
+      },
+      "date": 1787161585693,
+      "after": "32364dea2664e28a"
+    },
+    {
+      "type": "add",
+      "id": "afb50f0ceb435c2b",
+      "item": {
+        "type": "markdown",
+        "id": "afb50f0ceb435c2b",
+        "text": "The model's own accounting, from page 2 of its reference guide: about 1,000 constants, 12 X-Y lookup functions, 4,400 calculated output elements, 27 data time series for validation, and somewhere between 34 and 38 exogenous trends depending on which page you read. The Vensim equation listing runs from page 98 to page 265. The population is subscripted into ten segments — three age bands crossed with insured or uninsured, crossed with advantaged or disadvantaged — and most population, utilization and cost variables are calculated per segment and then rolled up."
+      },
+      "date": 1787161585694,
+      "after": "b90cf18cc6e782be"
+    },
+    {
+      "type": "add",
+      "id": "3a5fd3cb9e494396",
+      "item": {
+        "type": "markdown",
+        "id": "3a5fd3cb9e494396",
+        "text": "That is not a tool gap we can close. It is a multi-year modelling programme with a professional modelling team, and it is exactly the kind of undertaking Homer does for a living."
+      },
+      "date": 1787161585695,
+      "after": "afb50f0ceb435c2b"
+    },
+    {
+      "type": "add",
+      "id": "953a411d4c1d8de0",
+      "item": {
+        "type": "markdown",
+        "id": "953a411d4c1d8de0",
+        "text": "There is a second reason, which matters more. Even a perfect copy would hand us Anytown. Those thousand constants are calibrated to US national survey data — NSCH, BRFSS, NHANES, NAMCS, MEPS, the American Hospital Association survey. Whatcom numbers are not in there. Copying the model would give us a very sophisticated way to describe the average American county."
+      },
+      "date": 1787161585696,
+      "after": "3a5fd3cb9e494396"
+    },
+    {
+      "type": "add",
+      "id": "4f9db027bebe3eaf",
+      "item": {
+        "type": "markdown",
+        "id": "4f9db027bebe3eaf",
+        "text": "## The shape of it"
+      },
+      "date": 1787161585697,
+      "after": "953a411d4c1d8de0"
+    },
+    {
+      "type": "add",
+      "id": "2d153a8081f9df55",
+      "item": {
+        "type": "markdown",
+        "id": "2d153a8081f9df55",
+        "text": "The model's own overview diagram carries roughly sixty nodes with arrows crossing in every direction. It is a reference for modellers. It is not an image a group can point at and argue about, which is the standard we hold ourselves to — see [[Cave Drawings]]."
+      },
+      "date": 1787161585698,
+      "after": "4f9db027bebe3eaf"
+    },
+    {
+      "type": "add",
+      "id": "3b6d1cf02f9457d9",
+      "item": {
+        "type": "markdown",
+        "id": "3b6d1cf02f9457d9",
+        "text": "So we redrew it at fifteen nodes. The redraw is in the repository as tools/rth-overview-cave-drawing.rcn.json, openable in the [[RCN Graph Tool]]."
+      },
+      "date": 1787161585699,
+      "after": "2d153a8081f9df55"
+    },
+    {
+      "type": "add",
+      "id": "50e0d828b9323a2f",
+      "item": {
+        "type": "markdown",
+        "id": "50e0d828b9323a2f",
+        "text": "Read it as one counterclockwise circulation. Along the top runs the causal spine: disadvantage raises risk exposure, risk raises chronic illness, illness produces acute episodes, episodes and illness together drive care utilization, and utilization drives cost. On the right, cost becomes savings measured against a benchmark. Savings flow left into a fund. The fund pushes up into four families of intervention. The interventions push up into the spine. Then round again."
+      },
+      "date": 1787161585700,
+      "after": "3b6d1cf02f9457d9"
+    },
+    {
+      "type": "add",
+      "id": "b953225b0f19f807",
+      "item": {
+        "type": "markdown",
+        "id": "b953225b0f19f807",
+        "text": "Three feedback loops close the picture, and all three are vicious. Rising cost pushes employers to drop coverage, which cuts insurance coverage. Rising cost drives personal indebtedness, which raises disadvantage. And chronic illness causes disability, which also raises disadvantage. These loops are why the system does not drift back toward health on its own."
+      },
+      "date": 1787161585701,
+      "after": "50e0d828b9323a2f"
+    },
+    {
+      "type": "add",
+      "id": "fbd5aac02f013754",
+      "item": {
+        "type": "markdown",
+        "id": "fbd5aac02f013754",
+        "text": "## The twenty-three interventions"
+      },
+      "date": 1787161585702,
+      "after": "b953225b0f19f807"
+    },
+    {
+      "type": "add",
+      "id": "0d205f89a682123c",
+      "item": {
+        "type": "markdown",
+        "id": "0d205f89a682123c",
+        "text": "The model offers 23 interventions, which fall into five groups. The model itself distinguishes \"upstream\" from \"downstream\" because catalytic funds can be restricted to one or the other."
+      },
+      "date": 1787161585703,
+      "after": "fbd5aac02f013754"
+    },
+    {
+      "type": "add",
+      "id": "4f8a7710f79400b0",
+      "item": {
+        "type": "markdown",
+        "id": "4f8a7710f79400b0",
+        "text": "- Upstream, acting on risk before it becomes illness: enable healthier behaviours; reduce environmental hazards; reduce crime; create student pathways to advantage; create family pathways to advantage.\n- Care quality: improve routine preventive and chronic physical illness care; improve care for chronic mental illness; support self-care.\n- Provider capacity and efficiency: prevent hospital-acquired infections; redesign primary care practices for efficiency; recruit primary care providers for general offices and clinics; recruit primary care providers for FQHC clinics; improve hospital efficiency.\n- Care delivery redesign: offer pre-visit consultation for non-urgent episodes; create patient-centred medical homes; coordinate health care; reform medical malpractice; improve post-discharge care; expand reduced-intensity end-of-life care.\n- Payment and funding: expand value-based payments; expand global payments; obtain catalytic funds; capture and reinvest savings."
+      },
+      "date": 1787161585704,
+      "after": "0d205f89a682123c"
+    },
+    {
+      "type": "add",
+      "id": "e0467aba66ad9d62",
+      "item": {
+        "type": "markdown",
+        "id": "e0467aba66ad9d62",
+        "text": "Each one carries a calibrated effect size, a stated minimum and maximum for sensitivity testing, a program cost, and literature citations. That is the portable part. Those numbers are usable as priors in a model of any size, in any tool, without importing a line of Vensim."
+      },
+      "date": 1787161585705,
+      "after": "4f8a7710f79400b0"
+    },
+    {
+      "type": "add",
+      "id": "3c47287405b7da0c",
+      "item": {
+        "type": "markdown",
+        "id": "3c47287405b7da0c",
+        "text": "## Six things to know before quoting any of it"
+      },
+      "date": 1787161585706,
+      "after": "e0467aba66ad9d62"
+    },
+    {
+      "type": "add",
+      "id": "d1c7ff4263af8a03",
+      "item": {
+        "type": "markdown",
+        "id": "d1c7ff4263af8a03",
+        "text": "**Upstream is slow by construction.** Environmental hazards, crime, and student pathways all carry five-year time constants to full effect, and family pathways three years. Every clinical and delivery intervention implements in one year. Judge a scenario on a short horizon and downstream work wins on timing alone, regardless of merit. This is a property of the clock, not of the value."
+      },
+      "date": 1787161585707,
+      "after": "3c47287405b7da0c"
+    },
+    {
+      "type": "add",
+      "id": "cc3f2b225a24f520",
+      "item": {
+        "type": "markdown",
+        "id": "cc3f2b225a24f520",
+        "text": "**Two interventions cost nothing.** Value-based payment and global payment have no program cost in the model at all. Free levers look extraordinarily attractive in any return-on-investment comparison, and that should be said out loud whenever these numbers enter an argument."
+      },
+      "date": 1787161585708,
+      "after": "d1c7ff4263af8a03"
+    },
+    {
+      "type": "add",
+      "id": "b5f01985437a4c48",
+      "item": {
+        "type": "markdown",
+        "id": "b5f01985437a4c48",
+        "text": "**Malpractice reform is a placeholder.** Homer set its effect at exactly ten per cent of care coordination's. It is in the model for completeness, not as a lever anyone should reach for."
+      },
+      "date": 1787161585709,
+      "after": "cc3f2b225a24f520"
+    },
+    {
+      "type": "add",
+      "id": "88fb64ed35abc4b2",
+      "item": {
+        "type": "markdown",
+        "id": "88fb64ed35abc4b2",
+        "text": "**Medical homes create a shortage.** The model explicitly warns that pulling patients toward primary care can produce a primary care shortage for some population segments unless it is paired with recruitment or practice redesign. This is the clearest case in the whole table that interventions must be combined rather than chosen singly."
+      },
+      "date": 1787161585710,
+      "after": "b5f01985437a4c48"
+    },
+    {
+      "type": "add",
+      "id": "3fd320dc28da45d1",
+      "item": {
+        "type": "markdown",
+        "id": "3fd320dc28da45d1",
+        "text": "**Gains erode.** If funding ceases and accumulated funds deplete, the model erodes gains made to date and eventually erodes them entirely. There is also a nonlinearity worth knowing: if accumulated funds exceed six years of desired spending the captured savings fraction starts to be cut back, and beyond fifteen years it is cut to zero. Any result has to be presented alongside its funding-duration assumption."
+      },
+      "date": 1787161585711,
+      "after": "88fb64ed35abc4b2"
+    },
+    {
+      "type": "add",
+      "id": "a0968a116419c97a",
+      "item": {
+        "type": "markdown",
+        "id": "a0968a116419c97a",
+        "text": "**\"Student pathways\" is really one program.** More than ninety per cent of the cost and more than half the projected impact in that line comes from the Carrera Adolescent program alone. Treat it as shorthand for Carrera plus two minor additions, not as a general category estimate."
+      },
+      "date": 1787161585712,
+      "after": "3fd320dc28da45d1"
+    },
+    {
+      "type": "add",
+      "id": "02257e0cae5f7b78",
+      "item": {
+        "type": "markdown",
+        "id": "02257e0cae5f7b78",
+        "text": "## Two calibration facts"
+      },
+      "date": 1787161585713,
+      "after": "a0968a116419c97a"
+    },
+    {
+      "type": "add",
+      "id": "4daf7bd8f3f85a81",
+      "item": {
+        "type": "markdown",
+        "id": "4daf7bd8f3f85a81",
+        "text": "All dollar figures in the model are 2010 dollars. They need inflation adjustment before they go anywhere near 2026 planning, and medical care inflation has run well above general CPI across that span. Adjust deliberately and state which index was used."
+      },
+      "date": 1787161585714,
+      "after": "02257e0cae5f7b78"
+    },
+    {
+      "type": "add",
+      "id": "e0383e15f0f47c57",
+      "item": {
+        "type": "markdown",
+        "id": "e0383e15f0f47c57",
+        "text": "Anytown is close to Whatcom scale. It is calibrated as exactly one-thousandth of the US population, about 309,000 people at the 2000 base year. Whatcom County is roughly 226,000. Same order of magnitude, Whatcom about three-quarters the size. Per-capita figures transfer with reasonable confidence. Absolute totals need scaling by roughly 0.73."
+      },
+      "date": 1787161585715,
+      "after": "4daf7bd8f3f85a81"
+    },
+    {
+      "type": "add",
+      "id": "abdb19f017fdcec8",
+      "item": {
+        "type": "markdown",
+        "id": "abdb19f017fdcec8",
+        "text": "## Where the details are"
+      },
+      "date": 1787161585716,
+      "after": "e0383e15f0f47c57"
+    },
+    {
+      "type": "add",
+      "id": "b4525dc7e60f8dd5",
+      "item": {
+        "type": "markdown",
+        "id": "b4525dc7e60f8dd5",
+        "text": "Every constant, with its baseline, minimum, maximum and sources, is extracted in the repository at docs/rth-intervention-parameters.md."
+      },
+      "date": 1787161585717,
+      "after": "abdb19f017fdcec8"
+    },
+    {
+      "type": "add",
+      "id": "a4e1557fd6d19bb7",
+      "item": {
+        "type": "markdown",
+        "id": "a4e1557fd6d19bb7",
+        "text": "The source document is the Reference Guide for the ReThink Health Dynamics Simulation Model, Model Version 3v, November 2018, edited February 2020, prepared by Jack Homer for the Fannie E. Rippel Foundation. It is public at https://rethinkarchive.rippel.org/wp-content/uploads/2019/09/ReThink-Health-Dynamics-Reference-Guide-v3v-Nov-2018-1.pdf and needs no account."
+      },
+      "date": 1787161585718,
+      "after": "b4525dc7e60f8dd5"
+    },
+    {
+      "type": "add",
+      "id": "d85529f66764032b",
+      "item": {
+        "type": "markdown",
+        "id": "d85529f66764032b",
+        "text": "The Anytown simulator itself is at https://forio.com/app/rippel/rethink-health/login.html and does need one. Access is a separate matter and not required for anything on this page."
+      },
+      "date": 1787161585719,
+      "after": "a4e1557fd6d19bb7"
+    }
+  ]
+}

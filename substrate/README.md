@@ -10,6 +10,9 @@ One Neo4j graph holding every layer at once. Projections read the layers a lens 
 | `seed.py` | Builds the n=6 reference graph from scratch. Idempotent |
 | `api.py` | The projection layer, port 8768. Serves the tools too, so one origin and no CORS |
 | `load_composite.py` | Stage 2 — the 26-node signed EIP CLD into its own database |
+| `load_vna.py` | Loads the value-network and action-situation drawings into database `vna`, in substrate vocabulary. Reports every merge |
+| `project_iad.py` | **The IAD lens — a read-only projection over `vna`, not a copy.** See `iad-crosswalk.md` |
+| `iad-crosswalk.md` | **The RCN-to-IAD crosswalk** — what we can claim in Ostrom's terms and what we cannot |
 | `load_aspects.py` | The 16 aspect drawings with EXACT provenance, into `aspects16` |
 | `aspect_file.py` | Writes a drawing back to its source file, so nothing silently reverts |
 | `ROUND-TRIP.md` | **How the round trip works, how to use it, and what can go wrong** |
@@ -44,6 +47,7 @@ Then: <http://localhost:8768/> lists the projections and the rendered views.
 | `neo4j` | the n=6 reference — the permanent conformance test. 6 concepts, 6 states, 7 edges (5 causal, 2 structural). The only graph whose sources are **people** | `/projection/causal` |
 | `composite26` | the signed EIP CLD — 25 concepts, 25 states, 57 edges (12 causal, 45 structural). Note it holds `Affect` as **two concepts** where `aspects16` holds one concept with two states | `/projection/causal?db=composite26` |
 | `aspects16` | the 16 aspect drawings, exact provenance — 24 concepts, 25 states, 70 edges (20 causal, 50 structural) | `/projection/subgraph/org` |
+| `vna` | the value-network and action-situation drawings — 6 drawings, 37 positions, 9 participants, 7 resources, 1 outcome, 75 deliverables. The IAD view is a projection over this, holding no data of its own | `python3 load_vna.py --verify` then `python3 project_iad.py` |
 
 `?db=` selects **which graph, never which query.** Both are read by byte-identical Cypher. That is the Stage 2 claim — only the data grows — and if it ever stops being true, the architecture was not proven at n=6.
 

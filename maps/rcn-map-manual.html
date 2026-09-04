@@ -133,6 +133,8 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       <li><a href="#s16">16. Updating geographic data</a></li>
       <li><a href="#s17">17. Sharing &amp; deep links</a></li>
       <li><a href="#s18">18. Publishing &amp; federating regions</a></li>
+      <li><a href="#s19">19. Routes — drawn and found</a></li>
+      <li><a href="#s20">20. Reach areas (isochrones)</a></li>
     </ul>
     <div class="sb-links">
       <a href="rcn-map-intro.html">← Introduction</a>
@@ -184,6 +186,8 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       </table>
       <div class="note">The two are <strong>not interchangeable as the baseline</strong>: never replace <code>rcn_static_data.js</code> with either of these, and remember the standalone is a <em>snapshot</em> — it won't reflect edits to the source until <code>build_standalone_map.py</code> is re-run. Either way, Leaflet and the map tiles still load from the internet, so "self-contained" means "no companion <em>files</em>," not "works offline."</div>
       <div class="warn">Don't put the standalone at your live URL <em>and</em> keep editing the source — they'll drift. Serve <code>rcn_map.html</code> as the canonical live page; use the standalone only as a portable copy.</div>
+      <p><b>How old is this copy?</b> Every standalone build stamps its own build date into the sidebar, just under the Intro / Manual / Slides links — so a handout that has been sitting in someone's inbox says so on its face, and turns red past 90 days. The live <code>rcn_map.html</code> shows no stamp: it isn't a snapshot, it's the source.</p>
+      <p><b>Its doc links keep working.</b> The sidebar's Intro / Manual / Slides links are relative on the live page, because those files sit beside it in the same asset folder. A handout travels alone, with no siblings to resolve against — so the build rewrites those three links to their hosted copies at <code>ndcgroup.relocalizecreativity.net/assets/NDC/</code>. Anyone who opens the emailed file can still reach the docs. (Set <code>RCN_DOCS_BASE</code> before building if the asset folder ever moves.)</p>
 
       <h3>What <code>rcn_static_data.js</code> is</h3>
       <p>
@@ -1050,6 +1054,7 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
         <li>A yellow banner appears at the top of the sidebar. The map cursor changes to a crosshair.</li>
         <li>Click the correct position on the map. The marker moves immediately.</li>
       </ol>
+      <p><strong>You can click anywhere</strong> — including on top of a boundary polygon, a reach-area band, a route line, or another marker. While the yellow banner is up, the whole map is a placement surface, so nothing on it can intercept the click or open its own popup instead. <strong>Cancel</strong> stops it completely: once cancelled, later clicks on the map go back to doing their normal thing and nothing moves.</p>
 
       <figure class="ui-fig">
         <svg viewBox="0 0 620 200" font-family="system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">
@@ -1588,6 +1593,84 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       </ul>
 
       <div class="note">A forward-looking design — replacing the hand-maintained manifest with FedWiki's native <strong>fork</strong> gesture (forking a steward's region page = adding their region, with full provenance) — is written up in <code>rcn-region-forking-spec.md</code>.</div>
+    </section>
+
+    <!-- §19: ROUTES -->
+    <section id="s19">
+      <div class="section-pill">Drawing</div>
+      <h2>19. Routes — drawn and found</h2>
+      <p>A route is an open line, as opposed to a boundary's closed ring: a walking route to school, a delivery run, a corridor. There are two buttons, and the difference between them matters more than it looks.</p>
+
+      <table class="feat-table">
+        <thead><tr><th>Button</th><th>What the line is</th><th>When to use it</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>➤ Draw a route</code></td>
+            <td>Exactly the points you click. Nothing is snapped, routed, or calculated.</td>
+            <td>An <strong>assertion</strong> — the way people actually walk, a desire path, a route that isn't in any map yet, a line across a field.</td>
+          </tr>
+          <tr>
+            <td><code>➤ Find route</code></td>
+            <td>The route a routing engine returns along real roads and paths between your points.</td>
+            <td>A <strong>question answered</strong> — how far is the clinic on foot, what would a delivery van do, how long is the ride.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Finding a route</h3>
+      <ol>
+        <li>Click <strong>➤ Find route (walk / bike / drive)</strong>. A panel appears at the top of the map.</li>
+        <li>Pick a profile: <strong>🚶 Walk</strong>, <strong>🚲 Bike</strong>, or <strong>🚗 Drive</strong>. Walk is the default — it's the neighborhood question.</li>
+        <li>Click a start and an end on the map. Any further clicks become stops along the way, in order.</li>
+        <li>Click <strong>➤ Find route</strong> (or press Enter). The engine returns the actual route, and the panel reports distance and travel time.</li>
+        <li>Name it, colour it, and save it exactly like a drawn route — same form, same legend, same export.</li>
+      </ol>
+      <p><strong>Undo</strong> removes the last point (Backspace / Ctrl+Z), <strong>Esc</strong> cancels. Double-click does <em>not</em> trigger a search — finding a route makes a network request, so it always takes a deliberate click.</p>
+
+      <h3>A found route is a different kind of object</h3>
+      <p>Once saved, both kinds behave identically — legend row, colour and dash editing, direction arrows, deep link, JSON and SVG/PNG export. But a found route records where it came from, and its popup says so: the profile, the engine, and the date it was computed. A drawn route just says <em>Hand-drawn</em>.</p>
+      <div class="note">That distinction is deliberate. A drawn line is something a person claims. A found line is <strong>derived</strong> — it came from OpenStreetMap data on a particular day, it can change when that data changes, and it can be wrong. The saved date is what lets you tell later whether a route still means what it meant when you saved it.</div>
+
+      <h3>What it needs, and how it fails</h3>
+      <p>Routing is provided by <strong>Valhalla</strong> on the FOSSGIS public instance, using OpenStreetMap data. There is no account, no API key, and nothing to configure — but it is a shared community service with no service guarantee, and it needs an internet connection.</p>
+      <ul>
+        <li><strong>No connection</strong> — you're told to check it, or draw the route by hand instead. Your points stay on the map.</li>
+        <li><strong>A point too far from any road or path</strong> — "No suitable edges near location." Move that point nearer a road.</li>
+        <li><strong>Points too far apart</strong> — there's a 200 km limit per route.</li>
+      </ul>
+      <p>In every failure the panel stays open with your waypoints intact, so you can undo a point, switch profile, or retry. Nothing is ever saved from a failed search.</p>
+      <div class="warn">A standalone handout can still <em>show</em> saved routes offline, but it cannot <em>find</em> new ones without a connection — the same as the basemap tiles.</div>
+    </section>
+
+    <!-- §20: REACH AREAS -->
+    <section id="s20">
+      <div class="section-pill">Drawing</div>
+      <h2>20. Reach areas (isochrones)</h2>
+      <p>A route answers <em>how do I get from here to there</em>. A <strong>reach area</strong> answers the question a neighborhood actually asks: <em>what can be reached from here at all?</em> Place one centre — an NDC, a clinic, a school, a bus stop — and the map shades the area you can genuinely get to within a given number of minutes, following real streets and paths. The technical name is an <strong>isochrone</strong>: a line through all the points that are the same travel time away.</p>
+      <p>This is the "15-minute neighborhood" made checkable. A circle drawn with a compass says nothing — it ignores the river, the freeway, the missing sidewalk, the fence. A reach area shows those as dents in the shape.</p>
+
+      <h3>Making one</h3>
+      <ol>
+        <li>Click <strong>◎ Reach area (how far in N minutes)</strong>.</li>
+        <li>Pick <strong>🚶 Walk</strong>, <strong>🚲 Bike</strong> or <strong>🚗 Drive</strong>. Walk is the default.</li>
+        <li>Pick the times you care about — up to <strong>four bands</strong> at once (the routing service's limit). 5 / 10 / 15 minutes is the default set.</li>
+        <li>Click the map to place the centre. Click again to move it.</li>
+        <li>Click <strong>◎ Show reach area</strong> (or press Enter).</li>
+        <li>Give the set one name and save. Each band becomes its own boundary layer, named with its time — <em>"Superior clinic — 10 min walk"</em>.</li>
+      </ol>
+
+      <h3>They are ordinary boundaries afterwards</h3>
+      <p>Each band is saved as a normal boundary polygon, so everything the map already does to boundaries works on them: its own legend row, the <strong>✎ Edit</strong> editor for name, colour, opacity and which NDC it sits under, highlight on click, deep link, and inclusion in JSON and SVG/PNG export. Bands are coloured darkest-innermost and saved largest-first so the smaller ones draw on top; delete any band on its own without touching the others.</p>
+      <div class="note">Like a found route, a reach area records where it came from — profile, minutes, engine, centre, and the date it was computed — and its popup says so. A boundary you drew or pasted still reads <em>User-added</em>. The two look similar on the map and mean very different things: one is a claim about the world, the other is an estimate derived from OpenStreetMap on a particular day.</div>
+
+      <h3>Limits worth knowing before you show one to a room</h3>
+      <ul>
+        <li><strong>It's a road-network estimate, not a promise.</strong> It assumes an average traveller at an average speed. It knows nothing about a person's mobility, a pram, ice on the path, or whether the sidewalk is lit at night.</li>
+        <li><strong>It's only as good as OpenStreetMap.</strong> A footpath nobody has mapped doesn't exist to the engine; a path that's mapped but gated does. Where the shape looks wrong, that is often worth knowing in itself — and it's a reason to add the missing path to OSM.</li>
+        <li><strong>An unreachable centre gives nothing.</strong> Drop the centre in open water or far from any road and you're told nothing is reachable — the map refuses to save a meaningless speck.</li>
+        <li><strong>Four bands maximum</strong> per request, and it needs an internet connection.</li>
+      </ul>
+      <p>Two reach areas from the same centre — walk versus drive — put the transport gap in a single picture better than any table. So does one reach area against the households it's supposed to serve.</p>
     </section>
 
     <!-- Footer -->

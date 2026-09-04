@@ -123,6 +123,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
       <li><a href="#s9g">9g. Layers</a></li>
       <li><a href="#s9h">9h. Triples</a></li>
       <li><a href="#s9i">9i. LOP mode — linkage of processes</a></li>
+      <li><a href="#s9j">9j. VSM mode — value stream mapping</a></li>
       <li><a href="#s10">10. Driver trees</a></li>
 
       <li class="sb-section-hd">Layout &amp; Search</li>
@@ -154,7 +155,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
       <!-- UPDATE: version badge and date when tool version changes -->
       <div class="doc-meta">
         <span class="version-badge">v22</span>
-        Updated August 16 2026 &nbsp;·&nbsp;
+        Updated August 25 2026 &nbsp;·&nbsp;
         <a href="graph-tool-intro.html">Introduction &amp; comparisons →</a>
       </div>
     </div>
@@ -536,7 +537,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
       <div class="section-pill">Analysis Modes</div>
       <h2>7. Graph modes overview</h2>
       <p>
-        The <strong>Graph Mode</strong> section at the top of the sidebar switches between six
+        The <strong>Graph Mode</strong> section at the top of the sidebar switches between nine
         analytical framings of the same graph. Switching modes does not alter the graph data —
         it changes what overlays and controls are active.
       </p>
@@ -550,6 +551,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
           <tr><td><strong>Trace</strong></td><td>Pathway animation. Assign edges to named paths (T1–T4) and animate each path in sequence. Edges can belong to multiple traces.</td></tr>
           <tr><td><strong>Wardley</strong></td><td>Renders a Wardley Map grid behind the graph — evolution axis (Genesis → Commodity) across the bottom, value chain (Invisible → Visible) on the left. Auto-activates when importing a Wardley Map Generator JSON.</td></tr>
           <tr><td><strong>LOP</strong></td><td>Linkage of Processes — Deming's organization-as-a-system diagram, in the vocabulary of <em>The Improvement Guide</em> and <em>Quality as an Organizational Strategy</em>. Four labelled bands, twelve node types, seven typed linkages inferred from what you connect, a numbered List of Processes with owner and measure, and a linkage check. Export as LOP→CSV, LOP→MD or LOP→Cypher.</td></tr>
+          <tr><td><strong>VSM</strong></td><td>Value Stream Mapping in Cindy Jimmerson's healthcare version — one patient, one condition, one observation, times recorded at the gemba. Five lanes for the four flows that must converge at the point of care plus a timeline, nine node types, seven flows typed by <em>what moves</em>, storm bursts, and a <strong>computed sawtooth</strong> reporting lead time, value-added time and the ratio between them. Export as VSM→CSV, VSM→MD, or VSM→A3, which seeds an A3 in <code>a3.html</code>.</td></tr>
           <tr><td><strong>OPM</strong></td><td>Object Process Methodology (ISO 19450). Place Objects and Processes, then use + Edge to draw typed relationships. A picker suggests valid link types based on what you connected. OPL sentences are auto-generated and shown in the collapsible OPL panel. Export as OPM→OPL (plain text), OPM→Cypher, or OPM→CSV.</td></tr>
         </tbody>
       </table>
@@ -1429,6 +1431,188 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
       <div class="tip"><strong>Where to start.</strong> Purpose first, then customers and their needs on the right, then the four or five processes between suppliers and customers — most organizations have fewer key processes than they expect. Number them, then fill in owner and measure. Add measures and customer research last, and draw the <em>informs</em> arrows back to Design &amp; Redesign: that is the loop the whole picture exists to make visible. <code>tools/lop-whatcom-coop.rcn.json</code> is a worked example, and <code>tools/lop-whatcom-coop.svg</code> is what it exports to.</div>
     </section>
 
+
+    <!-- §9j: VSM MODE -->
+    <section id="s9j">
+      <div class="section-pill">Analysis Modes</div>
+      <h2>9j. VSM mode — Value Stream Mapping</h2>
+      <p>
+        VSM mode draws a value stream map in <strong>Cindy Jimmerson's healthcare version</strong>
+        (<em>Value Stream Mapping for Healthcare Made Easy</em>), not the Rother/Shook manufacturing one.
+        The differences are not cosmetic, and the mode is built around them:
+      </p>
+      <ul>
+        <li><strong>One patient, one condition, one observation.</strong> Not an aggregate process model — a single episode, watched end to end, with the times you actually saw.</li>
+        <li><strong>Four flows must converge at the point of care</strong> — the patient, the provider, the information, and the supplies. Each gets a lane. In manufacturing the product is inert; in healthcare it is a person who is present while the other three arrive, or fail to.</li>
+        <li><strong>Storm bursts</strong> mark every problem seen. Each one is a candidate A3.</li>
+        <li><strong>The sawtooth</strong> — value-added time on the upper ledges, waiting below — and the ratio between them, which is usually the moment a room goes quiet.</li>
+      </ul>
+      <div class="note">
+        The map is a record of an observation, not a design. If you find yourself writing what is
+        <em>supposed</em> to happen, you are drawing a process map. Go and watch.
+      </div>
+
+      <h3>Entering VSM mode</h3>
+      <p>
+        Click <strong>VSM</strong> in the Graph Mode section. A fuchsia banner appears and five labelled
+        <strong>lanes</strong> are drawn behind the canvas. On an empty map the view frames the lanes
+        automatically; on a map that already has typed nodes the view is left alone.
+      </p>
+      <table class="feat-table">
+        <thead><tr><th>Lane</th><th>What belongs in it</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Patient · the person moving through</strong></td><td>What happens to the person, and where they physically are. If this lane is empty you have not drawn a value stream.</td></tr>
+          <tr><td><strong>Provider · who does the work</strong></td><td>The work itself, plus the three things that break it: waits, handoffs and decisions.</td></tr>
+          <tr><td><strong>Information · orders, results, records</strong></td><td>The order, the result, the chart, the fax — and outside entities such as a lab or another agency.</td></tr>
+          <tr><td><strong>Supplies · equipment, meds, materials</strong></td><td>The thing that has to be there when the patient is.</td></tr>
+          <tr><td><strong>Timeline · value-added above, waiting below</strong></td><td>Nothing is placed here. The sawtooth is computed and drawn into this lane for you.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        <strong>Snap to lanes</strong> moves each typed node into its lane; <strong>Lanes</strong> hides the
+        guide for a clean export. Storm bursts have no home lane — a burst is drawn wherever the problem was
+        seen. Because everything is drawn inside the SVG, the lanes <em>and the sawtooth</em> survive PNG and
+        SVG export.
+      </p>
+
+      <h3>Node types</h3>
+      <p>Click a type in the palette, then click the canvas. Select an existing node to change its type from the panel.</p>
+      <table class="feat-table">
+        <thead><tr><th>Group</th><th>Types</th></tr></thead>
+        <tbody>
+          <tr><td><strong>The four flows</strong></td><td><strong>Patient Step</strong> — what happens to the person. <strong>Process Step</strong> — who does what, where. <strong>Information</strong> — an order, result, chart or message. <strong>Supply / Equipment</strong> — the thing that must be present.</td></tr>
+          <tr><td><strong>What breaks flow</strong></td><td><strong>Wait / Delay</strong> — the queue, the inbox, the hold. <strong>Handoff</strong> — ownership changes hands; worth counting explicitly, because handoffs are where healthcare streams break. <strong>Decision</strong> — the stream forks.</td></tr>
+          <tr><td><strong>What you saw</strong></td><td><strong>Storm Burst</strong> — a jagged star naming a problem you witnessed. <strong>Outside Entity</strong> — the lab, the agency, another organization.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Recording time — the part that matters</h3>
+      <p>
+        Every type except Storm Burst and Outside Entity is <strong>timed</strong>. Each carries three fields,
+        editable both in the node panel and inline in the Timeline list:
+      </p>
+      <table class="feat-table">
+        <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><strong>VA</strong></td><td>Value-added minutes — the work the patient would pay for.</td></tr>
+          <tr><td><strong>Wait</strong></td><td>Minutes of waiting <em>before</em> this step.</td></tr>
+          <tr><td><strong>Who</strong></td><td>The person you actually watched. Not a department.</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>Times are always in minutes.</strong> The tool humanises them on the way out — 39 min, 7 d —
+        but it never parses "7 days" on the way in. Type 10080, not 7.
+      </div>
+      <p>
+        Each timed node also takes a <strong>value class</strong> — would the patient pay for it? Three
+        buckets, not two: <strong>Value-added</strong>, <strong>Necessary</strong> (regulatory, documentation —
+        not value, but not removable either) and <strong>Pure waste</strong>. The class draws as a coloured
+        stripe along the foot of the node. A <strong>waste</strong> category can be attached from her seven,
+        said the way a nurse would recognise them: waiting, motion, transport, over-processing, inventory,
+        defect/rework, overproduction, plus talent.
+      </p>
+
+      <h3>Flows — typed by what moves</h3>
+      <p>
+        Use <strong>+ Edge</strong> to connect two steps. As in LOP, the type is <strong>read from what you
+        connected</strong> rather than picked from a menu, and you can override it in the panel.
+      </p>
+      <table class="feat-table">
+        <thead><tr><th>Flow</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td><strong>patient moves</strong></td><td>The person goes somewhere. Heavy magenta.</td></tr>
+          <tr><td><strong>information</strong></td><td>An order, a result, a message. Dashed teal.</td></tr>
+          <tr><td><strong>supply</strong></td><td>A thing is fetched or delivered.</td></tr>
+          <tr><td><strong>handoff</strong></td><td>Ownership passes to someone else.</td></tr>
+          <tr><td><strong>pushed</strong> / <strong>pulled</strong></td><td>Sent on regardless, versus taken when the next step is ready.</td></tr>
+          <tr><td><strong>rework</strong></td><td>Back round again — the loop that should not exist. Dotted red.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>The sawtooth is computed, not drawn</h3>
+      <p>
+        There is nothing to draw and no field to author. The tool topologically sorts the timed steps over the
+        <em>moving</em> flows only — patient, handoff, pushed, pulled — using x position as the tie-break.
+        Information and supply edges deliberately sequence nothing, and steps caught in a rework loop are
+        appended in x order rather than dropped: a cycle is not a reason to refuse a timeline.
+      </p>
+      <p>
+        It then draws value-added time on the upper ledges, waiting below, and prints the scoreboard beneath:
+        <strong>lead time, value-added time, the percentage worth paying for, and counts of steps, handoffs
+        and storm bursts.</strong> <strong>1–2–3 Renumber</strong> numbers the steps in that same flow order,
+        so the badges on the map and the Timeline list always agree.
+      </p>
+      <div class="note">
+        <strong>Segment widths are not strictly proportional, and that is deliberate.</strong> At any ratio
+        Jimmerson would recognise — single-digit percent and below — exactly proportional ledges collapse
+        under a pixel and the sawtooth flattens into a line, which is to say the drawing fails precisely when
+        it is most damning. Every segment therefore gets a minimum width and the surplus is shared out in
+        proportion: the waits still dwarf the work, every ledge stays visible and labelled, and the exact
+        ratio is carried by the number in the scoreboard, which is where precision belongs.
+        <strong>True scale</strong> turns the floor off for the one drawing that wants the shock.
+      </div>
+
+      <h3>Storm bursts, and choosing the A3</h3>
+      <p>
+        Place a <strong>Storm Burst</strong> wherever you saw something go wrong, and name it with what went
+        wrong. Put the detail in the node's <strong>note</strong> — it carries into the A3. Every problem seen
+        gets a burst; leaving them named is how they survive the walk back to the desk.
+      </p>
+      <p>
+        Select a burst and press <strong>Make this the A3's problem</strong>. Exactly one burst can hold that
+        mark — choosing another releases the first — and it gets an <strong>A3</strong> badge on the canvas.
+        The rest stay as candidates.
+      </p>
+
+      <h3>Check observation</h3>
+      <p>This tests an observation, not a diagram. It flags:</p>
+      <ul>
+        <li>Nothing in the patient lane — a process map, not a value stream.</li>
+        <li>No times recorded — the ratio is the whole argument.</li>
+        <li>Steps with no one doing them, or no value class.</li>
+        <li>Unnamed storm bursts, or none chosen for the A3.</li>
+        <li>Lead time that is all value-added and no waiting — "did you reconstruct this rather than watch it?"</li>
+        <li>A ratio over 50% — check the units.</li>
+        <li>No handoffs marked, or no information flow at all.</li>
+      </ul>
+
+      <h3>Exports, and the handoff to A3</h3>
+      <table class="feat-table">
+        <thead><tr><th>Export</th><th>What it writes</th></tr></thead>
+        <tbody>
+          <tr><td><strong>VSM→CSV</strong></td><td>The stream in flow order: number, step, kind, who, VA and wait minutes, value class, waste — with a totals row.</td></tr>
+          <tr><td><strong>VSM→MD</strong></td><td>The observation as markdown: the ratio, the step table, the storm bursts, and what the observation is still missing.</td></tr>
+          <tr><td><strong>VSM→A3</strong></td><td>Writes the <code>.a3.rcn.json</code> that <a href="a3.html">a3.html</a> loads.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        <strong>VSM→A3 is the handoff her method actually asks for.</strong> Map the stream, find the storm
+        bursts, A3 the worst one. The seeded file arrives with the whole burst list (the chosen one marked),
+        the observed times in the caption and in "what actually happened", the lead time as the follow-up
+        baseline, and a back-reference to this map. The halves only a person can fill —
+        what was <em>supposed</em> to happen, the gap, the five whys — are left empty on purpose.
+      </p>
+
+      <h3>What is stored in the file</h3>
+      <table class="feat-table">
+        <thead><tr><th>Field</th><th>On</th><th>Values</th></tr></thead>
+        <tbody>
+          <tr><td><code>vsmType</code></td><td>node</td><td>patientstep, step, info, supply, wait, handoff, decision, burst, outside</td></tr>
+          <tr><td><code>vsmNum</code></td><td>node</td><td>step number, timed types only</td></tr>
+          <tr><td><code>vsmValue</code></td><td>node</td><td>va, nnva, waste</td></tr>
+          <tr><td><code>vsmWaste</code></td><td>node</td><td>waiting, motion, transport, overproc, inventory, defect, overprod, talent</td></tr>
+          <tr><td><code>props.vaTime</code> / <code>props.waitTime</code> / <code>props.who</code></td><td>node</td><td>minutes, minutes, a name</td></tr>
+          <tr><td><code>props.a3</code></td><td>node</td><td><code>"yes"</code> on exactly one burst</td></tr>
+          <tr><td><code>vsmFlow</code></td><td>edge</td><td>patient, info, supply, handoff, push, pull, rework</td></tr>
+          <tr><td><code>vsmLanes</code> / <code>vsmTrueScale</code></td><td>file</td><td>booleans</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Worked example: <code>tools/vsm-chw-referral.rcn.json</code> — a clinic-to-CHW referral followed end to
+        end. Seven steps, one handoff, three storm bursts, and 39 minutes of value-added work inside a
+        seven-day lead time.
+      </p>
+    </section>
 
     <!-- §10: DRIVER TREES -->
     <section id="s10">

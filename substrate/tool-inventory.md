@@ -60,6 +60,32 @@ with Marc before relying on them.
    (`constitute`/`constitutes`) is stopped at the keyboard by offering existing
    spellings, not afterwards by rewriting what an author wrote.
 12. **Wardley is standalone.** It never reads from or writes to the substrate. Its demand for meaningful continuous coordinates was unique to it — Vester's grid is *computed* from magnitude, not stored — so that demand closes entirely.
+13. **A value network is substrate data; IAD is a lens over it.** The drawings
+   load into database `vna` in the existing Option-C vocabulary — roles as
+   `:Concept:<IADElement>` merged on schemaLabel, deliverables as *structural*
+   `[:REL]` on concepts, one `:Aspect {kind:'drawing'}` per drawing carrying the
+   action-situation facts. `project_iad.py` then queries them and writes nothing.
+   The first build of this wrote its own `iad` database, which made the IAD view
+   a parallel copy standing beside the substrate; that database has been dropped
+   and the mistake is recorded here so it is not repeated for the next
+   framework. **A lens that materialises is not a lens.**
+14. **Every merge is printed on load.** The substrate merges on schemaLabel and
+   records multiple sources as evidence rather than resolving them. That is right
+   for `BADGE ISSUANCE` drawn in two files and wrong for three placeholder
+   participants that happen to share the letter `A`. Both were merged; both were
+   printed; the wrong ones were fixed in the data. An unseen merge is the failure
+   this whole provenance design exists to prevent, so silence is not an option.
+15. **`props.evidence` is available to every mode.** `observed` needs a source
+   somebody else could check; `asserted` is reasoning, however good. Value
+   networks require it. Every other mode may use it, and the validator enforces
+   only that **partial adoption is worse than none** — an undeclared edge beside
+   declared ones reads as observed by default. This is the audit trail for
+   AI-assisted work and it is deliberately cheap: one optional field.
+16. **IAD levels are a standing lens, not an exercise.** `graphAttrs.iadLevel`
+   on a file, `iadLevel` on edge legend rows, `iadElement` on node rows. Marc:
+   "I could not overstate the importance of building these IAD distinctions into
+   our thinking, our schema, and our diagrams whenever possible and relevant."
+   Recorded in `tools/schemas/graph-tool-v22.md` so it binds the next author.
 8. **Relation families are declared, not drawn.** `tools/edge-families.js` is the
    one source; the substrate holds a generated copy. Local edge styling always
    wins — declaring a family changes no colour, width or dash.
@@ -285,3 +311,16 @@ the uniform MATCH, keeps the grammar.
   Proposal written: `substrate/edge-families-proposal.md` — seven relation
   families encoded on the ARROWHEAD (not hue, which `families.js` already owns).
   Not built; awaiting the Cave Drawing read-test.
+- **2026-08-31** — Value-network notation adopted (Allee VNA, via the Snowden
+  research thread) and projected into Ostrom's IAD vocabulary for readers at the
+  Ostrom Workshop at IU. Two validator rules added: every edge names its
+  deliverable, every edge declares its evidence. Decisions 13–16 recorded.
+- **2026-09-01** — The IAD projection **corrected from a copy to a lens**.
+  `load_vna.py` puts six drawings into database `vna` (37 positions, 9
+  participants, 7 resources, 1 outcome, 75 deliverables); `project_iad.py` reads
+  only; database `iad` dropped. `props.evidence` generalised past VNA with a
+  partial-adoption warning. `tools/band-state.js` reports the standing state of
+  all three Ostrom bands and repo-wide evidence adoption. Three errors the lens
+  caught and that the RCN vocabulary alone did not: a till projected as a
+  position, an undrawn arena appearing in a payoff query, and three placeholder
+  participants wrongly merged across two drawings.

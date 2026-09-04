@@ -14,6 +14,14 @@
  *                  --tables html -> one "html" item (for genuinely grid-shaped data)
  *   - [[Wiki Links]] pass through untouched (they are native)
  *
+ * Two multi-page output shapes, and they are NOT interchangeable:
+ *   --map file     flat {slug: page}, what wiki-client's readFile() actually
+ *                  wants and what /system/export.json emits. Drops on any
+ *                  client; click a slug, fork it, repeat. Prefer this.
+ *   --bundle file  a page carrying an "importer" item. Needs a client that
+ *                  detects page-json (0.32+, or patched) and costs an extra
+ *                  hop. Worth it only when the index should persist as a page.
+ *
  * Title: first H1 (removed from the story), else --title, else filename.
  * Titles are sanitized to slug-safe Title Case per the node-naming rule:
  * "&" -> "and", punctuation dropped, no parens/dashes surviving into slugs.
@@ -22,6 +30,7 @@
  *   node md-to-fedwiki-page.js <file.md> [more.md ...]
  *       [--title "Page Title"]           (single input only)
  *       [--out <dir>]                    (page files, named <slug>.json; default ./pages)
+ *       [--map <file>]                   (ALL inputs as one flat {slug: page} drop file)
  *       [--bundle <file> --bundle-title "Import Title"]
  *                                        (wrap ALL inputs into one importer page)
  *       [--tables html|rows]
@@ -39,7 +48,10 @@ const crypto = require('crypto');
 const argv = process.argv.slice(2);
 if (argv.length === 0 || argv.includes('--help')) usage(0);
 function usage(code) {
-  console.error('Usage: md-to-fedwiki-page.js <file.md> [...] [--title T] [--out dir] [--bundle file --bundle-title T] [--tables html|rows]');
+  console.error('Usage: md-to-fedwiki-page.js <file.md> [...] [--title T] [--out dir]');
+  console.error('       [--map file]                    one flat {slug: page} drop file  <- prefer this');
+  console.error('       [--bundle file --bundle-title T] one importer-wrapper page');
+  console.error('       [--tables html|rows]');
   process.exit(code);
 }
 function flag(name, dflt) {
@@ -49,11 +61,12 @@ function flag(name, dflt) {
   if (v === undefined || v.startsWith('--')) { console.error(`ERROR: ${name} needs a value`); usage(1); }
   return v;
 }
-const flagVals = new Set(['--title', '--out', '--bundle', '--bundle-title', '--tables']
+const flagVals = new Set(['--title', '--out', '--map', '--bundle', '--bundle-title', '--tables']
   .map(f => flag(f, null)).filter(Boolean));
 const inputs = argv.filter(a => !a.startsWith('--') && !flagVals.has(a));
 const TITLE   = flag('--title', null);
 const OUTDIR  = flag('--out', './pages');
+const MAPOUT  = flag('--map', null);
 const BUNDLE  = flag('--bundle', null);
 const BTITLE  = flag('--bundle-title', 'Import');
 const TABLES  = flag('--tables', 'rows');
@@ -61,6 +74,7 @@ const TABLES  = flag('--tables', 'rows');
 if (inputs.length === 0) { console.error('ERROR: no input .md files'); usage(1); }
 if (TITLE && inputs.length > 1) { console.error('ERROR: --title only applies to a single input'); usage(1); }
 if (!['html', 'rows'].includes(TABLES)) { console.error('ERROR: --tables must be html or rows'); usage(1); }
+if (MAPOUT && BUNDLE) { console.error('ERROR: --map and --bundle are two different output shapes; pick one'); usage(1); }
 
 /* ---------- helpers ---------- */
 const newId = () => crypto.randomBytes(8).toString('hex');           // 16 hex chars
@@ -79,6 +93,27 @@ function sanitizeTitle(raw) {
   return t;
 }
 const escapeHtml = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// A FedWiki "html" item is rendered RAW — the wiki runs no markdown over it and
+// does not resolve [[...]]. So anything inline inside a table cell has to leave
+// here as tags, or it shows up on the live page as literal asterisks and
+// brackets. (It did: the first publish of "OPM Relations" read **consists of**.)
+// Escape first, then build tags, so markup a user actually typed stays escaped.
+function inlineHtml(raw) {
+  let s = escapeHtml(raw);
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+  s = s.replace(/\[\[([^\]]+)\]\]/g, (_, name) => {
+    const n = name.trim();
+    return `<a class="internal" href="/${asSlug(n)}.html" data-page-name="${asSlug(n)}" title="local">${n}</a>`;
+  });
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,
+                '<a href="$2" rel="noopener" target="_blank">$1</a>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+  s = s.replace(/(^|[\s(])\*([^*\n]+)\*(?=$|[\s.,;:)!?])/g, '$1<em>$2</em>');
+  s = s.replace(/(^|[\s(])_([^_\n]+)_(?=$|[\s.,;:)!?])/g, '$1<em>$2</em>');
+  return s;
+}
 
 /* ---------- md -> story items ---------- */
 function mdToStory(md) {
@@ -154,8 +189,8 @@ function tableItems(rows) {
   const header = cells(rows[0]);
   const body = rows.slice(1).filter(r => !/^[\s|:-]+$/.test(r)).map(cells);
   if (TABLES === 'html') {
-    const th = header.map(h => `<th>${escapeHtml(h)}</th>`).join('');
-    const trs = body.map(r => `<tr>${r.map(c => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`).join('\n');
+    const th = header.map(h => `<th>${inlineHtml(h)}</th>`).join('');
+    const trs = body.map(r => `<tr>${r.map(c => `<td>${inlineHtml(c)}</td>`).join('')}</tr>`).join('\n');
     return [{ type: 'html', text: `<table>\n<tr>${th}</tr>\n${trs}\n</table>` }];
   }
   // rows mode: one labeled-paragraph item per body row (the FedWiki-native choice)
@@ -206,7 +241,18 @@ for (const file of inputs) {
   console.error(`${file} -> "${title}" (${slug}), ${items.length} items`);
 }
 
-if (BUNDLE) {
+if (MAPOUT) {
+  /* The flat {slug: page} map — byte-identical in shape to a site's own
+     /system/export.json, which is what wiki-client's drop handler reads. Every
+     top-level key is offered as a slug, on every client version. */
+  fs.writeFileSync(MAPOUT, JSON.stringify(pages, null, 2));
+  console.error(`wrote ${MAPOUT} (${Object.keys(pages).length} pages, flat map)`);
+} else if (BUNDLE) {
+  /* The importer-wrapper page. This is itself a {title, story, journal} page,
+     so a client WITHOUT the page-json branch (wiki-client < 0.32, unpatched)
+     reads its three top-level keys as three slugs and renders dead links named
+     title, story and journal. Use it only when the import index should survive
+     as a real page on the site; otherwise use --map. */
   const n = Object.keys(pages).length;
   const importer = {
     title: sanitizeTitle(BTITLE),
@@ -218,7 +264,9 @@ if (BUNDLE) {
     journal: [{ type: 'fork', date: Date.now() }]
   };
   fs.writeFileSync(BUNDLE, JSON.stringify(importer, null, 2));
-  console.error(`wrote ${BUNDLE} (${Object.keys(pages).length} pages)`);
+  console.error(`wrote ${BUNDLE} (${Object.keys(pages).length} pages, importer wrapper)`);
+  console.error('NOTE: the wrapper needs wiki-client 0.32+ (or a patched client) and imports in two');
+  console.error('      steps. For a file that drops cleanly anywhere, use --map instead.');
 } else {
   fs.mkdirSync(OUTDIR, { recursive: true });
   for (const [slug, page] of Object.entries(pages)) {

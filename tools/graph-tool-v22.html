@@ -241,6 +241,69 @@ Nodes carry their own resolved style (lopStyleNode writes color/border/shape),
   so there is no render-time colour branch for LOP the way there is for EIP and
   NRM, and the exported JSON is self-describing.
 
+── VSM MODE (Aug 18 2026) — Value Stream Mapping, Cindy Jimmerson ───
+
+Her healthcare version, not Rother/Shook. One patient, one condition, one
+  observation, times recorded at the gemba. Peer mode. Button VSM, fuchsia
+  (#c026d3).
+
+Layout guide: #vsm-layer is an SVG <g> BEHIND everything, pan/zoom transformed,
+  redrawn by renderVSMLayer() from renderAll(). Five lanes — the four flows that
+  must converge at the point of care, plus the timeline. Lanes draw only in VSM
+  mode; THE SAWTOOTH ALWAYS DRAWS, because the numbers must never be separable
+  from the drawing that produced them. Being inside the SVG, both export.
+
+Data model:
+  node.vsmType   patientstep|step|info|supply|wait|handoff|decision|burst|outside
+  node.vsmNum    step number, timed types only, set by vsmRenumber()
+  node.vsmValue  va|nnva|waste — would the patient pay for it? Three buckets,
+                 because two is a lie: documentation is not value but is not
+                 removable either. Drawn as a stripe along the node's foot.
+  node.vsmWaste  waiting|motion|transport|overproc|inventory|defect|overprod|talent
+  node.props.vaTime / .waitTime   MINUTES, as observed. props not bare fields,
+                 so they are searchable and every exporter carries them.
+  node.props.who who you actually watched
+  node.props.a3  'yes' on exactly one burst — the one this A3 is about
+  edge.vsmFlow   patient|info|supply|handoff|push|pull|rework — typed by WHAT
+                 MOVES, because the four flows are the whole point
+  state.vsmLanes / state.vsmTrueScale   persisted in buildState/loadGraphJSON
+
+THE SAWTOOTH IS COMPUTED, NOT DRAWN. vsmOrderedSteps() topologically sorts the
+  timed nodes over the moving-flow edges (patient/handoff/push/pull), x as the
+  tie-break, cycles appended rather than dropped — a rework loop is not a reason
+  to refuse a timeline. vsmTotals() then gives lead, VA, ratio, handoffs, bursts.
+
+  Segment WIDTH: strict proportion is the honest drawing and an unreadable one.
+  At any ratio Jimmerson would recognise (single-digit percent and below) the
+  value-added ledges collapse under a pixel and the sawtooth flattens to a line
+  — verified at 0.38%, which is what a real referral stream looks like. So every
+  segment gets a 30px floor and the surplus is shared out in proportion: the
+  waits still dwarf the work, every ledge stays visible, and the exact ratio is
+  carried by the number in the scoreboard, which is where precision belongs.
+  "True scale" turns the floor off for the one drawing that wants the shock.
+
+Typed edges WITHOUT a picker, same call as LOP: +Edge from VSM mode sets
+  prevGraphMode='vsm' and onCanvasUp calls applyVSMEdge(), which infers what
+  moves from the two node types (vsmInferFlow).
+
+Storm bursts are the signature. shapeHTML gained a 'burst' case (12-point star)
+  for them. Every problem SEEN gets one; exactly one carries props.a3='yes' and
+  becomes the A3, the rest stay named as candidates so they survive the walk
+  back to the desk. vsmChooseA3() enforces the exclusivity, the same rule
+  tools/a3.html enforces on its own burst list.
+
+VSM→A3 is the handoff her method actually asks for: exportVSMA3() writes the
+  .a3.rcn.json that tools/a3.html loads, pre-seeded with the whole burst list,
+  the observed times in the caption and problem statement, the lead time as the
+  follow-up baseline, and source{map,burstId} pointing back here. The halves
+  only a person can fill — what was SUPPOSED to happen, the gap, the five whys —
+  are deliberately left empty.
+
+vsmCheck() checks an OBSERVATION, not a diagram: nothing in the patient lane, no
+  times recorded, steps with no one doing them, unnamed bursts, no burst chosen,
+  all-VA-no-waiting ("did you reconstruct this rather than watch it?"), a ratio
+  over 50% ("check the units"), no handoffs, no information flow.
+
 ── CLD NODE LOOPS POPUP (April 25 2026) ─────────────────────────────
 
 Clicking a node in CLD mode shows a floating popup listing all loops
@@ -948,6 +1011,7 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
 .opm-swatch:hover{filter:brightness(.94)}
 .opm-swatch.active{border-color:#1e293b}
 #sfd-banner{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#b45309;color:#fff;font-size:11px;font-weight:500;padding:4px 14px;border-radius:20px;pointer-events:none;display:none;z-index:15;white-space:nowrap}
+#vsm-banner{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#c026d3;color:#fff;font-size:11px;font-weight:500;padding:4px 14px;border-radius:20px;pointer-events:none;display:none;z-index:15;white-space:nowrap}
 #lop-banner{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#be123c;color:#fff;font-size:11px;font-weight:500;padding:4px 14px;border-radius:20px;pointer-events:none;display:none;z-index:15;white-space:nowrap}
 .sfd-palette{padding:8px 12px;border-bottom:1px solid #f1f5f9}
 .sfd-palette-title{font-size:10px;color:#64748b;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
@@ -1030,6 +1094,7 @@ body.presenting #eip-banner,
 body.presenting #nrm-banner,
 body.presenting #opm-banner,
 body.presenting #sfd-banner,
+body.presenting #vsm-banner,
 body.presenting #lop-banner,
 body.presenting #trace-banner,
 body.presenting #wardley-banner{display:none!important}
@@ -1105,6 +1170,7 @@ body.presenting #present-exit{display:flex}
       <g id="rubber-layer"></g>
       <g id="wardley-layer"></g>
       <g id="lop-layer"></g>
+      <g id="vsm-layer"></g>
       <g id="lines-layer"></g>
       <g id="edges-layer"></g>
       <g id="nodes-layer"></g>
@@ -1127,6 +1193,7 @@ body.presenting #present-exit{display:flex}
     <div id="opm-banner">OPM Mode — use +Edge to draw typed relationships</div>
     <div id="sfd-banner">SFD Mode — place Stocks, Flows &amp; Auxiliaries</div>
     <div id="lop-banner">LOP Mode — Linkage of Processes</div>
+    <div id="vsm-banner">VSM Mode — Value Stream Mapping</div>
     <div id="trace-banner">Trace Mode — select edges, assign T1–T4, then ▶ to animate</div>
     <div id="routes-panel" onmousedown="event.stopPropagation()"></div>
     <div id="wardley-banner">Wardley Mode — Genesis · Custom · Product · Commodity</div>
@@ -1195,6 +1262,7 @@ body.presenting #present-exit{display:flex}
         <button class="tb-btn" id="btn-opm" onclick="setMode('opm')" style="border-color:#0f766e;color:#0f766e">OPM</button>
         <button class="tb-btn" id="btn-sfd" onclick="setMode('sfd')" style="border-color:#b45309;color:#b45309">SFD</button>
         <button class="tb-btn" id="btn-lop" onclick="setMode('lop')" style="border-color:#be123c;color:#be123c" title="Linkage of Processes — Deming / API organization-as-a-system map">LOP</button>
+        <button class="tb-btn" id="btn-vsm" onclick="setMode('vsm')" style="border-color:#c026d3;color:#c026d3" title="Value Stream Mapping — Cindy Jimmerson, healthcare: four flows, storm bursts, computed sawtooth">VSM</button>
       </div>
       <div id="drive-tree-section" style="display:none;margin-top:5px;padding-top:4px;border-top:1px solid #f1f5f9">
         <div style="font-size:10px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Driver Trees</div>
@@ -1326,6 +1394,9 @@ body.presenting #present-exit{display:flex}
         <button class="tb-btn" id="btn-opm-opl" title="Export OPM diagram as OPL (Object-Process Language) plain text" style="background:transparent;border-color:transparent;color:#0f766e;display:none" onclick="exportOPMOPL()">OPM&#x2192;OPL</button>
         <button class="tb-btn" id="btn-lop-csv" title="Export the numbered List of Processes as CSV — number, process, owner, measure, who it receives from and delivers to" style="background:transparent;border-color:transparent;color:#be123c;display:none" onclick="exportLOPCSV()">LOP&#x2192;CSV</button>
         <button class="tb-btn" id="btn-lop-md" title="Export purpose, customers and needs, the List of Processes and the linkage check as markdown" style="background:transparent;border-color:transparent;color:#be123c;display:none" onclick="exportLOPMarkdown()">LOP&#x2192;MD</button>
+        <button class="tb-btn" id="btn-vsm-csv" title="Export the stream in flow order as CSV — step, kind, who, VA and wait minutes, value class, waste" style="background:transparent;border-color:transparent;color:#c026d3;display:none" onclick="exportVSMCSV()">VSM&#x2192;CSV</button>
+        <button class="tb-btn" id="btn-vsm-md" title="Export the observation as markdown — the ratio, the step table, the storm bursts and what is still missing" style="background:transparent;border-color:transparent;color:#c026d3;display:none" onclick="exportVSMMarkdown()">VSM&#x2192;MD</button>
+        <button class="tb-btn" id="btn-vsm-a3" title="Seed an A3 from the storm burst marked for it — writes the .a3.rcn.json that tools/a3.html loads" style="background:transparent;border-color:transparent;color:#c026d3;display:none" onclick="exportVSMA3()">VSM&#x2192;A3</button>
         <button class="tb-btn" id="btn-lop-cypher" title="Export the linkage map as Neo4j Cypher — typed :LOP nodes and typed linkages" style="background:transparent;border-color:transparent;color:#be123c;display:none" onclick="exportLOPCypher()">LOP&#x2192;Cypher</button>
         <button class="tb-btn" id="btn-sfd-xmile" title="Export SFD as XMILE — opens in Vensim or Insightmaker for simulation" style="background:transparent;border-color:transparent;color:#b45309;display:none" onclick="exportSFDXMILE()">SFD&#x2192;XMILE</button>
       </div>
@@ -1431,6 +1502,7 @@ var linesLayer=document.getElementById('lines-layer');
 var dragLayer=document.getElementById('drag-layer');
 var wardleyLayer=document.getElementById('wardley-layer');
 var lopLayer=document.getElementById('lop-layer');
+var vsmLayer=document.getElementById('vsm-layer');
 var rubberLayer=document.getElementById('rubber-layer');
 var triplesLayer=document.getElementById('triples-layer');
 var svgDefs=document.getElementById('svg-defs');
@@ -2496,9 +2568,17 @@ var legendVisible=false;
 var legendCollapsed=false;
 var legendLayer=null; // set on init; NOT pan/zoom transformed, so it exports
 
-// ── House icon library (sidecar rcn-icons.js; absent is fine) ─────────────
+// ── House icon library (sidecar rcn-icons.js) ────────────────────────────
+// "Absent is fine" was the old comment and it was wrong. Absent is survivable —
+// the tool still runs — but it is never INTENDED, and it used to happen without
+// a word. Deployed into a flat asset folder the relative <script src> 404s, every
+// icon node silently renders as a bare shape, and a save writes that icon-less
+// picture back over a good diagram. Say it out loud instead. See
+// tools/build-deploy-tool.js, which removes the failure mode entirely by inlining.
 var ICONS=(typeof RCN_ICONS!=='undefined')?RCN_ICONS:[];
 var ICON_CATS=(typeof RCN_ICON_CATS!=='undefined')?RCN_ICON_CATS:[];
+var MISSING_SIDECARS=[];
+if(!ICONS.length)MISSING_SIDECARS.push('rcn-icons.js');
 function iconDef(key){
   if(!key)return null;
   for(var i=0;i<ICONS.length;i++)if(ICONS[i].key===key)return ICONS[i];
@@ -2521,6 +2601,16 @@ function iconSVG(key,px,color){
 var EDGE_FAM_DATA=(typeof EDGE_FAMILIES_DATA!=='undefined')?EDGE_FAMILIES_DATA
                  :(window.EDGE_FAMILIES_DATA||null);
 var EDGE_FAM_ORDER=EDGE_FAM_DATA?EDGE_FAM_DATA.order:[];
+if(!EDGE_FAM_DATA)MISSING_SIDECARS.push('edge-families.js');
+if(MISSING_SIDECARS.length){
+  console.warn('[graph-tool] sidecar(s) did not load: '+MISSING_SIDECARS.join(', ')
+    +'\n  They are loaded by RELATIVE <script src>, so they must sit in the same folder as this file.'
+    +'\n  Icons will not render and icon nodes will save as bare shapes.'
+    +'\n  Fix: deploy tools/dist/graph-tool-v22.html (self-contained) — build it with node tools/build-deploy-tool.js');
+  window.addEventListener('load',function(){setTimeout(function(){
+    try{toast('\u26a0\ufe0f '+MISSING_SIDECARS.join(' + ')+' did not load \u2014 icons are OFF. Do not save.');}catch(e){}
+  },700);});
+}
 function edgeFamDef(name){
   if(!name||!EDGE_FAM_DATA)return null;
   return EDGE_FAM_DATA.families[name]||null;
@@ -3825,6 +3915,660 @@ function buildLOPEdgeSection(e){
   return div;
 }
 
+// ── VSM MODE (Value Stream Mapping — Cindy Jimmerson, healthcare) ──────────
+// Her version, not Rother/Shook. One patient, one condition, one observation,
+// times recorded at the gemba. The four flows that must converge at the point
+// of care get a lane each; storm bursts mark what you SAW go wrong; and the
+// sawtooth at the bottom is computed, not drawn — it is the whole argument.
+
+var VSM_X1=20,VSM_X2=1400;
+var VSM_LANES={
+  patient: {label:'PATIENT · THE PERSON MOVING THROUGH',        y1:20,  y2:170, fill:'#fdf4ff', line:'#f5d0fe', text:'#86198f'},
+  provider:{label:'PROVIDER · WHO DOES THE WORK',               y1:180, y2:330, fill:'#f8fafc', line:'#e2e8f0', text:'#334155'},
+  info:    {label:'INFORMATION · ORDERS, RESULTS, RECORDS',      y1:340, y2:470, fill:'#f0fdfa', line:'#ccfbf1', text:'#0f766e'},
+  supply:  {label:'SUPPLIES · EQUIPMENT, MEDS, MATERIALS',       y1:480, y2:600, fill:'#fffbeb', line:'#fde68a', text:'#b45309'},
+  time:    {label:'TIMELINE · VALUE-ADDED ABOVE, WAITING BELOW', y1:620, y2:790, fill:'#fafafa', line:'#e5e5e5', text:'#525252'}
+};
+// A step lives in the lane of whatever is moving. Bursts float — they are drawn
+// wherever the problem was seen, so they get no home lane.
+var VSM_NODE_TYPES=[
+  {type:'patientstep',label:'Patient Step',   lane:'patient', group:'The four flows', shape:'rounded', color:'#fae8ff', border:'#a21caf', fontColor:'#4a044e', w:150, h:56, timed:true,  hint:'what happens to the person'},
+  {type:'step',       label:'Process Step',   lane:'provider',group:'The four flows', shape:'rounded', color:'#e0f2fe', border:'#0369a1', fontColor:'#0c4a6e', w:150, h:56, timed:true,  hint:'who does what, where'},
+  {type:'info',       label:'Information',    lane:'info',    group:'The four flows', shape:'rect',    color:'#ccfbf1', border:'#0f766e', fontColor:'#134e4a', w:140, h:48, timed:true,  hint:'order, result, chart, fax'},
+  {type:'supply',     label:'Supply / Equip', lane:'supply',  group:'The four flows', shape:'barrel',  color:'#fef3c7', border:'#b45309', fontColor:'#78350f', w:140, h:48, timed:true,  hint:'the thing that must be there'},
+  {type:'wait',       label:'Wait / Delay',   lane:'provider',group:'What breaks flow',shape:'hexagon',color:'#fee2e2', border:'#b91c1c', fontColor:'#450a0a', w:118, h:52, timed:true,  hint:'the queue, the inbox, the hold'},
+  {type:'handoff',    label:'Handoff',        lane:'provider',group:'What breaks flow',shape:'diamond',color:'#ffedd5', border:'#c2410c', fontColor:'#7c2d12', w:124, h:54, timed:true,  hint:'ownership changes hands'},
+  {type:'decision',   label:'Decision',       lane:'provider',group:'What breaks flow',shape:'diamond',color:'#f1f5f9', border:'#475569', fontColor:'#0f172a', w:124, h:54, timed:true,  hint:'the stream forks here'},
+  {type:'burst',      label:'Storm Burst',    lane:null,      group:'What you saw',   shape:'burst',   color:'#fef08a', border:'#b45309', fontColor:'#713f12', w:132, h:104,timed:false, hint:'a problem seen — a candidate A3'},
+  {type:'outside',    label:'Outside Entity', lane:'info',    group:'What you saw',   shape:'cylinder',color:'#ede9fe', border:'#7c3aed', fontColor:'#4c1d95', w:132, h:52, timed:false, hint:'the lab, the agency, another org'}
+];
+// Edges are typed by WHAT MOVES, because the four flows are the point.
+var VSM_FLOWS=[
+  {id:'patient', label:'patient moves',  color:'#a21caf', width:3.5, dash:'solid',  curved:false, rel:'PATIENT_MOVES', hint:'the person goes somewhere'},
+  {id:'info',    label:'information',    color:'#0f766e', width:2,   dash:'dashed', curved:true,  rel:'INFORMS',       hint:'an order, a result, a message'},
+  {id:'supply',  label:'supply',         color:'#b45309', width:2,   dash:'solid',  curved:false, rel:'SUPPLIES',      hint:'a thing is fetched or delivered'},
+  {id:'handoff', label:'handoff',        color:'#c2410c', width:3,   dash:'solid',  curved:false, rel:'HANDS_OFF',     hint:'ownership passes to someone else'},
+  {id:'push',    label:'pushed',         color:'#64748b', width:2,   dash:'solid',  curved:false, rel:'PUSHES',        hint:'sent on whether or not they are ready'},
+  {id:'pull',    label:'pulled',         color:'#15803d', width:2.5, dash:'solid',  curved:true,  rel:'PULLS',         hint:'taken when the next step is ready'},
+  {id:'rework',  label:'rework',         color:'#b91c1c', width:2.5, dash:'dotted', curved:true,  rel:'REWORKS',       hint:'back round again — the loop that should not exist'}
+];
+// Her seven wastes, said the way a nurse would recognise them.
+var VSM_WASTES=[
+  {id:'',          label:'—'},
+  {id:'waiting',   label:'Waiting'},
+  {id:'motion',    label:'Motion — hunting, walking'},
+  {id:'transport', label:'Transport — moving the patient or the thing'},
+  {id:'overproc',  label:'Over-processing — doing more than asked'},
+  {id:'inventory', label:'Inventory — stock, backlog, queue'},
+  {id:'defect',    label:'Defect / rework'},
+  {id:'overprod',  label:'Overproduction — made before needed'},
+  {id:'talent',    label:'Talent — skill not used'}
+];
+// Value from the patient's side: would they pay for this? Three buckets, because
+// two is a lie — documentation is not value, but it is not removable either.
+var VSM_VALUE=[
+  {id:'va',   label:'Value-added',   color:'#15803d'},
+  {id:'nnva', label:'Necessary',     color:'#b45309'},
+  {id:'waste',label:'Pure waste',    color:'#b91c1c'}
+];
+var vsmActiveType=null;
+var vsmLanesOn=true;
+var vsmTrueScale=false;
+var vsmFindings=null;
+
+function vsmTypeDef(t){for(var i=0;i<VSM_NODE_TYPES.length;i++)if(VSM_NODE_TYPES[i].type===t)return VSM_NODE_TYPES[i];return null;}
+function vsmFlowDef(id){for(var i=0;i<VSM_FLOWS.length;i++)if(VSM_FLOWS[i].id===id)return VSM_FLOWS[i];return null;}
+function vsmTypeLabel(t){var d=vsmTypeDef(t);return d?d.label:t;}
+function vsmIsTimed(n){var d=vsmTypeDef(n.vsmType);return!!(d&&d.timed);}
+function vsmNum(v){var x=parseFloat(v);return isFinite(x)&&x>=0?x:0;}
+function vsmVA(n){return vsmNum(n.props&&n.props.vaTime);}
+function vsmWait(n){return vsmNum(n.props&&n.props.waitTime);}
+// Minutes in, something a person says out loud back. 9 days beats 12960 min.
+function vsmFmt(m){
+  if(!m)return'0';
+  if(m<60)return(Math.round(m*10)/10)+' min';
+  if(m<60*24)return(Math.round(m/6)/10)+' hr';
+  return(Math.round(m/144)/10)+' d';
+}
+
+function vsmFitLanes(){
+  function doFit(){
+    var W=svgEl.clientWidth||900,H=svgEl.clientHeight||600;
+    if(W<10){requestAnimationFrame(function(){requestAnimationFrame(doFit);});return;}
+    var pad=54,minX=VSM_X1-pad,maxX=VSM_X2+pad,minY=VSM_LANES.patient.y1-pad,maxY=VSM_LANES.time.y2+pad;
+    zoom=Math.min(W/(maxX-minX),H/(maxY-minY),1.4);
+    pan.x=W/2-((minX+maxX)/2)*zoom;pan.y=H/2-((minY+maxY)/2)*zoom;
+    applyT();
+  }
+  requestAnimationFrame(function(){requestAnimationFrame(doFit);});
+}
+function enterVSM(){
+  updateVSMBanner();
+  if(!nodes.some(function(n){return!!n.vsmType;}))vsmFitLanes();
+  ['btn-vsm-csv','btn-vsm-md','btn-vsm-a3'].forEach(function(id){var b=document.getElementById(id);if(b)b.style.display='';});
+  renderAll();buildPanel();
+}
+function exitVSM(){
+  document.getElementById('vsm-banner').style.display='none';
+  vsmActiveType=null;svgEl.style.cursor='default';
+  ['btn-vsm-csv','btn-vsm-md','btn-vsm-a3'].forEach(function(id){var b=document.getElementById(id);if(b)b.style.display='none';});
+  renderAll();buildPanel();
+}
+function updateVSMBanner(){
+  var b=document.getElementById('vsm-banner');
+  b.textContent=vsmActiveType?
+    ('VSM — click canvas to place '+vsmTypeLabel(vsmActiveType)):
+    'VSM Mode — one patient, one condition, one observation. Times as you saw them.';
+  b.style.display='block';
+}
+
+// ── the ordered stream ────────────────────────────────────────────────────
+// The sawtooth needs a sequence. Prefer what the person drew: the moving-flow
+// edges (patient, handoff, push, pull) topologically sorted, x as the tie-break.
+// Anything in a cycle — rework loops, which are the interesting part — is
+// appended in x order rather than dropped, because a loop is not a reason to
+// refuse to draw a timeline.
+var VSM_SEQ_FLOWS=['patient','handoff','push','pull'];
+function vsmOrderedSteps(){
+  var ns=nodes.filter(vsmIsTimed);
+  if(!ns.length)return[];
+  var byId={},indeg={},adj={};
+  ns.forEach(function(n){byId[n.id]=n;indeg[n.id]=0;adj[n.id]=[];});
+  edges.forEach(function(e){
+    if(VSM_SEQ_FLOWS.indexOf(e.vsmFlow)<0||e.src===e.tgt)return;
+    if(!byId[e.src]||!byId[e.tgt])return;
+    if(adj[e.src].indexOf(e.tgt)>=0)return;
+    adj[e.src].push(e.tgt);indeg[e.tgt]++;
+  });
+  var xOf=function(id){return byId[id].x;};
+  var ready=ns.filter(function(n){return!indeg[n.id];}).map(function(n){return n.id;});
+  ready.sort(function(a,b){return xOf(a)-xOf(b);});
+  var out=[],seen={};
+  while(ready.length){
+    var id=ready.shift();if(seen[id])continue;seen[id]=1;out.push(byId[id]);
+    adj[id].forEach(function(t){if(--indeg[t]===0)ready.push(t);});
+    ready.sort(function(a,b){return xOf(a)-xOf(b);});
+  }
+  ns.filter(function(n){return!seen[n.id];}).sort(function(a,b){return a.x-b.x;}).forEach(function(n){out.push(n);});
+  return out;
+}
+function vsmTotals(){
+  var ordered=vsmOrderedSteps(),va=0,wait=0;
+  ordered.forEach(function(n){va+=vsmVA(n);wait+=vsmWait(n);});
+  var lead=va+wait;
+  return{
+    ordered:ordered, va:va, wait:wait, lead:lead,
+    ratio:lead?va/lead:0,
+    steps:ordered.length,
+    handoffs:nodes.filter(function(n){return n.vsmType==='handoff';}).length,
+    bursts:nodes.filter(function(n){return n.vsmType==='burst';}).length,
+    untimed:ordered.filter(function(n){return!vsmVA(n)&&!vsmWait(n);}).length
+  };
+}
+
+// ── the sawtooth, drawn inside the canvas ─────────────────────────────────
+// Segment WIDTH is proportional to time, which is the only way the ratio lands:
+// a 3-minute ledge next to a 7-day trough is the picture that stops the room.
+// It lives in the SVG layer so it exports with the map — the numbers must never
+// be separable from the drawing that produced them.
+function vsmSawtoothSVG(){
+  var t=vsmTotals(),lane=VSM_LANES.time;
+  var x0=VSM_X1+14,x1=VSM_X2-14,W=x1-x0;
+  var yTop=lane.y1+58,yBot=lane.y2-42,s='';
+  if(!t.ordered.length){
+    return'<text x="'+((VSM_X1+VSM_X2)/2)+'" y="'+((lane.y1+lane.y2)/2)+'" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="#a3a3a3" font-style="italic">Place timed steps and record VA and wait times — the sawtooth draws itself</text>';
+  }
+  if(!t.lead){
+    return'<text x="'+((VSM_X1+VSM_X2)/2)+'" y="'+((lane.y1+lane.y2)/2)+'" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="#b91c1c" font-style="italic">'+t.ordered.length+' step'+(t.ordered.length===1?'':'s')+' placed, no times recorded yet — the ratio is the argument, so go and get them</text>';
+  }
+  var px=x0,seg=[];
+  t.ordered.forEach(function(n){
+    var w=vsmWait(n),v=vsmVA(n);
+    if(w>0)seg.push({n:n,kind:'wait',t:w});
+    if(v>0)seg.push({n:n,kind:'va',t:v});
+  });
+  // Widths. Strict proportion is the honest drawing and an unreadable one: at
+  // any ratio she would recognise, the value-added ledges collapse below a
+  // pixel and the sawtooth flattens into a line. So every segment gets a floor
+  // and the surplus is shared out in proportion — the waits still dwarf the
+  // work, but every ledge can be seen and labelled. The exact ratio is carried
+  // by the number in the scoreboard, which is where precision belongs.
+  // "True scale" turns the floor off for the one drawing that wants the shock.
+  var MINW=vsmTrueScale?0.8:30;
+  var floor=Math.min(MINW,W/Math.max(1,seg.length));
+  var surplus=Math.max(0,W-floor*seg.length);
+  seg.forEach(function(g){g.w=floor+surplus*(g.t/t.lead);});
+  var path='',prevY=null;
+  seg.forEach(function(g){
+    var w=g.w,y=g.kind==='va'?yTop:yBot;
+    if(prevY===null)path='M '+px.toFixed(1)+' '+y;
+    else path+=' L '+px.toFixed(1)+' '+y;
+    path+=' L '+(px+w).toFixed(1)+' '+y;
+    if(w>44){
+      s+='<text x="'+(px+w/2).toFixed(1)+'" y="'+(g.kind==='va'?y-6:y+13)+'" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="'+(g.kind==='va'?'#15803d':'#b91c1c')+'">'+vsmFmt(g.t)+'</text>';
+    }
+    if(g.kind==='va')s+='<rect x="'+px.toFixed(1)+'" y="'+yTop+'" width="'+w.toFixed(1)+'" height="'+(yBot-yTop)+'" fill="#15803d" opacity=".07"/>';
+    px+=w;prevY=y;
+  });
+  s='<path d="'+path+'" fill="none" stroke="#334155" stroke-width="2" stroke-linejoin="round"/>'+s;
+  s+='<line x1="'+x0+'" y1="'+yTop+'" x2="'+x1+'" y2="'+yTop+'" stroke="#15803d" stroke-width="0.75" stroke-dasharray="3 4" opacity=".5"/>';
+  s+='<line x1="'+x0+'" y1="'+yBot+'" x2="'+x1+'" y2="'+yBot+'" stroke="#b91c1c" stroke-width="0.75" stroke-dasharray="3 4" opacity=".5"/>';
+  s+='<text x="'+(x0-4)+'" y="'+(yTop+3)+'" text-anchor="end" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#15803d">VA</text>';
+  s+='<text x="'+(x0-4)+'" y="'+(yBot+3)+'" text-anchor="end" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#b91c1c">WAIT</text>';
+  // the scoreboard — the sentence people repeat afterwards
+  var pct=(t.ratio*100),pctTxt=pct<0.1?pct.toFixed(3):pct<1?pct.toFixed(2):pct.toFixed(1);
+  var sum='Lead time '+vsmFmt(t.lead)+'   ·   Value-added '+vsmFmt(t.va)+'   ·   '+pctTxt+'% of the time is worth paying for'
+    +'   ·   '+t.steps+' steps, '+t.handoffs+' handoff'+(t.handoffs===1?'':'s')+', '+t.bursts+' storm burst'+(t.bursts===1?'':'s');
+  s+='<text x="'+((VSM_X1+VSM_X2)/2)+'" y="'+(lane.y2-14)+'" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#0f172a">'+escX(sum)+'</text>';
+  if(t.untimed)s+='<text x="'+((VSM_X1+VSM_X2)/2)+'" y="'+(lane.y1+30)+'" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#b45309" font-style="italic">'+t.untimed+' step'+(t.untimed===1?' has':'s have')+' no time recorded — the ratio below is understated</text>';
+  return s;
+}
+function renderVSMLayer(){
+  while(vsmLayer.firstChild)vsmLayer.removeChild(vsmLayer.firstChild);
+  if(mode!=='vsm')return;
+  var W=VSM_X2-VSM_X1,s='';
+  if(vsmLanesOn){
+    Object.keys(VSM_LANES).forEach(function(k){
+      var b=VSM_LANES[k],h=b.y2-b.y1;
+      s+='<rect x="'+VSM_X1+'" y="'+b.y1+'" width="'+W+'" height="'+h+'" rx="10" fill="'+b.fill+'" stroke="'+b.line+'" stroke-width="1.5"/>';
+      s+='<text x="'+(VSM_X1+14)+'" y="'+(b.y1+16)+'" font-family="system-ui,sans-serif" font-size="10" font-weight="700" letter-spacing="1.2" fill="'+b.text+'" opacity=".75">'+b.label+'</text>';
+    });
+    s+='<text x="'+(VSM_X2-14)+'" y="'+(VSM_LANES.patient.y1-8)+'" text-anchor="end" font-family="system-ui,sans-serif" font-size="10" font-style="italic" fill="#a21caf" opacity=".8">the four flows must converge at the point of care →</text>';
+  }
+  s+=vsmSawtoothSVG();
+  vsmLayer.innerHTML=s;
+}
+function vsmToggleLanes(){vsmLanesOn=!vsmLanesOn;renderVSMLayer();buildPanel();}
+function vsmToggleScale(){
+  vsmTrueScale=!vsmTrueScale;renderVSMLayer();buildPanel();
+  toast(vsmTrueScale?'True scale — every ledge is exactly proportional, and the short ones vanish':'Readable scale — ledges have a minimum width; the ratio is in the number');
+}
+function vsmSnapToLanes(){
+  snap();var moved=0;
+  nodes.forEach(function(n){
+    var t=vsmTypeDef(n.vsmType);if(!t||!t.lane)return;
+    var b=VSM_LANES[t.lane];
+    var top=b.y1+n.h/2+26,bot=b.y2-n.h/2-8;
+    if(bot<top)bot=top;
+    if(n.y<top){n.y=top;moved++;}
+    else if(n.y>bot){n.y=bot;moved++;}
+  });
+  renderAll();buildPanel();
+  toast(moved?('Moved '+moved+' node'+(moved===1?'':'s')+' into lane'):'Every typed node is already in its lane');
+}
+
+// ── placing and typing ────────────────────────────────────────────────────
+function vsmStyleNode(n,t){
+  n.vsmType=t.type;n.color=t.color;n.borderColor=t.border;n.fontColor=t.fontColor;
+  n.shape=t.shape;n.borderWidth=(t.type==='burst'||t.type==='wait')?2:1.5;n.borderDash='solid';
+  n.w=t.w;n.h=t.h;
+}
+function vsmSeedProps(n,t){
+  n.props=n.props||{};
+  if(t.timed){
+    if(!('vaTime'in n.props))n.props.vaTime='';
+    if(!('waitTime'in n.props))n.props.waitTime='';
+    if(!('who'in n.props))n.props.who='';
+  }
+}
+function applyVSMToNewNode(n){
+  var t=vsmTypeDef(vsmActiveType);if(!t)return;
+  vsmStyleNode(n,t);n.label=t.label;vsmSeedProps(n,t);
+  autoSize(n);
+}
+function setNodeVSMType(id,type){
+  snap();var n=nodeById(id);if(!n)return;
+  var t=vsmTypeDef(type);if(!t)return;
+  vsmStyleNode(n,t);vsmSeedProps(n,t);
+  if(!t.timed){if(n.props){delete n.props.vaTime;delete n.props.waitTime;}}
+  vsmFindings=null;autoSize(n);renderAll();buildPanel();
+}
+function vsmSetNodeProp(id,key,val){
+  var n=nodeById(id);if(!n)return;
+  snap();n.props=n.props||{};n.props[key]=val;
+  vsmFindings=null;renderAll();buildPanel();
+}
+function vsmSetNodeField(id,key,val){
+  var n=nodeById(id);if(!n)return;
+  snap();n[key]=val;vsmFindings=null;renderAll();buildPanel();
+}
+// Time badge and value-class stripe. Reading the map without reading the panel
+// is the point — the numbers belong on the drawing.
+function vsmNodeOverlay(n){
+  if(!n.vsmType)return'';
+  var s='';
+  if(n.vsmType==='burst'&&n.props&&(n.props.a3||'')==='yes'){
+    s+='<circle cx="'+(n.w/2-6).toFixed(1)+'" cy="'+(-n.h/2+16).toFixed(1)+'" r="8" fill="#b45309" stroke="#fff" stroke-width="1.5" pointer-events="none"/>'
+      +'<text x="'+(n.w/2-6).toFixed(1)+'" y="'+(-n.h/2+19.5).toFixed(1)+'" text-anchor="middle" font-family="system-ui,sans-serif" font-size="8" font-weight="700" fill="#fff" pointer-events="none">A3</text>';
+  }
+  if(!vsmIsTimed(n))return s;
+  var v=vsmVA(n),w=vsmWait(n);
+  if(v||w){
+    var y=(n.h/2+11).toFixed(1),parts=[];
+    if(v)parts.push({t:vsmFmt(v),c:'#15803d'});
+    if(w)parts.push({t:vsmFmt(w),c:'#b91c1c'});
+    var txt=parts.map(function(p){return'<tspan fill="'+p.c+'">'+escX(p.t)+'</tspan>';}).join('<tspan fill="#94a3b8"> / </tspan>');
+    s+='<text x="0" y="'+y+'" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" font-weight="700" pointer-events="none">'+txt+'</text>';
+  }
+  var vc=n.vsmValue;
+  if(vc){
+    var def=null;VSM_VALUE.forEach(function(d){if(d.id===vc)def=d;});
+    if(def)s+='<rect x="'+(-n.w/2).toFixed(1)+'" y="'+(n.h/2-3).toFixed(1)+'" width="'+n.w+'" height="3" fill="'+def.color+'" pointer-events="none"/>';
+  }
+  return s;
+}
+
+// ── flows ─────────────────────────────────────────────────────────────────
+// Same call as LOP: the pair of node types nearly always says what moves.
+function vsmInferFlow(s,t){
+  if(s==='burst'||t==='burst')return'info';
+  if(s==='info'||t==='info'||s==='outside'||t==='outside')return'info';
+  if(s==='supply'||t==='supply')return'supply';
+  if(s==='handoff'||t==='handoff')return'handoff';
+  if(s==='patientstep'||t==='patientstep')return'patient';
+  return'push';
+}
+function vsmStyleEdge(e,def){
+  e.vsmFlow=def.id;e.color=def.color;e.width=def.width;e.dash=def.dash;e.curved=def.curved;
+  getMarkerId(e.color);
+}
+function applyVSMEdge(srcId,tgtId){
+  var src=nodeById(srcId),tgt=nodeById(tgtId);if(!src||!tgt)return;
+  snap();
+  var def=vsmFlowDef(vsmInferFlow(src.vsmType,tgt.vsmType))||VSM_FLOWS[0];
+  var e=Object.assign({id:'e'+nextId++,src:srcId,tgt:tgtId,label:'',props:{}},DEF_EDGE);
+  vsmStyleEdge(e,def);
+  edges.push(e);selectEdgeId(e.id,false);
+  vsmFindings=null;renderAll();buildPanel();
+  toast('Flow: '+src.label+' — '+def.label+' → '+tgt.label);
+}
+function setEdgeVSMFlow(id,flowId){
+  snap();var e=edgeById(id);if(!e)return;
+  var def=vsmFlowDef(flowId);if(!def)return;
+  vsmStyleEdge(e,def);vsmFindings=null;renderAll();buildPanel();
+}
+function vsmToggleFlowLabels(){
+  snap();
+  var any=edges.some(function(e){return e.vsmFlow&&e.label;});
+  edges.forEach(function(e){
+    if(!e.vsmFlow)return;
+    if(any)e.label='';else{var d=vsmFlowDef(e.vsmFlow);e.label=d?d.label:'';}
+  });
+  renderAll();buildPanel();
+  toast(any?'Flow labels off':'Flow labels on');
+}
+// Exactly one burst is what this observation is about. Toggling one clears the
+// rest, the same rule the A3 page enforces on its own burst list.
+function vsmChooseA3(id){
+  snap();
+  var n=nodeById(id);if(!n)return;
+  var was=n.props&&n.props.a3==='yes';
+  nodes.forEach(function(m){if(m.vsmType==='burst'){m.props=m.props||{};m.props.a3='';}});
+  if(!was){n.props=n.props||{};n.props.a3='yes';}
+  renderAll();buildPanel();
+}
+function vsmRenumber(){
+  snap();
+  var ordered=vsmOrderedSteps();
+  ordered.forEach(function(n,i){n.vsmNum=i+1;});
+  nodes.forEach(function(n){if(!vsmIsTimed(n))delete n.vsmNum;});
+  renderAll();buildPanel();
+  toast(ordered.length?('Numbered '+ordered.length+' steps in flow order'):'No timed steps to number');
+}
+
+// ── the observation check ─────────────────────────────────────────────────
+// Everything here is something she says out loud in the books. It is a
+// checklist for an OBSERVATION, not for a diagram.
+function vsmCheck(){
+  var out=[],typed=nodes.filter(function(n){return!!n.vsmType;});
+  if(!typed.length){vsmFindings=[{level:'gap',text:'Nothing typed yet. Place steps from the palette above.'}];return;}
+  var t=vsmTotals();
+  if(!nodes.some(function(n){return n.vsmType==='patientstep';}))
+    out.push({level:'gap',text:'Nothing in the patient lane. A stream that never touches the patient is a process map, not a value stream.'});
+  if(!t.lead)
+    out.push({level:'gap',text:'No times recorded anywhere. The VA-to-lead ratio is the whole argument — without it this is just a flowchart.'});
+  t.ordered.forEach(function(n){
+    if(!vsmVA(n)&&!vsmWait(n))out.push({level:'gap',text:'“'+n.label+'” has no time recorded.',id:n.id});
+    if(!(n.props&&(n.props.who||'').trim()))out.push({level:'warn',text:'“'+n.label+'” has no one doing it — who did you watch?',id:n.id});
+    if(!n.vsmValue)out.push({level:'warn',text:'“'+n.label+'” is unclassified — would the patient pay for it?',id:n.id});
+  });
+  var bursts=nodes.filter(function(n){return n.vsmType==='burst';});
+  if(!bursts.length)
+    out.push({level:'warn',text:'No storm bursts. You watched a real stream and saw nothing go wrong?'});
+  bursts.forEach(function(n){
+    var d=vsmTypeDef('burst');
+    if(!n.label.trim()||n.label===d.label)out.push({level:'gap',text:'A storm burst is unnamed — say what went wrong there.',id:n.id});
+  });
+  if(bursts.length&&!bursts.some(function(n){return n.props&&n.props.a3==='yes';}))
+    out.push({level:'warn',text:'No burst is marked as this A3’s problem. Pick the one worth an A3; the rest stay as candidates.'});
+  if(t.lead&&!t.wait)
+    out.push({level:'warn',text:'Lead time is all value-added and no waiting. That almost never survives direct observation — did you reconstruct this rather than watch it?'});
+  if(t.lead&&t.ratio>0.5)
+    out.push({level:'warn',text:'Over half the lead time is value-added. Check the units — in her published streams the ratio is usually a few percent.'});
+  if(!nodes.some(function(n){return n.vsmType==='handoff';}))
+    out.push({level:'warn',text:'No handoffs marked. Handoffs are where healthcare streams break — they are worth counting explicitly.'});
+  if(!edges.some(function(e){return e.vsmFlow==='info';}))
+    out.push({level:'warn',text:'No information flow. The order, the result, the record — one of the four flows is missing.'});
+  var orphans=typed.filter(function(n){return!edges.some(function(e){return e.src===n.id||e.tgt===n.id;});});
+  orphans.forEach(function(n){out.push({level:'warn',text:'“'+n.label+'” connects to nothing.',id:n.id});});
+  vsmFindings=out;
+}
+function vsmRunCheck(){
+  vsmCheck();buildPanel();
+  var gaps=vsmFindings.filter(function(f){return f.level==='gap';}).length;
+  toast(vsmFindings.length?(gaps+' gap'+(gaps===1?'':'s')+', '+(vsmFindings.length-gaps)+' to consider'):'Observation complete — nothing missing');
+}
+function vsmBuildLegend(){
+  snap();
+  var rows=[],used={};
+  nodes.forEach(function(n){if(n.vsmType)used[n.vsmType]=1;});
+  VSM_NODE_TYPES.forEach(function(t){
+    if(!used[t.type])return;
+    rows.push({id:'lg_vsm_'+t.type,kind:'node',label:t.label,color:t.color,borderColor:t.border,borderWidth:1.5});
+  });
+  var usedF={};edges.forEach(function(e){if(e.vsmFlow)usedF[e.vsmFlow]=1;});
+  VSM_FLOWS.forEach(function(f){
+    if(!usedF[f.id])return;
+    rows.push({id:'lg_vsm_'+f.id,kind:'edge',label:f.label,color:f.color,width:f.width,dash:f.dash});
+  });
+  legendEntries=rows;legendVisible=true;normaliseLegend();
+  buildLegendSection();renderAll();buildPanel();
+  toast(rows.length?('Legend rebuilt — '+rows.length+' rows'):'Nothing typed to build a legend from');
+}
+
+// ── exports ───────────────────────────────────────────────────────────────
+function vsmRows(){
+  return vsmOrderedSteps().map(function(n,i){
+    var d=vsmTypeDef(n.vsmType),vc=null;
+    VSM_VALUE.forEach(function(x){if(x.id===n.vsmValue)vc=x;});
+    var ws=null;VSM_WASTES.forEach(function(x){if(x.id===(n.vsmWaste||''))ws=x;});
+    return{no:n.vsmNum||(i+1),name:n.label,kind:d?d.label:n.vsmType,
+      who:(n.props&&n.props.who)||'',va:vsmVA(n),wait:vsmWait(n),
+      value:vc?vc.label:'',waste:(ws&&ws.id)?ws.label:'',id:n.id};
+  });
+}
+function exportVSMCSV(){
+  var t=vsmTotals();
+  var rows=[['No','Step','Kind','Who','VA minutes','Wait minutes','Value','Waste']];
+  vsmRows().forEach(function(r){rows.push([r.no,r.name,r.kind,r.who,r.va,r.wait,r.value,r.waste]);});
+  rows.push(['','TOTAL','','',t.va,t.wait,'','']);
+  download(dlName('value-stream.csv'),'text/csv',rows.map(function(r){return r.map(lopCSVCell).join(',');}).join('\n'));
+  toast('Exported '+(rows.length-2)+' steps');
+}
+function exportVSMMarkdown(){
+  var t=vsmTotals(),rows=vsmRows(),L=[];
+  L.push('# '+modelName()+' — current state value stream');L.push('');
+  var note=(document.getElementById('model-note').value||'').trim();
+  if(note){L.push(note);L.push('');}
+  L.push('Observed as one patient, one condition, one pass. Times are what was seen, not what is scheduled.');L.push('');
+  var pct=t.ratio*100;
+  L.push('**Lead time** '+vsmFmt(t.lead)+' · **Value-added** '+vsmFmt(t.va)+' · **Waiting** '+vsmFmt(t.wait)+' · **'+(pct<1?pct.toFixed(2):pct.toFixed(1))+'%** of the elapsed time is worth paying for.');
+  L.push('');
+  L.push(t.steps+' steps, '+t.handoffs+' handoff'+(t.handoffs===1?'':'s')+', '+t.bursts+' storm burst'+(t.bursts===1?'':'s')+'.');
+  L.push('');
+  if(rows.length){
+    L.push('## The stream, in order');L.push('');
+    L.push('| # | Step | Kind | Who | VA | Wait | Value | Waste |');
+    L.push('|---|---|---|---|---|---|---|---|');
+    rows.forEach(function(r){
+      L.push('| '+r.no+' | '+r.name+' | '+r.kind+' | '+r.who+' | '+(r.va?vsmFmt(r.va):'') +' | '+(r.wait?vsmFmt(r.wait):'')+' | '+r.value+' | '+r.waste+' |');
+    });
+    L.push('');
+  }
+  var bursts=nodes.filter(function(n){return n.vsmType==='burst';});
+  if(bursts.length){
+    L.push('## Storm bursts');L.push('');
+    bursts.forEach(function(n){
+      var chosen=n.props&&n.props.a3==='yes';
+      L.push('- '+(chosen?'**':'')+n.label+(chosen?'** — this one gets the A3':'')+((n.note||'').trim()?' — '+n.note.trim():''));
+    });
+    L.push('');
+  }
+  vsmCheck();
+  if(vsmFindings&&vsmFindings.length){
+    L.push('## What the observation is still missing');L.push('');
+    vsmFindings.forEach(function(f){L.push('- '+(f.level==='gap'?'**gap** — ':'consider — ')+f.text);});
+    L.push('');
+  }
+  download(dlName('value-stream.md'),'text/markdown',L.join('\n'));
+  toast('Exported markdown');
+}
+// The handoff her method actually asks for: a storm burst becomes an A3. Writes
+// the file tools/a3.html loads, pre-seeded with the burst list, the observed
+// times, and a back-reference so the A3 knows which map it came from.
+function exportVSMA3(){
+  var bursts=nodes.filter(function(n){return n.vsmType==='burst';});
+  if(!bursts.length){toast('No storm bursts — mark what went wrong first');return;}
+  var chosen=null;bursts.forEach(function(n){if(n.props&&n.props.a3==='yes')chosen=n;});
+  if(!chosen){toast('Mark which burst this A3 is about (the A3 button in the panel)');return;}
+  var t=vsmTotals(),pct=t.ratio*100;
+  var a3={
+    version:'1.0',kind:'rcn.a3',
+    title:chosen.label,
+    status:'draft',jdi:false,owner:'',
+    observed:{who:'one patient, one condition, one pass',where:'',when:''},
+    background:'Taken from the current-state value stream “'+modelName()+'”, observed end to end.',
+    current:{
+      image:'',
+      caption:t.steps+' steps, '+t.handoffs+' handoff'+(t.handoffs===1?'':'s')+'. Lead time '+vsmFmt(t.lead)+'; value-added '+vsmFmt(t.va)+' ('+(pct<1?pct.toFixed(2):pct.toFixed(1))+'%).',
+      bursts:bursts.map(function(n){return{id:'b_'+n.id,text:n.label,chosen:n.id===chosen.id};})
+    },
+    problem:{
+      supposed:'',
+      actual:'Observed lead time '+vsmFmt(t.lead)+', of which '+vsmFmt(t.va)+' was value-added. '+(chosen.note||'').trim(),
+      gap:''
+    },
+    whys:['','','','',''],rootcause:'',
+    target:{image:'',text:''},
+    countermeasures:[],plan:[],
+    followup:{measure:'',baseline:vsmFmt(t.lead)+' lead time',target:'',checkdate:'',actual:''},
+    effects:'',
+    source:{map:modelName(),burstId:chosen.id}
+  };
+  var slug=String(chosen.label).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||'a3';
+  download(slug+'.a3.rcn.json','application/json',JSON.stringify(a3,null,2));
+  toast('A3 seeded — open it in tools/a3.html with Load…');
+}
+
+// ── panel ─────────────────────────────────────────────────────────────────
+function buildVSMPalette(){
+  var div=document.createElement('div');
+  var hd=document.createElement('div');
+  hd.className='section-hd';hd.style.cssText='background:#fdf4ff;color:#a21caf';
+  hd.textContent='Value Stream — Jimmerson';
+  div.appendChild(hd);
+  var groups={};VSM_NODE_TYPES.forEach(function(t){(groups[t.group]=groups[t.group]||[]).push(t);});
+  Object.keys(groups).forEach(function(g){
+    var gl=document.createElement('div');
+    gl.style.cssText='font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:6px 0 2px';
+    gl.textContent=g;div.appendChild(gl);
+    var wrap=document.createElement('div');
+    wrap.style.cssText='display:flex;flex-wrap:wrap;gap:4px';
+    groups[g].forEach(function(t){
+      var sw=document.createElement('button');
+      sw.className='tb-btn';
+      sw.style.cssText='font-size:10px;padding:3px 7px';
+      sw.style.background=t.color;sw.style.color=t.fontColor;
+      sw.style.border='1.5px solid '+(vsmActiveType===t.type?'#1e293b':t.border);
+      sw.title=t.hint+' — click, then click the canvas';
+      sw.innerHTML='<span style="font-weight:600">'+t.label+'</span>';
+      sw.onclick=(function(tt){return function(){
+        vsmActiveType=(vsmActiveType===tt.type)?null:tt.type;
+        svgEl.style.cursor=vsmActiveType?'crosshair':'default';
+        updateVSMBanner();buildPanel();
+      };})(t);
+      wrap.appendChild(sw);
+    });
+    div.appendChild(wrap);
+  });
+  var tools=document.createElement('div');
+  tools.style.cssText='display:flex;flex-wrap:wrap;gap:4px;padding:8px 0 2px';
+  tools.innerHTML='<button class="tb-btn" style="font-size:10px" onclick="vsmRenumber()" title="Number the steps in flow order, so the map and the step list agree">1–2–3 Renumber</button>'
+    +'<button class="tb-btn" style="font-size:10px" onclick="vsmSnapToLanes()" title="Move each typed node into the lane its type belongs to">Snap to lanes</button>'
+    +'<button class="tb-btn'+(vsmLanesOn?' active':'')+'" style="font-size:10px" onclick="vsmToggleLanes()" title="Show or hide the lane guide (the sawtooth always draws)">Lanes</button>'
+    +'<button class="tb-btn'+(vsmTrueScale?' active':'')+'" style="font-size:10px" onclick="vsmToggleScale()" title="True scale draws every segment exactly proportional — honest, and unreadable at real ratios. Off, each ledge gets a minimum width and the number carries the precision.">True scale</button>'
+    +'<button class="tb-btn" style="font-size:10px" onclick="vsmToggleFlowLabels()" title="Write what moves on every typed arrow, or clear them all">Flow labels</button>'
+    +'<button class="tb-btn" style="font-size:10px" onclick="vsmBuildLegend()" title="Rebuild the legend from the step and flow kinds actually used">Build legend</button>';
+  div.appendChild(tools);
+  var hint=document.createElement('div');
+  hint.style.cssText='font-size:10px;color:#94a3b8;padding:6px 0 0;line-height:1.6';
+  hint.innerHTML='Click a type, then click the canvas to place it.<br>Use <b>+Edge</b> to connect — what moves is read from the two step types.<br><b>Record the times as you saw them</b>, not as the policy says.';
+  div.appendChild(hint);
+  return div;
+}
+function buildVSMTimeline(){
+  var div=document.createElement('div'),t=vsmTotals(),rows=vsmRows();
+  var pct=t.ratio*100,pctTxt=pct<0.1?pct.toFixed(3):pct<1?pct.toFixed(2):pct.toFixed(1);
+  var html='<div class="section-hd" style="background:#fafafa;color:#334155">Timeline <span style="font-size:10px;color:#94a3b8">'+rows.length+' steps</span></div>';
+  html+='<div style="padding:6px 12px;display:grid;grid-template-columns:auto auto;gap:2px 10px;font-size:11px">'
+    +'<span style="color:#64748b">Lead time</span><b>'+vsmFmt(t.lead)+'</b>'
+    +'<span style="color:#15803d">Value-added</span><b style="color:#15803d">'+vsmFmt(t.va)+'</b>'
+    +'<span style="color:#b91c1c">Waiting</span><b style="color:#b91c1c">'+vsmFmt(t.wait)+'</b>'
+    +'<span style="color:#64748b">Worth paying for</span><b>'+(t.lead?pctTxt+'%':'—')+'</b>'
+    +'<span style="color:#64748b">Handoffs</span><b>'+t.handoffs+'</b>'
+    +'<span style="color:#64748b">Storm bursts</span><b>'+t.bursts+'</b>'
+    +'</div>';
+  if(!rows.length){
+    html+='<div style="padding:2px 12px 8px;font-size:11px;color:#94a3b8">Place steps and record their times — they appear here in flow order.</div>';
+  }else{
+    html+='<div style="padding:2px 10px 8px">';
+    rows.forEach(function(r){
+      var n=nodeById(r.id);
+      html+='<div style="border:1px solid #e2e8f0;border-radius:6px;padding:5px 6px;margin-bottom:5px;background:#fff">'
+        +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+        +'<span style="background:#334155;color:#fff;font-size:10px;font-weight:700;border-radius:9px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center">'+r.no+'</span>'
+        +'<span style="font-size:12px;font-weight:600;color:#1e293b;flex:1;cursor:pointer" onclick="selectNodeId(\''+r.id+'\',false);buildPanel()" title="Select on the canvas">'+escH(r.name)+'</span></div>'
+        +'<div style="display:flex;gap:4px;margin-bottom:3px">'
+        +'<span style="font-size:10px;color:#15803d;width:30px;flex-shrink:0;padding-top:3px">VA</span>'
+        +'<input value="'+escH(String(r.va||''))+'" placeholder="min" style="width:56px;font-size:11px;padding:2px 4px;border:1px solid '+(r.va?'#bbf7d0':'#fca5a5')+';border-radius:4px" onchange="vsmSetNodeProp(\''+r.id+'\',\'vaTime\',this.value)"/>'
+        +'<span style="font-size:10px;color:#b91c1c;width:34px;flex-shrink:0;padding-top:3px;text-align:right">Wait</span>'
+        +'<input value="'+escH(String(r.wait||''))+'" placeholder="min" style="width:56px;font-size:11px;padding:2px 4px;border:1px solid '+(r.wait?'#fecaca':'#e2e8f0')+';border-radius:4px" onchange="vsmSetNodeProp(\''+r.id+'\',\'waitTime\',this.value)"/>'
+        +'</div>'
+        +'<div class="prop-kv-row" style="padding:0"><span style="font-size:10px;color:#64748b;width:30px;flex-shrink:0">Who</span>'
+        +'<input value="'+escH(r.who)+'" placeholder="who you watched" style="flex:1;font-size:11px;padding:2px 4px;border:1px solid '+(r.who?'#e2e8f0':'#fed7aa')+';border-radius:4px;min-width:0" onchange="vsmSetNodeProp(\''+r.id+'\',\'who\',this.value)"/></div>'
+        +'</div>';
+    });
+    html+='</div>';
+  }
+  html+='<div style="padding:0 10px 8px;display:flex;gap:4px"><button class="tb-btn" style="font-size:10px;flex:1" onclick="vsmRunCheck()">Check observation</button></div>';
+  if(vsmFindings){
+    if(!vsmFindings.length){
+      html+='<div style="padding:0 12px 10px;font-size:11px;color:#15803d">Nothing missing — times, people, value classes, bursts and all four flows are present.</div>';
+    }else{
+      html+='<div style="padding:0 10px 10px">';
+      vsmFindings.forEach(function(f){
+        var col=f.level==='gap'?'#b91c1c':'#b45309',bg=f.level==='gap'?'#fef2f2':'#fffbeb';
+        html+='<div style="font-size:11px;color:'+col+';background:'+bg+';border-radius:5px;padding:4px 6px;margin-bottom:3px;line-height:1.45'+(f.id?';cursor:pointer':'')+'"'
+          +(f.id?' onclick="selectNodeId(\''+f.id+'\',false);buildPanel()"':'')+'>'+escH(f.text)+'</div>';
+      });
+      html+='</div>';
+    }
+  }
+  div.innerHTML=html;
+  return div;
+}
+function buildVSMNodeSection(n){
+  var div=document.createElement('div');
+  var tBtns=VSM_NODE_TYPES.map(function(t){
+    return'<button class="tb-btn'+(n.vsmType===t.type?' active':'')+'" style="font-size:10px;border-color:'+t.border+';color:'+t.border+'" title="'+t.hint+'" onclick="setNodeVSMType(\''+n.id+'\',\''+t.type+'\')">'+t.label+'</button>';
+  }).join('');
+  var html='<div class="section-hd" style="background:#fdf4ff;color:#a21caf">Step</div>'
+    +'<div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:4px;flex-wrap:wrap">'+tBtns+'</div>';
+  if(vsmIsTimed(n)){
+    var vBtns=VSM_VALUE.map(function(v){
+      return'<button class="tb-btn'+(n.vsmValue===v.id?' active':'')+'" style="font-size:10px;border-color:'+v.color+';color:'+v.color+'" onclick="vsmSetNodeField(\''+n.id+'\',\'vsmValue\',\''+(n.vsmValue===v.id?'':v.id)+'\')">'+v.label+'</button>';
+    }).join('');
+    html+='<div style="padding:6px 12px 2px;font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Would the patient pay for it?</div>'
+      +'<div style="padding:0 12px 6px;display:flex;gap:4px;flex-wrap:wrap">'+vBtns+'</div>';
+    var wOpts=VSM_WASTES.map(function(w){
+      return'<option value="'+w.id+'"'+((n.vsmWaste||'')===w.id?' selected':'')+'>'+w.label+'</option>';
+    }).join('');
+    html+='<div class="prop-kv-row" style="padding:2px 12px 8px"><span style="font-size:10px;color:#64748b;width:44px;flex-shrink:0">Waste</span>'
+      +'<select style="flex:1;font-size:11px;padding:2px 4px;border:1px solid #e2e8f0;border-radius:4px;min-width:0" onchange="vsmSetNodeField(\''+n.id+'\',\'vsmWaste\',this.value)">'+wOpts+'</select></div>';
+  }
+  if(n.vsmType==='burst'){
+    var on=n.props&&n.props.a3==='yes';
+    html+='<div style="padding:6px 12px 10px">'
+      +'<button class="tb-btn'+(on?' active':'')+'" style="font-size:10px;width:100%;border-color:#b45309;color:'+(on?'#fff':'#b45309')+';'+(on?'background:#b45309;':'')+'" onclick="vsmChooseA3(\''+n.id+'\')" title="Exactly one burst is what this A3 is about; the rest stay named as candidates">'
+      +(on?'✓ This burst gets the A3':'Make this the A3’s problem')+'</button>'
+      +'<div style="font-size:10px;color:#94a3b8;padding-top:5px;line-height:1.5">Name the burst with what went wrong. Put the detail in the node’s note — it carries into the A3.</div></div>';
+  }
+  div.innerHTML=html;
+  return div;
+}
+function buildVSMEdgeSection(e){
+  var div=document.createElement('div');
+  var src=nodeById(e.src),tgt=nodeById(e.tgt);
+  var btns=VSM_FLOWS.map(function(f){
+    return'<button class="tb-btn'+(e.vsmFlow===f.id?' active':'')+'" style="font-size:10px;border-color:'+f.color+';color:'+f.color+'" title="'+f.hint+'" onclick="setEdgeVSMFlow(\''+e.id+'\',\''+f.id+'\')">'+f.label+'</button>';
+  }).join('');
+  var def=vsmFlowDef(e.vsmFlow);
+  div.innerHTML='<div class="section-hd" style="background:#fdf4ff;color:#a21caf">What moves</div>'
+    +(def&&src&&tgt?'<div style="padding:5px 12px;font-size:11px;color:#475569;font-style:italic">'+escH(src.label)+' <b style="color:'+def.color+';font-style:normal">'+def.label+'</b> '+escH(tgt.label)+'</div>':'')
+    +'<div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:4px;flex-wrap:wrap">'+btns+'</div>';
+  return div;
+}
+
 // ── OPM MODE (Object-Process Methodology — ISO 19450) ──────────────────────
 
 var OPM_VALID_LINKS={
@@ -4075,6 +4819,8 @@ function applyOPMToNewNode(n){
       n.fontColor='#1e293b';
       n.shape=OPM_NODE_TYPES[i].shape;
       n.label=opmActiveType;
+      n.opmEssence='informatical';
+      n.opmAffiliation='systemic';
       autoSize(n);
       break;
     }
@@ -4088,6 +4834,144 @@ function setNodeOPMType(id,opmType){
     if(OPM_NODE_TYPES[i].type===opmType){n.color=OPM_NODE_TYPES[i].color;n.shape=OPM_NODE_TYPES[i].shape;break;}
   }
   autoSize(n);renderAll();buildPanel();
+}
+
+// --- Essence and affiliation (ISO 19450 7.3.3 thing generic properties) ---
+// essence:     'informatical' (default, flat contour) | 'physical' (shadowed contour)
+// affiliation: 'systemic'     (default, solid contour) | 'environmental' (dashed contour)
+// Both render in EVERY mode, like polarity — a diagram read outside OPM mode
+// must not silently lose its system boundary.
+function opmEssence(n){return n&&n.opmEssence==='physical'?'physical':'informatical';}
+function opmAffiliation(n){return n&&n.opmAffiliation==='environmental'?'environmental':'systemic';}
+function opmIsPhysical(n){return !!n&&n.opmEssence==='physical';}
+function opmIsEnvironmental(n){return !!n&&n.opmAffiliation==='environmental';}
+function setNodeOPMEssence(id,v){
+  snap();var n=nodeById(id);if(!n)return;
+  n.opmEssence=(v==='physical')?'physical':'informatical';
+  renderAll();buildPanel();
+}
+function setNodeOPMAffiliation(id,v){
+  snap();var n=nodeById(id);if(!n)return;
+  n.opmAffiliation=(v==='environmental')?'environmental':'systemic';
+  renderAll();buildPanel();
+}
+// The drop shadow that marks a physical thing. Drawn behind the shape.
+function opmShadowHTML(n,sw){
+  if(!opmIsPhysical(n))return'';
+  return'<g transform="translate(3,3)" opacity=".3" pointer-events="none">'
+    +shapeHTML(n,'#475569','#475569',sw||1.5,'solid')+'</g>';
+}
+
+// --- Functional form (Odum's interaction, made explicit) -------------------
+// OPM's AND over consumption links says "both are needed". It does NOT say
+// whether output scales with the product, saturates in the abundant input, or
+// is simply additive — and those three give opposite investment advice.
+// Declaring it costs a sentence; resolving it would cost a formula. We only
+// ask for the declaration.
+var OPM_FUNC_FORMS=[
+  {id:'multiplicative',label:'Multiplicative',hint:'out ≈ k·X·Y — zero in either kills it; returns are superadditive. Invest in both.'},
+  {id:'limiting',      label:'Limiting factor',hint:'out ≈ k·min(X,Y) — saturates in the abundant input. Only the scarce one moves it.'},
+  {id:'additive',      label:'Additive',      hint:'out ≈ aX + bY — independent contributions. Spend wherever it is cheapest.'},
+];
+function setNodeOPMFuncForm(id,v){
+  snap();var n=nodeById(id);if(!n)return;
+  if(n.opmFunctionalForm===v)n.opmFunctionalForm=null;else n.opmFunctionalForm=v;
+  renderAll();buildPanel();
+}
+
+// --- The four structural checks --------------------------------------------
+// Every one of these reads link types and the two generic properties only.
+// None needs a number, a unit, or a formula.
+var opmCheckResults=null;
+function opmEdgesOfType(t){return edges.filter(function(e){return e.linkType===t;});}
+function runOPMChecks(){
+  var out=[];
+  var procs=nodes.filter(function(n){return n.opmType==='Process';});
+  var cons=opmEdgesOfType('Consumption');   // src = object, tgt = process
+  var res=opmEdgesOfType('Result');         // src = process, tgt = object
+  var aps=opmEdgesOfType('AP');             // src = part,    tgt = whole
+
+  // 1. Sink rule — every process must yield something that leaves the system.
+  procs.forEach(function(p){
+    var yielded=res.filter(function(e){return e.src===p.id;}).map(function(e){return nodeById(e.tgt);}).filter(Boolean);
+    if(!yielded.length){
+      out.push({check:'sink',level:'warn',nodes:[p.id],
+        msg:'“'+p.label+'” yields nothing. Every real process produces something, including loss.'});
+    }else if(!yielded.some(opmIsEnvironmental)){
+      out.push({check:'sink',level:'warn',nodes:[p.id],
+        msg:'“'+p.label+'” yields only systemic objects — nothing leaves the system. Name what it burns and mark that object environmental.'});
+    }
+  });
+
+  // 2. Affiliation consistency — a part of an environmental whole is not systemic.
+  aps.forEach(function(e){
+    var part=nodeById(e.src),whole=nodeById(e.tgt);
+    if(!part||!whole)return;
+    if(opmIsEnvironmental(whole)&&!opmIsEnvironmental(part)){
+      out.push({check:'affiliation',level:'warn',nodes:[part.id,whole.id],
+        msg:'“'+part.label+'” is systemic but is a part of “'+whole.label+'”, which is environmental. A part cannot sit inside the boundary when its whole sits outside.'});
+    }
+  });
+
+  // 3. Functional form — 2+ things consumed, and no statement of how they combine.
+  procs.forEach(function(p){
+    var ins=cons.filter(function(e){return e.tgt===p.id;});
+    if(ins.length>=2&&!p.opmFunctionalForm){
+      out.push({check:'funcform',level:'info',nodes:[p.id],
+        msg:'“'+p.label+'” consumes '+ins.length+' things with no functional form declared. Multiplicative, limiting factor, and additive give opposite advice about where to invest.'});
+    }
+  });
+
+  // 4. Unsourced systemic input — consumed inside the system, produced nowhere.
+  //    An environmental object with no source is fine: that IS the outside world.
+  var consumedIds={};
+  cons.forEach(function(e){consumedIds[e.src]=true;});
+  var yieldedIds={};
+  res.forEach(function(e){yieldedIds[e.tgt]=true;});
+  Object.keys(consumedIds).forEach(function(id){
+    var n=nodeById(id);if(!n||opmIsEnvironmental(n)||yieldedIds[id])return;
+    var money=/financ|money|fund|cash|revenue|payment|premium|dollar|budget|grant|wage/i.test(n.label);
+    out.push({check:'unsourced',level:'warn',nodes:[n.id],
+      msg:'“'+n.label+'” is systemic and gets consumed, but nothing yields it — an unlimited source inside the boundary.'
+        +(money?' It reads as money: this is where a counterflow belongs, since nothing pays anything back.':'')});
+  });
+
+  return out;
+}
+function opmRunAndShow(){
+  opmCheckResults=runOPMChecks();
+  buildPanel();
+  toast(opmCheckResults.length?(opmCheckResults.length+' finding'+(opmCheckResults.length===1?'':'s')):'All four checks pass');
+}
+function opmClearChecks(){opmCheckResults=null;buildPanel();}
+function opmSelectFinding(i){
+  var f=opmCheckResults&&opmCheckResults[i];if(!f)return;
+  selected={nodes:f.nodes.slice(),edges:[],lines:[],triples:[]};
+  renderAll();
+}
+var OPM_CHECK_TITLES={sink:'Sink rule',affiliation:'Affiliation',funcform:'Functional form',unsourced:'Unsourced input'};
+function buildOPMChecksSection(){
+  var d=document.createElement('div');
+  var body='';
+  if(opmCheckResults===null){
+    body='<div style="padding:8px 12px;font-size:11px;color:#64748b">Four structural checks. None needs a number.</div>';
+  }else if(!opmCheckResults.length){
+    body='<div style="padding:8px 12px;font-size:12px;color:#166534">✓ All four checks pass.</div>';
+  }else{
+    body=opmCheckResults.map(function(f,i){
+      var col=f.level==='warn'?'#b91c1c':'#b45309';
+      var bg=f.level==='warn'?'#fef2f2':'#fffbeb';
+      return '<div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;background:'+bg+';cursor:pointer" onclick="opmSelectFinding('+i+')">'
+        +'<div style="font-size:10px;font-weight:700;color:'+col+';text-transform:uppercase;letter-spacing:.03em">'+OPM_CHECK_TITLES[f.check]+'</div>'
+        +'<div style="font-size:11px;color:#334155;line-height:1.45">'+escH(f.msg)+'</div></div>';
+    }).join('');
+  }
+  d.innerHTML='<div class="section-hd" style="background:#f0fdfa;color:#0f766e">Model Checks</div>'
+    +'<div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:6px">'
+    +'<button class="tb-btn" onclick="opmRunAndShow()" style="border-color:#0f766e;color:#0f766e">Run checks</button>'
+    +(opmCheckResults!==null?'<button class="tb-btn" onclick="opmClearChecks()">Clear</button>':'')
+    +'</div>'+body;
+  return d;
 }
 
 function buildOPMPalette(){
@@ -4434,14 +5318,20 @@ function exportOPMCypher(){
   nodes.forEach(function(n){
     var label=n.opmType==='Process'?'Process':'Object';
     var sub=n.opmSubtype?':'+n.opmSubtype:'';
-    lines.push('CREATE (n'+n.id+':'+label+sub+' {name: '+JSON.stringify(n.label)+'})');
+    // Essence and affiliation ride as Neo4j labels, matching the hand-built
+    // Second Language export: (:Object:Informatical:Systemic {...})
+    var ess=opmEssence(n)==='physical'?':Physical':':Informatical';
+    var aff=opmAffiliation(n)==='environmental'?':Environmental':':Systemic';
+    // opm_id is the join key that makes this a lens rather than a one-way export
+    // (Medvedev, Shani & Dori 2021) — names collide, ids do not.
+    lines.push('MERGE (n'+n.id+':'+label+sub+ess+aff+' {name: '+JSON.stringify(n.label)+', opm_id: '+JSON.stringify(n.id)+'})');
   });
   lines.push('');
   edges.forEach(function(e){
     var src=nodeById(e.src),tgt=nodeById(e.tgt);if(!src||!tgt)return;
     var rel=e.linkType?OPM_REL_LABELS[e.linkType]:(e.label?e.label.toUpperCase().replace(/\s+/g,'_'):'RELATES');
-    var props=[];if(e.opl)props.push('opl: '+JSON.stringify(e.opl));
-    lines.push('MATCH (a {name:'+JSON.stringify(src.label)+'}),(b {name:'+JSON.stringify(tgt.label)+'})\nCREATE (a)-[:'+rel+(props.length?' {'+props.join(', ')+'}':'')+']->(b)');
+    var props=['opm_id: '+JSON.stringify(e.id)];if(e.opl)props.push('opl: '+JSON.stringify(e.opl));
+    lines.push('MATCH (a {opm_id:'+JSON.stringify(src.id)+'}),(b {opm_id:'+JSON.stringify(tgt.id)+'})\nMERGE (a)-[:'+rel+' {'+props.join(', ')+'}]->(b)');
   });
   download(dlName('opm-cypher'),'text/plain',lines.join('\n'));
   toast('OPM Cypher downloaded');
@@ -4483,6 +5373,12 @@ var OPM_COMPOUND_TPL={
 
 var OPM_STRUCT_ORDER={AP:0,GS:1,EC:2,CI:3};
 
+// ISO 19450 declaration sentence: "<Name> is a[n] <essence> and <affiliation> <thing>."
+function opmDeclSentence(n){
+  var ess=opmEssence(n),aff=opmAffiliation(n);
+  var noun=n.opmType==='Process'?'process':'object';
+  return n.label+' is a'+(ess==='informatical'?'n ':' ')+ess+' and '+aff+' '+noun+'.';
+}
 function generateOPLText(){
   var mn=document.getElementById('model-name').value.trim()||'OPM Diagram';
   var lines=[
@@ -4495,14 +5391,14 @@ function generateOPLText(){
   // 1. Object declarations
   var objs=nodes.filter(function(n){return n.opmType==='Object';});
   if(objs.length){
-    objs.forEach(function(n){lines.push(n.label+' is an Object.');});
+    objs.forEach(function(n){lines.push(opmDeclSentence(n));});
     lines.push('');
   }
 
   // 2. Process declarations
   var procs=nodes.filter(function(n){return n.opmType==='Process';});
   if(procs.length){
-    procs.forEach(function(n){lines.push(n.label+' is a Process.');});
+    procs.forEach(function(n){lines.push(opmDeclSentence(n));});
     lines.push('');
   }
 
@@ -5367,10 +6263,10 @@ function setAllStraight(on){if(on){document.getElementById('chk-curved').checked
 function syncCC(){if(!edges.length)return;document.getElementById('chk-curved').checked=edges.every(function(e){return e.curved;});document.getElementById('chk-straight').checked=edges.every(function(e){return !e.curved;});}
 function svgPt(cx,cy){var r=svgEl.getBoundingClientRect();return{x:(cx-r.left-pan.x)/zoom,y:(cy-r.top-pan.y)/zoom};}
 function toScreen(sx,sy){return{x:sx*zoom+pan.x,y:sy*zoom+pan.y};}
-function applyT(){var t='translate('+pan.x+','+pan.y+') scale('+zoom+')';nodesLayer.setAttribute('transform',t);edgesLayer.setAttribute('transform',t);linesLayer.setAttribute('transform',t);wardleyLayer.setAttribute('transform',t);lopLayer.setAttribute('transform',t);triplesLayer.setAttribute('transform',t);renderCLDOverlay();}function setMode(m){var prev=mode;mode=m;if(m!=='edge')stickyEdge=false;if(m!=='node')stickyNode=false;['select','node','edge','freeline','arrow','cld','eip','nrm','opm','sfd','lop','trace','wardley'].forEach(function(k){var b=document.getElementById('btn-'+k);if(b)b.classList.toggle('active',k===m);});var bb=document.getElementById('btn-basic');if(bb)bb.classList.toggle('active',m==='select'||m==='node'||m==='edge');svgEl.style.cursor=(m==='node'||m==='freeline'||m==='arrow')?'crosshair':'default';document.getElementById('edge-hint').style.display=m==='edge'?'block':'none';if(m!=='edge')clearEdgeDrag();if(m!=='freeline'&&m!=='arrow'){freeDraw=null;while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);}if(m==='edge'&&prev==='opm')prevGraphMode='opm';else if(m==='edge'&&prev==='sfd')prevGraphMode='sfd';else if(m==='edge'&&prev==='lop')prevGraphMode='lop';else if(m!=='edge')prevGraphMode=null;if(m==='cld'){document.getElementById('cld-banner').style.display='block';document.getElementById('cld-mode-opts').style.display='block';enterCLD();}else{document.getElementById('cld-banner').style.display='none';document.getElementById('cld-mode-opts').style.display='none';if(prev==='cld')exitCLD();}if(m==='eip'){enterEIP();}else if(prev==='eip'){exitEIP();}if(m==='nrm'){enterNRM();}else if(prev==='nrm'){exitNRM();}
+function applyT(){var t='translate('+pan.x+','+pan.y+') scale('+zoom+')';nodesLayer.setAttribute('transform',t);edgesLayer.setAttribute('transform',t);linesLayer.setAttribute('transform',t);wardleyLayer.setAttribute('transform',t);lopLayer.setAttribute('transform',t);vsmLayer.setAttribute('transform',t);triplesLayer.setAttribute('transform',t);renderCLDOverlay();}function setMode(m){var prev=mode;mode=m;if(m!=='edge')stickyEdge=false;if(m!=='node')stickyNode=false;['select','node','edge','freeline','arrow','cld','eip','nrm','opm','sfd','lop','vsm','trace','wardley'].forEach(function(k){var b=document.getElementById('btn-'+k);if(b)b.classList.toggle('active',k===m);});var bb=document.getElementById('btn-basic');if(bb)bb.classList.toggle('active',m==='select'||m==='node'||m==='edge');svgEl.style.cursor=(m==='node'||m==='freeline'||m==='arrow')?'crosshair':'default';document.getElementById('edge-hint').style.display=m==='edge'?'block':'none';if(m!=='edge')clearEdgeDrag();if(m!=='freeline'&&m!=='arrow'){freeDraw=null;while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);}if(m==='edge'&&prev==='opm')prevGraphMode='opm';else if(m==='edge'&&prev==='sfd')prevGraphMode='sfd';else if(m==='edge'&&prev==='lop')prevGraphMode='lop';else if(m==='edge'&&prev==='vsm')prevGraphMode='vsm';else if(m!=='edge')prevGraphMode=null;if(m==='cld'){document.getElementById('cld-banner').style.display='block';document.getElementById('cld-mode-opts').style.display='block';enterCLD();}else{document.getElementById('cld-banner').style.display='none';document.getElementById('cld-mode-opts').style.display='none';if(prev==='cld')exitCLD();}if(m==='eip'){enterEIP();}else if(prev==='eip'){exitEIP();}if(m==='nrm'){enterNRM();}else if(prev==='nrm'){exitNRM();}
 if(m==='opm'){enterOPM();}else if(prev==='opm'){exitOPM();}
 if(m==='sfd'){document.getElementById('sfd-banner').style.display='block';enterSFD();}else{document.getElementById('sfd-banner').style.display='none';if(prev==='sfd')exitSFD();}
-if(m==='lop'){enterLOP();}else if(prev==='lop'){exitLOP();}
+if(m==='lop'){enterLOP();}else if(prev==='lop'){exitLOP();}if(m==='vsm'){enterVSM();}else if(prev==='vsm'){exitVSM();}
 if(m==='trace'){document.getElementById('trace-banner').style.display='block';document.getElementById('trace-mode-opts').style.display='block';enterTrace();}else{document.getElementById('trace-banner').style.display='none';document.getElementById('trace-mode-opts').style.display='none';if(prev==='trace')exitTrace();}
 if(m==='wardley'){document.getElementById('wardley-banner').style.display='block';enterWardley();}else{document.getElementById('wardley-banner').style.display='none';if(prev==='wardley')exitWardley();}}
 function clearEdgeDrag(){edgeDrag={active:false,srcId:null};while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);}
@@ -5388,6 +6284,7 @@ function eLO(e){var ep=edgeEndpoints(e);if(!ep||ep.selfLoop)return{nx:0,ny:-1};v
 function arcHit(e,px,py,tol){tol=tol||10;var src=nodeById(e.src),tgt=nodeById(e.tgt);if(!src||!tgt)return false;if(src.id===tgt.id){var m=midPt(e);return Math.sqrt(Math.pow(px-m.x,2)+Math.pow(py-m.y,2))<20;}var ep=edgeEndpoints(e);if(!ep)return false;for(var i=0;i<=40;i++){var tt=i/40,bx,by;if(ep.straight){bx=(1-tt)*ep.srcPt.x+tt*ep.tgtPt.x;by=(1-tt)*ep.srcPt.y+tt*ep.tgtPt.y;}else{bx=Math.pow(1-tt,2)*ep.srcPt.x+2*(1-tt)*tt*ep.cpx+tt*tt*ep.tgtPt.x;by=Math.pow(1-tt,2)*ep.srcPt.y+2*(1-tt)*tt*ep.cpy+tt*tt*ep.tgtPt.y;}if(Math.sqrt(Math.pow(px-bx,2)+Math.pow(py-by,2))<tol)return true;}return false;}
 function dashAttr(d){return d==='dashed'?'stroke-dasharray="8 5"':d==='dotted'?'stroke-dasharray="2 4"':'';}
 function shapeHTML(n,fill,stroke,sw,bDash){var hw=n.w/2,hh=n.h/2;sw=sw||1.5;var da=dashAttr(bDash||n.borderDash||'solid');var daAttr=da?' '+da:'';switch(n.shape){case'rect':return'<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+n.w+'" height="'+n.h+'" rx="2" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';case'rounded':return'<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+n.w+'" height="'+n.h+'" rx="10" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';case'diamond':return'<polygon points="0,'+(-hh*1.35)+' '+(hw*1.25)+',0 0,'+(hh*1.35)+' '+(-hw*1.25)+',0" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';case'hexagon':{var pts=[];for(var i=0;i<6;i++){var a=Math.PI/6+i*Math.PI/3;pts.push((hw*Math.cos(a)).toFixed(1)+','+(hh*Math.sin(a)).toFixed(1));}return'<polygon points="'+pts.join(' ')+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';}case'cylinder':return'<ellipse cx="0" cy="'+(-hh+9)+'" rx="'+hw+'" ry="9" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/><rect x="'+(-hw)+'" y="'+(-hh+9)+'" width="'+n.w+'" height="'+(n.h-9)+'" fill="'+fill+'" stroke="none"/><line x1="'+(-hw)+'" y1="'+(-hh+9)+'" x2="'+(-hw)+'" y2="'+hh+'" stroke="'+stroke+'" stroke-width="'+sw+'"/><line x1="'+hw+'" y1="'+(-hh+9)+'" x2="'+hw+'" y2="'+hh+'" stroke="'+stroke+'" stroke-width="'+sw+'"/><ellipse cx="0" cy="'+hh+'" rx="'+hw+'" ry="9" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';case'barrel':return'<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+n.w+'" height="'+n.h+'" rx="14" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/><line x1="'+(-hw+18)+'" y1="'+(-hh)+'" x2="'+(-hw+18)+'" y2="'+hh+'" stroke="'+stroke+'" stroke-width="1" opacity=".35"/><line x1="'+(hw-18)+'" y1="'+(-hh)+'" x2="'+(hw-18)+'" y2="'+hh+'" stroke="'+stroke+'" stroke-width="1" opacity=".35"/>';
+case'burst':{var bp=[],BN=12;for(var bi=0;bi<BN*2;bi++){var ba=-Math.PI/2+bi*Math.PI/BN,br=(bi%2===0)?1:0.6;bp.push((hw*br*Math.cos(ba)).toFixed(1)+','+(hh*br*Math.sin(ba)).toFixed(1));}return'<polygon points="'+bp.join(' ')+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+' stroke-linejoin="round"/>';}
 case'stock':return'<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+n.w+'" height="'+n.h+'" rx="3" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/>';
 case'valve':{var r=Math.min(hw,hh);var x0=(-r*0.58).toFixed(1),y0=(-r*0.58).toFixed(1),x1=(r*0.58).toFixed(1),y1=(r*0.58).toFixed(1);return'<circle cx="0" cy="0" r="'+r.toFixed(1)+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+daAttr+'/><line x1="'+x0+'" y1="'+y0+'" x2="'+x1+'" y2="'+y1+'" stroke="'+stroke+'" stroke-width="'+sw+'" pointer-events="none"/><line x1="'+x1+'" y1="'+y0+'" x2="'+x0+'" y2="'+y1+'" stroke="'+stroke+'" stroke-width="'+sw+'" pointer-events="none"/>';}
 case'cloud':{var cx1=0,cy1=(hh*0.18).toFixed(1),rx1=(hw*0.82).toFixed(1),ry1=(hh*0.56).toFixed(1);var cx2=(-hw*0.42).toFixed(1),cy2=(-hh*0.12).toFixed(1),rx2=(hw*0.4).toFixed(1),ry2=(hh*0.44).toFixed(1);var cx3=(hw*0.42).toFixed(1),cy3=(-hh*0.12).toFixed(1),rx3=(hw*0.4).toFixed(1),ry3=(hh*0.44).toFixed(1);var cx4=0,cy4=(-hh*0.48).toFixed(1),rx4=(hw*0.28).toFixed(1),ry4=(hh*0.36).toFixed(1);return'<ellipse cx="'+cx1+'" cy="'+cy1+'" rx="'+rx1+'" ry="'+ry1+'" fill="'+fill+'" stroke="none"/><ellipse cx="'+cx2+'" cy="'+cy2+'" rx="'+rx2+'" ry="'+ry2+'" fill="'+fill+'" stroke="none"/><ellipse cx="'+cx3+'" cy="'+cy3+'" rx="'+rx3+'" ry="'+ry3+'" fill="'+fill+'" stroke="none"/><ellipse cx="'+cx4+'" cy="'+cy4+'" rx="'+rx4+'" ry="'+ry4+'" fill="'+fill+'" stroke="none"/><ellipse cx="'+cx1+'" cy="'+cy1+'" rx="'+rx1+'" ry="'+ry1+'" fill="none" stroke="'+stroke+'" stroke-width="'+sw+'"/><ellipse cx="'+cx2+'" cy="'+cy2+'" rx="'+rx2+'" ry="'+ry2+'" fill="none" stroke="'+stroke+'" stroke-width="'+sw+'"/><ellipse cx="'+cx3+'" cy="'+cy3+'" rx="'+rx3+'" ry="'+ry3+'" fill="none" stroke="'+stroke+'" stroke-width="'+sw+'"/><ellipse cx="'+cx4+'" cy="'+cy4+'" rx="'+rx4+'" ry="'+ry4+'" fill="none" stroke="'+stroke+'" stroke-width="'+sw+'"/>';}
@@ -5395,7 +6292,7 @@ default:return'<ellipse cx="0" cy="0" rx="'+hw+'" ry="'+hh+'" fill="'+fill+'" st
 function darken(hex){var r=parseInt(hex.slice(1,3),16)||0,g=parseInt(hex.slice(3,5),16)||0,b=parseInt(hex.slice(5,7),16)||0;return'rgb('+Math.max(0,r-75)+','+Math.max(0,g-75)+','+Math.max(0,b-75)+')';}
 function onSearch(v){searchTerm=v.trim().toLowerCase();renderAll();var m=searchTerm?nodes.filter(nMatch).length:0;document.getElementById('search-count').textContent=searchTerm?(m+' match'+(m===1?'':'es')):'';;}
 function nMatch(n){if(!searchTerm)return false;if(n.label.toLowerCase().indexOf(searchTerm)>=0)return true;if(n.extraLabels&&n.extraLabels.some(function(el){return el.toLowerCase().indexOf(searchTerm)>=0;}))return true;return Object.keys(n.props||{}).some(function(k){return k.toLowerCase().indexOf(searchTerm)>=0||String(n.props[k]).toLowerCase().indexOf(searchTerm)>=0;});}
-function renderAll(){while(edgesLayer.firstChild)edgesLayer.removeChild(edgesLayer.firstChild);while(nodesLayer.firstChild)nodesLayer.removeChild(nodesLayer.firstChild);while(linesLayer.firstChild)linesLayer.removeChild(linesLayer.firstChild);while(triplesLayer.firstChild)triplesLayer.removeChild(triplesLayer.firstChild);renderWardleyLayer();renderLOPLayer();edges.forEach(renderEdge);nodes.forEach(renderNode);lines.forEach(renderLine);renderTripleDots();renderCLDOverlay();renderLegendSVG();renderOPMChart();renderEIPStatement();buildLayerFilter();}
+function renderAll(){while(edgesLayer.firstChild)edgesLayer.removeChild(edgesLayer.firstChild);while(nodesLayer.firstChild)nodesLayer.removeChild(nodesLayer.firstChild);while(linesLayer.firstChild)linesLayer.removeChild(linesLayer.firstChild);while(triplesLayer.firstChild)triplesLayer.removeChild(triplesLayer.firstChild);renderWardleyLayer();renderLOPLayer();renderVSMLayer();edges.forEach(renderEdge);nodes.forEach(renderNode);lines.forEach(renderLine);renderTripleDots();renderCLDOverlay();renderLegendSVG();renderOPMChart();renderEIPStatement();buildLayerFilter();}
 function renderNode(n){autoSize(n);if(n.layer&&n.layer.trim()&&hiddenLayers[n.layer.trim()])return;var isSel=selected.nodes.indexOf(n.id)>=0,isMatch=searchTerm&&nMatch(n),isDim=searchTerm&&!isMatch;var fill=sv(n,'color')||'#93c5fd';
 // EIP mode: override fill if node has an EIP column
 if(mode==='eip'){var ec=eipColorForNode(n);if(ec)fill=ec;else{var autoCol=eipColForX(n.x);fill=EIP_COLS[autoCol].color;}}
@@ -5411,7 +6308,7 @@ var lblHTML='<text text-anchor="middle" font-size="'+fs+'" font-weight="'+(nIcon
 if(n.extraLabels&&n.extraLabels.length){var elY=startY+lines.length*llh+2;var elFS=Math.max(8,Math.round(fs*0.72)),elDY=elFS+2;lblHTML+='<text text-anchor="middle" font-size="'+elFS+'" font-style="italic" fill="'+fc+'" opacity=".7" pointer-events="none">';n.extraLabels.forEach(function(el,ei){lblHTML+='<tspan x="0"'+(ei===0?' y="'+elY.toFixed(1)+'"':' dy="'+elDY+'"')+'>:'+escX(el)+'</tspan>';});lblHTML+='</text>';}
 // note indicator dot
 var hasNote=(n.note&&n.note.trim().length>0)||Object.keys(n.props||{}).length>0;var noteIndicator=hasNote?'<circle cx="'+(n.w/2-4)+'" cy="'+(-n.h/2+4)+'" r="4" fill="#f59e0b" stroke="#fff" stroke-width="1" pointer-events="none"/>':'';
-var g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('id','node-'+n.id);g.setAttribute('transform','translate('+n.x+','+n.y+')');g.style.cursor=mode==='edge'?'crosshair':'move';g.style.opacity=isDim?'0.22':'1';g.innerHTML=shapeHTML(n,fill,stroke,sw)+iconHTML+(isSel?'<ellipse cx="0" cy="0" rx="'+(n.w/2+7)+'" ry="'+(n.h/2+7)+'" fill="none" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4 3" opacity=".5"/>':'')+(isMatch?'<ellipse cx="0" cy="0" rx="'+(n.w/2+8)+'" ry="'+(n.h/2+8)+'" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity=".7"/>':'')+lblHTML+noteIndicator+lopNodeOverlay(n)+traceNodeOverlay(n)+cldNodeOverlay(n)+symbolsNodeOverlay(n);
+var g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('id','node-'+n.id);g.setAttribute('transform','translate('+n.x+','+n.y+')');g.style.cursor=mode==='edge'?'crosshair':'move';g.style.opacity=isDim?'0.22':'1';var _opmDash=opmIsEnvironmental(n)?'dashed':null;g.innerHTML=opmShadowHTML(n,sw)+shapeHTML(n,fill,stroke,sw,_opmDash)+iconHTML+(isSel?'<ellipse cx="0" cy="0" rx="'+(n.w/2+7)+'" ry="'+(n.h/2+7)+'" fill="none" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4 3" opacity=".5"/>':'')+(isMatch?'<ellipse cx="0" cy="0" rx="'+(n.w/2+8)+'" ry="'+(n.h/2+8)+'" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity=".7"/>':'')+lblHTML+noteIndicator+lopNodeOverlay(n)+vsmNodeOverlay(n)+traceNodeOverlay(n)+cldNodeOverlay(n)+symbolsNodeOverlay(n);
 // Vester symbol badge — real hover listeners
 if(n.symbols&&n.symbols.length){var _bsvgs=g.querySelectorAll('[data-vs-label]');for(var _bi=0;_bi<_bsvgs.length;_bi++){(function(bsvg){var lbl=bsvg.getAttribute('data-vs-label');bsvg.addEventListener('mouseenter',function(ev){_vsBadgeHover=true;if(!_ttEl)_ttEl=document.getElementById('prop-tooltip');clearTimeout(_ttHideTimer);_ttEl.innerHTML='<span>'+escH(lbl)+'</span>';_ttEl.style.display='block';moveTooltip(ev);ev.stopPropagation();});bsvg.addEventListener('mouseleave',function(){_vsBadgeHover=false;hideTooltip();});})(_bsvgs[_bi]);}}
 // resize handles on single selected node
@@ -5840,6 +6737,17 @@ if(mode==='lop'&&lopActiveType){
     lopFindings=null;updateLOPBanner();buildPanel();return;
   }
 }
+// VSM mode: click canvas to place typed node if type is active
+if(mode==='vsm'&&vsmActiveType){
+  var hitExisting=false;
+  for(var i=nodes.length-1;i>=0;i--)if(nodeHit(nodes[i],pt.x,pt.y)){hitExisting=true;break;}
+  if(!hitExisting){
+    snap();var vn=makeNode(pt.x,pt.y);applyVSMToNewNode(vn);
+    selectNodeId(vn.id,false);
+    vsmActiveType=null;svgEl.style.cursor='default';
+    vsmFindings=null;updateVSMBanner();buildPanel();return;
+  }
+}
 // SFD mode: click canvas to place typed node if type is active
 if(mode==='sfd'&&sfdActiveType){
   var hitExisting=false;
@@ -5902,12 +6810,13 @@ function onCanvasUp(ev){
   if(lineBodyDrag){lineBodyDrag=null;renderAll();buildPanel();return;}
   if(curveDrag){curveDrag=null;document.getElementById('curve-hint').style.display='none';svgEl.style.cursor='default';renderAll();return;}if(dragging){if(mode==='wardley'&&dragging.moved)wardleyWriteBack();dragging=null;renderAll();return;}if(panStart){panStart=null;return;}if(rubberBand){var rx=Math.min(rubberBand.sx,rubberBand.ex),ry=Math.min(rubberBand.sy,rubberBand.ey),rw=Math.abs(rubberBand.ex-rubberBand.sx),rh=Math.abs(rubberBand.ey-rubberBand.sy);while(rubberLayer.firstChild)rubberLayer.removeChild(rubberLayer.firstChild);if(rw>5||rh>5){var sel=nodes.filter(function(n){return n.x>=rx&&n.x<=rx+rw&&n.y>=ry&&n.y<=ry+rh;}).map(function(n){return n.id;});if(sel.length){selected.nodes=selected.nodes.concat(sel.filter(function(id){return selected.nodes.indexOf(id)<0;}));renderAll();buildPanel();}}rubberBand=null;return;}
   if((mode==='freeline'||mode==='arrow')&&freeDraw&&freeDraw.active){while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);var pt2=svgPt(ev.clientX,ev.clientY);if(ev.shiftKey){var _sa=snapAngle(freeDraw.x1,freeDraw.y1,pt2.x,pt2.y);pt2.x=_sa.x;pt2.y=_sa.y;}var dx2=pt2.x-freeDraw.x1,dy2=pt2.y-freeDraw.y1;if(Math.sqrt(dx2*dx2+dy2*dy2)>5){snap();var newL={id:'l'+nextId++,x1:freeDraw.x1,y1:freeDraw.y1,x2:pt2.x,y2:pt2.y,color:'#000000',width:1.5,dash:'solid',arrowhead:freeDraw.arrowhead,label:''};lines.push(newL);selectLineId(newL.id,false);}freeDraw=null;setMode('select');return;}
-  if(mode==='edge'&&edgeDrag.active){while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);var pt=svgPt(ev.clientX,ev.clientY),done=false;var wasOPM=prevGraphMode==='opm';var wasSFD=prevGraphMode==='sfd';var wasLOP=prevGraphMode==='lop';var savedSrcId=edgeDrag.srcId;edgeDrag={active:false,srcId:null};prevGraphMode=null;
+  if(mode==='edge'&&edgeDrag.active){while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);var pt=svgPt(ev.clientX,ev.clientY),done=false;var wasOPM=prevGraphMode==='opm';var wasSFD=prevGraphMode==='sfd';var wasLOP=prevGraphMode==='lop';var wasVSM=prevGraphMode==='vsm';var savedSrcId=edgeDrag.srcId;edgeDrag={active:false,srcId:null};prevGraphMode=null;
   // check triple dots as targets first
   for(var ti=edges.length-1;ti>=0;ti--){if(edges[ti].isTriple&&tripleHit(edges[ti],pt.x,pt.y)){snap();var me={id:'m'+nextId++,src:savedSrcId,tgt:edges[ti].tripleId,label:'',type:'meta'};metaEdges.push(me);selected={nodes:[],edges:[me.id],lines:[],triples:[]};done=true;toast('Meta-edge created → '+edges[ti].tripleId);break;}}
   if(!done){for(var i=nodes.length-1;i>=0;i--){if(nodeHit(nodes[i],pt.x,pt.y)&&nodes[i].id!==savedSrcId){
     if(wasOPM){showOPMLinkPicker(savedSrcId,nodes[i].id);}
     else if(wasLOP){applyLOPEdge(savedSrcId,nodes[i].id);}
+    else if(wasVSM){applyVSMEdge(savedSrcId,nodes[i].id);}
     else if(wasSFD){
       var srcN=nodeById(savedSrcId),tgtN=nodes[i];
       var srcIsEp=sfdIsFlowEndpoint(srcN),tgtIsEp=sfdIsFlowEndpoint(tgtN);
@@ -6468,11 +7377,32 @@ if(mode==='opm'){
       +'<div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:6px">'
       +'<button class="tb-btn'+(opmN.opmType==='Object'?' active':'')+'" onclick="setNodeOPMType(\''+opmN.id+'\',\'Object\')" style="border-color:#3b82f6;color:#1d4ed8">Object</button>'
       +'<button class="tb-btn'+(opmN.opmType==='Process'?' active':'')+'" onclick="setNodeOPMType(\''+opmN.id+'\',\'Process\')" style="border-color:#16a34a;color:#166534">Process</button>'
-      +'</div>';
+      +'</div>'
+      +'<div class="section-hd" style="background:#f0fdfa;color:#0f766e">Essence &amp; Affiliation</div>'
+      +'<div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:6px">'
+      +'<button class="tb-btn'+(opmEssence(opmN)==='informatical'?' active':'')+'" title="Informatical — flat contour" onclick="setNodeOPMEssence(\''+opmN.id+'\',\'informatical\')" style="border-color:#64748b;color:#334155">Informatical</button>'
+      +'<button class="tb-btn'+(opmEssence(opmN)==='physical'?' active':'')+'" title="Physical — shadowed contour" onclick="setNodeOPMEssence(\''+opmN.id+'\',\'physical\')" style="border-color:#64748b;color:#334155">Physical</button>'
+      +'</div>'
+      +'<div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:6px">'
+      +'<button class="tb-btn'+(opmAffiliation(opmN)==='systemic'?' active':'')+'" title="Systemic — inside the system boundary, solid contour" onclick="setNodeOPMAffiliation(\''+opmN.id+'\',\'systemic\')" style="border-color:#0f766e;color:#0f766e">Systemic</button>'
+      +'<button class="tb-btn'+(opmAffiliation(opmN)==='environmental'?' active':'')+'" title="Environmental — outside the system boundary, dashed contour" onclick="setNodeOPMAffiliation(\''+opmN.id+'\',\'environmental\')" style="border-color:#0f766e;color:#0f766e">Environmental</button>'
+      +'</div>'
+      +'<div style="padding:4px 12px 8px;font-size:11px;color:#64748b;font-style:italic;border-bottom:1px solid #f1f5f9">'
+      +escH(opmN.label+' is a'+(opmEssence(opmN)==='informatical'?'n ':' ')+opmEssence(opmN)+' and '+opmAffiliation(opmN)+' '+(opmN.opmType==='Process'?'process':'object')+'.')+'</div>'
+      +(opmN.opmType==='Process'?(
+         '<div class="section-hd" style="background:#f0fdfa;color:#0f766e">Functional Form</div>'
+        +'<div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:4px;flex-wrap:wrap">'
+        +OPM_FUNC_FORMS.map(function(f){
+            return '<button class="tb-btn'+(opmN.opmFunctionalForm===f.id?' active':'')+'" title="'+escH(f.hint)+'" onclick="setNodeOPMFuncForm(\''+opmN.id+'\',\''+f.id+'\')" style="border-color:#7c3aed;color:#6d28d9">'+f.label+'</button>';
+          }).join('')
+        +'</div>'
+        +'<div style="padding:4px 12px 8px;font-size:11px;color:#64748b;font-style:italic;border-bottom:1px solid #f1f5f9">How the things this process consumes combine. Click again to clear.</div>'
+      ):'');
     pc.appendChild(opmNDiv);
     var opmNPc=document.createElement('div');
     buildSelectionPanel(opmNPc,sN,[]);
     pc.appendChild(opmNPc);
+    if(opmCheckResults!==null)pc.appendChild(buildOPMChecksSection());
     updateOPLPanel();return;
   }
   if(sE.length===1&&!sN.length){
@@ -6496,6 +7426,7 @@ if(mode==='opm'){
     opmHint.style.cssText='padding:12px;font-size:12px;color:#64748b';
     opmHint.innerHTML='Click a type above, then click canvas to place.<br><br>Use <b>+Edge</b> to draw typed relationships &mdash; a picker will appear.';
     pc.appendChild(opmHint);
+    pc.appendChild(buildOPMChecksSection());
     updateOPLPanel();return;
   }
   var opmPC=document.createElement('div');
@@ -6514,6 +7445,20 @@ if(mode==='lop'){
     var lopPC=document.createElement('div');
     buildSelectionPanel(lopPC,sN,sE);
     pc.appendChild(lopPC);
+  }
+  return;
+}
+// VSM mode: palette + computed timeline + selection details
+if(mode==='vsm'){
+  pc.innerHTML='';
+  pc.appendChild(buildVSMPalette());
+  if(sN.length===1&&!sE.length&&sN[0].vsmType)pc.appendChild(buildVSMNodeSection(sN[0]));
+  if(sE.length===1&&!sN.length)pc.appendChild(buildVSMEdgeSection(sE[0]));
+  pc.appendChild(buildVSMTimeline());
+  if(sN.length||sE.length){
+    var vsmPC=document.createElement('div');
+    buildSelectionPanel(vsmPC,sN,sE);
+    pc.appendChild(vsmPC);
   }
   return;
 }
@@ -6849,7 +7794,7 @@ function setLineLabel(id,val){snap();var l=lineById(id);if(l){l.label=val;render
 // `mode` is persisted because Wardley/RBA files are unreadable in the wrong
 // mode — the grid vanishes and the rent bands go with it. Every other mode
 // tolerated being forgotten; this one does not.
-function buildState(){return{version:'1.0',mode:mode,modelName:modelName(),modelNote:(document.getElementById('model-note').value||'').trim(),canvasBg:canvasBg,graphAttrs:graphAttrs,cldLoopNames:cldLoopNames,legendEntries:legendEntries.map(function(e){return Object.assign({},e);}),legendVisible:legendVisible,lopBands:lopBandsOn,legendCollapsed:legendCollapsed,customSymbols:customSymbols.map(function(s){return Object.assign({},s);}),nodes:nodes.map(function(n){return stampStyle(Object.assign({},n,{props:Object.assign({},n.props)}),n,STAMP_NODE_FIELDS);}),edges:edges.map(function(e){return stampStyle(Object.assign({},e,{props:Object.assign({},e.props)}),e,STAMP_EDGE_FIELDS);}),lines:lines.map(function(l){return Object.assign({},l);}),metaEdges:metaEdges.map(function(me){return Object.assign({},me);})};}
+function buildState(){return{version:'1.0',mode:mode,modelName:modelName(),modelNote:(document.getElementById('model-note').value||'').trim(),canvasBg:canvasBg,graphAttrs:graphAttrs,cldLoopNames:cldLoopNames,legendEntries:legendEntries.map(function(e){return Object.assign({},e);}),legendVisible:legendVisible,lopBands:lopBandsOn,vsmLanes:vsmLanesOn,vsmTrueScale:vsmTrueScale,legendCollapsed:legendCollapsed,customSymbols:customSymbols.map(function(s){return Object.assign({},s);}),nodes:nodes.map(function(n){return stampStyle(Object.assign({},n,{props:Object.assign({},n.props)}),n,STAMP_NODE_FIELDS);}),edges:edges.map(function(e){return stampStyle(Object.assign({},e,{props:Object.assign({},e.props)}),e,STAMP_EDGE_FIELDS);}),lines:lines.map(function(l){return Object.assign({},l);}),metaEdges:metaEdges.map(function(me){return Object.assign({},me);})};}
 function cleanXmileLabel(raw){return(raw||'').replace(/^"+|"+$/g,'').replace(/^\\+|\\+$/g,'').replace(/_/g,' ').trim();}
 function xmileKey(raw){return(raw||'').replace(/^"+|"+$/g,'').replace(/^\\+|\\+$/g,'').trim().toLowerCase();}
 function toXmileName(label){return label.replace(/\s+/g,'_');}
@@ -7165,7 +8110,7 @@ return out;});if(raw.modelName)document.getElementById('model-name').value=raw.m
 // silently. Default them the same way makeNode() does.
 nodes.forEach(function(n){if(!isFinite(n.w)||n.w<=0)n.w=108;if(!isFinite(n.h)||n.h<=0)n.h=46;});
 nodes.forEach(autoSize);toast('Loaded '+nodes.length+' nodes');}lines=(raw.lines||[]).map(function(l){return Object.assign({color:'#000000',width:1.5,dash:'solid',arrowhead:'none',label:''},l);});var ids=nodes.map(function(n){return+String(n.id).replace(/\D/g,'')||0;}).concat(edges.map(function(e){return+String(e.id).replace(/\D/g,'')||0;})).concat(lines.map(function(l){return+String(l.id).replace(/\D/g,'')||0;}));nextId=(ids.length?Math.max.apply(null,ids):0)+1;selected={nodes:[],edges:[],lines:[],triples:[]};edges.forEach(function(e){if(e.color)getMarkerId(e.color);if(e.opmMarker&&e.color)getOPMMarkerId(e.opmMarker,e.color);});metaEdges=(raw.metaEdges||[]).map(function(me){return Object.assign({},me);});if(raw.cldLoopNames)cldLoopNames=raw.cldLoopNames;requestAnimationFrame(function(){renderLegendSVG();});
-if(raw.legendEntries){legendEntries=raw.legendEntries;legendVisible=!!raw.legendVisible;legendCollapsed=!!raw.legendCollapsed;normaliseLegend();legendEntries.forEach(function(r){if((r.kind||'node')==='edge'&&r.color)getMarkerId(r.color);});buildLegendSection();renderLegendOverlay();}if(raw.lopBands!==undefined)lopBandsOn=!!raw.lopBands;var _mn=document.getElementById('model-note');_mn.value=raw.modelNote||'';renderModelNote();// update nextTripleNum based on loaded triples
+if(raw.legendEntries){legendEntries=raw.legendEntries;legendVisible=!!raw.legendVisible;legendCollapsed=!!raw.legendCollapsed;normaliseLegend();legendEntries.forEach(function(r){if((r.kind||'node')==='edge'&&r.color)getMarkerId(r.color);});buildLegendSection();renderLegendOverlay();}if(raw.lopBands!==undefined)lopBandsOn=!!raw.lopBands;if(raw.vsmLanes!==undefined)vsmLanesOn=!!raw.vsmLanes;if(raw.vsmTrueScale!==undefined)vsmTrueScale=!!raw.vsmTrueScale;var _mn=document.getElementById('model-note');_mn.value=raw.modelNote||'';renderModelNote();// update nextTripleNum based on loaded triples
 var tNums=edges.filter(function(e){return e.tripleId;}).map(function(e){return parseInt(e.tripleId.slice(1))||0;});nextTripleNum=(tNums.length?Math.max.apply(null,tNums):0)+1;
 customSymbols=(raw.customSymbols||[]).map(function(s){return Object.assign({},s);});_vsAddMode=false;
 // Mode restore. `meta.mode` is honoured too: files written before buildState
@@ -7709,6 +8654,26 @@ var bg=document.createElementNS('http://www.w3.org/2000/svg','rect');bg.setAttri
 // inject <title> elements so browsers show note+props on hover
 nodes.forEach(function(n){var g=clone.querySelector('#node-'+n.id);if(!g)return;var parts=[];if(n.note&&n.note.trim())parts.push('📌 '+n.note.trim());Object.keys(n.props||{}).forEach(function(k){if(k)parts.push(k+': '+n.props[k]);});if(!parts.length)return;var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=parts.join('\n');g.insertBefore(t,g.firstChild);});
 edges.forEach(function(e){var g=clone.querySelector('#edge-'+e.id);if(!g)return;var parts=[];if(e.opl&&e.opl.trim())parts.push('OPL: '+e.opl.trim());if(e.note&&e.note.trim())parts.push('📌 '+e.note.trim());Object.keys(e.props||{}).forEach(function(k){if(k)parts.push(k+': '+e.props[k]);});if(!parts.length)return;var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=parts.join('\n');g.insertBefore(t,g.firstChild);});
+// A <title> is only reachable if something under the pointer can be hit. Two things
+// above conspire against that for edges: the transparent hit band is stripped as
+// clutter, and the visible 1.5px line carries pointer-events="none" so it never steals
+// events from that band in the live tool. Net effect in the exported file: edge notes
+// existed but nothing could reach them. Give every titled edge its hit band back, and
+// let the amber note dot — the marker that says "hover here" — be hoverable itself.
+Array.prototype.forEach.call(clone.querySelectorAll('g[id^="edge-"], g[id^="node-"]'),function(g){
+  if(!g.querySelector('title'))return;
+  Array.prototype.forEach.call(g.querySelectorAll('circle[fill="#f59e0b"]'),function(c){c.removeAttribute('pointer-events');});
+  if(g.id.indexOf('edge-')!==0)return;
+  Array.prototype.forEach.call(g.querySelectorAll('path'),function(p){
+    if(p.getAttribute('stroke')==='transparent')return;
+    p.removeAttribute('pointer-events');
+    var d=p.getAttribute('d');if(!d)return;
+    var hit=document.createElementNS('http://www.w3.org/2000/svg','path');
+    hit.setAttribute('d',d);hit.setAttribute('fill','none');hit.setAttribute('stroke','transparent');
+    hit.setAttribute('stroke-width','14');hit.setAttribute('stroke-linecap','round');
+    g.appendChild(hit);
+  });
+});
 // RBA annotations. The method requires the hover text to survive export, so a
 // printed rent band still answers "says who, and when" — same rbaTipLines the
 // live tooltip uses, emitted as <title>.
@@ -7781,6 +8746,18 @@ function loadFromURL(){var h=location.hash;if(h.indexOf('#graph=')<0)return;try{
 function loadFromQueryParam(){var params=new URLSearchParams(window.location.search);var url=params.get('url');if(url&&/\/projection\/subgraph\//.test(url)){substrateSubgraph=decodeURIComponent(url.split('/projection/subgraph/')[1].split('?')[0]);}if(!url)return;fetch(url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(text){loadGraphJSON(text);zoomFit();}).catch(function(err){console.warn('?url= load failed',err);setTimeout(function(){toast('\u26a0\ufe0f Could not load model \u2014 check URL and CORS headers');},400);});}
 function sendToWikiItem(){
   if(!window.opener){toast('Not running as wiki popup — use → Wiki for ghost page');return;}
+  // Refuse to overwrite a good diagram with an icon-less rendering of itself.
+  // The model keeps its icon keys either way (icon is in STAMP_NODE_FIELDS), but
+  // the svgString written back to the wiki item would be drawn without them.
+  if(!ICONS.length){
+    var iconNodes=nodes.filter(function(n){return sv(n,'icon');}).length;
+    if(iconNodes){
+      toast('\u26a0\ufe0f Blocked: '+iconNodes+' node(s) use icons but rcn-icons.js did not load. Saving would write an icon-less picture.');
+      console.warn('[graph-tool] save to wiki item blocked — '+iconNodes+' icon node(s) and no icon library. '
+        +'Deploy tools/dist/graph-tool-v22.html so the sidecar cannot go missing.');
+      return;
+    }
+  }
   var clone=buildExportSVG();
   var W=clone.getAttribute('width')||600,H=clone.getAttribute('height')||400;
   clone.setAttribute('viewBox','0 0 '+W+' '+H);

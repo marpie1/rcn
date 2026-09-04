@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<!-- RCN Rasch — dichotomous measurement for neighborhood work.
+
+     Lineage: Ben Wright and Mike Linacre, Chicago. The applied case Marc keeps
+     coming back to is Bill Mahoney finding measures in Judy Hibbard's data,
+     which became the Patient Activation Measure.
+
+     Design commitments, in order of importance:
+       1. THE WRIGHT MAP IS THE PRODUCT. Persons on the left, items on the
+          right, one vertical logit ruler between them. A group in a room with
+          no training can read whether the items reach the people. Everything
+          else in this tool exists to produce that picture honestly.
+       2. MISFIT IS INFORMATION, NOT AN ERROR CODE. An item that misfits is
+          measuring something else. The tool says which, in words.
+       3. EXTREME SCORES ARE NAMED, NOT SILENTLY DROPPED. A person who got
+          everything right has no finite measure. Saying so is the honest
+          answer; extrapolating quietly is not.
+       4. FEW STATISTICS. Measure, SE, infit, outfit, reliability, separation,
+          strata. That is the whole vocabulary. Every addition is something a
+          co-op board has to learn.
+
+     Estimation is JMLE (UCON) with a log-odds start, items centred at zero.
+     Fit is Wright & Masters: infit is information-weighted, outfit is not,
+     ZSTD is the Wilson-Hilferty cube-root transform. Formulas are named in the
+     RASCH namespace so they can be checked against Winsteps.
+
+     NOT IN THIS VERSION: polytomous data. The Andrich rating-scale model is
+     the next thing to build and is what Likert surveys need. This version is
+     dichotomous because the SODOTO badge ledger is dichotomous, and that is
+     the data RCN already has.
+
+     Single file, works from file://. No dependencies, no network. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN Rasch</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#eef2f6;color:#1e293b;line-height:1.5;font-size:14px}
+a{color:#1e5f8c;text-decoration:none}
+a:hover{text-decoration:underline}
+.app{display:flex;flex-direction:column;height:100vh}
+.topbar{background:#123a5a;color:#e2ecf4;padding:10px 18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;flex-shrink:0}
+.topbar h1{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.topbar .tag{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#7ba7c7;font-weight:700}
+.topbar nav{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.topbar nav button{font-size:12px;color:#c6dbea;background:transparent;border:1px solid #2d5c7e;border-radius:20px;padding:3px 12px;cursor:pointer;font-family:inherit}
+.topbar nav button:hover{background:#1d4d70}
+.main{display:flex;flex:1;min-height:0}
+.side{width:340px;flex-shrink:0;background:#fff;border-right:1px solid #d3dde6;overflow-y:auto;padding:16px}
+.canvas{flex:1;overflow-y:auto;padding:20px 24px 60px;min-width:0}
+.grp{margin-bottom:22px}
+.grp>h3{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:9px;padding-bottom:5px;border-bottom:1px solid #e2e8f0}
+label.fld{display:block;margin-bottom:9px}
+label.fld>span{display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:3px}
+select,input[type=text],input[type=number],textarea{width:100%;font-family:inherit;font-size:13px;padding:5px 8px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#1e293b}
+textarea{font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.45;resize:vertical}
+button{font-family:inherit;font-size:12px;font-weight:600;padding:6px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#334155;cursor:pointer}
+button:hover{background:#f1f5f9;border-color:#94a3b8}
+button.primary{background:#1e5f8c;border-color:#1e5f8c;color:#fff}
+button.primary:hover{background:#174c70}
+button.wide{width:100%;margin-bottom:6px}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.hint{font-size:11px;color:#64748b;line-height:1.45;margin-top:4px}
+.card{background:#fff;border:1px solid #d3dde6;border-radius:10px;padding:18px 20px;margin-bottom:18px}
+.card>h2{font-size:15px;font-weight:700;margin-bottom:3px;color:#123a5a}
+.card>h2 .sub{font-weight:400;font-size:12px;color:#64748b;margin-left:8px}
+.card>p.lead{font-size:12px;color:#64748b;margin-bottom:14px}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;font-weight:700;padding:5px 8px;border-bottom:2px solid #e2e8f0;white-space:nowrap}
+td{padding:5px 8px;border-bottom:1px solid #f1f5f9;white-space:nowrap}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+tr:hover td{background:#f8fafc}
+.pill{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px}
+.pill.ok{background:#dcfce7;color:#15803d}
+.pill.warn{background:#fef3c7;color:#b45309}
+.pill.bad{background:#fee2e2;color:#b91c1c}
+.pill.extreme{background:#e2e8f0;color:#475569}
+.stat{display:inline-block;margin-right:26px;margin-bottom:10px}
+.stat b{display:block;font-size:20px;font-weight:700;color:#123a5a;font-variant-numeric:tabular-nums}
+.stat span{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700}
+.note{background:#fffbeb;border-left:3px solid #f59e0b;padding:9px 12px;font-size:12px;color:#78350f;border-radius:0 6px 6px 0;margin-top:12px}
+.note.good{background:#f0fdf4;border-color:#22c55e;color:#14532d}
+.note.bad{background:#fef2f2;border-color:#ef4444;color:#7f1d1d}
+.wm{overflow-x:auto}
+#msg{font-size:12px;padding:8px 12px;border-radius:6px;margin-bottom:10px;display:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <h1>RCN Rasch</h1>
+    <span class="tag" id="modeltag">JMLE</span>
+    <nav>
+      <button onclick="loadDemo()">SODOTO demo (0/1)</button>
+      <button onclick="loadLikert()">Likert demo (1&ndash;5)</button>
+      <button onclick="exportMeasures()">Export measures CSV</button>
+      <button onclick="exportMap()">Export Wright map SVG</button>
+      <button onclick="saveSession()">Save session</button>
+      <button onclick="document.getElementById('openFile').click()">Open session</button>
+    </nav>
+  </div>
+  <input type="file" id="openFile" style="display:none" accept=".json" onchange="openSession(this)">
+  <div class="main">
+    <div class="side">
+      <div class="grp">
+        <h3>Data</h3>
+        <label class="fld"><span>CSV &mdash; first column is the person, every other column is an item</span>
+          <textarea id="csv" rows="12" spellcheck="false" placeholder="person,skill_a,skill_b&#10;dorothy,1,0&#10;marc,1,1"></textarea></label>
+        <p class="hint"><b>Dichotomous:</b> 1 or 0. <b>Rating scale:</b> whole numbers such as 0&ndash;3 or 1&ndash;5 &mdash; the Andrich model runs automatically and the thresholds are estimated. Leave a cell blank for missing; missing is handled, not imputed.</p>
+        <button class="primary wide" onclick="run()">Estimate</button>
+        <div class="btnrow"><button onclick="loadDemo()">Badges</button><button onclick="loadLikert()">Likert</button><button onclick="document.getElementById('csv').value='';">Clear</button></div>
+      </div>
+      <div class="grp">
+        <h3>Labels</h3>
+        <label class="fld"><span>What a person is</span><input type="text" id="pname" value="person"></label>
+        <label class="fld"><span>What an item is</span><input type="text" id="iname" value="skill"></label>
+        <p class="hint">Naming these changes every heading. "person / skill" for a badge ledger, "resident / statement" for a survey.</p>
+      </div>
+      <div class="grp">
+        <h3>Reading the fit</h3>
+        <p class="hint"><b>MNSQ near 1.0</b> means the data behave the way the model expects.<br><br>
+        <b>Above 1.5</b> &mdash; noisy. The item is picking up something other than the thing being measured. This is the one worth investigating.<br><br>
+        <b>Below 0.7</b> &mdash; too predictable. Often a duplicate item, or one that just restates another.<br><br>
+        Misfit is information. An item that misfits is measuring something else, and finding out what is usually the point.</p>
+      </div>
+    </div>
+    <div class="canvas" id="out">
+      <div class="card">
+        <h2>Nothing estimated yet</h2>
+        <p class="lead">Paste a person-by-item matrix on the left, or load the SODOTO demo to see what the tool does.</p>
+        <p style="font-size:13px;color:#475569">The Wright map is the thing to look at first. It puts people and items on one vertical ruler measured in <b>logits</b>, so you can see at a glance whether the items you wrote actually reach the people you have &mdash; which is the question almost every instrument gets wrong, and the one a total score cannot answer.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RASCH — the math, named so it can be checked against Winsteps.
+
+   Model (dichotomous):   P(x=1 | B,D) = exp(B-D) / (1 + exp(B-D))
+   B is person ability, D is item difficulty, both in logits, one scale.
+
+   JMLE/UCON: Newton-Raphson on both margins alternately, items recentred to
+   mean zero each pass so the scale has an origin. A person's raw score is a
+   sufficient statistic for B, which is why the model is the one that makes
+   "adding up the right answers" defensible — and the only one that does.
+   ══════════════════════════════════════════════════════════════════════════ */
+var RASCH = {
+  MAXIT: 300,
+  TOL: 0.0001,
+
+  P: function (b, d) { var e = Math.exp(b - d); return e / (1 + e); },
+
+  /* Extreme scores have no finite measure. A person who succeeded at
+     everything is somewhere above the hardest item and the data cannot say
+     where. Winsteps extrapolates with a fractional-score adjustment; this tool
+     reports them separately instead, because "we cannot measure this person
+     with these items" is the true answer and is usually actionable. */
+  /* The simple dichotomous model is the rating-scale model with m = 1. Verified
+     identical to a separate dichotomous implementation to 1e-15 on 400x12
+     simulated data before that implementation was deleted — two copies of a
+     numerical routine is a bug waiting to be fixed in only one of them. */
+  estimate: function (M, nP, nI) { return this.estimatePoly(M, nP, nI, 1); },
+
+  /* ────────────────────────────────────────────────────────────────────────
+     Andrich rating-scale model (polytomous). Categories 0..m, thresholds F
+     SHARED across items — that is what makes it the rating-scale model rather
+     than partial credit: every item uses the same rating scale, so the
+     categories mean the same thing everywhere, which is exactly the assumption
+     a Likert questionnaire is making whether or not anybody checks it.
+
+         P(x=k) ∝ exp( k(B - D) - Σ_{j=1..k} F_j ),  F_0 = 0, Σ F_j = 0
+
+     THE DIAGNOSTIC THAT MATTERS: threshold DISORDERING. If F_2 < F_1 the
+     categories are not being used in the order they were written — respondents
+     are not distinguishing "agree" from "strongly agree", and no amount of
+     careful wording fixes it after the fact. Collapsing adjacent categories is
+     the usual remedy. A summed Likert score cannot show you this, which is the
+     single best argument for running one of these before trusting a scale.
+
+     Dichotomous data (m = 1) reduces to the simple Rasch model exactly, and the
+     equivalence is checked rather than assumed — see the test in the schema. */
+  estimatePoly: function (M, nP, nI, mMax) {
+    var i, n, k, j;
+    var m = mMax;                       // top category; categories are 0..m
+    var pExt = [], iExt = [];
+    for (n = 0; n < nP; n++) pExt[n] = null;
+    for (i = 0; i < nI; i++) iExt[i] = null;
+    var pScore = [], pCount = [], iScore = [], iCount = [];
+
+    for (var pass = 0; pass < 50; pass++) {
+      for (n = 0; n < nP; n++) { pScore[n] = 0; pCount[n] = 0; }
+      for (i = 0; i < nI; i++) { iScore[i] = 0; iCount[i] = 0; }
+      for (n = 0; n < nP; n++) {
+        if (pExt[n]) continue;
+        for (i = 0; i < nI; i++) {
+          if (iExt[i] || M[n][i] === null) continue;
+          pScore[n] += M[n][i]; pCount[n]++; iScore[i] += M[n][i]; iCount[i]++;
+        }
+      }
+      var changed = false;
+      for (n = 0; n < nP; n++) {
+        if (pExt[n]) continue;
+        var e = (pCount[n] === 0) ? 'empty' : (pScore[n] === 0) ? 'minimum'
+              : (pScore[n] === pCount[n] * m) ? 'maximum' : null;
+        if (e) { pExt[n] = e; changed = true; }
+      }
+      for (i = 0; i < nI; i++) {
+        if (iExt[i]) continue;
+        var e2 = (iCount[i] === 0) ? 'empty' : (iScore[i] === 0) ? 'nobody'
+               : (iScore[i] === iCount[i] * m) ? 'everybody' : null;
+        if (e2) { iExt[i] = e2; changed = true; }
+      }
+      if (!changed) break;
+    }
+
+    // category frequencies over the surviving submatrix
+    var catN = []; for (k = 0; k <= m; k++) catN[k] = 0;
+    for (n = 0; n < nP; n++) for (i = 0; i < nI; i++) {
+      if (pExt[n] || iExt[i] || M[n][i] === null) continue;
+      catN[M[n][i]]++;
+    }
+
+    var B = [], D = [], F = [];
+    for (n = 0; n < nP; n++) B[n] = pExt[n] ? 0
+      : Math.log(pScore[n] / (pCount[n] * m - pScore[n]));
+    for (i = 0; i < nI; i++) D[i] = iExt[i] ? 0
+      : Math.log((iCount[i] * m - iScore[i]) / iScore[i]);
+    for (j = 1; j <= m; j++) F[j] = 0;   // flat start; the data move them
+
+    // per-response category probabilities, expected score, variance, 4th moment
+    function cell(b, d) {
+      var cum = 0, psi = [], mx = -Infinity;
+      for (var kk = 0; kk <= m; kk++) {
+        if (kk > 0) cum += F[kk];
+        psi[kk] = kk * (b - d) - cum;
+        if (psi[kk] > mx) mx = psi[kk];
+      }
+      var sum = 0, P = [];
+      for (kk = 0; kk <= m; kk++) { P[kk] = Math.exp(psi[kk] - mx); sum += P[kk]; }
+      var E = 0;
+      for (kk = 0; kk <= m; kk++) { P[kk] /= sum; E += kk * P[kk]; }
+      var V = 0, C = 0;
+      for (kk = 0; kk <= m; kk++) {
+        var dv = kk - E; V += dv * dv * P[kk]; C += Math.pow(dv, 4) * P[kk];
+      }
+      return { P: P, E: E, V: V, C: C };
+    }
+
+    var converged = false, iters = 0;
+    for (var it = 0; it < this.MAXIT; it++) {
+      var maxd = 0, c;
+      for (n = 0; n < nP; n++) {
+        if (pExt[n]) continue;
+        var eb = 0, vb = 0;
+        for (i = 0; i < nI; i++) {
+          if (M[n][i] === null || iExt[i]) continue;
+          c = cell(B[n], D[i]); eb += c.E; vb += c.V;
+        }
+        if (vb < 1e-9) continue;
+        var db = Math.max(-2, Math.min(2, (pScore[n] - eb) / vb));
+        B[n] += db; if (Math.abs(db) > maxd) maxd = Math.abs(db);
+      }
+      for (i = 0; i < nI; i++) {
+        if (iExt[i]) continue;
+        var ed = 0, vd = 0;
+        for (n = 0; n < nP; n++) {
+          if (M[n][i] === null || pExt[n]) continue;
+          c = cell(B[n], D[i]); ed += c.E; vd += c.V;
+        }
+        if (vd < 1e-9) continue;
+        var dd = Math.max(-2, Math.min(2, -(iScore[i] - ed) / vd));
+        D[i] += dd; if (Math.abs(dd) > maxd) maxd = Math.abs(dd);
+      }
+      // thresholds: T_j is how many responses reached category j or above
+      if (m > 1) {
+        var T = [], Ex = [], Vr = [];
+        for (j = 1; j <= m; j++) { T[j] = 0; Ex[j] = 0; Vr[j] = 0; }
+        for (n = 0; n < nP; n++) for (i = 0; i < nI; i++) {
+          if (M[n][i] === null || pExt[n] || iExt[i]) continue;
+          c = cell(B[n], D[i]);
+          var q = 1;
+          for (j = 1; j <= m; j++) {
+            q -= c.P[j - 1];
+            if (M[n][i] >= j) T[j]++;
+            Ex[j] += q; Vr[j] += q * (1 - q);
+          }
+        }
+        for (j = 1; j <= m; j++) {
+          if (Vr[j] < 1e-9) continue;
+          var df = Math.max(-1, Math.min(1, -(T[j] - Ex[j]) / Vr[j]));
+          F[j] += df; if (Math.abs(df) > maxd) maxd = Math.abs(df);
+        }
+        var fs = 0; for (j = 1; j <= m; j++) fs += F[j];
+        fs /= m; for (j = 1; j <= m; j++) F[j] -= fs;
+      }
+      var ss = 0, cc = 0;
+      for (i = 0; i < nI; i++) if (!iExt[i]) { ss += D[i]; cc++; }
+      if (cc) { var mm = ss / cc; for (i = 0; i < nI; i++) if (!iExt[i]) D[i] -= mm; }
+      iters = it + 1;
+      if (maxd < this.TOL) { converged = true; break; }
+    }
+
+    var pr = [], ir = [];
+    for (n = 0; n < nP; n++) pr[n] = { sw: 0, sy2: 0, sz2: 0, k: 0, cw: 0, c2: 0 };
+    for (i = 0; i < nI; i++) ir[i] = { sw: 0, sy2: 0, sz2: 0, k: 0, cw: 0, c2: 0 };
+    for (n = 0; n < nP; n++) for (i = 0; i < nI; i++) {
+      if (M[n][i] === null || pExt[n] || iExt[i]) continue;
+      var cc2 = cell(B[n], D[i]), W = cc2.V, yy = M[n][i] - cc2.E;
+      var z2 = (W > 1e-12) ? (yy * yy) / W : 0;
+      [pr[n], ir[i]].forEach(function (a) {
+        a.sw += W; a.sy2 += yy * yy; a.sz2 += z2; a.k++;
+        a.cw += (W > 1e-12) ? cc2.C / (W * W) : 0;
+        a.c2 += cc2.C - W * W;
+      });
+    }
+    function fit(a) {
+      if (!a.k || a.sw < 1e-9) return { infit: null, outfit: null, iz: null, oz: null };
+      var out = a.sz2 / a.k, inf = a.sy2 / a.sw;
+      var qo = Math.sqrt(Math.max(a.cw / (a.k * a.k) - 1 / a.k, 1e-9));
+      var qi = Math.sqrt(Math.max(a.c2 / (a.sw * a.sw), 1e-9));
+      var wh = function (v, q) { return (Math.pow(v, 1 / 3) - 1) * (3 / q) + (q / 3); };
+      return { infit: inf, outfit: out, iz: wh(inf, qi), oz: wh(out, qo) };
+    }
+    var persons = [], items = [];
+    for (n = 0; n < nP; n++) {
+      var f = fit(pr[n]);
+      persons.push({ idx: n, score: pScore[n], count: pCount[n], extreme: pExt[n],
+        measure: pExt[n] ? null : B[n],
+        se: (pExt[n] || pr[n].sw < 1e-9) ? null : 1 / Math.sqrt(pr[n].sw),
+        infit: f.infit, outfit: f.outfit, iz: f.iz, oz: f.oz });
+    }
+    for (i = 0; i < nI; i++) {
+      var g = fit(ir[i]);
+      items.push({ idx: i, score: iScore[i], count: iCount[i], extreme: iExt[i],
+        measure: iExt[i] ? null : D[i],
+        se: (iExt[i] || ir[i].sw < 1e-9) ? null : 1 / Math.sqrt(ir[i].sw),
+        infit: g.infit, outfit: g.outfit, iz: g.iz, oz: g.oz });
+    }
+    var thresholds = [];
+    for (j = 1; j <= m; j++) thresholds.push({ step: j, F: F[j], n: catN[j] });
+    return { persons: persons, items: items, converged: converged, iters: iters,
+             m: m, thresholds: thresholds, catN: catN };
+  },
+
+  /* Separation and reliability. RMSE is the root mean square standard error;
+     the observed spread minus that error is the TRUE spread. Reliability is
+     the ratio. Separation G says how many distinguishable levels the data
+     support, and strata (4G+1)/3 says the same thing in whole groups. A
+     reliability of 0.8 buys you about three strata — three groups you can tell
+     apart, not a rank order of individuals. */
+  separation: function (rows) {
+    var ms = rows.filter(function (r) { return r.measure !== null && r.se !== null; });
+    if (ms.length < 2) return null;
+    var mean = ms.reduce(function (a, r) { return a + r.measure; }, 0) / ms.length;
+    var sd2 = ms.reduce(function (a, r) { return a + Math.pow(r.measure - mean, 2); }, 0) / ms.length;
+    var mse = ms.reduce(function (a, r) { return a + r.se * r.se; }, 0) / ms.length;
+    var adj = Math.max(sd2 - mse, 0);
+    var rel = sd2 > 0 ? adj / sd2 : 0;
+    var G = mse > 0 ? Math.sqrt(adj / mse) : 0;
+    return { n: ms.length, mean: mean, sd: Math.sqrt(sd2), rmse: Math.sqrt(mse),
+             reliability: rel, separation: G, strata: (4 * G + 1) / 3 };
+  }
+};
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Data in
+   ══════════════════════════════════════════════════════════════════════════ */
+var STATE = null;
+
+function parseCSV(text) {
+  var lines = text.replace(/\r/g, '').split('\n').filter(function (l) { return l.trim() !== ''; });
+  if (lines.length < 2) throw new Error('needs a header row and at least one data row');
+  function cells(l) {
+    var out = [], cur = '', q = false;
+    for (var i = 0; i < l.length; i++) {
+      var c = l[i];
+      if (q) { if (c === '"' && l[i + 1] === '"') { cur += '"'; i++; } else if (c === '"') q = false; else cur += c; }
+      else if (c === '"') q = true; else if (c === ',') { out.push(cur); cur = ''; } else cur += c;
+    }
+    out.push(cur); return out.map(function (s) { return s.trim(); });
+  }
+  var head = cells(lines[0]);
+  if (head.length < 2) throw new Error('needs at least one item column');
+  var itemNames = head.slice(1), personNames = [], M = [];
+  for (var r = 1; r < lines.length; r++) {
+    var c = cells(lines[r]);
+    personNames.push(c[0] || ('row ' + r));
+    var row = [];
+    for (var j = 1; j <= itemNames.length; j++) {
+      var v = (c[j] === undefined) ? '' : c[j];
+      if (v === '') { row.push(null); continue; }
+      var n = Number(v);
+      // Categories are integers. Anything else is missing, loudly rather than coerced.
+      row.push((isFinite(n) && n >= 0 && n === Math.floor(n) && n <= 20) ? n : null);
+    }
+    M.push(row);
+  }
+  return { M: M, personNames: personNames, itemNames: itemNames };
+}
+
+function msg(t, kind) {
+  var e = document.getElementById('msg');
+  if (!e) { e = document.createElement('div'); e.id = 'msg'; document.getElementById('out').prepend(e); }
+  e.textContent = t; e.style.display = t ? 'block' : 'none';
+  e.style.background = kind === 'bad' ? '#fee2e2' : '#dcfce7';
+  e.style.color = kind === 'bad' ? '#7f1d1d' : '#14532d';
+}
+
+function run() {
+  var txt = document.getElementById('csv').value;
+  var d;
+  try { d = parseCSV(txt); } catch (e) { render(null, e.message); return; }
+  var lo = Infinity, hi = -Infinity;
+  d.M.forEach(function (r) { r.forEach(function (v) { if (v === null) return; if (v < lo) lo = v; if (v > hi) hi = v; }); });
+  if (!isFinite(lo)) { render(null, 'no usable values found'); return; }
+  /* The bottom category must be 0. A 1-5 Likert is shifted to 0-4 and the shift
+     is reported, because silently renumbering somebody's data is how a scale
+     ends up meaning something different from what they wrote. */
+  var shift = lo;
+  if (shift) d.M.forEach(function (r) { r.forEach(function (v, j) { if (v !== null) r[j] = v - shift; }); });
+  var m = hi - lo;
+  if (m < 1) { render(null, 'every response is the same value — nothing to measure'); return; }
+  var res = RASCH.estimatePoly(d.M, d.personNames.length, d.itemNames.length, m);
+  STATE = { data: d, res: res, m: m, shift: shift,
+            pname: document.getElementById('pname').value || 'person',
+            iname: document.getElementById('iname').value || 'item' };
+  render(STATE, null);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The Wright map. Persons left, items right, one ruler. This is the product.
+   ══════════════════════════════════════════════════════════════════════════ */
+/* NOTE: everything emitted here must be valid XML, not just valid HTML. The
+   export button writes this out as a standalone .svg, and XML predefines only
+   amp, lt, gt, quot and apos — a named entity like &mdash; renders fine in the
+   page and makes the exported file refuse to open. Use the character itself. */
+function wrightMap(S) {
+  var P = S.res.persons.filter(function (p) { return p.measure !== null; });
+  var I = S.res.items.filter(function (i) { return i.measure !== null; });
+  if (!P.length || !I.length) return '<p class="hint">Not enough non-extreme data to draw a map.</p>';
+  var all = P.map(function (p) { return p.measure; }).concat(I.map(function (i) { return i.measure; }));
+  var lo = Math.floor(Math.min.apply(null, all) - 0.6), hi = Math.ceil(Math.max.apply(null, all) + 0.6);
+
+  /* Extremes belong ON the map, at the edges, with no number. Dropping them
+     hides a ceiling: if a third of the group tops out, that pile-up IS the
+     finding and it should be the most visible thing here, not a footnote.
+     Winsteps shows them by extrapolating to a fractional score (EXTRSC, 0.3 by
+     default) which places them precisely but arbitrarily — change the setting
+     and the person moves with no new data. Showing the person and refusing the
+     number keeps the visibility and drops the fiction. */
+  var pTop = S.res.persons.filter(function (p) { return p.extreme === 'maximum'; });
+  var pBot = S.res.persons.filter(function (p) { return p.extreme === 'minimum'; });
+  var iTop = S.res.items.filter(function (i) { return i.extreme === 'nobody'; });
+  var iBot = S.res.items.filter(function (i) { return i.extreme === 'everybody'; });
+  var bandT = (pTop.length || iTop.length) ? 52 : 0;
+  var bandB = (pBot.length || iBot.length) ? 52 : 0;
+  var W = 940, padT = 46 + bandT, padB = 34 + bandB;
+  var H = Math.max(430, (hi - lo) * 78) + padT + padB;
+  var cx = 470, y = function (m) { return padT + (hi - m) / (hi - lo) * (H - padT - padB); };
+  var s = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" font-family="system-ui,sans-serif">'];
+  s.push('<rect width="' + W + '" height="' + H + '" fill="#ffffff"/>');
+  s.push('<text x="' + (cx - 30) + '" y="24" text-anchor="end" font-size="12" font-weight="700" fill="#1e5f8c">' +
+         esc(S.pname.toUpperCase()) + 'S \u2014 more able above</text>');
+  s.push('<text x="' + (cx + 30) + '" y="24" font-size="12" font-weight="700" fill="#b45309">' +
+         esc(S.iname.toUpperCase()) + 'S \u2014 harder above</text>');
+  // the ruler
+  s.push('<line x1="' + cx + '" y1="' + padT + '" x2="' + cx + '" y2="' + (H - padB) + '" stroke="#334155" stroke-width="2"/>');
+  for (var t = lo; t <= hi; t++) {
+    var yy = y(t);
+    s.push('<line x1="' + (cx - 6) + '" y1="' + yy + '" x2="' + (cx + 6) + '" y2="' + yy + '" stroke="#334155" stroke-width="1.5"/>');
+    s.push('<text x="' + cx + '" y="' + (yy - 8) + '" text-anchor="middle" font-size="10" fill="#64748b" font-weight="700" stroke="#ffffff" stroke-width="3" paint-order="stroke">' + t + '</text>');
+  }
+  s.push('<text x="' + cx + '" y="' + (H - 10) + '" text-anchor="middle" font-size="10" fill="#94a3b8">logits</text>');
+  // persons, binned
+  var bin = (hi - lo) / Math.max(14, Math.round((hi - lo) * 4));
+  var bins = {};
+  P.forEach(function (p) { var k = Math.round(p.measure / bin); (bins[k] = bins[k] || []).push(p); });
+  Object.keys(bins).forEach(function (k) {
+    var grp = bins[k], yy = y(k * bin);
+    grp.forEach(function (p, j) {
+      var x = cx - 34 - j * 15;
+      s.push('<circle cx="' + x + '" cy="' + yy + '" r="5" fill="#1e5f8c" opacity="0.85"/>');
+    });
+    var names = grp.map(function (p) { return S.data.personNames[p.idx]; }).join(', ');
+    s.push('<text x="' + (cx - 34 - grp.length * 15 - 8) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="10" fill="#475569">' + esc(names) + '</text>');
+  });
+  // items, nudged apart
+  var used = [];
+  I.slice().sort(function (a, b) { return b.measure - a.measure; }).forEach(function (i) {
+    var yy = y(i.measure);
+    while (used.some(function (u) { return Math.abs(u - yy) < 15; })) yy += 15;
+    used.push(yy);
+    var mis = i.infit !== null && (i.infit > 1.5 || i.outfit > 1.5);
+    s.push('<line x1="' + (cx + 6) + '" y1="' + y(i.measure) + '" x2="' + (cx + 22) + '" y2="' + yy + '" stroke="#cbd5e1" stroke-width="1"/>');
+    s.push('<rect x="' + (cx + 22) + '" y="' + (yy - 9) + '" width="10" height="18" rx="2" fill="' + (mis ? '#dc2626' : '#b45309') + '"/>');
+    s.push('<text x="' + (cx + 38) + '" y="' + (yy + 4) + '" font-size="11" fill="#334155">' +
+           esc(S.data.itemNames[i.idx]) + (mis ? ' <tspan fill="#dc2626" font-weight="700">misfit</tspan>' : '') + '</text>');
+  });
+  /* the out-of-bounds bands */
+  function band(persons, items, yy, above) {
+    if (!persons.length && !items.length) return;
+    s.push('<line x1="40" y1="' + yy + '" x2="' + (W - 20) + '" y2="' + yy +
+           '" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3 4"/>');
+    var ty = above ? yy - 16 : yy + 20;
+    if (persons.length) {
+      var names = persons.map(function (p) { return S.data.personNames[p.idx]; }).join(', ');
+      persons.forEach(function (p, j) {
+        s.push('<circle cx="' + (cx - 34 - j * 15) + '" cy="' + ty + '" r="5" fill="none" stroke="#1e5f8c" stroke-width="1.8" stroke-dasharray="2 2"/>');
+      });
+      s.push('<text x="' + (cx - 34 - persons.length * 15 - 8) + '" y="' + (ty + 4) +
+             '" text-anchor="end" font-size="10" fill="#64748b">' + esc(names) +
+             ' \u2014 ' + (above ? 'above every ' : 'below every ') + esc(S.iname) + ', no measure</text>');
+    }
+    if (items.length) {
+      items.forEach(function (i, j) {
+        s.push('<rect x="' + (cx + 22) + '" y="' + (ty - 9 + j * 20) + '" width="10" height="18" rx="2" fill="none" stroke="#b45309" stroke-width="1.8" stroke-dasharray="2 2"/>');
+        s.push('<text x="' + (cx + 38) + '" y="' + (ty + 4 + j * 20) + '" font-size="11" fill="#64748b">' +
+               esc(S.data.itemNames[i.idx]) + ' \u2014 ' + (above ? 'nobody' : 'everybody') + ', no measure</text>');
+      });
+    }
+  }
+  band(pTop, iTop, padT - 14, true);
+  band(pBot, iBot, H - padB + 14, false);
+
+  // means
+  var pm = P.reduce(function (a, p) { return a + p.measure; }, 0) / P.length;
+  var im = I.reduce(function (a, i) { return a + i.measure; }, 0) / I.length;
+  s.push('<line x1="' + (cx - 300) + '" y1="' + y(pm) + '" x2="' + (cx - 14) + '" y2="' + y(pm) + '" stroke="#1e5f8c" stroke-width="1" stroke-dasharray="6 4"/>');
+  s.push('<text x="' + (cx - 300) + '" y="' + (y(pm) - 5) + '" font-size="10" fill="#1e5f8c" font-weight="700">mean ' + S.pname + '</text>');
+  s.push('<line x1="' + (cx + 14) + '" y1="' + y(im) + '" x2="' + (W - 10) + '" y2="' + y(im) + '" stroke="#b45309" stroke-width="1" stroke-dasharray="6 4"/>');
+  s.push('<text x="' + (W - 10) + '" y="' + (y(im) - 5) + '" text-anchor="end" font-size="10" fill="#b45309" font-weight="700">mean ' + S.iname + ' = 0</text>');
+  s.push('</svg>');
+  return s.join('');
+}
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function f2(v) { return v === null || v === undefined ? '&mdash;' : v.toFixed(2); }
+function fitPill(v) {
+  if (v === null) return '<span class="pill extreme">&mdash;</span>';
+  if (v > 2.0) return '<span class="pill bad">' + v.toFixed(2) + '</span>';
+  if (v > 1.5) return '<span class="pill warn">' + v.toFixed(2) + '</span>';
+  if (v < 0.7) return '<span class="pill warn">' + v.toFixed(2) + '</span>';
+  return '<span class="pill ok">' + v.toFixed(2) + '</span>';
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Render
+   ══════════════════════════════════════════════════════════════════════════ */
+function render(S, err) {
+  var o = document.getElementById('out');
+  if (err) { o.innerHTML = '<div class="card"><h2>That did not parse</h2><p class="lead">' + esc(err) + '</p></div>'; return; }
+  if (!S) return;
+  var ps = RASCH.separation(S.res.persons), is = RASCH.separation(S.res.items);
+  var P = S.res.persons, I = S.res.items;
+  var pOK = P.filter(function (p) { return p.measure !== null; });
+  var iOK = I.filter(function (i) { return i.measure !== null; });
+  var pEx = P.filter(function (p) { return p.extreme; });
+  var iEx = I.filter(function (i) { return i.extreme; });
+  var tag = document.getElementById('modeltag');
+  if (tag) tag.textContent = S.m > 1 ? ('Andrich rating scale \u00b7 ' + (S.m + 1) + ' categories \u00b7 JMLE') : 'dichotomous \u00b7 JMLE';
+  var h = [];
+
+  // ── the map first, because it is the product ──
+  h.push('<div class="card"><h2>Wright map<span class="sub">' + pOK.length + ' ' + esc(S.pname) + 's, ' +
+         iOK.length + ' ' + esc(S.iname) + 's, one ruler</span></h2>');
+  h.push('<p class="lead">Read across, not down. A ' + esc(S.iname) + ' beside a ' + esc(S.pname) +
+         ' is one that person has about even odds on. ' + esc(S.iname) + 's far above everyone are out of reach; ' +
+         esc(S.iname) + 's far below are already universal and tell you nothing new.</p>');
+  h.push('<div class="wm" id="wmap">' + wrightMap(S) + '</div>');
+  var pm = pOK.reduce(function (a, p) { return a + p.measure; }, 0) / (pOK.length || 1);
+  var targ = pm; // items centre at 0 by construction
+  h.push('<div class="note' + (Math.abs(targ) < 0.8 ? ' good' : '') + '"><b>Targeting: ' + (targ >= 0 ? '+' : '') + targ.toFixed(2) + ' logits.</b> ' +
+    (Math.abs(targ) < 0.8
+      ? 'The ' + esc(S.iname) + 's are aimed near where the ' + esc(S.pname) + 's actually are, which is what you want.'
+      : targ > 0
+        ? 'The ' + esc(S.pname) + 's sit well above the ' + esc(S.iname) + 's — these ' + esc(S.iname) + 's are too easy for this group and are mostly confirming what you already know. Add harder ones.'
+        : 'The ' + esc(S.pname) + 's sit well below the ' + esc(S.iname) + 's — these ' + esc(S.iname) + 's are out of reach and most of the information is in whether anyone succeeded at all. Add easier ones.') +
+    '</div></div>');
+
+  // ── does it hold together ──
+  h.push('<div class="card"><h2>Does it hold together?</h2>');
+  h.push('<p class="lead">Separation says how many distinguishable levels the data support. Reliability is the same fact as a ratio. Neither is a measure of whether the instrument is <i>good</i> — only of how finely it can cut.</p>');
+  if (ps) h.push('<div><div class="stat"><b>' + ps.reliability.toFixed(2) + '</b><span>' + esc(S.pname) + ' reliability</span></div>' +
+    '<div class="stat"><b>' + ps.separation.toFixed(2) + '</b><span>separation</span></div>' +
+    '<div class="stat"><b>' + ps.strata.toFixed(1) + '</b><span>strata</span></div>' +
+    '<div class="stat"><b>' + ps.sd.toFixed(2) + '</b><span>SD (logits)</span></div>' +
+    '<div class="stat"><b>' + ps.rmse.toFixed(2) + '</b><span>RMSE</span></div></div>');
+  if (is) h.push('<div style="margin-top:4px"><div class="stat"><b>' + is.reliability.toFixed(2) + '</b><span>' + esc(S.iname) + ' reliability</span></div>' +
+    '<div class="stat"><b>' + is.separation.toFixed(2) + '</b><span>separation</span></div>' +
+    '<div class="stat"><b>' + is.strata.toFixed(1) + '</b><span>strata</span></div></div>');
+  if (ps) h.push('<div class="note' + (ps.strata >= 2 ? ' good' : ' bad') + '">' +
+    (ps.strata >= 3 ? 'About ' + Math.floor(ps.strata) + ' distinguishable groups of ' + esc(S.pname) + '. Enough to sort people into levels, not enough to rank them individually — that is almost always the honest limit.'
+     : ps.strata >= 2 ? 'About two distinguishable groups. You can tell high from low and nothing finer. Adding ' + esc(S.iname) + 's near the middle is what buys resolution.'
+     : 'Fewer than two distinguishable groups. This set of ' + esc(S.iname) + 's cannot separate these ' + esc(S.pname) + 's at all; treat any ranking from it as noise.') + '</div>');
+  h.push('<p class="hint" style="margin-top:10px">Estimation ' + (S.res.converged ? 'converged in ' + S.res.iters + ' iterations' : 'did NOT converge in ' + S.res.iters + ' iterations — treat every number here as provisional') + '.</p></div>');
+
+  // ── the rating scale itself ──
+  if (S.m > 1) {
+    var TH = S.res.thresholds, CN = S.res.catN;
+    var disordered = [];
+    for (var t = 1; t < TH.length; t++) if (TH[t].F < TH[t - 1].F) disordered.push(t);
+    var thin = CN.map(function (c, k) { return { k: k, n: c }; })
+                 .filter(function (c) { return c.n > 0 && c.n < 10; });
+    var empty = CN.map(function (c, k) { return { k: k, n: c }; })
+                  .filter(function (c) { return c.n === 0; });
+    h.push('<div class="card"><h2>The rating scale<span class="sub">' + (S.m + 1) + ' categories, thresholds shared across all ' + esc(S.iname) + 's</span></h2>');
+    h.push('<p class="lead">An Andrich threshold is the point on the ruler where the next category up becomes the more likely answer. They should climb. If they do not, the categories are not being used in the order they were written &mdash; and no total score can tell you that.</p>');
+    h.push('<p class="hint" style="margin-bottom:12px">JMLE spreads estimates slightly wider than the truth &mdash; a known bias of the method, around 10&ndash;20% with few items. The <i>ordering</i> of thresholds, which is what matters here, is unaffected. Winsteps applies a correction factor; this tool does not, so read the spacing as approximate and the sequence as reliable.</p>');
+    h.push('<table><tr><th>Category</th><th class="num">Count</th><th class="num">%</th><th class="num">Andrich threshold</th><th>Reading</th></tr>');
+    var tot = CN.reduce(function (a, b) { return a + b; }, 0);
+    for (var k = 0; k <= S.m; k++) {
+      var f = (k === 0) ? null : TH[k - 1];
+      h.push('<tr><td><b>' + (k + (S.shift || 0)) + '</b></td>' +
+        '<td class="num">' + CN[k] + '</td>' +
+        '<td class="num">' + (tot ? (100 * CN[k] / tot).toFixed(1) : '0') + '</td>' +
+        '<td class="num">' + (f ? f.F.toFixed(2) : '<span style="color:#94a3b8">baseline</span>') + '</td>' +
+        '<td style="white-space:normal;color:#64748b;font-size:11px">' +
+        (CN[k] === 0 ? 'Never used. This category has no threshold and cannot be estimated &mdash; collapse it.'
+         : CN[k] < 10 ? 'Very thin. The threshold here rests on almost no observations.'
+         : (f && k > 1 && TH[k - 2] && f.F < TH[k - 2].F) ? '<b style="color:#b91c1c">Disordered</b> &mdash; this threshold sits BELOW the one beneath it.'
+         : 'Used as expected.') + '</td></tr>');
+    }
+    h.push('</table>');
+    if (disordered.length) {
+      h.push('<div class="note bad"><b>Thresholds are disordered.</b> Category ' +
+        disordered.map(function (t) { return (t + (S.shift || 0)); }).join(' and ') +
+        ' sits below the threshold beneath it, which means respondents are not distinguishing these categories in the order you wrote them. ' +
+        'The usual remedy is to collapse the adjacent categories and re-run. This is the finding a summed score can never show you, and it is the main reason to run this before trusting a questionnaire.</div>');
+    } else {
+      h.push('<div class="note good"><b>Thresholds are ordered.</b> Each step up the scale is harder than the last, which is what the category labels claim. The scale is working as written.</div>');
+    }
+    if (empty.length) h.push('<div class="note bad">Category ' + empty.map(function (c) { return c.k + (S.shift || 0); }).join(', ') + ' was never used, so it has no estimable threshold. Collapse it into a neighbour before reading anything else here.</div>');
+    else if (thin.length) h.push('<div class="note">Category ' + thin.map(function (c) { return c.k + (S.shift || 0); }).join(', ') + ' has fewer than 10 observations. Its threshold is unstable; treat it as provisional.</div>');
+    if (S.shift) h.push('<p class="hint" style="margin-top:10px">Your lowest category was ' + S.shift + '; it has been treated as 0 for estimation. Category numbers above are shown in your original numbering.</p>');
+    h.push('</div>');
+  }
+
+  // ── items ──
+  h.push('<div class="card"><h2>' + cap(S.iname) + 's<span class="sub">hardest first</span></h2>');
+  h.push('<p class="lead">Difficulty is where a ' + esc(S.iname) + ' sits on the same ruler as the people. Infit and outfit near 1.0 mean the responses behave as the model expects.</p>');
+  h.push('<table><tr><th>' + cap(S.iname) + '</th><th class="num">Score</th><th class="num">N</th><th class="num">Measure</th><th class="num">SE</th><th>Infit</th><th>Outfit</th><th>Reading</th></tr>');
+  I.slice().sort(function (a, b) { return (b.measure === null ? -99 : b.measure) - (a.measure === null ? -99 : a.measure); })
+   .forEach(function (i) {
+    h.push('<tr><td><b>' + esc(S.data.itemNames[i.idx]) + '</b></td>' +
+      '<td class="num">' + i.score + '</td><td class="num">' + i.count + '</td>' +
+      '<td class="num">' + (i.extreme ? '<span class="pill extreme">' + i.extreme + '</span>' : f2(i.measure)) + '</td>' +
+      '<td class="num">' + f2(i.se) + '</td><td>' + fitPill(i.infit) + '</td><td>' + fitPill(i.outfit) + '</td>' +
+      '<td style="white-space:normal;color:#64748b;font-size:11px">' + itemReading(i, S) + '</td></tr>');
+  });
+  h.push('</table></div>');
+
+  // ── persons ──
+  h.push('<div class="card"><h2>' + cap(S.pname) + 's<span class="sub">most able first</span></h2>');
+  h.push('<table><tr><th>' + cap(S.pname) + '</th><th class="num">Score</th><th class="num">N</th><th class="num">Measure</th><th class="num">SE</th><th>Infit</th><th>Outfit</th></tr>');
+  P.slice().sort(function (a, b) { return (b.measure === null ? -99 : b.measure) - (a.measure === null ? -99 : a.measure); })
+   .forEach(function (p) {
+    h.push('<tr><td>' + esc(S.data.personNames[p.idx]) + '</td><td class="num">' + p.score + '</td><td class="num">' + p.count + '</td>' +
+      '<td class="num">' + (p.extreme ? '<span class="pill extreme">' + p.extreme + '</span>' : f2(p.measure)) + '</td>' +
+      '<td class="num">' + f2(p.se) + '</td><td>' + fitPill(p.infit) + '</td><td>' + fitPill(p.outfit) + '</td></tr>');
+  });
+  h.push('</table>');
+  if (pEx.length || iEx.length) {
+    h.push('<div class="note"><b>Extreme scores have no finite measure, and that is the honest answer.</b><br>' +
+      (pEx.length ? pEx.length + ' ' + esc(S.pname) + '(s) scored at a boundary — they are somewhere beyond the ' + esc(S.iname) + 's you have, and these ' + esc(S.iname) + 's cannot say where. ' : '') +
+      (iEx.length ? iEx.length + ' ' + esc(S.iname) + '(s) were passed by everybody or nobody — they carry no information about differences between these ' + esc(S.pname) + 's, though they may still be worth keeping for other groups. ' : '') +
+      'Nothing was quietly extrapolated; they are excluded from estimation and listed above.</div>');
+  }
+  h.push('</div>');
+  o.innerHTML = h.join('');
+}
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function itemReading(i, S) {
+  if (i.extreme === 'everybody') return 'Everyone succeeded. Universal here — no information about differences.';
+  if (i.extreme === 'nobody') return 'Nobody succeeded. Out of reach for this group entirely.';
+  if (i.extreme === 'empty') return 'No responses.';
+  var v = Math.max(i.infit, i.outfit);
+  if (v > 2.0) return 'Badly noisy. This is very likely measuring something other than the thing the rest measure — worth looking at before anything else.';
+  if (v > 1.5) return 'Noisy. Responses here are less predictable than the model expects: check whether it means the same thing to everyone.';
+  if (Math.max(i.infit, i.outfit) < 0.7) return 'Too predictable. Often a near-duplicate of another ' + esc(S.iname) + ', or one that adds no independent information.';
+  return 'Behaves as the model expects.';
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Demo — a SODOTO badge ledger. Persons x skills, dichotomous, which is what
+   the ledger already is. Built with a deterministic generator so the numbers
+   are reproducible, including one skill deliberately made to misfit.
+   ══════════════════════════════════════════════════════════════════════════ */
+function loadDemo() {
+  var skills = [
+    ['comment on a page', -2.6], ['edit a wiki page', -2.0], ['publish a FedWiki page', -1.4],
+    ['add a page to a lineup', -0.9], ['fork from another site', -0.5], ['draw a simple graph', -0.1],
+    ['run a campfire conversation', 0.3], ['label a value network arrow', 0.7],
+    ['assign an IAD level', 1.1], ['build a value network', 1.6], ['issue a signed badge', 2.1],
+    ['stand up an NDC server', 2.7]
+  ];
+  var people = ['marc', 'kerry', 'dorothy', 'luis', 'ana', 'ben', 'chris', 'dee', 'eli', 'fran',
+                'gus', 'hana', 'ivan', 'jo', 'kim', 'lee', 'mo', 'nina', 'omar', 'pia',
+                'quinn', 'ray', 'sam', 'tess'];
+  // deterministic pseudo-random so the demo is the same every time
+  var seed = 20260901;
+  function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+  var ability = people.map(function (_, n) { return -3.0 + 6.2 * n / (people.length - 1); });
+  var rows = [['person'].concat(skills.map(function (s) { return s[0]; })).join(',')];
+  people.forEach(function (p, n) {
+    var r = [p];
+    skills.forEach(function (s, i) {
+      var b = ability[n], d = s[1];
+      // "run a campfire conversation" deliberately misfits: it depends on
+      // temperament rather than on the capability the other skills share.
+      if (s[0] === 'run a campfire conversation') b = -0.4 + 2.6 * rnd();
+      var pr = 1 / (1 + Math.exp(-(b - d)));
+      r.push(rnd() < pr ? 1 : 0);
+    });
+    rows.push(r.join(','));
+  });
+  document.getElementById('csv').value = rows.join('\n');
+  document.getElementById('pname').value = 'person';
+  document.getElementById('iname').value = 'skill';
+  run();
+}
+
+/* A neighbourhood participation questionnaire, 1-5. Generated from an Andrich
+   model whose true thresholds are DISORDERED between 3 and 4 — the middle of
+   the scale is narrower than the labels suggest, which is what happens when
+   "neutral" and "agree" are not really different answers to the people filling
+   it in. Summing these responses would produce a perfectly plausible number
+   and hide the problem completely. That is the demonstration.
+
+   Note on sample size: an earlier version of this demo used 60 respondents and
+   a 0.2-logit disordering, and the estimator correctly reported the thresholds
+   as ordered — the disordering was real but smaller than the sampling noise.
+   That is the estimator being honest, not failing, and it is worth knowing that
+   detecting a subtle category problem needs respondents, not cleverness. */
+function loadLikert() {
+  var stmts = [
+    ['I know who to call when something goes wrong', -1.4],
+    ['People here look out for each other', -0.9],
+    ['I have a say in what happens on my block', -0.3],
+    ['I could get 10 neighbours to a meeting', 0.2],
+    ['I have helped organise something locally', 0.7],
+    ['Local decisions reflect what people here want', 1.1],
+    ['I would take a problem to the council myself', 1.5]
+  ];
+  var F = [0, -1.5, 0.9, -0.4, 1.4];  // F3 < F2 on purpose: a middle category nobody really uses
+  var m = 4;
+  var seed = 31415;
+  function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+  var rows = [['resident'].concat(stmts.map(function (x) { return x[0]; })).join(',')];
+  for (var n = 0; n < 140; n++) {
+    var B = -2.2 + 4.4 * rnd();
+    var r = ['r' + (n + 1)];
+    stmts.forEach(function (st) {
+      var cum = 0, psi = [], mx = -1e9;
+      for (var k = 0; k <= m; k++) { if (k > 0) cum += F[k]; psi[k] = k * (B - st[1]) - cum; if (psi[k] > mx) mx = psi[k]; }
+      var sum = 0, P = [];
+      for (k = 0; k <= m; k++) { P[k] = Math.exp(psi[k] - mx); sum += P[k]; }
+      var u = rnd() * sum, acc = 0, pick = m;
+      for (k = 0; k <= m; k++) { acc += P[k]; if (u <= acc) { pick = k; break; } }
+      r.push(pick + 1);              // present it as a 1-5 scale, as a survey would
+    });
+    rows.push(r.join(','));
+  }
+  document.getElementById('csv').value = rows.join('\n');
+  document.getElementById('pname').value = 'resident';
+  document.getElementById('iname').value = 'statement';
+  run();
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Out
+   ══════════════════════════════════════════════════════════════════════════ */
+function dl(name, text, mime) {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: mime || 'text/plain' }));
+  a.download = name; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+}
+
+function exportMeasures() {
+  if (!STATE) { alert('Estimate something first.'); return; }
+  var L = ['kind,label,score,count,measure,se,infit,outfit,infit_zstd,outfit_zstd,extreme'];
+  function row(k, name, r) {
+    L.push([k, JSON.stringify(name), r.score, r.count,
+      r.measure === null ? '' : r.measure.toFixed(4),
+      r.se === null ? '' : r.se.toFixed(4),
+      r.infit === null ? '' : r.infit.toFixed(4),
+      r.outfit === null ? '' : r.outfit.toFixed(4),
+      r.iz === null ? '' : r.iz.toFixed(2),
+      r.oz === null ? '' : r.oz.toFixed(2),
+      r.extreme || ''].join(','));
+  }
+  STATE.res.items.forEach(function (i) { row('item', STATE.data.itemNames[i.idx], i); });
+  STATE.res.persons.forEach(function (p) { row('person', STATE.data.personNames[p.idx], p); });
+  dl('rasch-measures.csv', L.join('\n'), 'text/csv');
+}
+
+function exportMap() {
+  if (!STATE) { alert('Estimate something first.'); return; }
+  var svg = document.getElementById('wmap').innerHTML;
+  dl('wright-map.svg', '<?xml version="1.0" encoding="UTF-8"?>\n' + svg, 'image/svg+xml');
+}
+
+function saveSession() {
+  if (!STATE) { alert('Estimate something first.'); return; }
+  dl('rasch-session.json', JSON.stringify({
+    version: '1.0', tool: 'rcn-rasch', model: 'dichotomous-jmle',
+    created: new Date().toISOString(),
+    pname: STATE.pname, iname: STATE.iname,
+    csv: document.getElementById('csv').value,
+    itemNames: STATE.data.itemNames, personNames: STATE.data.personNames,
+    items: STATE.res.items, persons: STATE.res.persons,
+    converged: STATE.res.converged, iterations: STATE.res.iters
+  }, null, 2), 'application/json');
+}
+
+function openSession(el) {
+  var f = el.files[0]; if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function () {
+    try {
+      var j = JSON.parse(rd.result);
+      document.getElementById('csv').value = j.csv || '';
+      if (j.pname) document.getElementById('pname').value = j.pname;
+      if (j.iname) document.getElementById('iname').value = j.iname;
+      run();
+    } catch (e) { alert('Could not read that session: ' + e.message); }
+  };
+  rd.readAsText(f); el.value = '';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<!-- NixOS for RCN — Exploratory Note
+     STATUS: exploration only. Nothing here is decided, scheduled, or committed.
+     Update this file if the NDC deployment model changes (containers, host OS,
+     per-NDC server shape) or if the FedWiki plugin install path changes.
+     Sections marked UPDATE: are the most likely to need refreshing. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NixOS for RCN — Exploratory Note</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+
+.page{max-width:820px;margin:0 auto;padding:40px 24px 80px}
+
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:40px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:32px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569;line-height:1.5}
+.doc-meta{margin-top:14px;font-size:12px;color:#94a3b8}
+
+h2{font-size:20px;font-weight:700;color:#0f172a;margin:48px 0 14px;padding-top:8px;border-top:1px solid #e2e8f0}
+h3{font-size:15px;font-weight:600;color:#1e293b;margin:28px 0 8px}
+p{margin-bottom:14px;color:#334155}
+p:last-child{margin-bottom:0}
+ul{margin:0 0 18px 22px}
+li{margin-bottom:7px;color:#334155}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;color:#0f172a}
+
+.status{background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:16px 20px;margin-bottom:32px}
+.status h4{font-size:13px;font-weight:700;color:#854d0e;margin-bottom:6px}
+.status p{font-size:13px;color:#713f12;margin:0;line-height:1.6}
+
+.lead{font-size:17px;line-height:1.7;color:#1e293b;margin-bottom:28px;padding:20px 24px;background:#fff7ed;border-left:4px solid #c84b2f;border-radius:0 8px 8px 0}
+
+.hl-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin:0 0 14px}
+.hl-card h4{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:6px}
+.hl-card p{font-size:13px;color:#475569;margin:0 0 8px;line-height:1.6}
+.hl-card p:last-child{margin-bottom:0}
+.hl-card.cost{border-left:4px solid #dc2626}
+.hl-card.gain{border-left:4px solid #16a34a}
+
+.gaps-table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0 24px}
+.gaps-table th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+.gaps-table td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+.gaps-table td:first-child{font-weight:600;color:#0f172a}
+
+.stage{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;margin:0 0 14px;display:flex;gap:16px;align-items:flex-start}
+.stage-num{flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:#0f172a;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.stage-body h4{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:6px}
+.stage-body p{font-size:13px;color:#475569;margin:0 0 6px;line-height:1.6}
+.stage-body p:last-child{margin-bottom:0}
+.stage-body .verdict{font-size:12px;color:#64748b;font-style:italic}
+
+.positioning{background:#0f172a;color:#f1f5f9;border-radius:12px;padding:28px 30px;margin-top:40px}
+.positioning h3{color:#f8fafc;font-size:16px;margin:0 0 12px}
+.positioning p{color:#cbd5e1;font-size:14px;line-height:1.7;margin:0 0 12px}
+.positioning p:last-child{margin-bottom:0}
+
+.doc-footer{margin-top:48px;padding-top:20px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="doc-header">
+  <div class="doc-tag">RCN · Infrastructure · Exploration</div>
+  <div class="doc-title">NixOS for RCN</div>
+  <div class="doc-sub">What we would actually gain — and what we would actually pay — if the whole RCN stack, Federated Wiki included, were deployed as NixOS.</div>
+  <div class="doc-meta">August 14, 2026 · exploratory note · no decision attached</div>
+</div>
+
+<div class="status">
+  <h4>Status: exploration, not a proposal</h4>
+  <p>Nothing in this note is decided, scheduled, budgeted, or recommended for adoption. It exists to answer a question that came up in conversation — "what would we get out of it?" — with enough specificity that the answer is worth something later. Treat every "we could" as a sketch, not a plan. The current deployment model (three GHCR containers behind Caddy on WikiCafe) is unchanged and unchallenged by this document.</p>
+</div>
+
+<div class="lead">The short version: we have already been drawing Nix by hand. The SODOTO dependency closures in <code>docs/assets/sodoto-dependency-closures.json</code> assert what each deployment artifact contains. Nix computes that same relationship instead of asserting it, and can sign the result. Whether that is worth the cost depends almost entirely on how many NDC servers we expect to be running, and how much we want the FedWiki plugin loop to stay fast and live.</div>
+
+<h2>What the question is really about</h2>
+
+<p>RCN's unit of deployment is not a container. It is a neighborhood site: a wiki, the sofi-proxy, Caddy terminating HTTPS, seed data, an identity key, and a backup story, all standing up together and staying consistent with each other. Docker Compose describes the containers well. It does not describe the machine.</p>
+
+<p>NixOS describes the machine — kernel, services, users, network, disks, and the applications — as a single declarative expression that evaluates to a bootable system. That is the whole of the appeal here, and every specific benefit below is a consequence of it.</p>
+
+<h2>What we would gain</h2>
+
+<div class="hl-card gain">
+  <h4>An NDC server becomes a readable text file</h4>
+  <p>One configuration per neighborhood, diffable, storable in FedWiki itself, and legible to someone who is not the person who built it. This is the cave-drawings principle applied to infrastructure: an artifact a group can read, point at, and argue about without special training. Today, "what is actually running at this site" is answerable only by someone with a shell on the box.</p>
+</div>
+
+<div class="hl-card gain">
+  <h4>Rollback that a non-expert can perform</h4>
+  <p>NixOS keeps previous system generations and lists them in the boot menu. If an upgrade breaks the wiki at an NDC on a weekday evening, someone on site reboots and picks the previous generation — OS, service versions, config, and data layout all reverting together as one atomic unit. Nothing in the current stack offers that as a single step.</p>
+</div>
+
+<div class="hl-card gain">
+  <h4>Offline and low-bandwidth installation</h4>
+  <p>A closure can be copied to a USB stick and carried to a site with poor connectivity, arriving bit-identical to what runs on WikiCafe. For rural NDCs this is a practical capability, not a convenience.</p>
+</div>
+
+<div class="hl-card gain">
+  <h4>The provenance shape matches the identity story</h4>
+  <p>This is the most interesting alignment, and the least obvious. RCN's thesis is signed substrate — did:key identities, badge JWTs, self-custody, verification without a registry and without a chain. A Nix closure is a content hash, and store paths can be signed and verified by anyone holding the public key.</p>
+  <p>"This NDC runs exactly closure X, signed by the RCN key" is structurally the same claim as a badge: independently verifiable, no central registry, no trust required in the host. Machines would get the same treatment people already get. That is a coherent extension of the signed-substrate position rather than an unrelated devops upgrade.</p>
+</div>
+
+<div class="hl-card gain">
+  <h4>The dependency diagrams stop being hand-maintained</h4>
+  <p>The closures document asserts that the deploy artifact contains sofi-proxy plus the tools plus the seed. Nix computes that relationship, and <code>nix why-depends</code> answers it on demand. Hand-drawn diagrams drift from reality; computed ones cannot.</p>
+</div>
+
+<div class="hl-card gain">
+  <h4>Development shells without polluting the laptop</h4>
+  <p>A pinned Node for FedWiki plugin work, a pinned Python for the FHIR smart-proxy, a Neo4j for substrate work — each entered per-project and each leaving nothing behind.</p>
+</div>
+
+<h2>What it would cost</h2>
+
+<div class="hl-card cost">
+  <h4>Federated Wiki fights immutability — this is the real objection</h4>
+  <p>Plugins install through npm into the wiki's own directory. Pages are written to disk as the primary act of using the system. Farm mode creates sites at runtime. The entire value of a wiki is mutable state that responds immediately to a person.</p>
+  <p>Under Nix, application code lives in a read-only store, and every plugin becomes a derivation with a pinned hash. Adding a plugin stops being an install and becomes a configuration edit plus a system rebuild. With sixty-four plugin repositories and active work aimed at making the wiki <em>more</em> live rather than less, this is a genuine cost in the direction we are trying to move.</p>
+  <p>The forced separation it imposes — application code in the store, all mutable data in explicitly declared persistent paths — is a discipline worth having regardless. The slower plugin loop is not.</p>
+</div>
+
+<div class="hl-card cost">
+  <h4>Concentrated expertise</h4>
+  <p>Nix's error messages are notoriously poor and its learning curve is steep. A neighborhood volunteer can read a Compose file and guess right. They cannot read a flake. Anything that pushes debugging back to one person works against the coordinatorless direction.</p>
+</div>
+
+<div class="hl-card cost">
+  <h4>Uneven payoff across the stack</h4>
+  <p>The single-file browser tools have no build step at all and gain nothing. Firebase is a hosted service and is unaffected. Neo4j Enterprise packaging is a project in its own right, separate from anything else here.</p>
+</div>
+
+<h2>Where the benefit actually lands</h2>
+
+<!-- UPDATE: revise this table if the stack composition changes -->
+<table class="gaps-table">
+  <tr><th>Layer</th><th>Benefit</th><th>Why</th></tr>
+  <tr><td>Per-NDC host</td><td>High</td><td>Whole-machine reproducibility, atomic rollback, offline install, signed provenance. This is the case.</td></tr>
+  <tr><td>Container images</td><td>Moderate</td><td>Reproducible builds with no Dockerfile drift; identical push path to GHCR.</td></tr>
+  <tr><td>Dev environments</td><td>Moderate</td><td>Pinned toolchains per project, nothing installed globally.</td></tr>
+  <tr><td>FedWiki plugin loop</td><td>Negative</td><td>Live npm install and symlinking becomes edit-and-rebuild.</td></tr>
+  <tr><td>Single-file HTML tools</td><td>None</td><td>No build step exists to make reproducible.</td></tr>
+  <tr><td>Firebase, hosted services</td><td>None</td><td>Outside the boundary entirely.</td></tr>
+</table>
+
+<h2>If it were ever pursued, the staged shape</h2>
+
+<p>The payoff is uneven enough that an all-at-once move would take the costs and the benefits together when they can be separated. A staged approach takes them in order of return.</p>
+
+<div class="stage">
+  <div class="stage-num">1</div>
+  <div class="stage-body">
+    <h4>Use Nix to build the containers, not to run them</h4>
+    <p>Produce the same three GHCR images reproducibly, with no Dockerfile drift and a computed dependency closure. WikiCafe changes nothing, the push path is unchanged, and the packaging work needed for anything further gets proved out.</p>
+    <p class="verdict">Low risk, contained blast radius, reversible by deleting a directory.</p>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="stage-num">2</div>
+  <div class="stage-body">
+    <h4>NixOS for the NDC host</h4>
+    <p>A single module declaring wiki, proxy, Caddy, backups, and the site's identity key, with one configuration file per neighborhood and all mutable data held in explicitly declared paths outside the store. This is where rollback, offline install, and signed provenance pay for themselves.</p>
+    <p class="verdict">Worth considering only once hand-tending individual servers has become the bottleneck — realistically the third or fourth NDC, not the first.</p>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="stage-num">3</div>
+  <div class="stage-body">
+    <h4>Never the plugin development loop</h4>
+    <p>Plugin work stays on npm and symlinks against a local wiki. Nothing about the packaging approach for deployment requires changing how plugins are written and tested.</p>
+    <p class="verdict">A boundary to hold deliberately, not a stage to complete.</p>
+  </div>
+</div>
+
+<h2>Open questions</h2>
+
+<ul>
+  <li>How many NDC servers do we actually expect to be running, and over what period? Below roughly three, hand-tending is cheaper than any reproducibility machinery.</li>
+  <li>Does the wiki's mutable state separate cleanly in practice, or are there paths where code and data are genuinely interleaved?</li>
+  <li>Is a signed closure hash something an NDC would ever be asked to present — or is the provenance argument elegant but unused?</li>
+  <li>Who besides one person would be able to debug a failing rebuild at a site?</li>
+  <li>Would this compete for attention with the FedWiki affordances work, which is the thing actually blocking use?</li>
+</ul>
+
+<div class="positioning">
+  <h3>The honest summary</h3>
+  <p>The strongest argument is not operational efficiency. It is that a signed, content-addressed machine closure is the infrastructure analogue of a signed did:key badge — the same trust shape, verifiable by anyone, dependent on no registry. RCN already made that argument for people. Making it for machines is consistent rather than novel.</p>
+  <p>The strongest argument against is that Federated Wiki is built on exactly the mutability that Nix removes, and the current work is aimed at making the wiki more live, not more sealed.</p>
+  <p>Stage one — building the existing containers with Nix — captures most of the reproducibility with almost none of the cost, and can be abandoned without consequence. Everything past that should wait for a real operational pain that a real number of NDC servers has produced.</p>
+</div>
+
+<div class="doc-footer">
+  <span>RCN — exploratory note, not a decision</span>
+  <span>docs/nixos-rcn-exploration.html</span>
+</div>
+
+</div>
+</body>
+</html>

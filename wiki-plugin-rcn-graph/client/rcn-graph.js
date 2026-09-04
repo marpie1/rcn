@@ -1,6 +1,11 @@
 (function () {
 
-  const GRAPH_URL = 'https://marc.relocalizecreativity.net/assets/Drag/graph-tool-v22.html'
+  // Kept in step with client/rcngraph.js — farm sites are alice.localhost etc., so
+  // match the suffix rather than the bare hostname.
+  const LOCAL = /(^|\.)localhost$/.test(window.location.hostname)
+  const GRAPH_URL = LOCAL
+    ? 'http://localhost:8765/tools/graph-tool-v22.html'
+    : 'https://marc.relocalizecreativity.net/assets/Drag/graph-tool-v22.html'
   const WINDOW_NAME = 'rcngraph'
 
   let pendingItem = null
@@ -23,7 +28,7 @@
       $item.append(`
         <div style="background-color:#eee;padding:15px;text-align:center;">
           <p style="font-weight:bold;margin:0 0 6px;">RCN Graph Tool</p>
-          <p style="color:#666;font-size:0.85em;margin:0 0 12px;">CLD · EIP · OPM · VSM · NRM</p>
+          <p style="color:#666;font-size:0.85em;margin:0 0 12px;">CLD · EIP · NRM · Trace · Wardley · OPM · SFD · LOP · VSM</p>
           <button class="open-graph" style="cursor:pointer;">Open Graph Tool ↗</button>
         </div>
       `)

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<!-- RCN A3 — User Manual
+     Update when features change. Sections are numbered; keep the nav + TOC in sync. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN A3 — User Manual</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+.page{max-width:840px;margin:0 auto;padding:40px 24px 90px}
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:28px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:30px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569}
+.doc-nav{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#fae8ff;color:#a21caf;border-color:#f0abfc}
+.toc{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-bottom:36px;columns:2;column-gap:28px}
+.toc a{display:block;font-size:12.5px;padding:3px 0;color:#475569;break-inside:avoid}
+.toc a:hover{color:#1d4ed8;text-decoration:none}
+h2{font-size:19px;font-weight:700;color:#0f172a;margin:44px 0 12px;padding-top:10px;border-top:1px solid #e2e8f0;scroll-margin-top:16px}
+h3{font-size:14.5px;font-weight:600;color:#1e293b;margin:24px 0 7px}
+p{margin-bottom:13px;color:#334155;font-size:14px}
+ul,ol{margin:0 0 14px 22px;color:#334155;font-size:14px}
+li{margin-bottom:6px;line-height:1.55}
+code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;font-size:12.5px;color:#0f172a;white-space:nowrap}
+kbd{background:#fff;border:1px solid #cbd5e1;border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:11px;font-family:system-ui,sans-serif;color:#0f172a}
+.tip{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#14532d}
+.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#1e3a8a}
+.warn{background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#713f12}
+.rule{background:#fdf4ff;border:1px solid #f0abfc;border-radius:9px;padding:12px 16px;margin:16px 0;font-size:13px;color:#701a75}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0 22px}
+th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0}
+td{padding:8px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#334155}
+td:first-child code{font-weight:600}
+.foot{margin-top:52px;padding-top:18px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-tag">RCN Toolset · Lean in healthcare</div>
+    <div class="doc-title">RCN A3 — User Manual</div>
+    <div class="doc-sub">Every box, field and rule on the sheet — Cindy Jimmerson's A3, one page, one problem.</div>
+  </div>
+
+  <nav class="doc-nav">
+    <a href="a3-intro.html">Introduction</a>
+    <a href="a3-manual.html" class="current">User Manual</a>
+    <a href="a3.html">Open the Tool ↗</a>
+    <a href="graph-tool-v22.html">Graph Tool (VSM mode) ↗</a>
+  </nav>
+
+  <div class="toc">
+    <a href="#s1">1 · Core ideas in one minute</a>
+    <a href="#s2">2 · The interface</a>
+    <a href="#s3">3 · The header block</a>
+    <a href="#s4">4 · Box 1 — Background</a>
+    <a href="#s5">5 · Box 2 — Current Condition</a>
+    <a href="#s6">6 · Storm bursts</a>
+    <a href="#s7">7 · Box 3 — Problem Statement</a>
+    <a href="#s8">8 · Box 4 — Root Cause &amp; the 5 Whys</a>
+    <a href="#s9">9 · Box 5 — Target Condition</a>
+    <a href="#s10">10 · Box 6 — Countermeasures</a>
+    <a href="#s11">11 · Box 7 — Implementation Plan</a>
+    <a href="#s12">12 · Box 8 — Test &amp; Follow-up</a>
+    <a href="#s13">13 · Making it fit on one page</a>
+    <a href="#s14">14 · Saving, loading, autosave</a>
+    <a href="#s15">15 · Printing to 11×17</a>
+    <a href="#s16">16 · Markdown export</a>
+    <a href="#s17">17 · Coming from a value stream map</a>
+    <a href="#s18">18 · Working patterns</a>
+    <a href="#s19">19 · What's not here yet</a>
+  </div>
+
+  <h2 id="s1">1 · Core ideas in one minute</h2>
+  <p>This is Jimmerson's A3 (<em>A3 Problem Solving for Healthcare</em>), not the generic Toyota one. It is a <strong>one-page conversation</strong>, written by the person who does the work, about <strong>one problem seen once</strong> at the gemba. It is not a report and not a project plan.</p>
+  <p>The page reads left to right. The <strong>left side is what IS</strong> — the investigation. The <strong>right side is what SHOULD BE</strong> — the response. Three of her rules are built into the sheet rather than left to your good intentions:</p>
+  <div class="rule">
+    <p style="margin:0 0 8px"><strong>1 · A problem is a gap.</strong> Her definition: the difference between what is supposed to happen and what actually happens. So Box 3 is three fields, not one. If you cannot fill the first two you do not have a problem yet — you have a complaint.</p>
+    <p style="margin:0 0 8px"><strong>2 · Root cause is a broken process, never a person.</strong> The 5 Whys chain warns you when a why lands on someone forgetting, failing or not caring. That is the point at which most healthcare A3s quietly stop being useful.</p>
+    <p style="margin:0"><strong>3 · Countermeasures, not solutions.</strong> A countermeasure is a specific change to the work, tried and measured, kept or dropped. "Solution" implies you are done. Each one points back at the why it answers, so the right side cannot drift free of the left.</p>
+  </div>
+  <div class="note">Current Condition and Target Condition are <strong>drawings</strong> in her method — small value stream sketches with storm bursts on them. A page whose Current Condition is a paragraph is not an A3.</div>
+
+  <h2 id="s2">2 · The interface</h2>
+  <p>Two regions:</p>
+  <ul>
+    <li><strong>Toolbar</strong> (top) — documentation links, zoom, save, load, Markdown, print, Demo, and at the far right <strong>New — clear page</strong>.</li>
+    <li><strong>The sheet</strong> — a fixed 11×17 landscape page. Everything is edited in place: click any field and type.</li>
+  </ul>
+  <h3>Zoom</h3>
+  <ul>
+    <li><kbd>−</kbd> / <kbd>+</kbd> step the zoom; <strong>Fit</strong> returns to automatic fit-to-window, which is the default.</li>
+    <li>The sheet is a fixed 1632 × 1056 px — 17 in × 11 in at 96 dpi — so what you see at 100% is exactly what prints.</li>
+  </ul>
+  <div class="warn"><strong>New — clear page</strong> sits alone at the far right, away from Save and Load, and asks before wiping the page. Clearing an hour of observation is not an undo away. It only asks if you have actually typed something — empty starter rows do not count as work.</div>
+
+  <h2 id="s3">3 · The header block</h2>
+  <table>
+    <thead><tr><th>Field</th><th>What goes in it</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Theme</strong></td><td>The problem in one line. Not the solution, not the department — the problem.</td></tr>
+      <tr><td><strong>Written by</strong></td><td>The person who does the work. Her method is emphatic that this is not written by a consultant or a manager.</td></tr>
+      <tr><td><strong>Observed</strong></td><td>What you watched — "one patient, one referral, followed end to end."</td></tr>
+      <tr><td><strong>Where</strong></td><td>At the gemba. The actual place.</td></tr>
+      <tr><td><strong>When</strong></td><td>A date and a time. One observation, not a month of them.</td></tr>
+      <tr><td><strong>Status</strong></td><td>Draft → Countermeasure in test → Effect confirmed, or Dropped. Dropped is a real outcome and is meant to be used.</td></tr>
+      <tr><td><strong>Just do it</strong></td><td>Her escape hatch. A problem you can fix this morning does not get an A3. Ticking the box marks a page that should have been a five-minute fix.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="s4">4 · Box 1 — Background</h2>
+  <p>One or two lines: who is affected, and why this stream was worth an hour of watching. Not a literature review.</p>
+
+  <h2 id="s5">5 · Box 2 — Current Condition</h2>
+  <p>The largest box on the left, and it is mostly a <strong>drawing</strong>. Three ways to get a picture in:</p>
+  <ul>
+    <li><strong>Click the slot</strong> (or <strong>Add drawing…</strong>) and choose a file.</li>
+    <li><strong>Drag and drop</strong> an image onto the slot.</li>
+    <li><strong>Paste</strong> — click the slot once so it is the active one, then <kbd>Cmd</kbd>+<kbd>V</kbd>. Whichever slot you last clicked receives the paste.</li>
+  </ul>
+  <p>It takes a photo of a pencil sketch, a screenshot, or an SVG/PNG exported from the Graph Tool. The image is stored inside the <code>.a3.rcn.json</code> file, so the A3 travels as one self-contained document.</p>
+  <p>Underneath is a one-line <strong>caption</strong> — what the drawing shows and the times you recorded — and then the storm burst list.</p>
+  <div class="tip">Hovering a filled slot reveals a <strong>Remove</strong> button in its corner, so you can swap a sketch without clearing the page.</div>
+
+  <h2 id="s6">6 · Storm bursts</h2>
+  <p>A storm burst is a problem you saw while observing. In her method they are drawn as jagged stars on the current-state sketch; here they are also a list, so they are searchable and exportable.</p>
+  <ul>
+    <li><strong>+ storm burst</strong> adds a row. Type what went wrong.</li>
+    <li><strong>Click the burst glyph</strong> to mark the one this A3 is about. It fills amber and the text goes bold. Exactly one can be marked — choosing another releases the first.</li>
+    <li>The rest stay named as <strong>candidate A3s</strong>. Naming them is how they survive the walk back to the desk.</li>
+  </ul>
+  <div class="note">Every problem seen gets a burst, but only one gets this page. Trying to fix four things on one A3 is the most common way an A3 dies.</div>
+
+  <h2 id="s7">7 · Box 3 — Problem Statement</h2>
+  <p>Three stacked fields, and the shape of the box is the teaching:</p>
+  <table>
+    <thead><tr><th>Field</th><th>What goes in it</th></tr></thead>
+    <tbody>
+      <tr><td><strong>What is supposed to happen</strong></td><td>The standard, the policy, the promise made to the patient.</td></tr>
+      <tr><td><strong>What actually happened</strong></td><td>What you watched happen, once, with times.</td></tr>
+      <tr><td><strong>The gap — this is the problem</strong></td><td>The difference between the two, in a number if you have one. Highlighted amber, because this is the sentence the rest of the page answers.</td></tr>
+    </tbody>
+  </table>
+  <div class="warn">If the first field is empty, stop. Not knowing what was supposed to happen is itself a finding, and usually a bigger one than the gap you came for.</div>
+
+  <h2 id="s8">8 · Box 4 — Root Cause &amp; the 5 Whys</h2>
+  <p>Five chained fields. Ask why until you reach something you can actually change, then write it in the green <strong>Root cause</strong> strip at the foot of the box — the conclusion of the left side, and the thing the right side must answer.</p>
+  <h3>The blame check</h3>
+  <p>As you type, each why is checked against a list of phrasings that name a person rather than a process — <em>forgot</em>, <em>failed to</em>, <em>didn't check</em>, <em>careless</em>, <em>human error</em>, <em>needs more training</em>, <em>should have known</em>, and others. A why that matches turns pink and a warning appears:</p>
+  <div class="rule" style="font-style:italic">"Why 5 names a person, not a process. Ask once more: what about the work made that the easy thing to do?"</div>
+  <p>It is a prompt, not a lock — nothing stops you keeping it. But it is the single most useful thing on the sheet, because "the nurse forgot" is where an A3 stops being an improvement and starts being a disciplinary note.</p>
+
+  <h2 id="s9">9 · Box 5 — Target Condition</h2>
+  <p>The mirror of Box 2: a drawing of the same stream redrawn — same notation, fewer steps, with the burst gone. Same three ways to add an image. Below it, say plainly what is different: who does what, when, instead of what.</p>
+
+  <h2 id="s10">10 · Box 6 — Countermeasures</h2>
+  <p>Numbered rows. Each has the change itself and an <strong>Answers</strong> column — write <code>why 3</code>, <code>why 5</code>, the why this countermeasure addresses.</p>
+  <div class="tip">That small column is doing real work. It is what stops the right side of the page from becoming a wish list that has nothing to do with the analysis on the left.</div>
+  <p><strong>+ row</strong> adds; the <strong>×</strong> at the end of a row removes it.</p>
+
+  <h2 id="s11">11 · Box 7 — Implementation Plan</h2>
+  <p>What · Who · By when · Status.</p>
+  <ul>
+    <li><strong>Who</strong> is a person's name. Not a department, not "the team" — an owner who can say yes or no.</li>
+    <li><strong>By when</strong> is a date, not "ongoing".</li>
+    <li><strong>Status</strong> cycles through planned / doing / done / dropped.</li>
+  </ul>
+
+  <h2 id="s12">12 · Box 8 — Test &amp; Follow-up</h2>
+  <p>How you will know it worked, and when you will look.</p>
+  <table>
+    <thead><tr><th>Field</th><th>What goes in it</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Measure</strong></td><td>One measure, stated so anyone could collect it — "days from referral to first CHW contact."</td></tr>
+      <tr><td><strong>Baseline</strong></td><td>What it is now. If you came from a value stream map this arrives pre-filled with the observed lead time.</td></tr>
+      <tr><td><strong>Target</strong></td><td>What good looks like.</td></tr>
+      <tr><td><strong>Check on</strong></td><td>A date. An A3 with no check date is an opinion.</td></tr>
+      <tr><td><strong>Actual</strong></td><td>Filled in after.</td></tr>
+    </tbody>
+  </table>
+  <p>Below is <strong>Effect confirmation</strong>: what actually changed, whether it was kept or dropped, and what you learned.</p>
+  <div class="note">Counts and days belong on a run chart. Hand the measure to <a href="rcn-spc.html">the SPC tool</a> rather than judging a change from two numbers — the tool says so on the sheet, and it means it.</div>
+
+  <h2 id="s13">13 · Making it fit on one page</h2>
+  <p>The constraint is hers, not the tool's: an A3 is one page. The sheet is a fixed size and does not grow.</p>
+  <p>Paper clips silently, so every field measures itself after each keystroke. When your text runs past its box the field outlines in red and a badge appears reading <strong>"too long for the page"</strong>. Nothing is lost while you are on screen — the field scrolls — but it <em>would</em> be lost on paper, so shorten it.</p>
+  <div class="tip">This is the sheet asking you to say it shorter, which is most of what the A3 format is for.</div>
+
+  <h2 id="s14">14 · Saving, loading, autosave</h2>
+  <ul>
+    <li><strong>Save .a3.rcn.json</strong> downloads the whole A3 as one file, drawings included, named from the theme.</li>
+    <li><strong>Load…</strong> opens a dialog — drop a file, choose one, or paste the JSON. It replaces the page you are looking at.</li>
+    <li><strong>Autosave</strong> runs continuously into browser local storage, so a refresh or a closed tab does not lose work. It is per-browser and per-origin — it is not a backup. Save the file.</li>
+  </ul>
+  <p>The file format is the RCN family idiom, matching the other <code>tools/*.rcn.json</code> files: <code>{version, kind:"rcn.a3", …}</code>.</p>
+
+  <h2 id="s15">15 · Printing to 11×17</h2>
+  <p><strong>Print / PDF</strong> prints the sheet at 1:1 on a single 17 in × 11 in landscape page. The toolbar, the italic hint text, the overflow badges and the remove buttons all drop away; only the A3 prints.</p>
+  <div class="warn">Do one test print on your own printer before a meeting. The page requests <code>size: 17in 11in</code>; a printer that does not honour it will scale the sheet, and a printer with no tabloid tray will fit it to letter, which is legible but small.</div>
+
+  <h2 id="s16">16 · Markdown export</h2>
+  <p><strong>Markdown</strong> writes the whole A3 as a <code>.md</code> file — every box in order, the whys as a list, the plan as a real table. Written unwrapped, one line per paragraph, so it ports straight into FedWiki with no reflow step.</p>
+  <p>The drawings are noted as present but not embedded; the markdown is for the text of the A3, and the sheet or its PDF is for the picture.</p>
+
+  <h2 id="s17">17 · Coming from a value stream map</h2>
+  <p>In her method the A3 does not start on a blank page. You map the stream, find the storm bursts, and A3 the worst one.</p>
+  <ol>
+    <li>Draw the current state in <strong>VSM mode</strong> in <a href="graph-tool-v22.html">the Graph Tool</a>.</li>
+    <li>Place a storm burst at every problem you saw, and mark one as <strong>the A3's problem</strong>.</li>
+    <li>Press <strong>VSM→A3</strong>. It writes a <code>.a3.rcn.json</code>.</li>
+    <li>Open this tool, press <strong>Load…</strong>, and drop that file in.</li>
+  </ol>
+  <p>The page arrives with the theme taken from the burst, the full burst list with the chosen one marked, the observed times in the caption and in "what actually happened", and the lead time as your follow-up baseline. The halves only a person can fill — what was <em>supposed</em> to happen, the gap, the five whys — are deliberately left empty.</p>
+  <div class="tip">Export the current-state map as SVG or PNG from the Graph Tool and drop it into the Current Condition slot. Then the A3 carries the picture the numbers came from.</div>
+
+  <h2 id="s18">18 · Working patterns</h2>
+  <h3>Write it at the gemba, not at the desk</h3>
+  <p>Fill the left side where the work happens, while you can still check what you saw. The right side can wait; the observation cannot be reconstructed.</p>
+  <h3>Print it and mark it up</h3>
+  <p>It is a conversation tool. Her A3s are pencil, and they get argued over. Print it, take it to the people who do the work, let them correct it, and bring the corrections back to the file.</p>
+  <h3>Keep the candidates</h3>
+  <p>The bursts you did not choose are the backlog. When this A3 closes, the next one is already named on the page.</p>
+  <h3>One page, one problem, one owner</h3>
+  <p>If the plan needs more than a handful of rows, you have more than one A3.</p>
+
+  <h2 id="s19">19 · What's not here yet</h2>
+  <ul>
+    <li><strong>An A3 board</strong> — a view of many A3s with their status, so a unit can see its whole backlog.</li>
+    <li><strong>FedWiki page JSON</strong> — export Markdown and run it through <code>md-to-fedwiki-page.js</code> for now.</li>
+    <li><strong>A link back to the source map.</strong> The file records which value stream map and which storm burst it came from, but nothing yet clicks through.</li>
+  </ul>
+
+  <div class="foot">
+    RCN A3 · part of the ReLocalize Creativity Network toolset ·
+    <a href="a3-intro.html">Introduction</a> ·
+    <a href="a3.html">Open the tool</a>
+  </div>
+</div>
+</body>
+</html>

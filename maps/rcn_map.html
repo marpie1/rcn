@@ -282,6 +282,16 @@
   .doc-links { display: flex; gap: 10px; margin: 2px 0 8px; font-size: 11px; }
   .doc-links a { color: #2563eb; text-decoration: none; }
   .doc-links a:hover { text-decoration: underline; }
+  /* Build stamp: only ever visible in a standalone handout, so its age is on its face */
+  #build-stamp {
+    font-size: 10px; line-height: 1.35; color: #92400e;
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 5px;
+    padding: 4px 7px; margin: 0 0 8px;
+  }
+  #build-stamp b { font-weight: 700; }
+  #build-stamp .stamp-age { color: #b45309; }
+  #build-stamp.stale { color: #991b1b; background: #fef2f2; border-color: #fecaca; }
+  #build-stamp.stale .stamp-age { color: #b91c1c; font-weight: 700; }
   .req { color: #c0392b; font-weight: 700; cursor: help; }
   .search-label { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #94a3b8; margin-bottom: 3px; }
   .basemap-legend-ctl { background: rgba(255,255,255,0.92); border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 9px; font-size: 11px; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
@@ -303,6 +313,55 @@
   #draw-panel .poly-form-actions, #route-panel .poly-form-actions { margin-top: 8px; }
   #route-panel .add-location-cancel { border-color: #5eead4; color: #0f766e; }
   #route-panel .add-location-cancel:hover { background: #f0fdfa; }
+  /* Find-route panel and button use an indigo accent, so a ROUTED line never
+     reads as the same gesture as a hand-drawn one anywhere in the UI. */
+  #findroute-panel { border-color: #c7d2fe; }
+  #findroute-stage-pick { text-align: center; }
+  #findroute-panel .add-location-cancel { border-color: #c7d2fe; color: #4338ca; margin: 6px 3px 0; }
+  #findroute-panel .add-location-cancel:hover { background: #eef2ff; }
+  #findroute-panel .add-location-cancel.primary { background: #eef2ff; font-weight: 600; }
+  .fr-profiles { display: flex; gap: 4px; margin: 6px 0 4px; }
+  .fr-profile {
+    flex: 1; padding: 5px 2px; font-size: 11px; cursor: pointer;
+    background: #fff; border: 1px solid #c7d2fe; border-radius: 5px; color: #4338ca;
+  }
+  .fr-profile:hover { background: #eef2ff; }
+  .fr-profile.active { background: #c7d2fe; font-weight: 700; }
+  #findroute-status { font-size: 11px; margin-top: 4px; min-height: 14px; }
+  #findroute-status.err { color: #b91c1c; }
+  #findroute-status.busy { color: #4338ca; }
+  .fr-attrib { font-size: 9.5px; color: #94a3b8; margin-top: 5px; line-height: 1.3; }
+  .fr-attrib a { color: #94a3b8; }
+  /* Reach area (isochrone) — amber, a third distinct accent. */
+  #iso-panel { border-color: #fed7aa; }
+  #iso-stage-pick { text-align: center; }
+  #iso-panel .add-location-cancel { border-color: #fed7aa; color: #c2410c; margin: 6px 3px 0; }
+  #iso-panel .add-location-cancel:hover { background: #fff7ed; }
+  #iso-panel .add-location-cancel.primary { background: #fff7ed; font-weight: 600; }
+  #iso-panel .poly-btn { }
+  .iso-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 5px 0 2px; justify-content: center; }
+  .iso-chip {
+    padding: 4px 9px; font-size: 11px; cursor: pointer;
+    background: #fff; border: 1px solid #fed7aa; border-radius: 12px; color: #c2410c;
+  }
+  .iso-chip:hover { background: #fff7ed; }
+  .iso-chip.active { background: #fed7aa; font-weight: 700; }
+  .iso-label { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #94a3b8; margin-top: 6px; }
+  #iso-status { font-size: 11px; margin-top: 4px; min-height: 14px; }
+  #iso-status.err { color: #b91c1c; }
+  #iso-status.busy { color: #c2410c; }
+  .iso-btn {
+    width: 100%; padding: 6px; margin-bottom: 6px; font-size: 12px; cursor: pointer;
+    background: #fff; border: 1px solid #fed7aa; border-radius: 5px; color: #c2410c; text-align: left;
+  }
+  .iso-btn:hover { background: #fff7ed; }
+  .iso-btn.active { background: #fed7aa; font-weight: 600; }
+  .findroute-btn {
+    width: 100%; padding: 6px; margin-bottom: 6px; font-size: 12px; cursor: pointer;
+    background: #fff; border: 1px solid #c7d2fe; border-radius: 5px; color: #4338ca; text-align: left;
+  }
+  .findroute-btn:hover { background: #eef2ff; }
+  .findroute-btn.active { background: #c7d2fe; font-weight: 600; }
   .route-btn {
     display: block; width: 100%; margin: 4px 0 6px; padding: 7px 8px;
     background: white; color: #0f766e; border: 1px solid #0f766e; border-radius: 6px;
@@ -450,9 +509,11 @@
       <button class="add-location-cancel" onclick="undoRoutePoint()" title="Remove the last point (Backspace / Ctrl+Z)">↩ Undo</button>
       <button class="add-location-cancel" onclick="cancelRouteMode()" title="Discard and exit">✕ Cancel</button>
     </div>
-    <!-- Stage 2: naming -->
+    <!-- Stage 2: naming. Shared by both routes you draw and routes you find, so a
+         saved route has one shape, one form, one save path regardless of origin. -->
     <div id="route-stage-name" style="display:none">
-      <b>✓ Route drawn — name &amp; save it</b>
+      <b id="route-name-heading">✓ Route drawn — name &amp; save it</b>
+      <div id="route-found-summary" style="display:none;font-size:11px;color:#4338ca;margin-top:4px"></div>
       <div class="poly-form-row" style="margin-top:6px">
         <label title="Required. Name for this route — shown in its popup and the legend.">Name <span class="req" title="Required field">*</span></label>
         <input id="route-form-name" class="poly-form-input" type="text" placeholder="e.g. School walking route">
@@ -497,6 +558,67 @@
     </div>
   </div>
 
+  <!-- Find route — place waypoints, then a routing engine follows real roads/paths
+       between them. Only this first stage is its own panel; naming and saving reuse
+       the shared stage above. -->
+  <div id="findroute-panel" style="display:none">
+    <div id="findroute-stage-pick">
+      <b>Find a route</b>
+      <div class="fr-profiles">
+        <button class="fr-profile active" data-profile="pedestrian" onclick="setRouteProfile('pedestrian')" title="Walking route — footpaths, sidewalks, crossings.">🚶 Walk</button>
+        <button class="fr-profile" data-profile="bicycle" onclick="setRouteProfile('bicycle')" title="Cycling route — prefers bike infrastructure and quieter roads.">🚲 Bike</button>
+        <button class="fr-profile" data-profile="auto" onclick="setRouteProfile('auto')" title="Driving route — roads only.">🚗 Drive</button>
+      </div>
+      <div id="findroute-count" style="margin:4px 0 2px">Click the map to place a start and an end (2 minimum; more become stops along the way).</div>
+      <div id="findroute-status"></div>
+      <button class="add-location-cancel primary" onclick="computeFoundRoute()" title="Ask the routing engine for the route through these points (Enter)">➤ Find route</button>
+      <button class="add-location-cancel" onclick="undoRoutePoint()" title="Remove the last point (Backspace / Ctrl+Z)">↩ Undo</button>
+      <button class="add-location-cancel" onclick="cancelRouteMode()" title="Discard and exit (Esc)">✕ Cancel</button>
+      <div class="fr-attrib">Routing by <a href="https://valhalla1.openstreetmap.de/" target="_blank" rel="noopener">Valhalla</a> (FOSSGIS) on <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> data. Needs an internet connection; a found route is a snapshot of what OSM said today.</div>
+    </div>
+  </div>
+
+  <!-- Reach area (isochrone) — one centre point, and the area you can actually get
+       to from it in N minutes. Saves as ordinary boundary polygons, one per band. -->
+  <div id="iso-panel" style="display:none">
+    <div id="iso-stage-pick">
+      <b>Reach area</b>
+      <div class="fr-profiles">
+        <button class="fr-profile active" data-isoprofile="pedestrian" onclick="setIsoProfile('pedestrian')" title="How far you can WALK in that time.">🚶 Walk</button>
+        <button class="fr-profile" data-isoprofile="bicycle" onclick="setIsoProfile('bicycle')" title="How far you can CYCLE in that time.">🚲 Bike</button>
+        <button class="fr-profile" data-isoprofile="auto" onclick="setIsoProfile('auto')" title="How far you can DRIVE in that time.">🚗 Drive</button>
+      </div>
+      <div class="iso-label">Minutes (up to 4)</div>
+      <div class="iso-chips" id="iso-chips"></div>
+      <div id="iso-count" style="margin:4px 0 2px">Click the map to place the centre — an NDC, a clinic, a school.</div>
+      <div id="iso-status"></div>
+      <button class="add-location-cancel primary" onclick="computeIsochrone()" title="Ask the routing engine which area is reachable in those times (Enter)">◎ Show reach area</button>
+      <button class="add-location-cancel" onclick="cancelIsoMode()" title="Discard and exit (Esc)">✕ Cancel</button>
+      <div class="fr-attrib">Reach areas by <a href="https://valhalla1.openstreetmap.de/" target="_blank" rel="noopener">Valhalla</a> (FOSSGIS) on <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> data. An estimate from a road network, not a promise about any particular person's trip.</div>
+    </div>
+
+    <div id="iso-stage-name" style="display:none">
+      <b>✓ Reach area found — name &amp; save it</b>
+      <div id="iso-summary" style="font-size:11px;color:#c2410c;margin-top:4px"></div>
+      <div class="poly-form-row" style="margin-top:6px">
+        <label title="Required. Each band is saved as its own boundary, named with its time (e.g. “Clinic — 10 min walk”).">Name <span class="req" title="Required field">*</span></label>
+        <input id="iso-form-name" class="poly-form-input" type="text" placeholder="e.g. Superior clinic">
+      </div>
+      <div class="poly-form-row">
+        <label title="Optional. File these bands INSIDE an NDC's section in the legend.">Under NDC</label>
+        <select id="iso-form-ndc" class="poly-form-input"><option value="">— none (My additions) —</option></select>
+      </div>
+      <div class="poly-form-row">
+        <label title="State / province / country code used to group these bands in the legend.">State / group</label>
+        <input id="iso-form-state" class="poly-form-input" type="text" list="state-group-options" placeholder="e.g. WA">
+      </div>
+      <div class="poly-form-actions">
+        <button class="poly-btn" onclick="confirmIsochrone()">Save bands</button>
+        <button class="poly-btn secondary" onclick="discardIsochrone()">Discard</button>
+      </div>
+    </div>
+  </div>
+
   <h2 title="Interactive map of all RCN Neighborhood Development Centers, their geographic context, and community issues. Everything you add is saved in your browser.">RCN NDC Map</h2>
   <p id="sidebar-desc">Neighborhood development centers</p>
   <div class="doc-links">
@@ -504,6 +626,8 @@
     <a href="rcn-map-manual.html" target="_blank" rel="noopener" title="User manual — step-by-step guide to every feature">Manual</a>
     <a href="rcn-ndc-map.pptx" title="Overview slide deck (PowerPoint download)">Slides</a>
   </div>
+  <!-- Filled in only when this file is a standalone build; the live page leaves it hidden. -->
+  <div id="build-stamp" style="display:none"></div>
   <div class="search-box">
     <div class="search-label" title="Full OpenStreetMap place search — any address, town, landmark, or business worldwide, not just RCN data. Click a result to fly there and drop a marker.">Search any place (OpenStreetMap)</div>
     <div class="search-row">
@@ -519,6 +643,8 @@
   <button class="add-location-btn" id="add-location-mode-btn" onclick="enterAddLocationMode()" title="Drop a named pin anywhere on the map. Saved in your browser and shown in the legend.">+ Add location</button>
   <button class="add-location-btn" id="draw-boundary-btn" onclick="startDrawMode()" title="Draw a boundary freehand by clicking points on the map, then name and save it. A control panel appears at the top of the map.">✎ Draw a boundary</button>
   <button class="route-btn" id="draw-route-btn" onclick="startRouteMode()" title="Draw a route by hand — click points along the path, then name, colour and save it. Nothing is routed or calculated; the line is exactly what you draw.">➤ Draw a route</button>
+  <button class="findroute-btn" id="find-route-btn" onclick="startFindRouteMode()" title="Find a route along real roads and paths — place a start and end (and any stops between), pick walk/bike/drive, and a routing engine returns the actual route. Needs an internet connection.">➤ Find route (walk / bike / drive)</button>
+  <button class="iso-btn" id="iso-btn" onclick="startIsoMode()" title="Show the area you can actually reach from one point in a given number of minutes — the “15-minute neighborhood” question. Place a centre, pick walk/bike/drive and the times, and each band is saved as a boundary polygon. Needs an internet connection.">◎ Reach area (how far in N minutes)</button>
   <button class="export-all-btn" onclick="exportAll()" title="Download everything you've added — NDCs, locations, boundaries, routes, corrections — as one JSON file">⬇ Export my data (JSON)</button>
   <button class="export-all-btn" onclick="document.getElementById('import-data-file').click()" title="Load a previously exported rcn-map-data.json — REPLACES your current NDCs, locations, boundaries, routes, and corrections (built-in NDCs and federated regions are untouched).">⬆ Import my data (JSON)</button>
   <input type="file" id="import-data-file" accept=".json,application/json" style="display:none" onchange="importMyDataFile(this)">
@@ -836,7 +962,8 @@ const colors = {
   mineral_deposit:  '#CD7F32',
   church:           '#7B5EA7',
   custom_location:  '#0ea5e9',
-  route:            '#0F766E'
+  route:            '#0F766E',
+  reach_area:       '#EA580C'
 };
 
 // layersById: id → { type, layers: [Leaflet layer, ...] }
@@ -1013,7 +1140,7 @@ function ndcOptionsHTML(selected) {
 
 // Fill the "Under NDC" selects in the draw + paste forms with the current NDCs.
 function populateNDCSelects() {
-  ['draw-form-ndc', 'poly-form-ndc', 'route-form-ndc'].forEach(id => {
+  ['draw-form-ndc', 'poly-form-ndc', 'route-form-ndc', 'iso-form-ndc'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = ndcOptionsHTML(el.value || '');
   });
@@ -1610,6 +1737,54 @@ function loadBundledIssues() {
       ISSUE_INDEX.push({ key: e.key, label: e.label, ndc: e.ndc, url: null, map: e.map || null });
     }
     if (BUNDLED_ISSUES.data && BUNDLED_ISSUES.data[e.key]) sessionIssues[e.key] = BUNDLED_ISSUES.data[e.key];
+  });
+}
+
+// Build stamp — sentinel replaced by build_standalone_map.py with the build date
+// (YYYY-MM-DD). Stays null in rcn_map.html, so the live page shows nothing: the
+// live page is never stale, it IS the source. A handout, though, can sit in an
+// inbox for months, so it says on its face how old it is.
+var BUILD_STAMP = null;
+
+// A handout older than this many days is called out in red rather than amber.
+// (Edits to this file auto-rebuild the standalone — see .claude/settings.json.)
+const BUILD_STAMP_STALE_DAYS = 90;
+
+function renderBuildStamp() {
+  const el = document.getElementById('build-stamp');
+  if (!el || !BUILD_STAMP) return;
+  const built = new Date(BUILD_STAMP + 'T00:00:00');
+  if (isNaN(built)) return;
+  const days = Math.max(0, Math.floor((Date.now() - built.getTime()) / 86400000));
+  const age  = days === 0 ? 'built today'
+             : days === 1 ? 'built yesterday'
+             : days < 60  ? `${days} days old`
+             : `${Math.floor(days / 30)} months old`;
+  if (days >= BUILD_STAMP_STALE_DAYS) el.classList.add('stale');
+  el.innerHTML = `<b>Standalone copy</b> — built ${BUILD_STAMP} ` +
+    `(<span class="stamp-age">${age}</span>).<br>` +
+    `Data and issues are a snapshot from that date. Ask for a fresh copy if this looks out of date.`;
+  el.title = 'This file is a self-contained handout, not the live site. It does not update itself.';
+  el.style.display = '';
+}
+
+// Doc-links base — sentinel replaced by build_standalone_map.py with the Wiki Café
+// asset folder. The live page keeps it null: there its Intro/Manual/Slides siblings
+// sit in the same folder, so relative links resolve. A standalone handout travels
+// alone — emailed, on a USB stick, opened from a desktop — with no siblings to
+// resolve against, so its doc links are rewritten absolute at load.
+var DOCS_BASE = null;
+
+function absolutizeDocLinks() {
+  if (!DOCS_BASE) return;
+  const base = DOCS_BASE.endsWith('/') ? DOCS_BASE : DOCS_BASE + '/';
+  document.querySelectorAll('.doc-links a[href]').forEach(a => {
+    const href = a.getAttribute('href');
+    // Leave anything already absolute (or an anchor/mailto) alone.
+    if (!href || /^([a-z]+:|\/\/|#)/i.test(href)) return;
+    a.setAttribute('href', base + href);
+    a.setAttribute('target', '_blank');
+    a.setAttribute('rel', 'noopener');
   });
 }
 
@@ -2306,8 +2481,11 @@ function enterCorrectionMode(ndcName) {
   document.getElementById('correction-ndc-name').textContent = ndcName;
   document.getElementById('correction-banner').style.display = 'block';
   document.getElementById('map').classList.add('crosshair-cursor');
-  // Capture a single map click to place the corrected position
-  map.once('click', onCorrectionClick);
+  // Capture the click on the transparent overlay, NOT via map.on('click').
+  // Leaflet vector layers swallow clicks, so a bare map click handler can't
+  // reach anywhere covered by a boundary, a reach-area band or a route line —
+  // and the armed handler would then fire on some later, unrelated click.
+  addLocOverlay.style.display = 'block';
 }
 
 function onCorrectionClick(e) {
@@ -2326,16 +2504,13 @@ function onCorrectionClick(e) {
 }
 
 function cancelCorrection() {
-  map.off('click', onCorrectionClick);
-  if (correctionModeLocIdx !== null) {
-    correctionModeLocIdx = null;
-    addLocOverlay.style.display = 'none';
-  }
+  correctionModeLocIdx = null;
   exitCorrectionMode();
 }
 
 function exitCorrectionMode() {
   correctionModeNDC = null;
+  addLocOverlay.style.display = 'none';
   document.getElementById('correction-banner').style.display = 'none';
   document.getElementById('map').classList.remove('crosshair-cursor');
 }
@@ -2382,6 +2557,8 @@ addLocOverlay.addEventListener('click', function(e) {
     applyPickNDCLocation(latlng);
   } else if (correctionModeLocIdx !== null) {
     applyUserLocCorrection(latlng);
+  } else if (correctionModeNDC) {
+    onCorrectionClick({ latlng });
   } else {
     onAddLocationClick({ latlng });
   }
@@ -2415,6 +2592,7 @@ function hideDrawPanel() {
 function startDrawMode() {
   if (addLocationModeActive) cancelAddLocationMode();
   if (routeModeActive) cancelRouteMode();
+  if (isoModeActive) cancelIsoMode();
   drawModeActive = true;
   drawPoints = [];
   clearDrawPreview();
@@ -2543,6 +2721,12 @@ let routePoints          = [];
 let routePreview         = null;
 let routeVertexMarkers   = [];
 let routePendingGeoJSON  = null;
+// 'draw' = the line is exactly the points placed. 'find' = the points are waypoints
+// and a routing engine supplies the line between them. The click interaction is the
+// same either way, so both share the overlay, the vertex dots, and undo.
+let routeModeKind        = 'draw';
+// Provenance for the route being saved: null for hand-drawn, populated for found.
+let routePendingMeta     = null;
 
 const routeOverlay = document.createElement('div');
 routeOverlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:681;display:none;cursor:crosshair';
@@ -2554,32 +2738,51 @@ routeOverlay.addEventListener('click', function(e) {
 // double-click-to-zoom from also firing.
 routeOverlay.addEventListener('dblclick', function(e) {
   L.DomEvent.stop(e);
+  // Finding a route needs an explicit click — a stray double-click must not fire
+  // a network request, and must never fall through to making a hand-drawn line.
+  if (routeModeKind === 'find') { undoRoutePoint(); return; }
   if (routePoints.length >= 3) { undoRoutePoint(); finishRouteMode(); }
 });
 map.getContainer().appendChild(routeOverlay);
 
-function showRouteStage(stage) {   // 'draw' or 'name'
-  document.getElementById('route-panel').style.display = '';
-  document.getElementById('route-stage-draw').style.display = stage === 'draw' ? '' : 'none';
+function showRouteStage(stage) {   // 'draw' (place points) or 'name' (shared form)
+  const finding = routeModeKind === 'find';
+  document.getElementById('findroute-panel').style.display = finding && stage === 'draw' ? '' : 'none';
+  document.getElementById('route-panel').style.display = finding && stage === 'draw' ? 'none' : '';
+  document.getElementById('route-stage-draw').style.display = !finding && stage === 'draw' ? '' : 'none';
   document.getElementById('route-stage-name').style.display = stage === 'name' ? '' : 'none';
 }
 function hideRoutePanel() {
   document.getElementById('route-panel').style.display = 'none';
+  document.getElementById('findroute-panel').style.display = 'none';
 }
 
-function startRouteMode() {
-  if (routeModeActive) { cancelRouteMode(); return; }
+// Shared entry for both route modes; kind is 'draw' or 'find'.
+function beginRouteMode(kind) {
+  const btn = document.getElementById(kind === 'find' ? 'find-route-btn' : 'draw-route-btn');
+  if (routeModeActive) {
+    const wasSame = routeModeKind === kind;
+    cancelRouteMode();
+    if (wasSame) return;      // second click on the same button = toggle off
+  }
   if (addLocationModeActive) cancelAddLocationMode();
   if (drawModeActive) cancelDrawMode();
+  if (isoModeActive) cancelIsoMode();
+  routeModeKind = kind;
   routeModeActive = true;
   routePoints = [];
+  routePendingMeta = null;
   clearRoutePreview();
+  setFindRouteStatus('');
   showRouteStage('draw');
-  document.getElementById('draw-route-btn').classList.add('active');
+  btn.classList.add('active');
   document.getElementById('map').classList.add('crosshair-cursor');
   routeOverlay.style.display = 'block';
   updateRouteCount();
 }
+
+function startRouteMode()     { beginRouteMode('draw'); }
+function startFindRouteMode() { beginRouteMode('find'); }
 
 function renderRoutePreview() {
   if (routePreview) { map.removeLayer(routePreview); routePreview = null; }
@@ -2617,6 +2820,14 @@ function routeLengthLabel(latlngs) {
 
 function updateRouteCount() {
   const n = routePoints.length;
+  if (routeModeKind === 'find') {
+    document.getElementById('findroute-count').textContent = n === 0
+      ? 'Click the map to place a start and an end (2 minimum; more become stops along the way).'
+      : n === 1
+        ? 'Start placed — now click the end point.'
+        : n + ' points placed — click “➤ Find route” or press Enter.';
+    return;
+  }
   document.getElementById('route-count').textContent = n >= 2
     ? n + ' points placed — double-click the map, press Enter, or click “✓ Finish & name”.'
     : 'Click the map to drop points along the route (' + n + ' of 2 minimum).';
@@ -2637,6 +2848,7 @@ function exitRouteInteraction() {
   routeModeActive = false;
   routeOverlay.style.display = 'none';
   document.getElementById('draw-route-btn').classList.remove('active');
+  document.getElementById('find-route-btn').classList.remove('active');
   document.getElementById('map').classList.remove('crosshair-cursor');
 }
 
@@ -2654,12 +2866,158 @@ function finishRouteMode() {
     geometry: { type: 'LineString', coordinates: routePoints.map(p => [p.lng, p.lat]) },
     properties: {}
   };
+  routePendingMeta = null;       // hand-drawn: no engine, no provenance to record
+  enterRouteNamingStage();
+}
+
+// Shared hand-off from either mode into the naming form.
+function enterRouteNamingStage() {
   exitRouteInteraction();
   clearRouteVertices();          // drop the dots but KEEP the line visible while naming
+  const found = !!routePendingMeta;
+  document.getElementById('route-name-heading').innerHTML =
+    found ? '✓ Route found — name &amp; save it' : '✓ Route drawn — name &amp; save it';
+  const sum = document.getElementById('route-found-summary');
+  if (found) {
+    sum.textContent = `${ROUTE_PROFILES[routePendingMeta.profile].label} · ` +
+      `${routePendingMeta.distanceLabel} · ${routePendingMeta.durationLabel}`;
+    sum.style.display = '';
+  } else {
+    sum.style.display = 'none';
+  }
   showRouteStage('name');
   const nm = document.getElementById('route-form-name');
   nm.value = '';
   setTimeout(() => nm.focus(), 100);
+}
+
+// ── Find route: real roads and paths via a routing engine ─────────────
+// Valhalla on the FOSSGIS public instance — no API key, and it covers walking,
+// cycling and driving (the OSRM demo server is driving-only). It is a shared,
+// fair-use service with no SLA, so every failure path here has to be survivable:
+// the user still has their waypoints and can retry, switch profile, or fall back
+// to drawing the line by hand.
+const VALHALLA_URL = 'https://valhalla1.openstreetmap.de/route';
+
+const ROUTE_PROFILES = {
+  pedestrian: { label: 'Walk',  icon: '🚶' },
+  bicycle:    { label: 'Bike',  icon: '🚲' },
+  auto:       { label: 'Drive', icon: '🚗' }
+};
+let routeProfile = 'pedestrian';
+
+function setRouteProfile(p) {
+  if (!ROUTE_PROFILES[p]) return;
+  routeProfile = p;
+  document.querySelectorAll('.fr-profile').forEach(b => {
+    b.classList.toggle('active', b.dataset.profile === p);
+  });
+  setFindRouteStatus('');
+}
+
+function setFindRouteStatus(msg, kind) {
+  const el = document.getElementById('findroute-status');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.className = kind || '';
+}
+
+// Valhalla returns each leg's geometry as an encoded polyline at precision 6.
+function decodePolyline6(str) {
+  const pts = [];
+  let lat = 0, lng = 0, i = 0;
+  while (i < str.length) {
+    let shift = 0, result = 0, b;
+    do { b = str.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+    shift = 0; result = 0;
+    do { b = str.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+    pts.push([lat / 1e6, lng / 1e6]);
+  }
+  return pts;
+}
+
+function durationLabel(seconds) {
+  const mins = Math.round(seconds / 60);
+  if (mins < 60) return mins + ' min';
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return m ? `${h} hr ${m} min` : `${h} hr`;
+}
+
+async function computeFoundRoute() {
+  if (routePoints.length < 2) { setFindRouteStatus('Place at least 2 points first.', 'err'); return; }
+  const profile = routeProfile;
+  setFindRouteStatus('Finding route…', 'busy');
+
+  let data;
+  try {
+    const res = await fetch(VALHALLA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        locations: routePoints.map(p => ({ lat: p.lat, lon: p.lng })),
+        costing: profile,
+        directions_options: { units: 'miles' }
+      })
+    });
+    data = await res.json().catch(() => null);
+    if (!res.ok) {
+      // Valhalla's own errors are the useful ones (e.g. "No suitable edges near
+      // location", "Path distance exceeds the max distance limit"). Pass them
+      // through as-is, and only add the "move a point" hint when it actually fits —
+      // a generic hint on a distance-limit error just sends the user the wrong way.
+      const why = data && data.error ? data.error : `Routing service returned ${res.status}`;
+      const hint = /edge|location|snap/i.test(why) ? ' Try moving a point nearer a road or path.' : '';
+      setFindRouteStatus(why.replace(/\.?$/, '.') + hint, 'err');
+      return;
+    }
+  } catch (e) {
+    setFindRouteStatus('Could not reach the routing service — check your connection, or draw the route by hand instead.', 'err');
+    return;
+  }
+
+  const trip = data && data.trip;
+  if (!trip || !Array.isArray(trip.legs) || !trip.legs.length) {
+    setFindRouteStatus('No route found between those points.', 'err');
+    return;
+  }
+
+  // Stitch the legs into one line, dropping each leg's duplicated first vertex.
+  const coords = [];
+  trip.legs.forEach((leg, li) => {
+    const pts = decodePolyline6(leg.shape || '');
+    pts.forEach((pt, pi) => { if (li === 0 || pi > 0) coords.push([pt[1], pt[0]]); });
+  });
+  if (coords.length < 2) { setFindRouteStatus('Routing service returned an empty route.', 'err'); return; }
+
+  const miles = (trip.summary && trip.summary.length) || 0;
+  const km = miles * 1.609344;
+  routePendingGeoJSON = {
+    type: 'Feature',
+    geometry: { type: 'LineString', coordinates: coords },
+    properties: {}
+  };
+  routePendingMeta = {
+    source: 'valhalla',
+    engine: 'Valhalla (FOSSGIS) · OpenStreetMap',
+    profile,
+    computedAt: new Date().toISOString(),
+    distanceMi: +miles.toFixed(3),
+    distanceLabel: miles.toFixed(miles < 10 ? 2 : 1) + ' mi · ' + km.toFixed(km < 10 ? 2 : 1) + ' km',
+    durationSec: Math.round((trip.summary && trip.summary.time) || 0),
+    durationLabel: durationLabel((trip.summary && trip.summary.time) || 0),
+    waypoints: routePoints.map(p => [+p.lng.toFixed(6), +p.lat.toFixed(6)])
+  };
+
+  // Replace the straight-line preview with the route the engine actually returned.
+  clearRoutePreview();
+  routePreview = L.polyline(coords.map(c => [c[1], c[0]]),
+    { color: '#4338ca', weight: 4, opacity: 0.85 }).addTo(map);
+  map.fitBounds(routePreview.getBounds(), { padding: [40, 40] });
+
+  setFindRouteStatus('');
+  enterRouteNamingStage();
 }
 
 function confirmDrawnRoute() {
@@ -2673,7 +3031,8 @@ function confirmDrawnRoute() {
     dash:   document.getElementById('route-form-dash').value,
     weight: parseInt(document.getElementById('route-form-weight').value, 10) || 4,
     arrows: document.getElementById('route-form-arrows').checked,
-    ndc:    document.getElementById('route-form-ndc').value
+    ndc:    document.getElementById('route-form-ndc').value,
+    routing: routePendingMeta       // null for hand-drawn
   });
   discardDrawnRoute();
 }
@@ -2681,6 +3040,7 @@ function confirmDrawnRoute() {
 function discardDrawnRoute() {
   clearRoutePreview();          // remove the temporary line (saved routes re-render separately)
   routePendingGeoJSON = null;
+  routePendingMeta = null;
   routePoints = [];
   hideRoutePanel();
 }
@@ -2693,10 +3053,260 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Backspace' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z')) {
     e.preventDefault(); undoRoutePoint();
   } else if (e.key === 'Enter') {
-    e.preventDefault(); finishRouteMode();
+    e.preventDefault();
+    if (routeModeKind === 'find') computeFoundRoute(); else finishRouteMode();
   } else if (e.key === 'Escape') {
     e.preventDefault(); cancelRouteMode();
   }
+});
+
+// ── Reach area (isochrone) ────────────────────────────────────────────
+// The neighborhood question the map is actually for: not "how do I get there"
+// but "what can be reached from here on foot in 15 minutes". Valhalla returns
+// one polygon per time band, and a polygon is something this map already knows
+// how to hold — so each band is saved as an ordinary boundary layer.
+const VALHALLA_ISO_URL = 'https://valhalla1.openstreetmap.de/isochrone';
+const ISO_MAX_CONTOURS = 4;              // the service's own limit
+const ISO_MINUTE_CHOICES = [5, 10, 15, 20, 30, 45, 60];
+// Innermost band darkest, so nesting reads at a glance.
+const ISO_BAND_COLORS = ['#7C2D12', '#C2410C', '#EA580C', '#F59E0B'];
+
+let isoModeActive   = false;
+let isoProfile      = 'pedestrian';
+let isoMinutes      = [5, 10, 15];
+let isoCenter       = null;   // L.LatLng
+let isoCenterMarker = null;
+let isoPreviewGroup = null;   // L.layerGroup of preview bands
+let isoPendingBands = null;   // [{minutes, geojson, color}, …] awaiting a name
+
+const isoOverlay = document.createElement('div');
+isoOverlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:681;display:none;cursor:crosshair';
+isoOverlay.addEventListener('click', function(e) {
+  setIsoCenter(map.mouseEventToLatLng(e));
+});
+map.getContainer().appendChild(isoOverlay);
+
+function renderIsoChips() {
+  document.getElementById('iso-chips').innerHTML = ISO_MINUTE_CHOICES.map(m =>
+    `<button class="iso-chip${isoMinutes.includes(m) ? ' active' : ''}" data-min="${m}" ` +
+    `onclick="toggleIsoMinute(${m})" title="Area reachable in ${m} minutes">${m}</button>`
+  ).join('');
+}
+
+function toggleIsoMinute(m) {
+  if (isoMinutes.includes(m)) {
+    if (isoMinutes.length === 1) { setIsoStatus('Keep at least one time band.', 'err'); return; }
+    isoMinutes = isoMinutes.filter(x => x !== m);
+  } else {
+    if (isoMinutes.length >= ISO_MAX_CONTOURS) {
+      setIsoStatus(`The routing service allows ${ISO_MAX_CONTOURS} bands at a time — deselect one first.`, 'err');
+      return;
+    }
+    isoMinutes.push(m);
+  }
+  isoMinutes.sort((a, b) => a - b);
+  renderIsoChips();
+  setIsoStatus('');
+}
+
+function setIsoProfile(p) {
+  if (!ROUTE_PROFILES[p]) return;
+  isoProfile = p;
+  document.querySelectorAll('[data-isoprofile]').forEach(b => {
+    b.classList.toggle('active', b.dataset.isoprofile === p);
+  });
+  setIsoStatus('');
+}
+
+function setIsoStatus(msg, kind) {
+  const el = document.getElementById('iso-status');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.className = kind || '';
+}
+
+function showIsoStage(stage) {   // 'pick' or 'name'
+  document.getElementById('iso-panel').style.display = '';
+  document.getElementById('iso-stage-pick').style.display = stage === 'pick' ? '' : 'none';
+  document.getElementById('iso-stage-name').style.display = stage === 'name' ? '' : 'none';
+}
+
+function startIsoMode() {
+  if (isoModeActive) { cancelIsoMode(); return; }
+  if (addLocationModeActive) cancelAddLocationMode();
+  if (drawModeActive) cancelDrawMode();
+  if (routeModeActive) cancelRouteMode();
+  isoModeActive = true;
+  clearIsoPreview();
+  isoPendingBands = null;
+  renderIsoChips();
+  setIsoStatus('');
+  updateIsoCount();
+  showIsoStage('pick');
+  document.getElementById('iso-btn').classList.add('active');
+  document.getElementById('map').classList.add('crosshair-cursor');
+  isoOverlay.style.display = 'block';
+}
+
+function setIsoCenter(latlng) {
+  isoCenter = latlng;
+  if (isoCenterMarker) map.removeLayer(isoCenterMarker);
+  isoCenterMarker = L.circleMarker(latlng,
+    { radius: 6, color: '#c2410c', fillColor: '#fff', weight: 3, fillOpacity: 1 }).addTo(map);
+  updateIsoCount();
+  setIsoStatus('');
+}
+
+function updateIsoCount() {
+  document.getElementById('iso-count').textContent = isoCenter
+    ? 'Centre placed — click “◎ Show reach area”, or click again to move it.'
+    : 'Click the map to place the centre — an NDC, a clinic, a school.';
+}
+
+function clearIsoPreview() {
+  if (isoCenterMarker) { map.removeLayer(isoCenterMarker); isoCenterMarker = null; }
+  if (isoPreviewGroup) { map.removeLayer(isoPreviewGroup); isoPreviewGroup = null; }
+  isoCenter = null;
+}
+
+function exitIsoInteraction() {
+  isoModeActive = false;
+  isoOverlay.style.display = 'none';
+  document.getElementById('iso-btn').classList.remove('active');
+  document.getElementById('map').classList.remove('crosshair-cursor');
+}
+
+function cancelIsoMode() {
+  exitIsoInteraction();
+  clearIsoPreview();
+  isoPendingBands = null;
+  document.getElementById('iso-panel').style.display = 'none';
+}
+
+// An unroutable centre (mid-ocean, deep wilderness) does NOT error — Valhalla
+// returns a degenerate speck around the point. Measure it and refuse to save
+// a meaningless blob.
+function bandSpanMeters(geojson) {
+  const layer = L.geoJSON(geojson);
+  const b = layer.getBounds();
+  if (!b.isValid()) return 0;
+  return map.distance(b.getNorthWest(), b.getSouthEast());
+}
+
+async function computeIsochrone() {
+  if (!isoCenter) { setIsoStatus('Place a centre point on the map first.', 'err'); return; }
+  if (!isoMinutes.length) { setIsoStatus('Pick at least one time band.', 'err'); return; }
+  const profile = isoProfile, minutes = isoMinutes.slice();
+  setIsoStatus('Working out what’s reachable…', 'busy');
+
+  let data;
+  try {
+    const res = await fetch(VALHALLA_ISO_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        locations: [{ lat: isoCenter.lat, lon: isoCenter.lng }],
+        costing: profile,
+        contours: minutes.map(m => ({ time: m })),
+        polygons: true
+      })
+    });
+    data = await res.json().catch(() => null);
+    if (!res.ok) {
+      const why = (data && data.error) ? data.error : `Routing service returned ${res.status}`;
+      const hint = /edge|location|snap/i.test(why) ? ' Try a centre nearer a road or path.' : '';
+      setIsoStatus(why.replace(/\.?$/, '.') + hint, 'err');
+      return;
+    }
+  } catch (e) {
+    setIsoStatus('Could not reach the routing service — check your connection.', 'err');
+    return;
+  }
+
+  const feats = (data && Array.isArray(data.features)) ? data.features : [];
+  if (!feats.length) { setIsoStatus('No reach area came back for that point.', 'err'); return; }
+
+  // Valhalla returns the largest contour first. Sort ascending so band N is the
+  // Nth-smallest and the colour ramp lines up with the times.
+  const bands = feats.map(f => ({
+    minutes: Math.round((f.properties && f.properties.contour) || 0),
+    geojson: { type: 'Feature', geometry: f.geometry, properties: {} }
+  })).filter(b => b.minutes > 0).sort((a, b) => a.minutes - b.minutes);
+
+  const biggest = bands[bands.length - 1];
+  if (!biggest || bandSpanMeters(biggest.geojson) < 400) {
+    setIsoStatus('Nothing is reachable from that point — no roads or paths near it. Try a centre on or beside a road.', 'err');
+    return;
+  }
+
+  bands.forEach((b, i) => { b.color = ISO_BAND_COLORS[Math.min(i, ISO_BAND_COLORS.length - 1)]; });
+  isoPendingBands = {
+    profile,
+    center: [+isoCenter.lng.toFixed(6), +isoCenter.lat.toFixed(6)],
+    computedAt: new Date().toISOString(),
+    bands
+  };
+
+  // Preview: draw largest first so the smaller bands sit on top.
+  if (isoPreviewGroup) map.removeLayer(isoPreviewGroup);
+  isoPreviewGroup = L.layerGroup().addTo(map);
+  bands.slice().reverse().forEach(b => {
+    L.geoJSON(b.geojson, { style: { color: b.color, fillColor: b.color, weight: 2, opacity: 1, fillOpacity: 0.18 } })
+      .addTo(isoPreviewGroup);
+  });
+  map.fitBounds(L.geoJSON(biggest.geojson).getBounds(), { padding: [40, 40] });
+
+  exitIsoInteraction();
+  setIsoStatus('');
+  document.getElementById('iso-summary').textContent =
+    `${ROUTE_PROFILES[profile].label} · ${bands.map(b => b.minutes + ' min').join(' · ')}`;
+  showIsoStage('name');
+  const nm = document.getElementById('iso-form-name');
+  nm.value = '';
+  setTimeout(() => nm.focus(), 100);
+}
+
+function confirmIsochrone() {
+  if (!isoPendingBands) return;
+  const nameEl = document.getElementById('iso-form-name');
+  const base = nameEl.value.trim();
+  if (!base) { nameEl.focus(); return; }
+  const ndc   = document.getElementById('iso-form-ndc').value;
+  const state = document.getElementById('iso-form-state').value.trim() || 'OTHER';
+  const { profile, center, computedAt, bands } = isoPendingBands;
+  const label = ROUTE_PROFILES[profile].label.toLowerCase();
+
+  // Save largest first, so the smaller bands end up later in the array and
+  // therefore render on top — same reason the preview draws in that order.
+  bands.slice().reverse().forEach(b => {
+    addUserPolygon(
+      b.geojson,
+      `${base} — ${b.minutes} min ${label}`,
+      'reach_area',
+      state,
+      b.color,
+      0.18,
+      ndc,
+      { source: 'valhalla', engine: 'Valhalla (FOSSGIS) · OpenStreetMap',
+        kind: 'isochrone', profile, minutes: b.minutes, center, computedAt }
+    );
+  });
+  discardIsochrone();
+}
+
+function discardIsochrone() {
+  clearIsoPreview();
+  isoPendingBands = null;
+  document.getElementById('iso-panel').style.display = 'none';
+}
+
+// Esc cancels, Enter computes, while placing a reach-area centre.
+document.addEventListener('keydown', function(e) {
+  if (!isoModeActive) return;
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+  if (e.key === 'Enter')       { e.preventDefault(); computeIsochrone(); }
+  else if (e.key === 'Escape') { e.preventDefault(); cancelIsoMode(); }
 });
 
 function loadUserLocations() {
@@ -2712,6 +3322,7 @@ function enterAddLocationMode() {
   if (addLocationModeActive) { cancelAddLocationMode(); return; }
   if (correctionModeNDC) cancelCorrection();
   if (routeModeActive) cancelRouteMode();
+  if (isoModeActive) cancelIsoMode();
   addLocationModeActive = true;
   document.getElementById('add-location-banner').style.display = 'block';
   document.getElementById('add-location-mode-btn').classList.add('active');
@@ -2889,7 +3500,12 @@ function renderUserPolygons() {
     const layer = L.geoJSON(p.geojson, {
       style,
       onEachFeature: (feat, lyr) => {
-        lyr.bindPopup(`<b>${p.name}</b><br>${p.type.replace(/_/g,' ')}<br><small>User-added · ${p.state}</small>` +
+        const d = p.derived;
+        const origin = d
+          ? `${ROUTE_PROFILES[d.profile] ? ROUTE_PROFILES[d.profile].label : d.profile} · ${d.minutes} min · ${d.engine || 'routing engine'}` +
+            `<br><small>Computed ${(d.computedAt || '').slice(0, 10)} · ${p.state}</small>`
+          : `User-added · ${p.state}`;
+        lyr.bindPopup(`<b>${p.name}</b><br>${p.type.replace(/_/g,' ')}<br><small>${origin}</small>` +
           `<br><button class="popup-btn" onclick="copyLink(layerLink('user:${i}'))">🔗 Copy link</button>` +
           `<br><span class="popup-reset" onclick="map.closePopup();removeUserPolygon(${i})">Remove</span>`);
       }
@@ -2899,12 +3515,16 @@ function renderUserPolygons() {
   });
 }
 
-function addUserPolygon(geojson, name, type, state, color, fillOpacity, ndc) {
+function addUserPolygon(geojson, name, type, state, color, fillOpacity, ndc, meta) {
   const polys = loadUserPolygons();
   const entry = { name, type, state, geojson, addedAt: new Date().toISOString() };
   if (color) entry.color = color;
   if (fillOpacity != null && !isNaN(fillOpacity)) entry.fillOpacity = fillOpacity;
   if (ndc) entry.ndc = ndc;
+  // Same rule as routes: a polygon computed by an engine is DERIVED, and says so
+  // for the rest of its life. Absent field = drawn or pasted by a person, which
+  // keeps every boundary saved before this existed valid.
+  if (meta) entry.derived = meta;
   polys.push(entry);
   saveUserPolygons(polys);
   renderUserPolygons();
@@ -2992,9 +3612,14 @@ function applyRouteArrows(layer, color) {
 function routePopupHTML(r, i) {
   const latlngs = (r.geojson.geometry.coordinates || []).map(c => L.latLng(c[1], c[0]));
   const dash = r.dash && r.dash !== 'solid' ? r.dash : 'solid';
+  const rt = r.routing;
+  const origin = rt
+    ? `${ROUTE_PROFILES[rt.profile] ? ROUTE_PROFILES[rt.profile].label : rt.profile} route · ${rt.engine || 'routing engine'}` +
+      `<br><small>Found ${(rt.computedAt || '').slice(0, 10)}${rt.durationLabel ? ' · ' + rt.durationLabel : ''} · ${r.state || 'OTHER'}</small>`
+    : `Hand-drawn · ${r.state || 'OTHER'}`;
   return `<b>${r.name}</b><br>Route · ${dash}` +
     `<br><small>${routeLengthLabel(latlngs)} · ${latlngs.length} points</small>` +
-    `<br><small>Hand-drawn · ${r.state || 'OTHER'}</small>` +
+    `<br><small>${origin}</small>` +
     `<br><button class="popup-btn" onclick="copyLink(layerLink('route:${i}'))">🔗 Copy link</button>` +
     `<br><span class="popup-reset" onclick="map.closePopup();removeUserRoute(${i})">Remove</span>`;
 }
@@ -3041,6 +3666,10 @@ function addUserRoute(geojson, opts) {
     addedAt: new Date().toISOString()
   };
   if (opts.ndc) entry.ndc = opts.ndc;
+  // Provenance. A found route is a DERIVED object — it can change when OSM changes,
+  // and it can be wrong — so it never passes as something someone asserted by hand.
+  // Absent field = hand-drawn, which keeps every route saved before this existed valid.
+  if (opts.routing) entry.routing = opts.routing;
   routes.push(entry);
   saveUserRoutes(routes);
   renderUserRoutes();
@@ -3676,6 +4305,8 @@ document.getElementById('add-loc-name-input').addEventListener('keydown', functi
   injectDefaultPolygons();
   await loadIssueIndex();
   loadBundledIssues();   // add any issues baked into this file (standalone build)
+  renderBuildStamp();       // show the build date — standalone builds only
+  absolutizeDocLinks();     // point Intro/Manual/Slides at Wiki Café — standalone builds only
   buildNDCList();
   showOverview();
   loadRegions();   // fetch + merge federated regional bundles (non-blocking, graceful)
