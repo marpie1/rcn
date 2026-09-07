@@ -1,0 +1,417 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>RCN Table</title>
+<!--
+═══════════════════════════════════════════════════════════════════════
+RCN TABLE — decisions log. Read this before editing.
+═══════════════════════════════════════════════════════════════════════
+
+WHAT THIS IS. The table pane. A wiki column cannot hold 189 rows by 34
+columns, so the table is "called out" into a full window that stays tied to
+the page it came from — the Solo pattern the graph tool already uses.
+
+WHY IT ONLY READS. Sort, filter, select, click through. No cell editing.
+A spreadsheet in the wiki is a different and much larger thing, with a real
+destructive surface; this is the pane you scan before you pick a row, which
+is the job Perspectives' bottom pane actually does.
+
+THE SLUG IS THE SELECTION. Two views are synchronised when they link to the
+same slug — that is the whole coordination model, and it needs no message
+bus. So asSlug() here MUST stay byte-identical to wiki-client's
+lib/page.js:12 and to enrichSVGLinks() in graph-tool-v22.html. A link to
+/superior-clinic.html and one to /superiorclinic.html both look right and
+will never meet. One rule, three tools; if you change it, change it in all
+of them or the join silently fails.
+
+THE AGREEMENT INSPECTOR is the one idea worth stealing outright from Tom
+Sawyer Perspectives. Select several rows and the inspector keeps its rows
+and changes its values: where the selection agrees it shows the value,
+where it differs it shows […]. A widget built to describe one thing
+answers "what do these have in common?" for free.
+
+INSPECTOR AND TABLE ARE THE SAME WIDGET, TRANSPOSED. One element with
+attributes down the side; many elements with attributes across the top.
+Same column spec drives both — do not grow a second implementation.
+
+COLUMNS ARE GATHERED, NOT DECLARED. These sheets are ragged: most columns
+are filled for a small minority of rows. Columns under FILL_FLOOR are
+hidden by default and counted in the picker rather than dropped, because a
+column that is empty here may be the point of some other row.
+
+WARD'S SHAPE, DELIBERATELY. Export writes {columns, data} — item.columns
+plus an array of row objects — which is exactly what wiki-plugin-data
+already publishes. chart, rollup, reduce and method can then read an RCN
+table with no adapter. Reusing his contract costs nothing and buys the
+whole downstream ecosystem.
+═══════════════════════════════════════════════════════════════════════
+-->
+<style>
+:root{
+  --bg:#f7f8fa; --panel:#fff; --line:#dfe3e8; --ink:#16233b; --dim:#64748b;
+  --accent:#0f766e; --sel:#cdf3ee; --head:#eef1f5;
+}
+*{box-sizing:border-box}
+body{margin:0;font:13px/1.5 system-ui,sans-serif;color:var(--ink);background:var(--bg);
+     height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;gap:10px;align-items:center;padding:8px 12px;background:var(--panel);
+       border-bottom:1px solid var(--line);flex-wrap:wrap}
+h1{font-size:13px;margin:0 8px 0 0;font-weight:700;letter-spacing:.02em}
+select,input,button{font:inherit;color:inherit;border:1px solid var(--line);border-radius:5px;
+       padding:4px 7px;background:#fff}
+button{cursor:pointer}
+button:hover{background:#eef6f5;border-color:var(--accent)}
+#search{min-width:190px}
+.count{color:var(--dim);font-size:12px;white-space:nowrap}
+main{flex:1;display:flex;min-height:0}
+#tablewrap{flex:1;overflow:auto;background:var(--panel)}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px}
+th,td{text-align:left;padding:5px 9px;border-bottom:1px solid var(--line);
+      white-space:nowrap;max-width:290px;overflow:hidden;text-overflow:ellipsis}
+th{position:sticky;top:0;background:var(--head);cursor:pointer;font-weight:600;z-index:2;
+   border-bottom:1px solid var(--line)}
+th:hover{color:var(--accent)}
+th .ind{color:var(--accent);font-size:10px}
+tbody tr:nth-child(even){background:#fafbfc}
+tbody tr.sel,tbody tr.sel:nth-child(even){background:var(--sel)}
+tbody tr{cursor:default}
+a.subject{color:var(--accent);text-decoration:none;font-weight:600;cursor:pointer}
+a.subject:hover{text-decoration:underline}
+aside{width:310px;border-left:1px solid var(--line);background:var(--panel);
+      display:flex;flex-direction:column;min-height:0}
+aside h2{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);
+         margin:0;padding:9px 12px;border-bottom:1px solid var(--line)}
+#inspector{flex:1;overflow:auto}
+#inspector table{font-size:12px}
+#inspector th{position:static;background:none;cursor:default;width:40%;
+              vertical-align:top;white-space:normal;color:var(--dim);font-weight:500}
+#inspector td{white-space:normal;max-width:none;word-break:break-word}
+.differ{color:#94a3b8;font-style:italic}
+.empty{padding:22px 12px;color:var(--dim);text-align:center}
+#cols{padding:8px 12px;border-top:1px solid var(--line);max-height:32%;overflow:auto}
+#cols label{display:block;font-size:11px;color:var(--dim);padding:1px 0;cursor:pointer;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cols input{vertical-align:-1px;margin-right:5px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#16233b;
+       color:#fff;padding:8px 15px;border-radius:6px;font-size:12px;display:none;z-index:9}
+footer{padding:5px 12px;background:var(--panel);border-top:1px solid var(--line);
+       color:var(--dim);font-size:11px}
+</style>
+
+<header>
+  <h1>RCN Table</h1>
+  <select id="db"></select>
+  <select id="kind"></select>
+  <input id="search" placeholder="Filter rows…">
+  <span class="count" id="count"></span>
+  <span style="flex:1"></span>
+  <button id="clear">Clear selection</button>
+  <button id="toWiki">→ Wiki item</button>
+  <button id="csv">CSV</button>
+</header>
+
+<main>
+  <div id="tablewrap"><div class="empty">Loading…</div></div>
+  <aside>
+    <h2 id="inspectorTitle">Inspector</h2>
+    <div id="inspector"><div class="empty">Select a row.</div></div>
+    <div id="cols"></div>
+  </aside>
+</main>
+<footer id="status"></footer>
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+// MUST match wiki-client lib/page.js:12 and graph-tool's enrichSVGLinks().
+function asSlug(name){
+  return String(name).replace(/\s/g,'-').replace(/[^A-Za-z0-9-]/g,'').toLowerCase();
+}
+
+// Same resolution order as graph-tool-v22.html. Relative paths only work when
+// the tool is served by the substrate itself; from :8765, the wiki popup, or a
+// deployed folder they address the wrong host.
+var SUBSTRATE_BASE = (function(){
+  var q = new URLSearchParams(location.search).get('substrate');
+  if(q) return q.replace(/\/+$/,'');
+  if(location.port === '8768') return '';
+  if(location.protocol === 'file:') return 'http://127.0.0.1:8768';
+  if(/(^|\.)localhost$/.test(location.hostname) || location.hostname === '127.0.0.1')
+    return 'http://127.0.0.1:8768';
+  return '';
+})();
+
+var FILL_FLOOR = 0.10;      // columns filled for fewer rows than this start hidden
+var ITEM_ROW_CAP = 200;     // what a wiki item carries; see decisions log
+
+var state = {
+  columns: [], data: [], subject: null, kind: '', db: '',
+  visible: {}, sortBy: null, sortDir: 1, selected: new Set(), filter: ''
+};
+
+var $ = function(id){ return document.getElementById(id); };
+
+function toast(msg){
+  var t = $('toast'); t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toast._t); toast._t = setTimeout(function(){ t.style.display='none'; }, 2600);
+}
+function esc(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fillOf(col){
+  var n = 0;
+  state.data.forEach(function(r){ if(String(r[col]||'').trim()) n++; });
+  return state.data.length ? n/state.data.length : 0;
+}
+
+// ── loading ───────────────────────────────────────────────────────────
+function api(path){
+  return fetch(SUBSTRATE_BASE + path).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
+  });
+}
+
+function loadDatabases(){
+  return api('/projection').then(function(j){
+    var sel = $('db');
+    sel.innerHTML = (j.databases||[]).map(function(d){
+      return '<option'+(d===state.db?' selected':'')+'>'+esc(d)+'</option>'; }).join('');
+  });
+}
+
+function loadKinds(){
+  return api('/projection/tables?db='+encodeURIComponent(state.db)).then(function(j){
+    var kinds = j.kinds||[];
+    $('kind').innerHTML = kinds.map(function(k){
+      return '<option value="'+esc(k.kind)+'"'+(k.kind===state.kind?' selected':'')+'>'
+           + esc(k.kind)+' ('+k.rows+')</option>'; }).join('');
+    if(kinds.length && !kinds.some(function(k){ return k.kind===state.kind; }))
+      state.kind = kinds[0].kind;
+    $('kind').value = state.kind;
+  });
+}
+
+function loadTable(){
+  $('tablewrap').innerHTML = '<div class="empty">Loading…</div>';
+  return api('/projection/table/'+encodeURIComponent(state.kind)
+            +'?db='+encodeURIComponent(state.db)).then(function(j){
+    state.columns = j.columns||[]; state.data = j.data||[];
+    state.subject = j.subject||null;
+    state.selected = new Set(); state.sortBy = null;
+    state.visible = {};
+    state.columns.forEach(function(c){ state.visible[c] = fillOf(c) >= FILL_FLOOR; });
+    if(state.subject) state.visible[state.subject] = true;
+    renderColumns(); render(); renderInspector();
+  }).catch(function(e){
+    $('tablewrap').innerHTML = '<div class="empty">Could not load: '+esc(e.message)
+      + '<br><br>Is the substrate running on 8768?</div>';
+  });
+}
+
+// ── rendering ─────────────────────────────────────────────────────────
+function visibleColumns(){
+  return state.columns.filter(function(c){ return state.visible[c]; });
+}
+
+function rows(){
+  var f = state.filter.trim().toLowerCase(), cols = visibleColumns();
+  var out = state.data.filter(function(r){
+    if(!f) return true;
+    return cols.some(function(c){ return String(r[c]||'').toLowerCase().indexOf(f) >= 0; });
+  });
+  if(state.sortBy){
+    var c = state.sortBy, d = state.sortDir;
+    out = out.slice().sort(function(a,b){
+      var x = String(a[c]||''), y = String(b[c]||'');
+      var nx = parseFloat(x), ny = parseFloat(y);
+      if(!isNaN(nx) && !isNaN(ny) && x.trim()!=='' && y.trim()!=='') return (nx-ny)*d;
+      return x.localeCompare(y, undefined, {numeric:true}) * d;
+    });
+  }
+  return out;
+}
+
+function rowKey(r){ return state.subject ? String(r[state.subject]||'') : JSON.stringify(r); }
+
+function render(){
+  var cols = visibleColumns(), rs = rows();
+  var html = '<table><thead><tr>' + cols.map(function(c){
+    var ind = state.sortBy===c ? ' <span class="ind">'+(state.sortDir>0?'▲':'▼')+'</span>' : '';
+    return '<th data-col="'+esc(c)+'" title="'+esc(c)+' — '
+         + Math.round(fillOf(c)*100)+'% filled">'+esc(c)+ind+'</th>';
+  }).join('') + '</tr></thead><tbody>';
+
+  rs.forEach(function(r, i){
+    var k = rowKey(r);
+    html += '<tr data-i="'+i+'"'+(state.selected.has(k)?' class="sel"':'')+'>';
+    cols.forEach(function(c){
+      var v = r[c]==null ? '' : String(r[c]);
+      if(c === state.subject && v){
+        // The row is a subject: its name is a slug is a page. This is the join.
+        html += '<td><a class="subject" data-title="'+esc(v)+'" href="/'
+              + esc(asSlug(v))+'.html">'+esc(v)+'</a></td>';
+      } else {
+        html += '<td title="'+esc(v)+'">'+esc(v)+'</td>';
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  $('tablewrap').innerHTML = rs.length ? html : '<div class="empty">No rows match.</div>';
+  $('count').textContent = rs.length === state.data.length
+    ? state.data.length + ' rows'
+    : rs.length + ' of ' + state.data.length + ' rows';
+  $('status').textContent = state.db + ' · ' + state.kind + ' · '
+    + cols.length + ' of ' + state.columns.length + ' columns shown'
+    + (state.selected.size ? ' · ' + state.selected.size + ' selected' : '');
+  window._rows = rs;
+}
+
+function renderColumns(){
+  $('cols').innerHTML = '<div style="font-size:11px;color:var(--dim);'
+    + 'text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">Columns</div>'
+    + state.columns.map(function(c){
+        var pct = Math.round(fillOf(c)*100);
+        return '<label title="'+esc(c)+' — '+pct+'% filled"><input type="checkbox" data-col="'
+             + esc(c)+'"'+(state.visible[c]?' checked':'')+'>'+esc(c)
+             + ' <span style="opacity:.6">'+pct+'%</span></label>';
+      }).join('');
+}
+
+// THE AGREEMENT VIEW. One selected row reads as a description. Several read as
+// a comparison — same rows, values where they agree and […] where they do not.
+function renderInspector(){
+  var sel = state.data.filter(function(r){ return state.selected.has(rowKey(r)); });
+  $('inspectorTitle').textContent = sel.length > 1
+    ? 'Inspector — ' + sel.length + ' rows, shared values'
+    : 'Inspector';
+  if(!sel.length){
+    $('inspector').innerHTML = '<div class="empty">Select a row.<br>'
+      + '<span style="font-size:11px">Cmd-click to compare several.</span></div>';
+    return;
+  }
+  var html = '<table>';
+  state.columns.forEach(function(c){
+    var vals = sel.map(function(r){ return r[c]==null ? '' : String(r[c]); });
+    var all = vals.every(function(v){ return v === vals[0]; });
+    if(all && !vals[0] && sel.length) return;          // agreed-empty tells nobody anything
+    var cell = all ? esc(vals[0])
+      : '<span class="differ">[…] ' + new Set(vals).size + ' values</span>';
+    html += '<tr><th>'+esc(c)+'</th><td>'+cell+'</td></tr>';
+  });
+  $('inspector').innerHTML = html + '</table>';
+}
+
+// ── interaction ───────────────────────────────────────────────────────
+$('tablewrap').addEventListener('click', function(ev){
+  var a = ev.target.closest('a.subject');
+  if(a){
+    ev.preventDefault();
+    openPage(a.getAttribute('data-title'), ev.shiftKey);
+    return;
+  }
+  var th = ev.target.closest('th');
+  if(th){
+    var c = th.getAttribute('data-col');
+    if(state.sortBy === c) state.sortDir = -state.sortDir;
+    else { state.sortBy = c; state.sortDir = 1; }
+    render();
+    return;
+  }
+  var tr = ev.target.closest('tr[data-i]');
+  if(!tr) return;
+  var r = window._rows[+tr.getAttribute('data-i')], k = rowKey(r);
+  if(ev.metaKey || ev.ctrlKey){
+    if(state.selected.has(k)) state.selected.delete(k); else state.selected.add(k);
+  } else {
+    state.selected = new Set([k]);
+  }
+  render(); renderInspector();
+});
+
+$('cols').addEventListener('change', function(ev){
+  var c = ev.target.getAttribute('data-col');
+  if(c){ state.visible[c] = ev.target.checked; render(); }
+});
+$('search').addEventListener('input', function(){ state.filter = this.value; render(); });
+$('clear').addEventListener('click', function(){
+  state.selected = new Set(); render(); renderInspector();
+});
+$('db').addEventListener('change', function(){
+  state.db = this.value; loadKinds().then(loadTable);
+});
+$('kind').addEventListener('change', function(){ state.kind = this.value; loadTable(); });
+
+// ── the wiki, behind the callout ──────────────────────────────────────
+// Navigating is the whole point: the table does not update a pane, it moves the
+// lineup. Shift-click keeps the lineup, matching FedWiki's own convention.
+function openPage(title, keepLineup){
+  if(window.opener && !window.opener.closed){
+    window.opener.postMessage({toolType:'rcn-table', action:'doInternalLink',
+      title:title, keepLineup:!!keepLineup, pageKey:window._pageKey||null}, '*');
+    window.opener.focus();
+    toast('→ ' + title);
+  } else {
+    toast('No wiki opened this table — would open /' + asSlug(title) + '.html');
+  }
+}
+
+$('toWiki').addEventListener('click', function(){
+  var cols = visibleColumns(), rs = rows().slice(0, ITEM_ROW_CAP);
+  var item = {
+    type: 'rcntable', kind: state.kind, database: state.db,
+    subject: state.subject, columns: cols,
+    data: rs.map(function(r){
+      var o = {}; cols.forEach(function(c){ o[c] = r[c]==null ? '' : r[c]; }); return o; }),
+    total: state.data.length, fetched: new Date().toISOString().slice(0,10),
+    // Only items with `text` are indexed by the wiki server's search.
+    text: state.kind + ' — ' + cols.join(', ') + ' — '
+        + rs.map(function(r){ return r[state.subject]; }).filter(Boolean).join(', ')
+  };
+  if(window.opener && !window.opener.closed){
+    window.opener.postMessage({toolType:'rcn-table', action:'saveTable', item:item}, '*');
+    window.opener.focus();
+    toast('Sent ' + item.data.length + ' rows to the wiki item');
+  } else {
+    navigator.clipboard.writeText(JSON.stringify(item, null, 2));
+    toast('No wiki opener — item JSON copied to clipboard');
+  }
+});
+
+$('csv').addEventListener('click', function(){
+  var cols = visibleColumns();
+  var q = function(v){ v = String(v==null?'':v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+  var out = [cols.map(q).join(',')].concat(rows().map(function(r){
+    return cols.map(function(c){ return q(r[c]); }).join(','); })).join('\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([out], {type:'text/csv'}));
+  a.download = state.db + '-' + state.kind + '.csv';
+  a.click();
+  toast('Downloaded ' + a.download);
+});
+
+// ── the opener handshake, same shape as the graph tool ────────────────
+if(window.opener){
+  window.opener.postMessage({toolType:'rcn-table', action:'tableReady'}, '*');
+  window.addEventListener('message', function(ev){
+    if(!ev.source || ev.source !== window.opener) return;
+    if(ev.data && ev.data.action === 'loadTable'){
+      window._pageKey = ev.data.pageKey || null;
+      if(ev.data.database) state.db = ev.data.database;
+      if(ev.data.kind) state.kind = ev.data.kind;
+      boot();
+    }
+  });
+}
+
+function boot(){
+  var p = new URLSearchParams(location.search);
+  state.db = state.db || p.get('db') || 'whatcom';
+  state.kind = state.kind || p.get('kind') || '';
+  loadDatabases().then(loadKinds).then(loadTable).catch(function(e){
+    $('tablewrap').innerHTML = '<div class="empty">Could not reach the substrate at '
+      + esc(SUBSTRATE_BASE || '(relative)') + '<br><br>' + esc(e.message) + '</div>';
+  });
+}
+boot();
+</script>
