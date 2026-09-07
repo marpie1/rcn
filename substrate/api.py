@@ -25,7 +25,7 @@ only the fields its lens needs, but always in this envelope. No adapters.
 """
 import json, os, sys, posixpath
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, unquote
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from db import run, BASE, DATABASE
@@ -651,6 +651,59 @@ def project(name, database=None):
 ASPECT_DB = 'aspects16'   # where the 16 drawings live, with exact provenance
 
 
+# Reserved names carry the substrate's own bookkeeping, not the row's content.
+TABLE_HIDDEN = {'schemaLabel', 'kind'}
+
+
+def table_projection(kind, database=ASPECT_DB):
+    """One kind of concept as ROWS, in the shape wiki-plugin-data already uses.
+
+    `{columns: [...], data: [{...}]}` is Ward's tabular contract — item.columns
+    plus an array of row objects — so a table item built from this can be read
+    by chart, rollup, reduce and method with no adapter. Reusing his shape costs
+    nothing and buys the whole downstream ecosystem.
+
+    `subject` names the column holding the row's identity. That column is what a
+    click navigates on: the row is a thing with a page, and the slug is the
+    join between this table, a drawing, and a wiki page. A table whose rows are
+    observations rather than subjects returns subject=None and does not link.
+
+    Columns are gathered from the rows actually returned, not declared up front,
+    because these sheets are ragged — most columns are filled for a minority of
+    rows, and a fixed column list would be mostly empty.
+    """
+    rows = run('MATCH (c:Concept {kind:$k}) RETURN c AS c '
+               'ORDER BY c.variableLabel', {'k': kind}, database=database)
+    out, cols = [], []
+    for r in rows:
+        props = (r['c'] or {}).get('properties', r['c']) or {}
+        row = {'Name': props.get('variableLabel') or props.get('schemaLabel')}
+        for key, val in props.items():
+            if key in TABLE_HIDDEN or key == 'variableLabel':
+                continue
+            if key == 'sources':
+                val = ', '.join(val or [])
+            row[key] = val
+        for key in row:
+            if key not in cols:
+                cols.append(key)
+        out.append(row)
+    # Name first, then the substrate's provenance, then the sheet's own columns.
+    order = ([c for c in ('Name', 'sources') if c in cols]
+             + sorted(c for c in cols if c not in ('Name', 'sources')))
+    return {'kind': kind, 'subject': 'Name', 'columns': order,
+            'data': [{c: r.get(c, '') for c in order} for r in out],
+            'total': len(out), 'database': database}
+
+
+def table_kinds(database=ASPECT_DB):
+    """What kinds exist, with row counts — the list a table picker offers."""
+    return {'database': database, 'kinds': run(
+        'MATCH (c:Concept) WHERE c.kind IS NOT NULL '
+        'RETURN c.kind AS kind, count(*) AS rows ORDER BY rows DESC',
+        database=database)}
+
+
 def subgraph(aspect, database=ASPECT_DB):
     """One drawing, as its author drew it, carrying the substrate's content.
 
@@ -679,6 +732,59 @@ def subgraph(aspect, database=ASPECT_DB):
 
 
 def put_subgraph(aspect, payload, database=ASPECT_DB):
+    """Replace one drawing, without a failure path that can destroy it.
+
+    THE WINDOW THIS CLOSES. The write used to retract and then re-assert, and
+    the retract DELETED anything left with no witness. Every concept in a small
+    drawing is witnessed only by that drawing, so between the two halves the
+    drawing did not exist. Any error in the second half — and there were two in
+    one afternoon, a NameError and a merge that matched nothing — left it
+    deleted with nothing put back. Recovery depended on the files being in git.
+
+    Two changes. The deletion now runs LAST, after the re-assert, so nothing is
+    removed until its replacement is already in place; an exception simply
+    means the deletion never happens. And the witnesses are captured before
+    anything is touched, so if the re-assert raises, every drawing that carried
+    this aspect gets it back before the error propagates.
+
+    What remains is not atomic — /query/v2 is one statement per transaction, so
+    genuine atomicity means rewriting this as a single UNWIND, which is a much
+    larger change to the most delicate code here. But no ordering of failures
+    now loses data: the worst case is a drawing briefly missing from the
+    listings, which the next successful save repairs.
+    """
+    kw = {'a': aspect}
+    # elementId is stable for as long as the node lives, and with the deletion
+    # moved to the end nothing dies before the rollback could need it.
+    had_c = [r['k'] for r in run(
+        "MATCH (c:Concept) WHERE $a IN c.sources RETURN elementId(c) AS k",
+        kw, database=database)]
+    had_v = [r['k'] for r in run(
+        "MATCH (v:Variable) WHERE $a IN v.sources RETURN elementId(v) AS k",
+        kw, database=database)]
+    had_r = [r['k'] for r in run(
+        "MATCH ()-[r:REL]->() WHERE $a IN r.sources RETURN elementId(r) AS k",
+        kw, database=database)]
+    try:
+        return _put_subgraph_write(aspect, payload, database)
+    except Exception:
+        for match, var, ks in (
+                ("MATCH (c:Concept)", 'c', had_c),
+                ("MATCH (v:Variable)", 'v', had_v),
+                ("MATCH ()-[r:REL]->()", 'r', had_r)):
+            if not ks:
+                continue
+            try:
+                run(f"{match} WHERE elementId({var}) IN $ks "
+                    f"AND NOT $a IN {var}.sources "
+                    f"SET {var}.sources = {var}.sources + $a",
+                    {'ks': ks, 'a': aspect}, database=database)
+            except Exception:
+                pass          # the original error is the one worth raising
+        raise
+
+
+def _put_subgraph_write(aspect, payload, database=ASPECT_DB):
     """Replace one contributor's drawing. NON-DESTRUCTIVE TO OTHERS.
 
     Retract, then re-assert:
@@ -706,33 +812,68 @@ def put_subgraph(aspect, payload, database=ASPECT_DB):
         "SET r.sources = [s IN r.sources WHERE s <> $a]", kw, database=database)
     run("MATCH (v:Variable) WHERE $a IN v.sources "
         "SET v.sources = [s IN v.sources WHERE s <> $a]", kw, database=database)
-    orphaned_e = run("MATCH ()-[r:REL]->() WHERE size(r.sources) = 0 "
-                     "DELETE r RETURN count(r) AS c", database=database)[0]['c']
-    orphaned_v = run("MATCH (v:Variable) WHERE size(v.sources) = 0 "
-                     "DETACH DELETE v RETURN count(v) AS c", database=database)[0]['c']
-    orphaned_n = run("MATCH (c:Concept) WHERE size(c.sources) = 0 "
-                     "DETACH DELETE c RETURN count(c) AS c", database=database)[0]['c']
-
     # A CANVAS NODE IS A STATE. Two nodes can share a schema label and be
     # different states of it — that is the whole point of Affect — so the
     # concept is MERGEd once and a :Variable is MERGEd per distinct wording.
     # Setting c.variableLabel from every node in turn is what let the last one
     # read win and erased the others.
     vid_of = {}                      # canvas node id -> :Variable id
+    label_keyed = aspect_file.KEY_FNS.get(database) is aspect_file._key_label
+    cid_of = {}                        # node id -> concept key, label-keyed dbs
     for n in payload.get('nodes', []):
         schema = n.get('schemaLabel') or (n.get('props') or {}).get('schemaLabel') \
                  or n.get('label') or n.get('id')
-        nid = ''.join(str(schema).split()).lower()
-        run("""MERGE (c:Concept {id:$id})
-               ON CREATE SET c.schemaLabel=$sl, c.variableLabel=$vl, c.mode='EIP',
-                             c.sources=[], c.w=$w, c.h=$h, c.shape=$sh
-               SET c.variableLabel = coalesce($vl, c.variableLabel),
-                   c.sources = CASE WHEN $a IN c.sources THEN c.sources
+        # THE WRITE MUST KEY THE WAY THE READ DOES. This merged on c.id with a
+        # spaceless schemaLabel — the aspects16 convention, from families.js.
+        # A vna concept has no `id` at all and is keyed on schemaLabel WITH its
+        # spaces, so the merge matched nothing, created `MEMBERHOUSEHOLD` beside
+        # the real `MEMBER HOUSEHOLD`, and the original then had no witness left
+        # and was deleted. One saved drawing, one concept silently renamed.
+        # aspect_file already knows each database's convention; use it.
+        sl = aspect_file.key_fn(database)({'schemaLabel': schema})
+        if label_keyed:
+            # NO schemaLabel MEANS NOT A CONCEPT. A vna drawing carries headers
+            # and captions beside its roles; the roles come back from the
+            # projection carrying a schemaLabel and the annotations do not, so
+            # the absence IS the signal and nothing needs flagging in the file.
+            #
+            # This was briefly written as MATCH-only — update, never create — on
+            # the reasoning that load_vna.py rebuilds the database from files
+            # anyway. That cannot work: put_subgraph RETRACTS first, deleting
+            # concepts left with no witness, and every concept in a small drawing
+            # is witnessed only by that drawing. The retraction removes exactly
+            # what the update would have matched, so all six were deleted and
+            # none re-asserted. Re-assertion has to be able to create.
+            if str(((n.get('props') or {}).get('_annotation') or '')).lower() == 'true':
+                continue
+            run("""MERGE (c:Concept {schemaLabel:$sl})
+                   ON CREATE SET c.variableLabel=$vl, c.sources=[],
+                                 c.w=$w, c.h=$h, c.shape=$sh
+                   SET c.variableLabel = coalesce($vl, c.variableLabel),
+                       c.sources = CASE WHEN $a IN c.sources THEN c.sources
                                ELSE c.sources + $a END""",
-            dict(id=nid, sl=''.join(str(schema).split()),
-                 vl=n.get('label'), w=n.get('w', 110), h=n.get('h', 60),
-                 sh=n.get('shape', 'ellipse'), a=aspect), database=database)
+                dict(sl=sl, vl=n.get('label'), w=n.get('w', 110), h=n.get('h', 60),
+                     sh=n.get('shape', 'ellipse'), a=aspect), database=database)
+        else:
+            run("""MERGE (c:Concept {id:$id})
+                   ON CREATE SET c.schemaLabel=$sl, c.variableLabel=$vl, c.mode='EIP',
+                                 c.sources=[], c.w=$w, c.h=$h, c.shape=$sh
+                   SET c.variableLabel = coalesce($vl, c.variableLabel),
+                       c.sources = CASE WHEN $a IN c.sources THEN c.sources
+                                   ELSE c.sources + $a END""",
+                dict(id=sl.lower(), sl=sl,
+                     vl=n.get('label'), w=n.get('w', 110), h=n.get('h', 60),
+                     sh=n.get('shape', 'ellipse'), a=aspect), database=database)
 
+        if label_keyed:
+            # A vna concept has no :Variable layer — load_vna.py creates none,
+            # because a role does not have measured states the way an EIP
+            # concept does. Creating them here would invent a layer the model
+            # does not have, so edges are written concept-to-concept below.
+            cid_of[str(n.get('id'))] = sl
+            continue
+
+        nid = sl.lower()
         state = (n.get('label') or '').strip() or ''.join(str(schema).split())
         found = run("""MATCH (c:Concept {id:$cid})-[:HAS_STATE]->(v:Variable)
                        WHERE v.label = $st RETURN v.id AS id""",
@@ -760,6 +901,21 @@ def put_subgraph(aspect, payload, database=ASPECT_DB):
         vid_of[str(n.get('id'))] = vid
 
     for e in payload.get('edges', []):
+        if label_keyed:
+            # Straight concept to concept, matching how load_vna.py wrote them.
+            sc, tc = cid_of.get(str(e.get('src'))), cid_of.get(str(e.get('tgt')))
+            if not sc or not tc:
+                continue                   # an edge to a node that was not sent
+            run("""MATCH (s:Concept {schemaLabel:$sc}), (t:Concept {schemaLabel:$tc})
+                   MERGE (s)-[r:REL {label:$label}]->(t)
+                   ON CREATE SET r.id=$id, r.sources=[]
+                   SET r.sources = CASE WHEN $a IN r.sources THEN r.sources
+                                   ELSE r.sources + $a END""",
+                dict(sc=sc, tc=tc, label=e.get('label', ''),
+                     id=e.get('id') or f"w_{aspect}_{e.get('src')}_{e.get('tgt')}",
+                     a=aspect), database=database)
+            continue
+
         sv, tv = vid_of.get(str(e.get('src'))), vid_of.get(str(e.get('tgt')))
         if not sv or not tv:
             continue                       # an edge to a node that was not sent
@@ -787,6 +943,17 @@ def put_subgraph(aspect, payload, database=ASPECT_DB):
                        r.srcState = sv.label, r.tgtState = tv.label,
                        r.sources = CASE WHEN $a IN r.sources THEN r.sources
                                    ELSE r.sources + $a END""", args, database=database)
+
+    # DELETE LAST. Everything above only ADDED — the aspect was stripped from
+    # each sources list at the top, and the re-assert put it back on whatever
+    # the drawing still contains. So what is witness-less now is genuinely
+    # retired, and nothing was at risk while the drawing was being rebuilt.
+    orphaned_e = run("MATCH ()-[r:REL]->() WHERE size(r.sources) = 0 "
+                     "DELETE r RETURN count(r) AS c", database=database)[0]['c']
+    orphaned_v = run("MATCH (v:Variable) WHERE size(v.sources) = 0 "
+                     "DETACH DELETE v RETURN count(v) AS c", database=database)[0]['c']
+    orphaned_n = run("MATCH (c:Concept) WHERE size(c.sources) = 0 "
+                     "DETACH DELETE c RETURN count(c) AS c", database=database)[0]['c']
 
     after = run("MATCH (c:Concept) WHERE $a IN c.sources RETURN count(c) AS c",
                 kw, database=database)[0]['c']
@@ -878,6 +1045,11 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._send(200, aspect_file.build_file(name, db or ASPECT_DB))
             except Exception as e:
                 return self._send(503, {'error': str(e)})
+        if path == '/projection/tables':
+            return self._send(200, table_kinds(db or ASPECT_DB))
+        if path.startswith('/projection/table/'):
+            kind = unquote(path[len('/projection/table/'):])
+            return self._send(200, table_projection(kind, db or ASPECT_DB))
         if path.startswith('/projection/subgraph/'):
             name = posixpath.basename(path)
             try:
