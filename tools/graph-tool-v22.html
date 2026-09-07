@@ -2164,10 +2164,36 @@ function applyEIPToNewNode(n){
 //   1. labels already on this canvas
 //   2. labels used across the substrate, with how widely (needs api.py)
 //   3. the verb lists in edge-families.js — a curated starting vocabulary
+// ── WHERE THE SUBSTRATE LIVES ───────────────────────────────────
+// Every substrate call below used a bare relative path ('/subgraph/...'), which
+// resolves only when this tool is served BY api.py itself on :8768. But the tool
+// is opened from three other origins — the static server on :8765, the FedWiki
+// plugin popup, and the deployed asset folder — and from each of those a relative
+// '/subgraph/' addressed the wrong host and 404'd. So the round trip existed, and
+// the wiki path existed, and they could not meet. This is the same class of
+// failure as the deployed build's relative sidecars.
+//
+// Resolve against an explicit base instead. Order of authority:
+//   1. ?substrate=<origin> on the URL — one canvas can address another server
+//   2. already served by the substrate (:8768) — stay relative, as before
+//   3. any localhost origin, or file:// — the local prototype substrate
+//   4. deployed — '' , so a public page never silently phones home
+// api.py already sends Access-Control-Allow-Origin: * , so the cross-origin call
+// from :8765 or :3000 needs nothing further. It binds 127.0.0.1, so this reaches
+// the substrate on THIS MACHINE only — which is what a prototype wants.
+var SUBSTRATE_BASE = (function(){
+  var q = new URLSearchParams(location.search).get('substrate');
+  if(q) return q.replace(/\/+$/,'');
+  if(location.port === '8768') return '';
+  if(location.protocol === 'file:') return 'http://127.0.0.1:8768';
+  if(/(^|\.)localhost$/.test(location.hostname) || location.hostname === '127.0.0.1')
+    return 'http://127.0.0.1:8768';
+  return '';
+})();
 var _subVocab = null;
 function loadSubstrateVocab(){
   if(_subVocab!==null) return Promise.resolve(_subVocab);
-  return fetch('/vocabulary/edge-labels').then(function(r){ return r.ok?r.json():null; })
+  return fetch(SUBSTRATE_BASE+'/vocabulary/edge-labels').then(function(r){ return r.ok?r.json():null; })
     .then(function(j){ _subVocab = (j&&j.labels)||[]; return _subVocab; })
     .catch(function(){ _subVocab = []; return _subVocab; });
 }
@@ -2277,7 +2303,13 @@ document.addEventListener('scroll', hideLabelSuggest, true);
 // witness at all, then re-inserts what you send. A concept another drawing also
 // contains keeps its other witnesses and survives. You cannot delete a
 // collaborator's work, even by saving an empty canvas.
-var substrateSubgraph = null;   // set by loadGraphJSON when the file names one
+var substrateSubgraph = null;   // set by loadFromQueryParam when the URL names one
+// WHICH DATABASE THIS DRAWING CAME FROM. Without it every write-back went to the
+// server's default (aspects16) whatever you had loaded — open a `vna` drawing,
+// press "→ Substrate", and its concepts landed in the wrong database. The name of
+// a drawing is not unique across databases, so the name alone cannot say where to
+// put it back. Captured on load, sent on both legs of the save.
+var substrateDb = null;
 
 function saveToSubstrate(){
   var name = substrateSubgraph;
@@ -2293,6 +2325,10 @@ function saveToSubstrate(){
                    + 'Other drawings are untouched.')){
     return;
   }
+  // Both legs carry the database, or neither does: a save that put the graph in
+  // one database and the file in another would be exactly the drift this round
+  // trip exists to prevent.
+  var dbq = substrateDb ? '?db='+encodeURIComponent(substrateDb) : '';
   var body = JSON.stringify({
     nodes: nodes.map(function(n){
       return {id:n.id, label:n.label, schemaLabel:n.schemaLabel||(n.props&&n.props.schemaLabel)||n.label,
@@ -2311,7 +2347,7 @@ function saveToSubstrate(){
   // canonical so git keeps the history; the database is rebuildable from it.
   var jok = function(r){ return r.json().then(function(j){
     if(!r.ok) throw new Error(j.error||('HTTP '+r.status)); return j; }); };
-  fetch('/subgraph/'+encodeURIComponent(name), {
+  fetch(SUBSTRATE_BASE+'/subgraph/'+encodeURIComponent(name)+dbq, {
     method:'PUT', headers:{'Content-Type':'application/json'}, body:body
   }).then(jok)
     .then(function(j){
@@ -2322,9 +2358,20 @@ function saveToSubstrate(){
       var pos={};
       nodes.forEach(function(n){
         var sl=n.schemaLabel||(n.props&&n.props.schemaLabel);
-        if(sl) pos[String(sl).replace(/\s+/g,'')]={x:Math.round(n.x),y:Math.round(n.y)};
+        // FIRST PLACEMENT WINS — the same rule aspect_file.layout_of() and
+        // build_file() use. A concept drawn twice (org draws "Effectiveness of
+        // ORG" twice so its edges do not cross) has two positions on this
+        // canvas but only one slot in this map. Letting the LAST one win sent
+        // the second placement's coordinates as if they were the first's, and
+        // build_file then re-derived every duplicate from that wrong base: on a
+        // round trip with no edits at all, n4 took n5's old position and n5
+        // took its own plus the same delta. The placements walked one slot per
+        // save, and drifted further every time.
+        if(sl){var _k=String(sl).replace(/\s+/g,'');
+               if(!Object.prototype.hasOwnProperty.call(pos,_k))
+                 pos[_k]={x:Math.round(n.x),y:Math.round(n.y)};}
       });
-      return fetch('/subgraph/'+encodeURIComponent(name)+'/file', {
+      return fetch(SUBSTRATE_BASE+'/subgraph/'+encodeURIComponent(name)+'/file'+dbq, {
           method:'POST', headers:{'Content-Type':'application/json'},
           body:JSON.stringify({positions:pos})})
         .then(jok).then(function(f){ return [j, f]; });
@@ -8743,7 +8790,7 @@ function download(fname,mime,content){var blob=new Blob([content],{type:mime});v
 var toastT;
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},2400);}
 function loadFromURL(){var h=location.hash;if(h.indexOf('#graph=')<0)return;try{var raw=h.split('#graph=')[1];var st=JSON.parse(decodeURIComponent(escape(atob(raw))));nodes=st.nodes||[];edges=st.edges||[];if(st.modelName)document.getElementById('model-name').value=st.modelName;if(st.canvasBg)setBgColor(st.canvasBg);if(st.graphAttrs)graphAttrs=st.graphAttrs;if(st.cldLoopNames)cldLoopNames=st.cldLoopNames;var _mn2=document.getElementById('model-note');_mn2.value=st.modelNote||'';renderModelNote();edges.forEach(function(e){e.polarity=e.polarity||'none';e.delay=!!e.delay;e.dash=e.dash||'solid';if(!e.note)e.note='';if(e.color)getMarkerId(e.color);if(e.opmMarker&&e.color)getOPMMarkerId(e.opmMarker,e.color);});nodes.forEach(function(n){if(!n.fontSize)n.fontSize=DEF_NFS;if(!n.fontColor)n.fontColor='auto';if(!n.borderColor)n.borderColor='';if(!n.borderWidth)n.borderWidth=1.5;if(!n.borderDash)n.borderDash='solid';if(!n.note)n.note='';if(!n.extraLabels)n.extraLabels=[];autoSize(n);});var ids=nodes.map(function(n){return+String(n.id).replace(/\D/g,'')||0;}).concat(edges.map(function(e){return+String(e.id).replace(/\D/g,'')||0;}));nextId=(ids.length?Math.max.apply(null,ids):0)+1;renderAll();zoomFit();syncCC();toast('Loaded: '+nodes.length+' nodes, '+edges.length+' edges');}catch(err){console.warn('URL load failed',err);setTimeout(function(){toast('\u26a0\ufe0f URL load failed \u2014 link may be truncated. Use JSON export for large diagrams.');},400);}}
-function loadFromQueryParam(){var params=new URLSearchParams(window.location.search);var url=params.get('url');if(url&&/\/projection\/subgraph\//.test(url)){substrateSubgraph=decodeURIComponent(url.split('/projection/subgraph/')[1].split('?')[0]);}if(!url)return;fetch(url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(text){loadGraphJSON(text);zoomFit();}).catch(function(err){console.warn('?url= load failed',err);setTimeout(function(){toast('\u26a0\ufe0f Could not load model \u2014 check URL and CORS headers');},400);});}
+function loadFromQueryParam(){var params=new URLSearchParams(window.location.search);var url=params.get('url');if(url&&/\/projection\/subgraph\//.test(url)){var _tail=url.split('/projection/subgraph/')[1];substrateSubgraph=decodeURIComponent(_tail.split('?')[0]);var _qi=_tail.indexOf('?');substrateDb=_qi<0?null:(new URLSearchParams(_tail.slice(_qi+1)).get('db')||null);}if(!url)return;fetch(url.charAt(0)==='/'?SUBSTRATE_BASE+url:url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(text){loadGraphJSON(text);zoomFit();}).catch(function(err){console.warn('?url= load failed',err);setTimeout(function(){toast('\u26a0\ufe0f Could not load model \u2014 check URL and CORS headers');},400);});}
 function sendToWikiItem(){
   if(!window.opener){toast('Not running as wiki popup — use → Wiki for ghost page');return;}
   // Refuse to overwrite a good diagram with an icon-less rendering of itself.
