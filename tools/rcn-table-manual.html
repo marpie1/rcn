@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<!-- RCN Table — User Manual
+     Written for someone who has never used it. Sections 1-7 are the tool,
+     8-9 are the wiki plugin, 10-11 are the loop into the Graph Tool.
+     Update when the callout actions, the item shape, or the projections change. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RCN Table — User Manual</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.65}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+.page{max-width:860px;margin:0 auto;padding:40px 24px 80px}
+.doc-header{border-bottom:2px solid #e2e8f0;padding-bottom:24px;margin-bottom:32px}
+.doc-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.doc-title{font-size:32px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:15px;color:#475569;line-height:1.5}
+.doc-nav{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap}
+.doc-nav a{font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;color:#475569;background:#fff}
+.doc-nav a:hover{background:#f1f5f9;text-decoration:none}
+.doc-nav a.current{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+.toc{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px 22px;margin-bottom:40px}
+.toc h4{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:10px}
+.toc ol{list-style:none;columns:2;column-gap:26px}
+.toc li{font-size:13px;padding:3px 0;break-inside:avoid}
+h2{font-size:19px;font-weight:700;color:#0f172a;margin:44px 0 12px;padding-top:10px;border-top:1px solid #e2e8f0;scroll-margin-top:16px}
+h3{font-size:14px;font-weight:700;color:#1e293b;margin:24px 0 7px}
+p{margin-bottom:13px;color:#334155;font-size:14px}
+ul,ol.steps{margin:0 0 15px 20px}
+li{font-size:14px;color:#334155;margin-bottom:6px;line-height:1.6}
+table{width:100%;border-collapse:collapse;margin:14px 0 20px;font-size:13px}
+th{text-align:left;font-weight:700;color:#0f172a;background:#f1f5f9;padding:8px 10px;border:1px solid #e2e8f0}
+td{padding:8px 10px;border:1px solid #e2e8f0;color:#334155;vertical-align:top}
+td code,th code{white-space:nowrap}
+code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;font-size:12.5px;color:#0f172a;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:14px 16px;overflow-x:auto;margin:12px 0 18px;font-size:12.5px;line-height:1.6}
+pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
+.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:12px 16px;margin:14px 0;font-size:13px;color:#1e3a8a}
+.warn{background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:12px 16px;margin:14px 0;font-size:13px;color:#713f12}
+.stop{background:#fef2f2;border:1px solid #fecaca;border-radius:9px;padding:12px 16px;margin:14px 0;font-size:13px;color:#991b1b}
+.key{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;background:#e2e8f0;color:#0f172a;font-family:ui-monospace,Menlo,monospace}
+.foot{margin-top:48px;padding-top:18px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8}
+@media (max-width:640px){.toc ol{columns:1}table{font-size:12px}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-tag">RCN Toolset · User Manual</div>
+    <div class="doc-title">📋 RCN Table</div>
+    <div class="doc-sub">Scanning many things, finding one, and following it into a picture.</div>
+  </div>
+
+  <nav class="doc-nav">
+    <a href="rcn-table-intro.html">Introduction</a>
+    <a href="rcn-table-manual.html" class="current">User Manual</a>
+    <a href="rcn-table.html">Open the Tool ↗</a>
+    <a href="graph-tool-manual.html">Graph Tool Manual</a>
+  </nav>
+
+  <div class="toc">
+    <h4>Contents</h4>
+    <ol>
+      <li><a href="#s1">1 · The idea in one minute</a></li>
+      <li><a href="#s2">2 · Opening the table</a></li>
+      <li><a href="#s3">3 · The screen</a></li>
+      <li><a href="#s4">4 · Finding a row</a></li>
+      <li><a href="#s5">5 · Selecting, and comparing</a></li>
+      <li><a href="#s6">6 · Columns</a></li>
+      <li><a href="#s7">7 · Getting data out</a></li>
+      <li><a href="#s8">8 · The table inside a wiki page</a></li>
+      <li><a href="#s9">9 · Names, links and ghost pages</a></li>
+      <li><a href="#s10">10 · Following a row into a picture</a></li>
+      <li><a href="#s11">11 · Expand and collapse</a></li>
+      <li><a href="#s12">12 · Where the rows come from</a></li>
+      <li><a href="#s13">13 · When something looks wrong</a></li>
+    </ol>
+  </div>
+
+  <h2 id="s1">1 · The idea in one minute</h2>
+  <p>A table answers <strong>which one?</strong> A drawing answers <strong>what is this connected to?</strong> You almost always need them in that order, and the table exists so you are not asked to look at four hundred things at once.</p>
+  <p>So the motion is: scan a list, pick a row, and follow it into a small picture of what that row touches. Then grow the picture a hop at a time if you want more.</p>
+  <div class="note">The table <strong>reads</strong> your records. It does not change them. Nothing you do here can alter the underlying data.</div>
+
+  <h2 id="s2">2 · Opening the table</h2>
+  <p>Three ways in:</p>
+  <ul>
+    <li><strong>From a wiki page</strong> — find a table item and press <strong>Open Table ↗</strong>. This is the usual way.</li>
+    <li><strong>Directly</strong> — open <code>rcn-table.html</code>. It will show you what is available.</li>
+    <li><strong>Straight to a particular set of rows</strong> — add <code>?db=whatcom&amp;kind=Entity</code> to the address.</li>
+  </ul>
+  <p>The two dropdowns at the top left choose <em>which body of records</em> and <em>which kind of thing</em> within it. The number beside each kind is how many rows it has.</p>
+
+  <h2 id="s3">3 · The screen</h2>
+  <table>
+    <tr><th>Where</th><th>What it is</th></tr>
+    <tr><td>Top bar</td><td>The two dropdowns, a filter box, the row count, and the action buttons.</td></tr>
+    <tr><td>Main area</td><td>The rows. The first column is the name, and it is a link.</td></tr>
+    <tr><td>Right panel, top</td><td>The <strong>Inspector</strong> — everything known about what you have selected.</td></tr>
+    <tr><td>Right panel, bottom</td><td>The <strong>Columns</strong> list, with a checkbox and a fill percentage for each.</td></tr>
+    <tr><td>Bottom strip</td><td>Which records you are looking at, how many columns are showing, how many rows are selected.</td></tr>
+  </table>
+
+  <h2 id="s4">4 · Finding a row</h2>
+  <h3>Filtering</h3>
+  <p>Type in the <strong>Filter rows…</strong> box. It matches anywhere in any column you can currently see — so hiding a column also removes it from the search. The count changes to "24 of 189 rows" so you always know you are looking at a subset.</p>
+  <h3>Sorting</h3>
+  <p>Click a column heading to sort by it. Click again to reverse. A small triangle marks the sorted column. Numbers sort as numbers and text sorts alphabetically, without you having to say which is which.</p>
+  <div class="note">Hovering a column heading tells you how full that column is — <em>"category — 28% filled"</em>. Real records are patchy, and it is better to know it than to guess.</div>
+
+  <h2 id="s5">5 · Selecting, and comparing</h2>
+  <p>Click any row to select it. The Inspector fills with everything known about that row.</p>
+  <p>Hold <span class="key">Cmd</span> (or <span class="key">Ctrl</span>) and click a second row, and the Inspector changes its job. It keeps the same attribute names but now shows you:</p>
+  <ul>
+    <li>the <strong>value</strong>, where every selected row agrees;</li>
+    <li><strong>[…] 2 values</strong>, where they differ.</li>
+  </ul>
+  <p>Attributes where everything agrees on being empty are left out entirely, because that tells you nothing. Two rows out of thirty-four columns will often collapse to four lines — which is the answer to "what do these have in common?"</p>
+  <p><strong>Clear selection</strong> empties it. Clicking a row without Cmd starts a new selection.</p>
+
+  <h2 id="s6">6 · Columns</h2>
+  <p>The Columns list at the bottom right has every column with a checkbox and how full it is. Untick to hide, tick to show.</p>
+  <p>Columns filled for fewer than one row in ten <strong>start hidden</strong>. They are not dropped — they are listed with their percentage so you can bring any of them back. A column that is empty for most rows may be exactly the one that matters for the row you care about.</p>
+  <div class="warn">Hidden columns are also excluded from filtering and from anything you export. If a search is not finding something you know is there, check whether its column is showing.</div>
+
+  <h2 id="s7">7 · Getting data out</h2>
+  <table>
+    <tr><th>Button</th><th>What it does</th></tr>
+    <tr><td><strong>CSV</strong></td><td>Downloads the rows you can currently see — after filtering, in the order you sorted, with only the visible columns. Opens in any spreadsheet.</td></tr>
+    <tr><td><strong>→ Wiki item</strong></td><td>Sends the current view back to the wiki page that opened the table, where it becomes a table item other people can read and follow.</td></tr>
+  </table>
+  <p>The wiki item carries up to 200 rows. If there are more, it says so — it records the true total so nobody mistakes the sample for the whole set.</p>
+
+  <h2 id="s8">8 · The table inside a wiki page</h2>
+  <p>A wiki column is far too narrow for a real table, so the page shows the <em>shape</em> of one instead:</p>
+  <ul>
+    <li>the title, and the dimensions in large type — <code>189×6</code>;</li>
+    <li>the column names as small chips;</li>
+    <li>the first three row names, as links;</li>
+    <li>an <strong>Open Table ↗</strong> button.</li>
+  </ul>
+  <p>Hovering a column chip announces that column to the rest of the page. Any chart on the same page that understands columns will respond to it. Nothing has to be connected up for that to work.</p>
+
+  <h2 id="s9">9 · Names, links and ghost pages</h2>
+  <p>The name in each row is an ordinary wiki link. Clicking it opens that subject's page beside the table.</p>
+  <p>Often that page will not exist yet, and you will get an invitation to write one. <strong>This is normal and it is useful.</strong> A link to a page nobody has written is a record that the thing was referred to — in the 2017 Whatcom records, 55 organisations, themes and people are named by some table without ever having a row of their own.</p>
+  <div class="note">Because names are the link, a row in this table, a node in a drawing and a name typed in a paragraph all lead to the same page. They agree because they name the same thing, not because anyone connected them.</div>
+
+  <h2 id="s10">10 · Following a row into a picture</h2>
+  <p>Select exactly one row and press <strong>Neighbourhood ↗</strong>. The Graph Tool opens with:</p>
+  <ul>
+    <li>your row in the middle, drawn with a thick border;</li>
+    <li>everything it is directly connected to, ringed around it;</li>
+    <li>every line labelled with the relationship — <em>funded by</em>, <em>part of</em>, <em>addresses</em>;</li>
+    <li>colour by kind, explained in the legend.</li>
+  </ul>
+  <p>The button is greyed out unless exactly one row is selected, because a neighbourhood is a picture of one thing.</p>
+  <div class="note">This is why the table exists. Drawn all at once, the Whatcom records are 409 things and 770 links — a picture of nothing. Whatcom Community Foundation on its own is a clear picture of one foundation and the thirty-two organisations it funded.</div>
+
+  <h2 id="s11">11 · Expand and collapse</h2>
+  <p>In that drawing, click any node and look at the panel on the right. If the substrate knows about it you will see <strong>Expand ↘</strong>.</p>
+  <p>Expanding brings that node's own connections in and attaches them to what is already on screen. <strong>The picture is not replaced</strong> — it grows. That is the difference between looking things up and following a thread.</p>
+  <p>If something arriving is already on the canvas, it is <em>not</em> drawn twice. The new line is drawn to the node already there. This is what lets two expansions meet in the middle and show you a shared funder or a shared theme.</p>
+  <p><strong>Collapse</strong> appears once a node has actually added something, and removes exactly what that expansion brought in — including anything those nodes went on to add. It never removes what was on the canvas before you expanded.</p>
+  <div class="warn">Expand asks the records a fresh question each time, so it needs the substrate running. If it is not, you will get a message rather than a silent failure.</div>
+
+  <h2 id="s12">12 · Where the rows come from</h2>
+  <p>The table reads named views of the shared records — it does not hold data of its own. The two dropdowns are choosing among those views.</p>
+  <table>
+    <tr><th>What you pick</th><th>What it asks for</th></tr>
+    <tr><td>The records dropdown</td><td>Which body of records — for example the 2017 Whatcom survey.</td></tr>
+    <tr><td>The kind dropdown</td><td>Which kind of thing within it — organisations, people, programmes, themes.</td></tr>
+    <tr><td>Neighbourhood ↗</td><td>One row's connections, as a drawing.</td></tr>
+  </table>
+  <p>Because these are named views rather than questions you have to compose, there is no query language to learn and no way to ask for something malformed.</p>
+
+  <h2 id="s13">13 · When something looks wrong</h2>
+  <table>
+    <tr><th>What you see</th><th>What it means</th></tr>
+    <tr><td>"Could not load — is the substrate running?"</td><td>The records are not reachable. On a laptop setup, the substrate needs starting.</td></tr>
+    <tr><td>A mostly empty table</td><td>Probably the wrong <em>kind</em> selected. Check the count beside each kind in the dropdown.</td></tr>
+    <tr><td>Neighbourhood ↗ greyed out</td><td>Select exactly one row. Zero or several will not do.</td></tr>
+    <tr><td>A row name ending in <code>(unspecified)</code></td><td>Real data, not an error. In the 2017 records it means a grant went to the organisation without a particular programme being recorded.</td></tr>
+    <tr><td>The same organisation appearing as two kinds</td><td>Also real. Nineteen names in the Whatcom records are both an organisation and a programme, because the sheet used the organisation's name for its programme. It is reported rather than silently merged, because only a person can say whether that is right.</td></tr>
+    <tr><td>Expand adds nothing</td><td>Everything that node connects to is already on the canvas. It will say so.</td></tr>
+  </table>
+
+  <div class="foot">RCN Toolset · open source, CC BY 4.0 · See the <a href="rcn-table-intro.html">Introduction</a> for why it works this way, and the <a href="graph-tool-manual.html">Graph Tool Manual</a> for the drawing it hands you to.</div>
+</div>
+</body>
+</html>
