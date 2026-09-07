@@ -90,6 +90,8 @@ with Marc before relying on them.
    one source; the substrate holds a generated copy. Local edge styling always
    wins — declaring a family changes no colour, width or dash.
 
+17. **The files are the source of truth; the database is derived.** Locked 2026-09-07, after two write bugs in one afternoon destroyed a drawing and were recovered only because this was already accidentally true. It is now a rule. `load_aspects.py`, `load_vna.py` and `load_whatcom.py` all rebuild their database from files, so Neo4j cannot be permanently corrupted while the files are intact and in git. The corollary is the part that has to be defended: **no data may exist only in the database.** Anything written straight to Neo4j with no file behind it is one bad write from being gone, and every future writer — a form, an importer, a person — has to produce a file too. See `substrate/WRITE-SAFETY.md`.
+
 ---
 
 ## 2. Environment as verified 2026-07-28
