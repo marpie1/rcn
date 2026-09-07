@@ -104,6 +104,7 @@ footer{padding:5px 12px;background:var(--panel);border-top:1px solid var(--line)
   <input id="search" placeholder="Filter rows…">
   <span class="count" id="count"></span>
   <span style="flex:1"></span>
+  <button id="neighbourhood" disabled>Neighbourhood ↗</button>
   <button id="clear">Clear selection</button>
   <button id="toWiki">→ Wiki item</button>
   <button id="csv">CSV</button>
@@ -261,6 +262,11 @@ function render(){
   $('count').textContent = rs.length === state.data.length
     ? state.data.length + ' rows'
     : rs.length + ' of ' + state.data.length + ' rows';
+  var one = state.selected.size === 1;
+  $('neighbourhood').disabled = !one || !state.subject;
+  $('neighbourhood').title = one
+    ? 'Draw what this row is connected to'
+    : 'Select one row to draw its neighbourhood';
   $('status').textContent = state.db + ' · ' + state.kind + ' · '
     + cols.length + ' of ' + state.columns.length + ' columns shown'
     + (state.selected.size ? ' · ' + state.selected.size + ' selected' : '');
@@ -334,6 +340,26 @@ $('cols').addEventListener('change', function(ev){
   if(c){ state.visible[c] = ev.target.checked; render(); }
 });
 $('search').addEventListener('input', function(){ state.filter = this.value; render(); });
+// THE CLICKABLE QUERY. Perspectives opens its Supply Chain canvas EMPTY and
+// tells you to right-click a product and run "Display Chain" — the query is a
+// named action on an element, never a query box, and its result BECOMES the
+// drawing. /projection/<name> is already that shape; giving it the selected row
+// as its parameter is what turns a view into an action.
+//
+// Nothing here is drawn by this tool. It hands the graph tool a URL and the
+// graph tool does what it always does, which is why this costs almost nothing.
+$('neighbourhood').addEventListener('click', function(){
+  var sel = state.data.filter(function(r){ return state.selected.has(rowKey(r)); });
+  if(sel.length !== 1 || !state.subject) return;
+  var name = String(sel[0][state.subject] || '');
+  if(!name) return;
+  var url = SUBSTRATE_BASE + '/tools/graph-tool-v22.html?url='
+          + encodeURIComponent('/projection/neighbours/' + encodeURIComponent(name)
+                               + '?db=' + encodeURIComponent(state.db));
+  window.open(url, 'rcngraph');
+  toast('Drawing the neighbourhood of ' + name);
+});
+
 $('clear').addEventListener('click', function(){
   state.selected = new Set(); render(); renderInspector();
 });

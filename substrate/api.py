@@ -23,7 +23,7 @@ It is graph-tool's native schema, declared canonical so renderers read it with
 zero translation. Note edges use src/tgt — never from/to. A projection returns
 only the fields its lens needs, but always in this envelope. No adapters.
 """
-import json, os, sys, posixpath
+import json, math, os, sys, posixpath
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs, unquote
 
@@ -704,6 +704,116 @@ def table_kinds(database=ASPECT_DB):
         database=database)}
 
 
+# Colour is the contract between the data and the picture, so it is declared in
+# one place and shown in the legend rather than being chosen at each call site.
+KIND_FILL = {'Entity': '#dbeafe', 'Person': '#dcfce7', 'Program': '#fef3c7',
+             'Theme': '#ede9fe', 'Promise': '#ffe4e6', 'Result': '#ccfbf1',
+             'Scrum': '#f1f5f9'}
+KIND_EDGE = {'Entity': '#2563eb', 'Person': '#16a34a', 'Program': '#d97706',
+             'Theme': '#7c3aed', 'Promise': '#e11d48', 'Result': '#0d9488',
+             'Scrum': '#64748b'}
+
+
+def neighbours_projection(root, depth=1, database=ASPECT_DB):
+    """One row's neighbourhood — the only sane way to look at a large graph.
+
+    whatcom holds 409 concepts and 770 links. Drawn at once that is a hairball
+    no layout algorithm rescues, which is exactly why Perspectives opens its
+    Supply Chain canvas EMPTY and tells you to right-click a product and run
+    "Display Chain". You never look at the graph; you look at the neighbourhood
+    of one row you picked out of a table.
+
+    Their "clickable query" is a stored, parameterised query surfaced as a named
+    action on an element. /projection/<name> already IS that shape — this simply
+    gives it the parameter that makes it an action rather than a view.
+
+    Structural only: it walks (:Concept)-[:REL]->(:Concept), which is what the
+    label-keyed databases hold. /projection/drivers is the causal counterpart
+    and needs the :Variable layer, which vna and whatcom do not have.
+    """
+    depth = max(1, min(int(depth), 3))
+    rows = run("""MATCH (r:Concept)
+                  WHERE toLower(r.schemaLabel) = toLower($root)
+                     OR toLower(r.variableLabel) = toLower($root)
+                  WITH r LIMIT 1
+                  MATCH p = (r)-[:REL*0..%d]-(n:Concept)
+                  RETURN n.schemaLabel AS sl, n.variableLabel AS label,
+                         n.kind AS kind, min(length(p)) AS hop
+                  ORDER BY hop, label""" % depth,
+               {'root': root}, database=database)
+    if not rows:
+        raise ValueError(f'no concept matching {root!r} in {database}')
+
+    ids, nodes, by_hop = {}, [], {}
+    for r in rows:
+        by_hop.setdefault(r['hop'], []).append(r)
+    for hop, group in sorted(by_hop.items()):
+        for i, r in enumerate(group):
+            nid = 'n%d' % len(ids)
+            ids[r['sl']] = nid
+            if hop == 0:
+                x, y = 620, 400
+            else:
+                # A ring per hop, so distance from the root is legible as
+                # distance on the page. The substrate stores no coordinates.
+                #
+                # The radius has to follow the crowd: whatcom community
+                # foundation funds 32 programmes, and 32 nodes 150 wide on a
+                # fixed 250 ring overlap into an unreadable rosette. Give each
+                # node its own arc length and the ring sizes itself.
+                ang = 2 * math.pi * i / max(1, len(group))
+                rad = hop * max(250, len(group) * 175 / (2 * math.pi))
+                x = round(620 + rad * math.cos(ang))
+                y = round(400 + rad * math.sin(ang) * 0.78)
+            kind = r['kind'] or 'Entity'
+            nodes.append({
+                'id': nid, 'label': r['label'] or r['sl'],
+                'x': x, 'y': y, 'w': 150, 'h': 56, 'shape': 'roundrect',
+                'color': KIND_FILL.get(kind, '#f1f5f9'),
+                'borderColor': KIND_EDGE.get(kind, '#64748b'),
+                'borderWidth': 3 if hop == 0 else 1.5,
+                'fontColor': '#16233b', 'fontSize': 12,
+                'props': {'kind': kind, 'schemaLabel': r['sl'], 'hop': str(hop)}})
+
+    erows = run("""MATCH (r:Concept)
+                   WHERE toLower(r.schemaLabel) = toLower($root)
+                      OR toLower(r.variableLabel) = toLower($root)
+                   WITH r LIMIT 1
+                   MATCH (r)-[:REL*0..%d]-(a:Concept)
+                   WITH collect(DISTINCT a) AS ns
+                   UNWIND ns AS a
+                   MATCH (a)-[e:REL]->(b:Concept) WHERE b IN ns
+                   RETURN DISTINCT a.schemaLabel AS src, b.schemaLabel AS tgt,
+                          e.label AS label""" % depth,
+                {'root': root}, database=database)
+    edges = []
+    for i, e in enumerate(erows):
+        sv, tv = ids.get(e['src']), ids.get(e['tgt'])
+        if not sv or not tv:
+            continue
+        edges.append({'id': 'e%d' % i, 'src': sv, 'tgt': tv,
+                      'label': e['label'] or '', 'polarity': 'none',
+                      'color': '#64748b', 'width': 1.5, 'fontSize': 10,
+                      'curved': True, 'dash': 'solid', 'props': {}})
+
+    kinds = sorted({n['props']['kind'] for n in nodes})
+    return {
+        'version': '1.0',
+        'modelName': '%s — neighbourhood, %d hop%s'
+                     % (rows[0]['label'] or root, depth, '' if depth == 1 else 's'),
+        'modelNote': 'Read from the %s substrate by /projection/neighbours. '
+                     'The thick border is the row you came from; each ring is '
+                     'one more hop away.' % database,
+        'canvasBg': '#ffffff',
+        'legendVisible': True,
+        'legendEntries': [{'id': 'lg_%s' % k.lower(), 'kind': 'node', 'label': k,
+                           'color': KIND_FILL.get(k, '#f1f5f9'),
+                           'borderColor': KIND_EDGE.get(k, '#64748b'),
+                           'borderWidth': 1.5} for k in kinds],
+        'nodes': nodes, 'edges': edges,
+    }
+
+
 def subgraph(aspect, database=ASPECT_DB):
     """One drawing, as its author drew it, carrying the substrate's content.
 
@@ -1045,6 +1155,14 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._send(200, aspect_file.build_file(name, db or ASPECT_DB))
             except Exception as e:
                 return self._send(503, {'error': str(e)})
+        if path.startswith('/projection/neighbours/'):
+            name = unquote(path[len('/projection/neighbours/'):])
+            q = parse_qs(parsed.query)
+            try:
+                return self._send(200, neighbours_projection(
+                    name, int((q.get('depth') or ['1'])[0]), db or ASPECT_DB))
+            except ValueError as e:
+                return self._send(404, {'error': str(e)})
         if path == '/projection/tables':
             return self._send(200, table_kinds(db or ASPECT_DB))
         if path.startswith('/projection/table/'):
