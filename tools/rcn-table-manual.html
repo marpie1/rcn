@@ -196,7 +196,9 @@ pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
 
   <h3>Where addresses became coordinates</h3>
   <p>Some rows were located from their street address rather than surveyed. Those carry <code>lat_source</code>, the query that was asked and what the service said it matched, so you can always see what produced a point. A geocode is a claim about an address: the address may be wrong, and a match may be a street rather than a door.</p>
-  <p>Of the 42 Whatcom organisations with an address, 27 were found and 15 were not — mostly clinics inside larger facilities, where a street address stops identifying a building. Those 15 have no coordinates rather than approximate ones.</p>
+  <p>Of the 42 Whatcom organisations with an address, 39 were found and 3 were not. Those 3 have no coordinates rather than approximate ones. 38 of the 39 matched an actual building; one matched only its street.</p>
+  <p>Most of the addresses name a room rather than a building — <em>Suite 204</em>, <em>#D-1</em>, <em>Ste 102</em> — which a service that resolves streets cannot match. Those are looked up without the suite, which finds the building the organisation is in, to within a few metres.</p>
+  <div class="warn">Every result is checked against the county it should be in before it is kept. That check matters: asking for <em>1610 West Grover Street, WA, 98264</em> returns a real West Grover Street — in Magnolia, Seattle, 145km from Lynden. It looked like a perfectly good coordinate and it was wrong. A result in the wrong county is discarded and the next form of the address is tried instead.</div>
 
   <h2 id="s13">13 · Where the rows come from</h2>
   <p>The table reads named views of the shared records — it does not hold data of its own. The two dropdowns are choosing among those views.</p>

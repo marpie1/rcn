@@ -373,11 +373,15 @@ rows(s, [
                            'That is the strongest kind.'),
     ('Some came from an address', 'Worked out from the street address afterwards. The map '
                                   'records the address it asked about and what was found.'),
-    ('Some have none at all', 'Of 42 organisations with an address, 27 were found and 15 '
-                              'were not — mostly clinics inside larger buildings.'),
-    ('The 15 are left empty', 'No coordinate at all, rather than an approximate one. A '
-                              'point you cannot trust is worse than a gap you can see.'),
-], GREEN, top=1.7, step=1.25, head_w=4.0)
+    ('Most name a room, not a building', 'Suite 204. #D-1. Ste 102. Those are looked up '
+                                         'without the suite, which finds the building.'),
+    ('Every result is checked', 'A wrong answer looks exactly like a right one. Asking for a '
+                                'Lynden street returned the same street in Seattle, 145km away.'),
+    ('39 of 42 found, 3 left empty', 'No coordinate at all rather than an approximate one. A '
+                                     'point you cannot trust is worse than a gap you can see.'),
+# Five rows, not four: at step 1.25 the last card ran off the bottom of the
+# slide. 1.55 + 5x1.16 ends at 7.29 on a 7.5in slide.
+], GREEN, top=1.55, step=1.16, head_w=4.6)
 
 # ── 14. Getting things out ───────────────────────────────────────────────────
 s = slide_base('Taking it with you', TEAL)
