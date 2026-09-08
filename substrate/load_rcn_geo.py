@@ -243,6 +243,28 @@ def build():
                     {'n': nkey, 'p': pkey}, database=DB)
                 links += 1
 
+    # THE NETWORK ITSELF. "sits in" is computed from geometry and is therefore a
+    # fact; this is not. Every NDC is a member of the same network, so each pair
+    # is joined by `participates with` — but that is an ASSERTION of shared
+    # membership, not an observation of two of them having worked together, and
+    # it is marked `evidence: asserted` so nobody later reads it as evidence of
+    # collaboration. Decision 15: observed needs a source, asserted says so.
+    #
+    # Symmetric, so one edge per unordered pair rather than two. Ordering the
+    # endpoints alphabetically is what keeps a re-run from adding the mirror.
+    #
+    # When we know which NDCs actually work with which, the honest fix is to
+    # delete the pairs that are not real rather than add a weight to them.
+    pairs = 0
+    keys = sorted(k for k, _, _, _ in ndcs)
+    for i, a_ in enumerate(keys):
+        for b_ in keys[i + 1:]:
+            run('MATCH (a:Concept {schemaLabel:$a}), (b:Concept {schemaLabel:$b}) '
+                'MERGE (a)-[r:REL {label:"participates with"}]->(b) '
+                'SET r.sources=["asserted"], r.evidence="asserted", r.symmetric="true"',
+                {'a': a_, 'b': b_}, database=DB)
+            pairs += 1
+
     for name in ('RCN_NDCS', 'RCN_PLACES'):
         run('MERGE (a:Aspect {name:$n}) SET a.kind="table"', {'n': name}, database=DB)
 
@@ -251,6 +273,8 @@ def build():
     print('loaded  %3d NDCs' % len(ndcs))
     print('loaded  %3d places' % len(places))
     print('computed %3d "sits in" links by point-in-polygon' % links)
+    print('asserted %3d "participates with" pairs among the NDCs '
+          '(membership, not observed collaboration)' % pairs)
     shared = {k: v for k, v in dupes.items() if v > 1}
     print('\nNAMES USED MORE THAN ONCE — disambiguated by state, not merged:')
     print('  ' + (', '.join(sorted(shared)) if shared else 'none'))

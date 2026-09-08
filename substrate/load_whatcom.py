@@ -41,7 +41,7 @@ Neo4j; nothing is copied into the repository. Do not add them to git.
 
     python3 substrate/load_whatcom.py --src "/path/to/CVS files on 010918"
 """
-import csv, os, sys, glob, argparse
+import csv, json, os, sys, glob, argparse
 from collections import defaultdict
 from db import run, BASE
 
@@ -116,6 +116,29 @@ def read(src):
     return out
 
 
+GEOCODED = os.path.join(BASE, 'substrate', 'whatcom-geocoded.json')
+
+
+def geocoded():
+    """Coordinates for the entity addresses, produced once by geocode_whatcom.py.
+
+    They live in a file, not in Neo4j, because this loader wipes and rebuilds
+    the database on every run — decision 17, the files are the source of truth.
+    This is the first data RCN has made that came from neither a CSV nor a
+    drawing, and keeping it in a file is what stops it being one reload from
+    gone.
+
+    Every coordinate carries where it came from. A geocode is an ASSERTION about
+    an address, not a surveyed position: the address may be wrong, the service
+    may have matched a street rather than a building, and 15 of the 42 addresses
+    matched nothing at all. `lat_source` and `geocode_query` are on the node so
+    that anyone reading a point can see what produced it.
+    """
+    if not os.path.exists(GEOCODED):
+        return {}
+    return json.load(open(GEOCODED))
+
+
 def build(src):
     data = read(src)
     missing = [t for t in TABLES if t not in data]
@@ -174,6 +197,7 @@ def ensure_db():
 
 
 def write(names, kinds, props, sources, edges, vsm):
+    geo = geocoded()
     ensure_db()
     run('MATCH (n) DETACH DELETE n', database=DB)
     run('CREATE CONSTRAINT whatcom_concept IF NOT EXISTS FOR (c:Concept) '
@@ -190,6 +214,13 @@ def write(names, kinds, props, sources, edges, vsm):
         extra = ':'.join(sorted(kinds[k]))
         cols = {c: v for c, v in props[k].items()
                 if c not in RESERVED and c.strip()}
+        g = geo.get(k)
+        if g:
+            cols['lat'] = g['lat']
+            cols['long'] = g['long']
+            cols['lat_source'] = g.get('source', 'geocoded')
+            cols['geocode_query'] = g.get('query', '')
+            cols['geocode_matched'] = g.get('matched', '')
         run(f'MERGE (c:Concept:{extra} {{schemaLabel:$k}}) '
             'SET c.variableLabel=$l, c.kind=$kind, c.sources=$src, c += $p',
             {'k': k, 'l': label, 'kind': sorted(kinds[k])[0],
@@ -282,6 +313,12 @@ def verify(vsm):
     print('  %-12s %d' % ('links', e))
     print('  %-12s %d  (named by more than one table)' % ('gold', g))
     print('  %-12s %d' % ('vsm responses', len(vsm)))
+    g = run('MATCH (c:Concept) WHERE c.lat IS NOT NULL AND trim(c.lat) <> "" '
+            'RETURN count(*) AS n', database=DB)[0]['n']
+    print('  %-12s %d  (of which %d geocoded from an address)' % (
+        'located', g,
+        run('MATCH (c:Concept) WHERE c.lat_source = "nominatim" RETURN count(*) AS n',
+            database=DB)[0]['n']))
 
 
 if __name__ == '__main__':
