@@ -200,8 +200,8 @@ step_card(s, 2, 'Select', 'Click a row. Everything known about it appears on the
                           'right.', 3.7, 1.6)
 step_card(s, 3, 'Follow', 'Press Neighbourhood. That row becomes a drawing of '
                           'what it touches.', 6.9, 1.6, accent=PURPLE)
-step_card(s, 4, 'Grow', 'Press Expand on anything in the drawing. One more hop '
-                        'arrives.', 10.1, 1.6, accent=PURPLE)
+step_card(s, 4, 'Or place it', 'Press Map instead and the same rows appear on the '
+                              'ground.', 10.1, 1.6, accent=GREEN)
 card(s, 0.5, 4.5, 12.3, 1.9)
 txt(s, 'You never draw the whole graph', 0.75, 4.7, 11.8, 0.5, 16, TEAL, bold=True)
 block(s, ['You arrive at a small, specific picture because you asked for it — '
@@ -345,6 +345,40 @@ rows(s, [
                  'there before you pressed Expand.'),
 ], PURPLE, top=1.7, step=1.25, head_w=3.4)
 
+
+# ── 13b. The map ─────────────────────────────────────────────────────────────
+s = slide_base('The same rows, on the ground', GREEN)
+txt(s, 'Select rows and press Map. Unlike Neighbourhood this does not need exactly '
+       'one row — a map of many things is the normal case.',
+    0.5, 1.45, 12.3, 0.7, 17, BODY)
+grid(s, [
+    ('Points stay points', 'A person, a building, an NDC. Selected rows are larger and '
+                           'amber so you can see what you brought.'),
+    ('Areas are drawn as areas', 'A watershed is a shape. Shrinking it to a dot throws '
+                                 'away the only thing that made it a place.'),
+    ('The links come too', 'A dashed line between two located things, labelled with what '
+                           'it is. A map of pins is a picture of coordinates.'),
+    ('Nothing is hidden', 'The header says how many rows had no location, rather than '
+                          'quietly showing you a smaller world.'),
+], GREEN, top=2.25, ch=1.9)
+# The second card row ends at 6.45; start the caption below that, not on it.
+txt(s, "Leo's NDC draws with lines to the four named areas that contain it — the town, "
+       'the county, two watersheds. Nobody typed that in; it was worked out from the shapes.',
+    0.5, 6.6, 12.3, 0.6, 14, MUTED, italic=True)
+
+# ── 13c. Where a point came from ─────────────────────────────────────────────
+s = slide_base('Where a point on the map came from', SLATE)
+rows(s, [
+    ('Some were surveyed', 'The location was recorded with the rest of the information. '
+                           'That is the strongest kind.'),
+    ('Some came from an address', 'Worked out from the street address afterwards. The map '
+                                  'records the address it asked about and what was found.'),
+    ('Some have none at all', 'Of 42 organisations with an address, 27 were found and 15 '
+                              'were not — mostly clinics inside larger buildings.'),
+    ('The 15 are left empty', 'No coordinate at all, rather than an approximate one. A '
+                              'point you cannot trust is worse than a gap you can see.'),
+], GREEN, top=1.7, step=1.25, head_w=4.0)
+
 # ── 14. Getting things out ───────────────────────────────────────────────────
 s = slide_base('Taking it with you', TEAL)
 grid(s, [
@@ -371,7 +405,7 @@ grid(s, [
                                  'blank screen pretending everything is fine.'),
 ], SLATE, top=1.5, ch=1.95)
 card(s, 0.5, 5.95, 12.3, 1.0)
-txt(s, 'Start here:  open the table, sort a column, click a row, press Neighbourhood.',
+txt(s, 'Start here:  open the table, sort a column, click a row — then Neighbourhood, or Map.',
     0.75, 6.2, 11.8, 0.5, 17, TEAL, bold=True, align=PP_ALIGN.CENTER)
 
 # ── Save ─────────────────────────────────────────────────────────────────────

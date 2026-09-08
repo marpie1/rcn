@@ -75,8 +75,9 @@ pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
       <li><a href="#s9">9 · Names, links and ghost pages</a></li>
       <li><a href="#s10">10 · Following a row into a picture</a></li>
       <li><a href="#s11">11 · Expand and collapse</a></li>
-      <li><a href="#s12">12 · Where the rows come from</a></li>
-      <li><a href="#s13">13 · When something looks wrong</a></li>
+      <li><a href="#s12">12 · Putting rows on a map</a></li>
+      <li><a href="#s13">13 · Where the rows come from</a></li>
+      <li><a href="#s14">14 · When something looks wrong</a></li>
     </ol>
   </div>
 
@@ -167,17 +168,49 @@ pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
   <p><strong>Collapse</strong> appears once a node has actually added something, and removes exactly what that expansion brought in — including anything those nodes went on to add. It never removes what was on the canvas before you expanded.</p>
   <div class="warn">Expand asks the records a fresh question each time, so it needs the substrate running. If it is not, you will get a message rather than a silent failure.</div>
 
-  <h2 id="s12">12 · Where the rows come from</h2>
+  <h2 id="s12">12 · Putting rows on a map</h2>
+  <p>Select rows and press <strong>Map ↗</strong>, next to Neighbourhood. Anything in the current view that carries a location is drawn; what you had selected is picked out.</p>
+  <p>Unlike Neighbourhood, this does not need exactly one row — a map of many things is the normal case. The button is greyed out only when nothing in view has a location at all.</p>
+
+  <h3>What gets drawn</h3>
+  <table>
+    <tr><th>The row is…</th><th>Drawn as</th></tr>
+    <tr><td>a point — a person, a building, an NDC</td><td>A filled circle. Selected rows are larger and amber.</td></tr>
+    <tr><td>an area — a watershed, a county, a school district</td><td>Its actual outline. Hovering brings one area forward when several overlap.</td></tr>
+    <tr><td>related to another thing on the map</td><td>A dashed line between them, labelled with the relationship.</td></tr>
+  </table>
+  <p>Colour is by kind, and the legend across the top says which is which and how many of each.</p>
+
+  <div class="note">Areas nest — a town inside a county inside a watershed — so fills are kept faint and the outline carries the shape. Bigger areas are drawn first so smaller ones stay visible on top of them.</div>
+
+  <h3>Lines that go to an area</h3>
+  <p>A line to an area ends at a small hollow dot inside it. That dot is the centre of the area's <em>bounding box</em>, not its true centre: for a crescent-shaped watershed it can fall outside the shape itself. It is honest as "this line arrives at this area" and wrong as "this is where the area is" — never measure anything from it. The exact boundary lives in the map data.</p>
+
+  <h3>Clicking things</h3>
+  <p>Click any point or area for its attributes and an <strong>Open its page ↗</strong> link, which opens that subject in the wiki behind — the same page a table row or a graph node opens. Hovering shows the name, and for an area its size.</p>
+
+  <h3>Coordinates come from the records, not from the map</h3>
+  <p>The map asks the substrate for geometry, attributes and relationships. The table only tells it which rows are in view and which are selected. So a map can never show something the records do not say, and a link to a map works with nobody's table open.</p>
+
+  <div class="warn">Rows without a usable location are <strong>counted in the header</strong>, never quietly dropped — <em>"22 of 41 rows mapped · 19 rows without coordinates"</em>. Latitude and longitude arrive as text from spreadsheets, so a blank, a stray word or a pair of zeroes all count as "no location" rather than being plotted somewhere in the Atlantic.</div>
+
+  <h3>Where addresses became coordinates</h3>
+  <p>Some rows were located from their street address rather than surveyed. Those carry <code>lat_source</code>, the query that was asked and what the service said it matched, so you can always see what produced a point. A geocode is a claim about an address: the address may be wrong, and a match may be a street rather than a door.</p>
+  <p>Of the 42 Whatcom organisations with an address, 27 were found and 15 were not — mostly clinics inside larger facilities, where a street address stops identifying a building. Those 15 have no coordinates rather than approximate ones.</p>
+
+  <h2 id="s13">13 · Where the rows come from</h2>
   <p>The table reads named views of the shared records — it does not hold data of its own. The two dropdowns are choosing among those views.</p>
   <table>
     <tr><th>What you pick</th><th>What it asks for</th></tr>
     <tr><td>The records dropdown</td><td>Which body of records — for example the 2017 Whatcom survey.</td></tr>
-    <tr><td>The kind dropdown</td><td>Which kind of thing within it — organisations, people, programmes, themes.</td></tr>
+    <tr><td>The kind dropdown</td><td>Which kind of thing within it — organisations, people, programmes, themes, NDCs, places.</td></tr>
     <tr><td>Neighbourhood ↗</td><td>One row's connections, as a drawing.</td></tr>
+    <tr><td>Map ↗</td><td>The located rows, with their shapes and the links between them.</td></tr>
   </table>
+  <p>There is more than one body of records. <code>whatcom</code> holds the 2017 county survey — organisations, programmes, themes and people. <code>rcngeo</code> holds the network's own geography — the NDCs, a partner, and the places that contain them. The others hold the drawings.</p>
   <p>Because these are named views rather than questions you have to compose, there is no query language to learn and no way to ask for something malformed.</p>
 
-  <h2 id="s13">13 · When something looks wrong</h2>
+  <h2 id="s14">14 · When something looks wrong</h2>
   <table>
     <tr><th>What you see</th><th>What it means</th></tr>
     <tr><td>"Could not load — is the substrate running?"</td><td>The records are not reachable. On a laptop setup, the substrate needs starting.</td></tr>
@@ -186,9 +219,13 @@ pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
     <tr><td>A row name ending in <code>(unspecified)</code></td><td>Real data, not an error. In the 2017 records it means a grant went to the organisation without a particular programme being recorded.</td></tr>
     <tr><td>The same organisation appearing as two kinds</td><td>Also real. Nineteen names in the Whatcom records are both an organisation and a programme, because the sheet used the organisation's name for its programme. It is reported rather than silently merged, because only a person can say whether that is right.</td></tr>
     <tr><td>Expand adds nothing</td><td>Everything that node connects to is already on the canvas. It will say so.</td></tr>
+    <tr><td>Map ↗ greyed out</td><td>Nothing in the current view has a location. Try another kind — in the 2017 survey no organisation was surveyed with coordinates, and only some have since been located from their address.</td></tr>
+    <tr><td>The map opens nearly empty</td><td>Read the header. It says how many rows were mapped and how many had no coordinates, which is usually the answer.</td></tr>
+    <tr><td>An area looks like it is in the wrong place</td><td>Check whether you are looking at the area's outline or its anchor dot. The outline is right; the dot is a bounding-box centre and can sit outside a curved shape.</td></tr>
+    <tr><td>No lines on the map</td><td>Lines are drawn only between two things that are both located. A relationship to something with no coordinates has nowhere to land.</td></tr>
   </table>
 
-  <div class="foot">RCN Toolset · open source, CC BY 4.0 · See the <a href="rcn-table-intro.html">Introduction</a> for why it works this way, and the <a href="graph-tool-manual.html">Graph Tool Manual</a> for the drawing it hands you to.</div>
+  <div class="foot">RCN Toolset · open source, CC BY 4.0 · See the <a href="rcn-table-intro.html">Introduction</a> for why it works this way, and the <a href="graph-tool-manual.html">Graph Tool Manual</a> for the drawing it hands you to. The map is part of this tool and is covered in §12.</div>
 </div>
 </body>
 </html>
