@@ -1,0 +1,73 @@
+{
+  "version": "1.0",
+  "mode": "select",
+  "modelName": "Using the Table, the Diagrams and the Map together",
+  "modelNote": "Every URL as deployed on Marc's machine, September 2026. Grey boxes must be running before anything else works — Neo4j first, then the substrate. The substrate on :8768 serves BOTH the data and the tools, so opening a tool from there means everything is same-origin and nothing needs configuring. Teal boxes are pages you open in a browser. Teal arrows are buttons you press; grey dashed arrows are what has to be running for that to work. Nothing here is a separate program: the table, the drawing and the map are three ways of placing the same records, joined by the name of the thing you are looking at.",
+  "canvasBg": "#ffffff",
+  "legendVisible": true,
+  "legendEntries": [
+    { "id": "lg_run",  "kind": "node", "label": "Must be running first", "color": "#f1f5f9", "borderColor": "#64748b", "borderWidth": 2 },
+    { "id": "lg_tool", "kind": "node", "label": "A page you open", "color": "#ccfbf1", "borderColor": "#0f766e", "borderWidth": 3 },
+    { "id": "lg_wiki", "kind": "node", "label": "FedWiki", "color": "#dbeafe", "borderColor": "#2563eb", "borderWidth": 3 },
+    { "id": "lg_data", "kind": "node", "label": "The records", "color": "#ede9fe", "borderColor": "#7c3aed", "borderWidth": 2 },
+    { "id": "lg_press","kind": "edge", "label": "a button you press", "color": "#0f766e", "width": 2.5 },
+    { "id": "lg_needs","kind": "edge", "label": "has to be running", "color": "#94a3b8", "width": 1.5, "dash": "dashed" }
+  ],
+  "nodes": [
+    { "id": "neo4j", "type": "lg_run", "label": "1. Neo4j Desktop — start RCN SCHEMA",
+      "note": "Everything else fails without this. Neo4j Desktop, the server named RCN SCHEMA. Listens on 7474 and 7687. Only one server can run at a time.",
+      "x": 210, "y": 130, "w": 300, "h": 78, "shape": "rounded", "fontSize": 12, "fontColor": "#16233b" },
+
+    { "id": "api", "type": "lg_run", "label": "2. Terminal: cd ~/rcn && python3 substrate/api.py",
+      "note": "The substrate. Serves the projections AND the tools directory on port 8768, which is why opening a tool from :8768 needs no configuration.",
+      "x": 210, "y": 320, "w": 300, "h": 78, "shape": "rounded", "fontSize": 12, "fontColor": "#16233b" },
+
+    { "id": "wikisrv", "type": "lg_run", "label": "3. FedWiki on :3000 (only for the wiki route)",
+      "note": "node /usr/local/bin/wiki --data ~/.wiki --port 3000. Not needed for the table, drawing or map on their own.",
+      "x": 210, "y": 510, "w": 300, "h": 78, "shape": "rounded", "fontSize": 12, "fontColor": "#16233b" },
+
+    { "id": "db", "type": "lg_data", "label": "Neo4j databases: whatcom · rcngeo · aspects16 · vna",
+      "note": "whatcom — the 2017 county survey, 409 things, 61 located. rcngeo — 5 NDCs, 1 partner, 477 places with real boundaries. aspects16 and vna — the drawings. Pick one in the table's left dropdown.",
+      "x": 210, "y": 700, "w": 300, "h": 86, "shape": "cylinder", "fontSize": 12, "fontColor": "#16233b" },
+
+    { "id": "index", "type": "lg_tool", "label": "START HERE  ·  127.0.0.1:8768",
+      "note": "The substrate index. Every projection listed and linked, so you can see what exists before choosing a tool.",
+      "x": 700, "y": 130, "w": 300, "h": 74, "shape": "rounded", "fontSize": 13, "fontColor": "#134e4a" },
+
+    { "id": "table", "type": "lg_tool", "label": "TABLE  ·  :8768/tools/rcn-table.html?db=whatcom&kind=Entity",
+      "note": "The front door. Scan, sort, filter, select. Change db and kind with the two dropdowns — you do not have to type them. Select ONE row for Neighbourhood; any number for Map.",
+      "x": 700, "y": 400, "w": 330, "h": 104, "shape": "rounded", "fontSize": 12, "fontColor": "#134e4a" },
+
+    { "id": "graph", "type": "lg_tool", "label": "DRAWING  ·  :8768/tools/graph-tool-v22.html",
+      "note": "Opens by itself for a blank canvas, or from the table carrying ?url=/projection/neighbours/<name>?db=<db>. Select a node and press Expand to grow it one hop at a time.",
+      "x": 1230, "y": 250, "w": 330, "h": 92, "shape": "rounded", "fontSize": 12, "fontColor": "#134e4a" },
+
+    { "id": "map", "type": "lg_tool", "label": "MAP  ·  :8768/tools/rcn-table-map.html?db=rcngeo",
+      "note": "Points where things are points, real outlines where they are areas, and the relationships drawn between them. Add &kind=NDC,Place to narrow it. Reads coordinates from Neo4j, never from the table.",
+      "x": 1230, "y": 520, "w": 330, "h": 92, "shape": "rounded", "fontSize": 12, "fontColor": "#134e4a" },
+
+    { "id": "wiki", "type": "lg_wiki", "label": "WIKI PAGE  ·  localhost:3000/view/whatcom-entities",
+      "note": "A page holding a table item — the 189x6 readout, column chips, linked names and Open Table. Clicking anything here adds a page to the right, and the address bar records the whole trail.",
+      "x": 1230, "y": 790, "w": 330, "h": 92, "shape": "rounded", "fontSize": 12, "fontColor": "#1e3a8a" },
+
+    { "id": "docs", "type": "lg_tool", "label": "If stuck: :8768/tools/rcn-table-manual.html",
+      "note": "The user manual. Section 12 is the map, 10 and 11 are the drawing, 14 is what to do when something looks wrong.",
+      "x": 700, "y": 790, "w": 300, "h": 74, "shape": "rounded", "fontSize": 12, "fontColor": "#134e4a" }
+  ],
+  "edges": [
+    { "id": "e1", "type": "lg_needs", "src": "neo4j", "tgt": "api", "label": "then", "polarity": "none", "curved": false, "fontSize": 11 },
+    { "id": "e2", "type": "lg_needs", "src": "api", "tgt": "index", "label": "serves the tools and the data", "polarity": "none", "curved": true, "fontSize": 11 },
+    { "id": "e3", "type": "lg_needs", "src": "neo4j", "tgt": "db", "label": "holds", "polarity": "none", "curved": true, "fontSize": 11 },
+    { "id": "e4", "type": "lg_needs", "src": "wikisrv", "tgt": "wiki", "label": "serves", "polarity": "none", "curved": true, "fontSize": 11 },
+
+    { "id": "e5", "type": "lg_press", "src": "index", "tgt": "table", "label": "pick a table", "polarity": "none", "curved": true, "fontSize": 11 },
+    { "id": "e6", "type": "lg_press", "src": "table", "tgt": "graph", "label": "select ONE row → Neighbourhood ↗", "polarity": "none", "curved": true, "fontSize": 11 },
+    { "id": "e7", "type": "lg_press", "src": "table", "tgt": "map", "label": "select rows → Map ↗", "polarity": "none", "curved": true, "fontSize": 11 },
+    { "id": "e8", "type": "lg_press", "src": "table", "tgt": "wiki", "label": "click a row NAME", "polarity": "none", "curved": true, "fontSize": 11 },
+    { "id": "e9", "type": "lg_press", "src": "graph", "tgt": "graph", "label": "Expand ↘ / Collapse — grows in place", "polarity": "none", "curved": true, "fontSize": 11 },
+    { "id": "e10", "type": "lg_press", "src": "map", "tgt": "wiki", "label": "Open its page ↗", "polarity": "none", "curved": true, "fontSize": 11 },
+    { "id": "e11", "type": "lg_press", "src": "wiki", "tgt": "table", "label": "Open Table ↗", "polarity": "none", "curved": true, "fontSize": 11 },
+    { "id": "e12", "type": "lg_press", "src": "table", "tgt": "docs", "label": "Introduction · User Manual", "polarity": "none", "curved": true, "fontSize": 11 },
+    { "id": "e13", "type": "lg_needs", "src": "db", "tgt": "table", "label": "rows, coordinates and links come from here", "polarity": "none", "curved": true, "fontSize": 11 }
+  ]
+}
