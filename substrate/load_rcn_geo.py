@@ -34,6 +34,23 @@ from db import run, BASE
 DB = 'rcngeo'
 SRC = os.path.join(BASE, 'maps', 'rcn_static_data.js')
 
+# NOT EVERY POINT IN RCN_NDCS IS AN NDC.
+#
+# The map file's NDC layer is "places the network has a pin in", which is not
+# the same list as "neighbourhood development cooperatives". The Carter Center
+# Library is a presidential library in Atlanta — a venue the network has a
+# relationship with, not a cooperative — and leaving it typed as an NDC makes
+# the count wrong in every table, legend and map that asks how many NDCs there
+# are.
+#
+# It stays in the data and keeps its participates-with edges, because being in
+# the network file is itself the record that it is part of the network. Only the
+# claim about what KIND of thing it is changes. Add a line here when the next
+# venue turns up; do not edit the map file, which is somebody else's source.
+RECLASSIFY = {
+    'Carter Center Library': 'Partner',
+}
+
 
 def read_collections():
     """Pull the two GeoJSON collections out of the JS file without a JS engine."""
@@ -210,10 +227,12 @@ def build():
         places.append((key, p, pt, f.get('geometry')))
 
     for key, p, pt, _ in ndcs:
-        run('MERGE (c:Concept:NDC {schemaLabel:$k}) '
-            'SET c.variableLabel=$n, c.kind="NDC", c.sources=["RCN_NDCS"], '
+        kind = RECLASSIFY.get(p['name'], 'NDC')
+        run(f'MERGE (c:Concept:{kind} {{schemaLabel:$k}}) '
+            'SET c.variableLabel=$n, c.kind=$kind, c.sources=["RCN_NDCS"], '
             '    c.lat=$lat, c.long=$lon, c.state=$st, c.address=$addr',
-            {'k': key, 'n': p['name'], 'lat': str(pt[0]), 'lon': str(pt[1]),
+            {'k': key, 'n': p['name'], 'kind': kind,
+             'lat': str(pt[0]), 'lon': str(pt[1]),
              'st': p.get('state', ''), 'addr': p.get('address', '')}, database=DB)
 
     raw_v = simple_v = 0
@@ -270,7 +289,12 @@ def build():
 
     print('simplified boundaries: %d vertices -> %d (%.1f%%), max ring %d'
           % (raw_v, simple_v, 100.0 * simple_v / max(1, raw_v), MAX_RING))
-    print('loaded  %3d NDCs' % len(ndcs))
+    reclassed = [(n, RECLASSIFY[n]) for _, p_, _, _ in ndcs for n in [p_['name']]
+                 if n in RECLASSIFY]
+    print('loaded  %3d from RCN_NDCS — %d NDCs, %d reclassified'
+          % (len(ndcs), len(ndcs) - len(reclassed), len(reclassed)))
+    for n, k in reclassed:
+        print('           %s is a %s, not an NDC' % (n, k))
     print('loaded  %3d places' % len(places))
     print('computed %3d "sits in" links by point-in-polygon' % links)
     print('asserted %3d "participates with" pairs among the NDCs '
