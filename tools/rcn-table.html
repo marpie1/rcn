@@ -110,6 +110,7 @@ footer{padding:5px 12px;background:var(--panel);border-top:1px solid var(--line)
   <span class="count" id="count"></span>
   <span style="flex:1"></span>
   <button id="neighbourhood" disabled>Neighbourhood ↗</button>
+  <button id="mapview" disabled title="Show these rows on a map">Map ↗</button>
   <button id="clear">Clear selection</button>
   <button id="toWiki">→ Wiki item</button>
   <button id="csv">CSV</button>
@@ -239,6 +240,16 @@ function rows(){
 
 function rowKey(r){ return state.subject ? String(r[state.subject]||'') : JSON.stringify(r); }
 
+// MAPPABLE MEANS A USABLE PAIR, not a present one. These arrive as strings out
+// of a spreadsheet, so a blank, a stray word or (0,0) all mean "no location"
+// rather than a point off West Africa. rcn-table-map.html applies the same test.
+function hasCoord(r){
+  var la = parseFloat(String(r.lat == null ? '' : r.lat).trim());
+  var lo = parseFloat(String(r.long == null ? '' : r.long).trim());
+  return isFinite(la) && isFinite(lo) && la >= -90 && la <= 90
+      && lo >= -180 && lo <= 180 && !(la === 0 && lo === 0);
+}
+
 function render(){
   var cols = visibleColumns(), rs = rows();
   var html = '<table><thead><tr>' + cols.map(function(c){
@@ -268,6 +279,11 @@ function render(){
     ? state.data.length + ' rows'
     : rs.length + ' of ' + state.data.length + ' rows';
   var one = state.selected.size === 1;
+  var mappable = rows().filter(hasCoord).length;
+  $('mapview').disabled = !mappable;
+  $('mapview').title = mappable
+    ? 'Show ' + mappable + ' mappable row' + (mappable===1?'':'s') + ' on a map'
+    : 'No row in this view carries a lat/long';
   $('neighbourhood').disabled = !one || !state.subject;
   $('neighbourhood').title = one
     ? 'Draw what this row is connected to'
@@ -363,6 +379,42 @@ $('neighbourhood').addEventListener('click', function(){
                                + '?db=' + encodeURIComponent(state.db));
   window.open(url, 'rcngraph');
   toast('Drawing the neighbourhood of ' + name);
+});
+
+// THE MAP IS A VIEW OF THIS TABLE, not a separate errand. Perspectives makes
+// Geographical View and Logical View two tabs of one area over one model; we
+// have callouts rather than panes, so it opens beside Neighbourhood off the
+// same selection. Rows go over postMessage because a selection can be large,
+// and the URL carries db+kind as well so the map can stand on its own if the
+// link is sent to someone.
+var mapWin = null;
+$('mapview').addEventListener('click', function(){
+  var shown = rows();
+  var url = SUBSTRATE_BASE + '/tools/rcn-table-map.html?db='
+          + encodeURIComponent(state.db) + '&kind=' + encodeURIComponent(state.kind);
+  mapWin = window.open(url, 'rcntablemap');
+  if(mapWin) mapWin.focus();
+  toast('Mapping ' + shown.filter(hasCoord).length + ' rows');
+});
+
+window.addEventListener('message', function(ev){
+  if(!ev.data || ev.data.toolType !== 'rcn-table-map') return;
+  if(ev.data.action === 'mapReady' && ev.source){
+    var shown = rows(), cols = visibleColumns();
+    ev.source.postMessage({action:'loadPoints', subject:state.subject,
+      database:state.db, kind:state.kind,
+      selected:Array.from(state.selected),
+      // Send the visible columns plus the coordinates, so a popup shows what
+      // the person chose to look at rather than all thirty-four.
+      rows: shown.map(function(r){
+        var o = {}; cols.forEach(function(c){ o[c] = r[c]; });
+        o.lat = r.lat; o.long = r.long; return o;
+      })}, '*');
+  }
+  if(ev.data.action === 'doInternalLink'){
+    // The map has no wiki of its own — it reaches ours through this window.
+    openPage(ev.data.title, false);
+  }
 });
 
 $('clear').addEventListener('click', function(){
