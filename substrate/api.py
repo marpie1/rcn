@@ -714,6 +714,73 @@ KIND_EDGE = {'Entity': '#2563eb', 'Person': '#16a34a', 'Program': '#d97706',
              'Scrum': '#64748b'}
 
 
+def geo_projection(database=ASPECT_DB, kinds=None, names=None):
+    """Everything with a location, and the relationships among those things.
+
+    A map that only drops pins is a picture of some coordinates. What makes it a
+    VIEW of the model — Perspectives' Geographical View beside its Logical View —
+    is that the edges come too, drawn between geographic positions. So this
+    returns nodes and edges together, and the edge list is restricted to pairs
+    that are both on the map, because an edge to something with no location has
+    nowhere to land.
+
+    A node carries `boundary` when it has one: a list of rings in Leaflet's
+    [lat, lng] order, already simplified by load_rcn_geo.py. Everything else
+    gets a point. `anchor` is where an edge should meet the shape — the stored
+    lat/long, which for an area is its bounding-box centre.
+    """
+    where, params = ['c.lat IS NOT NULL', 'trim(toString(c.lat)) <> ""'], {}
+    if kinds:
+        where.append('c.kind IN $kinds')
+        params['kinds'] = kinds
+    if names:
+        where.append('c.variableLabel IN $names OR c.schemaLabel IN $names')
+        params['names'] = names
+    rows = run('MATCH (c:Concept) WHERE %s RETURN c AS c ORDER BY c.variableLabel'
+               % ' AND '.join('(%s)' % w for w in where), params, database=database)
+
+    nodes, keys = [], set()
+    for r in rows:
+        props = (r['c'] or {}).get('properties', r['c']) or {}
+        try:
+            lat = float(str(props.get('lat', '')).strip())
+            lng = float(str(props.get('long', '')).strip())
+        except (TypeError, ValueError):
+            continue
+        if not (-90 <= lat <= 90 and -180 <= lng <= 180) or (lat == 0 and lng == 0):
+            continue
+        key = props.get('schemaLabel')
+        keys.add(key)
+        bnd = props.get('boundary') or ''
+        node = {'key': key, 'name': props.get('variableLabel') or key,
+                'kind': props.get('kind') or '', 'anchor': [lat, lng]}
+        if bnd:
+            try:
+                rings_ = json.loads(bnd)
+                if rings_:
+                    node['boundary'] = rings_
+            except ValueError:
+                pass
+        for k, v in props.items():
+            if k in ('lat', 'long', 'boundary', 'schemaLabel', 'variableLabel', 'kind'):
+                continue
+            if k == 'sources':
+                v = ', '.join(v or [])
+            node[k] = v
+        nodes.append(node)
+
+    erows = run('MATCH (a:Concept)-[r:REL]->(b:Concept) '
+                'WHERE a.schemaLabel IN $ks AND b.schemaLabel IN $ks '
+                'RETURN DISTINCT a.schemaLabel AS src, b.schemaLabel AS tgt, '
+                '       r.label AS label',
+                {'ks': sorted(keys)}, database=database) if keys else []
+
+    return {'database': database, 'nodes': nodes,
+            'edges': [{'src': e['src'], 'tgt': e['tgt'], 'label': e['label'] or ''}
+                      for e in erows],
+            'total': len(nodes)}
+
+
 def neighbours_projection(root, depth=1, database=ASPECT_DB):
     """One row's neighbourhood — the only sane way to look at a large graph.
 
@@ -1155,6 +1222,12 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._send(200, aspect_file.build_file(name, db or ASPECT_DB))
             except Exception as e:
                 return self._send(503, {'error': str(e)})
+        if path == '/projection/geo':
+            q = parse_qs(parsed.query)
+            kinds = [k for k in (q.get('kind') or [''])[0].split(',') if k]
+            names = [n for n in (q.get('names') or [''])[0].split('|') if n]
+            return self._send(200, geo_projection(db or ASPECT_DB,
+                                                  kinds or None, names or None))
         if path.startswith('/projection/neighbours/'):
             name = unquote(path[len('/projection/neighbours/'):])
             q = parse_qs(parsed.query)

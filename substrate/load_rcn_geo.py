@@ -104,6 +104,69 @@ def contains(geom, lat, lon):
     return inside
 
 
+def _perp(p, a, b):
+    """Perpendicular distance from p to the segment ab, in degrees. Good enough:
+    over a county the distortion from treating lon/lat as a plane is far smaller
+    than the tolerance we are simplifying at."""
+    (px, py), (ax, ay), (bx, by) = p, a, b
+    dx, dy = bx - ax, by - ay
+    if dx == 0 and dy == 0:
+        return ((px - ax) ** 2 + (py - ay) ** 2) ** 0.5
+    t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))
+    return ((px - (ax + t * dx)) ** 2 + (py - (ay + t * dy)) ** 2) ** 0.5
+
+
+def simplify(ring, tol):
+    """Douglas-Peucker, iterative so a 65,000-point watershed cannot blow the stack."""
+    if len(ring) < 3:
+        return ring
+    keep = [False] * len(ring)
+    keep[0] = keep[-1] = True
+    stack = [(0, len(ring) - 1)]
+    while stack:
+        i, j = stack.pop()
+        worst, idx = 0.0, -1
+        for k in range(i + 1, j):
+            d = _perp(ring[k], ring[i], ring[j])
+            if d > worst:
+                worst, idx = d, k
+        if idx != -1 and worst > tol:
+            keep[idx] = True
+            stack.append((i, idx))
+            stack.append((idx, j))
+    return [pt for pt, k in zip(ring, keep) if k]
+
+
+# A BOUNDARY FOR DRAWING IS NOT A BOUNDARY FOR DECIDING.
+#
+# The ten watersheds carry 150,000 vertices between them — one has 65,000 on its
+# own — which is several megabytes of coordinates to hold in the database and
+# push to a browser to draw a shape a few hundred pixels across. So what gets
+# stored is simplified until each ring is under MAX_RING points.
+#
+# Which means the stored boundary must never be used to decide anything. The
+# "sits in" links below are computed from the FULL geometry, before any of this
+# runs, and the order matters: simplify first and an NDC near an edge would be
+# ruled inside or outside by an artifact of the drawing budget. The exact
+# boundary stays in maps/rcn_static_data.js for anything that needs to measure.
+MAX_RING = 400
+
+
+def boundary_of(geom):
+    """Rings as [[lat, lng], ...] — Leaflet's order, so the map does no work."""
+    out = []
+    for ring in rings(geom):
+        if len(ring) < 4:
+            continue
+        tol = 0.0002
+        simple = simplify(ring, tol)
+        while len(simple) > MAX_RING and tol < 0.5:
+            tol *= 2
+            simple = simplify(ring, tol)
+        out.append([[round(p[1], 5), round(p[0], 5)] for p in simple])
+    return out
+
+
 def ensure_db():
     names = {r['name'] for r in run('SHOW DATABASES YIELD name RETURN name',
                                     database='system')}
@@ -153,15 +216,21 @@ def build():
             {'k': key, 'n': p['name'], 'lat': str(pt[0]), 'lon': str(pt[1]),
              'st': p.get('state', ''), 'addr': p.get('address', '')}, database=DB)
 
-    for key, p, pt, _ in places:
+    raw_v = simple_v = 0
+    for key, p, pt, geom in places:
+        bounds = boundary_of(geom)
+        raw_v += sum(len(r) for r in rings(geom))
+        simple_v += sum(len(r) for r in bounds)
         run('MERGE (c:Concept:Place {schemaLabel:$k}) '
             'SET c.variableLabel=$n, c.kind="Place", c.sources=["RCN_PLACES"], '
             '    c.lat=$lat, c.long=$lon, c.state=$st, c.place_type=$pt, '
-            '    c.area_mi2=$area, c.boundary_source=$src, c.dev_stat=$dev',
+            '    c.area_mi2=$area, c.boundary_source=$src, c.dev_stat=$dev, '
+            '    c.boundary=$bnd',
             {'k': key, 'n': p['name'], 'lat': str(pt[0]), 'lon': str(pt[1]),
              'st': p.get('state', ''), 'pt': p.get('place_type', ''),
              'area': str(p.get('area_mi2', '')), 'src': p.get('boundary_source', ''),
-             'dev': str(p.get('dev_stat', ''))}, database=DB)
+             'dev': str(p.get('dev_stat', '')),
+             'bnd': json.dumps(bounds) if bounds else ''}, database=DB)
 
     links = 0
     for nkey, np_, npt, _ in ndcs:
@@ -177,6 +246,8 @@ def build():
     for name in ('RCN_NDCS', 'RCN_PLACES'):
         run('MERGE (a:Aspect {name:$n}) SET a.kind="table"', {'n': name}, database=DB)
 
+    print('simplified boundaries: %d vertices -> %d (%.1f%%), max ring %d'
+          % (raw_v, simple_v, 100.0 * simple_v / max(1, raw_v), MAX_RING))
     print('loaded  %3d NDCs' % len(ndcs))
     print('loaded  %3d places' % len(places))
     print('computed %3d "sits in" links by point-in-polygon' % links)

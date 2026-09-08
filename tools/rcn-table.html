@@ -400,16 +400,15 @@ $('mapview').addEventListener('click', function(){
 window.addEventListener('message', function(ev){
   if(!ev.data || ev.data.toolType !== 'rcn-table-map') return;
   if(ev.data.action === 'mapReady' && ev.source){
-    var shown = rows(), cols = visibleColumns();
-    ev.source.postMessage({action:'loadPoints', subject:state.subject,
+    var shown = rows();
+    // NAMES, NOT COORDINATES. The map reads geometry, attributes and edges from
+    // Neo4j itself, so it cannot drift from the substrate and a link to it works
+    // with no table open. All this hands over is which rows are in view and
+    // which are selected.
+    ev.source.postMessage({action:'loadPoints',
       database:state.db, kind:state.kind,
-      selected:Array.from(state.selected),
-      // Send the visible columns plus the coordinates, so a popup shows what
-      // the person chose to look at rather than all thirty-four.
-      rows: shown.map(function(r){
-        var o = {}; cols.forEach(function(c){ o[c] = r[c]; });
-        o.lat = r.lat; o.long = r.long; return o;
-      })}, '*');
+      names: shown.map(rowKey).filter(Boolean),
+      selected: Array.from(state.selected)}, '*');
   }
   if(ev.data.action === 'doInternalLink'){
     // The map has no wiki of its own — it reaches ours through this window.

@@ -47,7 +47,11 @@ button{font:inherit;color:inherit;border:1px solid var(--line);border-radius:5px
 button:hover{background:#eef6f5;border-color:var(--accent)}
 #map{flex:1;min-height:0}
 .leaflet-popup-content{margin:10px 12px;font:13px/1.5 system-ui,sans-serif}
-.pop-name{font-weight:700;color:var(--accent);font-size:14px;margin-bottom:5px}
+.pop-name{font-weight:700;color:var(--accent);font-size:14px;margin-bottom:2px}
+.pop-kind{font-size:11px;color:var(--dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.legend{display:flex;gap:10px;flex-wrap:wrap}
+.lg{font-size:11px;color:var(--dim);display:inline-flex;align-items:center;gap:4px}
+.lg i{width:11px;height:11px;border-radius:3px;border:1.5px solid;display:inline-block}
 .pop-kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px;margin-bottom:8px}
 .pop-kv b{font-weight:500;color:var(--dim)}
 .pop-open{font-size:12px;color:var(--accent);cursor:pointer;text-decoration:underline;
@@ -61,6 +65,7 @@ button:hover{background:#eef6f5;border-color:var(--accent)}
   <h1>RCN Map</h1>
   <span class="count" id="count">Waiting for rows…</span>
   <span id="missing"></span>
+  <span id="legend" class="legend"></span>
   <span style="flex:1"></span>
   <button id="fit">Fit to points</button>
 </header>
@@ -95,27 +100,26 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19, attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-var layer = L.layerGroup().addTo(map);
-var state = {rows:[], subject:'Name', selected:[], db:'', kind:''};
+// Three panes, so a point is never buried under an area it sits inside and a
+// link is never hidden under either.
+var shapes = L.layerGroup().addTo(map);
+var lines  = L.layerGroup().addTo(map);
+var marks  = L.layerGroup().addTo(map);
+var state = {nodes:[], edges:[], selected:[], db:'', kind:''};
 
-// LAT AND LONG ARRIVE AS STRINGS. They come from a spreadsheet by way of Neo4j,
-// so anything that is not a finite number in range is treated as absent rather
-// than plotted at the wrong place or at (0,0) off West Africa.
-function coordOf(r){
-  var la = parseFloat(String(r.lat != null ? r.lat : r.latitude || '').trim());
-  var lo = parseFloat(String(r.long != null ? r.long : (r.lng != null ? r.lng : r.longitude || '')).trim());
-  if(!isFinite(la) || !isFinite(lo)) return null;
-  if(la < -90 || la > 90 || lo < -180 || lo > 180) return null;
-  if(la === 0 && lo === 0) return null;
-  return [la, lo];
-}
+// Colour by kind, declared once and shown in the legend, so the picture can be
+// read without being explained. Same principle as the graph tool's legend.
+var KIND = {
+  NDC:   {stroke:'#b45309', fill:'#fbbf24'},
+  Place: {stroke:'#0f766e', fill:'#5eead4'},
+  Entity:{stroke:'#2563eb', fill:'#bfdbfe'},
+  Person:{stroke:'#16a34a', fill:'#bbf7d0'}
+};
+function paint(k){ return KIND[k] || {stroke:'#64748b', fill:'#e2e8f0'}; }
 
 function openSubject(name){
-  // Up the chain: map -> table -> wiki. The table forwards it, and if nothing is
-  // listening we say what would have happened rather than doing nothing.
   if(HOST){
-    HOST.postMessage({toolType:'rcn-table-map', action:'doInternalLink',
-      title:name}, '*');
+    HOST.postMessage({toolType:'rcn-table-map', action:'doInternalLink', title:name}, '*');
     if(HOST.focus) HOST.focus();
     toast('→ ' + name);
   } else {
@@ -124,53 +128,142 @@ function openSubject(name){
 }
 window.openSubject = openSubject;
 
-function draw(){
-  layer.clearLayers();
-  var pts = [], missing = 0, sel = {};
-  state.selected.forEach(function(n){ sel[n] = true; });
+function popupFor(n){
+  var kv = '';
+  Object.keys(n).forEach(function(k){
+    if(['key','name','kind','anchor','boundary'].indexOf(k) >= 0) return;
+    if(!String(n[k]||'').trim()) return;
+    kv += '<b>' + esc(k) + '</b><span>' + esc(n[k]) + '</span>';
+  });
+  return '<div class="pop-name">' + esc(n.name) + '</div>'
+    + '<div class="pop-kind">' + esc(n.kind) + (n.boundary ? ' · area' : ' · point') + '</div>'
+    + (kv ? '<div class="pop-kv">' + kv + '</div>' : '')
+    + '<button class="pop-open" onclick="openSubject('
+    + JSON.stringify(n.name).replace(/"/g,'&quot;') + ')">Open its page ↗</button>';
+}
 
-  state.rows.forEach(function(r){
-    var c = coordOf(r);
-    var name = String(r[state.subject] || '');
-    if(!c){ missing++; return; }
-    var isSel = sel[name];
-    var m = L.circleMarker(c, {
-      radius: isSel ? 9 : 6,
-      color: isSel ? '#b45309' : '#0f766e',
-      weight: isSel ? 3 : 2,
-      fillColor: isSel ? '#fbbf24' : '#5eead4',
-      fillOpacity: 0.85
-    });
-    var kv = '';
-    Object.keys(r).forEach(function(k){
-      if(k === state.subject || !String(r[k]||'').trim()) return;
-      if(k === 'lat' || k === 'long') return;
-      kv += '<b>' + esc(k) + '</b><span>' + esc(r[k]) + '</span>';
-    });
-    m.bindPopup('<div class="pop-name">' + esc(name) + '</div>'
-      + (kv ? '<div class="pop-kv">' + kv + '</div>' : '')
-      + '<button class="pop-open" onclick="openSubject(' + JSON.stringify(name).replace(/"/g,'&quot;') + ')">Open its page ↗</button>');
-    m.bindTooltip(name, {direction:'top'});
-    m.addTo(layer);
-    pts.push(c);
+function draw(){
+  shapes.clearLayers(); lines.clearLayers(); marks.clearLayers();
+  var sel = {}; state.selected.forEach(function(n){ sel[n] = true; });
+  var at = {}, pts = [], areas = 0, points = 0;
+
+  // BIGGEST FIRST, so the small shapes end up on top. A county drawn after the
+  // town inside it hides the town completely, and the reading you want is
+  // usually the small thing — which watershed, which neighbourhood — seen
+  // against the large one.
+  var ordered = state.nodes.slice().sort(function(a, b){
+    var aa = parseFloat(a.area_mi2) || 0, bb = parseFloat(b.area_mi2) || 0;
+    return bb - aa;
+  });
+  ordered.forEach(function(n){
+    var isSel = sel[n.name] || sel[n.key];
+    var c = paint(n.kind);
+    at[n.key] = n.anchor;
+    pts.push(n.anchor);
+    var lyr;
+    if(n.boundary && n.boundary.length){
+      // A NAMED AREA IS DRAWN AS ITS AREA. The whole point of asking for
+      // polygons: a watershed is a shape, and shrinking it to a dot throws away
+      // the only thing that made it a place rather than a coordinate.
+      areas++;
+      // Areas nest, so several fills stack on the same pixel and the map turns
+      // into one flat colour. Keep the fill faint and let the OUTLINE carry the
+      // shape; hovering brings one area forward on its own.
+      lyr = L.polygon(n.boundary, {
+        color: c.stroke, weight: isSel ? 3 : 1.6, opacity: 0.95,
+        fillColor: c.fill, fillOpacity: isSel ? 0.28 : 0.08
+      });
+      lyr.bindTooltip(n.name + (n.area_mi2 ? ' · ' + n.area_mi2 + ' mi²' : ''),
+                      {sticky:true});
+      lyr.on('mouseover', function(){ this.setStyle({fillOpacity: 0.4, weight: 3}); });
+      lyr.on('mouseout',  function(){ this.setStyle({fillOpacity: isSel ? 0.28 : 0.08,
+                                                     weight: isSel ? 3 : 1.6}); });
+    } else {
+      points++;
+      lyr = L.circleMarker(n.anchor, {
+        radius: isSel ? 9 : 6, color: c.stroke, weight: isSel ? 3 : 2,
+        fillColor: c.fill, fillOpacity: 0.9
+      });
+      lyr.bindTooltip(n.name, {direction:'top'});
+    }
+    lyr.bindPopup(popupFor(n));
+    lyr.addTo(n.boundary && n.boundary.length ? shapes : marks);
+
+    // AN AREA NEEDS A VISIBLE ANCHOR. Edges meet a shape at its bounding-box
+    // centre, and with nothing drawn there the line just stops in open ground
+    // and the reader cannot tell what it reached. A small hollow dot says
+    // "this line arrives at this area" without pretending to be its location.
+    if(n.boundary && n.boundary.length){
+      var dot = L.circleMarker(n.anchor, {
+        radius: 4, color: c.stroke, weight: 2, opacity: 0.9,
+        fillColor: '#ffffff', fillOpacity: 0.95
+      });
+      dot.bindTooltip(n.name, {direction:'top'});
+      dot.bindPopup(popupFor(n));
+      dot.addTo(marks);
+    }
   });
 
-  $('count').textContent = pts.length + ' of ' + state.rows.length + ' rows mapped'
-    + (state.db ? '  ·  ' + state.db + ' · ' + state.kind : '');
-  $('missing').innerHTML = missing
-    ? '<span class="warn">' + missing + ' row' + (missing===1?'':'s') + ' without coordinates</span>'
-    : '';
-  if(pts.length){
-    map.fitBounds(L.latLngBounds(pts).pad(0.25), {maxZoom: 14});
-  } else {
-    toast('None of these rows carry a lat/long');
-  }
+  // EDGES MEET THE SHAPE AT ITS ANCHOR. For an area that is the bounding-box
+  // centre, which is where the marker would have been — so a line to a watershed
+  // ends inside the watershed rather than at some arbitrary vertex.
+  var drawn = 0;
+  state.edges.forEach(function(e){
+    var a = at[e.src], b = at[e.tgt];
+    if(!a || !b) return;
+    drawn++;
+    var pl = L.polyline([a, b], {color:'#334155', weight:1.6, opacity:0.75, dashArray:'5,4'});
+    if(e.label) pl.bindTooltip(e.label, {sticky:true});
+    pl.addTo(lines);
+  });
+
+  $('count').textContent = state.nodes.length + ' located  ·  ' + areas + ' area'
+    + (areas===1?'':'s') + ', ' + points + ' point' + (points===1?'':'s')
+    + '  ·  ' + drawn + ' link' + (drawn===1?'':'s')
+    + (state.db ? '  ·  ' + state.db : '');
+  $('missing').innerHTML = state.skipped
+    ? '<span class="warn">' + state.skipped + ' row' + (state.skipped===1?'':'s')
+      + ' without coordinates</span>' : '';
+  var kinds = {};
+  state.nodes.forEach(function(n){ kinds[n.kind] = (kinds[n.kind]||0)+1; });
+  $('legend').innerHTML = Object.keys(kinds).sort().map(function(k){
+    var c = paint(k);
+    return '<span class="lg"><i style="background:' + c.fill + ';border-color:'
+         + c.stroke + '"></i>' + esc(k) + ' ' + kinds[k] + '</span>';
+  }).join('');
+  if(pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.15), {maxZoom: 13});
+  else toast('Nothing here carries a location');
   window._pts = pts;
 }
 
 $('fit').addEventListener('click', function(){
-  if(window._pts && window._pts.length) map.fitBounds(L.latLngBounds(window._pts).pad(0.25), {maxZoom:14});
+  if(window._pts && window._pts.length)
+    map.fitBounds(L.latLngBounds(window._pts).pad(0.15), {maxZoom:13});
 });
+
+// ONE SOURCE. Geometry, attributes and edges all come from Neo4j through
+// /projection/geo — the table hands over which rows it is showing and which are
+// selected, never the coordinates themselves. So the map cannot drift from the
+// substrate, and a link to it works with no table open at all.
+function load(opts){
+  state.db = opts.db || state.db;
+  state.kind = opts.kind || '';
+  state.selected = opts.selected || [];
+  var q = '/projection/geo?db=' + encodeURIComponent(state.db);
+  if(opts.kind) q += '&kind=' + encodeURIComponent(opts.kind);
+  if(opts.names && opts.names.length && opts.names.length <= 400)
+    q += '&names=' + encodeURIComponent(opts.names.join('|'));
+  $('count').textContent = 'Loading…';
+  return fetch(SUBSTRATE_BASE + q).then(function(r){ return r.json(); })
+    .then(function(j){
+      if(j.error) throw new Error(j.error);
+      state.nodes = j.nodes || []; state.edges = j.edges || [];
+      state.skipped = opts.names ? Math.max(0, opts.names.length - state.nodes.length) : 0;
+      document.title = 'RCN Map — ' + (state.kind || state.db);
+      draw();
+    })
+    .catch(function(e){ $('count').textContent = 'Could not load: ' + e.message; });
+}
 
 // ── how the rows arrive ───────────────────────────────────────────────
 // Two ways, because a map opened from a selection and a map someone was sent
@@ -185,34 +278,19 @@ if(HOST){
   window.addEventListener('message', function(ev){
     if(!ev.source || ev.source !== HOST) return;
     if(ev.data && ev.data.action === 'loadPoints'){
-      state.rows = ev.data.rows || [];
-      state.subject = ev.data.subject || 'Name';
-      state.selected = ev.data.selected || [];
-      state.db = ev.data.database || ''; state.kind = ev.data.kind || '';
-      document.title = 'RCN Map — ' + (state.kind || 'points');
-      draw();
+      load({db: ev.data.database, kind: ev.data.kind,
+            names: ev.data.names, selected: ev.data.selected});
     }
   });
 }
 
 (function bootFromUrl(){
   var p = new URLSearchParams(location.search);
-  var db = p.get('db'), kind = p.get('kind');
-  if(!db || !kind) return;                 // a postMessage is coming instead
-  fetch(SUBSTRATE_BASE + '/projection/table/' + encodeURIComponent(kind)
-        + '?db=' + encodeURIComponent(db))
-    .then(function(r){ return r.json(); })
-    .then(function(j){
-      if(state.rows.length) return;        // the opener already sent rows
-      state.rows = j.data || []; state.subject = j.subject || 'Name';
-      state.db = db; state.kind = kind;
-      var names = p.get('names');
-      state.selected = names ? names.split('|') : [];
-      document.title = 'RCN Map — ' + kind;
-      draw();
-    })
-    .catch(function(e){
-      $('count').textContent = 'Could not load: ' + e.message;
-    });
+  var db = p.get('db');
+  if(!db) return;                          // a postMessage is coming instead
+  var names = p.get('names');
+  load({db: db, kind: p.get('kind') || '',
+        names: names ? names.split('|') : null,
+        selected: names ? names.split('|') : []});
 })();
 </script>
