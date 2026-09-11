@@ -28,6 +28,18 @@ COPY sodoto/plugins/wiki-security-did/ \
 COPY sodoto/plugins/wiki-plugin-sodoto-signin/ \
      /usr/local/lib/node_modules/wiki/node_modules/wiki-plugin-sodoto-signin/
 
+# The RCN Graph Tool and RCN Outliner page items. Vendored from this repo the
+# same way; both are also on npm (wiki-plugin-rcngraph, wiki-plugin-rcnoutliner)
+# at the versions in their package.json. NOTE the source folders are named
+# rcn-graph / rcn-outliner but the packages are rcngraph / rcnoutliner — the
+# destination must use the package name, because wiki 0.27 derives the plugin
+# type from the directory name after "wiki-plugin-", and factory.json says
+# "Rcngraph" / "Rcnoutliner". node_modules/ is excluded by .dockerignore.
+COPY wiki-plugin-rcn-graph/ \
+     /usr/local/lib/node_modules/wiki/node_modules/wiki-plugin-rcngraph/
+COPY wiki-plugin-rcn-outliner/ \
+     /usr/local/lib/node_modules/wiki/node_modules/wiki-plugin-rcnoutliner/
+
 EXPOSE 3000
 
 # FedWiki defaults data dir to ~/.wiki (= /root/.wiki in this image).
