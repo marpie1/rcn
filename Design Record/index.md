@@ -8,7 +8,7 @@ Two deliverables, in order.
 
 **First, the book.** A full write-up of the theory and methods behind the RCN tools and methods, for people who really want to understand in depth what is behind them — newcomers and curious outsiders as much as Marc, Kerry and the four conveners. Written in reasoning voice: why each thing is shaped as it is, what substrate it rests on, what patterns it exists to interrupt, what corrections its design absorbed as it took form. It started life as "the RCN Design Record" behind a facilitator kit; late in Section 8 Marc observed that we are in fact writing a book, and that reshapes it: a title, a structure a cold reader can pick up, a publication path.
 
-**Second, the tool kit.** With the book in hand, Marc and Claude build the field guide — the thing people grab tools from. Operational prose, imperative where a convener needs a specific move named, drafted against the book once the book is stable. Chat's kit discussion is at turns 104–107 of `13-drafting-conversation.md`; Marc settled on Option A there: mostly narrative operational prose, with imperative form when the convener needs a specific move named. Nothing of the kit has been drafted yet.
+**Second, the tool kit.** With the book in hand, Marc and Claude build the field guide — the thing people grab tools from. Operational prose, imperative where a convener needs a specific move named, drafted against the book once the book is stable. Chat's kit discussion is at turns 104–107 of `13-drafting-conversation.md`; Marc settled on Option A there. **A first pass exists as of 2026-09-11 in `field-guide/`** (seven files, ~17,000 words): the five phases, a labeled composite worked example, and the tools as a pattern language on Alexander's model — Marc's idea — with a Basic / Intermediate / Advanced ladder per pattern as the seed for SODOTO pages in FedWiki.
 
 Delivery medium for both: FedWiki page JSON (with Neo4j for the structured graph), drafted here as pipeline markdown first. Publishing order per Marc's standing rule: .md → FedWiki → edit and discuss → .md → then HTML and PDF.
 
@@ -38,7 +38,7 @@ Each section file holds every layer in order — first draft, Marc's verbatim ed
 1. **All twelve sections are at the rewrite layer** as of 2026-09-11. Marc's review copies are in `review/` — one clean file per section holding only the latest text.
 2. **One review pass over all twelve** with Marc. Places already flagged for argument: Section 8's speech-acts Customer role, the Ackoff retelling's length, the single nesting-plus-network diagram, and whether "Forms of neighborhood value creation" belongs in Section 10; Section 3's Beer→e-VSM and RenDanHeYi mappings; Section 1's "field guide" against Marc's "tool kit"; Section 9's proposed three gates and the tool-state colors on the lifecycle diagram; Section 10's Likert answer and the Bill Mahoney attribution; Section 11's Whatcom-institutions paragraph and the Rippel correction.
 3. **Book-level work**: title; the cold-reader structure (Section 1 now glosses RCN and WWHA, but is it an introduction?); whether Section 8 splits; which of Sections 9–12 survive as chapters; a publication path.
-4. **Then the field guide (the tool kit).**
+4. **Then the field guide (the tool kit)** — first pass drafted; Marc's reactions next; then the SODOTO skill pages per pattern.
 
 Work items Sections 9 and 10 surfaced: run one ME by hand end to end at small scale, simulating the red boxes on `diagrams/me-lifecycle-end-to-end.rcn.json`; work out the RCN gates with that first ME; build a weighted-selection matrix tool (and look at Vester's sensitivity model for project selection); integrate Rasch with e-VSM results, including revising the survey's questions for measurement in neighborhoods (Bill Mahoney's complaint); run the scenario-validation experiment on synthetic respondents through the real aggregator; revisit the six anti-capture properties after the field guide exists.
 
@@ -75,6 +75,7 @@ Settled vocabulary is in `handoff-2026-09-10.md` and is not repeated here.
 | `sources/` | the files Marc uploaded to the two chats, gathered from Downloads and Desktop, plus his later `.pages` edits and the recovered CAM item pool; `sources/pastes/` holds the text he pasted, including his FedWiki pages on customer scenarios, Story Structure and the action conversation |
 | `chat-export/` | the raw account export (gitignored where large) and the two full transcripts |
 | `review/` | the latest text of each section with nothing else — Marc's reading and editing copies, rebuilt from the section files whenever a rewrite lands |
+| `field-guide/` | the tool kit, first pass: how to use, Phases 1–5, the tools as a pattern language |
 | `diagrams/` | RCN Graph Tool JSON for the book's diagrams; validated with `../tools/validate-rcn-graph.js`; render by opening the tool with `?url=` or dragging the file in |
 | `build-design-record.py` | rebuilds the section and conversation files from the export and the Pages files; the Pages reader is in there |
 
