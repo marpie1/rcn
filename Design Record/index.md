@@ -23,7 +23,7 @@ Delivery medium for both: FedWiki page JSON (with Neo4j for the structured graph
 | 5 | `05-customer-scenario.md` | rewrite | awaiting Marc's reactions |
 | 6 | `06-industry-platform.md` | rewrite | awaiting Marc's reactions; value chain flow diagram in `sources/rcn-value-chain-flow.json` needs rendering |
 | 7 | `07-moods-and-speech-acts.md` | rewrite | awaiting Marc's reactions |
-| 8 | `08-between-institution-project.md` | Marc's edits | **rewrite pending — this is where the source chat stopped** |
+| 8 | `08-between-institution-project.md` | rewrite (2026-09-11) | awaiting Marc's reactions; diagram in `diagrams/`; the footnote convention (tools and methods listed at the end of a section) starts here |
 | 9 | `09-catalytic-seed-capital.md` | first draft | awaiting Marc's edits |
 | 10 | `10-value-by-residents.md` | first draft | awaiting Marc's edits |
 | 11 | `11-prior-work-substrate.md` | first draft | awaiting Marc's edits; propagate the Chris/Jerry correction |
@@ -33,13 +33,15 @@ Each section file holds every layer in order — first draft, Marc's verbatim ed
 
 ## Next actions, in order
 
-1. **Section 8 rewrite.** Everything it needs is now on disk: Marc's 21 parenthetical questions and additions in the edits layer; the institutions correction, dual-track participation, "seldom works", Platform persistence, the speech-acts Customer role, the GGCS gloss, Principle Three by name; the Ackoff Bell Labs transcript (`sources/_tape__of_ackoff's_bell_lab_lecture_v1 (480p) (1).md`) as the forty-year-scenario case study; Verna Allee's VNA as already integrated in the Graph Tool (`../docs/value-network-notation.md`, `../tools/schemas/graph-tool-v22.md` lines 617–660, the six `../tools/vna-*.rcn.json` and `iad-*.rcn.json` drawings) — compare with VAM: VNA maps existing flows for analysis, VAM specifies future flows for contracts; "network of nested systems" **and** an RCN Graph diagram of the refugee-student nested-systems case (Marc wants both, turn 158). Still missing: the EIP Stage Sketch tool documentation, and whatever Marc meant to add after turn 161.
+1. **Marc reads the Section 8 rewrite** (done 2026-09-11) and reacts. Four places to argue with are named in its delivery notes: the speech-acts Customer role, the length of the Ackoff retelling, the single nesting-plus-network diagram, and whether "Forms of neighborhood value creation" belongs in Section 10.
 2. **Section 4 correction** — Chris/Jerry.
 3. **Rewrites of Sections 1, 2, 3** absorbing Marc's edits and the ripples listed in `chat-memory/areas/design-record-drafting.md`.
 4. **Mechanical pass on 1–7**: kit → field guide; "menu of adjacencies" out; the vocabulary list in `handoff-2026-09-10.md` applied throughout.
 5. **Marc's edits to 9–12**, then their rewrites.
 6. **Book-level work**: title; the cold-reader structure (does Section 1 do the job of an introduction for someone who has never heard of RCN?); which of Sections 9–12 survive as chapters; a publication path.
 7. **Then the field guide.**
+
+Work items Section 8 surfaced, beyond the sections: write the school-refugee-transition scenario in full (the first real one) and a playbook for how an Experience-ME writes one; run the EIP Stage → value network → VAM test on that scenario in Claude Code; decide whether Section 8 splits (the Ackoff case and the RCN Workbench are candidates for short sections of their own); the pattern-language book Marc proposed (Alexander) as a companion to the tool kit — a book-level decision.
 
 Two Claude Code sessions Chat flagged as separate pieces of substrate work, not part of the book: SODOTO portfolios extension (what a portfolio entry contains, how it attaches to individuals/MEs/Platforms, how it surfaces in bidding); CfA-dSC enhancement for chartering, VAM specification, speech-act instrumentation and gated funding.
 
@@ -71,6 +73,7 @@ Settled vocabulary is in `handoff-2026-09-10.md` and is not repeated here.
 | `chat-memory/` | Chat's 45 memory files as exported — `areas/design-record-drafting.md` is the running log with the per-section ripple lists |
 | `sources/` | the 24 files Marc uploaded to the two chats, gathered from Downloads and Desktop; `sources/pastes/` holds the text he pasted, including his FedWiki pages on customer scenarios, Story Structure and the action conversation |
 | `chat-export/` | the raw account export (gitignored where large) and the two full transcripts |
+| `diagrams/` | RCN Graph Tool JSON for the book's diagrams; validated with `../tools/validate-rcn-graph.js`; render by opening the tool with `?url=` or dragging the file in |
 | `build-design-record.py` | rebuilds the section and conversation files from the export and the Pages files; the Pages reader is in there |
 
 Turn numbers throughout index `chat-export/organizing-local-projects.md`, which is the full transcript of "Organizing local projects into actionable plans" (chat uuid 2f737cc8-4f75-402d-86b1-8b5b63e99882 in Chat; 167 turns, Aug 30 – Sep 11 2026). Times in the files are UTC as the export recorded them; Marc's local time is seven hours earlier.
@@ -80,5 +83,6 @@ Turn numbers throughout index `chat-export/organizing-local-projects.md`, which 
 - Every draft and rewrite lands in this folder at the moment it is produced, and is committed. Nothing substantive lives only in a conversation.
 - Pipeline files stay `.md`, one line per paragraph. FedWiki page JSON is built from them at publish time with the fedwiki-page skill.
 - Marc edits in Pages if he likes; the `.pages` file goes in `sources/` and the build script (or a hand pass) pulls the text into the section file verbatim.
-- Diagrams are RCN Graph Tool JSON, rendered to SVG for the book and kept editable as rcngraph items in FedWiki.
+- Diagrams are RCN Graph Tool JSON in `diagrams/`, rendered to SVG for the book and kept editable as rcngraph items in FedWiki.
+- From Section 8 on, each section ends with "Tools and methods named in this section" — the footnote convention Marc proposed, one list per section with repo paths.
 - Sources of truth for the tools live in the repo, not here: `tools/schemas/*.md`, `docs/value-network-notation.md`, `docs/evsm-*.html`. This folder points at them.
