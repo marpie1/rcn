@@ -1,6 +1,6 @@
 # Section 2 — The Four Dependency-Elimination Principles
 
-**State (as of 2026-09-11):** First draft delivered; edited by Marc; Claude rewrite pending. Ripples: spell out Neighborhood-Catalyzing Industry Platform, drop 'menu of adjacencies', kit → field guide.
+**State (as of 2026-09-11):** First draft delivered; edited by Marc; REWRITE DELIVERED 2026-09-11 in Claude Code: Marc's edits taken as the text; Conant–Ashby 'models of' precision; Principle Two retitled; 'menu of adjacencies' replaced by the offerings themselves; ALL CAPS flag turned into plain prose; typos as Marc confirmed; Chris/Jerry corrected; closing section list fixed. Awaiting Marc's reactions.
 
 **Provenance:** recovered from the Claude Chat conversation "Organizing local projects into actionable plans" (uuid 2f737cc8-4f75-402d-86b1-8b5b63e99882) via the account data export of 2026-09-11; full transcript at `chat-export/organizing-local-projects.md`. Turn numbers index that transcript. Marc's edits come from the `.pages` files in `sources/`.
 
@@ -271,3 +271,96 @@ If these were intentional, tell me and I'll preserve. If typos, I'll clean them.
 Ready for Section 3 whenever you send it.
 
 ---
+
+
+## Rewrite — 2026-09-11, Claude Code session (after the source chat closed)
+
+_Written against Marc's verbatim edits above, Chat's report turns, the ripple lists in chat-memory/areas/design-record-drafting.md, and the handoff vocabulary._
+
+### Section 2 — The Four Dependency-Elimination Principles
+
+#### Why these four, together
+
+This kind of work fails in one of two ways. It fails because the outside facilitator team goes home and the capacity to sustain the work goes with them. Or it fails because the funded work is force-fitted to the funder's goals and measures rather than to the residents' benefit, and becomes another instance of the pattern John McKnight named the counterfeit of community.
+
+The four principles are a response to these failures. Together they define what makes this work sustainable: structure that makes the failure modes less likely, rather than willpower, ascetic self-sacrifice, or heroic individual character.
+
+The principles are: variety distributed; facilitation compensated only through downstream user value; capital catalytic; and value defined and recognized by those it serves.
+
+#### Principle One — Facilitator variety distributed, not replaced
+
+The 2016 Cambridge Management Group prospectus for Jackson County, Oregon, named the goal plainly: "with the goal of ensuring local competence and autonomy." The five-phase Linkage Mapping method CMG deployed produced real between-institution projects. And when CMG stepped away, the local participants did not have the social and organizational structures to sustain the practice.
+
+This was not for lack of intelligence, will, or skill on the local side. It happened because the requisite variety needed to see between-organization opportunities is exactly what organizations do not have about themselves. Ashby's Law is not sentimental: to regulate a system, the regulator must match the system's variety. Conant and Ashby sharpened it: every good regulator of a system must be a model of that system. In the county-scale work, CMG was carrying models of that variety. When they left, no local participant had built the models to replace them, and the participants collectively had not developed a shared practice for it either. The understanding of the system, the models, the variety, had stayed concentrated in the facilitators instead of being distributed.
+
+Naming this matters. Framing the design constraint as "replace the facilitator" implies a person or team can be swapped in for CMG. The constraint is sharper than that: reduce the variety that is required to a level distributable across the neighborhood, permanently. The tools themselves, the linkage-mapping method, the weighted-selection matrix, the moods and speech-acts vocabulary, the customer scenario practice, the e-VSM survey, the CfA-dSC coordination tools, the SODOTO portfolios, the Overall Schema graph, carry what a skilled external facilitator would carry, but now modular and open source.
+
+Some parts of this are further along than others. The linkage-mapping method exists in usable form; the weighted-selection matrix exists in the 2014 material; e-VSM is operational; SODOTO and CfA-dSC are in active testing and development; the Overall Schema is stabilizing. The field guide's conveners do real work, and the work that in 2014 required a CMG team member's judgment can, piece by piece as the tools mature, be done by the neighborhood with tool support. The convener's role should get easier and smaller over time as the tools get better and worked examples become available.
+
+This principle also constrains what the field guide can ask of its convener. If a task in the field guide's phases can only be done by someone with the accumulated variety of a Marc-Pierson-equivalent, that task is a design failure and needs to be redesigned until the tool would be handy within most neighborhoods. Templates and tools will be held to this test.
+
+#### Principle Two — Industry Platform actors compensated through the value chain
+
+McKnight's *The Careless Society* names what happens when care becomes service. The associational gift, one neighbor to another, one small group to a community, gets replaced by an external professional transaction, and the professional's compensation structure deforms the system over time toward the professional's continued employment rather than toward the recipient's actual benefit. This happens through the incentive structure of paid work to external agents, regardless of intention.
+
+The straightforward reading of this, and the reading that first suggested itself in the design work, was that facilitation and granting must be entirely volunteer. If money corrupts the work, remove the money. Elders give back; the granting arm is entirely volunteer-run; nobody in the facilitation or granting role earns anything for their contribution.
+
+That reading is too extreme, and it fails. It assumes the only alternative to McKnight's counterfeit is self-sacrifice, and that assumption produces a design that cannot scale because it cannot compensate people doing real work for real time. It also confuses compensation, paid versus unpaid, with incentives, compensation independent of value delivered versus compensation structurally tied to value delivered.
+
+Haier's RenDanHeYi resolves this. In RenDanHeYi, MEs (microenterprises) earn only when users receive value; support MEs earn only when the customer-facing MEs they support succeed; and the Industry Platform, which acts as an internal venture capital arm inside the company, is compensated only as the MEs it seeds deliver value to their customers. Everyone gets paid. Nobody gets paid on a job description independent of what actually gets created for users, customers, and beneficiaries.
+
+That is what closes McKnight's door without requiring ascetic self-sacrifice. Compensation stays, and becomes completely dependent on and proportional to beneficiary value creation.
+
+WWHA's granting arm is being considered for design as a Neighborhood-Catalyzing Industry Platform in this pattern. The four conveners currently in position, Carl in East County, Washington; Chris in Superior, Arizona, at Leo's; Jerry in Lansing, Michigan, at The Fledge; and Brent in southwest Lansing, will begin to operate as Industry Platform actors at the scale of the grouping of neighborhoods each serves. Their compensation flows through the value chain from the MEs and small groups they seed and support, whose value creation is recognized by residents and by those the residents count as neighbors. When residents recognize value received, the Platform actors get paid; when they do not, the Platform actors do not.
+
+This principle keeps the giving-back framing that fits how Marc describes the work of Carl, Chris, Jerry, and Brent, while rejecting the ascetic implication that giving back requires financial self-sacrifice. Platform actors, too often called elders, can be paid, and probably should be paid, provided the pay flows structurally from value received by those whose lives the work touches. Reputation is likely to matter more to them than money, and Section 6 develops reputation as a compensation stream in its own right. This is McKnight's principle expressed through RenDanHeYi's mechanism.
+
+The instrumentation this requires is dyadic smart contracts (dSC) that instrument the value chain, and portfolio systems that make the causal chain from Platform contribution, through ME work, to resident value received visible over time. All of this is the CfA-dSC and SODOTO work in RCN's infrastructure and matching data schema. As these mature we will tune the compensation agreements.
+
+#### Principle Three — Catalytic seed capital
+
+Money enters the work as catalytic seed capital that funds new work. It does not enter as ongoing operating subsidy that funds existing work indefinitely.
+
+Amounts are beside the point. Seed capital for launching a new between-institution project can be substantial. What makes it catalytic rather than operating is its form: enough to enable the ME to try something it otherwise could not, not enough to become the ME's permanent budget, and structurally not set up to migrate into a permanent budget. If seed capital is still funding the same work in year three at similar or higher levels, either the ME failed to become self-sustaining or the work was never something that could self-sustain; it was a program the money was propping up.
+
+This principle constrains what the granting arm evaluates when an ME requests funding. Whether this is a good project is one question. The question the granting arm has to answer is whether it is catalyzable: will the seed do its work and then be able to step away? Answering that well requires people who have seen the pattern and can recognize the difference between a launch and a subsidy request. A paid program officer with quarterly deployment targets cannot reliably decline requests that fail this test; their job depends on deploying capital, and declining is professionally costly. An Industry Platform actor whose compensation is downstream of ME success has aligned incentives. They are not paid for money deployed, only for value ultimately received by residents, which means seeding an ME that turns into a subsidy hole hurts their own compensation and reputation.
+
+The principle also applies to the small groups and MEs themselves. Raise your kids and set them free. The MEs are not the granting arm's ongoing clients. They come into conversation; they receive what they need, on request, from what the Platform can offer, which is mentorship, SODOTO, RenDanHeYi patterns, linkage mapping, dSC contracting, facilitation help, and when relevant seed capital; they do the work; and they become self-organizing and self-funding when they no longer need the granting arm. That is the point. There is the possibility of future collaboration, and no room for dependency.
+
+And the principle applies to the field guide itself. Conveners support neighborhoods through the phases and then step back. If the neighborhood cannot absorb the pattern and continue without the convener, the convener has made the classic error of raising kids who never left. If it can, the convener moves on to another neighborhood if there is one to serve, or rests, or takes up the mentorship role for other conveners coming up. Graduations and growing self-sufficiency, which is to say self-organizing, are built in at every scale.
+
+#### Principle Four — Value created by residents for residents and their neighbors, recognized by them, measured by their own measures
+
+Value here means something specific. It is value created by residents for residents and their neighbors, with "neighbors" defined by the value creators themselves and never imposed from outside, and recognized as such by them. It is not value as assessed by a foundation's evaluation framework, a state agency's outcome metrics, an academic evaluator's methodology, or WWHA's board's judgment.
+
+The measures through which that value is seen are the neighborhood's own measures. Balanced scorecards for what counts as value are neighborhood-constructed and neighborhood-maintained, adapted to the place, time, and culture of that neighborhood. WWHA's Industry Platform helps the neighborhood build a scorecard that will show its own value creation clearly; that is skilled work, and it is part of what the convener brings. The Platform does not hand the neighborhood a template. Different neighborhoods produce different scorecards. That is a feature.
+
+Because the Industry Platform's own compensation and reputation depend on the neighborhood's scorecard, the Platform has a strong incentive to help construct a scorecard that is real and supports the well-being of that particular neighborhood. Two-way discipline is built into the measure itself.
+
+Rasch measurement, the methodology behind RCN's Civic Activation Measure work, fits this design in a specific way. Rasch is built to hold latent constructs across contexts by calibrating items to a shared underlying dimension while allowing item content to vary. Neighborhood-authored scorecards need exactly this: dimensions comparable enough to be usable across neighborhoods, so the Platform can operate across the neighborhoods it serves and MEs can be evaluated in comparable terms, while the specific items measuring those dimensions are neighborhood-authored. The e-VSM survey family provides the structured multi-perspective measure through which neighborhoods can see themselves before and after ME work, with Claude API synthesis integrating the respondents' evidence and suggestions.
+
+Outsiders, WWHA's board, funders, state agencies, evaluators, cannot originate the scorecard even when they contribute capital. They can decline to fund a neighborhood whose scorecard they do not believe in, and that is a legitimate use of their judgment. They cannot substitute their scorecard for the neighborhood's judgment. This is a real governance constraint on WWHA itself, and it belongs in WWHA's charter as a founding limit.
+
+The principle also has an anti-capture function. Grantmakers who dislike a neighborhood's scorecard have one legitimate response: decline to fund it. They do not get to negotiate the scorecard toward their own preferences as a condition of funding, because that negotiation would be exactly the capture pattern the design exists to prevent. This will be challenging for the grantmaker, a hard problem to navigate, and possibly an impossible one. The design record says so plainly rather than pretending the constraint is easy to hold.
+
+#### How the four hold together
+
+Each principle serves a purpose. Facilitator variety distributed prevents dependency of the local on the external. Industry Platform compensation through the value chain prevents heavy-handed facilitation toward outsider goals and metrics. Catalytic seed capital prevents the subsidy trap that turns launches into fatal dependencies. Neighborhood-authored value measurement prevents the capture of the work by outside definitions of success.
+
+Any three without the fourth invites failure and disappointment. All four together reduce the failure modes and support the otherwise good judgment of the participants.
+
+These principles are the foundation for everything that follows in this design record. Section 3 places them within the VSM-plus-Idealized-Design frame at neighborhood scale and introduces e-VSM. Section 4 develops the founded commons that these principles both require and support. Section 5 introduces the customer scenario as the durable object around which everything else moves. Section 6 develops the Neighborhood-Catalyzing Industry Platform and the four currencies its compensation runs in. Section 7 places moods and speech acts as the working layer. Section 8 describes the between-institution project, and Section 9 returns to catalytic seed capital in operational detail, with the four principles now doing the design work under them.
+
+### Claude's notes on delivering the rewrite
+
+Marc's edited text is the basis. Changes beyond the agreed ripples:
+
+Principle Two's heading is now "Industry Platform actors compensated through the value chain". Chat flagged the old heading as trying to hold too much, and Marc said the actors are "too often called elders"; the text keeps "giving back" and names elders once, with reputation forward-referenced to Section 6.
+
+Principle Four's heading ends "measured by their own measures", per the measures-not-instruments decision, and the body follows.
+
+The ALL CAPS parenthetical ("THIS WILL BE CHALLENGING TO THE GRANTMAKER...") is kept as a plain sentence, because the honesty is the point and Marc only objected to the capitals.
+
+"Menu of adjacencies" is gone; the sentence lists what the Platform offers. "Set them free" survives once, in Marc's "raise your kids" line, because it is his image; the MEs "become self-organizing and self-funding" everywhere else. The closing list of sections is corrected (Marc's version described Sections 8 and 9 as the linkage-mapping phases and the project shape, which is not what they are).
+
+Two negation-correction frames restated directly: "the design constraint is not 'replace the facilitator'" and "compensation is not eliminated". Chat's three typo reads applied as Marc confirmed. Chris/Jerry corrected.

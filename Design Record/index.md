@@ -16,12 +16,12 @@ Delivery medium for both: FedWiki page JSON (with Neo4j for the structured graph
 
 | # | file | latest layer | state |
 |---|---|---|---|
-| 1 | `01-origin-and-purpose.md` | Marc's edits | rewrite pending; restate the section list to the actual twelve; kit → field guide; convenor → convener |
-| 2 | `02-four-principles.md` | Marc's edits | rewrite pending; spell out Neighborhood-Catalyzing Industry Platform; drop "menu of adjacencies" |
-| 3 | `03-vsm-at-neighborhood-scale.md` | Marc's edits | rewrite pending; scope expanded to carry the shared e-VSM reference (Section 5 points here) |
-| 4 | `04-founded-commons.md` | rewrite | **correction needed**: Chris at Leo's in Superior, Jerry at The Fledge in Lansing (the rewrite reversed them) |
-| 5 | `05-customer-scenario.md` | rewrite | awaiting Marc's reactions |
-| 6 | `06-industry-platform.md` | rewrite | awaiting Marc's reactions; value chain flow diagram in `sources/rcn-value-chain-flow.json` needs rendering |
+| 1 | `01-origin-and-purpose.md` | rewrite (2026-09-11) | awaiting Marc's reactions; RCN/WWHA glossed for a cold reader; the Linkage Mapping phases are noted as the field guide's spine, not a section |
+| 2 | `02-four-principles.md` | rewrite (2026-09-11) | awaiting Marc's reactions; Principle Two retitled; Principle Four 'measured by their own measures' |
+| 3 | `03-vsm-at-neighborhood-scale.md` | rewrite (2026-09-11) | awaiting Marc's reactions — the VSM→e-VSM mapping and the RenDanHeYi mapping are first passes offered for correction; e-VSM shared reference now lives here |
+| 4 | `04-founded-commons.md` | rewrite (corrected 2026-09-11) | Chris/Jerry fixed in three places; kit → field guide; awaiting Marc's reactions |
+| 5 | `05-customer-scenario.md` | rewrite (vocabulary pass 2026-09-11) | awaiting Marc's reactions |
+| 6 | `06-industry-platform.md` | rewrite (vocabulary pass 2026-09-11) | awaiting Marc's reactions; value chain flow diagram in `sources/rcn-value-chain-flow.json` needs rendering |
 | 7 | `07-moods-and-speech-acts.md` | rewrite | awaiting Marc's reactions |
 | 8 | `08-between-institution-project.md` | rewrite (2026-09-11) | awaiting Marc's reactions; diagram in `diagrams/`; the footnote convention (tools and methods listed at the end of a section) starts here |
 | 9 | `09-catalytic-seed-capital.md` | first draft | awaiting Marc's edits |
@@ -33,13 +33,12 @@ Each section file holds every layer in order — first draft, Marc's verbatim ed
 
 ## Next actions, in order
 
-1. **Marc reads the Section 8 rewrite** (done 2026-09-11) and reacts. Four places to argue with are named in its delivery notes: the speech-acts Customer role, the length of the Ackoff retelling, the single nesting-plus-network diagram, and whether "Forms of neighborhood value creation" belongs in Section 10.
-2. **Section 4 correction** — Chris/Jerry.
-3. **Rewrites of Sections 1, 2, 3** absorbing Marc's edits and the ripples listed in `chat-memory/areas/design-record-drafting.md`.
-4. **Mechanical pass on 1–7**: kit → field guide; "menu of adjacencies" out; the vocabulary list in `handoff-2026-09-10.md` applied throughout.
-5. **Marc's edits to 9–12**, then their rewrites.
-6. **Book-level work**: title; the cold-reader structure (does Section 1 do the job of an introduction for someone who has never heard of RCN?); which of Sections 9–12 survive as chapters; a publication path.
-7. **Then the field guide.**
+**Agreed working order (Marc, 2026-09-11):** Marc sends his edits to Sections 9–12 one at a time; Claude rewrites each as it arrives; when all twelve rewrites exist Marc reads them all in one pass and they go over it together; then the tool kit.
+
+1. **Sections 9–12** — Marc is editing 9 now. As each `.pages` file arrives: copy it to `sources/`, pull the text into the section file, rewrite.
+2. **One review pass over all twelve** with Marc. Places already flagged for argument: Section 8's speech-acts Customer role, the Ackoff retelling's length, the single nesting-plus-network diagram, and whether "Forms of neighborhood value creation" belongs in Section 10; Section 3's Beer→e-VSM and RenDanHeYi mappings; Section 1's "field guide" against Marc's "tool kit".
+3. **Book-level work**: title; the cold-reader structure (Section 1 now glosses RCN and WWHA, but is it an introduction?); whether Section 8 splits; which of Sections 9–12 survive as chapters; a publication path.
+4. **Then the field guide (the tool kit).**
 
 Work items Section 8 surfaced, beyond the sections: write the school-refugee-transition scenario in full (the first real one) and a playbook for how an Experience-ME writes one; run the EIP Stage → value network → VAM test on that scenario in Claude Code; decide whether Section 8 splits (the Ackoff case and the RCN Workbench are candidates for short sections of their own); the pattern-language book Marc proposed (Alexander) as a companion to the tool kit — a book-level decision.
 
