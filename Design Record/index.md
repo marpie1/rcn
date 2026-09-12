@@ -24,8 +24,8 @@ Delivery medium for both: FedWiki page JSON (with Neo4j for the structured graph
 | 6 | `06-industry-platform.md` | rewrite (vocabulary pass 2026-09-11) | awaiting Marc's reactions; value chain flow diagram in `sources/rcn-value-chain-flow.json` needs rendering |
 | 7 | `07-moods-and-speech-acts.md` | rewrite | awaiting Marc's reactions |
 | 8 | `08-between-institution-project.md` | rewrite (2026-09-11) | awaiting Marc's reactions; diagram in `diagrams/`; the footnote convention (tools and methods listed at the end of a section) starts here |
-| 9 | `09-catalytic-seed-capital.md` | first draft | awaiting Marc's edits |
-| 10 | `10-value-by-residents.md` | first draft | awaiting Marc's edits |
+| 9 | `09-catalytic-seed-capital.md` | rewrite (2026-09-11) | awaiting Marc's reactions; the RCN gates proposal is the thing to argue with; two diagrams in `diagrams/` |
+| 10 | `10-value-by-residents.md` | rewrite (2026-09-11) | awaiting Marc's reactions; CAM item pool recovered to `sources/`; anti-capture properties to revisit after the field guide |
 | 11 | `11-prior-work-substrate.md` | first draft | awaiting Marc's edits; propagate the Chris/Jerry correction |
 | 12 | `12-open-questions.md` | first draft (second attempt) | awaiting Marc's edits |
 
@@ -35,10 +35,12 @@ Each section file holds every layer in order — first draft, Marc's verbatim ed
 
 **Agreed working order (Marc, 2026-09-11):** Marc sends his edits to Sections 9–12 one at a time; Claude rewrites each as it arrives; when all twelve rewrites exist Marc reads them all in one pass and they go over it together; then the tool kit.
 
-1. **Sections 9–12** — Marc is editing 9 now. As each `.pages` file arrives: copy it to `sources/`, pull the text into the section file, rewrite.
-2. **One review pass over all twelve** with Marc. Places already flagged for argument: Section 8's speech-acts Customer role, the Ackoff retelling's length, the single nesting-plus-network diagram, and whether "Forms of neighborhood value creation" belongs in Section 10; Section 3's Beer→e-VSM and RenDanHeYi mappings; Section 1's "field guide" against Marc's "tool kit".
+1. **Sections 11–12** — 9 and 10 done. As each `.pages` file arrives: copy it to `sources/`, pull the text into the section file, rewrite.
+2. **One review pass over all twelve** with Marc. Places already flagged for argument: Section 8's speech-acts Customer role, the Ackoff retelling's length, the single nesting-plus-network diagram, and whether "Forms of neighborhood value creation" belongs in Section 10; Section 3's Beer→e-VSM and RenDanHeYi mappings; Section 1's "field guide" against Marc's "tool kit"; Section 9's proposed three gates and the tool-state colors on the lifecycle diagram; Section 10's Likert answer and the Bill Mahoney attribution.
 3. **Book-level work**: title; the cold-reader structure (Section 1 now glosses RCN and WWHA, but is it an introduction?); whether Section 8 splits; which of Sections 9–12 survive as chapters; a publication path.
 4. **Then the field guide (the tool kit).**
+
+Work items Sections 9 and 10 surfaced: run one ME by hand end to end at small scale, simulating the red boxes on `diagrams/me-lifecycle-end-to-end.rcn.json`; work out the RCN gates with that first ME; build a weighted-selection matrix tool (and look at Vester's sensitivity model for project selection); integrate Rasch with e-VSM results, including revising the survey's questions for measurement in neighborhoods (Bill Mahoney's complaint); run the scenario-validation experiment on synthetic respondents through the real aggregator; revisit the six anti-capture properties after the field guide exists.
 
 Work items Section 8 surfaced, beyond the sections: write the school-refugee-transition scenario in full (the first real one) and a playbook for how an Experience-ME writes one; run the EIP Stage → value network → VAM test on that scenario in Claude Code; decide whether Section 8 splits (the Ackoff case and the RCN Workbench are candidates for short sections of their own); the pattern-language book Marc proposed (Alexander) as a companion to the tool kit — a book-level decision.
 
@@ -70,7 +72,7 @@ Settled vocabulary is in `handoff-2026-09-10.md` and is not repeated here.
 | `handoff-2026-09-10.md` | Chat's state dump at the compaction wall — vocabulary decisions, entities, pending asks (copy; the original is in `docs/RNC Book Files/`) |
 | `substrate-notes.md` | Chat's notes on Story Structure and the Dunham conversation-for-action (2026-09-11) |
 | `chat-memory/` | Chat's 45 memory files as exported — `areas/design-record-drafting.md` is the running log with the per-section ripple lists |
-| `sources/` | the 24 files Marc uploaded to the two chats, gathered from Downloads and Desktop; `sources/pastes/` holds the text he pasted, including his FedWiki pages on customer scenarios, Story Structure and the action conversation |
+| `sources/` | the files Marc uploaded to the two chats, gathered from Downloads and Desktop, plus his later `.pages` edits and the recovered CAM item pool; `sources/pastes/` holds the text he pasted, including his FedWiki pages on customer scenarios, Story Structure and the action conversation |
 | `chat-export/` | the raw account export (gitignored where large) and the two full transcripts |
 | `diagrams/` | RCN Graph Tool JSON for the book's diagrams; validated with `../tools/validate-rcn-graph.js`; render by opening the tool with `?url=` or dragging the file in |
 | `build-design-record.py` | rebuilds the section and conversation files from the export and the Pages files; the Pages reader is in there |
