@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eVSM — Respondent Report Manual</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; background: #fafaf8; }
+.page { max-width: 820px; margin: 0 auto; padding: 48px 32px 80px; }
+nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 48px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+nav a { color: #2d6a4f; text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+nav .current { color: #1a1a1a; font-weight: 500; }
+.doc-header { margin-bottom: 48px; }
+.doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 600px; }
+.filename { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #888; margin-top: 8px; }
+h2 { font-size: 19px; font-weight: 600; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
+h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: #2d6a4f; }
+p { margin-bottom: 14px; }
+ul, ol { padding-left: 22px; margin-bottom: 14px; }
+li { margin-bottom: 6px; }
+code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f0ec; padding: 1px 5px; border-radius: 3px; }
+.note { background: #f0f9f4; border-left: 3px solid #2d6a4f; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0; }
+.step-list { counter-reset: steps; list-style: none; padding: 0; margin-bottom: 14px; }
+.step-list li { counter-increment: steps; display: flex; gap: 14px; margin-bottom: 12px; align-items: flex-start; }
+.step-list li::before { content: counter(steps); flex-shrink: 0; width: 24px; height: 24px; background: #2d6a4f; color: #fff; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+th { text-align: left; padding: 8px 12px; background: #f0f0ec; font-weight: 600; font-size: 12px; border: 1px solid #ddd; }
+td { padding: 8px 12px; border: 1px solid #e0e0da; vertical-align: top; }
+tr:nth-child(even) td { background: #fafaf7; }
+.report-mock { border: 1px solid #dde; border-radius: 6px; background: #fff; padding: 20px; margin: 20px 0; font-size: 12px; }
+.report-mock .rm-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1a3a5c; padding-bottom: 12px; margin-bottom: 16px; }
+.report-mock .rm-meta { font-family: 'IBM Plex Mono', monospace; color: #333; line-height: 1.8; }
+.report-mock .rm-logo { font-size: 20px; font-weight: 700; color: #1a3a5c; text-align: right; }
+.report-mock .rm-sphere { margin-bottom: 14px; border: 1px solid #e8e8e4; border-radius: 4px; overflow: hidden; }
+.report-mock .rm-sphere-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f4f4f0; font-weight: 600; font-size: 11px; }
+.report-mock .rm-dot { width: 10px; height: 10px; border-radius: 50%; }
+.report-mock .rm-body { padding: 10px 12px; font-size: 11px; color: #444; }
+@media print { nav { display: none; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav>
+  <a href="evsm-intro.html">Introduction</a>
+  <a href="evsm-workflow.html">Workflow</a>
+  <a href="evsm-manual-survey.html">Survey Tool</a>
+  <a href="evsm-manual-aggregator.html">Aggregator</a>
+  <span class="current">Report</span>
+  <a href="evsm-manual-excel.html">Excel Tool</a>
+</nav>
+
+<div class="doc-header">
+  <div class="suite">eVSM Documentation — User Manual</div>
+  <h1>Respondent Report</h1>
+  <p class="lead">Generate a formatted, print-ready report of a single respondent's complete assessment. Save as PDF or print on paper.</p>
+  <div class="filename">evsm-report.html</div>
+</div>
+
+<h2>Overview</h2>
+
+<p>The Respondent Report takes a single eVSM response JSON and renders it as a clean, readable document organized by sphere. It is used in two situations:</p>
+<ul>
+  <li><strong>By the respondent</strong>, immediately after completing a survey, to review their own assessments and create a personal record</li>
+  <li><strong>By the facilitator</strong>, to produce individual reports that can be shared back with each participant after the survey is complete</li>
+</ul>
+
+<p>The report contains no aggregated data from other respondents — it reflects one person's assessments only. For a combined report across all respondents with Claude syntheses, use the Aggregator's <strong>Full Report</strong> feature.</p>
+
+<h2>Opening the Report</h2>
+
+<h3>From the Survey Tool (automatic)</h3>
+<p>While in Survey mode, click the <strong>⎙ Print My Report</strong> button in the left panel. The Survey Tool fetches <code>evsm-report.html</code>, bakes your response data into it as a self-contained blob, and opens it in a new tab. No file download or upload is required.</p>
+<div class="note">
+  Both <code>evsm-svg-v3.html</code> and <code>evsm-report.html</code> must be in the same folder for the Print button to work. If the button fails, use the drag-and-drop path below.
+</div>
+
+<h3>Directly (drag-and-drop)</h3>
+<ol class="step-list">
+  <li>Open <code>evsm-report.html</code> in your browser.</li>
+  <li>A load screen appears with a drop zone.</li>
+  <li>Drag your response JSON file onto the drop zone, or click <strong>Choose Response File</strong> to browse.</li>
+  <li>The report renders immediately.</li>
+</ol>
+
+<h2>Report Structure</h2>
+
+<p>The report is organized by focal sphere — one section per sphere (S-1 through S-11), each separated by a page break for clean printing.</p>
+
+<h3>Header block</h3>
+<p>Shows survey metadata: enterprise name, respondent name or ID, date, time frame, survey ID, world category tags, and the focal point text (if the facilitator provided one).</p>
+
+<h3>Sphere sections</h3>
+<p>Each sphere section contains:</p>
+<ul>
+  <li><strong>Focus diagram</strong> — the full eVSM SVG with only the focal sphere and its directly connected neighbors rendered in color; all other spheres and edges are faded to 10% opacity for spatial reference. The focal sphere has a bolder border. Assessed connections are colored by status (green = Agree, red = Disagree, blue = Don't Know); unassessed connections in the active neighborhood are shown as bold black arrows.</li>
+  <li><strong>Sphere assessment</strong> — the sphere description, the respondent's status choice (Go / Caution / Stop / Unsure), and their evidence and suggestions text.</li>
+  <li><strong>Homeostatic Pairs</strong> — one block per directly connected neighbor, showing <em>both</em> directions of each relationship: the focal→neighbor edge and the neighbor→focal edge, each with its description, the respondent's assessment, and their evidence and suggestions. Unassessed edges are marked "Not assessed."</li>
+</ul>
+
+<h3>Sphere filter bar</h3>
+<p>After the report renders, a sticky bar appears at the top of the page showing a pill for each of the 11 spheres (all active by default). Click any pill to hide that sphere's section. Click it again to show it. Use <strong>all</strong> and <strong>none</strong> links to toggle all at once. The filter bar does not appear in print — only visible sections are included when you print or save as PDF.</p>
+
+<h3>Footer</h3>
+<p>Timestamp showing when the report was generated.</p>
+
+<h2>Printing and Saving as PDF</h2>
+
+<ol class="step-list">
+  <li>Use the sphere filter bar to show only the sections you want in the output.</li>
+  <li>Click the <strong>⎙ Print / Save PDF</strong> button in the lower right corner of the screen.</li>
+  <li>Your browser's print dialog opens.</li>
+  <li>To save as PDF: select "Save as PDF" (or "Microsoft Print to PDF") as the destination.</li>
+  <li>To print on paper: select your printer and click Print.</li>
+</ol>
+
+<div class="note">
+  For best results when saving as PDF, use Chrome or Edge and set paper size to Letter or A4 with default margins. The report paginates at sphere boundaries — one sphere per page.
+</div>
+
+<h2>Loading a Different Response</h2>
+
+<p>Click <strong>← Load Another</strong> in the lower left corner to return to the load screen. This discards the currently displayed report and lets you load a different response file.</p>
+
+<h2>Error Messages</h2>
+
+<table>
+  <tr><th>Message</th><th>Cause and fix</th></tr>
+  <tr><td>✗ Could not read file — is it a valid eVSM response JSON?</td><td>The file does not have the expected structure. Make sure you are loading a response JSON exported from the Survey Tool, not a config JSON.</td></tr>
+</table>
+
+<h2>Notes</h2>
+
+<ul>
+  <li>The Report tool can only display one respondent at a time. To analyze multiple respondents together, use the Aggregator.</li>
+  <li>If a respondent's name is not available (anonymous survey), the report shows their respondent ID or "Anonymous."</li>
+  <li>All text is selectable — you can copy evidence or suggestion text from the report directly.</li>
+  <li>This is the <strong>individual Respondent Report</strong> — it shows one person's data. The <strong>Aggregate Full Report</strong> (generated by the Aggregator's Full Report button) is a separate document covering all respondents combined, including Claude syntheses.</li>
+</ul>
+
+</div>
+</body>
+</html>

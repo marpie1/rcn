@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eVSM — Excel Tool Manual</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; background: #fafaf8; }
+.page { max-width: 820px; margin: 0 auto; padding: 48px 32px 80px; }
+nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 48px; padding-bottom: 16px; border-bottom: 1px solid #ddd; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+nav a { color: #2d6a4f; text-decoration: none; }
+nav a:hover { text-decoration: underline; }
+nav .current { color: #1a1a1a; font-weight: 500; }
+.doc-header { margin-bottom: 48px; }
+.doc-header .suite { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
+.doc-header .lead { font-size: 16px; color: #444; font-weight: 300; max-width: 600px; }
+.filename { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #888; margin-top: 8px; }
+h2 { font-size: 19px; font-weight: 600; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e4; }
+h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; color: #2d6a4f; }
+h4 { font-size: 13px; font-weight: 600; margin: 18px 0 6px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; }
+p { margin-bottom: 14px; }
+ul, ol { padding-left: 22px; margin-bottom: 14px; }
+li { margin-bottom: 6px; }
+code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f0ec; padding: 1px 5px; border-radius: 3px; }
+.note { background: #f0f9f4; border-left: 3px solid #2d6a4f; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0; }
+.warn { background: #fff8e1; border-left: 3px solid #f59e0b; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 13px; margin: 16px 0; }
+.step-list { counter-reset: steps; list-style: none; padding: 0; margin-bottom: 14px; }
+.step-list li { counter-increment: steps; display: flex; gap: 14px; margin-bottom: 12px; align-items: flex-start; }
+.step-list li::before { content: counter(steps); flex-shrink: 0; width: 24px; height: 24px; background: #2d6a4f; color: #fff; border-radius: 50%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+th { text-align: left; padding: 8px 12px; background: #f0f0ec; font-weight: 600; font-size: 12px; border: 1px solid #ddd; }
+td { padding: 8px 12px; border: 1px solid #e0e0da; vertical-align: top; }
+tr:nth-child(even) td { background: #fafaf7; }
+.sheet-tab { display: inline-block; background: #1a3a5c; color: #fff; font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 3px 10px; border-radius: 3px 3px 0 0; margin-right: 2px; }
+.sheet-content { border: 1px solid #1a3a5c; border-radius: 0 6px 6px 6px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; background: #fff; }
+@media print { nav { display: none; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav>
+  <a href="evsm-intro.html">Introduction</a>
+  <a href="evsm-workflow.html">Workflow</a>
+  <a href="evsm-manual-survey.html">Survey Tool</a>
+  <a href="evsm-manual-aggregator.html">Aggregator</a>
+  <a href="evsm-manual-report.html">Report</a>
+  <span class="current">Excel Tool</span>
+</nav>
+
+<div class="doc-header">
+  <div class="suite">eVSM Documentation — User Manual</div>
+  <h1>Excel Tool</h1>
+  <p class="lead">Convert between eVSM JSON and Excel workbooks. Use familiar spreadsheet software to write and review survey content, then bring it back into the eVSM tools.</p>
+  <div class="filename">evsm_excel_tool.html</div>
+</div>
+
+<h2>Overview</h2>
+
+<p>The Excel Tool bridges the eVSM JSON format and Microsoft Excel (or any application that reads <code>.xlsx</code> files). It has two uses:</p>
+
+<ul>
+  <li><strong>Export (JSON → Excel)</strong> — take an existing eVSM config JSON and produce a structured workbook. Edit the content in Excel, then import it back.</li>
+  <li><strong>Import (Excel → JSON)</strong> — take a filled-in workbook and produce a config JSON ready to load into the Survey Tool.</li>
+</ul>
+
+<div class="warn">
+  The Excel Tool is for <strong>survey design only</strong>. It handles sphere labels, descriptions, edge descriptions, and world categories. It does not import or export respondent assessment data (status, evidence, suggestions from respondents).
+</div>
+
+<h2>Exporting JSON to Excel</h2>
+
+<ol class="step-list">
+  <li>Open <code>evsm_excel_tool.html</code> in your browser.</li>
+  <li>In the <strong>Export JSON → Excel</strong> card, paste your eVSM config JSON into the text area, or <strong>drag a config JSON file directly onto the Export card</strong> — it loads automatically. If you are starting from scratch, click <strong>Load Sample JSON</strong> to populate it with a working example.</li>
+  <li>Click <strong>⬇ Export to Excel</strong>.</li>
+  <li>A file named <code>NDC_Sofi_Setup.xlsx</code> downloads to your computer.</li>
+  <li>Open it in Excel, Google Sheets, or LibreOffice Calc.</li>
+</ol>
+
+<p>Click <strong>Clear</strong> to empty the text area and start over.</p>
+
+<div class="note">
+  Exported workbooks have navy-colored header rows and word-wrapped data cells for readability.
+</div>
+
+<h2>The Excel Workbook Structure</h2>
+
+<p>The exported workbook has five sheets:</p>
+
+<div>
+  <span class="sheet-tab">Survey Meta</span>
+  <div class="sheet-content">
+    <strong>Two columns: Field | Value</strong><br>
+    Contains all survey metadata fields: Enterprise, Focal Point, Date, Time Frame, Survey ID, Respondent ID, Anonymous Mode. Edit the Value column to change any of these.
+  </div>
+</div>
+
+<div>
+  <span class="sheet-tab">Spheres</span>
+  <div class="sheet-content">
+    <strong>Columns: ID · Label · Layer · Anatomical Framing · Vernacular Description · Status · Notes</strong><br>
+    One row per sphere (S-1 through S-11). Edit the <strong>Label</strong> to rename a sphere. Write the sphere's description across two columns:
+    <ul style="margin-top:8px;">
+      <li><strong>Anatomical Framing</strong> — the systems-theory or structural description (appears as italic text in the tool)</li>
+      <li><strong>Vernacular Description</strong> — the plain-language, community-facing description (appears as bold text in the tool)</li>
+    </ul>
+    The <strong>Layer</strong> column is automatically set based on sphere ID and should not be edited. <strong>Status</strong> and <strong>Notes</strong> are optional planning fields.
+  </div>
+</div>
+
+<div>
+  <span class="sheet-tab">Edges</span>
+  <div class="sheet-content">
+    <strong>Columns: From · To · Edge ID · From Label · To Label · Anatomical Framing · Domain Assertion · Status · Evidence/Example · Suggestion</strong><br>
+    One row per relationship. The <strong>From</strong> and <strong>To</strong> columns use sphere IDs (S-1, S-2, etc.). Write edge descriptions across two columns:
+    <ul style="margin-top:8px;">
+      <li><strong>Anatomical Framing</strong> — the structural description of this relationship (appears as italic)</li>
+      <li><strong>Domain Assertion</strong> — the statement of what this relationship should accomplish (appears as bold)</li>
+    </ul>
+    From Label and To Label are Excel formula references to the Spheres sheet (e.g., <code>=Spheres!B2</code>). If you rename a sphere label in the Spheres sheet, those columns update automatically everywhere in the Edges sheet.
+  </div>
+</div>
+
+<div>
+  <span class="sheet-tab">Worlds Categories</span>
+  <div class="sheet-content">
+    <strong>Columns: # · Category · Notes</strong><br>
+    One row per world category. Add, remove, or rename categories in the <strong>Category</strong> column. Order is preserved in the import.
+  </div>
+</div>
+
+<div>
+  <span class="sheet-tab">Layer Reference</span>
+  <div class="sheet-content">
+    A read-only reference table explaining the three sphere layers (Sensory/Interface, Internal Core, Alignment/Homeostatic) and the Markov Blanket concept. Do not edit this sheet — it does not affect the import.
+  </div>
+</div>
+
+<h2>Importing Excel to JSON</h2>
+
+<ol class="step-list">
+  <li>After editing the workbook, save it as <code>.xlsx</code> (not <code>.xls</code> or <code>.csv</code>).</li>
+  <li>In the <strong>Import Excel → JSON</strong> card, <strong>drag your workbook directly onto the card</strong>, or click <strong>📂 Choose Excel File</strong> to browse.</li>
+  <li>A preview table appears confirming what was read: number of spheres, number of edges with content, number of world categories, and survey metadata.</li>
+  <li>The resulting JSON is automatically loaded into the Export card's textarea — you can inspect or re-export it immediately without an extra step.</li>
+  <li>Click <strong>⬇ Download JSON</strong> to save the result as <code>NDC_Sofi_export.json</code>.</li>
+  <li>Load this file into the Survey Tool via the <strong>Import</strong> button in Setup mode.</li>
+</ol>
+
+<h2>How Descriptions Are Converted</h2>
+
+<p>The Excel Tool splits and recombines description text between markdown (used in the Survey Tool) and two separate columns (used in Excel):</p>
+
+<table>
+  <tr>
+    <th>In JSON (Survey Tool)</th>
+    <th>In Excel</th>
+  </tr>
+  <tr>
+    <td><code>_This is italic text_</code></td>
+    <td>Anatomical Framing column: <em>This is italic text</em></td>
+  </tr>
+  <tr>
+    <td><code>**This is bold text**</code></td>
+    <td>Vernacular Description (or Domain Assertion) column: <strong>This is bold text</strong></td>
+  </tr>
+  <tr>
+    <td>Both italic and bold together, separated by a line break</td>
+    <td>Both columns filled; combined on import back into <code>_italic_\n**bold**</code></td>
+  </tr>
+</table>
+
+<p>This means you should write one type of text per column — do not put both italic and bold content in the same column cell.</p>
+
+<h2>Error Messages</h2>
+
+<table>
+  <tr><th>Message</th><th>Cause and fix</th></tr>
+  <tr><td>❌ Invalid JSON — please check your input.</td><td>The text in the export textarea is not valid JSON. Check for missing brackets, quotes, or commas.</td></tr>
+  <tr><td>❌ Error reading file: {message}</td><td>The Excel file could not be parsed. Ensure the file is saved as .xlsx and has the expected sheet names.</td></tr>
+</table>
+
+<h2>Tips</h2>
+
+<ul>
+  <li>Start from the sample JSON rather than writing a config from scratch. Click <strong>Load Sample JSON</strong>, export to Excel, and edit from there.</li>
+  <li><strong>Round-trip workflow:</strong> after importing an Excel file, the resulting JSON auto-loads into the Export textarea. You can immediately re-export to Excel, inspect the JSON, or copy it to the Survey Tool — no extra steps needed.</li>
+  <li>After importing and downloading the JSON, load it into the Survey Tool's Setup mode to verify that the labels and descriptions appear correctly before distributing to respondents.</li>
+  <li>Rename sphere labels in the Spheres sheet and the Edges sheet updates automatically via cross-sheet formula linking.</li>
+  <li>The workbook can be shared with co-designers who do not have access to the Survey Tool. They can fill in descriptions in Excel and return the file for import.</li>
+  <li>Google Sheets can edit <code>.xlsx</code> files — but save back to <code>.xlsx</code> format before importing, not as Google Sheets format.</li>
+</ul>
+
+</div>
+</body>
+</html>
