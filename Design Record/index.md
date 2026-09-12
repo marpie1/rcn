@@ -26,7 +26,7 @@ Delivery medium for both: FedWiki page JSON (with Neo4j for the structured graph
 | 8 | `08-between-institution-project.md` | rewrite (2026-09-11) | awaiting Marc's reactions; diagram in `diagrams/`; the footnote convention (tools and methods listed at the end of a section) starts here |
 | 9 | `09-catalytic-seed-capital.md` | rewrite (2026-09-11) | awaiting Marc's reactions; the RCN gates proposal is the thing to argue with; two diagrams in `diagrams/` |
 | 10 | `10-value-by-residents.md` | rewrite (2026-09-11) | awaiting Marc's reactions; CAM item pool recovered to `sources/`; anti-capture properties to revisit after the field guide |
-| 11 | `11-prior-work-substrate.md` | first draft | awaiting Marc's edits; propagate the Chris/Jerry correction |
+| 11 | `11-prior-work-substrate.md` | rewrite (2026-09-11) | awaiting Marc's reactions; needs a paragraph from Marc or Kerry on ReLocalize Health and Seeing the Systems; four unverifiable points flagged in its notes |
 | 12 | `12-open-questions.md` | first draft (second attempt) | awaiting Marc's edits |
 
 Each section file holds every layer in order — first draft, Marc's verbatim edits from the Pages file (his comments are the paragraphs wrapped in parentheses), the conversation about the edits, and the rewrite where one exists — with Claude's delivery notes after each version. The latest layer is the working text.
@@ -35,8 +35,8 @@ Each section file holds every layer in order — first draft, Marc's verbatim ed
 
 **Agreed working order (Marc, 2026-09-11):** Marc sends his edits to Sections 9–12 one at a time; Claude rewrites each as it arrives; when all twelve rewrites exist Marc reads them all in one pass and they go over it together; then the tool kit.
 
-1. **Sections 11–12** — 9 and 10 done. As each `.pages` file arrives: copy it to `sources/`, pull the text into the section file, rewrite.
-2. **One review pass over all twelve** with Marc. Places already flagged for argument: Section 8's speech-acts Customer role, the Ackoff retelling's length, the single nesting-plus-network diagram, and whether "Forms of neighborhood value creation" belongs in Section 10; Section 3's Beer→e-VSM and RenDanHeYi mappings; Section 1's "field guide" against Marc's "tool kit"; Section 9's proposed three gates and the tool-state colors on the lifecycle diagram; Section 10's Likert answer and the Bill Mahoney attribution.
+1. **Section 12** — 9, 10 and 11 done. As each `.pages` file arrives: copy it to `sources/`, pull the text into the section file, rewrite.
+2. **One review pass over all twelve** with Marc. Places already flagged for argument: Section 8's speech-acts Customer role, the Ackoff retelling's length, the single nesting-plus-network diagram, and whether "Forms of neighborhood value creation" belongs in Section 10; Section 3's Beer→e-VSM and RenDanHeYi mappings; Section 1's "field guide" against Marc's "tool kit"; Section 9's proposed three gates and the tool-state colors on the lifecycle diagram; Section 10's Likert answer and the Bill Mahoney attribution; Section 11's Whatcom-institutions paragraph and the Rippel correction.
 3. **Book-level work**: title; the cold-reader structure (Section 1 now glosses RCN and WWHA, but is it an introduction?); whether Section 8 splits; which of Sections 9–12 survive as chapters; a publication path.
 4. **Then the field guide (the tool kit).**
 
