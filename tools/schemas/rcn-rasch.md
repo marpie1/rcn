@@ -15,7 +15,7 @@ marc,1,1,1
 luis,1,0,
 ```
 
-Values are whole numbers. `0`/`1` for dichotomous; `0–3`, `1–5` or similar for a rating scale. **The lowest category present is shifted to 0 for estimation and the shift is reported**, so a 1–5 Likert is estimated as 0–4 but displayed in your original numbering — silently renumbering somebody's scale is how it ends up meaning something other than what they wrote. **An empty cell is missing and is handled, not imputed** — the person simply contributes no observation for that item. Any other numeric value is coerced to 1 if positive, 0 otherwise; anything unparseable becomes missing.
+Values are whole numbers. `0`/`1` for dichotomous; `0–3`, `1–5` or similar for a rating scale. **The lowest category present is shifted to 0 for estimation and the shift is reported**, so a 1–5 Likert is estimated as 0–4 but displayed in your original numbering — silently renumbering somebody's scale is how it ends up meaning something other than what they wrote. **An empty cell is missing and is handled, not imputed** — the person simply contributes no observation for that item. Anything else — a decimal, a negative, a value above 20, unparseable text — becomes missing, loudly rather than coerced; a short row is padded with missing.
 
 Column order is item order in every table; row order does not matter.
 

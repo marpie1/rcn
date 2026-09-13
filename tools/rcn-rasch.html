@@ -326,17 +326,28 @@ var RASCH = {
       var wh = function (v, q) { return (Math.pow(v, 1 / 3) - 1) * (3 / q) + (q / 3); };
       return { infit: inf, outfit: out, iz: wh(inf, qi), oz: wh(out, qo) };
     }
+    /* An extreme person or item was skipped by the final margin pass, so its
+       working score is 0 of 0. Report the raw margin over every response it
+       actually gave instead — "12 of 12, maximum" is the fact; "0 of 0" is
+       an artefact of the elimination loop. */
+    var rawS = [], rawC = [], rawIS = [], rawIC = [];
+    for (n = 0; n < nP; n++) { rawS[n] = 0; rawC[n] = 0; }
+    for (i = 0; i < nI; i++) { rawIS[i] = 0; rawIC[i] = 0; }
+    for (n = 0; n < nP; n++) for (i = 0; i < nI; i++) {
+      if (M[n][i] === null) continue;
+      rawS[n] += M[n][i]; rawC[n]++; rawIS[i] += M[n][i]; rawIC[i]++;
+    }
     var persons = [], items = [];
     for (n = 0; n < nP; n++) {
       var f = fit(pr[n]);
-      persons.push({ idx: n, score: pScore[n], count: pCount[n], extreme: pExt[n],
+      persons.push({ idx: n, score: pExt[n] ? rawS[n] : pScore[n], count: pExt[n] ? rawC[n] : pCount[n], extreme: pExt[n],
         measure: pExt[n] ? null : B[n],
         se: (pExt[n] || pr[n].sw < 1e-9) ? null : 1 / Math.sqrt(pr[n].sw),
         infit: f.infit, outfit: f.outfit, iz: f.iz, oz: f.oz });
     }
     for (i = 0; i < nI; i++) {
       var g = fit(ir[i]);
-      items.push({ idx: i, score: iScore[i], count: iCount[i], extreme: iExt[i],
+      items.push({ idx: i, score: iExt[i] ? rawIS[i] : iScore[i], count: iExt[i] ? rawIC[i] : iCount[i], extreme: iExt[i],
         measure: iExt[i] ? null : D[i],
         se: (iExt[i] || ir[i].sw < 1e-9) ? null : 1 / Math.sqrt(ir[i].sw),
         infit: g.infit, outfit: g.outfit, iz: g.iz, oz: g.oz });
@@ -628,7 +639,7 @@ function render(S, err) {
     h.push('</table>');
     if (disordered.length) {
       h.push('<div class="note bad"><b>Thresholds are disordered.</b> Category ' +
-        disordered.map(function (t) { return (t + (S.shift || 0)); }).join(' and ') +
+        disordered.map(function (t) { return (t + 1 + (S.shift || 0)); }).join(' and ') +
         ' sits below the threshold beneath it, which means respondents are not distinguishing these categories in the order you wrote them. ' +
         'The usual remedy is to collapse the adjacent categories and re-run. This is the finding a summed score can never show you, and it is the main reason to run this before trusting a questionnaire.</div>');
     } else {
