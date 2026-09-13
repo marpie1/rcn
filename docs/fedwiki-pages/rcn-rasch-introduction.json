@@ -1,0 +1,782 @@
+{
+  "title": "RCN Rasch Introduction",
+  "story": [
+    {
+      "type": "markdown",
+      "text": "Why a total score is not a measurement, and what a Wright map adds. Companion to the RCN Rasch tool and its user manual. Every number here is real output from the two demo datasets shipped inside the tool.",
+      "id": "13afd35a484a9d1b"
+    },
+    {
+      "type": "markdown",
+      "text": "**A total score tells you how many. It does not tell you how much.**",
+      "id": "89f7cd70cc5b794d"
+    },
+    {
+      "type": "markdown",
+      "text": "## The problem the Rasch model solves",
+      "id": "cb3341cc71c583c8"
+    },
+    {
+      "type": "markdown",
+      "text": "Suppose the SODOTO ledger shows that Dorothy holds two badges and Nina holds ten. Nina has more. But is she five times as capable? Which two does Dorothy hold — the two easiest, or two that half the mentors cannot do? Is the gap between the second badge and the third the same size as the gap between the ninth and the tenth? A count of badges cannot say. It reports the number of rungs climbed on a ladder whose rungs are unevenly spaced, and nobody has measured the spacing.",
+      "id": "301d223a9ddddf52"
+    },
+    {
+      "type": "markdown",
+      "text": "The same is true of every questionnaire that adds up its answers. A resident who circles *agree* four times and *strongly agree* three times gets a score of 32 out of 35. That is a count of circles, weighted by the numbers printed beside them. It assumes every statement is equally hard to agree with and every step of the scale is the same size everywhere. Neither is ever checked, and both are usually false.",
+      "id": "4be9827a382a32bf"
+    },
+    {
+      "type": "markdown",
+      "text": "In 1960 the Danish mathematician Georg Rasch wrote down a model in which the two things that matter — how capable a person is, and how hard an item is — sit on a single ruler, and the odds of success depend only on the distance between them. Benjamin Wright at the University of Chicago spent the next forty years turning that model into a working measurement practice. RCN Rasch is that practice, reduced to one file.",
+      "id": "58ac21c77d426ebd"
+    },
+    {
+      "type": "markdown",
+      "text": "**A person's raw score is enough to place them on the ruler. The Rasch model is the only model in which \"adding up the right answers\" is defensible — and it tells you the spacing of the rungs as it goes.**",
+      "id": "66d460bc92b04241"
+    },
+    {
+      "type": "markdown",
+      "text": "## One ruler, two kinds of thing on it",
+      "id": "e3147a3113fda004"
+    },
+    {
+      "type": "markdown",
+      "text": "The model is short enough to say in a sentence. The probability that person B succeeds at item D is `exp(B − D) / (1 + exp(B − D))`. When the person's ability equals the item's difficulty the odds are even; a person one unit above an item succeeds about 73% of the time, two units above about 88%. The unit is the **logit**, and the ruler runs from roughly −5 to +5 in most real data.",
+      "id": "c7d233e8192f243e"
+    },
+    {
+      "type": "markdown",
+      "text": "What makes this a measurement rather than a score is that persons and items land on the *same* ruler. A skill at +1.9 logits is not \"hard\" in the abstract; it is hard relative to these people, and a person at +1.9 has even odds on it. That is a claim you can check in a room, and the picture that shows it is the whole product of this tool.",
+      "id": "d21140be2310d612"
+    },
+    {
+      "type": "markdown",
+      "text": "## The Wright map",
+      "id": "dda03542f73eea9c"
+    },
+    {
+      "type": "markdown",
+      "text": "This is the tool's own output for the badge demo it ships with: 24 people, 12 SODOTO skills, badged or not. Persons on the left, more able above. Skills on the right, harder above. One vertical ruler in logits between them.",
+      "id": "9a64de484dc16423"
+    },
+    {
+      "type": "html",
+      "id": "a7d16f546b90bd33",
+      "text": "<div style=\"overflow-x:auto\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"auto\" style=\"max-width:940px;display:block\" viewBox=\"0 0 940 912\" font-family=\"system-ui,sans-serif\"><rect width=\"940\" height=\"912\" fill=\"#ffffff\"/><text x=\"440\" y=\"24\" text-anchor=\"end\" font-size=\"12\" font-weight=\"700\" fill=\"#1e5f8c\">PERSONS — more able above</text><text x=\"500\" y=\"24\" font-size=\"12\" font-weight=\"700\" fill=\"#b45309\">SKILLS — harder above</text><line x1=\"470\" y1=\"98\" x2=\"470\" y2=\"878\" stroke=\"#334155\" stroke-width=\"2\"/><line x1=\"464\" y1=\"878\" x2=\"476\" y2=\"878\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"870\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-5</text><line x1=\"464\" y1=\"800\" x2=\"476\" y2=\"800\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"792\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-4</text><line x1=\"464\" y1=\"722\" x2=\"476\" y2=\"722\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"714\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-3</text><line x1=\"464\" y1=\"644\" x2=\"476\" y2=\"644\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"636\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-2</text><line x1=\"464\" y1=\"566\" x2=\"476\" y2=\"566\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"558\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-1</text><line x1=\"464\" y1=\"488\" x2=\"476\" y2=\"488\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"480\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">0</text><line x1=\"464\" y1=\"410\" x2=\"476\" y2=\"410\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"402\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">1</text><line x1=\"464\" y1=\"332\" x2=\"476\" y2=\"332\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"324\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">2</text><line x1=\"464\" y1=\"254\" x2=\"476\" y2=\"254\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"246\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">3</text><line x1=\"464\" y1=\"176\" x2=\"476\" y2=\"176\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"168\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">4</text><line x1=\"464\" y1=\"98\" x2=\"476\" y2=\"98\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"90\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">5</text><text x=\"470\" y=\"902\" text-anchor=\"middle\" font-size=\"10\" fill=\"#94a3b8\">logits</text><circle cx=\"436\" cy=\"468.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"468.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"398\" y=\"472.5\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">kim, mo</text><circle cx=\"436\" cy=\"351.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"351.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"398\" y=\"355.5\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">pia, quinn</text><circle cx=\"436\" cy=\"273.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"273.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"398\" y=\"277.5\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">lee, nina</text><circle cx=\"436\" cy=\"176\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"176\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"406\" cy=\"176\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"383\" y=\"180\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">ray, sam, tess</text><circle cx=\"436\" cy=\"761\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"413\" y=\"765\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">marc</text><circle cx=\"436\" cy=\"644\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"413\" y=\"648\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">kerry</text><circle cx=\"436\" cy=\"683\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"683\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"406\" cy=\"683\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"391\" cy=\"683\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"368\" y=\"687\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">dorothy, luis, ben, dee</text><circle cx=\"436\" cy=\"585.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"413\" y=\"589.5\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">ana</text><circle cx=\"436\" cy=\"546.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"546.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"406\" cy=\"546.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"391\" cy=\"546.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"376\" cy=\"546.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"361\" cy=\"546.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"338\" y=\"550.5\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">chris, eli, fran, gus, hana, jo</text><circle cx=\"436\" cy=\"507.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"413\" y=\"511.5\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">ivan</text><line x1=\"476\" y1=\"155.13337564557196\" x2=\"492\" y2=\"155.13337564557196\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"146.13337564557196\" width=\"10\" height=\"18\" rx=\"2\" fill=\"none\" stroke=\"#b45309\" stroke-width=\"1.8\" stroke-dasharray=\"2 2\"/><text x=\"508\" y=\"159.13337564557196\" font-size=\"11\" fill=\"#334155\">stand up an NDC server <tspan fill=\"#64748b\">provisional — 2 on the minority side</tspan></text><line x1=\"476\" y1=\"255.82691702741795\" x2=\"492\" y2=\"255.82691702741795\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"246.82691702741795\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"259.82691702741795\" font-size=\"11\" fill=\"#334155\">build a value network</text><line x1=\"476\" y1=\"338.73694396972576\" x2=\"492\" y2=\"338.73694396972576\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"329.73694396972576\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"342.73694396972576\" font-size=\"11\" fill=\"#334155\">assign an IAD level</text><line x1=\"476\" y1=\"410.35578634362867\" x2=\"492\" y2=\"410.35578634362867\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"401.35578634362867\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"414.35578634362867\" font-size=\"11\" fill=\"#334155\">label a value network arrow</text><line x1=\"476\" y1=\"441.72968719030683\" x2=\"492\" y2=\"441.72968719030683\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"432.72968719030683\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"445.72968719030683\" font-size=\"11\" fill=\"#334155\">issue a signed badge</text><line x1=\"476\" y1=\"522.5024161001771\" x2=\"492\" y2=\"522.5024161001771\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"513.5024161001771\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"526.5024161001771\" font-size=\"11\" fill=\"#334155\">fork from another site</text><line x1=\"476\" y1=\"570.8745237271592\" x2=\"492\" y2=\"570.8745237271592\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"561.8745237271592\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"574.8745237271592\" font-size=\"11\" fill=\"#334155\">draw a simple graph</text><line x1=\"476\" y1=\"594.9571647439334\" x2=\"492\" y2=\"594.9571647439334\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"585.9571647439334\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"598.9571647439334\" font-size=\"11\" fill=\"#334155\">edit a wiki page</text><line x1=\"476\" y1=\"594.9571647439334\" x2=\"492\" y2=\"609.9571647439334\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"600.9571647439334\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"613.9571647439334\" font-size=\"11\" fill=\"#334155\">add a page to a lineup</text><line x1=\"476\" y1=\"594.9571647439334\" x2=\"492\" y2=\"624.9571647439334\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"615.9571647439334\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#dc2626\"/><text x=\"508\" y=\"628.9571647439334\" font-size=\"11\" fill=\"#334155\">run a campfire conversation <tspan fill=\"#dc2626\" font-weight=\"700\">misfit</tspan></text><line x1=\"476\" y1=\"672.835510914938\" x2=\"492\" y2=\"672.835510914938\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"663.835510914938\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"676.835510914938\" font-size=\"11\" fill=\"#334155\">publish a FedWiki page</text><line x1=\"476\" y1=\"703.1333448492741\" x2=\"492\" y2=\"703.1333448492741\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"694.1333448492741\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"707.1333448492741\" font-size=\"11\" fill=\"#334155\">comment on a page</text><line x1=\"40\" y1=\"84\" x2=\"920\" y2=\"84\" stroke=\"#cbd5e1\" stroke-width=\"1\" stroke-dasharray=\"3 4\"/><circle cx=\"436\" cy=\"68\" r=\"5\" fill=\"none\" stroke=\"#1e5f8c\" stroke-width=\"1.8\" stroke-dasharray=\"2 2\"/><text x=\"413\" y=\"72\" text-anchor=\"end\" font-size=\"10\" fill=\"#64748b\">omar — above every skill, no measure</text><line x1=\"170\" y1=\"488.7189250690006\" x2=\"456\" y2=\"488.7189250690006\" stroke=\"#1e5f8c\" stroke-width=\"1\" stroke-dasharray=\"6 4\"/><text x=\"170\" y=\"483.7189250690006\" font-size=\"10\" fill=\"#1e5f8c\" font-weight=\"700\">mean person</text><line x1=\"484\" y1=\"488\" x2=\"930\" y2=\"488\" stroke=\"#b45309\" stroke-width=\"1\" stroke-dasharray=\"6 4\"/><text x=\"930\" y=\"483\" text-anchor=\"end\" font-size=\"10\" fill=\"#b45309\" font-weight=\"700\">mean skill = 0</text></svg></div>"
+    },
+    {
+      "type": "markdown",
+      "text": "The badge demo, as exported by the tool. Blue dots are people, amber bars are skills, a red bar is a skill that misfits. The hollow dot at the top is a person who holds every badge and therefore has no measure — only a position beyond the hardest skill. The hollow amber bar at the top is a skill whose fit would be flagged but only 2 of 23 people hold it — too few responses to read fit either way, so the map calls it *provisional* rather than red. Dashed lines mark the mean person and the mean skill; skills are centred at zero by construction.",
+      "id": "eda027b1125fdb28"
+    },
+    {
+      "type": "markdown",
+      "text": "**Read across, not down.** A skill beside a person is one that person has about even odds on. Skills far above everyone are out of reach; skills far below everyone are already universal and tell you nothing new about differences. Whether the items you wrote actually reach the people you have is the question almost every instrument gets wrong, and it is answered here at a glance — no training, no statistics, one picture.",
+      "id": "18a26a3b8a553843"
+    },
+    {
+      "type": "markdown",
+      "text": "The tool reports **targeting** as the gap between the mean person and the mean item. Here it is −0.01 logits: the skills are aimed at where the people are. A targeting of +2 would mean the skills are all too easy for this group and mostly confirm what you already know; −2 would mean they are out of reach and most of the information is in whether anyone succeeded at all.",
+      "id": "3dd2c3a82dcfcbcf"
+    },
+    {
+      "type": "markdown",
+      "text": "## Misfit is information, not an error code",
+      "id": "5ba46f00c88b67e8"
+    },
+    {
+      "type": "markdown",
+      "text": "The model makes a prediction for every cell in the matrix — this person, this skill, this probability. Where the responses disagree with the predictions more than chance allows, the model reports **misfit**, as a mean-square that should sit near 1.0. Two versions are computed. **Infit** weights responses near a person's own level, so it reflects the item as a whole. **Outfit** is unweighted, so it is dominated by the few responses far from a person's level — the lucky guess, the careless slip.",
+      "id": "45ea11c7ee248d9d"
+    },
+    {
+      "type": "html",
+      "text": "<table>\n<tr><th>Skill</th><th>Badged</th><th>Measure</th><th>Infit</th><th>Outfit</th><th>Reading</th></tr>\n<tr><td>stand up an NDC server</td><td>2 of 23</td><td>+4.27</td><td>1.36</td><td>2.31</td><td>Provisional. Only 2 of 23 succeeded — too few to read fit either way.</td></tr>\n<tr><td>build a value network</td><td>4 of 23</td><td>+2.98</td><td>0.71</td><td>0.28</td><td>Provisional. Only 4 of 23 succeeded.</td></tr>\n<tr><td>assign an IAD level</td><td>6 of 23</td><td>+1.91</td><td>0.40</td><td>0.18</td><td>Too predictable — closely tracks the neighbouring skills.</td></tr>\n<tr><td>fork from another site</td><td>12 of 23</td><td>−0.44</td><td>0.93</td><td>0.84</td><td>Behaves as expected.</td></tr>\n<tr><td><strong>run a campfire conversation</strong></td><td>15 of 23</td><td>−1.37</td><td><strong>2.07</strong></td><td><strong>11.61</strong></td><td><strong>Badly noisy. Measuring something else.</strong></td></tr>\n<tr><td>comment on a page</td><td>19 of 23</td><td>−2.76</td><td>1.05</td><td>0.66</td><td>Provisional. Only 4 of 23 failed.</td></tr>\n</table>",
+      "id": "a9053365dd9d30d5"
+    },
+    {
+      "type": "markdown",
+      "text": "Eleven of the twelve skills either behave or sit on too little evidence to say. One does not behave, and it is not close: *run a campfire conversation* has an outfit of 11.6 against an expected 1.0. The demo generator built it that way on purpose — whether someone can run a campfire depends on temperament, not on the FedWiki-and-graph capability the other eleven share — and the model found it without being told. Some of the least able people in the ledger hold that badge and some of the most able do not. In a real ledger that is not a nuisance to be suppressed. It is the finding: this badge belongs to a different construct, and a person's standing on it should be reported separately, not folded into the total.",
+      "id": "a83b72f2546a904d"
+    },
+    {
+      "type": "markdown",
+      "text": "The provisional readings are the other half of the same honesty. A fit statistic on a skill that only two people hold, or only four people lack, is a mean over a handful of cells, and one surprise swings it. Below five responses on the minority side the tool refuses to call a flagged fit a misfit: the pill goes grey, the reading says *provisional*, and on the map the bar is drawn hollow rather than red. It is not saying the skill is fine. It is saying it cannot tell yet, which is different.",
+      "id": "3e2f873e7d92900a"
+    },
+    {
+      "type": "markdown",
+      "text": "**A misfitting person is worth a look too.** Ray holds eleven of twelve badges and has an outfit of 19.7. The one he is missing is the campfire badge, which is one of the easiest — so the model's prediction for that cell was a near-certain success and the miss counts heavily. That is exactly what outfit is for. A high-outfit person usually has one anomalous response, and the question is what happened there, not whether the person is \"unreliable\".",
+      "id": "fb1766b7250f48e8"
+    },
+    {
+      "type": "markdown",
+      "text": "## Extreme scores are named, not extrapolated",
+      "id": "474dfb54e4536a3c"
+    },
+    {
+      "type": "markdown",
+      "text": "Omar holds all twelve badges. He is somewhere above *stand up an NDC server* and the data cannot say where. Winsteps, the standard commercial program, places such a person by treating a perfect score as if it were a fractional one — 11.7 of 12 by default — which yields a precise-looking measure with a standard error. Change the setting and the person moves with no new data.",
+      "id": "d814bf7524431dbf"
+    },
+    {
+      "type": "markdown",
+      "text": "This tool refuses that. Omar is drawn at the top of the map in a hollow marker with no number, the persons table says `12 of 12 · maximum`, and nothing about him enters a mean, a reliability, or a control chart. The pile-up stays visible — if a third of the group tops out, that is a ceiling effect and it should be the most obvious thing on the page — and the fiction stays out.",
+      "id": "be591aac896afdc3"
+    },
+    {
+      "type": "markdown",
+      "text": "## The case a summed score can never show you",
+      "id": "ff3dd6d8ae97c1dc"
+    },
+    {
+      "type": "markdown",
+      "text": "The tool's second demo is a neighbourhood participation questionnaire: 140 residents, seven statements from *I know who to call when something goes wrong* to *I would take a problem to the council myself*, each answered 1 to 5. With more than two categories the tool switches automatically to the **Andrich rating-scale model**, which estimates one extra thing: where on the ruler each step of the scale is crossed. These are the **thresholds**, and they should climb.",
+      "id": "9022df0b8bfa978d"
+    },
+    {
+      "type": "html",
+      "text": "<table>\n<tr><th>Category</th><th>Used</th><th>%</th><th>Threshold</th><th>Reading</th></tr>\n<tr><td>1</td><td>215</td><td>21.9</td><td>baseline</td><td>—</td></tr>\n<tr><td>2</td><td>276</td><td>28.2</td><td>−1.81</td><td>Used as expected</td></tr>\n<tr><td>3</td><td>95</td><td>9.7</td><td>+0.63</td><td>Used as expected</td></tr>\n<tr><td>4</td><td>205</td><td>20.9</td><td>−0.31</td><td><strong>Disordered</strong> — sits below the one beneath it</td></tr>\n<tr><td>5</td><td>189</td><td>19.3</td><td>+1.48</td><td>Used as expected</td></tr>\n</table>",
+      "id": "62768eda6e148f08"
+    },
+    {
+      "type": "markdown",
+      "text": "**What a summed score shows:** nothing. Every resident gets a number between 7 and 35. The distribution looks normal. Reliability computed the usual way looks fine. The report goes to the board.",
+      "id": "940159d08365140d"
+    },
+    {
+      "type": "markdown",
+      "text": "**What the thresholds show:** the step into category 4 is crossed at −0.31 logits, *below* the step into category 3 at +0.63. Residents are not distinguishing \"neutral\" from \"agree\" in the order the form wrote them — category 3 is used less than 10% of the time and there is no point on the ruler where it is the most likely answer. Collapse 3 and 4 and re-run.",
+      "id": "738308ba2d0c01a5"
+    },
+    {
+      "type": "markdown",
+      "text": "The demo was generated from a model whose middle thresholds were deliberately reversed, so this is a recovery, not a discovery. But it is the shape of the real finding, and it is the main reason to run a Rasch analysis before trusting a questionnaire: a scale can be wrong in a way that no amount of careful wording fixes after the fact, and the only way to see it is to estimate the thresholds.",
+      "id": "0fcfae86ba298ed1"
+    },
+    {
+      "type": "markdown",
+      "text": "**Two honest limits.** Detecting a subtle disordering needs respondents, not cleverness: an earlier version of this demo had 60 residents and a 0.2-logit reversal, and the estimator reported the thresholds as ordered — the reversal was real but smaller than the sampling noise. That is the estimator being honest. With 1,500 respondents it recovers a 0.2-logit reversal reliably. And the spacing of the thresholds is approximate while the sequence is reliable: the estimation method spreads its estimates 10–20% wider than the truth with few items. Winsteps applies a correction factor; this tool does not. The disordering diagnostic depends only on the sequence, which is unaffected.",
+      "id": "94afff1a9d64cef3"
+    },
+    {
+      "type": "markdown",
+      "text": "## How many groups can the data tell apart?",
+      "id": "963af65ba309d7be"
+    },
+    {
+      "type": "markdown",
+      "text": "Every measure comes with a standard error, and the ratio of the spread of measures to the size of those errors says how finely the instrument can cut. The tool reports it three ways because each is useful to a different reader. For the badge demo — 23 measurable people, 12 skills — person reliability is 0.84, separation 2.32, strata 3.4, SD 2.31 logits, RMSE 0.92.",
+      "id": "2eca99cfe87200a7"
+    },
+    {
+      "type": "markdown",
+      "text": "**Strata** is the number in plain language: about three distinguishable groups of people. That is enough to sort the ledger into levels, and it is not enough to rank people individually — the standing of two neighbours in the same stratum is noise. Reporting a rank order from an instrument with two or three strata is the standard misuse, and the tool says so in words beside the number.",
+      "id": "b0188de9a9de7638"
+    },
+    {
+      "type": "markdown",
+      "text": "Neither reliability nor separation says whether the instrument is *good*. They say how finely it cuts. A dozen badges cannot cut finely; twelve items rarely do. Adding skills near the middle of the ruler, where most of the people are, is what buys resolution.",
+      "id": "39933e3bad2bbd6d"
+    },
+    {
+      "type": "markdown",
+      "text": "## Why this matters for RCN",
+      "id": "e5cb64419c7506d8"
+    },
+    {
+      "type": "markdown",
+      "text": "**The badge ledger is already the data.** Persons × skills, badged or not, is the classic dichotomous design. It needs no survey, and a badge is *observed* by a mentor rather than self-reported. This is the likeliest route to RCN's first genuinely measured construct.",
+      "id": "a81fe237ecc9d80e"
+    },
+    {
+      "type": "markdown",
+      "text": "**A measure can go on a control chart.** A total of ordinal responses is not on an interval scale and must not be charted. A Rasch measure is, and can. The intended path is badge ledger → Rasch measure → RCN Process Behavior Charts.",
+      "id": "337c792e6e843fa7"
+    },
+    {
+      "type": "markdown",
+      "text": "**Comparable across neighbourhoods.** Measures are person-free and item-free. A construct measured with one set of items in Superior, Arizona and a different set in Whatcom County stays on one ruler, provided some items are shared.",
+      "id": "a1237530a35bad77"
+    },
+    {
+      "type": "markdown",
+      "text": "**It can be wrong, and says so.** Data fit the model or they do not. Misfit is reported per item and per person, in words. A summed score cannot fail; that is its weakness, not its strength.",
+      "id": "f3f556f5ba230841"
+    },
+    {
+      "type": "markdown",
+      "text": "The lineage runs from Rasch to Wright and Mike Linacre at Chicago, and the applied case Marc keeps returning to is Bill Mahoney finding measures in Judy Hibbard's data, which became the Patient Activation Measure — the instrument the health-care world now uses to ask how far a person is from managing their own care. The same method, on a badge ledger, asks how far a person is from running a neighbourhood.",
+      "id": "888c8912cf71952d"
+    },
+    {
+      "type": "markdown",
+      "text": "## What the tool leaves out",
+      "id": "6fc25bfad92c4774"
+    },
+    {
+      "type": "markdown",
+      "text": "The whole vocabulary is seven words: measure, SE, infit, outfit, reliability, separation, strata.",
+      "id": "f99d182f58537a4c"
+    },
+    {
+      "type": "markdown",
+      "text": "Deliberately absent: partial credit model, many-facet Rasch, differential item functioning, principal components of residuals, extreme-score extrapolation, bias correction, anchoring.",
+      "id": "316b7a0cc199b91c"
+    },
+    {
+      "type": "markdown",
+      "text": "All are legitimate and some are important. They are absent because the first version of a measurement tool should be the version a co-op board can read, and every addition is something the board has to learn. The rating-scale model was added because Likert questionnaires need it and the disordering check is the single most valuable thing Rasch offers a survey. If a real need appears — a badge that different mentors award at different standards, say, which is what many-facet Rasch is for — it can be added on top of an estimator that has been verified to recover known parameters.",
+      "id": "9529cdc3f0465518"
+    },
+    {
+      "type": "markdown",
+      "text": "## The Wright map must be readable",
+      "id": "9382e6634ad3cf18"
+    },
+    {
+      "type": "markdown",
+      "text": "A picture a group can gather around, point at, and argue about without any training. Persons on one side, items on the other, one ruler between them. Everything else in the tool exists to produce that picture honestly.",
+      "id": "e54da5e256417ebf"
+    }
+  ],
+  "journal": [
+    {
+      "type": "create",
+      "item": {
+        "title": "RCN Rasch Introduction",
+        "story": []
+      },
+      "date": 1789321467393
+    },
+    {
+      "type": "add",
+      "id": "13afd35a484a9d1b",
+      "item": {
+        "type": "markdown",
+        "id": "13afd35a484a9d1b",
+        "text": "Why a total score is not a measurement, and what a Wright map adds. Companion to the RCN Rasch tool and its user manual. Every number here is real output from the two demo datasets shipped inside the tool."
+      },
+      "date": 1789321467394
+    },
+    {
+      "type": "add",
+      "id": "89f7cd70cc5b794d",
+      "item": {
+        "type": "markdown",
+        "id": "89f7cd70cc5b794d",
+        "text": "**A total score tells you how many. It does not tell you how much.**"
+      },
+      "date": 1789321467395,
+      "after": "13afd35a484a9d1b"
+    },
+    {
+      "type": "add",
+      "id": "cb3341cc71c583c8",
+      "item": {
+        "type": "markdown",
+        "id": "cb3341cc71c583c8",
+        "text": "## The problem the Rasch model solves"
+      },
+      "date": 1789321467396,
+      "after": "89f7cd70cc5b794d"
+    },
+    {
+      "type": "add",
+      "id": "301d223a9ddddf52",
+      "item": {
+        "type": "markdown",
+        "id": "301d223a9ddddf52",
+        "text": "Suppose the SODOTO ledger shows that Dorothy holds two badges and Nina holds ten. Nina has more. But is she five times as capable? Which two does Dorothy hold — the two easiest, or two that half the mentors cannot do? Is the gap between the second badge and the third the same size as the gap between the ninth and the tenth? A count of badges cannot say. It reports the number of rungs climbed on a ladder whose rungs are unevenly spaced, and nobody has measured the spacing."
+      },
+      "date": 1789321467397,
+      "after": "cb3341cc71c583c8"
+    },
+    {
+      "type": "add",
+      "id": "4be9827a382a32bf",
+      "item": {
+        "type": "markdown",
+        "id": "4be9827a382a32bf",
+        "text": "The same is true of every questionnaire that adds up its answers. A resident who circles *agree* four times and *strongly agree* three times gets a score of 32 out of 35. That is a count of circles, weighted by the numbers printed beside them. It assumes every statement is equally hard to agree with and every step of the scale is the same size everywhere. Neither is ever checked, and both are usually false."
+      },
+      "date": 1789321467398,
+      "after": "301d223a9ddddf52"
+    },
+    {
+      "type": "add",
+      "id": "58ac21c77d426ebd",
+      "item": {
+        "type": "markdown",
+        "id": "58ac21c77d426ebd",
+        "text": "In 1960 the Danish mathematician Georg Rasch wrote down a model in which the two things that matter — how capable a person is, and how hard an item is — sit on a single ruler, and the odds of success depend only on the distance between them. Benjamin Wright at the University of Chicago spent the next forty years turning that model into a working measurement practice. RCN Rasch is that practice, reduced to one file."
+      },
+      "date": 1789321467399,
+      "after": "4be9827a382a32bf"
+    },
+    {
+      "type": "add",
+      "id": "66d460bc92b04241",
+      "item": {
+        "type": "markdown",
+        "id": "66d460bc92b04241",
+        "text": "**A person's raw score is enough to place them on the ruler. The Rasch model is the only model in which \"adding up the right answers\" is defensible — and it tells you the spacing of the rungs as it goes.**"
+      },
+      "date": 1789321467400,
+      "after": "58ac21c77d426ebd"
+    },
+    {
+      "type": "add",
+      "id": "e3147a3113fda004",
+      "item": {
+        "type": "markdown",
+        "id": "e3147a3113fda004",
+        "text": "## One ruler, two kinds of thing on it"
+      },
+      "date": 1789321467401,
+      "after": "66d460bc92b04241"
+    },
+    {
+      "type": "add",
+      "id": "c7d233e8192f243e",
+      "item": {
+        "type": "markdown",
+        "id": "c7d233e8192f243e",
+        "text": "The model is short enough to say in a sentence. The probability that person B succeeds at item D is `exp(B − D) / (1 + exp(B − D))`. When the person's ability equals the item's difficulty the odds are even; a person one unit above an item succeeds about 73% of the time, two units above about 88%. The unit is the **logit**, and the ruler runs from roughly −5 to +5 in most real data."
+      },
+      "date": 1789321467402,
+      "after": "e3147a3113fda004"
+    },
+    {
+      "type": "add",
+      "id": "d21140be2310d612",
+      "item": {
+        "type": "markdown",
+        "id": "d21140be2310d612",
+        "text": "What makes this a measurement rather than a score is that persons and items land on the *same* ruler. A skill at +1.9 logits is not \"hard\" in the abstract; it is hard relative to these people, and a person at +1.9 has even odds on it. That is a claim you can check in a room, and the picture that shows it is the whole product of this tool."
+      },
+      "date": 1789321467403,
+      "after": "c7d233e8192f243e"
+    },
+    {
+      "type": "add",
+      "id": "dda03542f73eea9c",
+      "item": {
+        "type": "markdown",
+        "id": "dda03542f73eea9c",
+        "text": "## The Wright map"
+      },
+      "date": 1789321467404,
+      "after": "d21140be2310d612"
+    },
+    {
+      "type": "add",
+      "id": "9a64de484dc16423",
+      "item": {
+        "type": "markdown",
+        "id": "9a64de484dc16423",
+        "text": "This is the tool's own output for the badge demo it ships with: 24 people, 12 SODOTO skills, badged or not. Persons on the left, more able above. Skills on the right, harder above. One vertical ruler in logits between them."
+      },
+      "date": 1789321467405,
+      "after": "dda03542f73eea9c"
+    },
+    {
+      "type": "add",
+      "id": "a7d16f546b90bd33",
+      "item": {
+        "type": "html",
+        "id": "a7d16f546b90bd33",
+        "text": "<div style=\"overflow-x:auto\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"auto\" style=\"max-width:940px;display:block\" viewBox=\"0 0 940 912\" font-family=\"system-ui,sans-serif\"><rect width=\"940\" height=\"912\" fill=\"#ffffff\"/><text x=\"440\" y=\"24\" text-anchor=\"end\" font-size=\"12\" font-weight=\"700\" fill=\"#1e5f8c\">PERSONS — more able above</text><text x=\"500\" y=\"24\" font-size=\"12\" font-weight=\"700\" fill=\"#b45309\">SKILLS — harder above</text><line x1=\"470\" y1=\"98\" x2=\"470\" y2=\"878\" stroke=\"#334155\" stroke-width=\"2\"/><line x1=\"464\" y1=\"878\" x2=\"476\" y2=\"878\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"870\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-5</text><line x1=\"464\" y1=\"800\" x2=\"476\" y2=\"800\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"792\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-4</text><line x1=\"464\" y1=\"722\" x2=\"476\" y2=\"722\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"714\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-3</text><line x1=\"464\" y1=\"644\" x2=\"476\" y2=\"644\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"636\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-2</text><line x1=\"464\" y1=\"566\" x2=\"476\" y2=\"566\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"558\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-1</text><line x1=\"464\" y1=\"488\" x2=\"476\" y2=\"488\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"480\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">0</text><line x1=\"464\" y1=\"410\" x2=\"476\" y2=\"410\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"402\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">1</text><line x1=\"464\" y1=\"332\" x2=\"476\" y2=\"332\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"324\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">2</text><line x1=\"464\" y1=\"254\" x2=\"476\" y2=\"254\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"246\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">3</text><line x1=\"464\" y1=\"176\" x2=\"476\" y2=\"176\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"168\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">4</text><line x1=\"464\" y1=\"98\" x2=\"476\" y2=\"98\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"90\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">5</text><text x=\"470\" y=\"902\" text-anchor=\"middle\" font-size=\"10\" fill=\"#94a3b8\">logits</text><circle cx=\"436\" cy=\"468.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"468.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"398\" y=\"472.5\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">kim, mo</text><circle cx=\"436\" cy=\"351.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"351.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"398\" y=\"355.5\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">pia, quinn</text><circle cx=\"436\" cy=\"273.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"273.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"398\" y=\"277.5\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">lee, nina</text><circle cx=\"436\" cy=\"176\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"176\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"406\" cy=\"176\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"383\" y=\"180\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">ray, sam, tess</text><circle cx=\"436\" cy=\"761\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"413\" y=\"765\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">marc</text><circle cx=\"436\" cy=\"644\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"413\" y=\"648\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">kerry</text><circle cx=\"436\" cy=\"683\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"683\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"406\" cy=\"683\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"391\" cy=\"683\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"368\" y=\"687\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">dorothy, luis, ben, dee</text><circle cx=\"436\" cy=\"585.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"413\" y=\"589.5\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">ana</text><circle cx=\"436\" cy=\"546.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"546.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"406\" cy=\"546.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"391\" cy=\"546.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"376\" cy=\"546.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"361\" cy=\"546.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"338\" y=\"550.5\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">chris, eli, fran, gus, hana, jo</text><circle cx=\"436\" cy=\"507.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"413\" y=\"511.5\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">ivan</text><line x1=\"476\" y1=\"155.13337564557196\" x2=\"492\" y2=\"155.13337564557196\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"146.13337564557196\" width=\"10\" height=\"18\" rx=\"2\" fill=\"none\" stroke=\"#b45309\" stroke-width=\"1.8\" stroke-dasharray=\"2 2\"/><text x=\"508\" y=\"159.13337564557196\" font-size=\"11\" fill=\"#334155\">stand up an NDC server <tspan fill=\"#64748b\">provisional — 2 on the minority side</tspan></text><line x1=\"476\" y1=\"255.82691702741795\" x2=\"492\" y2=\"255.82691702741795\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"246.82691702741795\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"259.82691702741795\" font-size=\"11\" fill=\"#334155\">build a value network</text><line x1=\"476\" y1=\"338.73694396972576\" x2=\"492\" y2=\"338.73694396972576\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"329.73694396972576\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"342.73694396972576\" font-size=\"11\" fill=\"#334155\">assign an IAD level</text><line x1=\"476\" y1=\"410.35578634362867\" x2=\"492\" y2=\"410.35578634362867\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"401.35578634362867\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"414.35578634362867\" font-size=\"11\" fill=\"#334155\">label a value network arrow</text><line x1=\"476\" y1=\"441.72968719030683\" x2=\"492\" y2=\"441.72968719030683\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"432.72968719030683\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"445.72968719030683\" font-size=\"11\" fill=\"#334155\">issue a signed badge</text><line x1=\"476\" y1=\"522.5024161001771\" x2=\"492\" y2=\"522.5024161001771\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"513.5024161001771\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"526.5024161001771\" font-size=\"11\" fill=\"#334155\">fork from another site</text><line x1=\"476\" y1=\"570.8745237271592\" x2=\"492\" y2=\"570.8745237271592\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"561.8745237271592\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"574.8745237271592\" font-size=\"11\" fill=\"#334155\">draw a simple graph</text><line x1=\"476\" y1=\"594.9571647439334\" x2=\"492\" y2=\"594.9571647439334\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"585.9571647439334\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"598.9571647439334\" font-size=\"11\" fill=\"#334155\">edit a wiki page</text><line x1=\"476\" y1=\"594.9571647439334\" x2=\"492\" y2=\"609.9571647439334\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"600.9571647439334\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"613.9571647439334\" font-size=\"11\" fill=\"#334155\">add a page to a lineup</text><line x1=\"476\" y1=\"594.9571647439334\" x2=\"492\" y2=\"624.9571647439334\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"615.9571647439334\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#dc2626\"/><text x=\"508\" y=\"628.9571647439334\" font-size=\"11\" fill=\"#334155\">run a campfire conversation <tspan fill=\"#dc2626\" font-weight=\"700\">misfit</tspan></text><line x1=\"476\" y1=\"672.835510914938\" x2=\"492\" y2=\"672.835510914938\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"663.835510914938\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"676.835510914938\" font-size=\"11\" fill=\"#334155\">publish a FedWiki page</text><line x1=\"476\" y1=\"703.1333448492741\" x2=\"492\" y2=\"703.1333448492741\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"694.1333448492741\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"707.1333448492741\" font-size=\"11\" fill=\"#334155\">comment on a page</text><line x1=\"40\" y1=\"84\" x2=\"920\" y2=\"84\" stroke=\"#cbd5e1\" stroke-width=\"1\" stroke-dasharray=\"3 4\"/><circle cx=\"436\" cy=\"68\" r=\"5\" fill=\"none\" stroke=\"#1e5f8c\" stroke-width=\"1.8\" stroke-dasharray=\"2 2\"/><text x=\"413\" y=\"72\" text-anchor=\"end\" font-size=\"10\" fill=\"#64748b\">omar — above every skill, no measure</text><line x1=\"170\" y1=\"488.7189250690006\" x2=\"456\" y2=\"488.7189250690006\" stroke=\"#1e5f8c\" stroke-width=\"1\" stroke-dasharray=\"6 4\"/><text x=\"170\" y=\"483.7189250690006\" font-size=\"10\" fill=\"#1e5f8c\" font-weight=\"700\">mean person</text><line x1=\"484\" y1=\"488\" x2=\"930\" y2=\"488\" stroke=\"#b45309\" stroke-width=\"1\" stroke-dasharray=\"6 4\"/><text x=\"930\" y=\"483\" text-anchor=\"end\" font-size=\"10\" fill=\"#b45309\" font-weight=\"700\">mean skill = 0</text></svg></div>"
+      },
+      "date": 1789321467406,
+      "after": "9a64de484dc16423"
+    },
+    {
+      "type": "add",
+      "id": "eda027b1125fdb28",
+      "item": {
+        "type": "markdown",
+        "id": "eda027b1125fdb28",
+        "text": "The badge demo, as exported by the tool. Blue dots are people, amber bars are skills, a red bar is a skill that misfits. The hollow dot at the top is a person who holds every badge and therefore has no measure — only a position beyond the hardest skill. The hollow amber bar at the top is a skill whose fit would be flagged but only 2 of 23 people hold it — too few responses to read fit either way, so the map calls it *provisional* rather than red. Dashed lines mark the mean person and the mean skill; skills are centred at zero by construction."
+      },
+      "date": 1789321467407,
+      "after": "2063e191ef19e9d8"
+    },
+    {
+      "type": "add",
+      "id": "18a26a3b8a553843",
+      "item": {
+        "type": "markdown",
+        "id": "18a26a3b8a553843",
+        "text": "**Read across, not down.** A skill beside a person is one that person has about even odds on. Skills far above everyone are out of reach; skills far below everyone are already universal and tell you nothing new about differences. Whether the items you wrote actually reach the people you have is the question almost every instrument gets wrong, and it is answered here at a glance — no training, no statistics, one picture."
+      },
+      "date": 1789321467408,
+      "after": "eda027b1125fdb28"
+    },
+    {
+      "type": "add",
+      "id": "3dd2c3a82dcfcbcf",
+      "item": {
+        "type": "markdown",
+        "id": "3dd2c3a82dcfcbcf",
+        "text": "The tool reports **targeting** as the gap between the mean person and the mean item. Here it is −0.01 logits: the skills are aimed at where the people are. A targeting of +2 would mean the skills are all too easy for this group and mostly confirm what you already know; −2 would mean they are out of reach and most of the information is in whether anyone succeeded at all."
+      },
+      "date": 1789321467409,
+      "after": "18a26a3b8a553843"
+    },
+    {
+      "type": "add",
+      "id": "5ba46f00c88b67e8",
+      "item": {
+        "type": "markdown",
+        "id": "5ba46f00c88b67e8",
+        "text": "## Misfit is information, not an error code"
+      },
+      "date": 1789321467410,
+      "after": "3dd2c3a82dcfcbcf"
+    },
+    {
+      "type": "add",
+      "id": "45ea11c7ee248d9d",
+      "item": {
+        "type": "markdown",
+        "id": "45ea11c7ee248d9d",
+        "text": "The model makes a prediction for every cell in the matrix — this person, this skill, this probability. Where the responses disagree with the predictions more than chance allows, the model reports **misfit**, as a mean-square that should sit near 1.0. Two versions are computed. **Infit** weights responses near a person's own level, so it reflects the item as a whole. **Outfit** is unweighted, so it is dominated by the few responses far from a person's level — the lucky guess, the careless slip."
+      },
+      "date": 1789321467411,
+      "after": "5ba46f00c88b67e8"
+    },
+    {
+      "type": "add",
+      "id": "a9053365dd9d30d5",
+      "item": {
+        "type": "html",
+        "id": "a9053365dd9d30d5",
+        "text": "<table>\n<tr><th>Skill</th><th>Badged</th><th>Measure</th><th>Infit</th><th>Outfit</th><th>Reading</th></tr>\n<tr><td>stand up an NDC server</td><td>2 of 23</td><td>+4.27</td><td>1.36</td><td>2.31</td><td>Provisional. Only 2 of 23 succeeded — too few to read fit either way.</td></tr>\n<tr><td>build a value network</td><td>4 of 23</td><td>+2.98</td><td>0.71</td><td>0.28</td><td>Provisional. Only 4 of 23 succeeded.</td></tr>\n<tr><td>assign an IAD level</td><td>6 of 23</td><td>+1.91</td><td>0.40</td><td>0.18</td><td>Too predictable — closely tracks the neighbouring skills.</td></tr>\n<tr><td>fork from another site</td><td>12 of 23</td><td>−0.44</td><td>0.93</td><td>0.84</td><td>Behaves as expected.</td></tr>\n<tr><td><strong>run a campfire conversation</strong></td><td>15 of 23</td><td>−1.37</td><td><strong>2.07</strong></td><td><strong>11.61</strong></td><td><strong>Badly noisy. Measuring something else.</strong></td></tr>\n<tr><td>comment on a page</td><td>19 of 23</td><td>−2.76</td><td>1.05</td><td>0.66</td><td>Provisional. Only 4 of 23 failed.</td></tr>\n</table>"
+      },
+      "date": 1789321467412,
+      "after": "45ea11c7ee248d9d"
+    },
+    {
+      "type": "add",
+      "id": "a83b72f2546a904d",
+      "item": {
+        "type": "markdown",
+        "id": "a83b72f2546a904d",
+        "text": "Eleven of the twelve skills either behave or sit on too little evidence to say. One does not behave, and it is not close: *run a campfire conversation* has an outfit of 11.6 against an expected 1.0. The demo generator built it that way on purpose — whether someone can run a campfire depends on temperament, not on the FedWiki-and-graph capability the other eleven share — and the model found it without being told. Some of the least able people in the ledger hold that badge and some of the most able do not. In a real ledger that is not a nuisance to be suppressed. It is the finding: this badge belongs to a different construct, and a person's standing on it should be reported separately, not folded into the total."
+      },
+      "date": 1789321467413,
+      "after": "a9053365dd9d30d5"
+    },
+    {
+      "type": "add",
+      "id": "3e2f873e7d92900a",
+      "item": {
+        "type": "markdown",
+        "id": "3e2f873e7d92900a",
+        "text": "The provisional readings are the other half of the same honesty. A fit statistic on a skill that only two people hold, or only four people lack, is a mean over a handful of cells, and one surprise swings it. Below five responses on the minority side the tool refuses to call a flagged fit a misfit: the pill goes grey, the reading says *provisional*, and on the map the bar is drawn hollow rather than red. It is not saying the skill is fine. It is saying it cannot tell yet, which is different."
+      },
+      "date": 1789321467414,
+      "after": "a83b72f2546a904d"
+    },
+    {
+      "type": "add",
+      "id": "fb1766b7250f48e8",
+      "item": {
+        "type": "markdown",
+        "id": "fb1766b7250f48e8",
+        "text": "**A misfitting person is worth a look too.** Ray holds eleven of twelve badges and has an outfit of 19.7. The one he is missing is the campfire badge, which is one of the easiest — so the model's prediction for that cell was a near-certain success and the miss counts heavily. That is exactly what outfit is for. A high-outfit person usually has one anomalous response, and the question is what happened there, not whether the person is \"unreliable\"."
+      },
+      "date": 1789321467415,
+      "after": "3e2f873e7d92900a"
+    },
+    {
+      "type": "add",
+      "id": "474dfb54e4536a3c",
+      "item": {
+        "type": "markdown",
+        "id": "474dfb54e4536a3c",
+        "text": "## Extreme scores are named, not extrapolated"
+      },
+      "date": 1789321467416,
+      "after": "fb1766b7250f48e8"
+    },
+    {
+      "type": "add",
+      "id": "d814bf7524431dbf",
+      "item": {
+        "type": "markdown",
+        "id": "d814bf7524431dbf",
+        "text": "Omar holds all twelve badges. He is somewhere above *stand up an NDC server* and the data cannot say where. Winsteps, the standard commercial program, places such a person by treating a perfect score as if it were a fractional one — 11.7 of 12 by default — which yields a precise-looking measure with a standard error. Change the setting and the person moves with no new data."
+      },
+      "date": 1789321467417,
+      "after": "474dfb54e4536a3c"
+    },
+    {
+      "type": "add",
+      "id": "be591aac896afdc3",
+      "item": {
+        "type": "markdown",
+        "id": "be591aac896afdc3",
+        "text": "This tool refuses that. Omar is drawn at the top of the map in a hollow marker with no number, the persons table says `12 of 12 · maximum`, and nothing about him enters a mean, a reliability, or a control chart. The pile-up stays visible — if a third of the group tops out, that is a ceiling effect and it should be the most obvious thing on the page — and the fiction stays out."
+      },
+      "date": 1789321467418,
+      "after": "d814bf7524431dbf"
+    },
+    {
+      "type": "add",
+      "id": "ff3dd6d8ae97c1dc",
+      "item": {
+        "type": "markdown",
+        "id": "ff3dd6d8ae97c1dc",
+        "text": "## The case a summed score can never show you"
+      },
+      "date": 1789321467419,
+      "after": "be591aac896afdc3"
+    },
+    {
+      "type": "add",
+      "id": "9022df0b8bfa978d",
+      "item": {
+        "type": "markdown",
+        "id": "9022df0b8bfa978d",
+        "text": "The tool's second demo is a neighbourhood participation questionnaire: 140 residents, seven statements from *I know who to call when something goes wrong* to *I would take a problem to the council myself*, each answered 1 to 5. With more than two categories the tool switches automatically to the **Andrich rating-scale model**, which estimates one extra thing: where on the ruler each step of the scale is crossed. These are the **thresholds**, and they should climb."
+      },
+      "date": 1789321467420,
+      "after": "ff3dd6d8ae97c1dc"
+    },
+    {
+      "type": "add",
+      "id": "62768eda6e148f08",
+      "item": {
+        "type": "html",
+        "id": "62768eda6e148f08",
+        "text": "<table>\n<tr><th>Category</th><th>Used</th><th>%</th><th>Threshold</th><th>Reading</th></tr>\n<tr><td>1</td><td>215</td><td>21.9</td><td>baseline</td><td>—</td></tr>\n<tr><td>2</td><td>276</td><td>28.2</td><td>−1.81</td><td>Used as expected</td></tr>\n<tr><td>3</td><td>95</td><td>9.7</td><td>+0.63</td><td>Used as expected</td></tr>\n<tr><td>4</td><td>205</td><td>20.9</td><td>−0.31</td><td><strong>Disordered</strong> — sits below the one beneath it</td></tr>\n<tr><td>5</td><td>189</td><td>19.3</td><td>+1.48</td><td>Used as expected</td></tr>\n</table>"
+      },
+      "date": 1789321467421,
+      "after": "9022df0b8bfa978d"
+    },
+    {
+      "type": "add",
+      "id": "940159d08365140d",
+      "item": {
+        "type": "markdown",
+        "id": "940159d08365140d",
+        "text": "**What a summed score shows:** nothing. Every resident gets a number between 7 and 35. The distribution looks normal. Reliability computed the usual way looks fine. The report goes to the board."
+      },
+      "date": 1789321467422,
+      "after": "62768eda6e148f08"
+    },
+    {
+      "type": "add",
+      "id": "738308ba2d0c01a5",
+      "item": {
+        "type": "markdown",
+        "id": "738308ba2d0c01a5",
+        "text": "**What the thresholds show:** the step into category 4 is crossed at −0.31 logits, *below* the step into category 3 at +0.63. Residents are not distinguishing \"neutral\" from \"agree\" in the order the form wrote them — category 3 is used less than 10% of the time and there is no point on the ruler where it is the most likely answer. Collapse 3 and 4 and re-run."
+      },
+      "date": 1789321467423,
+      "after": "940159d08365140d"
+    },
+    {
+      "type": "add",
+      "id": "0fcfae86ba298ed1",
+      "item": {
+        "type": "markdown",
+        "id": "0fcfae86ba298ed1",
+        "text": "The demo was generated from a model whose middle thresholds were deliberately reversed, so this is a recovery, not a discovery. But it is the shape of the real finding, and it is the main reason to run a Rasch analysis before trusting a questionnaire: a scale can be wrong in a way that no amount of careful wording fixes after the fact, and the only way to see it is to estimate the thresholds."
+      },
+      "date": 1789321467424,
+      "after": "738308ba2d0c01a5"
+    },
+    {
+      "type": "add",
+      "id": "94afff1a9d64cef3",
+      "item": {
+        "type": "markdown",
+        "id": "94afff1a9d64cef3",
+        "text": "**Two honest limits.** Detecting a subtle disordering needs respondents, not cleverness: an earlier version of this demo had 60 residents and a 0.2-logit reversal, and the estimator reported the thresholds as ordered — the reversal was real but smaller than the sampling noise. That is the estimator being honest. With 1,500 respondents it recovers a 0.2-logit reversal reliably. And the spacing of the thresholds is approximate while the sequence is reliable: the estimation method spreads its estimates 10–20% wider than the truth with few items. Winsteps applies a correction factor; this tool does not. The disordering diagnostic depends only on the sequence, which is unaffected."
+      },
+      "date": 1789321467425,
+      "after": "0fcfae86ba298ed1"
+    },
+    {
+      "type": "add",
+      "id": "963af65ba309d7be",
+      "item": {
+        "type": "markdown",
+        "id": "963af65ba309d7be",
+        "text": "## How many groups can the data tell apart?"
+      },
+      "date": 1789321467426,
+      "after": "94afff1a9d64cef3"
+    },
+    {
+      "type": "add",
+      "id": "2eca99cfe87200a7",
+      "item": {
+        "type": "markdown",
+        "id": "2eca99cfe87200a7",
+        "text": "Every measure comes with a standard error, and the ratio of the spread of measures to the size of those errors says how finely the instrument can cut. The tool reports it three ways because each is useful to a different reader. For the badge demo — 23 measurable people, 12 skills — person reliability is 0.84, separation 2.32, strata 3.4, SD 2.31 logits, RMSE 0.92."
+      },
+      "date": 1789321467427,
+      "after": "963af65ba309d7be"
+    },
+    {
+      "type": "add",
+      "id": "b0188de9a9de7638",
+      "item": {
+        "type": "markdown",
+        "id": "b0188de9a9de7638",
+        "text": "**Strata** is the number in plain language: about three distinguishable groups of people. That is enough to sort the ledger into levels, and it is not enough to rank people individually — the standing of two neighbours in the same stratum is noise. Reporting a rank order from an instrument with two or three strata is the standard misuse, and the tool says so in words beside the number."
+      },
+      "date": 1789321467428,
+      "after": "2eca99cfe87200a7"
+    },
+    {
+      "type": "add",
+      "id": "39933e3bad2bbd6d",
+      "item": {
+        "type": "markdown",
+        "id": "39933e3bad2bbd6d",
+        "text": "Neither reliability nor separation says whether the instrument is *good*. They say how finely it cuts. A dozen badges cannot cut finely; twelve items rarely do. Adding skills near the middle of the ruler, where most of the people are, is what buys resolution."
+      },
+      "date": 1789321467429,
+      "after": "b0188de9a9de7638"
+    },
+    {
+      "type": "add",
+      "id": "e5cb64419c7506d8",
+      "item": {
+        "type": "markdown",
+        "id": "e5cb64419c7506d8",
+        "text": "## Why this matters for RCN"
+      },
+      "date": 1789321467430,
+      "after": "39933e3bad2bbd6d"
+    },
+    {
+      "type": "add",
+      "id": "a81fe237ecc9d80e",
+      "item": {
+        "type": "markdown",
+        "id": "a81fe237ecc9d80e",
+        "text": "**The badge ledger is already the data.** Persons × skills, badged or not, is the classic dichotomous design. It needs no survey, and a badge is *observed* by a mentor rather than self-reported. This is the likeliest route to RCN's first genuinely measured construct."
+      },
+      "date": 1789321467431,
+      "after": "e5cb64419c7506d8"
+    },
+    {
+      "type": "add",
+      "id": "337c792e6e843fa7",
+      "item": {
+        "type": "markdown",
+        "id": "337c792e6e843fa7",
+        "text": "**A measure can go on a control chart.** A total of ordinal responses is not on an interval scale and must not be charted. A Rasch measure is, and can. The intended path is badge ledger → Rasch measure → RCN Process Behavior Charts."
+      },
+      "date": 1789321467432,
+      "after": "a81fe237ecc9d80e"
+    },
+    {
+      "type": "add",
+      "id": "a1237530a35bad77",
+      "item": {
+        "type": "markdown",
+        "id": "a1237530a35bad77",
+        "text": "**Comparable across neighbourhoods.** Measures are person-free and item-free. A construct measured with one set of items in Superior, Arizona and a different set in Whatcom County stays on one ruler, provided some items are shared."
+      },
+      "date": 1789321467433,
+      "after": "337c792e6e843fa7"
+    },
+    {
+      "type": "add",
+      "id": "f3f556f5ba230841",
+      "item": {
+        "type": "markdown",
+        "id": "f3f556f5ba230841",
+        "text": "**It can be wrong, and says so.** Data fit the model or they do not. Misfit is reported per item and per person, in words. A summed score cannot fail; that is its weakness, not its strength."
+      },
+      "date": 1789321467434,
+      "after": "a1237530a35bad77"
+    },
+    {
+      "type": "add",
+      "id": "888c8912cf71952d",
+      "item": {
+        "type": "markdown",
+        "id": "888c8912cf71952d",
+        "text": "The lineage runs from Rasch to Wright and Mike Linacre at Chicago, and the applied case Marc keeps returning to is Bill Mahoney finding measures in Judy Hibbard's data, which became the Patient Activation Measure — the instrument the health-care world now uses to ask how far a person is from managing their own care. The same method, on a badge ledger, asks how far a person is from running a neighbourhood."
+      },
+      "date": 1789321467435,
+      "after": "f3f556f5ba230841"
+    },
+    {
+      "type": "add",
+      "id": "6fc25bfad92c4774",
+      "item": {
+        "type": "markdown",
+        "id": "6fc25bfad92c4774",
+        "text": "## What the tool leaves out"
+      },
+      "date": 1789321467436,
+      "after": "888c8912cf71952d"
+    },
+    {
+      "type": "add",
+      "id": "f99d182f58537a4c",
+      "item": {
+        "type": "markdown",
+        "id": "f99d182f58537a4c",
+        "text": "The whole vocabulary is seven words: measure, SE, infit, outfit, reliability, separation, strata."
+      },
+      "date": 1789321467437,
+      "after": "6fc25bfad92c4774"
+    },
+    {
+      "type": "add",
+      "id": "316b7a0cc199b91c",
+      "item": {
+        "type": "markdown",
+        "id": "316b7a0cc199b91c",
+        "text": "Deliberately absent: partial credit model, many-facet Rasch, differential item functioning, principal components of residuals, extreme-score extrapolation, bias correction, anchoring."
+      },
+      "date": 1789321467438,
+      "after": "f99d182f58537a4c"
+    },
+    {
+      "type": "add",
+      "id": "9529cdc3f0465518",
+      "item": {
+        "type": "markdown",
+        "id": "9529cdc3f0465518",
+        "text": "All are legitimate and some are important. They are absent because the first version of a measurement tool should be the version a co-op board can read, and every addition is something the board has to learn. The rating-scale model was added because Likert questionnaires need it and the disordering check is the single most valuable thing Rasch offers a survey. If a real need appears — a badge that different mentors award at different standards, say, which is what many-facet Rasch is for — it can be added on top of an estimator that has been verified to recover known parameters."
+      },
+      "date": 1789321467439,
+      "after": "316b7a0cc199b91c"
+    },
+    {
+      "type": "add",
+      "id": "9382e6634ad3cf18",
+      "item": {
+        "type": "markdown",
+        "id": "9382e6634ad3cf18",
+        "text": "## The Wright map must be readable"
+      },
+      "date": 1789321467440,
+      "after": "9529cdc3f0465518"
+    },
+    {
+      "type": "add",
+      "id": "e54da5e256417ebf",
+      "item": {
+        "type": "markdown",
+        "id": "e54da5e256417ebf",
+        "text": "A picture a group can gather around, point at, and argue about without any training. Persons on one side, items on the other, one ruler between them. Everything else in the tool exists to produce that picture honestly."
+      },
+      "date": 1789321467441,
+      "after": "9382e6634ad3cf18"
+    }
+  ]
+}
