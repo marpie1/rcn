@@ -1,0 +1,702 @@
+{
+  "title": "eVSM and Rasch",
+  "story": [
+    {
+      "type": "markdown",
+      "text": "Can data from eVSM surveys be turned into measurements? A first look, using the seven artificial Neighborhood Development Center responses written for the aggregator in March 2026, run through the RCN Rasch tool on 13 September 2026. Every number here is the tool's output on that data.",
+      "id": "6f3f923225fb96d9"
+    },
+    {
+      "type": "markdown",
+      "text": "**Short answer: yes for the eleven spheres, no for the relationships as currently collected, and the reason for the no is a survey-design fix rather than a statistical one.**",
+      "id": "2d95f0a3e1066814"
+    },
+    {
+      "type": "markdown",
+      "text": "## What an eVSM response looks like to Rasch",
+      "id": "e6f4f5458e033d6f"
+    },
+    {
+      "type": "markdown",
+      "text": "An eVSM response is 77 assessments: 11 spheres rated *go / caution / stop / unsure*, and 66 directed relationships rated *agree / disagree / unknown*, each with free-text evidence. Across respondents that is a person-by-item matrix, which is what Rasch wants — with two wrinkles.",
+      "id": "4b5d72cbc5057fb3"
+    },
+    {
+      "type": "markdown",
+      "text": "The first is that the spheres are a three-step scale and the relationships are two-step. The tool's rating-scale model needs every item on one scale, so spheres and relationships are two separate analyses, not one. Coded for the tool: stop = 0, caution = 1, go = 2, unsure = blank (missing, not imputed); disagree = 0, agree = 1, unknown = blank.",
+      "id": "e50b88a020fe8a9d"
+    },
+    {
+      "type": "markdown",
+      "text": "The second wrinkle is the interesting one.",
+      "id": "1536490a84657d14"
+    },
+    {
+      "type": "markdown",
+      "text": "## In a single-organization survey, the person is the rater",
+      "id": "aa2a9fd608691662"
+    },
+    {
+      "type": "markdown",
+      "text": "Rasch places persons and items on one ruler. In a badge ledger the person is the thing being measured. In an eVSM survey of one neighborhood, every respondent is rating the *same* object, so the roles invert:",
+      "id": "f26258c926a870d4"
+    },
+    {
+      "type": "markdown",
+      "text": "- **Item difficulty** becomes *how hard it is to call this sphere \"go\"* — the sphere's weakness, on an interval scale, corrected for who happened to answer.\n- **Person ability** becomes *rater generosity* — how readily this resident says \"go\".\n- **Item misfit** becomes *a contested sphere* — residents disagree about it in a way their general optimism does not explain.\n- **Person misfit** becomes *a resident whose pattern breaks the consensus ordering* — one specific rating worth reading the evidence for.\n- **Thresholds** say whether stop / caution / go is being used as a real three-step scale.",
+      "id": "d5525150125953a4"
+    },
+    {
+      "type": "markdown",
+      "text": "This is a two-facet Rasch analysis, rater × item, with the organization facet fixed at one. The tool does it as it stands; the only change is the labels — *resident* and *sphere* instead of *person* and *skill*.",
+      "id": "a2c3f9dbf613e54c"
+    },
+    {
+      "type": "markdown",
+      "text": "## The seven artificial responses, spheres only",
+      "id": "112f7d0d8cc0cd5d"
+    },
+    {
+      "type": "markdown",
+      "text": "Seven residents of the Generic Neighborhood Development Center, eleven spheres. The CSV, ready to paste into the tool:",
+      "id": "b106c63706d451a2"
+    },
+    {
+      "type": "markdown",
+      "text": "```\nresident,Coordination Across The neighborhood,Involvement,Tools And Workspaces,Awareness Within The neighborhood,Quality Of Learning And Change,Ability To Get Things Done Within The neighborhood,Resources (Finance),Quality Of Neighborhood Planning,Awareness Beyond The neighborhood,Leadership In The neighborhood,Culture\nRosa,1,2,1,2,1,1,0,1,1,2,2\nJames,0,1,0,1,0,0,0,0,1,1,1\nPriya,1,2,2,1,2,1,1,1,2,1,2\nDeShawn,1,2,1,2,2,2,0,1,1,2,2\nElena,2,2,1,2,1,1,1,1,2,2,2\nTom,1,1,0,1,1,1,1,0,1,1,1\nKeisha,1,2,2,1,2,1,0,0,2,1,2\n```",
+      "id": "9fbd407abe6af1b1"
+    },
+    {
+      "type": "markdown",
+      "text": "The tool chose the Andrich rating-scale model (three categories) and converged in 62 iterations.",
+      "id": "0256a11b072a2a03"
+    },
+    {
+      "type": "html",
+      "id": "0ce88d9902e9baa6",
+      "text": "<div style=\"overflow-x:auto\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"auto\" style=\"max-width:940px;display:block\" viewBox=\"0 0 940 1016\" font-family=\"system-ui,sans-serif\"><rect width=\"940\" height=\"1016\" fill=\"#ffffff\"/><text x=\"440\" y=\"24\" text-anchor=\"end\" font-size=\"12\" font-weight=\"700\" fill=\"#1e5f8c\">RESIDENTS — more able above</text><text x=\"500\" y=\"24\" font-size=\"12\" font-weight=\"700\" fill=\"#b45309\">SPHERES — harder above</text><line x1=\"470\" y1=\"46\" x2=\"470\" y2=\"982\" stroke=\"#334155\" stroke-width=\"2\"/><line x1=\"464\" y1=\"982\" x2=\"476\" y2=\"982\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"974\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-5</text><line x1=\"464\" y1=\"904\" x2=\"476\" y2=\"904\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"896\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-4</text><line x1=\"464\" y1=\"826\" x2=\"476\" y2=\"826\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"818\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-3</text><line x1=\"464\" y1=\"748\" x2=\"476\" y2=\"748\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"740\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-2</text><line x1=\"464\" y1=\"670\" x2=\"476\" y2=\"670\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"662\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-1</text><line x1=\"464\" y1=\"592\" x2=\"476\" y2=\"592\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"584\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">0</text><line x1=\"464\" y1=\"514\" x2=\"476\" y2=\"514\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"506\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">1</text><line x1=\"464\" y1=\"436\" x2=\"476\" y2=\"436\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"428\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">2</text><line x1=\"464\" y1=\"358\" x2=\"476\" y2=\"358\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"350\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">3</text><line x1=\"464\" y1=\"280\" x2=\"476\" y2=\"280\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"272\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">4</text><line x1=\"464\" y1=\"202\" x2=\"476\" y2=\"202\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">5</text><line x1=\"464\" y1=\"124\" x2=\"476\" y2=\"124\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"116\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">6</text><line x1=\"464\" y1=\"46\" x2=\"476\" y2=\"46\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"38\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">7</text><text x=\"470\" y=\"1006\" text-anchor=\"middle\" font-size=\"10\" fill=\"#94a3b8\">logits</text><circle cx=\"436\" cy=\"436\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"436\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"398\" y=\"440\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">Rosa, Keisha</text><circle cx=\"436\" cy=\"358\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"358\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"398\" y=\"362\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">Priya, DeShawn</text><circle cx=\"436\" cy=\"319\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"413\" y=\"323\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">Elena</text><circle cx=\"436\" cy=\"904\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"413\" y=\"908\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">James</text><circle cx=\"436\" cy=\"689.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"413\" y=\"693.5\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">Tom</text><line x1=\"476\" y1=\"156.93244280669063\" x2=\"492\" y2=\"156.93244280669063\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"147.93244280669063\" width=\"10\" height=\"18\" rx=\"2\" fill=\"none\" stroke=\"#b45309\" stroke-width=\"1.8\" stroke-dasharray=\"2 2\"/><text x=\"508\" y=\"160.93244280669063\" font-size=\"11\" fill=\"#334155\">Resources (Finance) <tspan fill=\"#64748b\">provisional — 3 on the minority side</tspan></text><line x1=\"476\" y1=\"232.33043208553832\" x2=\"492\" y2=\"232.33043208553832\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"223.33043208553832\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"236.33043208553832\" font-size=\"11\" fill=\"#334155\">Quality Of Neighborhood Planning</text><line x1=\"476\" y1=\"532.9609722241787\" x2=\"492\" y2=\"532.9609722241787\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"523.9609722241787\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"536.9609722241787\" font-size=\"11\" fill=\"#334155\">Coordination Across The neighborhood</text><line x1=\"476\" y1=\"532.9609722241787\" x2=\"492\" y2=\"547.9609722241787\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"538.9609722241787\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#dc2626\"/><text x=\"508\" y=\"551.9609722241787\" font-size=\"11\" fill=\"#334155\">Tools And Workspaces <tspan fill=\"#dc2626\" font-weight=\"700\">misfit</tspan></text><line x1=\"476\" y1=\"532.9609722241787\" x2=\"492\" y2=\"562.9609722241787\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"553.9609722241787\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"566.9609722241787\" font-size=\"11\" fill=\"#334155\">Ability To Get Things Done Within The neighborhood</text><line x1=\"476\" y1=\"647.6434284552968\" x2=\"492\" y2=\"647.6434284552968\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"638.6434284552968\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"651.6434284552968\" font-size=\"11\" fill=\"#334155\">Quality Of Learning And Change</text><line x1=\"476\" y1=\"703.0612491670663\" x2=\"492\" y2=\"703.0612491670663\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"694.0612491670663\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"707.0612491670663\" font-size=\"11\" fill=\"#334155\">Awareness Within The neighborhood</text><line x1=\"476\" y1=\"703.0612491670663\" x2=\"492\" y2=\"718.0612491670663\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"709.0612491670663\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"722.0612491670663\" font-size=\"11\" fill=\"#334155\">Awareness Beyond The neighborhood</text><line x1=\"476\" y1=\"703.0612491670663\" x2=\"492\" y2=\"733.0612491670663\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"724.0612491670663\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"737.0612491670663\" font-size=\"11\" fill=\"#334155\">Leadership In The neighborhood</text><line x1=\"476\" y1=\"883.5135162393694\" x2=\"492\" y2=\"883.5135162393694\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"874.5135162393694\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"887.5135162393694\" font-size=\"11\" fill=\"#334155\">Involvement</text><line x1=\"476\" y1=\"883.5135162393694\" x2=\"492\" y2=\"898.5135162393694\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"889.5135162393694\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"902.5135162393694\" font-size=\"11\" fill=\"#334155\">Culture</text><line x1=\"170\" y1=\"503.7498979648451\" x2=\"456\" y2=\"503.7498979648451\" stroke=\"#1e5f8c\" stroke-width=\"1\" stroke-dasharray=\"6 4\"/><text x=\"170\" y=\"498.7498979648451\" font-size=\"10\" fill=\"#1e5f8c\" font-weight=\"700\">mean resident</text><line x1=\"484\" y1=\"592\" x2=\"930\" y2=\"592\" stroke=\"#b45309\" stroke-width=\"1\" stroke-dasharray=\"6 4\"/><text x=\"930\" y=\"587\" text-anchor=\"end\" font-size=\"10\" fill=\"#b45309\" font-weight=\"700\">mean sphere = 0</text></svg></div>"
+    },
+    {
+      "type": "markdown",
+      "text": "Residents on the left, more generous above. Spheres on the right, weaker above. The one red bar is a sphere residents disagree about; the hollow bar is the weakest sphere, whose fit rests on too few \"go\" responses to read.",
+      "id": "9132430a583c2bfe"
+    },
+    {
+      "type": "markdown",
+      "text": "### The neighborhood's profile, rater-corrected",
+      "id": "2e5100dbb0304084"
+    },
+    {
+      "type": "html",
+      "text": "<table>\n<tr><th>Sphere</th><th>Steps up, of 14</th><th>Measure</th><th>Infit</th><th>Outfit</th><th>Reading</th></tr>\n<tr><td>Resources (Finance)</td><td>3</td><td>+5.58</td><td>1.67</td><td>5.63</td><td>Weakest by a wide margin. Fit provisional — only 3 steps up</td></tr>\n<tr><td>Quality of Neighborhood Planning</td><td>4</td><td>+4.61</td><td>0.67</td><td>0.41</td><td>Second weakest. Provisional</td></tr>\n<tr><td>Coordination Across the Neighborhood</td><td>7</td><td>+0.76</td><td>0.54</td><td>0.43</td><td>Middle; behaves</td></tr>\n<tr><td>Tools and Workspaces</td><td>7</td><td>+0.76</td><td>1.96</td><td>2.24</td><td><strong>Contested</strong> — see below</td></tr>\n<tr><td>Ability to Get Things Done</td><td>7</td><td>+0.76</td><td>0.75</td><td>0.65</td><td>Middle; behaves</td></tr>\n<tr><td>Quality of Learning and Change</td><td>9</td><td>−0.71</td><td>1.13</td><td>1.06</td><td>Behaves</td></tr>\n<tr><td>Awareness Within the Neighborhood</td><td>10</td><td>−1.42</td><td>0.96</td><td>0.84</td><td>Strong</td></tr>\n<tr><td>Awareness Beyond the Neighborhood</td><td>10</td><td>−1.42</td><td>0.96</td><td>0.84</td><td>Strong</td></tr>\n<tr><td>Leadership in the Neighborhood</td><td>10</td><td>−1.42</td><td>0.96</td><td>0.84</td><td>Strong</td></tr>\n<tr><td>Involvement</td><td>12</td><td>−3.74</td><td>0.19</td><td>0.10</td><td>Near-universal \"go\"</td></tr>\n<tr><td>Culture</td><td>12</td><td>−3.74</td><td>0.19</td><td>0.10</td><td>Near-universal \"go\"</td></tr>\n</table>",
+      "id": "f51906687aa18c9e"
+    },
+    {
+      "type": "markdown",
+      "text": "\"Steps up\" is the item score: each *caution* is one step above *stop*, each *go* is two, so seven residents give a maximum of 14. Measures are in logits; the sphere mean is zero by construction.",
+      "id": "caa3823925cfe724"
+    },
+    {
+      "type": "markdown",
+      "text": "The ordering is what an average of statuses would also give. What the average cannot give is the *spacing* — Finance is not merely last, it is a full logit beyond Planning and five beyond the middle group — and the two diagnostics that follow.",
+      "id": "027d45b7871a3866"
+    },
+    {
+      "type": "markdown",
+      "text": "### The contested sphere",
+      "id": "1b47a6b3c1c16d06"
+    },
+    {
+      "type": "markdown",
+      "text": "*Tools and Workspaces* has infit 1.96 and outfit 2.24 on adequate data. Residents disagree about it beyond what their general generosity explains. Tom, in his seventies and a lifelong resident, rated it *stop*: \"I don't understand half the tools people are using. The meetings are now on apps I've never heard of.\" Keisha, a student in her twenties, rated it *go*. A summed or averaged status would have called this sphere *caution* and moved on. Rasch says: this is not a middling sphere, it is a divided one, and the division runs along a line worth naming.",
+      "id": "0b632e2044fd4e4a"
+    },
+    {
+      "type": "markdown",
+      "text": "This is the single most useful thing the method adds to eVSM. The aggregator already shows disagreement per item; misfit says which disagreements are *structural* — not explained by some residents being generally harsher — and ranks them.",
+      "id": "23058cfd01f717e6"
+    },
+    {
+      "type": "markdown",
+      "text": "### The dissenting rater",
+      "id": "4ea2b851d5fc93cc"
+    },
+    {
+      "type": "markdown",
+      "text": "Tom has outfit 3.64. He rated Tools and Planning *stop* while rating Finance — which every other resident called the worst thing in the neighborhood — only *caution*. His ratings are internally coherent and his evidence explains each one; they simply do not follow the consensus ordering. That is what outfit detects, and the response is to read Tom's evidence, not to discount him.",
+      "id": "4203e73525ca6aea"
+    },
+    {
+      "type": "markdown",
+      "text": "### Rater generosity",
+      "id": "e37e425978892a77"
+    },
+    {
+      "type": "markdown",
+      "text": "Elena at +3.55 logits down to James at −4.07, who said *stop* on seven of eleven spheres. Rater reliability 0.91, separation 3.20, strata 4.6 — with seven people those numbers are noise, but the ordering is legible and it is the thing a facilitator wants to know before reading the evidence: whose *stop* is a strong signal and whose is Tuesday.",
+      "id": "4bd8f36a2277677e"
+    },
+    {
+      "type": "markdown",
+      "text": "### The scale works",
+      "id": "ef33e6c22563cf40"
+    },
+    {
+      "type": "markdown",
+      "text": "Thresholds −3.33 and +3.33, ordered. *Caution* was used for 39 of the 77 sphere ratings and has a wide region of the ruler where it is the most likely answer. It is a real middle category, not a dead zone between two others. The spacing is exaggerated by the estimator's known bias at small n; the order is what matters, and it is right. This is a confirmation the Likert demo in the tool could not give: go / caution / stop is a scale Rasch can work with as written.",
+      "id": "82be5e3fb9538e3b"
+    },
+    {
+      "type": "markdown",
+      "text": "## The relationships cannot be measured as collected",
+      "id": "de73b006a6ec6e5a"
+    },
+    {
+      "type": "markdown",
+      "text": "The 66 directed relationships are the bulk of the survey, and as the seven responses stand they are unmeasurable. Each respondent assessed about 12 of 66. Across all seven, 45 distinct relationships appear; **none was assessed by everyone**, and 21 were assessed by exactly one person.",
+      "id": "729adbe259556634"
+    },
+    {
+      "type": "markdown",
+      "text": "Rasch needs common items across raters to place anything on one ruler. Run on all 77 items together, dichotomised, the matrix falls apart: almost every relationship comes back *everybody* or *nobody*, reliability is 0.00, and the tool reports fewer than one stratum. That is not the method failing. It is the survey telling you the relationship data has no shared structure — each resident chose a different dozen, so there is nothing to compare.",
+      "id": "0741656d1e2c5c6d"
+    },
+    {
+      "type": "markdown",
+      "text": "**The fix is a design change.** A fixed core set of relationships that every respondent assesses — the 33 homeostat pairs, or a chosen dozen — with the rest optional. Agree / disagree on a fixed set is a clean dichotomous matrix, and the same rater-and-item reading applies: a contested relationship is one where misfit says residents disagree structurally.",
+      "id": "2c9bd7cb0bb938a8"
+    },
+    {
+      "type": "markdown",
+      "text": "The same point applies to the aggregator's compare mode today: comparing worlds on relationships that different people chose to assess is comparing samples of different things.",
+      "id": "eab2d28a58b9c8c5"
+    },
+    {
+      "type": "markdown",
+      "text": "## What seven responses license",
+      "id": "7c89d8ecf88b0c51"
+    },
+    {
+      "type": "markdown",
+      "text": "Nothing anyone would publish. Standard errors on the sphere measures are 0.8 to 1.4 logits, seven of eleven spheres trip the tool's provisional rule, and rater strata of 4.6 is not to be believed. But the diagnostics already work at seven — a contested sphere, a dissenting rater, an honest weakest-sphere ordering with spacing — and those are conversation material for a room, which is what eVSM is for. At twenty to thirty respondents the sphere measures become numbers with usable errors, and at that point they can go on a control chart, survey to survey.",
+      "id": "84493424f21b212e"
+    },
+    {
+      "type": "markdown",
+      "text": "## Across neighborhoods",
+      "id": "62123500c5fdedd8"
+    },
+    {
+      "type": "markdown",
+      "text": "Comparing Superior to Whatcom on one ruler needs three facets — organization × rater × item — which is many-facet Rasch, the first thing listed as deliberately absent from the tool. An interim route exists now: treat each (neighborhood, resident) pair as a person, run every neighborhood together with the eleven spheres as common items, and compare neighborhood means. It is crude, because it confounds rater generosity with organizational health. It is still more than any summed score can do, because the items are shared and the scale is interval. The sphere set is already identical across NDCs, so the anchoring problem is solved by the survey's own design.",
+      "id": "a13baf9e96d3b163"
+    },
+    {
+      "type": "markdown",
+      "text": "Many-facet Rasch is the right addition when there are two or more neighborhoods with twenty-plus respondents each. Not before.",
+      "id": "3de822a9b36ac798"
+    },
+    {
+      "type": "markdown",
+      "text": "## Recommendations",
+      "id": "097dd48a532b2c77"
+    },
+    {
+      "type": "markdown",
+      "text": "1. **Keep go / caution / stop.** It works as a three-step scale. Keep *unsure* as missing.\n2. **Fix a core set of relationships that everyone assesses.** Without it the relationship half of the survey cannot be measured or honestly compared.\n3. **Aim for twenty to thirty respondents per neighborhood** before treating sphere measures as numbers rather than as a conversation.\n4. **Add a Rasch pass to the aggregator's reading** — the contested-sphere list (item misfit, ranked) and the dissenting-rater list (person misfit, with their evidence) are the two outputs a facilitator would use.\n5. **Many-facet Rasch when there are two neighborhoods with twenty respondents each,** and not before.",
+      "id": "520fd8c2d3fc8d36"
+    },
+    {
+      "type": "markdown",
+      "text": "## Sources",
+      "id": "c1361ef6dc247bec"
+    },
+    {
+      "type": "markdown",
+      "text": "The seven responses are `7NDCsofiSurveyResponses.zip` in Downloads, written for the aggregator on 4 March 2026. The real RCN self-assessments in Downloads (five usable, spheres only) are too few for numbers but would answer one question worth asking: whether RCN's own contested sphere is the same one.",
+      "id": "b30026f792250027"
+    }
+  ],
+  "journal": [
+    {
+      "type": "create",
+      "item": {
+        "title": "eVSM and Rasch",
+        "story": []
+      },
+      "date": 1789324593761
+    },
+    {
+      "type": "add",
+      "id": "6f3f923225fb96d9",
+      "item": {
+        "type": "markdown",
+        "id": "6f3f923225fb96d9",
+        "text": "Can data from eVSM surveys be turned into measurements? A first look, using the seven artificial Neighborhood Development Center responses written for the aggregator in March 2026, run through the RCN Rasch tool on 13 September 2026. Every number here is the tool's output on that data."
+      },
+      "date": 1789324593762
+    },
+    {
+      "type": "add",
+      "id": "2d95f0a3e1066814",
+      "item": {
+        "type": "markdown",
+        "id": "2d95f0a3e1066814",
+        "text": "**Short answer: yes for the eleven spheres, no for the relationships as currently collected, and the reason for the no is a survey-design fix rather than a statistical one.**"
+      },
+      "date": 1789324593763,
+      "after": "6f3f923225fb96d9"
+    },
+    {
+      "type": "add",
+      "id": "e6f4f5458e033d6f",
+      "item": {
+        "type": "markdown",
+        "id": "e6f4f5458e033d6f",
+        "text": "## What an eVSM response looks like to Rasch"
+      },
+      "date": 1789324593764,
+      "after": "2d95f0a3e1066814"
+    },
+    {
+      "type": "add",
+      "id": "4b5d72cbc5057fb3",
+      "item": {
+        "type": "markdown",
+        "id": "4b5d72cbc5057fb3",
+        "text": "An eVSM response is 77 assessments: 11 spheres rated *go / caution / stop / unsure*, and 66 directed relationships rated *agree / disagree / unknown*, each with free-text evidence. Across respondents that is a person-by-item matrix, which is what Rasch wants — with two wrinkles."
+      },
+      "date": 1789324593765,
+      "after": "e6f4f5458e033d6f"
+    },
+    {
+      "type": "add",
+      "id": "e50b88a020fe8a9d",
+      "item": {
+        "type": "markdown",
+        "id": "e50b88a020fe8a9d",
+        "text": "The first is that the spheres are a three-step scale and the relationships are two-step. The tool's rating-scale model needs every item on one scale, so spheres and relationships are two separate analyses, not one. Coded for the tool: stop = 0, caution = 1, go = 2, unsure = blank (missing, not imputed); disagree = 0, agree = 1, unknown = blank."
+      },
+      "date": 1789324593766,
+      "after": "4b5d72cbc5057fb3"
+    },
+    {
+      "type": "add",
+      "id": "1536490a84657d14",
+      "item": {
+        "type": "markdown",
+        "id": "1536490a84657d14",
+        "text": "The second wrinkle is the interesting one."
+      },
+      "date": 1789324593767,
+      "after": "e50b88a020fe8a9d"
+    },
+    {
+      "type": "add",
+      "id": "aa2a9fd608691662",
+      "item": {
+        "type": "markdown",
+        "id": "aa2a9fd608691662",
+        "text": "## In a single-organization survey, the person is the rater"
+      },
+      "date": 1789324593768,
+      "after": "1536490a84657d14"
+    },
+    {
+      "type": "add",
+      "id": "f26258c926a870d4",
+      "item": {
+        "type": "markdown",
+        "id": "f26258c926a870d4",
+        "text": "Rasch places persons and items on one ruler. In a badge ledger the person is the thing being measured. In an eVSM survey of one neighborhood, every respondent is rating the *same* object, so the roles invert:"
+      },
+      "date": 1789324593769,
+      "after": "aa2a9fd608691662"
+    },
+    {
+      "type": "add",
+      "id": "d5525150125953a4",
+      "item": {
+        "type": "markdown",
+        "id": "d5525150125953a4",
+        "text": "- **Item difficulty** becomes *how hard it is to call this sphere \"go\"* — the sphere's weakness, on an interval scale, corrected for who happened to answer.\n- **Person ability** becomes *rater generosity* — how readily this resident says \"go\".\n- **Item misfit** becomes *a contested sphere* — residents disagree about it in a way their general optimism does not explain.\n- **Person misfit** becomes *a resident whose pattern breaks the consensus ordering* — one specific rating worth reading the evidence for.\n- **Thresholds** say whether stop / caution / go is being used as a real three-step scale."
+      },
+      "date": 1789324593770,
+      "after": "f26258c926a870d4"
+    },
+    {
+      "type": "add",
+      "id": "a2c3f9dbf613e54c",
+      "item": {
+        "type": "markdown",
+        "id": "a2c3f9dbf613e54c",
+        "text": "This is a two-facet Rasch analysis, rater × item, with the organization facet fixed at one. The tool does it as it stands; the only change is the labels — *resident* and *sphere* instead of *person* and *skill*."
+      },
+      "date": 1789324593771,
+      "after": "d5525150125953a4"
+    },
+    {
+      "type": "add",
+      "id": "112f7d0d8cc0cd5d",
+      "item": {
+        "type": "markdown",
+        "id": "112f7d0d8cc0cd5d",
+        "text": "## The seven artificial responses, spheres only"
+      },
+      "date": 1789324593772,
+      "after": "a2c3f9dbf613e54c"
+    },
+    {
+      "type": "add",
+      "id": "b106c63706d451a2",
+      "item": {
+        "type": "markdown",
+        "id": "b106c63706d451a2",
+        "text": "Seven residents of the Generic Neighborhood Development Center, eleven spheres. The CSV, ready to paste into the tool:"
+      },
+      "date": 1789324593773,
+      "after": "112f7d0d8cc0cd5d"
+    },
+    {
+      "type": "add",
+      "id": "9fbd407abe6af1b1",
+      "item": {
+        "type": "markdown",
+        "id": "9fbd407abe6af1b1",
+        "text": "```\nresident,Coordination Across The neighborhood,Involvement,Tools And Workspaces,Awareness Within The neighborhood,Quality Of Learning And Change,Ability To Get Things Done Within The neighborhood,Resources (Finance),Quality Of Neighborhood Planning,Awareness Beyond The neighborhood,Leadership In The neighborhood,Culture\nRosa,1,2,1,2,1,1,0,1,1,2,2\nJames,0,1,0,1,0,0,0,0,1,1,1\nPriya,1,2,2,1,2,1,1,1,2,1,2\nDeShawn,1,2,1,2,2,2,0,1,1,2,2\nElena,2,2,1,2,1,1,1,1,2,2,2\nTom,1,1,0,1,1,1,1,0,1,1,1\nKeisha,1,2,2,1,2,1,0,0,2,1,2\n```"
+      },
+      "date": 1789324593774,
+      "after": "b106c63706d451a2"
+    },
+    {
+      "type": "add",
+      "id": "0256a11b072a2a03",
+      "item": {
+        "type": "markdown",
+        "id": "0256a11b072a2a03",
+        "text": "The tool chose the Andrich rating-scale model (three categories) and converged in 62 iterations."
+      },
+      "date": 1789324593775,
+      "after": "9fbd407abe6af1b1"
+    },
+    {
+      "type": "add",
+      "id": "0ce88d9902e9baa6",
+      "item": {
+        "type": "html",
+        "id": "0ce88d9902e9baa6",
+        "text": "<div style=\"overflow-x:auto\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"auto\" style=\"max-width:940px;display:block\" viewBox=\"0 0 940 1016\" font-family=\"system-ui,sans-serif\"><rect width=\"940\" height=\"1016\" fill=\"#ffffff\"/><text x=\"440\" y=\"24\" text-anchor=\"end\" font-size=\"12\" font-weight=\"700\" fill=\"#1e5f8c\">RESIDENTS — more able above</text><text x=\"500\" y=\"24\" font-size=\"12\" font-weight=\"700\" fill=\"#b45309\">SPHERES — harder above</text><line x1=\"470\" y1=\"46\" x2=\"470\" y2=\"982\" stroke=\"#334155\" stroke-width=\"2\"/><line x1=\"464\" y1=\"982\" x2=\"476\" y2=\"982\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"974\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-5</text><line x1=\"464\" y1=\"904\" x2=\"476\" y2=\"904\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"896\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-4</text><line x1=\"464\" y1=\"826\" x2=\"476\" y2=\"826\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"818\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-3</text><line x1=\"464\" y1=\"748\" x2=\"476\" y2=\"748\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"740\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-2</text><line x1=\"464\" y1=\"670\" x2=\"476\" y2=\"670\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"662\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">-1</text><line x1=\"464\" y1=\"592\" x2=\"476\" y2=\"592\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"584\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">0</text><line x1=\"464\" y1=\"514\" x2=\"476\" y2=\"514\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"506\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">1</text><line x1=\"464\" y1=\"436\" x2=\"476\" y2=\"436\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"428\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">2</text><line x1=\"464\" y1=\"358\" x2=\"476\" y2=\"358\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"350\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">3</text><line x1=\"464\" y1=\"280\" x2=\"476\" y2=\"280\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"272\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">4</text><line x1=\"464\" y1=\"202\" x2=\"476\" y2=\"202\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">5</text><line x1=\"464\" y1=\"124\" x2=\"476\" y2=\"124\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"116\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">6</text><line x1=\"464\" y1=\"46\" x2=\"476\" y2=\"46\" stroke=\"#334155\" stroke-width=\"1.5\"/><text x=\"470\" y=\"38\" text-anchor=\"middle\" font-size=\"10\" fill=\"#64748b\" font-weight=\"700\" stroke=\"#ffffff\" stroke-width=\"3\" paint-order=\"stroke\">7</text><text x=\"470\" y=\"1006\" text-anchor=\"middle\" font-size=\"10\" fill=\"#94a3b8\">logits</text><circle cx=\"436\" cy=\"436\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"436\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"398\" y=\"440\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">Rosa, Keisha</text><circle cx=\"436\" cy=\"358\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><circle cx=\"421\" cy=\"358\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"398\" y=\"362\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">Priya, DeShawn</text><circle cx=\"436\" cy=\"319\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"413\" y=\"323\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">Elena</text><circle cx=\"436\" cy=\"904\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"413\" y=\"908\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">James</text><circle cx=\"436\" cy=\"689.5\" r=\"5\" fill=\"#1e5f8c\" opacity=\"0.85\"/><text x=\"413\" y=\"693.5\" text-anchor=\"end\" font-size=\"10\" fill=\"#475569\">Tom</text><line x1=\"476\" y1=\"156.93244280669063\" x2=\"492\" y2=\"156.93244280669063\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"147.93244280669063\" width=\"10\" height=\"18\" rx=\"2\" fill=\"none\" stroke=\"#b45309\" stroke-width=\"1.8\" stroke-dasharray=\"2 2\"/><text x=\"508\" y=\"160.93244280669063\" font-size=\"11\" fill=\"#334155\">Resources (Finance) <tspan fill=\"#64748b\">provisional — 3 on the minority side</tspan></text><line x1=\"476\" y1=\"232.33043208553832\" x2=\"492\" y2=\"232.33043208553832\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"223.33043208553832\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"236.33043208553832\" font-size=\"11\" fill=\"#334155\">Quality Of Neighborhood Planning</text><line x1=\"476\" y1=\"532.9609722241787\" x2=\"492\" y2=\"532.9609722241787\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"523.9609722241787\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"536.9609722241787\" font-size=\"11\" fill=\"#334155\">Coordination Across The neighborhood</text><line x1=\"476\" y1=\"532.9609722241787\" x2=\"492\" y2=\"547.9609722241787\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"538.9609722241787\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#dc2626\"/><text x=\"508\" y=\"551.9609722241787\" font-size=\"11\" fill=\"#334155\">Tools And Workspaces <tspan fill=\"#dc2626\" font-weight=\"700\">misfit</tspan></text><line x1=\"476\" y1=\"532.9609722241787\" x2=\"492\" y2=\"562.9609722241787\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"553.9609722241787\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"566.9609722241787\" font-size=\"11\" fill=\"#334155\">Ability To Get Things Done Within The neighborhood</text><line x1=\"476\" y1=\"647.6434284552968\" x2=\"492\" y2=\"647.6434284552968\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"638.6434284552968\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"651.6434284552968\" font-size=\"11\" fill=\"#334155\">Quality Of Learning And Change</text><line x1=\"476\" y1=\"703.0612491670663\" x2=\"492\" y2=\"703.0612491670663\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"694.0612491670663\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"707.0612491670663\" font-size=\"11\" fill=\"#334155\">Awareness Within The neighborhood</text><line x1=\"476\" y1=\"703.0612491670663\" x2=\"492\" y2=\"718.0612491670663\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"709.0612491670663\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"722.0612491670663\" font-size=\"11\" fill=\"#334155\">Awareness Beyond The neighborhood</text><line x1=\"476\" y1=\"703.0612491670663\" x2=\"492\" y2=\"733.0612491670663\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"724.0612491670663\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"737.0612491670663\" font-size=\"11\" fill=\"#334155\">Leadership In The neighborhood</text><line x1=\"476\" y1=\"883.5135162393694\" x2=\"492\" y2=\"883.5135162393694\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"874.5135162393694\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"887.5135162393694\" font-size=\"11\" fill=\"#334155\">Involvement</text><line x1=\"476\" y1=\"883.5135162393694\" x2=\"492\" y2=\"898.5135162393694\" stroke=\"#cbd5e1\" stroke-width=\"1\"/><rect x=\"492\" y=\"889.5135162393694\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#b45309\"/><text x=\"508\" y=\"902.5135162393694\" font-size=\"11\" fill=\"#334155\">Culture</text><line x1=\"170\" y1=\"503.7498979648451\" x2=\"456\" y2=\"503.7498979648451\" stroke=\"#1e5f8c\" stroke-width=\"1\" stroke-dasharray=\"6 4\"/><text x=\"170\" y=\"498.7498979648451\" font-size=\"10\" fill=\"#1e5f8c\" font-weight=\"700\">mean resident</text><line x1=\"484\" y1=\"592\" x2=\"930\" y2=\"592\" stroke=\"#b45309\" stroke-width=\"1\" stroke-dasharray=\"6 4\"/><text x=\"930\" y=\"587\" text-anchor=\"end\" font-size=\"10\" fill=\"#b45309\" font-weight=\"700\">mean sphere = 0</text></svg></div>"
+      },
+      "date": 1789324593776,
+      "after": "0256a11b072a2a03"
+    },
+    {
+      "type": "add",
+      "id": "9132430a583c2bfe",
+      "item": {
+        "type": "markdown",
+        "id": "9132430a583c2bfe",
+        "text": "Residents on the left, more generous above. Spheres on the right, weaker above. The one red bar is a sphere residents disagree about; the hollow bar is the weakest sphere, whose fit rests on too few \"go\" responses to read."
+      },
+      "date": 1789324593777,
+      "after": "0ac160413f5f033e"
+    },
+    {
+      "type": "add",
+      "id": "2e5100dbb0304084",
+      "item": {
+        "type": "markdown",
+        "id": "2e5100dbb0304084",
+        "text": "### The neighborhood's profile, rater-corrected"
+      },
+      "date": 1789324593778,
+      "after": "9132430a583c2bfe"
+    },
+    {
+      "type": "add",
+      "id": "f51906687aa18c9e",
+      "item": {
+        "type": "html",
+        "id": "f51906687aa18c9e",
+        "text": "<table>\n<tr><th>Sphere</th><th>Steps up, of 14</th><th>Measure</th><th>Infit</th><th>Outfit</th><th>Reading</th></tr>\n<tr><td>Resources (Finance)</td><td>3</td><td>+5.58</td><td>1.67</td><td>5.63</td><td>Weakest by a wide margin. Fit provisional — only 3 steps up</td></tr>\n<tr><td>Quality of Neighborhood Planning</td><td>4</td><td>+4.61</td><td>0.67</td><td>0.41</td><td>Second weakest. Provisional</td></tr>\n<tr><td>Coordination Across the Neighborhood</td><td>7</td><td>+0.76</td><td>0.54</td><td>0.43</td><td>Middle; behaves</td></tr>\n<tr><td>Tools and Workspaces</td><td>7</td><td>+0.76</td><td>1.96</td><td>2.24</td><td><strong>Contested</strong> — see below</td></tr>\n<tr><td>Ability to Get Things Done</td><td>7</td><td>+0.76</td><td>0.75</td><td>0.65</td><td>Middle; behaves</td></tr>\n<tr><td>Quality of Learning and Change</td><td>9</td><td>−0.71</td><td>1.13</td><td>1.06</td><td>Behaves</td></tr>\n<tr><td>Awareness Within the Neighborhood</td><td>10</td><td>−1.42</td><td>0.96</td><td>0.84</td><td>Strong</td></tr>\n<tr><td>Awareness Beyond the Neighborhood</td><td>10</td><td>−1.42</td><td>0.96</td><td>0.84</td><td>Strong</td></tr>\n<tr><td>Leadership in the Neighborhood</td><td>10</td><td>−1.42</td><td>0.96</td><td>0.84</td><td>Strong</td></tr>\n<tr><td>Involvement</td><td>12</td><td>−3.74</td><td>0.19</td><td>0.10</td><td>Near-universal \"go\"</td></tr>\n<tr><td>Culture</td><td>12</td><td>−3.74</td><td>0.19</td><td>0.10</td><td>Near-universal \"go\"</td></tr>\n</table>"
+      },
+      "date": 1789324593779,
+      "after": "2e5100dbb0304084"
+    },
+    {
+      "type": "add",
+      "id": "caa3823925cfe724",
+      "item": {
+        "type": "markdown",
+        "id": "caa3823925cfe724",
+        "text": "\"Steps up\" is the item score: each *caution* is one step above *stop*, each *go* is two, so seven residents give a maximum of 14. Measures are in logits; the sphere mean is zero by construction."
+      },
+      "date": 1789324593780,
+      "after": "f51906687aa18c9e"
+    },
+    {
+      "type": "add",
+      "id": "027d45b7871a3866",
+      "item": {
+        "type": "markdown",
+        "id": "027d45b7871a3866",
+        "text": "The ordering is what an average of statuses would also give. What the average cannot give is the *spacing* — Finance is not merely last, it is a full logit beyond Planning and five beyond the middle group — and the two diagnostics that follow."
+      },
+      "date": 1789324593781,
+      "after": "caa3823925cfe724"
+    },
+    {
+      "type": "add",
+      "id": "1b47a6b3c1c16d06",
+      "item": {
+        "type": "markdown",
+        "id": "1b47a6b3c1c16d06",
+        "text": "### The contested sphere"
+      },
+      "date": 1789324593782,
+      "after": "027d45b7871a3866"
+    },
+    {
+      "type": "add",
+      "id": "0b632e2044fd4e4a",
+      "item": {
+        "type": "markdown",
+        "id": "0b632e2044fd4e4a",
+        "text": "*Tools and Workspaces* has infit 1.96 and outfit 2.24 on adequate data. Residents disagree about it beyond what their general generosity explains. Tom, in his seventies and a lifelong resident, rated it *stop*: \"I don't understand half the tools people are using. The meetings are now on apps I've never heard of.\" Keisha, a student in her twenties, rated it *go*. A summed or averaged status would have called this sphere *caution* and moved on. Rasch says: this is not a middling sphere, it is a divided one, and the division runs along a line worth naming."
+      },
+      "date": 1789324593783,
+      "after": "1b47a6b3c1c16d06"
+    },
+    {
+      "type": "add",
+      "id": "23058cfd01f717e6",
+      "item": {
+        "type": "markdown",
+        "id": "23058cfd01f717e6",
+        "text": "This is the single most useful thing the method adds to eVSM. The aggregator already shows disagreement per item; misfit says which disagreements are *structural* — not explained by some residents being generally harsher — and ranks them."
+      },
+      "date": 1789324593784,
+      "after": "0b632e2044fd4e4a"
+    },
+    {
+      "type": "add",
+      "id": "4ea2b851d5fc93cc",
+      "item": {
+        "type": "markdown",
+        "id": "4ea2b851d5fc93cc",
+        "text": "### The dissenting rater"
+      },
+      "date": 1789324593785,
+      "after": "23058cfd01f717e6"
+    },
+    {
+      "type": "add",
+      "id": "4203e73525ca6aea",
+      "item": {
+        "type": "markdown",
+        "id": "4203e73525ca6aea",
+        "text": "Tom has outfit 3.64. He rated Tools and Planning *stop* while rating Finance — which every other resident called the worst thing in the neighborhood — only *caution*. His ratings are internally coherent and his evidence explains each one; they simply do not follow the consensus ordering. That is what outfit detects, and the response is to read Tom's evidence, not to discount him."
+      },
+      "date": 1789324593786,
+      "after": "4ea2b851d5fc93cc"
+    },
+    {
+      "type": "add",
+      "id": "e37e425978892a77",
+      "item": {
+        "type": "markdown",
+        "id": "e37e425978892a77",
+        "text": "### Rater generosity"
+      },
+      "date": 1789324593787,
+      "after": "4203e73525ca6aea"
+    },
+    {
+      "type": "add",
+      "id": "4bd8f36a2277677e",
+      "item": {
+        "type": "markdown",
+        "id": "4bd8f36a2277677e",
+        "text": "Elena at +3.55 logits down to James at −4.07, who said *stop* on seven of eleven spheres. Rater reliability 0.91, separation 3.20, strata 4.6 — with seven people those numbers are noise, but the ordering is legible and it is the thing a facilitator wants to know before reading the evidence: whose *stop* is a strong signal and whose is Tuesday."
+      },
+      "date": 1789324593788,
+      "after": "e37e425978892a77"
+    },
+    {
+      "type": "add",
+      "id": "ef33e6c22563cf40",
+      "item": {
+        "type": "markdown",
+        "id": "ef33e6c22563cf40",
+        "text": "### The scale works"
+      },
+      "date": 1789324593789,
+      "after": "4bd8f36a2277677e"
+    },
+    {
+      "type": "add",
+      "id": "82be5e3fb9538e3b",
+      "item": {
+        "type": "markdown",
+        "id": "82be5e3fb9538e3b",
+        "text": "Thresholds −3.33 and +3.33, ordered. *Caution* was used for 39 of the 77 sphere ratings and has a wide region of the ruler where it is the most likely answer. It is a real middle category, not a dead zone between two others. The spacing is exaggerated by the estimator's known bias at small n; the order is what matters, and it is right. This is a confirmation the Likert demo in the tool could not give: go / caution / stop is a scale Rasch can work with as written."
+      },
+      "date": 1789324593790,
+      "after": "ef33e6c22563cf40"
+    },
+    {
+      "type": "add",
+      "id": "de73b006a6ec6e5a",
+      "item": {
+        "type": "markdown",
+        "id": "de73b006a6ec6e5a",
+        "text": "## The relationships cannot be measured as collected"
+      },
+      "date": 1789324593791,
+      "after": "82be5e3fb9538e3b"
+    },
+    {
+      "type": "add",
+      "id": "729adbe259556634",
+      "item": {
+        "type": "markdown",
+        "id": "729adbe259556634",
+        "text": "The 66 directed relationships are the bulk of the survey, and as the seven responses stand they are unmeasurable. Each respondent assessed about 12 of 66. Across all seven, 45 distinct relationships appear; **none was assessed by everyone**, and 21 were assessed by exactly one person."
+      },
+      "date": 1789324593792,
+      "after": "de73b006a6ec6e5a"
+    },
+    {
+      "type": "add",
+      "id": "0741656d1e2c5c6d",
+      "item": {
+        "type": "markdown",
+        "id": "0741656d1e2c5c6d",
+        "text": "Rasch needs common items across raters to place anything on one ruler. Run on all 77 items together, dichotomised, the matrix falls apart: almost every relationship comes back *everybody* or *nobody*, reliability is 0.00, and the tool reports fewer than one stratum. That is not the method failing. It is the survey telling you the relationship data has no shared structure — each resident chose a different dozen, so there is nothing to compare."
+      },
+      "date": 1789324593793,
+      "after": "729adbe259556634"
+    },
+    {
+      "type": "add",
+      "id": "2c9bd7cb0bb938a8",
+      "item": {
+        "type": "markdown",
+        "id": "2c9bd7cb0bb938a8",
+        "text": "**The fix is a design change.** A fixed core set of relationships that every respondent assesses — the 33 homeostat pairs, or a chosen dozen — with the rest optional. Agree / disagree on a fixed set is a clean dichotomous matrix, and the same rater-and-item reading applies: a contested relationship is one where misfit says residents disagree structurally."
+      },
+      "date": 1789324593794,
+      "after": "0741656d1e2c5c6d"
+    },
+    {
+      "type": "add",
+      "id": "eab2d28a58b9c8c5",
+      "item": {
+        "type": "markdown",
+        "id": "eab2d28a58b9c8c5",
+        "text": "The same point applies to the aggregator's compare mode today: comparing worlds on relationships that different people chose to assess is comparing samples of different things."
+      },
+      "date": 1789324593795,
+      "after": "2c9bd7cb0bb938a8"
+    },
+    {
+      "type": "add",
+      "id": "7c89d8ecf88b0c51",
+      "item": {
+        "type": "markdown",
+        "id": "7c89d8ecf88b0c51",
+        "text": "## What seven responses license"
+      },
+      "date": 1789324593796,
+      "after": "eab2d28a58b9c8c5"
+    },
+    {
+      "type": "add",
+      "id": "84493424f21b212e",
+      "item": {
+        "type": "markdown",
+        "id": "84493424f21b212e",
+        "text": "Nothing anyone would publish. Standard errors on the sphere measures are 0.8 to 1.4 logits, seven of eleven spheres trip the tool's provisional rule, and rater strata of 4.6 is not to be believed. But the diagnostics already work at seven — a contested sphere, a dissenting rater, an honest weakest-sphere ordering with spacing — and those are conversation material for a room, which is what eVSM is for. At twenty to thirty respondents the sphere measures become numbers with usable errors, and at that point they can go on a control chart, survey to survey."
+      },
+      "date": 1789324593797,
+      "after": "7c89d8ecf88b0c51"
+    },
+    {
+      "type": "add",
+      "id": "62123500c5fdedd8",
+      "item": {
+        "type": "markdown",
+        "id": "62123500c5fdedd8",
+        "text": "## Across neighborhoods"
+      },
+      "date": 1789324593798,
+      "after": "84493424f21b212e"
+    },
+    {
+      "type": "add",
+      "id": "a13baf9e96d3b163",
+      "item": {
+        "type": "markdown",
+        "id": "a13baf9e96d3b163",
+        "text": "Comparing Superior to Whatcom on one ruler needs three facets — organization × rater × item — which is many-facet Rasch, the first thing listed as deliberately absent from the tool. An interim route exists now: treat each (neighborhood, resident) pair as a person, run every neighborhood together with the eleven spheres as common items, and compare neighborhood means. It is crude, because it confounds rater generosity with organizational health. It is still more than any summed score can do, because the items are shared and the scale is interval. The sphere set is already identical across NDCs, so the anchoring problem is solved by the survey's own design."
+      },
+      "date": 1789324593799,
+      "after": "62123500c5fdedd8"
+    },
+    {
+      "type": "add",
+      "id": "3de822a9b36ac798",
+      "item": {
+        "type": "markdown",
+        "id": "3de822a9b36ac798",
+        "text": "Many-facet Rasch is the right addition when there are two or more neighborhoods with twenty-plus respondents each. Not before."
+      },
+      "date": 1789324593800,
+      "after": "a13baf9e96d3b163"
+    },
+    {
+      "type": "add",
+      "id": "097dd48a532b2c77",
+      "item": {
+        "type": "markdown",
+        "id": "097dd48a532b2c77",
+        "text": "## Recommendations"
+      },
+      "date": 1789324593801,
+      "after": "3de822a9b36ac798"
+    },
+    {
+      "type": "add",
+      "id": "520fd8c2d3fc8d36",
+      "item": {
+        "type": "markdown",
+        "id": "520fd8c2d3fc8d36",
+        "text": "1. **Keep go / caution / stop.** It works as a three-step scale. Keep *unsure* as missing.\n2. **Fix a core set of relationships that everyone assesses.** Without it the relationship half of the survey cannot be measured or honestly compared.\n3. **Aim for twenty to thirty respondents per neighborhood** before treating sphere measures as numbers rather than as a conversation.\n4. **Add a Rasch pass to the aggregator's reading** — the contested-sphere list (item misfit, ranked) and the dissenting-rater list (person misfit, with their evidence) are the two outputs a facilitator would use.\n5. **Many-facet Rasch when there are two neighborhoods with twenty respondents each,** and not before."
+      },
+      "date": 1789324593802,
+      "after": "097dd48a532b2c77"
+    },
+    {
+      "type": "add",
+      "id": "c1361ef6dc247bec",
+      "item": {
+        "type": "markdown",
+        "id": "c1361ef6dc247bec",
+        "text": "## Sources"
+      },
+      "date": 1789324593803,
+      "after": "520fd8c2d3fc8d36"
+    },
+    {
+      "type": "add",
+      "id": "b30026f792250027",
+      "item": {
+        "type": "markdown",
+        "id": "b30026f792250027",
+        "text": "The seven responses are `7NDCsofiSurveyResponses.zip` in Downloads, written for the aggregator on 4 March 2026. The real RCN self-assessments in Downloads (five usable, spheres only) are too few for numbers but would answer one question worth asking: whether RCN's own contested sphere is the same one."
+      },
+      "date": 1789324593804,
+      "after": "c1361ef6dc247bec"
+    }
+  ]
+}
