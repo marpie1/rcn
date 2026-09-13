@@ -193,6 +193,7 @@ luis,1,0,</code></pre>
     <tr><td>Blue dot, left</td><td class="wrap">A person. Higher is more able. People within about a quarter-logit of each other are drawn on one row with their names listed beside them.</td></tr>
     <tr><td>Amber bar, right</td><td class="wrap">An item. Higher is harder. Items too close to share a row are nudged apart and a thin grey lead line runs back to the item's true height on the ruler.</td></tr>
     <tr><td>Red bar, right</td><td class="wrap">An item whose infit or outfit exceeds 1.5 — a misfit, labelled as such. See §9.</td></tr>
+    <tr><td>Hollow amber bar, right</td><td class="wrap">An item whose fit would be flagged but which fewer than 5 persons succeeded at (or failed at) — too few responses to read fit. Labelled <em>provisional</em> with the count. See §9.</td></tr>
     <tr><td>Hollow dashed dot or bar</td><td class="wrap">An extreme score, drawn above the top tick or below the bottom one, with no number. A person who succeeded at everything sits above every item; an item everybody passed sits below every person. See §11.</td></tr>
     <tr><td>Dashed blue line</td><td class="wrap">The mean person measure.</td></tr>
     <tr><td>Dashed amber line</td><td class="wrap">The mean item measure, which is zero by construction — items are centred to give the ruler an origin.</td></tr>
@@ -285,7 +286,11 @@ luis,1,0,</code></pre>
     <tr><td><span class="pill warn">1.72</span></td><td class="num">1.5 – 2.0</td><td class="wrap">Noisy. Responses are less predictable than the model expects — check whether the item means the same thing to everyone.</td></tr>
     <tr><td><span class="pill bad">2.07</span></td><td class="num">&gt; 2.0</td><td class="wrap">Badly noisy. Very likely measuring something other than what the rest measure. Look at this one before anything else.</td></tr>
     <tr><td><span class="pill warn">0.40</span></td><td class="num">&lt; 0.7</td><td class="wrap">Too predictable. Often a near-duplicate of another item, or one that adds no independent information. Less serious than noise — it inflates reliability slightly rather than corrupting the measures.</td></tr>
+    <tr><td><span class="pill extreme">2.31</span></td><td class="num">any, on thin evidence</td><td class="wrap">Provisional. The value would be flagged, but fewer than 5 persons sit on the minority side of this item — fewer than 5 succeeded, or fewer than 5 failed — and a fit statistic on that few cells is a mean over a handful of responses that one surprise can swing. The reading says how many. Not a finding until more persons sit near the item.</td></tr>
   </table>
+  <p>
+    The provisional rule applies to items only. A person's outfit on a dozen items is always computed from few cells, and a high value there is usually pointing at one real response worth looking at (§10), not at noise.
+  </p>
   <div class="tip">
     <strong>Misfit is information.</strong> An item that misfits is measuring something else, and finding out what is usually the point. In the badge demo, <em>run a campfire conversation</em> reports infit 2.07 and outfit 11.61 — some of the least able people hold it and some of the most able do not — because the demo built it to depend on temperament rather than on the capability the other eleven skills share. Do not delete a misfitting item without looking at who succeeded on it and who did not; that pattern is the finding.
   </div>
@@ -343,10 +348,10 @@ luis,1,0,</code></pre>
   </p>
   <table class="t">
     <tr><th>What to look at</th><th>What it shows</th></tr>
-    <tr><td>Map</td><td class="wrap">Omar at the top in a hollow marker — 12 of 12, no measure. Two red bars: the campfire skill at −1.37, which is the finding, and <em>stand up an NDC server</em> at +4.27, flagged on two successes and meaning little. Every other skill amber and spread over seven logits.</td></tr>
+    <tr><td>Map</td><td class="wrap">Omar at the top in a hollow marker — 12 of 12, no measure. One red bar: the campfire skill at −1.37, labelled <em>misfit</em>. One hollow amber bar: <em>stand up an NDC server</em> at +4.27, labelled <em>provisional — 2 on the minority side</em>. Every other skill solid amber, spread over seven logits.</td></tr>
     <tr><td>Targeting</td><td class="wrap">−0.01. Aimed correctly.</td></tr>
     <tr><td>Holds together</td><td class="wrap">Person reliability 0.84, separation 2.32, strata 3.4 — about three distinguishable groups. Item reliability 0.90. Converged in 16 iterations.</td></tr>
-    <tr><td>Items</td><td class="wrap">Campfire: infit <span class="pill bad">2.07</span>, outfit <span class="pill bad">11.61</span>. <em>Stand up an NDC server</em>: only 2 of 23 succeeded, outfit 2.31 on almost no information. <em>Assign an IAD level</em>: infit 0.40 — too predictable, it closely tracks its neighbours.</td></tr>
+    <tr><td>Items</td><td class="wrap">Campfire: infit <span class="pill bad">2.07</span>, outfit <span class="pill bad">11.61</span>. <em>Stand up an NDC server</em>: outfit <span class="pill extreme">2.31</span>, provisional — only 2 of 23 succeeded. <em>Build a value network</em> (4 of 23) and <em>comment on a page</em> (4 of 23 failed) are provisional the same way on low outfit. <em>Assign an IAD level</em>: infit 0.40 — too predictable, it closely tracks its neighbours.</td></tr>
     <tr><td>Persons</td><td class="wrap">Ray: 11 of 12, outfit 19.69, because the one he misses is the easy campfire badge. Sam and Tess also hold 11 and fit well — they miss the hardest skill, which is exactly what the model expects.</td></tr>
   </table>
 

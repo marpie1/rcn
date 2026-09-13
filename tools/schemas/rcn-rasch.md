@@ -32,6 +32,8 @@ Column order is item order in every table; row order does not matter.
 
 MNSQ near 1.0 is what the model expects. Above 1.5 is noisy — the item is probably measuring something else, which is the finding worth chasing. Below 0.7 is too predictable, usually a near-duplicate.
 
+**Thin evidence is marked provisional, not flagged.** An item with fewer than 5 responses on the minority side (fewer than 5 succeeded, or fewer than 5 failed; for a rating scale, steps taken against steps not taken) has a fit statistic that is a mean over a handful of cells, and one surprise swings it. If such an item's fit would be flagged, the pill is grey, the reading says *provisional* with the count, and the Wright map draws a hollow dashed bar instead of red. Items only — a person's high outfit on few items is usually one real response. `RASCH.THIN = 5`. The exported CSV carries the raw fit values; the provisional judgement is a display rule, and a reader of the CSV should apply it themselves (`min(score, count·m − score) < 5`).
+
 ## The rating scale — thresholds and disordering
 
 With more than two categories the tool estimates **Andrich thresholds**, shared across all items. That sharing is what makes it the rating-scale model rather than partial credit: every item uses the same scale, so the categories mean the same thing everywhere — which is exactly the assumption a Likert questionnaire makes whether or not anybody checks it.

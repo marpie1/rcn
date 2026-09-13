@@ -264,12 +264,12 @@ PERSONS = [  # (name, measure) — omar is extreme (12/12), no measure
     ('chris', -0.82), ('eli', -0.82), ('fran', -0.82), ('gus', -0.82), ('hana', -0.82),
     ('jo', -0.82), ('ana', -1.37), ('kerry', -1.95), ('dorothy', -2.62), ('luis', -2.62),
     ('ben', -2.62), ('dee', -2.62), ('marc', -3.55)]
-ITEMS = [  # (name, measure, misfit)
-    ('stand up an NDC server', 4.27, True), ('build a value network', 2.98, False),
+ITEMS = [  # (name, measure, flag) — flag is False, 'misfit' or 'provisional'
+    ('stand up an NDC server', 4.27, 'provisional'), ('build a value network', 2.98, False),
     ('assign an IAD level', 1.91, False), ('label a value network arrow', 1.00, False),
     ('issue a signed badge', 0.59, False), ('fork from another site', -0.44, False),
     ('draw a simple graph', -1.06, False), ('edit a wiki page', -1.37, False),
-    ('add a page to a lineup', -1.37, False), ('run a campfire conversation', -1.37, True),
+    ('add a page to a lineup', -1.37, False), ('run a campfire conversation', -1.37, 'misfit'),
     ('publish a FedWiki page', -2.37, False), ('comment on a page', -2.76, False)]
 BADGE_STATS = dict(rel=0.84, sep=2.32, strata=3.4, sd=2.31, rmse=0.92, irel=0.90, targ=-0.01)
 # Likert demo: 140 residents × 7 statements, 1–5, Andrich, 28 iterations.
@@ -309,9 +309,14 @@ def wright_map(sl, x, y, w, h, persons, items, extreme_top=('omar',), lo=-4, hi=
               PP_ALIGN.RIGHT, bold=False)
     # items, nudged apart
     prev = -9
-    for name, m, mis in sorted(items, key=lambda i: -i[1]):
+    for name, m, flag in sorted(items, key=lambda i: -i[1]):
         yy = max(Y(m), prev + 0.145)   # pack downward, tightly
         prev = yy
+        mis = flag == 'misfit'
+        if flag == 'provisional':
+            rect(sl, cx + 0.22, yy - 0.065, 0.1, 0.13, None, ITEM, 1.2, MSO_LINE_DASH_STYLE.SQUARE_DOT)
+            label(sl, name + '   provisional — 2 on the minority side', cx + 0.4, yy - 0.085, 3.4, 8, INK3, bold=False)
+            continue
         rect(sl, cx + 0.22, yy - 0.065, 0.1, 0.13, MIS if mis else ITEM)
         label(sl, name + ('   misfit' if mis else ''), cx + 0.4, yy - 0.085, 3.2, 8,
               MIS if mis else INK2, bold=mis)
@@ -428,7 +433,7 @@ card(sl, 9.35, 3.75, 3.1, 1.4, 'Targeting −0.01',
      'Mean person against mean skill. The skills are aimed where the people are — a real instrument '
      'rarely manages that on its first run.', GRN, headsize=13, bodysize=10.5)
 card(sl, 9.35, 5.3, 3.1, 1.45, 'Two things to see first',
-     'Is there a skill near every cluster of people, or are there gaps on the ruler? And is anything red?',
+     'Is there a skill near every cluster of people, or are there gaps on the ruler? And is anything red? A hollow bar is not red — it is too few responses to say.',
      ITEM, headsize=13, bodysize=10.5)
 footer(sl, nxt())
 
@@ -443,14 +448,14 @@ txt(sl, 'The model predicts every cell. Where responses disagree with the predic
     0.85, 2.05, 11.6, 0.6, size=15, color=INK2)
 table(sl, 0.85, 2.85, [3.4, 1.1, 1.1, 1.0, 1.0, 4.0],
       [['Skill', 'Badged', 'Measure', 'Infit', 'Outfit', 'Reading'],
-       ['stand up an NDC server', '2 of 23', '+4.27', '1.36', ('2.31', MIS), 'Two successes — outfit rests on almost nothing'],
+       ['stand up an NDC server', '2 of 23', '+4.27', '1.36', ('2.31', INK3), ('Provisional — only 2 succeeded, too few to read fit', INK3)],
        ['assign an IAD level', '6 of 23', '+1.91', ('0.40', ITEM), ('0.18', ITEM), 'Too predictable — tracks its neighbours'],
        ['fork from another site', '12 of 23', '−0.44', '0.93', '0.84', 'Behaves as expected'],
        [('run a campfire conversation', MIS), '15 of 23', '−1.37', ('2.07', MIS), ('11.61', MIS), ('Badly noisy — measuring something else', MIS)],
-       ['comment on a page', '19 of 23', '−2.76', '1.05', '0.66', 'Behaves as expected']],
+       ['comment on a page', '19 of 23', '−2.76', '1.05', ('0.66', INK3), ('Provisional — only 4 failed, too few to read fit', INK3)]],
       size=11.5, rowh=0.36, numcols=(1, 2, 3, 4))
 banner(sl, 0.85, 5.2, 11.6, 1.3,
-       'Ten of twelve behave, one is flagged on thin evidence, one does not behave at all.',
+       'Eleven of twelve behave or sit on too little evidence to say. One does not, and it is not close.',
        'Some of the least able people hold the campfire badge and some of the most able do not. The demo '
        'built it that way — running a campfire depends on temperament, not on the FedWiki-and-graph '
        'capability the other eleven share — and the model found it without being told. In a real ledger '
@@ -464,23 +469,24 @@ footer(sl, nxt())
 sl = slide()
 kicker(sl, 'Reading the fit')
 title(sl, 'Two fit statistics, and why there are two')
-card(sl, 0.85, 2.15, 5.6, 2.1, 'Infit — information-weighted',
+card(sl, 0.85, 2.15, 5.6, 1.9, 'Infit — information-weighted',
      'Weights responses near a person\'s own level, where the model is least sure and the response '
      'carries most information. Reflects the item as a whole. An item with high infit means something '
      'different to different people.', ACC, headsize=15, bodysize=12.5)
-card(sl, 6.85, 2.15, 5.6, 2.1, 'Outfit — unweighted',
+card(sl, 6.85, 2.15, 5.6, 1.9, 'Outfit — unweighted',
      'Dominated by the few responses far from a person\'s level: the lucky guess on something far too '
      'hard, the careless miss on something far too easy. Ray holds 11 of 12 badges, misses the easy '
      'campfire one, and has an outfit of 19.7 — one cell did that.', ITEM, headsize=15, bodysize=12.5)
-table(sl, 0.85, 4.55, [1.6, 2.2, 7.8],
+table(sl, 0.85, 4.3, [1.6, 2.2, 7.8],
       [['Mean-square', 'Pill', 'Reading'],
        ['0.7 – 1.5', ('green', GRN), 'Behaves as the model expects'],
        ['1.5 – 2.0', ('amber', ITEM), 'Noisy — check whether the item means the same thing to everyone'],
        ['above 2.0', ('red', MIS), 'Badly noisy — very likely measuring something else; look at this first'],
-       ['below 0.7', ('amber', ITEM), 'Too predictable — often a near-duplicate; inflates reliability slightly']],
+       ['below 0.7', ('amber', ITEM), 'Too predictable — often a near-duplicate; inflates reliability slightly'],
+       ['thin evidence', ('grey', INK3), 'Provisional — under 5 on the minority side; a flagged fit is not a finding yet']],
       size=12, rowh=0.36)
 txt(sl, 'Misfit is where the interesting work is. Do not delete a misfitting item without looking at who succeeded on it and who did not — that pattern is the finding.',
-    0.85, 6.35, 11.6, 0.4, size=12, italic=True, color=INK2)
+    0.85, 6.6, 11.6, 0.3, size=11, italic=True, color=INK2)
 footer(sl, nxt())
 
 # ═════════════════════════════════════════════════════════════════════════════

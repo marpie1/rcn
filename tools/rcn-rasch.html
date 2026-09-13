@@ -123,6 +123,7 @@ tr:hover td{background:#f8fafc}
         <p class="hint"><b>MNSQ near 1.0</b> means the data behave the way the model expects.<br><br>
         <b>Above 1.5</b> &mdash; noisy. The item is picking up something other than the thing being measured. This is the one worth investigating.<br><br>
         <b>Below 0.7</b> &mdash; too predictable. Often a duplicate item, or one that just restates another.<br><br>
+        <b>Provisional</b> &mdash; fewer than 5 responses on the minority side (almost nobody, or almost everybody, succeeded). Fit cannot be read on so few; a grey pill and a hollow bar say so instead of red.<br><br>
         Misfit is information. An item that misfits is measuring something else, and finding out what is usually the point.</p>
       </div>
     </div>
@@ -152,6 +153,17 @@ tr:hover td{background:#f8fafc}
 var RASCH = {
   MAXIT: 300,
   TOL: 0.0001,
+  /* Fit cannot be read on an item almost nobody or almost everybody passed:
+     outfit in particular is a mean over a handful of cells and one surprise
+     swings it. Below this many responses on the minority side, a fit that
+     would be flagged is marked PROVISIONAL instead of red. Items only — a
+     person's outfit on few items is usually pointing at one real response. */
+  THIN: 5,
+
+  /* Responses on the minority side: successes if few succeeded, failures if
+     few failed. For a rating scale, steps taken against steps not taken. */
+  minority: function (r, m) { return Math.min(r.score, r.count * m - r.score); },
+  thin: function (r, m) { return r.extreme ? false : this.minority(r, m) < this.THIN; },
 
   P: function (b, d) { var e = Math.exp(b - d); return e / (1 + e); },
 
@@ -506,11 +518,17 @@ function wrightMap(S) {
     var yy = y(i.measure);
     while (used.some(function (u) { return Math.abs(u - yy) < 15; })) yy += 15;
     used.push(yy);
-    var mis = i.infit !== null && (i.infit > 1.5 || i.outfit > 1.5);
+    var flagged = i.infit !== null && (i.infit > 1.5 || i.outfit > 1.5);
+    var thin = flagged && RASCH.thin(i, S.m);
+    var mis = flagged && !thin;
     s.push('<line x1="' + (cx + 6) + '" y1="' + y(i.measure) + '" x2="' + (cx + 22) + '" y2="' + yy + '" stroke="#cbd5e1" stroke-width="1"/>');
-    s.push('<rect x="' + (cx + 22) + '" y="' + (yy - 9) + '" width="10" height="18" rx="2" fill="' + (mis ? '#dc2626' : '#b45309') + '"/>');
+    s.push(thin
+      ? '<rect x="' + (cx + 22) + '" y="' + (yy - 9) + '" width="10" height="18" rx="2" fill="none" stroke="#b45309" stroke-width="1.8" stroke-dasharray="2 2"/>'
+      : '<rect x="' + (cx + 22) + '" y="' + (yy - 9) + '" width="10" height="18" rx="2" fill="' + (mis ? '#dc2626' : '#b45309') + '"/>');
     s.push('<text x="' + (cx + 38) + '" y="' + (yy + 4) + '" font-size="11" fill="#334155">' +
-           esc(S.data.itemNames[i.idx]) + (mis ? ' <tspan fill="#dc2626" font-weight="700">misfit</tspan>' : '') + '</text>');
+           esc(S.data.itemNames[i.idx]) +
+           (mis ? ' <tspan fill="#dc2626" font-weight="700">misfit</tspan>' : '') +
+           (thin ? ' <tspan fill="#64748b">provisional — ' + RASCH.minority(i, S.m) + ' on the minority side</tspan>' : '') + '</text>');
   });
   /* the out-of-bounds bands */
   function band(persons, items, yy, above) {
@@ -551,8 +569,9 @@ function wrightMap(S) {
 
 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function f2(v) { return v === null || v === undefined ? '&mdash;' : v.toFixed(2); }
-function fitPill(v) {
+function fitPill(v, thin) {
   if (v === null) return '<span class="pill extreme">&mdash;</span>';
+  if (thin && (v > 1.5 || v < 0.7)) return '<span class="pill extreme" title="too few responses on the minority side to read fit">' + v.toFixed(2) + '</span>';
   if (v > 2.0) return '<span class="pill bad">' + v.toFixed(2) + '</span>';
   if (v > 1.5) return '<span class="pill warn">' + v.toFixed(2) + '</span>';
   if (v < 0.7) return '<span class="pill warn">' + v.toFixed(2) + '</span>';
@@ -660,7 +679,7 @@ function render(S, err) {
     h.push('<tr><td><b>' + esc(S.data.itemNames[i.idx]) + '</b></td>' +
       '<td class="num">' + i.score + '</td><td class="num">' + i.count + '</td>' +
       '<td class="num">' + (i.extreme ? '<span class="pill extreme">' + i.extreme + '</span>' : f2(i.measure)) + '</td>' +
-      '<td class="num">' + f2(i.se) + '</td><td>' + fitPill(i.infit) + '</td><td>' + fitPill(i.outfit) + '</td>' +
+      '<td class="num">' + f2(i.se) + '</td><td>' + fitPill(i.infit, RASCH.thin(i, S.m)) + '</td><td>' + fitPill(i.outfit, RASCH.thin(i, S.m)) + '</td>' +
       '<td style="white-space:normal;color:#64748b;font-size:11px">' + itemReading(i, S) + '</td></tr>');
   });
   h.push('</table></div>');
@@ -692,6 +711,11 @@ function itemReading(i, S) {
   if (i.extreme === 'nobody') return 'Nobody succeeded. Out of reach for this group entirely.';
   if (i.extreme === 'empty') return 'No responses.';
   var v = Math.max(i.infit, i.outfit);
+  if (RASCH.thin(i, S.m) && (v > 1.5 || i.infit < 0.7 || i.outfit < 0.7)) {
+    var k = RASCH.minority(i, S.m);
+    return 'Provisional. Only ' + k + ' of ' + i.count + ' ' + (i.score * 2 < i.count * S.m ? 'succeeded' : 'failed') +
+           ' — too few to read fit either way. Not a finding until more ' + esc(S.pname) + 's sit near this ' + esc(S.iname) + '.';
+  }
   if (v > 2.0) return 'Badly noisy. This is very likely measuring something other than the thing the rest measure — worth looking at before anything else.';
   if (v > 1.5) return 'Noisy. Responses here are less predictable than the model expects: check whether it means the same thing to everyone.';
   if (Math.max(i.infit, i.outfit) < 0.7) return 'Too predictable. Often a near-duplicate of another ' + esc(S.iname) + ', or one that adds no independent information.';
