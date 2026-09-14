@@ -49,7 +49,7 @@ Advanced: can run a cycle, then hand phases over one at a time until the neighbo
 
 **Therefore.** Before inviting anyone, find out whether the neighborhood has a place its people created, recognize as theirs, use as a commons, and that no outside actor directs. Answer these eleven questions: origin; the founder's relationship now; governance in practice; access and membership; safety; cultural fit; function match; financial durability; constituency; history under stress; neighborhood recognition. Ask the five short ones out loud: who decides who comes in, who has the keys, who cleans up, who pays, who decides what happens. Learn the hard three by being there: cultural fit (whose language is spoken, in every sense), safety (do people say things here they would not say elsewhere), and history under stress (has the place been through something hard and come out the other side). Decline to proceed if there is no viable founded commons in place.
 
-**Needs.** Coffee Conversation, where most of the answers come from. Moods Reading, to hear whether the place is in acceptance. Patience and Highlander 3.0, for what to do when the answer is no.
+**Needs.** Coffee Conversation, where most of the answers come from. Moods Assessment, to hear whether the place is in acceptance. Patience and Highlander 3.0, for what to do when the answer is no.
 
 **State.** Paper. The questions are held by the convener and answered by observation; no tool.
 
@@ -87,7 +87,7 @@ Advanced: can see from the list which groups will form the center of the first m
 
 **Therefore.** Meet one or two people at a time, in the neighborhood, over coffee or its equivalent, and find out whether they see the world in enough shared terms to imagine building anything together. Ask what they are working on and what gets in the way. Do not pitch, promise, or explain. Write notes the same day: who, what they do, what they want, what mood, who they named.
 
-**Needs.** Moods Reading, to hear what is under the words.
+**Needs.** Moods Assessment, to hear what is under the words.
 
 **State.** Paper.
 
@@ -144,7 +144,7 @@ Advanced: can design scenario-specific items, run compare mode across worlds and
 
 **Therefore.** Ask WHY first, around the room, from where each person stands, and write every answer on the wall in their words. Then WHERE, WHEN, and WHO. WHAT is session two's Idealized Design. HOW comes last, in Phases 3 to 5, because a room that starts with HOW does the wrong thing righter. These are declarations; hold space for declaring rather than for asserting a right answer. Keep the WHYs; they are a declaration of independence.
 
-**Needs.** Moods Reading, to hear resignation in a WHY and not argue. Speech Acts, to know a declaration when you hear one.
+**Needs.** Moods Assessment, to hear resignation in a WHY and not argue. Speech Acts, to know a declaration when you hear one.
 
 **State.** Paper.
 
@@ -163,7 +163,7 @@ Advanced: can bring the WHYs back at the right moment in a later phase, and upda
 
 **Therefore.** With a resident's situation at the center, put up the parts and draw the flows, clients, information, materials, money, each arrow labeled with what moves and the missing ones dotted, from three perspectives: mainstay (the client's), support (the infrastructure's), driver (the stakeholders'). Fifteen to twenty parts, readable at arm's length. Start from pain points between institutions, or from one client's end-to-end needs. Keep it on the wall; enter it in the Graph Tool afterward and validate it with the group.
 
-**Needs.** The Six Questions, which frame it. Moods Reading, to keep resentment on the map and off the room. The RCN Graph Tool, to keep it after the wall.
+**Needs.** The Six Questions, which frame it. Moods Assessment, to keep resentment on the map and off the room. The RCN Graph Tool, to keep it after the wall.
 
 **State.** Built for keeping (Graph Tool, ordinary mode with a legend of kinds); a ready linkage-map legend is work to do.
 
@@ -182,7 +182,7 @@ Advanced: can read the between-institution form off the map, see where a scenari
 
 **Therefore.** Tell the room the system on the wall was destroyed last night. Design the one it would want right now, subject only to being technologically feasible and able to survive in the world as it is. Keep the 2014 building blocks on a side sheet as prompts, concepts, what every design considers, principles, components, and never lecture them. Add the SWOT-type scan of what is coming. Stand the wanted design beside the current map. Remember the wanted system may need a new association, a new business, or a time-limited project as much as better coordination.
 
-**Needs.** The Linkage Map, which it designs against. The Six Questions, for the WHY it designs toward. Moods Reading, to invite ambition only after acceptance has settled.
+**Needs.** The Linkage Map, which it designs against. The Six Questions, for the WHY it designs toward. Moods Assessment, to invite ambition only after acceptance has settled.
 
 **State.** Paper.
 
@@ -239,7 +239,7 @@ Advanced: can teach scenario writing with it.
 
 **Therefore.** Weight the room's principles first, each person alone; score every candidate against every principle, each person alone, plus catalyzable, right scale, and who would do it; combine; meet only to adjudicate the outliers; declare the choice together. Split the cycle's seed across small, medium, and large in advance.
 
-**Needs.** Idealized Design, whose co-defined principles are the weights. Moods Reading, because outliers are usually moods or information rather than conflicts of value. Speech Acts, for the declaration at the end.
+**Needs.** Idealized Design, whose co-defined principles are the weights. Moods Assessment, because outliers are usually moods or information rather than conflicts of value. Speech Acts, for the declaration at the end.
 
 **State.** Paper; a tool is on the list to build.
 
@@ -372,7 +372,7 @@ Advanced: can run a Platform's pool across a cycle with Alexander's split.
 
 **Therefore.** Know the five foundational acts, assertion, declaration, request, offer, promise, and the four-phase conversation for action: request; promise, decline, counteroffer, or commit-to-commit; declare complete, cancel, or revoke; declare satisfied or dissatisfied. Name the act when naming helps. Walk the ME's promises weekly. Protect the right to decline and to revoke out loud.
 
-**Needs.** Moods Reading, since a promise made in resignation is not one. CfA-dSC, to record the conversations.
+**Needs.** Moods Assessment, since a promise made in resignation is not one. CfA-dSC, to record the conversations.
 
 **State.** Partial: CfA-dSC tracks two-party conversations for action.
 
@@ -383,7 +383,7 @@ Basic: can tell a promise from a hope and a request from a complaint.
 Intermediate: can hold a conversation for action through all four phases and record it.
 Advanced: can run a room's commitments on speech acts, as the hospital was run, and teach it.
 
-## 19. Moods Reading
+## 19. Moods Assessment
 
 **Where it fits.** Every conversation in the guide. It is the floor the other patterns stand on.
 
@@ -410,7 +410,7 @@ Advanced: can shift a room's mood from closing to opening without pretending the
 
 **Therefore.** Keep the residents whose scenario it is on the ME or a call away; walk the promises weekly; revoke out loud; watch the gate window; mentor only on request. When a promise reaches inside an institution, use Value Stream Mapping and A3 with that institution's staff.
 
-**Needs.** Speech Acts, for the promises. Moods Reading, for week six. Catalytic Seed with Gates, for the window. Value Stream Mapping and A3 Problem Solving, for the work inside an institution.
+**Needs.** Speech Acts, for the promises. Moods Assessment, for week six. Catalytic Seed with Gates, for the window. Value Stream Mapping and A3 Problem Solving, for the work inside an institution.
 
 **State.** Paper.
 
@@ -429,7 +429,7 @@ Advanced: can mentor an ME through a missed gate without taking it over.
 
 **Therefore.** Survey again first; lay the sketches and value networks side by side; then, in order: what happened (assertions); what residents received (they speak first, at length); what the numbers say; what was learned (declarations); what next. Write it into the scenario's existing attempts the same week.
 
-**Needs.** The e-VSM Survey, the Value Network, the Ecosystem Sketch, and the Neighborhood Scorecard for the evidence; the Timeline to hold it in order; Moods Reading and Speech Acts to run the evening.
+**Needs.** The e-VSM Survey, the Value Network, the Ecosystem Sketch, and the Neighborhood Scorecard for the evidence; the Timeline to hold it in order; Moods Assessment and Speech Acts to run the evening.
 
 **State.** Paper, with the tools it uses built.
 
@@ -581,7 +581,7 @@ Advanced: can host a Highlander cohort, or mentor a nascent leader in another ne
 
 **Therefore.** Be the EMC organizer: help the ME form, mentor on request, bring contacts and contract help, bring the seed against gates, take a VAM share paid last, and hold no authority over the work. Your compensation and reputation ride on what the ME's residents recognize. From the second cycle on, do less; hand over the phase that still depends on you.
 
-**Needs.** Catalytic Seed with Gates, Speech Acts, Moods Reading.
+**Needs.** Catalytic Seed with Gates, Speech Acts, Moods Assessment.
 
 **State.** Paper.
 
