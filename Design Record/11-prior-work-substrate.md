@@ -397,7 +397,7 @@ Marc's own arc, from the Whatcom County institutions and the community medical r
 
 The intellectual foundations from other authors are acknowledged as the specific traditions this design draws on and extends, and Marc has confirmed the selection is well focused.
 
-Section 12 addresses the questions still open in the design, the ones RCN is grappling with, the ones tool maturation will affect, the ones the first years of operation will teach, so a reader knows what is settled and what is not, and can engage the open questions as active work rather than assumed answers.
+Section 12 describes the Federated Wiki and the foundational tools as a set, and Section 13 addresses the questions still open in the design, the ones RCN is grappling with, the ones tool maturation will affect, the ones the first years of operation will teach, so a reader knows what is settled and what is not, and can engage the open questions as active work rather than assumed answers.
 
 #### Tools and methods named in this section
 

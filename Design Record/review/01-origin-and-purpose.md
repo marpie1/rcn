@@ -47,7 +47,7 @@ Neighborhoods that cannot sustain the field guide under these constraints are ne
 
 ## How this design record is organized
 
-The remaining eleven sections work through the design in the order the reasoning arrived rather than in strict logical dependency, because the reasoning arrived by iteration and correction and the design record honors that history.
+The remaining twelve sections work through the design in the order the reasoning arrived rather than in strict logical dependency, because the reasoning arrived by iteration and correction and the design record honors that history.
 
 Section 2 lays out the four dependency-elimination principles: facilitator variety distributed rather than replaced; elder-driven Industry Platform actors compensated through the value chain; catalytic seed capital; and value created by residents for residents and their neighbors.
 
@@ -69,6 +69,8 @@ Section 10 defines value in the form settled through the design work, and the ne
 
 Section 11 references the prior work this record rests on: CMG, Medford, Spokane, the Ripple ReThink Model, Highlander 3.0, and the thirty-year arc of related work.
 
-Section 12 names the questions still open, including the ones RCN is actively grappling with, so the reader knows what is settled and what is not.
+Section 12 describes the Federated Wiki, the medium of the whole design, and the RCN foundational tools as a set: what they are, why the wiki was chosen, and the RCN Workbench that composes them.
+
+Section 13 names the questions still open, including the ones RCN is actively grappling with, so the reader knows what is settled and what is not.
 
 The five-phase structure the field guide is organized around, Linkage Mapping adapted to neighborhood scale, is referenced throughout and is the field guide's own spine rather than a section of this record. Cross-references among sections use FedWiki internal links where the design record is rendered as a FedWiki site. Where diagrams help, and several sections have them, they are drawn in the RCN Graph Tool and described in text so a reader without the picture still has the structural claim.

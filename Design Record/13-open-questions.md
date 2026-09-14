@@ -1,4 +1,4 @@
-# Section 12 — Open Questions
+# Section 13 — Open Questions and Ongoing RCN Grappling
 
 **State (as of 2026-09-11):** Drafted twice in Chat (the second supersedes the first); Marc's Pages file of 2026-09-11 is the unedited second draft; REWRITE DELIVERED 2026-09-11 in Claude Code against Sections 1–11 as rewritten: the three categories kept, the questions regathered from the rewrites (county-to-neighborhood translation, the speech-acts Customer role, the gates, the neighborhood VAM, the Section 3 mappings, scenario writing, the book itself), the tool-maturation category keyed to the Section 9 lifecycle diagram, the end-to-end test by hand placed first among the empirical questions. Awaiting Marc's reactions.
 
@@ -110,7 +110,7 @@ The full twelve-section design record is complete. Ready to compile as a single 
 
 ## First draft (second attempt — supersedes the first) — turn 103, 2026-08-31 16:04 UTC
 _Claude's preface:_ Drafting Section 12.
-### Section 12 — Open Questions and Ongoing RCN Grappling
+### Section 13 — Open Questions and Ongoing RCN Grappling
 
 #### Why this section closes rather than concludes
 
@@ -283,7 +283,7 @@ _Byte-for-byte the second draft above with Chat's trailing commentary; no edits.
 
 _Written against the rewrites of Sections 1–11, the handoff, and Chat's drafting log; every open question here is traceable to the section it comes from._
 
-### Section 12 — Open Questions and Ongoing RCN Grappling
+### Section 13 — Open Questions and Ongoing RCN Grappling
 
 #### Why this section closes rather than concludes
 
@@ -399,7 +399,7 @@ Section 9 says the people who hold Platform, convener, and ME-leader roles relea
 
 This document and the field guide to be drafted against it are themselves under test. Whether the four conveners and those who follow them pick up the field guide and use it, whether the record's reasoning helps new participants understand what they are joining, whether the moods-and-speech-acts vocabulary earns its way in through use, whether the customer scenario as origin object actually gets written in FedWiki as the design contemplates, are all empirical. Sections that turn out confusing, prescriptive where they should be open, gestural where they should be operational, or theoretical where they should be practical will be revised. The record is a working document that gardens itself as the work matures.
 
-#### What Section 12 commits the design to
+#### What Section 13 commits the design to
 
 The open questions are named honestly. Future readers can engage them as active work rather than assumed answers, and RCN participants can see which questions are their grappling to do, which wait on a tool, and which wait on a first ME.
 

@@ -2,17 +2,19 @@
 
 **Status date:** 2026-09-11. This file is the compass: what the work is, what is written, what is still to write, what is open, and what to do next. Update it after every drafting session.
 
-## What we are doing
+## What we are doing — the three things
 
-Two deliverables, in order.
+Marc's structure, stated plainly (2026-09-14): **the 12, the 6, and the Kit.** Three deliverables, nested, each written for a different reader.
 
-**First, the book.** A full write-up of the theory and methods behind the RCN tools and methods, for people who really want to understand in depth what is behind them — newcomers and curious outsiders as much as Marc, Kerry and the four conveners. Written in reasoning voice: why each thing is shaped as it is, what substrate it rests on, what patterns it exists to interrupt, what corrections its design absorbed as it took form. It started life as "the RCN Design Record" behind a facilitator kit; late in Section 8 Marc observed that we are in fact writing a book, and that reshapes it: a title, a structure a cold reader can pick up, a publication path.
+**The Book — thirteen sections now.** The RCN Design Record: the theory and methods behind everything, in reasoning voice, for people who want to understand in depth what is behind the tools and methods. It started at twelve sections; on 2026-09-14 a new Section 12 on the Federated Wiki and the foundational tools was added at Marc's request and Open Questions became Section 13. Files `01-` to `13-` in this folder; clean copies in `review/`.
 
-**Second, the tool kit.** With the book in hand, Marc and Claude build the field guide — the thing people grab tools from. Operational prose, imperative where a convener needs a specific move named, drafted against the book once the book is stable. Chat's kit discussion is at turns 104–107 of `13-drafting-conversation.md`; Marc settled on Option A there. **A first pass exists as of 2026-09-11 in `field-guide/`** (seven files, ~17,000 words): the five phases, a labeled composite worked example, and the tools as a pattern language on Alexander's model — Marc's idea — with a Basic / Intermediate / Advanced ladder per pattern as the seed for SODOTO pages in FedWiki.
+**The Field Guide — six files.** How a convener runs one neighborhood through one cycle: `00-how-to-use-this-guide.md` and the five phases, `01-` to `05-`, in `field-guide/`. Operational voice, imperative where a move is named, one worked example carried through. Written for a convener doing, not a reader thinking. Each phase says where in the Book its reasoning lives.
 
-Delivery medium for both: FedWiki page JSON (with Neo4j for the structured graph), drafted here as pipeline markdown first. Publishing order per Marc's standing rule: .md → FedWiki → edit and discuss → .md → then HTML and PDF.
+**The Kit — the pattern language.** The tools and methods themselves, the things people grab: `field-guide/06-the-conveners-tools-a-pattern-language.md`, thirty-two patterns on Alexander's model, each with its problem, its move, what it needs, its state, where to learn it, and its Basic / Intermediate / Advanced ladder; the network drawn in `diagrams/`. This is the seed of the RCN pattern-language book, and of the SODOTO skill pages, one triple per pattern, that will teach each tool in FedWiki. The Kit is the thing Chat and Marc first called "the kit"; the Field Guide is the sequence for using it.
 
-## The twelve sections and where each stands
+The Book explains, the Field Guide sequences, the Kit equips. A convener can run the Field Guide without the Book; the Field Guide cannot be run without the Kit; the Kit makes no sense without the Book. All three are delivered as FedWiki pages, drafted here as pipeline markdown. Publishing order per Marc's standing rule: .md → FedWiki → edit and discuss → .md → then HTML and PDF.
+
+## The Book's sections and where each stands
 
 | # | file | latest layer | state |
 |---|---|---|---|
@@ -27,7 +29,8 @@ Delivery medium for both: FedWiki page JSON (with Neo4j for the structured graph
 | 9 | `09-catalytic-seed-capital.md` | rewrite (2026-09-11) | awaiting Marc's reactions; the RCN gates proposal is the thing to argue with; two diagrams in `diagrams/` |
 | 10 | `10-value-by-residents.md` | rewrite (2026-09-11) | awaiting Marc's reactions; CAM item pool recovered to `sources/`; anti-capture properties to revisit after the field guide |
 | 11 | `11-prior-work-substrate.md` | rewrite (2026-09-11) | awaiting Marc's reactions; needs a paragraph from Marc or Kerry on ReLocalize Health and Seeing the Systems; four unverifiable points flagged in its notes |
-| 12 | `12-open-questions.md` | rewrite (2026-09-11) | rewritten from Sections 1–11 as rewritten; awaiting Marc's reactions |
+| 12 | `12-federated-wiki-and-tools.md` | first draft (2026-09-14) | NEW — needs Marc's and Ward's account of why the wiki was chosen, and Ward's read |
+| 13 | `13-open-questions.md` | rewrite (2026-09-11), renumbered | rewritten from Sections 1–11 as rewritten; awaiting Marc's reactions |
 
 Each section file holds every layer in order — first draft, Marc's verbatim edits from the Pages file (his comments are the paragraphs wrapped in parentheses), the conversation about the edits, and the rewrite where one exists — with Claude's delivery notes after each version. The latest layer is the working text.
 
@@ -60,8 +63,8 @@ Carried from the chat, with where they live:
 
 - How to write scenarios well — a playbook for Experience-ME scenario creation (Section 5; `sources/pastes/turn-136-*` are Marc's FedWiki pages on it)
 - Curriculum in SODOTO for the ME formation sequence and tool skills
-- Founded-commons succession — biology, sociology, anthropology, not engineering (Section 4, Section 12)
-- The Platform's own S4 function at the scale of the neighborhoods it serves — noted, not developed (Section 6, Section 12)
+- Founded-commons succession — biology, sociology, anthropology, not engineering (Section 4, Section 13)
+- The Platform's own S4 function at the scale of the neighborhoods it serves — noted, not developed (Section 6, Section 13)
 - WWHA charter's specific structural properties to preserve (Section 6)
 - e-VSM does not yet handle explicit links to the environment shown in `sources/rcn-graph-of-evsm.svg`; recursion is a separate e-VSM survey per level linked in Neo4j (Section 3)
 - Speech acts: who the primary-ME promises to, and who declares satisfaction — resident as primary Customer, Platform as secondary, EMC members as Performers (Section 7, Section 8)
@@ -75,7 +78,7 @@ Settled vocabulary is in `handoff-2026-09-10.md` and is not repeated here.
 |---|---|
 | `index.md` | this file |
 | `00-prework-conversation.md` | turns 0–68: the theory settled before drafting — the two biases, Ashby–Conant, Linkage Mapping, founded commons, McKnight, catalytic capital, Haier's Industry Platform, value by residents |
-| `01-` … `12-*.md` | the twelve sections, all layers |
+| `01-` … `13-*.md` | the Book's sections, all layers |
 | `13-drafting-conversation.md` | turns 69–166: everything said around the drafts, with section bodies replaced by pointers |
 | `handoff-2026-09-10.md` | Chat's state dump at the compaction wall — vocabulary decisions, entities, pending asks (copy; the original is in `docs/RNC Book Files/`) |
 | `substrate-notes.md` | Chat's notes on Story Structure and the Dunham conversation-for-action (2026-09-11) |
@@ -83,7 +86,7 @@ Settled vocabulary is in `handoff-2026-09-10.md` and is not repeated here.
 | `sources/` | the files Marc uploaded to the two chats, gathered from Downloads and Desktop, plus his later `.pages` edits and the recovered CAM item pool; `sources/pastes/` holds the text he pasted, including his FedWiki pages on customer scenarios, Story Structure and the action conversation |
 | `chat-export/` | the raw account export (gitignored where large) and the two full transcripts |
 | `review/` | the latest text of each section with nothing else — Marc's reading and editing copies, rebuilt from the section files whenever a rewrite lands |
-| `field-guide/` | the tool kit, first pass: how to use, Phases 1–5, the tools as a pattern language |
+| `field-guide/` | the Field Guide (`00`–`05`) and the Kit (`06`, the pattern language) |
 | `diagrams/` | RCN Graph Tool JSON for the book's diagrams; validated with `../tools/validate-rcn-graph.js`; render by opening the tool with `?url=` or dragging the file in |
 | `build-design-record.py` | rebuilds the section and conversation files from the export and the Pages files; the Pages reader is in there |
 
