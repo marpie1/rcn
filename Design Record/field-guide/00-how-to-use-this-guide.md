@@ -44,7 +44,7 @@ One scenario is carried through all five phases: a refugee student's first year 
 
 ## The tools
 
-The RCN foundational tools carry parts of every phase: FedWiki for the scenario pages, the e-VSM survey before and after, the RCN Graph Tool for the linkage map, the ecosystem sketch, and the value network, SODOTO for portfolios, CfA-dSC for the charter. Some steps have no tool yet and are done on paper. The tools file says which is which, and the Design Record's Section 9 diagram (`diagrams/me-lifecycle-end-to-end.rcn.json`) colors every step by its state. Do not wait for a tool to be built to run a phase; every step in this guide can be done by hand, and running it by hand is how we learn which tool to build next.
+The RCN foundational tools carry parts of every phase: FedWiki for the scenario pages, the e-VSM survey before and after, the RCN Graph Tool for the linkage map, the ecosystem sketch, and the value network, SODOTO for portfolios, CfA-dSC for the charter, Value Stream Mapping and A3 for the work inside an institution. Some steps have no tool yet and are done on paper. The tools file says which is which, and the Design Record's Section 9 diagram (`diagrams/me-lifecycle-end-to-end.rcn.json`) colors every step by its state. Do not wait for a tool to be built to run a phase; every step in this guide can be done by hand, and running it by hand is how we learn which tool to build next.
 
 ## Files
 
@@ -54,4 +54,4 @@ The RCN foundational tools carry parts of every phase: FedWiki for the scenario 
 - `03-phase-3-choose.md`
 - `04-phase-4-charter.md`
 - `05-phase-5-do-look-settle-and-go-again.md`
-- `06-the-conveners-tools.md` — the one-page references: moods and speech acts, the Phase 1 questions, the scenario template, the selection matrix, the charter, the retrospective, tool status
+- `06-the-conveners-tools-a-pattern-language.md` — the tools and methods as a pattern language: each with its problem, its move, what supports it, where its intro and manual live, and its Basic / Intermediate / Advanced ladder

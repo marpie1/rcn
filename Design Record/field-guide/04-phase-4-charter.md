@@ -18,7 +18,7 @@ You, the convener, are the Platform's actor here: the EMC organizer in Haier's s
 
 ## Step one: write the scenario
 
-Phase 2 produced a compound-need scenario: title, situation, needs, who counts, where, existing attempts, attribution, and the invitation. Phase 4 turns it into a vision-blueprint: the ME's proposal for how the need will be addressed. The template in the tools file has both halves; the second half is:
+Phase 2 produced an interlocking-needs scenario: title, situation, needs, who counts, where, existing attempts, attribution, and the invitation. Phase 4 turns it into a vision-blueprint: the ME's proposal for how the need will be addressed. The template in the tools file has both halves; the second half is:
 
 - **Value proposition.** What value will be created, for whom, in what form, over what time? Named specifically enough that a resident could say afterward whether it happened.
 - **Value creation process.** How the work will go, from forming the ecosystem to delivering to residents, in sequence.
@@ -48,6 +48,8 @@ Nobody has written a neighborhood VAM yet. Write one anyway, on one page, and ke
 ## Step four: the institutions commit
 
 Go to each institution the ecosystem sketch shows the ME needs, the school, the agency, the clinic, with the scenario and the sketch, and make a request of someone who can answer it: will the school change its intake to include the CHW, lend the nurse two hours a week, share what the agency sends? The answer is a promise, a counteroffer, or a decline, and any of the three is legitimate. Most institutions commit by lending a person's time without money changing hands, betting that the ME will save them waste and delay; write that down as their contribution and give them a seat in the VAM if they want one. Record every institutional commitment in the charter, separately from the promises of the people who lent.
+
+When the commitment is a change to a process inside the institution, the school's intake, the clinic's referral, the agency's handoff, agree now how it will be worked: the ME member from that institution and its staff map the process as it actually runs with Value Stream Mapping, in the Graph Tool's VSM mode, find the storm bursts, and work the worst one with an A3, one page, in pencil, by the person who does the work. The A3's last box names one measure with a baseline, a target, and a date, and that measure is what gate two will look at for this part of the work. Medford's Phase 4 trained project staff in these two methods; the tools file has both.
 
 ## Step five: the gates and the seed
 
