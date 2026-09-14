@@ -14,7 +14,7 @@ Book the founded commons for both sessions and for the map to stay on the wall a
 
 Prepare, from your Phase 1 notes, a starter list of the parts: the small groups, the institutions residents deal with, the two or three residents' situations you heard most about. Do not prepare the map. The group makes the map.
 
-Have the e-VSM synthesis in your pocket, not on the wall.
+Have the e-VSM synthesis ready to show: the worlds side by side, where they agree and where they diverge, and a page of the free text in respondents' own words.
 
 ## Session one: the linkage map
 
@@ -25,6 +25,10 @@ Go around the room once. Ask each person: why are you here, from where you stand
 Then, briefly, WHERE (what place are we talking about, whose edges), WHEN (what span of time matters, this year, this generation), and FOR WHOM (whose lives). These are shorter. They settle the frame.
 
 If the room is in resignation, you will hear it in the WHY round: "I'm here because I was asked." Do not argue. Say, if it helps, that the room has tried before and been let down, and that today is for looking, not for promising. Then go on.
+
+### What the neighborhood has already said
+
+Before the map, show the e-VSM results. Say what they are: fourteen people, or however many, in these worlds, asked how the neighborhood's capacities and the relationships among them are doing. Show the worlds side by side. Point at where they agree and where they diverge, and read a few lines of the free text aloud in the respondents' words. Ask the room what it makes of the divergences. Ten or fifteen minutes. It is the neighborhood's own several pictures of itself, gathered from more people than are in the room, and the room should have it before it draws. Do not present it as findings that settle anything; it is what has already been said, for the room to argue with and correct on the map.
 
 ### Building the map
 
