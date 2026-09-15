@@ -41,7 +41,7 @@ Each section file holds every layer in order — first draft, Marc's verbatim ed
 1. **All twelve sections are at the rewrite layer** as of 2026-09-11. Marc's review copies are in `review/` — one clean file per section holding only the latest text.
 2. **One review pass over all twelve** with Marc. Places already flagged for argument: Section 8's speech-acts Customer role, the Ackoff retelling's length, the single nesting-plus-network diagram, and whether "Forms of neighborhood value creation" belongs in Section 10; Section 3's Beer→e-VSM and RenDanHeYi mappings; Section 1's "field guide" against Marc's "tool kit"; Section 9's proposed three gates and the tool-state colors on the lifecycle diagram; Section 10's Likert answer and the Bill Mahoney attribution; Section 11's Whatcom-institutions paragraph and the Rippel correction.
 3. **Book-level work**: title; the cold-reader structure (Section 1 now glosses RCN and WWHA, but is it an introduction?); whether Section 8 splits; which of Sections 9–12 survive as chapters; a publication path.
-4. **Then the field guide (the tool kit)** — first pass drafted; Marc's reactions on 1, 2, and the Kit applied; 3–5 next; then the SODOTO skill pages per pattern in `kit/`.
+4. **Then the field guide (the tool kit)** — first pass drafted; Marc's reactions on 1, 2, and the Kit applied; 3–5 next; then the remaining thirty-one SODOTO triples in `kit/skills/`, on the e-VSM model.
 
 Work items from Marc's review of the pattern language (2026-09-14): patterns for the RCN Table, the Graph Composer and Causal Loop Diagramming; the SODOTO Basic / Intermediate / Advanced pages, one triple per pattern, in FedWiki.
 
@@ -87,7 +87,7 @@ Settled vocabulary is in `handoff-2026-09-10.md` and is not repeated here.
 | `chat-export/` | the raw account export (gitignored where large) and the two full transcripts |
 | `review/` | the latest text of each section with nothing else — Marc's reading and editing copies, rebuilt from the section files whenever a rewrite lands |
 | `field-guide/` | the Field Guide: how to use, and Phases 1–5 |
-| `kit/` | the Kit: the pattern language of tools and methods; the SODOTO skill triples and the tool intros will join it |
+| `kit/` | the Kit: `pattern-language.md`; `tool-index.md` pointing at every tool's intro, manual, deck and schema; `skills/` with the SODOTO triple template and the e-VSM triple as the model |
 | `diagrams/` | RCN Graph Tool JSON for the book's diagrams; validated with `../tools/validate-rcn-graph.js`; render by opening the tool with `?url=` or dragging the file in |
 | `build-design-record.py` | rebuilds the section and conversation files from the export and the Pages files; the Pages reader is in there |
 
