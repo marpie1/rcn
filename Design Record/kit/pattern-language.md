@@ -1,4 +1,4 @@
-# The convener's tools — a pattern language
+# The Kit — the convener's tools as a pattern language
 
 **Second pass, 2026-09-14**, from Marc's edits to the first. This is Marc's idea, written out: the tools and methods of the field guide as a pattern language on Alexander's model. Each pattern helps complete larger patterns above it and is completed by smaller patterns below it, so the whole forms a network of supporting and supported tools rather than a list. A convener grabs a pattern when a phase calls for it and follows its links to what it needs.
 
@@ -18,7 +18,7 @@ Each pattern has the same parts, each on its own line.
 
 **Skills** is the Basic / Intermediate / Advanced ladder, the seed for the SODOTO pages that will teach each pattern in FedWiki. Every tool and method needs these three pages; this is the first statement of what each level means.
 
-The network is drawn in `../diagrams/field-guide-pattern-language.rcn.json`. The numbering follows the cycle: pattern 0 is the cycle itself; then the patterns of readiness, then seeing, choosing, chartering, doing and settling, and last the patterns that run through everything.
+The network is drawn in `../diagrams/kit-pattern-language.rcn.json`. The numbering follows the cycle: pattern 0 is the cycle itself; then the patterns of readiness, then seeing, choosing, chartering, doing and settling, and last the patterns that run through everything.
 
 ---
 
@@ -34,7 +34,7 @@ The network is drawn in `../diagrams/field-guide-pattern-language.rcn.json`. The
 
 **State.** Paper. The cycle is a sequence of meetings and conversations; the tools carry its steps.
 
-**Learn it from.** `00-how-to-use-this-guide.md`; the Medford playbook in Confluence (LMID space, "Phases of Linkage Mapping Work"); Design Record Sections 1 and 2.
+**Learn it from.** `../field-guide/00-how-to-use-this-guide.md`; the Medford playbook in Confluence (LMID space, "Phases of Linkage Mapping Work"); Design Record Sections 1 and 2.
 
 **Skills.**
 Basic: can name the five phases and say what each produces.
@@ -53,7 +53,7 @@ Advanced: can run a cycle, then hand phases over one at a time until the neighbo
 
 **State.** Paper. The questions are held by the convener and answered by observation; no tool.
 
-**Learn it from.** Design Record Section 4 has the full eleven with what each is looking for; `01-phase-1-understand-and-enlist.md` has the examples inside and outside RCN and the definition of a steward.
+**Learn it from.** Design Record Section 4 has the full eleven with what each is looking for; `../field-guide/01-phase-1-understand-and-enlist.md` has the examples inside and outside RCN and the definition of a steward.
 
 **Skills.**
 Basic: can find answers to the five questions in a neighborhood.
@@ -72,7 +72,7 @@ Advanced: one or more locals can now do this assessment themselves and can teach
 
 **State.** Paper for the finding; the RCN Table exists for the list; a schema entry for a small group in Neo4j is work to do.
 
-**Learn it from.** Design Record Section 4, "Beyond the diagnostic"; `01-phase-1-understand-and-enlist.md` on associations; `tools/rcn-table-intro.pptx` for the Table.
+**Learn it from.** Design Record Section 4, "Beyond the diagnostic"; `../field-guide/01-phase-1-understand-and-enlist.md` on associations; `tools/rcn-table-intro.pptx` for the Table.
 
 **Skills.**
 Basic: can find and list the groups by following names.
@@ -91,7 +91,7 @@ Advanced: can see from the list which groups will form the center of the first m
 
 **State.** Paper.
 
-**Learn it from.** Design Record Section 7, "Conversations for coffee, possibilities, and action" (Marc and Robin Asby's addition to Dunham); `01-phase-1-understand-and-enlist.md`, "Coffee conversations."
+**Learn it from.** Design Record Section 7, "Conversations for coffee, possibilities, and action" (Marc and Robin Asby's addition to Dunham); `../field-guide/01-phase-1-understand-and-enlist.md`, "Coffee conversations."
 
 **Skills.**
 Basic: can have one without asking for anything.
@@ -110,7 +110,7 @@ Advanced: can tell from a set of coffee conversations whether a neighborhood is 
 
 **State.** Paper.
 
-**Learn it from.** `01-phase-1-understand-and-enlist.md`, "Enlisting."
+**Learn it from.** `../field-guide/01-phase-1-understand-and-enlist.md`, "Enlisting."
 
 **Skills.**
 Basic: can make the list of people and make the invitations.
@@ -129,7 +129,7 @@ Advanced: can read a decline as information and change the room because of it.
 
 **State.** Built: `evsm-svg-v3.html`, `evsm-aggregator.html`, `evsm-report.html`, `evsm_excel_tool.html`. Not built: Rasch calibration of the results, the environment interface, the neighborhood version's re-check against this guide.
 
-**Learn it from.** `docs/evsm-intro.html`, `evsm-workflow.html`, `evsm-architecture.html`, and the four manuals (survey, aggregator, report, excel); Design Record Section 3's shared reference; `01-phase-1-understand-and-enlist.md` for the list of worlds.
+**Learn it from.** `docs/evsm-intro.html`, `evsm-workflow.html`, `evsm-architecture.html`, and the four manuals (survey, aggregator, report, excel); Design Record Section 3's shared reference; `../field-guide/01-phase-1-understand-and-enlist.md` for the list of worlds.
 
 **Skills.**
 Basic: can answer the survey and read their own report.
@@ -148,7 +148,7 @@ Advanced: can design scenario-specific items, run compare mode across worlds and
 
 **State.** Paper.
 
-**Learn it from.** `02-phase-2-see-the-system-design-what-is-wanted.md`; Design Record Section 7, "Phase 2's WHY sequence"; Marc's 2014 Idealized Design deck.
+**Learn it from.** `../field-guide/02-phase-2-see-the-system-design-what-is-wanted.md`; Design Record Section 7, "Phase 2's WHY sequence"; Marc's 2014 Idealized Design deck.
 
 **Skills.**
 Basic: can run the WHY round without shortening it.
@@ -167,7 +167,7 @@ Advanced: can bring the WHYs back at the right moment in a later phase, and upda
 
 **State.** Built for keeping (Graph Tool, ordinary mode with a legend of kinds); a ready linkage-map legend is work to do.
 
-**Learn it from.** `02-phase-2-see-the-system-design-what-is-wanted.md`; Marc's Logic of VSM Linkage Maps deck (Design Record/sources/); the thirty Spokane maps; Design Record Sections 3 and 8; `tools/graph-tool-intro.html` and `graph-tool-manual.html`.
+**Learn it from.** `../field-guide/02-phase-2-see-the-system-design-what-is-wanted.md`; Marc's Logic of VSM Linkage Maps deck (Design Record/sources/); the thirty Spokane maps; Design Record Sections 3 and 8; `tools/graph-tool-intro.html` and `graph-tool-manual.html`.
 
 **Skills.**
 Basic: can put up parts and labeled arrows on a wall with a room.
@@ -186,7 +186,7 @@ Advanced: can read the between-institution form off the map, see where a scenari
 
 **State.** Paper.
 
-**Learn it from.** Marc's Logic of VSM Linkage Maps Idealized Design deck; Ackoff's Bell Labs lecture (Design Record/sources/); Design Record Sections 3 and 8; `02-phase-2-…md`, "Session two."
+**Learn it from.** Marc's Logic of VSM Linkage Maps Idealized Design deck; Ackoff's Bell Labs lecture (Design Record/sources/); Design Record Sections 3 and 8; `../field-guide/02-phase-2-…md`, "Session two."
 
 **Skills.**
 Basic: can state the two constraints and hold the room to them.
@@ -205,7 +205,7 @@ Advanced: can keep a room in ambition without letting it become a wish list, and
 
 **State.** Built: the FedWiki template pages. Not built: the playbook for writing one; the four conveners' own scenarios.
 
-**Learn it from.** Marc's FedWiki pages "Customer Scenario Template" and "Writing a Customer Scenario" (Design Record/sources/pastes/); Design Record Section 5 (the fourteen elements, the bid mechanic); `04-phase-4-charter.md`, "Step one."
+**Learn it from.** Marc's FedWiki pages "Customer Scenario Template" and "Writing a Customer Scenario" (Design Record/sources/pastes/); Design Record Section 5 (the fourteen elements, the bid mechanic); `../field-guide/04-phase-4-charter.md`, "Step one."
 
 **Skills.**
 Basic: can fill the interlocking-needs half from a Phase 2 meeting.
@@ -243,7 +243,7 @@ Advanced: can teach scenario writing with it.
 
 **State.** Paper; a tool is on the list to build.
 
-**Learn it from.** The 2014 CMG Linkage Mapping playbook (Confluence, community4health.atlassian.net, LMID space); Design Record Sections 7 and 9; `03-phase-3-choose.md`.
+**Learn it from.** The 2014 CMG Linkage Mapping playbook (Confluence, community4health.atlassian.net, LMID space); Design Record Sections 7 and 9; `../field-guide/03-phase-3-choose.md`.
 
 **Skills.**
 Basic: can run it on paper with a room.
@@ -281,7 +281,7 @@ Advanced: can run a full sensitivity model and integrate it with a linkage map.
 
 **State.** Partial: EIP mode exists; the stage underlay, the wall print path, and the storyboard are on `docs/eip-stage-todo.md`.
 
-**Learn it from.** `tools/graph-tool-manual.html` (EIP mode); `docs/eip-stage-todo.md`; `04-phase-4-charter.md`, "Step two."
+**Learn it from.** `tools/graph-tool-manual.html` (EIP mode); `docs/eip-stage-todo.md`; `../field-guide/04-phase-4-charter.md`, "Step two."
 
 **Skills.**
 Basic: can sketch roles on a wall.
@@ -300,7 +300,7 @@ Advanced: can read a storyboard of sketches as the story of an ecosystem changin
 
 **State.** Built.
 
-**Learn it from.** `docs/value-network-notation.md`; `tools/schemas/graph-tool-v22.md`, "Value networks"; the six drawings in `tools/vna-*.rcn.json` and companions; Design Record Sections 8, 9, 10; `04-phase-4-charter.md`, "Step two."
+**Learn it from.** `docs/value-network-notation.md`; `tools/schemas/graph-tool-v22.md`, "Value networks"; the six drawings in `tools/vna-*.rcn.json` and companions; Design Record Sections 8, 9, 10; `../field-guide/04-phase-4-charter.md`, "Step two."
 
 **Skills.**
 Basic: can draw one on paper with labeled arrows.
@@ -319,7 +319,7 @@ Advanced: can read the five findings off a drawing, lay two drawings over each o
 
 **State.** Paper; the research on neighborhood VAMs is not done and CfA-dSC does not carry it yet.
 
-**Learn it from.** Design Record Sections 6 (VAM explained at first reference), 8, 9 (VAM proportion); Hamel and Zanini, HBR 2018, for Haier's; `04-phase-4-charter.md`, "Step three."
+**Learn it from.** Design Record Sections 6 (VAM explained at first reference), 8, 9 (VAM proportion); Hamel and Zanini, HBR 2018, for Haier's; `../field-guide/04-phase-4-charter.md`, "Step three."
 
 **Skills.**
 Basic: can fill the one-page VAM for a small ME.
@@ -338,7 +338,7 @@ Advanced: can write a VAM from a value network and settle it partially.
 
 **State.** Partial: CfA-dSC carries two-party conversations for action; the multi-party charter is the committed enhancement. Until then the signed sheet is the contract.
 
-**Learn it from.** `docs/cfa-dsc-intro.html`; `tools/cfa-dsc-creator.html`; Design Record Sections 7 and 8; `04-phase-4-charter.md`, "Step six."
+**Learn it from.** `docs/cfa-dsc-intro.html`; `tools/cfa-dsc-creator.html`; Design Record Sections 7 and 8; `../field-guide/04-phase-4-charter.md`, "Step six."
 
 **Skills.**
 Basic: can name each speech act as it happens in a chartering.
@@ -357,7 +357,7 @@ Advanced: can run a chartering with a dozen parties and enter it in CfA-dSC.
 
 **State.** Paper; proposed and untested.
 
-**Learn it from.** Design Record Section 9; the two diagrams `../diagrams/catalytic-capital-money-flows.rcn.json` and `me-lifecycle-end-to-end.rcn.json`; `04-phase-4-charter.md`, "Step five."
+**Learn it from.** Design Record Section 9; the two diagrams `../diagrams/catalytic-capital-money-flows.rcn.json` and `me-lifecycle-end-to-end.rcn.json`; `../field-guide/04-phase-4-charter.md`, "Step five."
 
 **Skills.**
 Basic: can state the three gates to an ME and mean them.
@@ -395,7 +395,7 @@ Advanced: can run a room's commitments on speech acts, as the hospital was run, 
 
 **State.** Paper.
 
-**Learn it from.** Design Record Section 7; Marc's five years of training with Dunham, Turkovitch, and Lucy (Section 11); `01-phase-1-understand-and-enlist.md`, "Listen for the moods."
+**Learn it from.** Design Record Section 7; Marc's five years of training with Dunham, Turkovitch, and Lucy (Section 11); `../field-guide/01-phase-1-understand-and-enlist.md`, "Listen for the moods."
 
 **Skills.**
 Basic: can tell resignation from acceptance in themselves.
@@ -414,7 +414,7 @@ Advanced: can shift a room's mood from closing to opening without pretending the
 
 **State.** Paper.
 
-**Learn it from.** Design Record Section 8 (execution); `05-phase-5-do-look-settle-and-go-again.md`, "Doing the work."
+**Learn it from.** Design Record Section 8 (execution); `../field-guide/05-phase-5-do-look-settle-and-go-again.md`, "Doing the work."
 
 **Skills.**
 Basic: can walk a promise list.
@@ -433,7 +433,7 @@ Advanced: can mentor an ME through a missed gate without taking it over.
 
 **State.** Paper, with the tools it uses built.
 
-**Learn it from.** Design Record Sections 7, 8, 10; the 2014 assessment-of-situation template (the mood matrix past / present / future) in the Medford material; `05-phase-5-…md`, "Looking."
+**Learn it from.** Design Record Sections 7, 8, 10; the 2014 assessment-of-situation template (the mood matrix past / present / future) in the Medford material; `../field-guide/05-phase-5-…md`, "Looking."
 
 **Skills.**
 Basic: can run the five steps in order.
@@ -471,7 +471,7 @@ Advanced: can build a neighborhood scorecard dimension from scratch, compare acr
 
 **State.** Paper.
 
-**Learn it from.** Design Record Sections 6 (the four currencies), 8, 9, 10 (recognition as something a person does); `05-phase-5-…md`, "Settling."
+**Learn it from.** Design Record Sections 6 (the four currencies), 8, 9, 10 (recognition as something a person does); `../field-guide/05-phase-5-…md`, "Settling."
 
 **Skills.**
 Basic: can run a settlement conversation with residents speaking first.
@@ -566,7 +566,7 @@ Advanced: can relate several MEs' timelines and read overlaps.
 
 **State.** Paper; Highlander 3.0 is an initiative in formation.
 
-**Learn it from.** Design Record Section 4; `01-phase-1-understand-and-enlist.md`, "When one filter is present and the other is not"; Design Record/chat-memory/areas/highlander-3.md.
+**Learn it from.** Design Record Section 4; `../field-guide/01-phase-1-understand-and-enlist.md`, "When one filter is present and the other is not"; Design Record/chat-memory/areas/highlander-3.md.
 
 **Skills.**
 Basic: can say "not yet, and here is what is missing" without blame.
@@ -585,7 +585,7 @@ Advanced: can host a Highlander cohort, or mentor a nascent leader in another ne
 
 **State.** Paper.
 
-**Learn it from.** Design Record Sections 2 (Principle Two), 6, 8 (how the Platform persists); `01-phase-1-understand-and-enlist.md`, "Know your own Platform relationship."
+**Learn it from.** Design Record Sections 2 (Principle Two), 6, 8 (how the Platform persists); `../field-guide/01-phase-1-understand-and-enlist.md`, "Know your own Platform relationship."
 
 **Skills.**
 Basic: can say what is in it for them honestly when asked.

@@ -10,7 +10,7 @@ Marc's structure, stated plainly (2026-09-14): **the 12, the 6, and the Kit.** T
 
 **The Field Guide — six files.** How a convener runs one neighborhood through one cycle: `00-how-to-use-this-guide.md` and the five phases, `01-` to `05-`, in `field-guide/`. Operational voice, imperative where a move is named, one worked example carried through. Written for a convener doing, not a reader thinking. Each phase says where in the Book its reasoning lives.
 
-**The Kit — the pattern language.** The tools and methods themselves, the things people grab: `field-guide/06-the-conveners-tools-a-pattern-language.md`, thirty-two patterns on Alexander's model, each with its problem, its move, what it needs, its state, where to learn it, and its Basic / Intermediate / Advanced ladder; the network drawn in `diagrams/`. This is the seed of the RCN pattern-language book, and of the SODOTO skill pages, one triple per pattern, that will teach each tool in FedWiki. The Kit is the thing Chat and Marc first called "the kit"; the Field Guide is the sequence for using it.
+**The Kit — the pattern language.** The tools and methods themselves, the things people grab: `kit/pattern-language.md`, thirty-two patterns on Alexander's model, each with its problem, its move, what it needs, its state, where to learn it, and its Basic / Intermediate / Advanced ladder; the network drawn in `diagrams/`. This is the seed of the RCN pattern-language book, and of the SODOTO skill pages, one triple per pattern, that will teach each tool in FedWiki. The Kit is the thing Chat and Marc first called "the kit"; the Field Guide is the sequence for using it.
 
 The Book explains, the Field Guide sequences, the Kit equips. A convener can run the Field Guide without the Book; the Field Guide cannot be run without the Kit; the Kit makes no sense without the Book. All three are delivered as FedWiki pages, drafted here as pipeline markdown. Publishing order per Marc's standing rule: .md → FedWiki → edit and discuss → .md → then HTML and PDF.
 
@@ -41,7 +41,7 @@ Each section file holds every layer in order — first draft, Marc's verbatim ed
 1. **All twelve sections are at the rewrite layer** as of 2026-09-11. Marc's review copies are in `review/` — one clean file per section holding only the latest text.
 2. **One review pass over all twelve** with Marc. Places already flagged for argument: Section 8's speech-acts Customer role, the Ackoff retelling's length, the single nesting-plus-network diagram, and whether "Forms of neighborhood value creation" belongs in Section 10; Section 3's Beer→e-VSM and RenDanHeYi mappings; Section 1's "field guide" against Marc's "tool kit"; Section 9's proposed three gates and the tool-state colors on the lifecycle diagram; Section 10's Likert answer and the Bill Mahoney attribution; Section 11's Whatcom-institutions paragraph and the Rippel correction.
 3. **Book-level work**: title; the cold-reader structure (Section 1 now glosses RCN and WWHA, but is it an introduction?); whether Section 8 splits; which of Sections 9–12 survive as chapters; a publication path.
-4. **Then the field guide (the tool kit)** — first pass drafted; Marc's reactions next; then the SODOTO skill pages per pattern.
+4. **Then the field guide (the tool kit)** — first pass drafted; Marc's reactions on 1, 2, and the Kit applied; 3–5 next; then the SODOTO skill pages per pattern in `kit/`.
 
 Work items from Marc's review of the pattern language (2026-09-14): patterns for the RCN Table, the Graph Composer and Causal Loop Diagramming; the SODOTO Basic / Intermediate / Advanced pages, one triple per pattern, in FedWiki.
 
@@ -86,7 +86,8 @@ Settled vocabulary is in `handoff-2026-09-10.md` and is not repeated here.
 | `sources/` | the files Marc uploaded to the two chats, gathered from Downloads and Desktop, plus his later `.pages` edits and the recovered CAM item pool; `sources/pastes/` holds the text he pasted, including his FedWiki pages on customer scenarios, Story Structure and the action conversation |
 | `chat-export/` | the raw account export (gitignored where large) and the two full transcripts |
 | `review/` | the latest text of each section with nothing else — Marc's reading and editing copies, rebuilt from the section files whenever a rewrite lands |
-| `field-guide/` | the Field Guide (`00`–`05`) and the Kit (`06`, the pattern language) |
+| `field-guide/` | the Field Guide: how to use, and Phases 1–5 |
+| `kit/` | the Kit: the pattern language of tools and methods; the SODOTO skill triples and the tool intros will join it |
 | `diagrams/` | RCN Graph Tool JSON for the book's diagrams; validated with `../tools/validate-rcn-graph.js`; render by opening the tool with `?url=` or dragging the file in |
 | `build-design-record.py` | rebuilds the section and conversation files from the export and the Pages files; the Pages reader is in there |
 

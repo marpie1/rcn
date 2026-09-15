@@ -32,7 +32,7 @@ The five phases descend from the five-phase Linkage Mapping playbook Cambridge M
 
 **Three kinds of conversation.** A coffee conversation asks whether there is any shared interest at all. A conversation for possibilities asks what could exist. A conversation for action commits specific people to specific work by specific times. Phase 1 is coffee, Phase 2 is possibilities, Phase 3 turns possibilities into the ground for action, Phase 4 is action. Skipping ahead, asking for promises in a possibilities conversation or floating possibilities when the room is ready to commit, is the most common way conveners lose a room. The guide names which conversation each moment is.
 
-**Moods are information.** A room in resignation cannot design; a room in resentment cannot be facilitated past what happened to it; a room in acceptance can work. You will not teach anyone this vocabulary. You will use it yourself, and name a mood out loud only when naming it would help. The tools file has the one-page version.
+**Moods are information.** A room in resignation cannot design; a room in resentment cannot be facilitated past what happened to it; a room in acceptance can work. You will not teach anyone this vocabulary. You will use it yourself, and name a mood out loud only when naming it would help. The Kit has the one-page version, pattern 19.
 
 ## What this guide is not
 
@@ -44,7 +44,7 @@ One scenario is carried through all five phases: a refugee student's first year 
 
 ## The tools
 
-The RCN foundational tools carry parts of every phase: FedWiki for the scenario pages, the e-VSM survey before and after, the RCN Graph Tool for the linkage map, the ecosystem sketch, and the value network, SODOTO for portfolios, CfA-dSC for the charter, Value Stream Mapping and A3 for the work inside an institution. Some steps have no tool yet and are done on paper. The tools file says which is which, and the Design Record's Section 9 diagram (`diagrams/me-lifecycle-end-to-end.rcn.json`) colors every step by its state. Do not wait for a tool to be built to run a phase; every step in this guide can be done by hand, and running it by hand is how we learn which tool to build next.
+The RCN foundational tools carry parts of every phase: FedWiki for the scenario pages, the e-VSM survey before and after, the RCN Graph Tool for the linkage map, the ecosystem sketch, and the value network, SODOTO for portfolios, CfA-dSC for the charter, Value Stream Mapping and A3 for the work inside an institution. Some steps have no tool yet and are done on paper. The Kit says which is which, and the Design Record's Section 9 diagram (`diagrams/me-lifecycle-end-to-end.rcn.json`) colors every step by its state. Do not wait for a tool to be built to run a phase; every step in this guide can be done by hand, and running it by hand is how we learn which tool to build next.
 
 ## Files
 
@@ -54,4 +54,5 @@ The RCN foundational tools carry parts of every phase: FedWiki for the scenario 
 - `03-phase-3-choose.md`
 - `04-phase-4-charter.md`
 - `05-phase-5-do-look-settle-and-go-again.md`
-- `06-the-conveners-tools-a-pattern-language.md` — the tools and methods as a pattern language: each with its problem, its move, what supports it, where its intro and manual live, and its Basic / Intermediate / Advanced ladder
+
+The tools themselves are the Kit, in `../kit/pattern-language.md`, the tools and methods as a pattern language, each with its problem, its move, what it needs, where to learn it, and its Basic / Intermediate / Advanced ladder. The Kit is a separate thing from this guide; this guide is the sequence for using it.
