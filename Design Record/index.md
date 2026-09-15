@@ -20,6 +20,7 @@ The Book explains, the Field Guide sequences, the Kit equips. A convener can run
 |---|---|---|---|
 | 1 | `01-origin-and-purpose.md` | rewrite (2026-09-11) | awaiting Marc's reactions; RCN/WWHA glossed for a cold reader; the Linkage Mapping phases are noted as the field guide's spine, not a section |
 | 2 | `02-four-principles.md` | rewrite (2026-09-11) | awaiting Marc's reactions; Principle Two retitled; Principle Four 'measured by their own measures' |
+| 2b | `02b-seven-protection-principles.md` | first draft (2026-09-15) | NEW — the seven protection principles (safety writ large), stated beside Section 2's four; from the Paris Safety Meeting deck, Reason, Tripod Beta/Delta, ORM, Amalberti, Mahoney, Pieper; awaiting Marc's reactions |
 | 3 | `03-vsm-at-neighborhood-scale.md` | rewrite (2026-09-11) | awaiting Marc's reactions — the VSM→e-VSM mapping and the RenDanHeYi mapping are first passes offered for correction; e-VSM shared reference now lives here |
 | 4 | `04-founded-commons.md` | rewrite (corrected 2026-09-11) | Chris/Jerry fixed in three places; kit → field guide; awaiting Marc's reactions |
 | 5 | `05-customer-scenario.md` | rewrite (vocabulary pass 2026-09-11) | awaiting Marc's reactions |
@@ -56,6 +57,8 @@ Work items Sections 9 and 10 surfaced: run one ME by hand end to end at small sc
 Work items Section 8 surfaced, beyond the sections: write the school-refugee-transition scenario in full (the first real one) and a playbook for how an Experience-ME writes one; run the EIP Stage → value network → VAM test on that scenario in Claude Code; decide whether Section 8 splits (the Ackoff case and the RCN Workbench are candidates for short sections of their own); the pattern-language book Marc proposed (Alexander) as a companion to the tool kit — a book-level decision.
 
 Two Claude Code sessions Chat flagged as separate pieces of substrate work, not part of the book: SODOTO portfolios extension (what a portfolio entry contains, how it attaches to individuals/MEs/Platforms, how it surfaces in bidding); CfA-dSC enhancement for chartering, VAM specification, speech-act instrumentation and gated funding.
+
+Work items from the safety thread (2026-09-15): the latent-condition survey as a pipeline .md (eleven BRFs in neighborhood terms, observable yes/no items, Mahoney's six vigilance items with 'leadership' read as the outside per McKnight, everyone answers, Worlds carry perspective); the field-guide insertions Section 2b's closing paragraph proposes (protection clause and barrier reading in the Charter, domain and safety model on the Customer Scenario, the substitution test in the Retrospective, the survey in Phase 1); then reconfigure the NRM tool to serve the practice (IAD bands as rows, HFACS classification per node type, Annex 6 validator with empty-band warnings, stepwise reveal as FedWiki items).
 
 ## Open design questions
 
