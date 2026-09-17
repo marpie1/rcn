@@ -18,13 +18,16 @@ Use the e-VSM config's Worlds. Choose three or four per survey in the neighborho
 
 ## Block A — Latent conditions (the eleven Basic Risk Factors in neighborhood terms)
 
+*What it measures: the eleven factors as events the respondent met in the last three months. Yes means a condition of concern occurred.*
+
 Response for every item: **Yes / No / Didn't come up.** "Didn't come up" means the respondent had no occasion to see it; it is excluded from the bar and reported as coverage. Optional free text after each block: *If you answered Yes to any of these, say a little about it.*
 
 Four items per factor. The first two of each four are the **core** items for a short form (22 items). The full form is 44. A neighborhood that already sits through e-VSM's 44 items may prefer Delta's rotation: each respondent gets the two core items plus one of the other two at random.
 
 ### A1. HW — The things we work with
 
-*What Shell called Hardware: the tools, materials and equipment. Here: the room, the kitchen, the van, the printer, the sign-up system, the supplies.*
+*Shell: Hardware. Poor condition, suitability or availability of materials: tools, equipment and components.*
+*Here: The room, the kitchen, the van, the printer, the sign-up system, the supplies: whether they exist, work, and are there when needed.*
 
 HW-1. In the last three months, did a piece of neighborhood work stall or get dropped because a space, vehicle, tool or supply wasn't there when it was needed?
 HW-2. Did you, or someone you know, pay out of pocket, or use your own car, phone or home, because the shared one wasn't available?
@@ -33,7 +36,8 @@ HW-4. Did anyone do a task with something not meant for it because the right thi
 
 ### A2. DE — How things are set up
 
-*Design: layouts and arrangements that make it hard to do the right thing. Here: how a room, a form, a schedule or a hand-off is laid out.*
+*Shell: Design. Ergonomically poor design of tools or equipment; user-unfriendly.*
+*Here: Whether a room, a form, a schedule or a hand-off is laid out so that doing it right is the easy way, or so that people must work around it.*
 
 DE-1. Did you have to work around the way something is set up (a room, a form, a sign-up, a schedule) to get a job done?
 DE-2. Is there a step in a neighborhood task that people regularly skip because it is awkward or slow?
@@ -42,7 +46,8 @@ DE-4. Did a form, an app or a sheet ask for something that made people give up o
 
 ### A3. MM — Keeping things up
 
-*Maintenance management: whether shared things get kept in working order. Here: shared things and shared agreements alike.*
+*Shell: Maintenance management. The non- or inadequate performance of maintenance tasks and repairs.*
+*Here: Whether shared things, and shared agreements, get kept in working order, or are found broken or lapsed at the moment they are needed.*
 
 MM-1. Is there a shared thing that has been broken, missing or unusable for more than a month?
 MM-2. Did an agreement (with a church, a school, a landlord, the city, a funder) turn out to have lapsed when someone needed it?
@@ -51,7 +56,8 @@ MM-4. Is there a shared thing that everyone knows needs fixing and nobody is on 
 
 ### A4. HK — Keeping track
 
-*Housekeeping: tidiness of the workplace. Here: the state of the commons, physical and informational.*
+*Shell: Housekeeping. No or insufficient attention to keeping the work floor clean or tidied up.*
+*Here: The state of the commons, physical and informational: whether people can find what they need, whether the list of who does what is current, whether one version of a thing is in circulation.*
 
 HK-1. Were you unable to find something you needed (a document, a key, a password, a contact, the notes from last time)?
 HK-2. Is the list of who is doing what out of date, or is there no such list?
@@ -60,7 +66,8 @@ HK-4. Did something (leftover supplies, a space, a shared account) get left in a
 
 ### A5. EC — Strain
 
-*Error-enforcing conditions: time pressure, fatigue, and conditions that make mistakes likely. Here: what the work asks of people's evenings, bodies and households.*
+*Shell: Error-enforcing conditions. Unsuitable physical conditions and other influences with a disadvantageous effect on human functioning.*
+*Here: What the work asks of people's evenings, bodies and households: exhaustion, outside deadlines met on volunteers' time, taking on what no one else would, money or health or family pressure on what was promised.*
 
 EC-1. Did you do neighborhood work past the point of exhaustion?
 EC-2. Was a deadline set by an outside body (a funder, the city, a school) met on volunteers' evenings and weekends?
@@ -69,7 +76,8 @@ EC-4. Did money worries, health or family strain affect your ability to do what 
 
 ### A6. PR — How we do things
 
-*Procedures: whether the way to do a task is written, findable, correct and usable.*
+*Shell: Procedures. Insufficient quality or availability of procedures: guidelines, instructions and manuals; specifications, paperwork, use in practice.*
+*Here: Whether the way to do a task is known, agreed, findable and matches what actually happens.*
 
 PR-1. Is there a task where two people would do it two different ways and neither knows which is right?
 PR-2. Did you have to ask three people to find out how something is done here?
@@ -78,7 +86,8 @@ PR-4. Did you finish a task and not know who to tell?
 
 ### A7. TR — Being shown first
 
-*Training: competence and experience. Here: whether anyone was shown before being expected to do. This is SODOTO's See One.*
+*Shell: Training. No or insufficient competence or experience among employees; not sufficiently suited, inadequately trained.*
+*Here: Whether anyone was shown before being expected to do; whether a task rests on one person who alone knows it. SODOTO's See One.*
 
 TR-1. Did you do a task you had never seen anyone do?
 TR-2. Is there a task that only one person knows how to do?
@@ -87,7 +96,8 @@ TR-4. Did you want to learn how something is done and find there was no one to s
 
 ### A8. CO — Knowing what's going on
 
-*Communication: whether information reaches the people who need it.*
+*Shell: Communication. No or ineffective communication between the various sites, departments or employees, or with official bodies.*
+*Here: Whether information reaches the people who need it: decisions learned after the fact, groups duplicating each other, messages that mattered not arriving.*
 
 CO-1. Did you learn of a decision that affected you after it was made?
 CO-2. Did two groups do the same work without knowing of each other?
@@ -96,7 +106,8 @@ CO-4. Did you first hear something important about the neighborhood's work as a 
 
 ### A9. IG — Pulled two ways
 
-*Incompatible goals: having to choose between the right way and production, money, politics or personal goals. This is the factor McKnight's critique lives in.*
+*Shell: Incompatible goals. The employee must choose between optimal working methods according to the established rules and the pursuit of production, financial, political, social or individual goals.*
+*Here: Having to choose between what a funder or institution wants and what residents need; work bending toward a report rather than a result; the careful way against the deadline; someone's paid job against their promise here.*
 
 IG-1. Did you have to choose between what a funder or an institution wanted and what residents needed?
 IG-2. Did work bend toward producing a report, a count or a photo rather than a result for residents?
@@ -105,7 +116,8 @@ IG-4. Did anyone's paid job pull against what they had promised here?
 
 ### A10. OR — Who does what, who decides
 
-*Organization: structure, philosophy and process. Here: roles, standing and ownership of decisions. This is the factor the three IAD bands read.*
+*Shell: Organisation. Shortcomings in the organization's structure, philosophy, processes or management strategies, resulting in inadequate management.*
+*Here: Whether roles, standing and ownership of decisions are clear: decisions nobody owns, roles nobody knew were roles, things falling between two groups.*
 
 OR-1. Is there a decision here that nobody knows who owns?
 OR-2. Did a role go unfilled because nobody knew it was a role?
@@ -114,7 +126,8 @@ OR-4. Did something fall between two groups because each thought the other had i
 
 ### A11. DF — Catching it when it goes wrong
 
-*Defences: protection against the consequences when the rest fails. Here: whether anything or anyone is watching, and whether a near miss gets said.*
+*Shell: Defences. No or insufficient protection of people, material and environment against the consequences of the operational disturbance that occurred.*
+*Here: Whether anything or anyone is watching when the rest fails: things going wrong that no one was watching for, work that depends on one person being present, near misses that go unmentioned.*
 
 DF-1. Did something go wrong here that no one had been watching for?
 DF-2. When something went wrong, was there no one whose job it was to notice?
@@ -124,6 +137,8 @@ DF-4. Did a near miss (something that almost went wrong) go unmentioned afterwar
 ---
 
 ## Block B — Speaking up (Mahoney's six, neighborhood wording)
+
+*What it measures: willingness to speak up about harm, Mahoney's six verbal-vigilance items, with "the outside" (the city, the funders, the service institutions) in place of "management/leadership."*
 
 Response: four-point **Disagree / Somewhat disagree / Somewhat agree / Agree**, as Mahoney ran them. No middle option.
 
@@ -142,6 +157,8 @@ Mahoney's originals, for the record: (1) My suggestions about patient safety wou
 
 ## Block C — Engagement (the inside)
 
+*What it measures: engagement on the inside, the small groups, the ME, the neighbors doing the work, as teamness, culture and people. Not Mahoney's items.*
+
 Response: the same four-point scale. Mahoney's Engagement factor had three components, teamness, culture and people, and predicted B-6 at .65. His engagement items are not in the deck, so these six are new and are marked as such; two per component. They ask about the inside: the small groups, the ME, the neighbors doing the work.
 
 C-1. (teamness) The people I do neighborhood work with can count on me, and I can count on them.
@@ -155,6 +172,8 @@ C-6. (people) Someone here would notice if I were struggling.
 
 ## Block D — Breakdowns
 
+*What it measures: whether harm was seen, whether it was said, what happened next, and how the person who raised it was treated.*
+
 Response as marked. The block exists so that Principle Five (breakdowns are blameless by default) has a measure: not whether breakdowns happen, which they will, but what happened to the people who named them.
 
 D-1. In the last three months, did you see something in the neighborhood's work that you thought could harm someone? **Yes / No.**
@@ -166,6 +185,8 @@ D-5. If someone here raised a concern about harm in the last three months, how w
 ---
 
 ## Block E — One open question
+
+*What it measures: the one thing that could go wrong that nobody is talking about.*
 
 E-1. What is the one thing that could go wrong here that nobody is talking about? *(free text; answered last; read first at the Phase 1 meeting.)*
 

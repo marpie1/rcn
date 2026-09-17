@@ -434,6 +434,17 @@ input[type=range] { width:100%; accent-color:var(--accent); height:3px; cursor:p
       </div>
     </div>
     <div class="ps">
+      <div class="pt">Extra Items
+        <span style="font-size:8px;font-weight:normal;color:var(--muted);margin-left:4px;">e.g. the Protection Survey</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-accent" id="importItemsBtn">⬆ Load items</button>
+        <button class="btn" id="clearItemsBtn">Clear</button>
+      </div>
+      <input type="file" id="itemsFileInput" accept=".json" style="display:none">
+      <div class="io-msg" id="items-msg" style="min-height:14px;"></div>
+    </div>
+    <div class="ps">
       <div class="pt">Save / Load Config</div>
       <div class="btn-row">
         <button class="btn" id="exportConfigBtn">⬇ Export</button>
@@ -547,6 +558,11 @@ input[type=range] { width:100%; accent-color:var(--accent); height:3px; cursor:p
     <div class="s-ps">
       <div class="s-pt">Navigate by Sphere</div>
       <div id="sphere-nav-list"></div>
+    </div>
+
+    <div class="s-ps" id="items-nav-section" style="display:none;">
+      <div class="s-pt" id="items-nav-title">Extra Items</div>
+      <div id="items-nav-list"></div>
     </div>
 
     <div class="s-ps" style="padding:0 0 4px;">
@@ -745,7 +761,22 @@ let surveyResponse = {
   respondentName: "",
   selectedWorlds: [],
   nodeAssessments: {},  // { "S-1": { status:"go" } }
-  edgeAssessments: {}   // { "1->2": { status:"agree", evidence:"...", suggestions:"..." } }
+  edgeAssessments: {},  // { "1->2": { status:"agree", evidence:"...", suggestions:"..." } }
+  itemAssessments: {}   // { "HW-1": { value:"yes", note:"..." } } — extra items (Protection Survey etc.)
+};
+
+// ══ EXTRA ITEMS ═══════════════════════════════════════════════════════════════
+// Optional question blocks carried in the config alongside the spheres and edges.
+// Item: { id, block, blockName, factor, factorName, text, scale, core, help }
+// Scales: ynd (Yes/No/Didn't come up), yn, ynk, agree4, d5, free
+let extraItems = [];
+const ITEM_SCALES = {
+  ynd:    [['yes','Yes'],['no','No'],['dnc',"Didn't come up"]],
+  yn:     [['yes','Yes'],['no','No']],
+  ynk:    [['yes','Yes'],['no','No'],['dk',"Don't know"]],
+  agree4: [['1','Disagree'],['2','Somewhat disagree'],['3','Somewhat agree'],['4','Agree']],
+  d5:     [['better','Better off'],['same','The same'],['worse','Worse off'],['dk',"Don't know"],['none','No one did']],
+  free:   []
 };
 
 // ══ EDGE LIST ═════════════════════════════════════════════════════════════════
@@ -788,7 +819,8 @@ const EDGE_LIST = [
 function buildAssessmentSequence() {
   const nodes = Object.keys(nodeLabels).map(id => ({type:'node', id}));
   const edges = EDGE_LIST.map(({tail,head}) => ({type:'edge', id:`${tail}->${head}`}));
-  return [...nodes, ...edges];
+  const items = extraItems.map(it => ({type:'item', id:it.id}));
+  return [...nodes, ...edges, ...items];
 }
 
 // ══ DISPLAY PARAMS ════════════════════════════════════════════════════════════
@@ -1224,7 +1256,7 @@ function initConfigIO() {
   const msg = id => { const m=document.getElementById('config-msg'); m.textContent=id; setTimeout(()=>m.textContent='',2200); };
 
   document.getElementById('exportConfigBtn').addEventListener('click',()=>{
-    const payload={ surveyMeta, nodeLabels, nodeDescriptions, nodeStatus, edgeStatus, edgeDescriptions, worldsCategories };
+    const payload={ surveyMeta, nodeLabels, nodeDescriptions, nodeStatus, edgeStatus, edgeDescriptions, worldsCategories, extraItems };
     const a=Object.assign(document.createElement('a'),{
       href:URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'})),
       download:'evsm-config.json'
@@ -1248,7 +1280,7 @@ function initConfigIO() {
   });
 
   document.getElementById('snapshotBtn').addEventListener('click', () => {
-    const payload = { surveyMeta, nodeLabels, nodeDescriptions, nodeStatus, edgeStatus, edgeDescriptions, worldsCategories };
+    const payload = { surveyMeta, nodeLabels, nodeDescriptions, nodeStatus, edgeStatus, edgeDescriptions, worldsCategories, extraItems };
     const sentinel = 'var EMBEDDED_CONFIG = null; // sentinel — exportSnapshot() replaces this with live config';
     const replacement = 'var EMBEDDED_CONFIG = ' + JSON.stringify(payload) + ';';
     const src = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
@@ -1271,11 +1303,44 @@ function applyConfig(d) {
   if(d.edgeStatus) Object.assign(edgeStatus,d.edgeStatus);
   if(d.edgeDescriptions) Object.assign(edgeDescriptions,d.edgeDescriptions);
   if(d.worldsCategories) worldsCategories=[...d.worldsCategories];
+  if(d.extraItems) extraItems=[...d.extraItems];
   if(d.surveyMeta) Object.assign(surveyMeta, d.surveyMeta);
   initMetaEditor(); renderSurveyMeta();
   buildLabelEditor(); buildNodeStatusEditor(); buildEdgeStatusEditor();
-  renderWorldsTags(); buildSurveyWorldsList(); buildSphereNavList();
+  renderWorldsTags(); buildSurveyWorldsList(); buildSphereNavList(); buildItemsNavList();
+  renderItemsMsg();
   renderSetup();
+}
+
+// ── Extra items: setup-side load / clear ──────────────────────────────────────
+function renderItemsMsg() {
+  const m=document.getElementById('items-msg'); if(!m) return;
+  if(!extraItems.length){ m.textContent='none loaded'; return; }
+  const blocks=[...new Set(extraItems.map(i=>i.block))];
+  m.textContent=`${extraItems.length} items in ${blocks.length} block${blocks.length===1?'':'s'}`;
+}
+function initItemsIO() {
+  const msg=t=>{ const m=document.getElementById('items-msg'); m.textContent=t; setTimeout(renderItemsMsg,2200); };
+  document.getElementById('importItemsBtn').addEventListener('click',()=>document.getElementById('itemsFileInput').click());
+  document.getElementById('itemsFileInput').addEventListener('change',e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try {
+        const d=JSON.parse(ev.target.result);
+        const arr=Array.isArray(d)?d:(d.items||d.extraItems||[]);
+        const bad=arr.filter(i=>!i.id||!i.text||!ITEM_SCALES[i.scale]);
+        if(!arr.length||bad.length){ msg(`✗ ${bad.length?bad.length+' items malformed':'no items found'}`); return; }
+        // worlds the items file asks for are added, not replaced
+        if(Array.isArray(d.worlds)) for(const w of d.worlds) if(!worldsCategories.includes(w)) worldsCategories.push(w);
+        extraItems=arr.map(i=>Object.assign({}, d.surveyName?{surveyName:d.surveyName}:{}, i));
+        renderWorldsTags(); buildSurveyWorldsList(); buildItemsNavList(); msg(`✓ Loaded ${arr.length} items`);
+      } catch { msg('✗ Invalid JSON'); }
+    };
+    r.readAsText(file); e.target.value='';
+  });
+  document.getElementById('clearItemsBtn').addEventListener('click',()=>{ extraItems=[]; surveyResponse.itemAssessments={}; buildItemsNavList(); msg('cleared'); });
+  renderItemsMsg();
 }
 
 // ── Sliders ──────────────────────────────────────────────
@@ -1357,6 +1422,79 @@ function buildSphereNavList() {
   c.appendChild(edgeSection);
 }
 
+function itemDone(it, a) {
+  if(!a) return false;
+  return it.scale==='free' ? !!(a.note&&a.note.trim()) : !!a.value;
+}
+
+function buildItemsNavList() {
+  const sec=document.getElementById('items-nav-section'); const c=document.getElementById('items-nav-list');
+  if(!sec||!c) return;
+  c.innerHTML='';
+  if(!extraItems.length){ sec.style.display='none'; return; }
+  sec.style.display='';
+  const blocks=[];
+  for(const it of extraItems){ if(!blocks.includes(it.block)) blocks.push(it.block); }
+  document.getElementById('items-nav-title').textContent=extraItems[0].surveyName||'Extra Items';
+  for(const b of blocks){
+    const its=extraItems.filter(i=>i.block===b);
+    const h=document.createElement('div');
+    h.style.cssText="font-family:'Libre Baskerville',serif;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--survey-muted);padding:6px 10px 4px;";
+    h.textContent=`${its[0].blockName||b} (${its.length})`;
+    c.appendChild(h);
+    for(const it of its){
+      const a=surveyResponse.itemAssessments[it.id];
+      const item=document.createElement('div'); item.className='sphere-nav-item';
+      item.dataset.id=it.id; item.dataset.type='item'; item.title=it.text;
+      item.innerHTML=`<span class="sphere-name" style="font-size:10px;font-weight:400;">${it.id}${it.factorName?' · '+it.factorName:''}</span><span class="dot ${itemDone(it,a)?'go':''}"></span>`;
+      item.addEventListener('click',()=>openAssessment('item',it.id));
+      c.appendChild(item);
+    }
+  }
+}
+
+function renderItemAssessment(id, seq) {
+  const it=extraItems.find(i=>i.id===id); if(!it) return;
+  const panel=document.getElementById('assessment-panel');
+  const a=surveyResponse.itemAssessments[id]||{};
+  const opts=ITEM_SCALES[it.scale]||[];
+  const choice = opts.length ? `
+        <div class="ap-field">
+          <div class="ap-field-label">Your answer</div>
+          <select class="ap-select" id="ap-status">
+            ${[['','— not answered —'],...opts].map(([v,l])=>`<option value="${v}" ${(a.value||'')===v?'selected':''}>${l}</option>`).join('')}
+          </select>
+        </div>` : '';
+  const factorLine = it.factorName ? `<div class="ap-label" style="font-size:11px;color:var(--survey-muted);">${it.factorName}${it.factor?' · '+it.factor:''}</div>` : '';
+  panel.innerHTML=`
+      <div class="ap-header">
+        <div class="ap-id">${it.blockName||it.block} · ${id}</div>
+        ${factorLine}
+        <div class="ap-label">${it.text}</div>
+        ${it.help?`<div class="ap-description">${miniMd(it.help)}</div>`:(it.blockHelp?`<div class="ap-description">${miniMd(it.blockHelp)}</div>`:'')}
+        ${it.shellDef?`<div class="ap-description" style="font-size:9px;opacity:.7;margin-top:3px;">Shell: ${miniMd(it.shellDef)}</div>`:''}
+      </div>
+      <div class="ap-body">
+        ${choice}
+        <div class="ap-field">
+          <div class="ap-field-label">${it.scale==='free'?'Your answer':'Say a little about it (optional)'}</div>
+          <textarea class="ap-textarea" id="ap-note" placeholder="${it.scale==='free'?'':(/^yn/.test(it.scale)?'If you answered Yes, what happened?':'Anything you want to add?')}">${a.note||''}</textarea>
+        </div>
+      </div>
+      <div class="ap-nav">
+        <button class="ap-nav-btn" id="ap-prev" ${currentSeqIndex===0?'disabled':''}>← Prev</button>
+        <button class="ap-nav-btn" id="ap-next" ${currentSeqIndex===seq.length-1?'disabled':''}>Next →</button>
+      </div>`;
+  const save=()=>{
+    const sel=document.getElementById('ap-status');
+    surveyResponse.itemAssessments[id]={ value: sel?sel.value:'', note: document.getElementById('ap-note').value };
+    buildItemsNavList(); updateProgress();
+    document.querySelectorAll('.sphere-nav-item').forEach(el=>el.classList.toggle('active',el.dataset.id===id));
+  };
+  const sel=document.getElementById('ap-status'); if(sel) sel.addEventListener('change',save);
+  document.getElementById('ap-note').addEventListener('input',save);
+}
+
 function renderSurvey() {
   const svg=buildSVG('survey-svg-container','survey',surveyHighlight);
   svg.addEventListener('click',e=>{
@@ -1382,7 +1520,9 @@ function openAssessment(type, id) {
   const panel=document.getElementById('assessment-panel');
   const isEdge=type==='edge';
 
-  if (isEdge) {
+  if (type==='item') {
+    renderItemAssessment(id, seq);
+  } else if (isEdge) {
     const [tail,head]=id.split('->').map(Number);
     const fromLabel=(nodeLabels[`S-${tail}`]||`S-${tail}`).replace(/\n/g,' ');
     const toLabel  =(nodeLabels[`S-${head}`]||`S-${head}`).replace(/\n/g,' ');
@@ -1487,10 +1627,11 @@ function openAssessment(type, id) {
 function updateProgress() {
   const nodeCount = Object.keys(nodeLabels).length;
   const edgeCount = EDGE_LIST.length;
-  const total = nodeCount + edgeCount;
+  const total = nodeCount + edgeCount + extraItems.length;
   const doneNodes = Object.values(surveyResponse.nodeAssessments).filter(a=>a.status).length;
   const doneEdges = Object.values(surveyResponse.edgeAssessments).filter(a=>a.status).length;
-  const done = doneNodes + doneEdges;
+  const doneItems = extraItems.filter(it=>itemDone(it, surveyResponse.itemAssessments[it.id])).length;
+  const done = doneNodes + doneEdges + doneItems;
   document.getElementById('survey-progress-bar').style.width = `${(done/total)*100}%`;
   document.getElementById('survey-progress-label').textContent = `${done} / ${total}`;
 }
@@ -1589,10 +1730,11 @@ function initSurveyExport() {
         worlds: surveyResponse.selectedWorlds
       },
       surveyMeta,
-      config:{ nodeLabels, nodeDescriptions, edgeDescriptions, worldsCategories },
+      config:{ nodeLabels, nodeDescriptions, edgeDescriptions, worldsCategories, extraItems },
       assessments:{
         nodes: surveyResponse.nodeAssessments,
-        edges: surveyResponse.edgeAssessments
+        edges: surveyResponse.edgeAssessments,
+        items: surveyResponse.itemAssessments
       }
     };
     const ident = anon
@@ -1619,10 +1761,11 @@ function initSurveyExport() {
         worlds: surveyResponse.selectedWorlds
       },
       surveyMeta,
-      config: { nodeLabels, nodeDescriptions, edgeDescriptions, worldsCategories },
+      config: { nodeLabels, nodeDescriptions, edgeDescriptions, worldsCategories, extraItems },
       assessments: {
         nodes: surveyResponse.nodeAssessments,
-        edges: surveyResponse.edgeAssessments
+        edges: surveyResponse.edgeAssessments,
+        items: surveyResponse.itemAssessments
       }
     };
     const sentinel = 'var EMBEDDED_REPORT_DATA = null; // sentinel — survey tool replaces this with live payload';
@@ -1663,6 +1806,7 @@ function initSurveyExport() {
         if (data.assessments) {
           if (data.assessments.nodes) Object.assign(surveyResponse.nodeAssessments, data.assessments.nodes);
           if (data.assessments.edges) Object.assign(surveyResponse.edgeAssessments, data.assessments.edges);
+          if (data.assessments.items) Object.assign(surveyResponse.itemAssessments, data.assessments.items);
         }
         // Restore config labels/descriptions if present
         if (data.config) {
@@ -1670,10 +1814,12 @@ function initSurveyExport() {
           if (data.config.nodeDescriptions) Object.assign(nodeDescriptions, data.config.nodeDescriptions);
           if (data.config.edgeDescriptions) Object.assign(edgeDescriptions, data.config.edgeDescriptions);
           if (data.config.worldsCategories) worldsCategories = [...data.config.worldsCategories];
+          if (data.config.extraItems) extraItems = [...data.config.extraItems];
         }
         // Rebuild all UI
         buildSurveyWorldsList();
         buildSphereNavList();
+        buildItemsNavList();
         renderSurvey();
         updateProgress();
         const m = document.getElementById('survey-msg');
@@ -1719,6 +1865,7 @@ buildEdgeStatusEditor();
 renderWorldsTags();
 initWorldsEditor();
 initConfigIO();
+initItemsIO();
 initSliders();
 initSurveyExport();
 buildSurveyWorldsList();

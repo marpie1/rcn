@@ -93,6 +93,21 @@ header {
   color:var(--muted); text-align:center; max-width:300px;
 }
 .diagram-n { font-size:9px; font-family:'IBM Plex Mono',monospace; color:var(--muted); }
+.fsp-wrap { margin:14px auto 0; max-width:560px; padding:10px 12px 8px; border-top:1px solid var(--rule); }
+.fsp-title { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.fsp-row { display:grid; grid-template-columns:150px 1fr 34px 34px; align-items:center; gap:6px; font-size:10px; padding:2px 0; cursor:pointer; border-radius:3px; }
+.fsp-row:hover { background:#f0f5f2; }
+.fsp-row.active { background:#e6efe9; }
+.fsp-label { color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fsp-label small { color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:8px; margin-left:4px; }
+.fsp-bar-wrap { height:9px; background:#eae7df; border-radius:2px; overflow:hidden; }
+.fsp-bar { height:100%; background:var(--stop); }
+.fsp-bar.speak { background:var(--unsure); }
+.fsp-bar.engage { background:var(--caution); }
+.fsp-pct { font-family:'IBM Plex Mono',monospace; font-size:9px; text-align:right; }
+.fsp-n { font-family:'IBM Plex Mono',monospace; font-size:8px; color:var(--muted); text-align:right; }
+.fsp-sep { border-top:1px dashed var(--rule); margin:5px 0 3px; }
+.fsp-note { font-size:9px; color:var(--muted); margin-top:6px; line-height:1.4; }
 #svg-container-a, #svg-container-b { cursor:default; }
 
 /* Legend */
@@ -500,6 +515,127 @@ function miniMd(text) {
 // ══ AGGREGATION ENGINE ═══════════════════════════════════════════════════════
 
 // Filter responses by world set (empty worlds array = all respondents)
+// ══ EXTRA ITEMS (Protection Survey and any other item blocks carried in the config) ══
+let extraItems = [];   // from the first response that carries config.extraItems
+let fspActive = null;  // { key, subsetTag } — highlighted bar
+
+const CONCERN = {      // which answer counts as "concern" per scale
+  ynd:    v => v==='yes', yn: v => v==='yes', ynk: v => v==='yes',
+  agree4: v => v==='1' || v==='2',
+};
+// Bars: one per Block A factor, then one per non-A block that has a choice scale
+function fspBars() {
+  const bars = [];
+  const seen = new Set();
+  for (const it of extraItems) {
+    if (it.scale === 'free' || it.scale === 'd5') continue;
+    const key = it.block === 'A' && it.factor ? `A:${it.factor}` : `B:${it.block}`;
+    if (seen.has(key)) continue; seen.add(key);
+    bars.push({ key, label: it.block==='A' ? (it.factorName||it.factor) : (it.blockName||it.block),
+                code: it.block==='A' ? it.factor : null, block: it.block,
+                help: it.block==='A' ? (it.help||'') : (it.blockHelp||''), shellDef: it.shellDef||'' });
+  }
+  return bars;
+}
+function fspItemsFor(key) {
+  const [kind, val] = key.split(':');
+  return extraItems.filter(it => kind==='A' ? it.factor===val : (it.block===val && it.scale!=='free' && it.scale!=='d5'));
+}
+// share of concern among answered (non-"didn't come up") responses, pooled over items × respondents
+function fspAggregate(key, subset) {
+  const items = fspItemsFor(key);
+  let concern = 0, answered = 0, asked = 0, notes = [];
+  const perItem = {};
+  for (const it of items) {
+    perItem[it.id] = { text: it.text, concern: 0, answered: 0, asked: 0, counts: {} };
+    for (const r of subset) {
+      const a = r.assessments?.items?.[it.id]; if (!a) continue;
+      asked++; perItem[it.id].asked++;
+      const v = a.value || '';
+      if (v) { perItem[it.id].counts[v] = (perItem[it.id].counts[v]||0)+1; }
+      const isConcern = CONCERN[it.scale] ? CONCERN[it.scale](v) : false;
+      const countsAsAnswered = v && v!=='dnc' && v!=='dk';
+      if (countsAsAnswered) { answered++; perItem[it.id].answered++; if (isConcern) { concern++; perItem[it.id].concern++; } }
+      if (a.note && a.note.trim()) notes.push({ who: respondentLabel(r), worlds: r.respondent?.worlds||[], text: `${it.id}: ${a.note.trim()}` });
+    }
+  }
+  return { concern, answered, asked, pct: answered ? Math.round(concern/answered*100) : 0, notes, perItem, items };
+}
+function fspD5(subset) { // Breakdowns: how the person who raised a concern was treated
+  const it = extraItems.find(i => i.scale==='d5'); if (!it) return null;
+  const counts = {}; let n = 0;
+  for (const r of subset) { const v = r.assessments?.items?.[it.id]?.value; if (v) { counts[v]=(counts[v]||0)+1; n++; } }
+  return { id: it.id, text: it.text, counts, n };
+}
+function fspFree(subset) { // free-text items, read in respondents' words
+  const out = [];
+  for (const it of extraItems.filter(i => i.scale==='free')) {
+    for (const r of subset) { const a = r.assessments?.items?.[it.id]; if (a?.note?.trim()) out.push({ id: it.id, text: it.text, who: respondentLabel(r), worlds: r.respondent?.worlds||[], note: a.note.trim() }); }
+  }
+  return out;
+}
+function fspHtml(subset, tag) {
+  if (!extraItems.length) return '';
+  const bars = fspBars();
+  const name = extraItems[0].surveyName || 'Extra items';
+  let html = `<div class="fsp-wrap"><div class="fsp-title">${name} — failure state profile <span style="text-transform:none;letter-spacing:0;">(share of answers that report a concern · right column = answers counted, "didn't come up" excluded)</span></div>`;
+  let lastBlock = null;
+  for (const b of bars) {
+    const agg = fspAggregate(b.key, subset);
+    if (lastBlock === 'A' && b.block !== 'A') html += '<div class="fsp-sep"></div>';
+    lastBlock = b.block;
+    const cls = b.block==='A' ? '' : (b.block==='B' ? 'speak' : 'engage');
+    const active = fspActive && fspActive.key===b.key && fspActive.tag===tag ? 'active' : '';
+    const tip = (b.help ? b.help : '') + (b.shellDef ? `\nShell: ${b.shellDef}` : '');
+    html += `<div class="fsp-row ${active}" data-key="${b.key}" data-tag="${tag}" title="${tip.replace(/"/g,'&quot;')}">
+      <div class="fsp-label">${b.label}${b.code?`<small>${b.code}</small>`:''}</div>
+      <div class="fsp-bar-wrap"><div class="fsp-bar ${cls}" style="width:${agg.pct}%"></div></div>
+      <div class="fsp-pct">${agg.answered?agg.pct+'%':'—'}</div>
+      <div class="fsp-n">${agg.answered}</div></div>`;
+  }
+  const d5 = fspD5(subset);
+  if (d5 && d5.n) {
+    const order = [['worse','worse off'],['same','the same'],['better','better off'],['dk',"don't know"],['none','no one did']];
+    html += `<div class="fsp-sep"></div><div class="fsp-note"><b>Breakdowns.</b> Someone who raised a concern was: ${order.filter(([k])=>d5.counts[k]).map(([k,l])=>`${l} ${d5.counts[k]}`).join(' · ')} (n=${d5.n})</div>`;
+  }
+  html += `<div class="fsp-note">Click a bar for the items behind it and what people said.</div></div>`;
+  return html;
+}
+function wireFsp(container, subset, tag) {
+  container.querySelectorAll('.fsp-row').forEach(row => row.addEventListener('click', () => {
+    fspActive = { key: row.dataset.key, tag };
+    container.querySelectorAll('.fsp-row').forEach(r => r.classList.toggle('active', r===row));
+    showFspDetail(row.dataset.key, subset);
+  }));
+}
+function showFspDetail(key, subset) {
+  const bars = fspBars(); const b = bars.find(x => x.key===key); if (!b) return;
+  const agg = fspAggregate(key, subset);
+  document.getElementById('detail-id').textContent = b.code ? `${b.code} · ${agg.answered} answers` : `${b.label} · ${agg.answered} answers`;
+  document.getElementById('detail-name').textContent = b.label;
+  document.getElementById('synth-btn').style.display = 'none';
+  currentSynthContext = null;
+  let html = '';
+  if (b.help) html += `<div class="stat-section"><div class="detail-desc" style="color:var(--ink);">${miniMd(b.help)}</div>${b.shellDef?`<div class="detail-desc" style="font-size:9px;margin-top:4px;">Shell: ${miniMd(b.shellDef)}</div>`:''}</div>`;
+  if (key.startsWith('B:B')) html += descHtml(agg.items[0]?.help || '');
+  html += `<div class="stat-section"><div class="stat-title">Items <span class="stat-n">(concern / answered)</span></div>`;
+  for (const it of agg.items) {
+    const pi = agg.perItem[it.id];
+    const pct = pi.answered ? Math.round(pi.concern/pi.answered*100) : 0;
+    html += `<div style="font-size:10px;margin:6px 0 2px;line-height:1.35;"><b style="font-family:'IBM Plex Mono',monospace;font-size:9px;">${it.id}</b> ${it.text}</div>
+      <div class="stat-row"><div class="stat-label" style="font-family:'IBM Plex Mono',monospace;font-size:9px;">${pi.concern}/${pi.answered}${pi.asked>pi.answered?` <span style="color:var(--muted)">(+${pi.asked-pi.answered} n/a)</span>`:''}</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="width:${pct}%;background:${b.block==='A'?'var(--stop)':(b.block==='B'?'var(--unsure)':'var(--caution)')};"></div></div>
+        <div class="stat-pct">${pi.answered?pct+'%':'—'}</div></div>`;
+  }
+  html += '</div>';
+  html += quotesHtml(agg.notes, 'What people said');
+  if (key.startsWith('B:')) {
+    const frees = fspFree(subset);
+    if (frees.length) html += quotesHtml(frees.map(f => ({ who:f.who, worlds:f.worlds, text:`${f.id}: ${f.note}` })), 'Open answers');
+  }
+  document.getElementById('detail-body').innerHTML = html;
+}
+
 function filterByWorldSet(ws) {
   if (ws.respondentId != null) {
     return responses.filter(r => respondentLabel(r) === ws.respondentId);
@@ -969,6 +1105,10 @@ function renderDiagrams() {
       (type,id,shift) => shift ? showSynthSelector(type,id,subA,subB) : showDetail(type,id,subA));
     buildAggSVG('svg-container-b', aggregateNodes(subB), aggregateEdges(subB), subB,
       (type,id,shift) => shift ? showSynthSelector(type,id,subA,subB) : showDetail(type,id,subB));
+    for (const [id, sub, tag] of [['svg-container-a', subA, 'a'], ['svg-container-b', subB, 'b']]) {
+      const wrap = document.getElementById(id).parentElement;
+      wrap.insertAdjacentHTML('beforeend', fspHtml(sub, tag)); wireFsp(wrap, sub, tag);
+    }
   } else {
     const sub = filterByWorldSet(worldSetA);
     const label = worldSetA.worlds.length > 0 ? worldSetA.name : 'All Respondents';
@@ -980,6 +1120,8 @@ function renderDiagrams() {
       </div>`;
     buildAggSVG('svg-container-a', aggregateNodes(sub), aggregateEdges(sub), sub,
       (type,id,shift) => showDetail(type,id,sub));
+    const wrap = document.getElementById('svg-container-a').parentElement;
+    wrap.insertAdjacentHTML('beforeend', fspHtml(sub, 'a')); wireFsp(wrap, sub, 'a');
   }
 }
 
@@ -1513,7 +1655,7 @@ function exportSession() {
   const payload = {
     _type: 'evsm-aggregate-session',
     exportedAt: new Date().toISOString(),
-    nodeLabels, edgeDescriptions, nodeDescriptions,
+    nodeLabels, edgeDescriptions, nodeDescriptions, extraItems,
     worldSetA, worldSetB,
     synthCache,
     responses
@@ -1889,6 +2031,7 @@ function loadFiles(files) {
           if (data.edgeDescriptions) edgeDescriptions = data.edgeDescriptions;
           if (data.nodeDescriptions) nodeDescriptions = data.nodeDescriptions;
           if (data.synthCache)       synthCache       = data.synthCache;
+          if (data.extraItems)       extraItems       = data.extraItems;
           if (data.worldSetA) {
             worldSetA = data.worldSetA;
             const na = document.getElementById('ws-a-name');
@@ -1919,6 +2062,8 @@ function loadFiles(files) {
           edgeDescriptions = {...data.config.edgeDescriptions};
         if (data.config?.nodeDescriptions && Object.keys(nodeDescriptions).length === 0)
           nodeDescriptions = {...data.config.nodeDescriptions};
+        if (data.config?.extraItems?.length && extraItems.length === 0)
+          extraItems = data.config.extraItems.map(i => ({...i}));
         rebuildWorlds();
         renderRespondentList();
         renderDiagrams();
