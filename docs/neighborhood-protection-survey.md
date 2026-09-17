@@ -6,6 +6,8 @@
 
 **How it is run.** With the e-VSM survey, in the same sitting, from the same config: the same Worlds, the same respondents, the same session. Everyone answers every question; nothing is split by role. A respondent's Worlds tell the aggregator whose corner an answer comes from. Run in Phase 1 alongside e-VSM; re-run at every retrospective; any later incident analysis (an NRM drawing) is read against the profile that was in force when the work was chartered.
 
+**How each factor is tied to the e-VSM diagram.** Under every factor and block: *Spheres* names the e-VSM spheres the condition runs under, *Edges* the relationships (homeostats) it breaks, and *Scene* a small illustration. The survey tool shows a factor's items as grounds under those spheres and edges; the aggregator shows the items in a sphere's or edge's detail and draws a concern ring on the sphere. The mapping is the instrument's theory of how latent conditions reach the functions; edit it here.
+
 **Design rules, from Tripod Delta, kept.** Every latent-condition item is an observable event, not an evaluation. Every item is bounded: *in the last three months, in this neighborhood's work*. Every item asks what happened to the respondent or in front of them, never what they think of the organization. Every latent-condition item is worded so that **Yes means a condition of concern occurred**; the profile is the share of Yes.
 
 ---
@@ -28,6 +30,9 @@ Four items per factor. The first two of each four are the **core** items for a s
 
 *Shell: Hardware. Poor condition, suitability or availability of materials: tools, equipment and components.*
 *Here: The room, the kitchen, the van, the printer, the sign-up system, the supplies: whether they exist, work, and are there when needed.*
+*Spheres: S-3, S-7*
+*Edges: 3->1, 3->6, 1->3*
+*Scene: The church van is the only vehicle. Two Saturdays running it is out with the youth group, so the food run is done in three private cars, one of which has no room for the coolers. Half the produce stays in the church basement. Nobody wrote it down; the third Saturday it happens again.*
 
 HW-1. In the last three months, did a piece of neighborhood work stall or get dropped because a space, vehicle, tool or supply wasn't there when it was needed?
 HW-2. Did you, or someone you know, pay out of pocket, or use your own car, phone or home, because the shared one wasn't available?
@@ -38,6 +43,9 @@ HW-4. Did anyone do a task with something not meant for it because the right thi
 
 *Shell: Design. Ergonomically poor design of tools or equipment; user-unfriendly.*
 *Here: Whether a room, a form, a schedule or a hand-off is laid out so that doing it right is the easy way, or so that people must work around it.*
+*Spheres: S-3, S-8*
+*Edges: 3->2, 4->3, 8->6*
+*Scene: The volunteer sign-up form asks for an email address first. Half the elders don't have one, so the small-group holder fills it in for them, and they never see the reminders. The form was designed by someone who has never met the people it screens out.*
 
 DE-1. Did you have to work around the way something is set up (a room, a form, a sign-up, a schedule) to get a job done?
 DE-2. Is there a step in a neighborhood task that people regularly skip because it is awkward or slow?
@@ -48,6 +56,9 @@ DE-4. Did a form, an app or a sheet ask for something that made people give up o
 
 *Shell: Maintenance management. The non- or inadequate performance of maintenance tasks and repairs.*
 *Here: Whether shared things, and shared agreements, get kept in working order, or are found broken or lapsed at the moment they are needed.*
+*Spheres: S-3, S-6*
+*Edges: 5->3, 6->3, 3->6*
+*Scene: The room-use agreement with the school was for one year. Nobody renewed it. The night of the family meeting the custodian, quite properly, won't unlock the door. Forty people in the parking lot.*
 
 MM-1. Is there a shared thing that has been broken, missing or unusable for more than a month?
 MM-2. Did an agreement (with a church, a school, a landlord, the city, a funder) turn out to have lapsed when someone needed it?
@@ -58,6 +69,9 @@ MM-4. Is there a shared thing that everyone knows needs fixing and nobody is on 
 
 *Shell: Housekeeping. No or insufficient attention to keeping the work floor clean or tidied up.*
 *Here: The state of the commons, physical and informational: whether people can find what they need, whether the list of who does what is current, whether one version of a thing is in circulation.*
+*Spheres: S-3, S-4*
+*Edges: 3->4, 4->1*
+*Scene: Two flyers for the clean-up circulate, one with the old date. Twelve people show up on the wrong Saturday, and the one who has the rake key is not among them. The roster of who holds what is in someone's phone.*
 
 HK-1. Were you unable to find something you needed (a document, a key, a password, a contact, the notes from last time)?
 HK-2. Is the list of who is doing what out of date, or is there no such list?
@@ -68,6 +82,9 @@ HK-4. Did something (leftover supplies, a space, a shared account) get left in a
 
 *Shell: Error-enforcing conditions. Unsuitable physical conditions and other influences with a disadvantageous effect on human functioning.*
 *Here: What the work asks of people's evenings, bodies and households: exhaustion, outside deadlines met on volunteers' time, taking on what no one else would, money or health or family pressure on what was promised.*
+*Spheres: S-2, S-6*
+*Edges: 7->10, 7->2, 6->2*
+*Scene: The county wants the grant report by Friday. The three people who can write it do it Tuesday through Thursday after their shifts. Friday one of them says, quietly, that she is done after this. She is the one who knows the mothers.*
 
 EC-1. Did you do neighborhood work past the point of exhaustion?
 EC-2. Was a deadline set by an outside body (a funder, the city, a school) met on volunteers' evenings and weekends?
@@ -78,6 +95,9 @@ EC-4. Did money worries, health or family strain affect your ability to do what 
 
 *Shell: Procedures. Insufficient quality or availability of procedures: guidelines, instructions and manuals; specifications, paperwork, use in practice.*
 *Here: Whether the way to do a task is known, agreed, findable and matches what actually happens.*
+*Spheres: S-6, S-5*
+*Edges: 8->6, 5->6*
+*Scene: Two people take the cash at the market. One counts it with a witness and writes the total in the book; the other puts it in an envelope and hands it to the treasurer. Both believe they are doing it the right way. The month the totals don't match, nobody can say which is the procedure.*
 
 PR-1. Is there a task where two people would do it two different ways and neither knows which is right?
 PR-2. Did you have to ask three people to find out how something is done here?
@@ -88,6 +108,9 @@ PR-4. Did you finish a task and not know who to tell?
 
 *Shell: Training. No or insufficient competence or experience among employees; not sufficiently suited, inadequately trained.*
 *Here: Whether anyone was shown before being expected to do; whether a task rests on one person who alone knows it. SODOTO's See One.*
+*Spheres: S-5, S-2*
+*Edges: 6->5, 2->6, 5->2*
+*Scene: Only Rosa knows how the community kitchen's inspection paperwork works. Rosa is in the hospital. The new volunteer is handed the folder the morning the inspector comes.*
 
 TR-1. Did you do a task you had never seen anyone do?
 TR-2. Is there a task that only one person knows how to do?
@@ -98,6 +121,9 @@ TR-4. Did you want to learn how something is done and find there was no one to s
 
 *Shell: Communication. No or ineffective communication between the various sites, departments or employees, or with official bodies.*
 *Here: Whether information reaches the people who need it: decisions learned after the fact, groups duplicating each other, messages that mattered not arriving.*
+*Spheres: S-4, S-1*
+*Edges: 1->4, 4->1, 1->2, 3->4*
+*Scene: The clinic moved its Tuesday hours. The CHWs learned it from a flyer at the laundromat, after two families had walked over to a locked door. Meanwhile the church and the tenants' group both started a ride program in the same month, unaware of each other.*
 
 CO-1. Did you learn of a decision that affected you after it was made?
 CO-2. Did two groups do the same work without knowing of each other?
@@ -108,6 +134,9 @@ CO-4. Did you first hear something important about the neighborhood's work as a 
 
 *Shell: Incompatible goals. The employee must choose between optimal working methods according to the established rules and the pursuit of production, financial, political, social or individual goals.*
 *Here: Having to choose between what a funder or institution wants and what residents need; work bending toward a report rather than a result; the careful way against the deadline; someone's paid job against their promise here.*
+*Spheres: S-7, S-9, S-10*
+*Edges: 9->7, 7->11, 5->7, 8->9*
+*Scene: The grant counts "residents served." The block party would serve two hundred people badly and count well; the home visits serve fifteen people well and count badly. The organizer, who is paid by the grant, schedules the party.*
 
 IG-1. Did you have to choose between what a funder or an institution wanted and what residents needed?
 IG-2. Did work bend toward producing a report, a count or a photo rather than a result for residents?
@@ -118,6 +147,9 @@ IG-4. Did anyone's paid job pull against what they had promised here?
 
 *Shell: Organisation. Shortcomings in the organization's structure, philosophy, processes or management strategies, resulting in inadequate management.*
 *Here: Whether roles, standing and ownership of decisions are clear: decisions nobody owns, roles nobody knew were roles, things falling between two groups.*
+*Spheres: S-10, S-8, S-1*
+*Edges: 10->6, 10->8, 6->10, 8->6*
+*Scene: Someone has to decide whether the teen program can use the kitchen on Thursdays. The tenants' group thinks the church decides; the church thinks the committee decides; the committee hasn't met since spring. The teens stop coming.*
 
 OR-1. Is there a decision here that nobody knows who owns?
 OR-2. Did a role go unfilled because nobody knew it was a role?
@@ -128,6 +160,9 @@ OR-4. Did something fall between two groups because each thought the other had i
 
 *Shell: Defences. No or insufficient protection of people, material and environment against the consequences of the operational disturbance that occurred.*
 *Here: Whether anything or anyone is watching when the rest fails: things going wrong that no one was watching for, work that depends on one person being present, near misses that go unmentioned.*
+*Spheres: S-10, S-11, S-6*
+*Edges: 11->6, 10->6, 5->6*
+*Scene: A volunteer driver's license had lapsed. Nobody's job was to check. The near-miss on the highway with four elders in the car is mentioned to no one, because there is no one it is for.*
 
 DF-1. Did something go wrong here that no one had been watching for?
 DF-2. When something went wrong, was there no one whose job it was to notice?
@@ -139,6 +174,9 @@ DF-4. Did a near miss (something that almost went wrong) go unmentioned afterwar
 ## Block B — Speaking up (Mahoney's six, neighborhood wording)
 
 *What it measures: willingness to speak up about harm, Mahoney's six verbal-vigilance items, with "the outside" (the city, the funders, the service institutions) in place of "management/leadership."*
+*Spheres: S-11, S-10, S-9*
+*Edges: 11->5, 11->9, 9->10*
+*Scene: A resident tells the county caseworker that the new intake form is turning families away. The caseworker says she'll pass it on. Nothing changes. The next resident who notices something says nothing, and would tell you, if asked, that there is no point.*
 
 Response: four-point **Disagree / Somewhat disagree / Somewhat agree / Agree**, as Mahoney ran them. No middle option.
 
@@ -158,6 +196,9 @@ Mahoney's originals, for the record: (1) My suggestions about patient safety wou
 ## Block C — Engagement (the inside)
 
 *What it measures: engagement on the inside, the small groups, the ME, the neighbors doing the work, as teamness, culture and people. Not Mahoney's items.*
+*Spheres: S-2, S-11*
+*Edges: 2->6, 6->2, 6->11, 11->10*
+*Scene: After the food run fails, the driver says "I lost half the produce." The reply is "we'll get a second cooler and I'll ride with you." She is at the next run. In the neighborhood two blocks over the reply was silence, and she isn't.*
 
 Response: the same four-point scale. Mahoney's Engagement factor had three components, teamness, culture and people, and predicted B-6 at .65. His engagement items are not in the deck, so these six are new and are marked as such; two per component. They ask about the inside: the small groups, the ME, the neighbors doing the work.
 
@@ -173,6 +214,9 @@ C-6. (people) Someone here would notice if I were struggling.
 ## Block D — Breakdowns
 
 *What it measures: whether harm was seen, whether it was said, what happened next, and how the person who raised it was treated.*
+*Spheres: S-11, S-5*
+*Edges: 5->11, 11->5, 6->5*
+*Scene: The treasurer says, at the meeting, that the cash counts have not matched for two months and she does not know why. One reading: she is blamed, and no treasurer volunteers again. The other: the room writes the counting procedure that night, and she is thanked. D-5 asks which happened.*
 
 Response as marked. The block exists so that Principle Five (breakdowns are blameless by default) has a measure: not whether breakdowns happen, which they will, but what happened to the people who named them.
 

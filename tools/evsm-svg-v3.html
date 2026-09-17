@@ -284,6 +284,13 @@ input[type=range] { width:100%; accent-color:var(--accent); height:3px; cursor:p
   resize:vertical; min-height:70px;
 }
 .ap-textarea:focus { outline:none; border-color:var(--accent); }
+.grounds { border-top:1px dashed var(--survey-rule); padding-top:8px; }
+.grounds-row { display:grid; grid-template-columns:1fr 128px; gap:8px; align-items:center; padding:4px 0; border-bottom:1px solid var(--survey-rule); }
+.grounds-text { font-size:10.5px; line-height:1.35; }
+.grounds-id { font-family:'IBM Plex Mono',monospace; font-size:8.5px; color:var(--survey-muted); margin-right:4px; }
+.grounds-select { padding:3px 6px; font-size:10px; }
+.grounds-src { font-weight:normal; text-transform:none; letter-spacing:0; color:var(--survey-muted); margin-left:6px; }
+.grounds-hint { font-size:9px; color:var(--survey-muted); margin-top:6px; line-height:1.4; }
 .ap-nav {
   display:flex; gap:8px; padding:12px 16px;
   border-top:1px solid var(--survey-rule); flex-shrink:0;
@@ -1453,6 +1460,38 @@ function buildItemsNavList() {
   }
 }
 
+// ── Grounds: extra items shown under the sphere or edge they bear on ──────────
+// The answer is stored once (surveyResponse.itemAssessments[id]) and editable wherever it appears.
+function groundsFor(kind, id) {
+  return extraItems.filter(it => it.scale!=='free' && (kind==='node' ? (it.nodes||[]).includes(id) : (it.edges||[]).includes(id)));
+}
+function groundsHtml(kind, id) {
+  const its = groundsFor(kind, id); if (!its.length) return '';
+  const rows = its.map(it => {
+    const a = surveyResponse.itemAssessments[it.id]||{};
+    const opts = ITEM_SCALES[it.scale]||[];
+    return `<div class="grounds-row">
+      <div class="grounds-text"><span class="grounds-id">${it.id}</span> ${it.text}</div>
+      <select class="ap-select grounds-select" data-item="${it.id}">
+        ${[['','—'],...opts].map(([v,l])=>`<option value="${v}" ${(a.value||'')===v?'selected':''}>${l}</option>`).join('')}
+      </select>
+    </div>`;
+  }).join('');
+  const name = its[0].surveyName||'Extra items';
+  return `<div class="ap-field grounds">
+    <div class="ap-field-label">Grounds — did any of these happen? <span class="grounds-src">${name}</span></div>
+    ${rows}
+    <div class="grounds-hint">Answered once; the same answer shows wherever the item applies. Click an item in the ${name} list to add a note.</div>
+  </div>`;
+}
+function wireGrounds(panel) {
+  panel.querySelectorAll('.grounds-select').forEach(sel => sel.addEventListener('change', () => {
+    const iid = sel.dataset.item; const prev = surveyResponse.itemAssessments[iid]||{};
+    surveyResponse.itemAssessments[iid] = { value: sel.value, note: prev.note||'' };
+    buildItemsNavList(); updateProgress();
+  }));
+}
+
 function renderItemAssessment(id, seq) {
   const it=extraItems.find(i=>i.id===id); if(!it) return;
   const panel=document.getElementById('assessment-panel');
@@ -1466,6 +1505,8 @@ function renderItemAssessment(id, seq) {
           </select>
         </div>` : '';
   const factorLine = it.factorName ? `<div class="ap-label" style="font-size:11px;color:var(--survey-muted);">${it.factorName}${it.factor?' · '+it.factor:''}</div>` : '';
+  const bears = (it.nodes||[]).map(n=>(nodeLabels[n]||n).replace(/\n/g,' ')).concat((it.edges||[]).map(e=>e.replace('->','→')));
+  const bearsLine = bears.length ? `<div class="ap-description" style="font-size:9px;margin-top:3px;">Grounds for: ${bears.join(' · ')}</div>` : '';
   panel.innerHTML=`
       <div class="ap-header">
         <div class="ap-id">${it.blockName||it.block} · ${id}</div>
@@ -1473,6 +1514,7 @@ function renderItemAssessment(id, seq) {
         <div class="ap-label">${it.text}</div>
         ${it.help?`<div class="ap-description">${miniMd(it.help)}</div>`:(it.blockHelp?`<div class="ap-description">${miniMd(it.blockHelp)}</div>`:'')}
         ${it.shellDef?`<div class="ap-description" style="font-size:9px;opacity:.7;margin-top:3px;">Shell: ${miniMd(it.shellDef)}</div>`:''}
+        ${bearsLine}
       </div>
       <div class="ap-body">
         ${choice}
@@ -1541,6 +1583,7 @@ function openAssessment(type, id) {
             ${['','agree','disagree','unknown'].map(s=>`<option value="${s}" ${(a.status||'')===s?'selected':''}>${s||'— not assessed —'}</option>`).join('')}
           </select>
         </div>
+        ${groundsHtml('edge', id)}
         <div class="ap-field">
           <div class="ap-field-label">Evidence / Example</div>
           <textarea class="ap-textarea" id="ap-evidence" placeholder="Describe what you observe that informs your assessment…">${a.evidence||''}</textarea>
@@ -1587,6 +1630,7 @@ function openAssessment(type, id) {
             ${['','go','caution','stop','unsure'].map(s=>`<option value="${s}" ${(a.status||'')===s?'selected':''}>${s||'— not assessed —'}</option>`).join('')}
           </select>
         </div>
+        ${groundsHtml('node', id)}
         <div class="ap-field">
           <div class="ap-field-label">Evidence / Example</div>
           <textarea class="ap-textarea" id="ap-evidence" placeholder="What do you observe about this sphere?">${a.evidence||''}</textarea>
@@ -1614,6 +1658,8 @@ function openAssessment(type, id) {
     document.getElementById('ap-evidence').addEventListener('input',save);
     document.getElementById('ap-suggestions').addEventListener('input',save);
   }
+
+  wireGrounds(panel);
 
   // Prev / Next
   document.getElementById('ap-prev').addEventListener('click',()=>{

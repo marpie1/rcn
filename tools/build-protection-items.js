@@ -10,6 +10,9 @@ const md = fs.readFileSync(src, 'utf8').split('\n');
 
 const items = [];
 let block = null, blockName = null, blockHelp = null, factor = null, factorName = null, help = null, shellDef = null, perFactor = 0;
+let nodes = [], edges = [], scene = null;   // mapping to the e-VSM diagram, per factor or block
+const parseNodes = t => t.split(',').map(x => x.trim()).filter(Boolean);
+const parseEdges = t => t.split(',').map(x => x.trim().replace(/\s*(→|->)\s*/, '->')).filter(Boolean);
 
 // response markers embedded in item text → scale
 const SCALE_BY_MARKER = [
@@ -26,15 +29,20 @@ for (const raw of md) {
   let m;
   if ((m = line.match(/^## Block ([A-E]) — (.+)$/))) {
     block = m[1]; blockName = m[2].replace(/\s*\(.*\)$/, ''); blockHelp = null; factor = null; factorName = null; help = null; shellDef = null; perFactor = 0;
+    nodes = []; edges = []; scene = null;
     continue;
   }
   if ((m = line.match(/^### A\d+\. ([A-Z]{2}) — (.+)$/))) {
     factor = m[1]; factorName = m[2]; help = null; shellDef = null; perFactor = 0;
+    nodes = []; edges = []; scene = null;
     continue;
   }
   if ((m = line.match(/^\*Shell: (.+)\*$/))) { shellDef = m[1]; continue; }
   if ((m = line.match(/^\*Here: (.+)\*$/))) { help = m[1]; continue; }
   if ((m = line.match(/^\*What it measures: (.+)\*$/))) { blockHelp = m[1].charAt(0).toUpperCase() + m[1].slice(1); continue; }
+  if ((m = line.match(/^\*Spheres: (.+)\*$/))) { nodes = parseNodes(m[1]); continue; }
+  if ((m = line.match(/^\*Edges: (.+)\*$/))) { edges = parseEdges(m[1]); continue; }
+  if ((m = line.match(/^\*Scene: (.+)\*$/))) { scene = m[1]; continue; }
   if ((m = line.match(/^([A-Z]{1,2}-\d+)\. (.+)$/)) && block) {
     let text = m[2];
     let scale = DEFAULT_SCALE[block];
@@ -48,6 +56,9 @@ for (const raw of md) {
     if (help) it.help = help;               // the neighborhood definition, on every item of the factor
     if (shellDef) it.shellDef = shellDef;   // Shell's name and definition, for anyone trained on Tripod
     if (blockHelp) it.blockHelp = blockHelp;
+    if (nodes.length) it.nodes = nodes.slice();   // spheres this item is grounds for
+    if (edges.length) it.edges = edges.slice();   // relationships it breaks
+    if (scene) it.scene = scene;
     if (tag) it.component = tag[1];
     if (block === 'B') it.help = '"The outside" means the city and county, the funders, and the institutions and professionals that provide services here: schools, clinics, agencies, churches as service providers.';
     items.push(it);
