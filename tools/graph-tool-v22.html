@@ -304,6 +304,17 @@ vsmCheck() checks an OBSERVATION, not a diagram: nothing in the patient lane, no
   all-VA-no-waiting ("did you reconstruct this rather than watch it?"), a ratio
   over 50% ("check the units"), no handoffs, no information flow.
 
+── CLD LOOP TYPE FILTER (September 17 2026) ─────────────────────────
+
+All / R only / B only under the Loop labels button. A VIEW, not a model
+change: with 'R only', balancing loop labels disappear and every node or
+edge that sits on no reinforcing loop dims (same opacity path search uses,
+so it survives into SVG/PNG exports). cldLoopFilter holds the choice;
+cldLoopVisible(loop) gates labels and the node loop lists (getNodeLoops);
+cldOnFilteredLoop(kind,id) gates dimming in renderNode/renderEdge and is
+always true outside CLD mode, so nothing leaks into other modes. Not
+persisted in buildState — it is a way of looking, not part of the drawing.
+
 ── CLD NODE LOOPS POPUP (April 25 2026) ─────────────────────────────
 
 Clicking a node in CLD mode shows a floating popup listing all loops
@@ -924,6 +935,13 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
 .cld-loop-label.B{background:#dbeafe;color:#1d4ed8;border:2px solid #93c5fd}
 .cld-loop-label.U{background:#f1f5f9;color:#64748b;border:2px solid #cbd5e1}
 .cld-loop-label.active-loop{box-shadow:0 0 0 3px #f59e0b,0 2px 8px rgba(0,0,0,.2)}
+/* one loop highlighted: the other labels collapse to dots so the drawing shows through.
+   A 26px disc becomes a 9px dot (margin keeps it centred on the same point); hover grows it
+   back to a readable, clickable label, so you can step to the next loop without deselecting. */
+.cld-loop-label.other-loop{width:9px;height:9px;margin:8.5px;font-size:0;opacity:.4;box-shadow:none;border-width:1.5px}
+.cld-loop-label.other-loop .cld-loop-name-tag{display:none}
+.cld-loop-label.other-loop:hover{width:26px;height:26px;margin:0;font-size:13px;opacity:1;border-width:2px}
+.cld-loop-label.other-loop:hover .cld-loop-name-tag{display:block}
 .cld-loop-label.node-loop{box-shadow:0 0 0 2px #7c3aed,0 2px 8px rgba(0,0,0,.18);transform:scale(1.1)}
 .cld-loop-name-tag{position:absolute;top:29px;left:50%;transform:translateX(-50%);background:rgba(254,249,195,0.93);color:#854d0e;font-size:9px;font-weight:600;padding:1px 5px;border-radius:4px;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 3px rgba(0,0,0,.1);pointer-events:none;border:1px solid rgba(253,224,71,.6);opacity:0;transition:opacity .15s;z-index:30}
 .cld-loop-label:hover .cld-loop-name-tag{opacity:1}
@@ -1275,6 +1293,11 @@ body.presenting #present-exit{display:flex}
       </div>
       <div id="cld-mode-opts" style="display:none;margin-top:4px">
         <button id="btn-loops" class="tb-btn active" onclick="toggleCLDLoops()" style="font-size:10px;border-color:#7c3aed;color:#7c3aed;width:100%">Loop labels</button>
+        <div style="display:flex;gap:3px;margin-top:4px" title="Show only one kind of loop — everything not on a loop of that kind fades back. Exports the same way.">
+          <button id="btn-loopf-all" class="tb-btn active" onclick="setCLDLoopFilter('all')" style="flex:1;font-size:10px;text-align:center;border-color:#7c3aed;color:#7c3aed">All</button>
+          <button id="btn-loopf-R" class="tb-btn" onclick="setCLDLoopFilter('R')" style="flex:1;font-size:10px;text-align:center;border-color:#fde047;color:#854d0e">R only</button>
+          <button id="btn-loopf-B" class="tb-btn" onclick="setCLDLoopFilter('B')" style="flex:1;font-size:10px;text-align:center;border-color:#93c5fd;color:#1d4ed8">B only</button>
+        </div>
         <div id="cld-loops-list-hdr" style="display:none;margin-top:5px;cursor:pointer;align-items:center;justify-content:space-between;padding:1px 2px" onclick="toggleCLDLoopsList()">
           <span id="cld-loops-list-title" style="font-size:10px;font-weight:600;color:#7c3aed;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0"></span>
           <span id="cld-loops-chevron" style="font-size:9px;color:#7c3aed;flex-shrink:0;margin-left:4px">▼</span>
@@ -1360,10 +1383,10 @@ body.presenting #present-exit{display:flex}
     <div id="import-section">
       <div class="io-label">Import</div>
       <div class="io-btns">
+        <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="importJSON()">JSON</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="showExamples()">Examples</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#276749" onclick="showImport('cypher')">Cypher</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="showImport('match')">MATCH</button>
-        <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="importJSON()">JSON</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#0f766e" onclick="importMerge()">Merge</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#2b6cb0" onclick="importArrows()">Arrows</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#7c3aed" onclick="importXMILE()">XMILE</button>
@@ -1374,6 +1397,7 @@ body.presenting #present-exit{display:flex}
     <div id="export-section">
       <div class="io-label">Export</div>
       <div class="io-btns">
+        <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportJSON()">JSON</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportSVG()">SVG</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#7c3aed" onclick="sendToWikiSVG()" title="Send SVG to FedWiki lineup as ghost page">→ Wiki</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#2563eb" onclick="sendToWikiItem()" title="Save graph JSON + SVG back into the originating FedWiki plugin item">→ Item</button>
@@ -1383,7 +1407,6 @@ body.presenting #present-exit{display:flex}
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportCypher()">Cypher</button>
         <button class="tb-btn" id="btn-substrate" title="Save this drawing to BOTH the Neo4j substrate and its source file, so neither can silently revert the other. Other drawings are untouched — concepts they also contain keep their other witnesses." style="background:transparent;border-color:transparent;color:#7c3aed" onclick="saveToSubstrate()">→ Substrate</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportURL()">URL</button>
-        <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportJSON()">JSON</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#b45309" onclick="exportSnapshot()" title="Download a single HTML file with this diagram baked in — share without a separate JSON file">Snapshot</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#7c3aed" onclick="exportXMILE()">XMILE</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#0d9488" onclick="exportMDL()">MDL</button>
@@ -5513,6 +5536,7 @@ var cldPropResult={};     // nodeId -> 'up'|'down'|'ambiguous'
 var cldPropEdges={};      // edgeId -> 'up'|'down'|'ambiguous'
 var cldLoopCounter={R:0,B:0,U:0};
 var cldShowLoops=true;
+var cldLoopFilter='all';  // 'all' | 'R' | 'B' — show only loops of one type; members of the other type fade
 var cldNodePopupId=null;  // node id whose loops popup is currently shown
 var cldLoopsListCollapsed=false; // user-collapsed state for the node-loops sidebar list
 var TRACE_COLORS=['#f97316','#8b5cf6','#06b6d4','#f43f5e'];
@@ -5755,6 +5779,27 @@ function clearPropagation(){
   cldPropResult={};cldPropEdges={};
   document.getElementById('cld-controls').style.display='none';
   renderAll();renderCLDOverlay();
+}
+// ── Loop type filter ──────────────────────────────────────
+// 'R only' / 'B only' is a VIEW: nothing in the model changes. Loops of the
+// other type lose their labels, and any node or edge that sits on no loop of
+// the chosen type is dimmed the same way search dims non-matches — so the
+// reinforcing structure and the balancing structure can be looked at, and
+// exported, one at a time.
+function cldLoopVisible(loop){return cldLoopFilter==='all'||loop.type===cldLoopFilter;}
+function cldOnFilteredLoop(kind,id){
+  if(mode!=='cld'||cldLoopFilter==='all')return true;
+  var f=kind==='node'?'nodeIds':'edgeIds';
+  for(var i=0;i<cldLoops.length;i++){if(cldLoops[i].type===cldLoopFilter&&cldLoops[i][f].indexOf(id)>=0)return true;}
+  return false;
+}
+function setCLDLoopFilter(f){
+  cldLoopFilter=f;
+  ['all','R','B'].forEach(function(k){var b=document.getElementById('btn-loopf-'+k);if(b)b.classList.toggle('active',k===f);});
+  // a highlighted loop of the hidden type would be an orphan — drop it
+  if(cldActiveLoop){for(var i=0;i<cldLoops.length;i++){if(cldLoops[i].id===cldActiveLoop&&!cldLoopVisible(cldLoops[i])){cldActiveLoop=null;break;}}}
+  renderAll();
+  refreshNodeLoopsPopup();
 }
 function toggleCLDLoops(){
   cldShowLoops=!cldShowLoops;
@@ -6056,10 +6101,11 @@ function renderCLDOverlay(){
   if(mode!=='cld')return;
   if(!cldShowLoops)return;
   cldLoops.forEach(function(loop){
+    if(!cldLoopVisible(loop))return;
     var c=loopCentroid(loop);
     var sc=toScreen(c.x,c.y);
     var el=document.createElement('div');
-    el.className='cld-loop-label '+loop.type+(cldActiveLoop===loop.id?' active-loop':'');
+    el.className='cld-loop-label '+loop.type+(cldActiveLoop===loop.id?' active-loop':cldActiveLoop?' other-loop':'');
     el.textContent=loop.label;
     el.style.left=(sc.x-13)+'px';
     el.style.top=(sc.y-13)+'px';
@@ -6132,7 +6178,7 @@ function commitLoopName(){
 
 // ── Node loops sidebar ────────────────────────────────────
 function getNodeLoops(nodeId){
-  return cldLoops.filter(function(l){return l.nodeIds.indexOf(nodeId)>=0;});
+  return cldLoops.filter(function(l){return cldLoopVisible(l)&&l.nodeIds.indexOf(nodeId)>=0;});
 }
 function renderCLDNodeLoopsPanel(){
   var sec=document.getElementById('cld-node-loops');
@@ -6340,7 +6386,7 @@ function darken(hex){var r=parseInt(hex.slice(1,3),16)||0,g=parseInt(hex.slice(3
 function onSearch(v){searchTerm=v.trim().toLowerCase();renderAll();var m=searchTerm?nodes.filter(nMatch).length:0;document.getElementById('search-count').textContent=searchTerm?(m+' match'+(m===1?'':'es')):'';;}
 function nMatch(n){if(!searchTerm)return false;if(n.label.toLowerCase().indexOf(searchTerm)>=0)return true;if(n.extraLabels&&n.extraLabels.some(function(el){return el.toLowerCase().indexOf(searchTerm)>=0;}))return true;return Object.keys(n.props||{}).some(function(k){return k.toLowerCase().indexOf(searchTerm)>=0||String(n.props[k]).toLowerCase().indexOf(searchTerm)>=0;});}
 function renderAll(){while(edgesLayer.firstChild)edgesLayer.removeChild(edgesLayer.firstChild);while(nodesLayer.firstChild)nodesLayer.removeChild(nodesLayer.firstChild);while(linesLayer.firstChild)linesLayer.removeChild(linesLayer.firstChild);while(triplesLayer.firstChild)triplesLayer.removeChild(triplesLayer.firstChild);renderWardleyLayer();renderLOPLayer();renderVSMLayer();edges.forEach(renderEdge);nodes.forEach(renderNode);lines.forEach(renderLine);renderTripleDots();renderCLDOverlay();renderLegendSVG();renderOPMChart();renderEIPStatement();buildLayerFilter();}
-function renderNode(n){autoSize(n);if(n.layer&&n.layer.trim()&&hiddenLayers[n.layer.trim()])return;var isSel=selected.nodes.indexOf(n.id)>=0,isMatch=searchTerm&&nMatch(n),isDim=searchTerm&&!isMatch;var fill=sv(n,'color')||'#93c5fd';
+function renderNode(n){autoSize(n);if(n.layer&&n.layer.trim()&&hiddenLayers[n.layer.trim()])return;var isSel=selected.nodes.indexOf(n.id)>=0,isMatch=searchTerm&&nMatch(n),isDim=(searchTerm&&!isMatch)||!cldOnFilteredLoop('node',n.id);var fill=sv(n,'color')||'#93c5fd';
 // EIP mode: override fill if node has an EIP column
 if(mode==='eip'){var ec=eipColorForNode(n);if(ec)fill=ec;else{var autoCol=eipColForX(n.x);fill=EIP_COLS[autoCol].color;}}
 // NRM mode: override fill if node has an nrmType
@@ -6383,7 +6429,7 @@ g.addEventListener('mouseenter',function(ev){if(!_vsBadgeHover)showObjTooltip(n,
 g.addEventListener('mousemove',function(ev){moveTooltip(ev);});
 g.addEventListener('mouseleave',function(){_vsBadgeHover=false;hideTooltip();});
 nodesLayer.appendChild(g);}
-function renderEdge(e){var src=nodeById(e.src),tgt=nodeById(e.tgt);if(!src||!tgt)return;if(e.layer&&e.layer.trim()&&hiddenLayers[e.layer.trim()])return;if(src.layer&&src.layer.trim()&&hiddenLayers[src.layer.trim()])return;if(tgt.layer&&tgt.layer.trim()&&hiddenLayers[tgt.layer.trim()])return;var isSel=selected.edges.indexOf(e.id)>=0;var isCurveDrag=curveDrag&&curveDrag.edgeId===e.id;var isMatch=searchTerm&&((e.label&&e.label.toLowerCase().indexOf(searchTerm)>=0)||Object.keys(e.props||{}).some(function(k){return k.toLowerCase().indexOf(searchTerm)>=0||String(e.props[k]).toLowerCase().indexOf(searchTerm)>=0;}));var isDim=searchTerm&&!isMatch;
+function renderEdge(e){var src=nodeById(e.src),tgt=nodeById(e.tgt);if(!src||!tgt)return;if(e.layer&&e.layer.trim()&&hiddenLayers[e.layer.trim()])return;if(src.layer&&src.layer.trim()&&hiddenLayers[src.layer.trim()])return;if(tgt.layer&&tgt.layer.trim()&&hiddenLayers[tgt.layer.trim()])return;var isSel=selected.edges.indexOf(e.id)>=0;var isCurveDrag=curveDrag&&curveDrag.edgeId===e.id;var isMatch=searchTerm&&((e.label&&e.label.toLowerCase().indexOf(searchTerm)>=0)||Object.keys(e.props||{}).some(function(k){return k.toLowerCase().indexOf(searchTerm)>=0||String(e.props[k]).toLowerCase().indexOf(searchTerm)>=0;}));var isDim=(searchTerm&&!isMatch)||!cldOnFilteredLoop('edge',e.id);
 // long-press highlight
 var isLongPress=longPressActive&&longPressNodeId&&(e.src===longPressNodeId||e.tgt===longPressNodeId);
 // CLD overlays
@@ -8730,6 +8776,11 @@ Array.prototype.forEach.call(clone.querySelectorAll('g[id^="edge-"], g[id^="node
 // live tooltip uses, emitted as <title>.
 // (no 'rent' — a <title> child inside a <text> element renders as label text)
 nodes.forEach(function(n){['band','shadow','pressure','pin'].forEach(function(k){var el=clone.querySelector('#rba-'+k+'-'+n.id);if(!el)return;var lines=rbaTipLines(n,k);if(!lines.length)return;var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=lines.join('\n');el.insertBefore(t,el.firstChild);});});
+// The graph's name, top-left, in viewport coordinates (appended last so nothing
+// draws over it). Every export path — SVG, PNG, Copy, Print, both wiki sends —
+// goes through this clone, so a drawing never leaves without saying what it is.
+var rawName=(document.getElementById('model-name').value||'').trim();
+if(rawName){var tt=document.createElementNS('http://www.w3.org/2000/svg','text');tt.setAttribute('x','16');tt.setAttribute('y','26');tt.setAttribute('font-family','system-ui,sans-serif');tt.setAttribute('font-size','15');tt.setAttribute('font-weight','600');tt.setAttribute('fill','#1e293b');tt.setAttribute('pointer-events','none');tt.textContent=rawName;clone.appendChild(tt);}
 return clone;}
 function exportSVG(){var clone=buildExportSVG();var str=new XMLSerializer().serializeToString(clone);download(dlName('svg'),'image/svg+xml',str);toast('Downloaded '+dlName('svg'));}
 // Enrich every text element as an internal wiki link (Ward's "Enrich Any SVG" pattern).
