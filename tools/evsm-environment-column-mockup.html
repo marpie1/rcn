@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+body{margin:0;background:#fafaf8;font-family:'IBM Plex Sans',system-ui,sans-serif}
+.wrap{display:flex;gap:28px;padding:24px}
+svg{background:#fff;border:1px solid #ddd}
+.cap{font-size:12px;color:#555;max-width:300px;line-height:1.5}
+.cap h3{font-size:14px;margin:0 0 8px;color:#1a1a1a}
+.cap b{color:#1a1a1a}
+.sw{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-2px;margin-right:4px}
+</style></head><body>
+<div class="wrap">
+<svg id="s" width="900" height="760" viewBox="0 0 900 760"></svg>
+<div class="cap">
+<h3>Environment column — mockup on the existing 11-sphere layout</h3>
+<p>The eleven spheres and their edges are exactly what the survey and aggregator draw today. Nothing inside the ring changes.</p>
+<p>Ten tiles, one per environment coupling from the RCN model, in a column beside the spheres they feed — the same place the RCN diagram puts them. Each tile is colored by the <b>latency input index</b> — the share of respondents who said that coupling is working (Block F, agree 3–4) — and a dashed spoke joins it to its sphere.</p>
+<p><span class="sw" style="background:#4a9"></span>working &nbsp; <span class="sw" style="background:#e0b040"></span>mixed &nbsp; <span class="sw" style="background:#d9534f"></span>blocked &nbsp; <span class="sw" style="background:#ddd"></span>mostly unsure</p>
+<p>The number in each tile is the index; the small grey number is the share who left it blank — which is itself a reading of S-9.</p>
+<p>Clicking a tile opens the Block F evidence for that coupling in the detail panel, the same way clicking a sphere does today. Tiles are not nodes: they have no go/caution/stop, no edges of their own, no ids in EDGE_LIST. They are drawn from the extra-item block, exactly as the protection items already are.</p>
+<p>In the survey tool the same column appears un-colored as navigation: click a tile to answer that Block F item. Two tiles sit on the left because the working groups' inputs and demand feed S-6 and S-3.</p>
+</div>
+</div>
+<script>
+const NS='http://www.w3.org/2000/svg';
+const svg=document.getElementById('s');
+const el=(t,a={})=>{const e=document.createElementNS(NS,t);for(const[k,v]of Object.entries(a))e.setAttribute(k,v);return e;};
+const txt=(x,y,s,a={})=>{const t=el('text',Object.assign({x,y,'text-anchor':'middle','font-size':9,'font-family':"'IBM Plex Sans',system-ui,sans-serif",fill:'#1a1a1a'},a));t.textContent=s;svg.appendChild(t);return t;};
+
+// ── the existing layout, offset into the middle of the canvas ─────────────
+const radius=38, space=62, ex=3, mw=430, ox=215, oy0=40;
+const oy=i=>2*radius*(i+1)+(i+0.5)*space+ex, iy=i=>(2*i+1)*radius+i*space+ex;
+const nodes=[...[10,11,5,2,1].map((n,i)=>({n,x:mw/2,y:iy(i)})),...[8,6,3].map((n,i)=>({n,x:radius+3,y:oy(i)})),...[9,7,4].map((n,i)=>({n,x:mw-radius-3,y:oy(i)}))].map(o=>({n:o.n,x:o.x+ox,y:o.y+oy0}));
+const labels={1:'Coordination',2:'Involvement',3:'Tools &\nworkspaces',4:'Awareness\nwithin',5:'Learning &\nchange',6:'Getting\nthings done',7:'Resources',8:'Planning',9:'Awareness\nbeyond',10:'Leadership',11:'Culture'};
+const status={1:'#fff3c4',2:'#d8f0dc',3:'#f8d7d5',4:'#d8f0dc',5:'#fff3c4',6:'#fff3c4',7:'#f8d7d5',8:'#f8d7d5',9:'#d8f0dc',10:'#d8f0dc',11:'#d8f0dc'};
+const N=Object.fromEntries(nodes.map(o=>[o.n,o]));
+// a sample of internal edges, light, to show the graph is unchanged
+const edges=[[1,2],[2,1],[3,1],[1,4],[2,5],[5,8],[8,6],[6,7],[9,8],[10,6],[11,5],[7,2],[4,5],[6,10],[3,6],[9,5],[10,9],[11,10],[8,9],[5,11]];
+const eg=el('g',{stroke:'#999','stroke-width':1,fill:'none'});
+for(const[a,b]of edges){const A=N[a],B=N[b];const dx=B.x-A.x,dy=B.y-A.y,L=Math.hypot(dx,dy);const ux=dx/L,uy=dy/L;const x1=A.x+ux*radius,y1=A.y+uy*radius,x2=B.x-ux*(radius+2),y2=B.y-uy*(radius+2);
+  eg.appendChild(el('line',{x1,y1,x2,y2,'marker-end':'url(#ah)'}));}
+const defs=el('defs');defs.innerHTML='<marker id="ah" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#999"/></marker>';svg.appendChild(defs);svg.appendChild(eg);
+for(const o of nodes){svg.appendChild(el('circle',{cx:o.x,cy:o.y,r:radius,fill:status[o.n],stroke:'#444','stroke-width':1}));
+  const ls=labels[o.n].split('\n');ls.forEach((l,i)=>txt(o.x,o.y+4+(i-(ls.length-1)/2)*11,l,{'font-size':9}));
+  txt(o.x,o.y-radius+11,'S-'+o.n,{'font-size':7,fill:'#777'});}
+
+// ── the environment column ────────────────────────────────────────────────
+const segs=[
+ {k:'Ideal futures',edge:'I→9',to:9,idx:0.71,blank:0.35},
+ {k:'Regulators',edge:'R→9',to:9,idx:0.28,blank:0.40},
+ {k:'Partners',edge:'P→9',to:9,idx:0.64,blank:0.30},
+ {k:'Extractors',edge:'Co→9',to:9,idx:0.33,blank:0.45},
+ {k:'Financiers',edge:'F→7',to:7,idx:0.22,blank:0.25},
+ {k:'Suppliers',edge:'S→7',to:7,idx:0.58,blank:0.30},
+ {k:'Places served',edge:'G→4',to:4,idx:0.80,blank:0.10},
+ {k:'People served',edge:'C→4',to:4,idx:0.66,blank:0.08},
+ {k:'Group inputs',edge:'Sou→OUH',to:6,idx:0.55,blank:0.50,side:'L'},
+ {k:'Group demand',edge:'Cou→OUH',to:6,idx:0.48,blank:0.55,side:'L'},
+];
+const col=s=>s.blank>0.5?'#ddd':s.idx>=0.6?'#4a9':s.idx>=0.4?'#e0b040':'#d9534f';
+const TW=112, TH=40, TG=8;
+const rightX=ox+mw+70, leftX=ox-70-TW;
+const byTarget={};segs.forEach(s=>(byTarget[s.to]=byTarget[s.to]||[]).push(s));
+const rg=el('g'); svg.appendChild(rg);
+for(const [t,list] of Object.entries(byTarget)){
+  const T=N[t]; const total=list.length*TH+(list.length-1)*TG; let y=T.y-total/2;
+  for(const s of list){
+    const x=s.side==='L'?leftX:rightX;
+    const r=el('rect',{x,y,width:TW,height:TH,rx:6,fill:col(s),stroke:'#fff','stroke-width':1.5,style:'cursor:pointer'});
+    const tt=el('title');tt.textContent=`${s.k} (${s.edge}) — latency input index ${s.idx.toFixed(2)}, ${Math.round(s.blank*100)}% unsure. Click for Block F evidence.`;r.appendChild(tt);rg.appendChild(r);
+    const dark=s.blank>0.5; const fg=dark?'#444':'#fff', fg2=dark?'#777':'#f0f0f0';
+    txt(x+8,y+16,s.k,{'text-anchor':'start','font-size':10,'font-weight':600,fill:fg});
+    txt(x+8,y+30,s.edge,{'text-anchor':'start','font-size':8,fill:fg2});
+    txt(x+TW-8,y+16,s.idx.toFixed(2),{'text-anchor':'end','font-size':10,'font-weight':600,fill:fg});
+    txt(x+TW-8,y+30,Math.round(s.blank*100)+'% ?',{'text-anchor':'end','font-size':8,fill:fg2});
+    const sx=s.side==='L'?x+TW:x, ex2=s.side==='L'?T.x-radius-4:T.x+radius+4;
+    rg.appendChild(el('line',{x1:sx,y1:y+TH/2,x2:ex2,y2:T.y,stroke:col(s),'stroke-width':1.4,'stroke-dasharray':'3 3',opacity:0.9}));
+    y+=TH+TG;
+  }
+}
+txt(rightX+TW/2,oy0-8,'ENVIRONMENT (Block F)',{'font-size':8,fill:'#888','letter-spacing':'0.1em'});
+txt(leftX+TW/2,oy0-8,'WORKING GROUPS',{'font-size':8,fill:'#888','letter-spacing':'0.1em'});
+
+</script>
+</body></html>
