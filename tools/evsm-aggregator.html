@@ -534,7 +534,7 @@ function fspBars() {
   const bars = [];
   const seen = new Set();
   for (const it of extraItems) {
-    if (it.scale === 'free' || it.scale === 'd5') continue;
+    if (it.scale === 'free' || it.scale === 'd5' || it.envType) continue;   // environment couplings have their own tiles
     const key = it.block === 'A' && it.factor ? `A:${it.factor}` : `B:${it.block}`;
     if (seen.has(key)) continue; seen.add(key);
     bars.push({ key, label: it.block==='A' ? (it.factorName||it.factor) : (it.blockName||it.block),
@@ -582,8 +582,28 @@ function fspFree(subset) { // free-text items, read in respondents' words
   return out;
 }
 // ── Items as grounds for spheres and edges ──────────────────────────────────
-function itemsForNode(id) { return extraItems.filter(it => (it.nodes||[]).includes(id)); }
+function itemsForNode(id) { return extraItems.filter(it => !it.envType && (it.nodes||[]).includes(id)); }   // env couplings are tiles, not grounds
 function itemsForEdge(id) { return extraItems.filter(it => (it.edges||[]).includes(id)); }
+
+// ── ENVIRONMENT COUPLINGS (Block F): items with an envType, drawn as tiles beside the sphere they feed ──
+// A tile is a rendering of an extra item, not a node: no status, no EDGE_LIST entry, no numeric id.
+// Its colour is the latency input index — the share of answers saying the coupling works.
+function envItems() { return extraItems.filter(it => it.envType && it.scale === 'agree4' && (it.nodes||[]).length); }
+function envIndex(it, subset) {   // {agree, answered, blank, n, idx, pct, blankPct}
+  let agree = 0, answered = 0;
+  for (const r of subset) {
+    const v = r.assessments?.items?.[it.id]?.value; if (!v) continue;
+    answered++; if (v === '3' || v === '4') agree++;
+  }
+  const n = subset.length, blank = n - answered;
+  return { agree, answered, blank, n, idx: answered ? agree/answered : null,
+           pct: answered ? Math.round(agree/answered*100) : null, blankPct: n ? Math.round(blank/n*100) : 0 };
+}
+function envColor(e) {
+  if (!e.answered || e.blankPct > 50) return NODE_COLORS.default;
+  return e.idx >= 0.6 ? NODE_COLORS.go : e.idx >= 0.4 ? NODE_COLORS.caution : NODE_COLORS.stop;
+}
+const ENV_TILE = { w: 124, h: 34, gap: 6, margin: 26 };
 // pooled concern share over a set of items for a subset; returns {concern, answered, pct}
 function itemsConcern(items, subset) {
   let concern = 0, answered = 0;
@@ -626,7 +646,9 @@ function groundsDetailHtml(items, subset, heading) {
 function fspHtml(subset, tag) {
   if (!extraItems.length) return '';
   const bars = fspBars();
-  const name = extraItems[0].surveyName || 'Extra items';
+  if (!bars.length) return '';   // only environment couplings loaded — they are drawn as tiles
+  const first = extraItems.find(it => !it.envType) || extraItems[0];
+  const name = first.surveyName || 'Extra items';
   let html = `<div class="fsp-wrap"><div class="fsp-title">${name} — failure state profile <span style="text-transform:none;letter-spacing:0;">(share of answers that report a concern · right column = answers counted, "didn't come up" excluded)</span></div>`;
   let lastBlock = null;
   for (const b of bars) {
@@ -795,8 +817,15 @@ function respondentLabel(r) {
 // ══ SVG BUILDER ══════════════════════════════════════════════════════════════
 
 function buildAggSVG(containerId, nodeAgg, edgeAgg, subset, clickHandler) {
-  const nodes = buildNodes();
-  const W = mw(), H = ht();
+  // Environment tiles sit in a column beside the sphere they feed: left of the left column
+  // (S-8, S-6, S-3), right of everything else. The canvas widens; the spheres do not move relative to each other.
+  const env = envItems();
+  const leftNs = new Set([8,6,3]);
+  const envSide = it => leftNs.has(Number(String(it.nodes[0]).replace('S-',''))) ? 'L' : 'R';
+  const LW = env.some(it => envSide(it)==='L') ? ENV_TILE.w + ENV_TILE.margin : 0;
+  const RW = env.some(it => envSide(it)==='R') ? ENV_TILE.w + ENV_TILE.margin : 0;
+  const nodes = buildNodes().map(o => ({ ...o, x: o.x + LW }));
+  const W = mw() + LW + RW, H = ht();
 
   const svg = el('svg', {
     viewBox:`0 0 ${W} ${H}`,
@@ -894,6 +923,37 @@ function buildAggSVG(containerId, nodeAgg, edgeAgg, subset, clickHandler) {
     svg.appendChild(rg);
   }
 
+  // ── ENVIRONMENT TILES (Block F) ──────────────────────────────────────────
+  if (env.length) {
+    const tg = el('g');
+    const byTarget = {};
+    for (const it of env) { const k = String(it.nodes[0]); (byTarget[k] = byTarget[k] || []).push(it); }
+    for (const [sid, list] of Object.entries(byTarget)) {
+      const T = nodes.find(o => `S-${o.n}` === sid); if (!T) continue;
+      const side = envSide(list[0]);
+      const x = side === 'L' ? T.x - radius - ENV_TILE.margin - ENV_TILE.w : T.x + radius + ENV_TILE.margin;
+      const total = list.length*ENV_TILE.h + (list.length-1)*ENV_TILE.gap;
+      let y = T.y - total/2;
+      for (const it of list) {
+        const e = envIndex(it, subset), fill = envColor(e), dim = fill === NODE_COLORS.default;
+        const fg = dim ? '#444' : '#fff', fg2 = dim ? '#777' : 'rgba(255,255,255,0.85)';
+        const g = el('g', {'data-type':'env', 'data-id':it.id, style:'cursor:pointer;'});
+        g.appendChild(el('rect', {x, y, width:ENV_TILE.w, height:ENV_TILE.h, rx:5, fill, stroke:'#fff', 'stroke-width':1.5}));
+        const t1 = el('text', {x:x+7, y:y+14, 'font-size':'9', 'font-weight':'700', fill:fg, 'font-family':"'Libre Baskerville',serif"}); t1.textContent = it.envType.length > 14 ? it.envType.slice(0, 13) + '…' : it.envType; g.appendChild(t1);
+        const t2 = el('text', {x:x+7, y:y+26, 'font-size':'7', fill:fg2}); t2.textContent = (it.edges||[])[0] ? it.edges[0].replace('->','→') : it.id; g.appendChild(t2);
+        const t3 = el('text', {x:x+ENV_TILE.w-7, y:y+14, 'font-size':'9', 'font-weight':'700', fill:fg, 'text-anchor':'end'}); t3.textContent = e.idx === null ? '—' : e.idx.toFixed(2); g.appendChild(t3);
+        const t4 = el('text', {x:x+ENV_TILE.w-7, y:y+26, 'font-size':'7', fill:fg2, 'text-anchor':'end'}); t4.textContent = e.n ? `${e.blankPct}% blank` : ''; g.appendChild(t4);
+        const tt = el('title'); tt.textContent = `${it.envType} (${(it.edges||[])[0]||it.id}) — latency input index ${e.idx===null?'—':e.idx.toFixed(2)}: ${e.agree} of ${e.answered} answered agree, ${e.blank} of ${e.n} blank. Click for the answers.`; g.appendChild(tt);
+        // spoke to the sphere it feeds — the environment edge, drawn but not modelled
+        const sx = side === 'L' ? x + ENV_TILE.w : x, ex = side === 'L' ? T.x - radius - 3 : T.x + radius + 3;
+        g.appendChild(el('line', {x1:sx, y1:y+ENV_TILE.h/2, x2:ex, y2:T.y, stroke:fill, 'stroke-width':'1.3', 'stroke-dasharray':'3 3', opacity:'0.9'}));
+        tg.appendChild(g);
+        y += ENV_TILE.h + ENV_TILE.gap;
+      }
+    }
+    svg.appendChild(tg);
+  }
+
   // ── EDGES ────────────────────────────────────────────────────────────────
   const eg = el('g');
   for (const {tail,head} of EDGE_LIST) {
@@ -985,6 +1045,7 @@ function buildAggSVG(containerId, nodeAgg, edgeAgg, subset, clickHandler) {
     if (!target) { hideRichTip(); return; }
     const type = target.getAttribute('data-type');
     const id   = target.getAttribute('data-id');
+    if (type === 'env') { hideRichTip(0); return; }   // tiles carry an SVG title instead
     showRichTip(e, type, id, subset);
   });
 
@@ -1181,9 +1242,9 @@ function renderDiagrams() {
         <div id="svg-container-b"></div>
       </div>`;
     buildAggSVG('svg-container-a', aggregateNodes(subA), aggregateEdges(subA), subA,
-      (type,id,shift) => shift ? showSynthSelector(type,id,subA,subB) : showDetail(type,id,subA));
+      (type,id,shift) => (shift && type !== 'env') ? showSynthSelector(type,id,subA,subB) : showDetail(type,id,subA));
     buildAggSVG('svg-container-b', aggregateNodes(subB), aggregateEdges(subB), subB,
-      (type,id,shift) => shift ? showSynthSelector(type,id,subA,subB) : showDetail(type,id,subB));
+      (type,id,shift) => (shift && type !== 'env') ? showSynthSelector(type,id,subA,subB) : showDetail(type,id,subB));
     for (const [id, sub, tag] of [['svg-container-a', subA, 'a'], ['svg-container-b', subB, 'b']]) {
       const wrap = document.getElementById(id).parentElement;
       wrap.insertAdjacentHTML('beforeend', fspHtml(sub, tag)); wireFsp(wrap, sub, tag);
@@ -1211,6 +1272,32 @@ function showDetail(type, id, subset) {
   const idEl   = document.getElementById('detail-id');
   const nameEl = document.getElementById('detail-name');
   const body   = document.getElementById('detail-body');
+
+  if (type === 'env') {
+    const it = extraItems.find(i => i.id === id); if (!it) return;
+    const sid = String(it.nodes[0]);
+    const toLabel = (nodeLabels[sid]||sid).replace(/\n/g,' ');
+    const e = envIndex(it, subset);
+    idEl.textContent = `${(it.edges||[])[0]||id} · ${id}`;
+    nameEl.textContent = `${it.envType} → ${toLabel}`;
+    const counts = { '4 agree':0, '3 somewhat agree':0, '2 somewhat disagree':0, '1 disagree':0, total:0 };
+    const keyOf = { '4':'4 agree', '3':'3 somewhat agree', '2':'2 somewhat disagree', '1':'1 disagree' };
+    const notes = [];
+    for (const r of subset) {
+      const a = r.assessments?.items?.[id]; if (!a?.value || !keyOf[a.value]) continue;
+      counts[keyOf[a.value]]++; counts.total++;
+      if (a.note?.trim()) notes.push({ who: respondentLabel(r), worlds: r.respondent?.worlds||[], text: a.note.trim() });
+    }
+    const colors = { '4 agree':NODE_COLORS.go, '3 somewhat agree':'#8fc49a', '2 somewhat disagree':NODE_COLORS.caution, '1 disagree':NODE_COLORS.stop };
+    const idxHtml = `<div class="stat-section"><div class="stat-title">Latency input index <span class="stat-n">(share of answers saying this coupling works)</span></div>
+      <div style="font-size:22px;font-weight:700;color:${envColor(e)};">${e.idx===null?'—':e.idx.toFixed(2)}</div>
+      <div class="stat-n">${e.agree} of ${e.answered} answered agree · ${e.blank} of ${e.n} left it blank (${e.blankPct}%) — blank is itself a reading of Awareness beyond</div>
+      ${it.route ? `<div class="stat-n" style="margin-top:6px;"><b>If blocked, route:</b> ${it.route}</div>` : ''}</div>`;
+    currentSynthContext = { type:'env', id, subset, label:`${it.envType} → ${toLabel}`, desc:it.text, counts, evidence:notes, suggestions:[] };
+    document.getElementById('synth-btn').style.display = '';
+    body.innerHTML = descHtml(it.text) + idxHtml + statBarHtml(Object.keys(colors), counts, colors) + quotesHtml(notes, 'What people said');
+    return;
+  }
 
   if (isEdge) {
     const [tail,head] = id.split('->').map(Number);
@@ -1617,7 +1704,9 @@ Write in plain language for neighborhood organizers. Do not use bullet points.`;
   } else {
     const { type, id, label, desc, counts, evidence, suggestions } = ctx;
     const isEdge = type === 'edge';
-    const countSummary = isEdge
+    const countSummary = type === 'env'
+      ? Object.entries(counts).filter(([k]) => k !== 'total').map(([k,v]) => `${k}: ${v}`).join(', ') + ` (of ${counts.total} answered)`
+      : isEdge
       ? `agree: ${counts.agree||0}, disagree: ${counts.disagree||0}, unknown: ${counts.unknown||0} (of ${counts.total} assessed)`
       : `green: ${counts.go||0}, yellow: ${counts.caution||0}, red: ${counts.stop||0}, blue: ${counts.unsure||0} (of ${counts.total} assessed)`;
     const evLines  = evidence.map(e => `[${e.worlds?.join(', ')||'\u2014'}] ${e.text}`).join('\n') || 'None provided.';
@@ -1626,7 +1715,7 @@ Write in plain language for neighborhood organizers. Do not use bullet points.`;
     prompt = `You are helping a neighborhood cooperative analyze survey results from their eVSM (Systems Oriented Fitness Inventory) assessment.
 
 ELEMENT: ${label} (${id})
-TYPE: ${isEdge ? 'Edge (relationship between two spheres)' : 'Sphere (organizational capacity)'}
+TYPE: ${type === 'env' ? 'Environment coupling — an input the neighborhood depends on but does not control; a blocked one is latency, work for the level above' : isEdge ? 'Edge (relationship between two spheres)' : 'Sphere (organizational capacity)'}
 ${desc ? `DESCRIPTION: ${desc}
 ` : ''}
 ASSESSMENT COUNTS: ${countSummary}
@@ -1761,13 +1850,25 @@ function buildElementPrompt(type, id, subset) {
     desc  = edgeDescriptions[id] || '';
     const agg = (aggregateEdges(subset)[id]) || { counts:{agree:0,disagree:0,unknown:0,total:0}, evidence:[], suggestions:[] };
     counts = agg.counts; evidence = agg.evidence; suggestions = agg.suggestions;
+  } else if (type === 'env') {
+    const it = extraItems.find(i => i.id === id) || {};
+    const sid = String((it.nodes||[])[0]||'');
+    label = `${it.envType||id} → ${(nodeLabels[sid]||sid).replace(/\n/g,' ')}`;
+    desc  = it.text || '';
+    counts = { agree:0, 'somewhat agree':0, 'somewhat disagree':0, disagree:0, total:0 };
+    const keyOf = { '4':'agree', '3':'somewhat agree', '2':'somewhat disagree', '1':'disagree' };
+    evidence = []; suggestions = [];
+    for (const r of subset) { const a = r.assessments?.items?.[id]; if (!a?.value || !keyOf[a.value]) continue; counts[keyOf[a.value]]++; counts.total++;
+      if (a.note?.trim()) evidence.push({ worlds: r.respondent?.worlds||[], text: a.note.trim() }); }
   } else {
     label = (nodeLabels[id]||id).replace(/\n/g,' ');
     desc  = nodeDescriptions[id] || '';
     const agg = (aggregateNodes(subset)[id]) || { counts:{go:0,caution:0,stop:0,unsure:0,total:0}, evidence:[], suggestions:[] };
     counts = agg.counts; evidence = agg.evidence; suggestions = agg.suggestions;
   }
-  const countSummary = isEdge
+  const countSummary = type === 'env'
+    ? Object.entries(counts).filter(([k]) => k !== 'total').map(([k,v]) => `${k}: ${v}`).join(', ') + ` (of ${counts.total} answered)`
+    : isEdge
     ? `agree: ${counts.agree||0}, disagree: ${counts.disagree||0}, unknown: ${counts.unknown||0} (of ${counts.total} assessed)`
     : `green: ${counts.go||0}, yellow: ${counts.caution||0}, red: ${counts.stop||0}, blue: ${counts.unsure||0} (of ${counts.total} assessed)`;
   const evLines  = evidence.map(e  => `[${e.worlds?.join(', ')||'—'}] ${e.text}`).join('\n') || 'None provided.';
@@ -1775,7 +1876,7 @@ function buildElementPrompt(type, id, subset) {
   return `You are helping a cooperative analyze survey results from their eVSM assessment.
 
 ELEMENT: ${label} (${id})
-TYPE: ${isEdge ? 'Edge (relationship between two spheres)' : 'Sphere (organizational capacity)'}
+TYPE: ${type === 'env' ? 'Environment coupling — an input the neighborhood depends on but does not control; a blocked one is latency, work for the level above' : isEdge ? 'Edge (relationship between two spheres)' : 'Sphere (organizational capacity)'}
 ${desc ? `DESCRIPTION: ${desc}\n` : ''}ASSESSMENT COUNTS: ${countSummary}
 
 RESPONDENT EVIDENCE:
@@ -2143,8 +2244,9 @@ function loadFiles(files) {
           edgeDescriptions = {...data.config.edgeDescriptions};
         if (data.config?.nodeDescriptions && Object.keys(nodeDescriptions).length === 0)
           nodeDescriptions = {...data.config.nodeDescriptions};
-        if (data.config?.extraItems?.length && extraItems.length === 0)
-          extraItems = data.config.extraItems.map(i => ({...i}));
+        // Union by id, so a resident survey and a steward survey (Blocks F/G/H) can be read in one session
+        if (data.config?.extraItems?.length)
+          for (const it of data.config.extraItems) if (!extraItems.find(x => x.id === it.id)) extraItems.push({...it});
         rebuildWorlds();
         renderRespondentList();
         renderDiagrams();
@@ -2167,7 +2269,8 @@ function rebuildWorlds() {
 function renderRespondentList() {
   const c = document.getElementById('resp-list');
   c.innerHTML = '';
-  document.getElementById('resp-badge').textContent = `${responses.length} respondent${responses.length!==1?'s':''}`;
+  const vers = [...new Set(responses.map(r => 'v' + (r.schemaVersion || 1)))].sort();
+  document.getElementById('resp-badge').textContent = `${responses.length} respondent${responses.length!==1?'s':''}${vers.length > 1 ? ' · mixed schema ' + vers.join('/') : ''}`;
   if (selectedRespondent) {
     const clr = document.createElement('div');
     clr.innerHTML = `<span class="resp-clear" onclick="clearRespondentSelection()">× Clear respondent filter</span>`;
@@ -2177,12 +2280,15 @@ function renderRespondentList() {
     const r = responses[i];
     const label = respondentLabel(r);
     const worlds = (r.respondent?.worlds||[]).join(', ') || '—';
+    const sv = r.schemaVersion || 1, sid = r.surveyMeta?.surveyId || '';
+    const badge = `<span style="font-size:8px;color:var(--muted);font-family:'IBM Plex Mono',monospace;" title="schema version ${sv}${sid?' · survey '+sid:''}">v${sv}${sid?' · '+sid:''}</span>`;
     const isSelected = selectedRespondent && respondentLabel(selectedRespondent) === label;
     const div = document.createElement('div');
     div.className = 'resp-item' + (isSelected ? ' resp-selected' : '');
     div.innerHTML = `<span style="flex:1;">
       <span class="resp-name" onclick="selectRespondent(responses[${i}])">${label}</span>
       <div class="resp-worlds">${worlds}</div>
+      <div>${badge}</div>
     </span>
     <button class="resp-compare" title="Compare ${label} vs all respondents" onclick="compareRespondent(responses[${i}])">⇄</button>`;
     const btn = document.createElement('button');

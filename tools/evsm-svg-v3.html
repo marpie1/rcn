@@ -604,6 +604,12 @@ input[type=range] { width:100%; accent-color:var(--accent); height:3px; cursor:p
 
 var EMBEDDED_CONFIG = null; // sentinel — exportSnapshot() replaces this with live config
 
+// Schema version, written into every config, snapshot and response this tool produces.
+//   1 — eleven spheres (S-1..S-11) and the 66 relationships; no field present in files from before 2026-09.
+//   2 — the same graph, plus extra item blocks (extraItems: Protection Survey A–E, Measures F–H) and this field.
+// The graph itself has not changed between 1 and 2; the aggregator merges both in one session and shows the version per respondent.
+const SCHEMA_VERSION = 2;
+
 // ══ CONFIG DATA ═══════════════════════════════════════════════════════════════
 
 let nodeLabels = {
@@ -1263,7 +1269,7 @@ function initConfigIO() {
   const msg = id => { const m=document.getElementById('config-msg'); m.textContent=id; setTimeout(()=>m.textContent='',2200); };
 
   document.getElementById('exportConfigBtn').addEventListener('click',()=>{
-    const payload={ surveyMeta, nodeLabels, nodeDescriptions, nodeStatus, edgeStatus, edgeDescriptions, worldsCategories, extraItems };
+    const payload={ schemaVersion: SCHEMA_VERSION, surveyMeta, nodeLabels, nodeDescriptions, nodeStatus, edgeStatus, edgeDescriptions, worldsCategories, extraItems };
     const a=Object.assign(document.createElement('a'),{
       href:URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'})),
       download:'evsm-config.json'
@@ -1287,7 +1293,7 @@ function initConfigIO() {
   });
 
   document.getElementById('snapshotBtn').addEventListener('click', () => {
-    const payload = { surveyMeta, nodeLabels, nodeDescriptions, nodeStatus, edgeStatus, edgeDescriptions, worldsCategories, extraItems };
+    const payload = { schemaVersion: SCHEMA_VERSION, surveyMeta, nodeLabels, nodeDescriptions, nodeStatus, edgeStatus, edgeDescriptions, worldsCategories, extraItems };
     const sentinel = 'var EMBEDDED_CONFIG = null; // sentinel — exportSnapshot() replaces this with live config';
     const replacement = 'var EMBEDDED_CONFIG = ' + JSON.stringify(payload) + ';';
     const src = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
@@ -1769,6 +1775,7 @@ function initSurveyExport() {
   function doSurveyExport() {
     const anon = !!surveyMeta.anonymousMode;
     const payload={
+      schemaVersion: SCHEMA_VERSION,
       meta:{ exportedAt: new Date().toISOString(), tool:'eVSM SVG v3' },
       respondent:{
         name: anon ? null : surveyResponse.respondentName,
@@ -1800,6 +1807,7 @@ function initSurveyExport() {
   function doSurveyPrint() {
     const anon = !!surveyMeta.anonymousMode;
     const payload = {
+      schemaVersion: SCHEMA_VERSION,
       meta: { exportedAt: new Date().toISOString(), tool: 'eVSM SVG v3' },
       respondent: {
         name: anon ? null : surveyResponse.respondentName,
