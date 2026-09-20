@@ -20,15 +20,24 @@ ENV_PATH = os.path.join(BASE, '.env.neo4j')
 
 
 def load_env(path=ENV_PATH):
-    if not os.path.exists(path):
-        sys.exit(f"missing {path} — see substrate/README.md")
+    # Two homes for the credentials, one precedence: the process environment
+    # wins, then ~/rcn/.env.neo4j. A laptop has the file; the steward stack
+    # (deploy/steward/) has only environment variables, set by docker compose.
+    # Neither is required if the other is present.
     env = {}
-    with open(path) as fh:
-        for line in fh:
-            line = line.strip()
-            if line and not line.startswith('#') and '=' in line:
-                k, v = line.split('=', 1)
-                env[k.strip()] = v.strip()
+    if os.path.exists(path):
+        with open(path) as fh:
+            for line in fh:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    k, v = line.split('=', 1)
+                    env[k.strip()] = v.strip()
+    for k in ('NEO4J_HTTP', 'NEO4J_USER', 'NEO4J_PASSWORD', 'NEO4J_DATABASE'):
+        if os.environ.get(k):
+            env[k] = os.environ[k]
+    if not env.get('NEO4J_PASSWORD'):
+        sys.exit(f"no Neo4j credentials — set NEO4J_PASSWORD in the environment "
+                 f"or write {path}; see substrate/README.md")
     return env
 
 

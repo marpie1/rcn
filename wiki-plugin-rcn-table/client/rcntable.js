@@ -45,8 +45,11 @@
   // folder — federation for tables. At home the popup keeps reading the live
   // api.py on 8768 so a steward sees Neo4j as it is, not as it was exported.
   const ASSETS = window.location.origin + '/assets/rcn-table/'
+  // At home the substrate itself serves the tools (api.py serves the repo root),
+  // so the popup and the projections share one origin and no second server is
+  // needed — the same three containers as deploy/steward/.
   const tableURL = item => item.tool || (LOCAL
-    ? 'http://localhost:8765/tools/rcn-table.html'
+    ? 'http://localhost:8768/tools/rcn-table.html'
     : ASSETS + 'rcn-table.html')
   const tableSrc = item => item.src || (LOCAL ? null
     : ASSETS + encodeURIComponent(item.database || 'whatcom') + '/')

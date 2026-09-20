@@ -33,6 +33,10 @@ import aspect_file
 aspect_file.configure(BASE)
 
 PORT = int(os.environ.get('PORT', 8768))
+# 127.0.0.1 on a laptop. Inside a container it must be 0.0.0.0 so docker's
+# port publish can reach it; the network boundary is then the publish spec in
+# deploy/steward/docker-compose.yml (127.0.0.1:8768), not this bind address.
+HOST = os.environ.get('HOST', '127.0.0.1')
 
 # ── the projections ───────────────────────────────────────────────────────
 # One query each. Kept as literals here, not built from strings, so what runs
@@ -1342,4 +1346,4 @@ if __name__ == '__main__':
         sys.exit(f"cannot reach Neo4j — {e}")
     print(f"substrate api  http://localhost:{PORT}/   db={DATABASE}  concepts={n}")
     print(f"  /projection/causal   /projection/gold")
-    ThreadingHTTPServer(('127.0.0.1', PORT), Handler).serve_forever()
+    ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()

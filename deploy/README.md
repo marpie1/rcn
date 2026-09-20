@@ -102,5 +102,6 @@ The original Mac Mini deployment used macOS launchd agents (`org.rcn.fedwiki.pli
 | SCP + Groove | `marpie1/rcn-scp` GitHub repo | GitHub access + clone instructions |
 | SCP + Groove (alt) | `deploy/scp/` | 4 files + fill in `.env` |
 | SODOTO | `deploy/docker/` | Folder contents + fill in `.env` |
+| RCN steward stack (one person's workbench: Neo4j + substrate + FedWiki, 127.0.0.1 only) | `deploy/steward/` | Not for a sysadmin — for a steward on their own computer. `cp .env.example .env`, `docker compose up -d`; see its README |
 
 The GitHub repo approach (`marpie1/rcn-scp`) and the `deploy/scp/` approach produce the same running system via different paths. Wiki Café is using the GitHub repo approach.

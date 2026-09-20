@@ -1,0 +1,19 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+ENV PYTHONUNBUFFERED=1
+
+# The rcn tree: substrate/ (db.py, api.py, the loaders, export.py) and tools/
+# (the table, the map, the graph tool and its sidecars), which api.py serves
+# from the repo root so the popup and the projections share one origin.
+# Build context is the repo root; .dockerignore keeps secrets and data out.
+COPY . .
+
+# Never ship an export made on the build machine — the steward makes their own.
+RUN rm -rf substrate/export && mkdir -p substrate/export
+
+EXPOSE 8768
+
+# db.py reads NEO4J_* from the environment (compose sets them); api.py binds
+# HOST=0.0.0.0 inside the container, and compose publishes it on 127.0.0.1 only.
+CMD ["python3", "substrate/api.py"]
