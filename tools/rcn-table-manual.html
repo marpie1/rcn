@@ -79,6 +79,7 @@ pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
       <li><a href="#s12">12 · Putting rows on a map</a></li>
       <li><a href="#s13">13 · Where the rows come from</a></li>
       <li><a href="#s14">14 · When something looks wrong</a></li>
+      <li><a href="#s15">15 · Making a folder for your site (stewards)</a></li>
     </ol>
   </div>
 
@@ -90,9 +91,9 @@ pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
   <h2 id="s2">2 · Opening the table</h2>
   <p>Three ways in:</p>
   <ul>
-    <li><strong>From a wiki page</strong> — find a table item and press <strong>Open Table ↗</strong>. This is the usual way.</li>
-    <li><strong>Directly</strong> — open <code>rcn-table.html</code>. It will show you what is available.</li>
-    <li><strong>Straight to a particular set of rows</strong> — add <code>?db=whatcom&amp;kind=Entity</code> to the address.</li>
+    <li><strong>From a wiki page</strong> — find a table item and press <strong>Open Table ↗</strong>. This is the usual way. The table reads from that site's own records folder (§13); nothing else needs to be running.</li>
+    <li><strong>Directly</strong> — open <code>rcn-table.html</code>. On a steward's laptop it shows what the live records hold; anywhere else give it a folder: <code>?src=https://…/assets/rcn-table/whatcom/</code>.</li>
+    <li><strong>Straight to a particular set of rows</strong> — add <code>&amp;kind=Entity</code> (and <code>db=whatcom</code> when reading live records) to the address.</li>
   </ul>
   <p>The two dropdowns at the top left choose <em>which body of records</em> and <em>which kind of thing</em> within it. The number beside each kind is how many rows it has.</p>
 
@@ -212,11 +213,19 @@ pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
   </table>
   <p>There is more than one body of records. <code>whatcom</code> holds the 2017 county survey — organisations, programmes, themes and people. <code>rcngeo</code> holds the network's own geography — the NDCs, a partner, and the places that contain them. The others hold the drawings.</p>
   <p>Because these are named views rather than questions you have to compose, there is no query language to learn and no way to ask for something malformed.</p>
+  <p>Those views reach the table in one of two ways, and the table looks the same either way:</p>
+  <table>
+    <tr><th>Where</th><th>What the table reads</th><th>Who needs to do what</th></tr>
+    <tr><td>A wiki site (WikiCafe, or any site that is not on your own machine)</td><td>A <strong>folder of files</strong> in that site's assets: <code>/assets/rcn-table/&lt;records&gt;/</code>. Plain JSON. Nothing runs; a reader needs no account and no software.</td><td>The site's owner made the folder once (§15) and uploaded it. Only they can change it.</td></tr>
+    <tr><td>A steward's own laptop (a wiki on <code>localhost</code>)</td><td>The <strong>live records</strong> — Neo4j, answered through the substrate on port 8768 — so the steward sees the database as it is, not as it was last exported.</td><td>Neo4j Desktop and the substrate (<code>python3 substrate/api.py</code>) must be running.</td></tr>
+  </table>
+  <p>A table item can also be pointed at <em>another</em> site's folder: double-click it and add a line <code>src: https://their-site/assets/rcn-table/whatcom/</code>. That is how one neighbourhood reads another's records without copying them.</p>
 
   <h2 id="s14">14 · When something looks wrong</h2>
   <table>
     <tr><th>What you see</th><th>What it means</th></tr>
-    <tr><td>"Could not load — is the substrate running?"</td><td>The records are not reachable. On a laptop setup, the substrate needs starting.</td></tr>
+    <tr><td>"Could not reach the export folder at …"</td><td>The site has no <code>/assets/rcn-table/&lt;records&gt;/</code> folder yet, or the item's <code>src:</code> line points somewhere that does not exist. The site's owner needs to make and upload the folder (§15).</td></tr>
+    <tr><td>"Could not load — is the substrate running?"</td><td>On a steward's laptop: the live records are not reachable. Start Neo4j Desktop and <code>substrate/api.py</code>.</td></tr>
     <tr><td>A mostly empty table</td><td>Probably the wrong <em>kind</em> selected. Check the count beside each kind in the dropdown.</td></tr>
     <tr><td>Neighbourhood ↗ greyed out</td><td>Select exactly one row. Zero or several will not do.</td></tr>
     <tr><td>A row name ending in <code>(unspecified)</code></td><td>Real data, not an error. In the 2017 records it means a grant went to the organisation without a particular programme being recorded.</td></tr>
@@ -227,6 +236,16 @@ pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
     <tr><td>An area looks like it is in the wrong place</td><td>Check whether you are looking at the area's outline or its anchor dot. The outline is right; the dot is a bounding-box centre and can sit outside a curved shape.</td></tr>
     <tr><td>No lines on the map</td><td>Lines are drawn only between two things that are both located. A relationship to something with no coordinates has nowhere to land.</td></tr>
   </table>
+
+  <h2 id="s15">15 · Making a folder for your site (stewards)</h2>
+  <p>This is the only step that needs anything installed, and only the steward does it. It turns the live records into the folder a site serves.</p>
+  <ol>
+    <li>Load your records into Neo4j with the loader for their shape — for example <code>python3 substrate/load_whatcom.py</code> reads the 2017 survey's CSVs. The loader rebuilds the database from the files every time, so the files stay the truth and the database can always be remade.</li>
+    <li>Export: <code>python3 substrate/export.py --bundle whatcom rcngeo</code> (name the bodies of records you want to publish). This writes <code>substrate/export/rcn-table/</code>: the table, the map and the graph tool, beside one folder per body of records — <code>index.json</code>, one <code>table-….json</code> per kind, <code>geo.json</code> for the map and <code>graph.json</code> for Neighbourhood.</li>
+    <li>Upload that whole folder to your site's assets as <code>rcn-table</code>. A table item on any page of that site now opens against it.</li>
+    <li>When the records change, run steps 1–3 again. The folder is derived; nothing lives only in it.</li>
+  </ol>
+  <p>The whole Whatcom survey is about half a megabyte. Copy the folder to a phone and the table still works.</p>
 
   <div class="foot">RCN Toolset · open source, CC BY 4.0 · See the <a href="rcn-table-intro.html">Introduction</a> for why it works this way, and the <a href="graph-tool-manual.html">Graph Tool Manual</a> for the drawing it hands you to. The map is part of this tool and is covered in §12.</div>
 </div>
