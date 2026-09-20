@@ -868,6 +868,15 @@ function buildNodes() {
   ].sort((a,b) => a.n - b.n);
 }
 
+// ── ENVIRONMENT COUPLINGS (Block F) as navigation tiles ──────────────────────
+// Items with an envType are drawn beside the sphere they feed — left of S-8/S-6/S-3, right of the rest —
+// uncoloured, as a way into that item's assessment. They are not nodes: no status, no EDGE_LIST entry.
+// The aggregator draws the same tiles coloured by the latency input index.
+const ENV_TILE = { w: 124, h: 34, gap: 6, margin: 26 };
+const ENV_LEFT = new Set([8,6,3]);
+function envItems() { return extraItems.filter(it => it.envType && (it.nodes||[]).length); }
+function envSide(it) { return ENV_LEFT.has(Number(String(it.nodes[0]).replace('S-',''))) ? 'L' : 'R'; }
+
 // ══ SVG ENGINE ════════════════════════════════════════════════════════════════
 
 const NS  = 'http://www.w3.org/2000/svg';
@@ -926,8 +935,11 @@ function arrowPath(x,y,deg,ew) {
 }
 
 function buildSVG(containerId, mode='setup', highlightId=null) {
-  const nodes = buildNodes();
-  const W = mw(), H = ht();
+  const env = envItems();
+  const LW = env.some(it => envSide(it)==='L') ? ENV_TILE.w + ENV_TILE.margin : 0;
+  const RW = env.some(it => envSide(it)==='R') ? ENV_TILE.w + ENV_TILE.margin : 0;
+  const nodes = buildNodes().map(o => ({ ...o, x: o.x + LW }));
+  const W = mw() + LW + RW, H = ht();
 
   const svg = el('svg', {
     viewBox:`0 0 ${W} ${H}`,
@@ -987,6 +999,37 @@ function buildSVG(containerId, mode='setup', highlightId=null) {
     eg.appendChild(g);
   }
   svg.appendChild(eg);
+
+  // environment tiles (Block F): navigation into the item, uncoloured; filled once answered
+  if (env.length) {
+    const tg = el('g');
+    const byTarget = {};
+    for (const it of env) { const k = String(it.nodes[0]); (byTarget[k] = byTarget[k] || []).push(it); }
+    for (const [sid, list] of Object.entries(byTarget)) {
+      const T = nodes.find(o => `S-${o.n}` === sid); if (!T) continue;
+      const side = envSide(list[0]);
+      const x = side === 'L' ? T.x - radius - ENV_TILE.margin - ENV_TILE.w : T.x + radius + ENV_TILE.margin;
+      let y = T.y - (list.length*ENV_TILE.h + (list.length-1)*ENV_TILE.gap)/2;
+      for (const it of list) {
+        const done = mode === 'survey' && itemDone(it, surveyResponse.itemAssessments?.[it.id]);
+        const hi = highlightId === it.id;
+        const g = el('g', {'data-type':'item', 'data-id':it.id, style: mode==='survey' ? 'cursor:pointer;' : 'pointer-events:none;opacity:0.6;'});
+        g.appendChild(el('rect', {x, y, width:ENV_TILE.w, height:ENV_TILE.h, rx:5,
+          fill: done ? '#e8e4d8' : (mode==='survey' ? '#fff' : 'transparent'),
+          stroke: hi ? '#4a9' : (mode==='survey' ? '#888' : 'black'), 'stroke-width': hi ? 2.5 : 1}));
+        const t1 = el('text', {x:x+7, y:y+14, 'font-size':'9', 'font-weight':'700', fill:'#1a1a18', 'font-family':"'Libre Baskerville',serif"});
+        t1.textContent = it.envType.length > 16 ? it.envType.slice(0, 15) + '…' : it.envType; g.appendChild(t1);
+        const t2 = el('text', {x:x+7, y:y+26, 'font-size':'7', fill:'#666'}); t2.textContent = ((it.edges||[])[0]||it.id).replace('->','→') + ' · ' + it.id; g.appendChild(t2);
+        if (done) { const ck = el('text', {x:x+ENV_TILE.w-8, y:y+21, 'font-size':'11', fill:'#4a9', 'text-anchor':'end'}); ck.textContent = '✓'; g.appendChild(ck); }
+        const tt = el('title'); tt.textContent = `${it.envType} → ${(nodeLabels[sid]||sid).replace(/\n/g,' ')} — click to answer`; g.appendChild(tt);
+        const sx = side === 'L' ? x + ENV_TILE.w : x, ex = side === 'L' ? T.x - radius - 3 : T.x + radius + 3;
+        g.appendChild(el('line', {x1:sx, y1:y+ENV_TILE.h/2, x2:ex, y2:T.y, stroke: hi ? '#4a9' : '#aaa', 'stroke-width':'1.2', 'stroke-dasharray':'3 3'}));
+        tg.appendChild(g);
+        y += ENV_TILE.h + ENV_TILE.gap;
+      }
+    }
+    svg.appendChild(tg);
+  }
 
   // foreignObject labels
   const fo = el('foreignObject',{x:0,y:0,width:W,height:H});
@@ -1049,6 +1092,7 @@ function renderSetup(highlightId=null) {
     if (!target) return;
     const type = target.getAttribute('data-type');
     const id   = target.getAttribute('data-id');
+    if (type === 'item') return;   // environment tiles are edited as extra items, not here
     showSetupDetail(type, id);
     renderSetup(id);
   });
@@ -1458,7 +1502,7 @@ function buildItemsNavList() {
     for(const it of its){
       const a=surveyResponse.itemAssessments[it.id];
       const item=document.createElement('div'); item.className='sphere-nav-item';
-      item.dataset.id=it.id; item.dataset.type='item'; item.title=it.text;
+      item.dataset.id=it.id; item.dataset.type='item'; item.title=it.text.replace(/\*\*|_/g,'');
       item.innerHTML=`<span class="sphere-name" style="font-size:10px;font-weight:400;">${it.id}${it.factorName?' · '+it.factorName:''}</span><span class="dot ${itemDone(it,a)?'go':''}"></span>`;
       item.addEventListener('click',()=>openAssessment('item',it.id));
       c.appendChild(item);
@@ -1477,7 +1521,7 @@ function groundsHtml(kind, id) {
     const a = surveyResponse.itemAssessments[it.id]||{};
     const opts = ITEM_SCALES[it.scale]||[];
     return `<div class="grounds-row">
-      <div class="grounds-text"><span class="grounds-id">${it.id}</span> ${it.text}</div>
+      <div class="grounds-text"><span class="grounds-id">${it.id}</span> ${miniMd(it.text)}</div>
       <select class="ap-select grounds-select" data-item="${it.id}">
         ${[['','—'],...opts].map(([v,l])=>`<option value="${v}" ${(a.value||'')===v?'selected':''}>${l}</option>`).join('')}
       </select>
@@ -1517,7 +1561,7 @@ function renderItemAssessment(id, seq) {
       <div class="ap-header">
         <div class="ap-id">${it.blockName||it.block} · ${id}</div>
         ${factorLine}
-        <div class="ap-label">${it.text}</div>
+        <div class="ap-label">${miniMd(it.text)}</div>
         ${it.help?`<div class="ap-description">${miniMd(it.help)}</div>`:(it.blockHelp?`<div class="ap-description">${miniMd(it.blockHelp)}</div>`:'')}
         ${it.shellDef?`<div class="ap-description" style="font-size:9px;opacity:.7;margin-top:3px;">Shell: ${miniMd(it.shellDef)}</div>`:''}
         ${bearsLine}

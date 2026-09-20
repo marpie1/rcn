@@ -630,7 +630,7 @@ function groundsDetailHtml(items, subset, heading) {
     for (const it of g.items) {
       if (!CONCERN[it.scale]) continue;
       const c = itemsConcern([it], subset);
-      html += `<div class="grounds-item"><div class="grounds-item-text"><span class="grounds-code">${it.id}</span>${it.text}</div>
+      html += `<div class="grounds-item"><div class="grounds-item-text"><span class="grounds-code">${it.id}</span>${miniMd(it.text)}</div>
         <div class="stat-row" style="margin-bottom:2px;"><div class="stat-label" style="width:44px;">${c.concern}/${c.answered}</div>
         <div class="stat-bar-wrap"><div class="stat-bar" style="width:${c.pct}%;background:${it.block==='A'?'var(--stop)':(it.block==='B'?'var(--unsure)':'var(--caution)')};"></div></div>
         <div class="stat-pct">${c.answered?c.pct+'%':'—'}</div></div></div>`;
@@ -698,7 +698,7 @@ function showFspDetail(key, subset) {
   for (const it of agg.items) {
     const pi = agg.perItem[it.id];
     const pct = pi.answered ? Math.round(pi.concern/pi.answered*100) : 0;
-    html += `<div style="font-size:10px;margin:6px 0 2px;line-height:1.35;"><b style="font-family:'IBM Plex Mono',monospace;font-size:9px;">${it.id}</b> ${it.text}</div>
+    html += `<div style="font-size:10px;margin:6px 0 2px;line-height:1.35;"><b style="font-family:'IBM Plex Mono',monospace;font-size:9px;">${it.id}</b> ${miniMd(it.text)}</div>
       <div class="stat-row"><div class="stat-label" style="font-family:'IBM Plex Mono',monospace;font-size:9px;">${pi.concern}/${pi.answered}${pi.asked>pi.answered?` <span style="color:var(--muted)">(+${pi.asked-pi.answered} n/a)</span>`:''}</div>
         <div class="stat-bar-wrap"><div class="stat-bar" style="width:${pct}%;background:${b.block==='A'?'var(--stop)':(b.block==='B'?'var(--unsure)':'var(--caution)')};"></div></div>
         <div class="stat-pct">${pi.answered?pct+'%':'—'}</div></div>`;
