@@ -93,6 +93,7 @@ pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
   <ul>
     <li><strong>From a wiki page</strong> — find a table item and press <strong>Open Table ↗</strong>. This is the usual way. The table reads from that site's own records folder (§13); nothing else needs to be running.</li>
     <li><strong>Directly</strong> — open <code>rcn-table.html</code>. On a steward's laptop it shows what the live records hold; anywhere else give it a folder: <code>?src=https://…/assets/rcn-table/whatcom/</code>.</li>
+    <li><strong>From a spreadsheet</strong> — open <code>rcn-table.html</code> and press <strong>Open spreadsheet…</strong>, or drop CSV or Excel files onto it. Nothing else needs to exist. §15 says how to lay the sheet out and how to publish it.</li>
     <li><strong>Straight to a particular set of rows</strong> — add <code>&amp;kind=Entity</code> (and <code>db=whatcom</code> when reading live records) to the address.</li>
   </ul>
   <p>The two dropdowns at the top left choose <em>which body of records</em> and <em>which kind of thing</em> within it. The number beside each kind is how many rows it has.</p>
@@ -238,15 +239,23 @@ pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
   </table>
 
   <h2 id="s15">15 · Making a folder for your site (stewards)</h2>
-  <p>This is the only step that needs anything installed, and only the steward does it. It turns the live records into the folder a site serves.</p>
+  <p>A site serves its table from a folder in its assets. There are two ways to make that folder. The first needs nothing installed.</p>
+  <h3>From a spreadsheet, in the table itself</h3>
+  <ol>
+    <li>Lay the records out as one sheet per kind of thing — <em>Organization</em>, <em>Program</em>, <em>Person</em> — with the name in the first column (or a column called <code>Name</code>) and one header row. A column called <code>lat</code> and one called <code>long</code> put a row on the map. Optionally add a sheet called <code>Links</code> with three columns, <code>From</code>, <code>Relation</code>, <code>To</code>, one row per connection; a name there that has no row of its own still becomes a node. An Excel workbook with several sheets, or several CSV files, both work.</li>
+    <li>Open <code>rcn-table.html</code> and press <strong>Open spreadsheet…</strong> (or drop the files onto the table). The table, Neighbourhood and Map now work on what you opened, in memory. The footer says <em>not yet published</em>.</li>
+    <li>Press <strong>Publish folder ↓</strong>. You get <code>rcn-table.zip</code>: the table, the map and the graph tool, beside a folder named after your workbook holding <code>index.json</code>, one <code>table-….json</code> per sheet, <code>geo.json</code> and <code>graph.json</code>.</li>
+    <li>Unzip it and put the <code>rcn-table</code> folder in your site's assets. A table item on any page of that site — with the line <code>database: <em>your-workbook-name</em></code> in its text — now opens against it.</li>
+    <li>When the records change, open the new sheet and publish again. The folder is derived; nothing lives only in it.</li>
+  </ol>
+  <p>The table does not merge two rows that name the same thing differently, guess a kind, or fill an empty cell. Those are decisions, and it leaves them to you.</p>
+  <h3>From Neo4j, for a steward with a workbench</h3>
   <ol>
     <li>Load your records into Neo4j with the loader for their shape — for example <code>python3 substrate/load_whatcom.py</code> reads the 2017 survey's CSVs. The loader rebuilds the database from the files every time, so the files stay the truth and the database can always be remade.</li>
-    <li>Export: <code>python3 substrate/export.py --bundle whatcom rcngeo</code> (name the bodies of records you want to publish). This writes <code>substrate/export/rcn-table/</code>: the table, the map and the graph tool, beside one folder per body of records — <code>index.json</code>, one <code>table-….json</code> per kind, <code>geo.json</code> for the map and <code>graph.json</code> for Neighbourhood.</li>
-    <li>Upload that whole folder to your site's assets as <code>rcn-table</code>. A table item on any page of that site now opens against it.</li>
-    <li>When the records change, run steps 1–3 again. The folder is derived; nothing lives only in it.</li>
+    <li>Export: <code>python3 substrate/export.py --bundle whatcom rcngeo</code> (name the bodies of records you want to publish). This writes <code>substrate/export/rcn-table/</code> in exactly the layout the zip above has.</li>
+    <li>Upload that folder to your site's assets as <code>rcn-table</code>, and re-run when the records change.</li>
   </ol>
   <p>The whole Whatcom survey is about half a megabyte. Copy the folder to a phone and the table still works.</p>
-
   <div class="foot">RCN Toolset · open source, CC BY 4.0 · See the <a href="rcn-table-intro.html">Introduction</a> for why it works this way, and the <a href="graph-tool-manual.html">Graph Tool Manual</a> for the drawing it hands you to. The map is part of this tool and is covered in §12.</div>
 </div>
 </body>

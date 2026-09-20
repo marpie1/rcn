@@ -66,7 +66,7 @@ button:hover{background:#eef6f5;border-color:var(--accent)}
 .doclink:hover{background:#eef6f5;border-color:var(--accent);color:var(--accent)}
 .count{color:var(--dim);font-size:12px;white-space:nowrap}
 main{flex:1;display:flex;min-height:0}
-#tablewrap{flex:1;overflow:auto;background:var(--panel)}
+#tablewrap{flex:1;min-width:0;overflow:auto;background:var(--panel)}  /* min-width:0 — a flex child's default min-width is its content; 22 nowrap columns pushed the Inspector off the right edge */
 table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px}
 th,td{text-align:left;padding:5px 9px;border-bottom:1px solid var(--line);
       white-space:nowrap;max-width:290px;overflow:hidden;text-overflow:ellipsis}
@@ -79,7 +79,7 @@ tbody tr.sel,tbody tr.sel:nth-child(even){background:var(--sel)}
 tbody tr{cursor:default}
 a.subject{color:var(--accent);text-decoration:none;font-weight:600;cursor:pointer}
 a.subject:hover{text-decoration:underline}
-aside{width:310px;border-left:1px solid var(--line);background:var(--panel);
+aside{flex:0 0 310px;border-left:1px solid var(--line);background:var(--panel);
       display:flex;flex-direction:column;min-height:0}
 aside h2{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);
          margin:0;padding:9px 12px;border-bottom:1px solid var(--line)}
@@ -114,6 +114,9 @@ footer{padding:5px 12px;background:var(--panel);border-top:1px solid var(--line)
   <button id="clear">Clear selection</button>
   <button id="toWiki">→ Wiki item</button>
   <button id="csv">CSV</button>
+  <button id="openfile" title="Open a CSV or Excel file — one sheet per kind of thing, an optional Links sheet (From, Relation, To)">Open spreadsheet…</button>
+  <button id="publish" hidden title="Download this as the folder a wiki site serves: the tools plus the records">Publish folder ↓</button>
+  <input id="filepick" type="file" accept=".csv,.tsv,.xlsx,.xls,.ods" multiple hidden>
 </header>
 
 <main>
@@ -163,6 +166,15 @@ var SRC = (function(){
 var srcIndex = null;   // index.json, fetched once per folder
 var srcGraph = null;   // graph.json, fetched the first time a neighbourhood is asked for
 
+// A THIRD SOURCE, WITH NO SERVER AND NO FOLDER: a spreadsheet opened here.
+// One sheet (or CSV) per kind of thing, named for the kind, first column the
+// name; an optional sheet called Links with From, Relation, To. It becomes the
+// same four projections export.py writes — tables, geo, graph — held in memory,
+// so the table, Neighbourhood and Map all work at once, and Publish hands the
+// folder back as a zip for the site's assets. This is level 1 in
+// substrate/LAYERS-2-3.md: a steward with a spreadsheet and nothing installed.
+var MEM = null;        // {database, kinds, tables:{kind:projection}, geo, graph, sourceName}
+
 var FILL_FLOOR = 0.10;      // columns filled for fewer rows than this start hidden
 var ITEM_ROW_CAP = 200;     // what a wiki item carries; see decisions log
 
@@ -197,6 +209,17 @@ function srcIndexOnce(){
                   : getJSON(SRC + 'index.json').then(function(j){ srcIndex = j; return j; });
 }
 function api(path){
+  if(MEM){
+    var b = path.split('?')[0];
+    if(b === '/projection') return Promise.resolve({databases:[MEM.database], default:MEM.database});
+    if(b === '/projection/tables') return Promise.resolve({database:MEM.database, kinds:MEM.kinds});
+    if(b.indexOf('/projection/table/') === 0){
+      var k = decodeURIComponent(b.slice('/projection/table/'.length));
+      return MEM.tables[k] ? Promise.resolve(MEM.tables[k])
+                           : Promise.reject(new Error('no sheet called '+k));
+    }
+    return Promise.reject(new Error('the spreadsheet cannot answer '+b));
+  }
   if(!SRC) return getJSON(SUBSTRATE_BASE + path);
   // The folder answers the same three questions the server does. Names of
   // files come from index.json when it lists them and from the slug rule when
@@ -329,7 +352,8 @@ function render(){
     : 'Select one row to draw its neighbourhood';
   $('status').textContent = state.db + ' · ' + state.kind + ' · '
     + cols.length + ' of ' + state.columns.length + ' columns shown'
-    + (state.selected.size ? ' · ' + state.selected.size + ' selected' : '');
+    + (state.selected.size ? ' · ' + state.selected.size + ' selected' : '')
+    + (MEM ? ' · from ' + MEM.sourceName + ' (not yet published)' : SRC ? ' · from folder' : ' · live records');
   window._rows = rs;
 }
 
@@ -413,6 +437,16 @@ $('neighbourhood').addEventListener('click', function(){
   if(sel.length !== 1 || !state.subject) return;
   var name = String(sel[0][state.subject] || '');
   if(!name) return;
+  if(MEM){
+    try{
+      var g = neighboursFromGraph(MEM.graph, name, 1);
+      pendingGraph = {graph:g, title:g.modelName};
+      graphWin = window.open(GRAPH_TOOL_URL, 'rcngraph'); if(graphWin) graphWin.focus();
+      setTimeout(deliverGraph, 1500);
+      toast('Drawing the neighbourhood of ' + name + ' (' + g.nodes.length + ' nodes)');
+    }catch(e){ toast('Could not draw: ' + e.message); }
+    return;
+  }
   if(SRC){ neighbourhoodFromFolder(name); return; }
   var url = SUBSTRATE_BASE + '/tools/graph-tool-v22.html?url='
           + encodeURIComponent('/projection/neighbours/' + encodeURIComponent(name)
@@ -536,8 +570,8 @@ function neighbourhoodFromFolder(name){
 var mapWin = null;
 $('mapview').addEventListener('click', function(){
   var shown = rows();
-  var url = (SRC ? new URL('rcn-table-map.html', location.href).href
-                 : SUBSTRATE_BASE + '/tools/rcn-table-map.html')
+  var url = ((SRC || MEM) ? new URL('rcn-table-map.html', location.href).href
+                          : SUBSTRATE_BASE + '/tools/rcn-table-map.html')
           + '?db=' + encodeURIComponent(state.db) + '&kind=' + encodeURIComponent(state.kind)
           + (SRC ? '&src=' + encodeURIComponent(SRC) : '');
   mapWin = window.open(url, 'rcntablemap');
@@ -556,7 +590,8 @@ window.addEventListener('message', function(ev){
     ev.source.postMessage({action:'loadPoints',
       database:state.db, kind:state.kind,
       names: shown.map(rowKey).filter(Boolean),
-      selected: Array.from(state.selected)}, '*');
+      selected: Array.from(state.selected),
+      geo: MEM ? MEM.geo : null}, '*');
   }
   if(ev.data.action === 'doInternalLink'){
     // The map has no wiki of its own — it reaches ours through this window.
@@ -618,6 +653,192 @@ $('csv').addEventListener('click', function(){
   a.download = state.db + '-' + state.kind + '.csv';
   a.click();
   toast('Downloaded ' + a.download);
+});
+
+// ── a spreadsheet as the source ───────────────────────────────────────
+// Everything below turns sheets into the projections; nothing above knows
+// the difference. Column names are kept as written. The first column is the
+// subject unless a column is literally called Name. lat/long are recognised
+// under their usual spellings so the map works without renaming anything.
+var LINK_SHEET = /^(links?|relations?(hips?)?|edges?)$/i;
+var LAT_RE = /^(lat|latitude)$/i, LNG_RE = /^(long|lng|lon|longitude)$/i;
+
+function parseCSV(text){
+  // RFC 4180, enough of it: quoted fields, doubled quotes, CRLF, and a
+  // comma or tab delimiter chosen from the header line.
+  var delim = (text.split('\n')[0].split('\t').length > text.split('\n')[0].split(',').length) ? '\t' : ',';
+  var rows = [], row = [], field = '', q = false;
+  for(var i = 0; i < text.length; i++){
+    var c = text[i];
+    if(q){
+      if(c === '"'){ if(text[i+1] === '"'){ field += '"'; i++; } else q = false; }
+      else field += c;
+    }else if(c === '"') q = true;
+    else if(c === delim){ row.push(field); field = ''; }
+    else if(c === '\n' || c === '\r'){
+      if(c === '\r' && text[i+1] === '\n') i++;
+      row.push(field); rows.push(row); row = []; field = '';
+    }else field += c;
+  }
+  if(field !== '' || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(function(r){ return r.some(function(v){ return String(v).trim() !== ''; }); });
+}
+
+function loadScript(url){
+  return new Promise(function(res, rej){
+    var el = document.createElement('script'); el.src = url;
+    el.onload = res; el.onerror = function(){ rej(new Error('could not load ' + url)); };
+    document.head.appendChild(el);
+  });
+}
+
+// One workbook or several files -> [{name, rows:[[...]]}]
+function readSheets(files){
+  return Promise.all(Array.prototype.map.call(files, function(f){
+    var stem = f.name.replace(/\.[^.]+$/, '');
+    if(/\.(csv|tsv|txt)$/i.test(f.name))
+      return f.text().then(function(t){ return [{name:stem, rows:parseCSV(t)}]; });
+    var xl = (typeof XLSX !== 'undefined') ? Promise.resolve()
+      : loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+    return xl.then(function(){ return f.arrayBuffer(); }).then(function(buf){
+      var wb = XLSX.read(buf, {type:'array'});
+      return wb.SheetNames.map(function(n){
+        return {name:n, rows:XLSX.utils.sheet_to_json(wb.Sheets[n], {header:1, raw:false, defval:''})
+                  .filter(function(r){ return r.some(function(v){ return String(v).trim() !== ''; }); })};
+      });
+    });
+  })).then(function(lists){ return [].concat.apply([], lists); });
+}
+
+function sheetsToProjections(sheets, database){
+  var tables = {}, kinds = [], graphNodes = {}, edges = [], geoNodes = [];
+  sheets.forEach(function(sh){
+    if(!sh.rows.length) return;
+    var header = sh.rows[0].map(function(h){ return String(h).trim(); });
+    var body = sh.rows.slice(1);
+    if(LINK_SHEET.test(sh.name)){
+      var fi = header.findIndex(function(h){ return /^(from|src|source)$/i.test(h); });
+      var ri = header.findIndex(function(h){ return /^(relation|label|rel|type)$/i.test(h); });
+      var ti = header.findIndex(function(h){ return /^(to|tgt|target)$/i.test(h); });
+      if(fi < 0) fi = 0; if(ri < 0) ri = 1; if(ti < 0) ti = 2;
+      body.forEach(function(r){
+        var a = String(r[fi]||'').trim(), b = String(r[ti]||'').trim();
+        if(!a || !b) return;
+        [a, b].forEach(function(n){ if(!graphNodes[asSlug(n)]) graphNodes[asSlug(n)] = {key:asSlug(n), name:n, kind:''}; });
+        edges.push({src:asSlug(a), tgt:asSlug(b), label:String(r[ri]||'').trim()});
+      });
+      return;
+    }
+    var kind = sh.name.trim();
+    var ni = header.findIndex(function(h){ return /^name$/i.test(h); }); if(ni < 0) ni = 0;
+    var subject = header[ni];
+    var lati = header.findIndex(function(h){ return LAT_RE.test(h); });
+    var lngi = header.findIndex(function(h){ return LNG_RE.test(h); });
+    var data = [];
+    body.forEach(function(r){
+      var o = {}; header.forEach(function(h, i){ if(h) o[h] = r[i] == null ? '' : String(r[i]); });
+      var name = String(o[subject]||'').trim(); if(!name) return;
+      data.push(o);
+      graphNodes[asSlug(name)] = {key:asSlug(name), name:name, kind:kind};
+      if(lati >= 0 && lngi >= 0){
+        var la = parseFloat(o[header[lati]]), lo = parseFloat(o[header[lngi]]);
+        if(isFinite(la) && isFinite(lo) && la >= -90 && la <= 90 && lo >= -180 && lo <= 180 && !(la === 0 && lo === 0)){
+          var g = {key:asSlug(name), name:name, kind:kind, anchor:[la, lo]};
+          header.forEach(function(h){ if(h && h !== subject && !LAT_RE.test(h) && !LNG_RE.test(h)) g[h] = o[h]; });
+          geoNodes.push(g);
+        }
+      }
+    });
+    var cols = header.filter(Boolean);
+    tables[kind] = {kind:kind, subject:subject, columns:cols, data:data, total:data.length, database:database};
+    kinds.push({kind:kind, rows:data.length});
+  });
+  kinds.sort(function(a, b){ return b.rows - a.rows; });
+  var on = {}; geoNodes.forEach(function(n){ on[n.key] = 1; });
+  return {database:database, kinds:kinds, tables:tables,
+    graph:{database:database, nodes:Object.keys(graphNodes).map(function(k){ return graphNodes[k]; }), edges:edges},
+    geo:{database:database, nodes:geoNodes, total:geoNodes.length,
+         edges:edges.filter(function(e){ return on[e.src] && on[e.tgt]; })}};
+}
+
+function openSpreadsheet(files){
+  if(!files || !files.length) return;
+  // The folder is named after the workbook, or the first CSV that is not the
+  // Links file. This is the name a wiki item's `database:` line must match.
+  var named = Array.prototype.filter.call(files, function(f){ return !LINK_SHEET.test(f.name.replace(/\.[^.]+$/, '')); });
+  var stem = asSlug((named[0] || files[0]).name.replace(/\.[^.]+$/, '')) || 'sheet';
+  readSheets(files).then(function(sheets){
+    var m = sheetsToProjections(sheets, stem);
+    if(!m.kinds.length) throw new Error('no sheet with a header row and at least one named row');
+    m.sourceName = Array.prototype.map.call(files, function(f){ return f.name; }).join(', ');
+    MEM = m; SRC = ''; srcIndex = srcGraph = null;
+    state.db = m.database; state.kind = m.kinds[0].kind;
+    $('publish').hidden = false;
+    loadDatabases().then(loadKinds).then(loadTable).then(function(){
+      toast('Opened ' + m.sourceName + ': ' + m.kinds.map(function(k){ return k.rows + ' ' + k.kind; }).join(', ')
+            + (m.graph.edges.length ? ', ' + m.graph.edges.length + ' links' : '')
+            + (m.geo.total ? ', ' + m.geo.total + ' located' : ''));
+    });
+  }).catch(function(e){ toast('Could not open: ' + e.message); });
+}
+$('openfile').addEventListener('click', function(){ $('filepick').value = ''; $('filepick').click(); });
+$('filepick').addEventListener('change', function(){ openSpreadsheet(this.files); });
+document.querySelector('main').addEventListener('dragover', function(e){ e.preventDefault(); });
+document.querySelector('main').addEventListener('drop', function(e){
+  e.preventDefault(); openSpreadsheet(e.dataTransfer.files);
+});
+
+// PUBLISH: the same folder export.py --bundle writes, as one zip. The tool
+// files are fetched from beside this page — rcn-table.html itself, the map,
+// and the graph tool (dist/ first, because the plain one needs sidecars that
+// a flat assets folder cannot serve). Whatever cannot be fetched is named in
+// the toast rather than silently left out.
+$('publish').addEventListener('click', function(){
+  if(!MEM) return;
+  var db = MEM.database, idx = {database:db, exported:new Date().toISOString(),
+    source:'spreadsheet: ' + MEM.sourceName, kinds:MEM.kinds,
+    files:{tables:{}, geo:'geo.json', graph:'graph.json'},
+    counts:{concepts:MEM.graph.nodes.length, links:MEM.graph.edges.length}};
+  var records = {};
+  MEM.kinds.forEach(function(k){
+    var f = 'table-' + asSlug(k.kind) + '.json'; idx.files.tables[k.kind] = f;
+    records[f] = MEM.tables[k.kind];
+  });
+  records['geo.json'] = MEM.geo; records['graph.json'] = MEM.graph; records['index.json'] = idx;
+  var here = location.href.split('?')[0];
+  var toolFetches = [
+    ['rcn-table.html', [here]],
+    ['rcn-table-map.html', [new URL('rcn-table-map.html', here).href]],
+    ['graph-tool-v22.html', [new URL('dist/graph-tool-v22.html', here).href, new URL('graph-tool-v22.html', here).href]]
+  ];
+  var missing = [];
+  function fetchFirst(urls){
+    return urls.reduce(function(p, u){
+      return p.then(function(t){ return t != null ? t : fetch(u).then(function(r){ return r.ok ? r.text() : null; }).catch(function(){ return null; }); });
+    }, Promise.resolve(null));
+  }
+  var zipLib = (typeof JSZip !== 'undefined') ? Promise.resolve()
+    : loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+  zipLib.then(function(){
+    var zip = new JSZip(), root = zip.folder('rcn-table');
+    Object.keys(records).forEach(function(f){ root.file(db + '/' + f, JSON.stringify(records[f], null, 1)); });
+    return Promise.all(toolFetches.map(function(t){
+      return fetchFirst(t[1]).then(function(text){ if(text) root.file(t[0], text); else missing.push(t[0]); });
+    })).then(function(){ return zip.generateAsync({type:'blob'}); });
+  }).then(function(blob){
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'rcn-table.zip'; a.click();
+    toast('rcn-table.zip: unzip it and put the rcn-table folder in your site\'s assets'
+          + (missing.length ? ' — could not include ' + missing.join(', ') + '; copy those in by hand' : ''));
+  }).catch(function(e){
+    // No zip library (offline, say): hand over the records one file at a time.
+    Object.keys(records).forEach(function(f){
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(records[f], null, 1)], {type:'application/json'}));
+      a.download = f; a.click();
+    });
+    toast('Zip unavailable (' + e.message + '); downloaded the record files one by one — put them in assets/rcn-table/' + db + '/');
+  });
 });
 
 // ── the opener handshake, same shape as the graph tool ────────────────

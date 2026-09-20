@@ -263,22 +263,27 @@ function load(opts){
   if(opts.names && opts.names.length && opts.names.length <= 400)
     q += '&names=' + encodeURIComponent(opts.names.join('|'));
   $('count').textContent = 'Loading…';
-  var fetched = SRC
-    ? fetch(SRC + 'geo.json').then(function(r){ return r.json(); }).then(function(j){
-        // Same two filters geo_projection applies, in the same order: kinds,
-        // then names matched against either label. Edges then keep only pairs
-        // still on the map, because an edge to nothing has nowhere to land.
-        var nodes = j.nodes || [];
-        if(opts.kind) nodes = nodes.filter(function(n){ return n.kind === opts.kind; });
-        if(opts.names && opts.names.length && opts.names.length <= 400){
-          var want = {}; opts.names.forEach(function(n){ want[n] = 1; });
-          nodes = nodes.filter(function(n){ return want[n.name] || want[n.key]; });
-        }
-        var on = {}; nodes.forEach(function(n){ on[n.key] = 1; });
-        return {nodes:nodes, total:nodes.length,
-                edges:(j.edges || []).filter(function(e){ return on[e.src] && on[e.tgt]; })};
-      })
-    : fetch(SUBSTRATE_BASE + q).then(function(r){ return r.json(); });
+  // Same two filters geo_projection applies, in the same order: kinds, then
+  // names matched against either label. Edges then keep only pairs still on
+  // the map, because an edge to nothing has nowhere to land. Used for a
+  // folder's geo.json and for geometry a table hands over from a spreadsheet
+  // it opened in memory — neither has a server to filter for it.
+  function filterGeo(j){
+    var nodes = j.nodes || [];
+    if(opts.kind) nodes = nodes.filter(function(n){ return n.kind === opts.kind; });
+    if(opts.names && opts.names.length && opts.names.length <= 400){
+      var want = {}; opts.names.forEach(function(n){ want[n] = 1; });
+      nodes = nodes.filter(function(n){ return want[n.name] || want[n.key]; });
+    }
+    var on = {}; nodes.forEach(function(n){ on[n.key] = 1; });
+    return {nodes:nodes, total:nodes.length,
+            edges:(j.edges || []).filter(function(e){ return on[e.src] && on[e.tgt]; })};
+  }
+  var fetched = opts.geo
+    ? Promise.resolve(filterGeo(opts.geo))
+    : SRC
+      ? fetch(SRC + 'geo.json').then(function(r){ return r.json(); }).then(filterGeo)
+      : fetch(SUBSTRATE_BASE + q).then(function(r){ return r.json(); });
   return fetched
     .then(function(j){
       if(j.error) throw new Error(j.error);
@@ -304,15 +309,20 @@ if(HOST){
     if(!ev.source || ev.source !== HOST) return;
     if(ev.data && ev.data.action === 'loadPoints'){
       load({db: ev.data.database, kind: ev.data.kind,
-            names: ev.data.names, selected: ev.data.selected});
+            names: ev.data.names, selected: ev.data.selected, geo: ev.data.geo || null});
     }
   });
 }
 
 (function bootFromUrl(){
+  // A host (the table that opened this, or a page framing it) sends loadPoints
+  // and drives; the URL boot is for a map standing alone — a link someone was
+  // sent. Doing both raced, and when the table had opened a spreadsheet in
+  // memory the URL load had nowhere to fetch from and overwrote the good one.
+  if(HOST) return;
   var p = new URLSearchParams(location.search);
   var db = p.get('db');
-  if(!db) return;                          // a postMessage is coming instead
+  if(!db) return;
   var names = p.get('names');
   load({db: db, kind: p.get('kind') || '',
         names: names ? names.split('|') : null,
