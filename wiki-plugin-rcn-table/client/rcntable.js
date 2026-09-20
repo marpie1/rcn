@@ -71,18 +71,39 @@
   function columnsOf (item) { return item.columns || [] }
   function rowsOf (item) { return item.data || [] }
 
+  // THE TEXT IS THE CONTROL PANEL. Double-click opens FedWiki's own text editor
+  // on item.text (and Cmd-I inside it opens About Rcntable Plugin, which the
+  // editor does for every plugin). A line of the form `key: value` for one of
+  // these four keys sets that field; every other line is left alone, so the
+  // search-index text the popup writes on save keeps working, and a person can
+  // put `kind: Program` above it. An empty value clears the field, which is how
+  // to go back to the site's own folder after pointing at another site's.
+  const CONFIG_KEYS = ['database', 'kind', 'src', 'tool']
+  function configFromText (item) {
+    String(item.text || '').split('\n').forEach(line => {
+      const m = line.match(/^\s*(database|kind|src|tool)\s*:\s*(.*?)\s*$/i)
+      if (!m) return
+      const key = m[1].toLowerCase()
+      if (m[2]) item[key] = m[2]; else delete item[key]
+    })
+  }
+
   function renderContent ($item, item) {
+    configFromText(item)
     $item.empty()
     const cols = columnsOf(item)
     const rows = rowsOf(item)
 
     if (!rows.length) {
+      const where = [item.database, item.kind].filter(Boolean).join(' · ')
       $item.append(`
         <div style="background:#eee;padding:15px;text-align:center;">
-          <p style="font-weight:bold;margin:0 0 6px;">RCN Table</p>
+          <p style="font-weight:bold;margin:0 0 6px;">RCN Table${where ? ' — ' + esc(where) : ''}</p>
           <p style="color:#666;font-size:0.85em;margin:0 0 12px;">
             Rows from the substrate — scan, select, click through</p>
           <button class="open-table" style="cursor:pointer;">Open Table ↗</button>
+          <p style="color:#888;font-size:0.75em;margin:12px 0 0;">
+            double-click to edit · ⌘I in the editor for help</p>
         </div>`)
       return
     }
@@ -141,7 +162,12 @@
       })
     })
 
-    $item.on('dblclick', '.rcnt-head, .rcnt-dim', () => wiki.textEditor($item, item))
+    // Double-click anywhere opens the editor, as every FedWiki item does — except
+    // on a link or the button, which have their own click and would fight it.
+    $item.on('dblclick', e => {
+      if ($(e.target).closest('a, button').length) return
+      wiki.textEditor($item, item)
+    })
   }
 
   function emit ($item, item) { renderContent($item, item) }

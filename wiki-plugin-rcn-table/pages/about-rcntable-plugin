@@ -3,30 +3,45 @@
   "story": [
     {
       "type": "paragraph",
-      "id": "2c688709b8866b4d",
-      "text": "The Rcntable plugin puts a table of records on a wiki page. The page shows the shape of the table - how many rows by how many columns, the column names as chips, the first few names as links - and an Open Table button that opens the whole table in a popup: scan, sort, filter, select rows, compare them, then follow one row into a drawing of what it is connected to, or put the selected rows on a map."
+      "id": "d3c66bb2320bdc02",
+      "text": "The Rcntable plugin puts a table of records on a wiki page. A page is far too narrow for hundreds of rows, so the item shows the shape of the table instead: how many rows by how many columns, the column names as chips, and the first few names as links. The Open Table button opens the whole table in a popup beside the page."
     },
     {
       "type": "paragraph",
-      "id": "5628a97a8e10fbf1",
-      "text": "Create an item with the factory and press Open Table. In the popup, choose the records and the kind of thing, then use -> Wiki item to write what you are looking at back onto the page. Every name is a link: click one and that subject opens beside the table. Hover a column chip and any chart on the same page responds to it."
+      "id": "70a84f1905f07329",
+      "text": "In the popup: sort by clicking a heading, type in the box to filter, click a row to see everything known about it, Cmd-click more rows to see where they agree and where they differ. Every name is a link - click one and that subject's page opens in the lineup next to this page, whether or not anyone has written it yet. Select one row and press Neighbourhood for a drawing of what it is connected to; select any rows and press Map to see them on the ground; press CSV to take the rows away in a spreadsheet."
     },
     {
       "type": "paragraph",
-      "id": "56dfcc7b574ef904",
-      "text": "Where the records come from: the popup reads a folder in this site's assets, /assets/rcn-table/, holding one exported database per subfolder. The folder is written by substrate/export.py from the site owner's own files. So each site is its own database - whoever owns the site is its keeper, and anyone who can read the page can read the table. Nothing here talks to a database server. An item may carry src to read another site's folder instead."
+      "id": "79db76ff03f9ab0d",
+      "text": "Wiki item writes what you are looking at back onto the page - the rows in view, in the order you sorted them, with the columns you had showing - so a reader of the page sees what you found. It carries up to 200 rows and says the true total. The page has to be yours for the save to reach the server; on someone else's page it is kept in your browser only, and the page glows to say so."
+    },
+    {
+      "type": "paragraph",
+      "id": "6a4004cf69d9da0c",
+      "text": "Hover a column chip and any chart, rollup or reduce item on the same page responds to that column. Nothing had to be wired up for that: the chip fires the same thumb event those plugins already listen for."
+    },
+    {
+      "type": "paragraph",
+      "id": "215b2cdd8d516d2b",
+      "text": "Where the rows come from. The popup reads a folder in the site's own assets, /assets/rcn-table/, holding one exported database per subfolder. The folder is written from the site owner's own files by substrate/export.py in the rcn repository, so each site is its own database: whoever owns the site keeps it, and anyone who can read the page can read the table. Nothing talks to a database server. On a localhost wiki the popup reads the live substrate on port 8768 instead, so a steward sees the database as it is rather than as it was exported."
+    },
+    {
+      "type": "paragraph",
+      "id": "47babe90dbd45290",
+      "text": "Editing the item. Double-click anywhere on it to open the text editor. A line of the form database: whatcom or kind: Program sets which records the popup opens; src: followed by the address of another site's folder reads that site's table instead of this one's, and tool: does the same for the popup itself. Any other line is left alone - the popup writes a line of names there on save so the wiki's search can find the table. Cmd-I inside the editor opens this page."
     },
     {
       "type": "rcntable",
       "id": "d0dbe915091d400b",
-      "text": "",
+      "text": "database: whatcom\nkind: Entity",
       "database": "whatcom",
       "kind": "Entity"
     },
     {
       "type": "paragraph",
-      "id": "54c5088e8dc74b7a",
-      "text": "Developed by Marc Pierson with Claude Opus 5 (Anthropic) for the ReLocalize Creativity Network. Source: [[RCN Table]] - tools/rcn-table.html, tools/rcn-table-map.html and wiki-plugin-rcn-table in the rcn repository."
+      "id": "cbe8f6f5b5663f83",
+      "text": "Developed by Marc Pierson with Claude Opus 5 (Anthropic) for the ReLocalize Creativity Network. Source: tools/rcn-table.html, tools/rcn-table-map.html and wiki-plugin-rcn-table in the rcn repository; the export is substrate/export.py. The design it follows is written up in [[RCN Table]] and drawn in substrate/layer1-static-projections.rcn.json."
     }
   ],
   "journal": [
@@ -39,31 +54,61 @@
     },
     {
       "type": "add",
-      "id": "2c688709b8866b4d",
+      "id": "d3c66bb2320bdc02",
       "item": {
         "type": "paragraph",
-        "id": "2c688709b8866b4d",
-        "text": "The Rcntable plugin puts a table of records on a wiki page. The page shows the shape of the table - how many rows by how many columns, the column names as chips, the first few names as links - and an Open Table button that opens the whole table in a popup: scan, sort, filter, select rows, compare them, then follow one row into a drawing of what it is connected to, or put the selected rows on a map."
+        "id": "d3c66bb2320bdc02",
+        "text": "The Rcntable plugin puts a table of records on a wiki page. A page is far too narrow for hundreds of rows, so the item shows the shape of the table instead: how many rows by how many columns, the column names as chips, and the first few names as links. The Open Table button opens the whole table in a popup beside the page."
       },
       "date": 1789948800000
     },
     {
       "type": "add",
-      "id": "5628a97a8e10fbf1",
+      "id": "70a84f1905f07329",
       "item": {
         "type": "paragraph",
-        "id": "5628a97a8e10fbf1",
-        "text": "Create an item with the factory and press Open Table. In the popup, choose the records and the kind of thing, then use -> Wiki item to write what you are looking at back onto the page. Every name is a link: click one and that subject opens beside the table. Hover a column chip and any chart on the same page responds to it."
+        "id": "70a84f1905f07329",
+        "text": "In the popup: sort by clicking a heading, type in the box to filter, click a row to see everything known about it, Cmd-click more rows to see where they agree and where they differ. Every name is a link - click one and that subject's page opens in the lineup next to this page, whether or not anyone has written it yet. Select one row and press Neighbourhood for a drawing of what it is connected to; select any rows and press Map to see them on the ground; press CSV to take the rows away in a spreadsheet."
       },
       "date": 1789948800000
     },
     {
       "type": "add",
-      "id": "56dfcc7b574ef904",
+      "id": "79db76ff03f9ab0d",
       "item": {
         "type": "paragraph",
-        "id": "56dfcc7b574ef904",
-        "text": "Where the records come from: the popup reads a folder in this site's assets, /assets/rcn-table/, holding one exported database per subfolder. The folder is written by substrate/export.py from the site owner's own files. So each site is its own database - whoever owns the site is its keeper, and anyone who can read the page can read the table. Nothing here talks to a database server. An item may carry src to read another site's folder instead."
+        "id": "79db76ff03f9ab0d",
+        "text": "Wiki item writes what you are looking at back onto the page - the rows in view, in the order you sorted them, with the columns you had showing - so a reader of the page sees what you found. It carries up to 200 rows and says the true total. The page has to be yours for the save to reach the server; on someone else's page it is kept in your browser only, and the page glows to say so."
+      },
+      "date": 1789948800000
+    },
+    {
+      "type": "add",
+      "id": "6a4004cf69d9da0c",
+      "item": {
+        "type": "paragraph",
+        "id": "6a4004cf69d9da0c",
+        "text": "Hover a column chip and any chart, rollup or reduce item on the same page responds to that column. Nothing had to be wired up for that: the chip fires the same thumb event those plugins already listen for."
+      },
+      "date": 1789948800000
+    },
+    {
+      "type": "add",
+      "id": "215b2cdd8d516d2b",
+      "item": {
+        "type": "paragraph",
+        "id": "215b2cdd8d516d2b",
+        "text": "Where the rows come from. The popup reads a folder in the site's own assets, /assets/rcn-table/, holding one exported database per subfolder. The folder is written from the site owner's own files by substrate/export.py in the rcn repository, so each site is its own database: whoever owns the site keeps it, and anyone who can read the page can read the table. Nothing talks to a database server. On a localhost wiki the popup reads the live substrate on port 8768 instead, so a steward sees the database as it is rather than as it was exported."
+      },
+      "date": 1789948800000
+    },
+    {
+      "type": "add",
+      "id": "47babe90dbd45290",
+      "item": {
+        "type": "paragraph",
+        "id": "47babe90dbd45290",
+        "text": "Editing the item. Double-click anywhere on it to open the text editor. A line of the form database: whatcom or kind: Program sets which records the popup opens; src: followed by the address of another site's folder reads that site's table instead of this one's, and tool: does the same for the popup itself. Any other line is left alone - the popup writes a line of names there on save so the wiki's search can find the table. Cmd-I inside the editor opens this page."
       },
       "date": 1789948800000
     },
@@ -73,7 +118,7 @@
       "item": {
         "type": "rcntable",
         "id": "d0dbe915091d400b",
-        "text": "",
+        "text": "database: whatcom\nkind: Entity",
         "database": "whatcom",
         "kind": "Entity"
       },
@@ -81,11 +126,11 @@
     },
     {
       "type": "add",
-      "id": "54c5088e8dc74b7a",
+      "id": "cbe8f6f5b5663f83",
       "item": {
         "type": "paragraph",
-        "id": "54c5088e8dc74b7a",
-        "text": "Developed by Marc Pierson with Claude Opus 5 (Anthropic) for the ReLocalize Creativity Network. Source: [[RCN Table]] - tools/rcn-table.html, tools/rcn-table-map.html and wiki-plugin-rcn-table in the rcn repository."
+        "id": "cbe8f6f5b5663f83",
+        "text": "Developed by Marc Pierson with Claude Opus 5 (Anthropic) for the ReLocalize Creativity Network. Source: tools/rcn-table.html, tools/rcn-table-map.html and wiki-plugin-rcn-table in the rcn repository; the export is substrate/export.py. The design it follows is written up in [[RCN Table]] and drawn in substrate/layer1-static-projections.rcn.json."
       },
       "date": 1789948800000
     }
