@@ -115,7 +115,8 @@ footer{padding:5px 12px;background:var(--panel);border-top:1px solid var(--line)
   <button id="toWiki">→ Wiki item</button>
   <button id="csv">CSV</button>
   <button id="openfile" title="Open a CSV or Excel file — one sheet per kind of thing, an optional Links sheet (From, Relation, To)">Open spreadsheet…</button>
-  <button id="publish" hidden title="Download this as the folder a wiki site serves: the tools plus the records">Publish folder ↓</button>
+  <button id="publish" hidden title="Download the record files for your site's assets item named rcn-table/<name>">Publish records ↓</button>
+  <button id="tools" hidden title="Download the three tool files, once per site, for an assets item named rcn-table">Tool files ↓</button>
   <input id="filepick" type="file" accept=".csv,.tsv,.xlsx,.xls,.ods" multiple hidden>
 </header>
 
@@ -773,7 +774,7 @@ function openSpreadsheet(files){
     m.sourceName = Array.prototype.map.call(files, function(f){ return f.name; }).join(', ');
     MEM = m; SRC = ''; srcIndex = srcGraph = null;
     state.db = m.database; state.kind = m.kinds[0].kind;
-    $('publish').hidden = false;
+    $('publish').hidden = false; $('tools').hidden = false;
     loadDatabases().then(loadKinds).then(loadTable).then(function(){
       toast('Opened ' + m.sourceName + ': ' + m.kinds.map(function(k){ return k.rows + ' ' + k.kind; }).join(', ')
             + (m.graph.edges.length ? ', ' + m.graph.edges.length + ' links' : '')
@@ -788,13 +789,20 @@ document.querySelector('main').addEventListener('drop', function(e){
   e.preventDefault(); openSpreadsheet(e.dataTransfer.files);
 });
 
-// PUBLISH: the same folder export.py --bundle writes, as one zip. The tool
-// files are fetched from beside this page — rcn-table.html itself, the map,
-// and the graph tool (dist/ first, because the plain one needs sidecars that
-// a flat assets folder cannot serve). Whatever cannot be fetched is named in
-// the toast rather than silently left out.
-$('publish').addEventListener('click', function(){
-  if(!MEM) return;
+// PUBLISH: the record files, one by one, for the site's assets item. FedWiki
+// users add files to an assets item, not folders, and the item's text names
+// the folder — slashes allowed (wiki-plugin-assets server: /[\w\/-]*/). So an
+// item reading `rcn-table/<database>` takes these files straight in, and an
+// item reading `rcn-table` takes the three tool files once per site. No zip:
+// it would be one more thing to unpack, and the assets item cannot take it.
+// The browser asks once whether this page may download several files.
+function downloadText(name, text, type){
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], {type: type || 'application/json'}));
+  a.download = name; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+}
+function memRecords(){
   var db = MEM.database, idx = {database:db, exported:new Date().toISOString(),
     source:'spreadsheet: ' + MEM.sourceName, kinds:MEM.kinds,
     files:{tables:{}, geo:'geo.json', graph:'graph.json'},
@@ -805,39 +813,42 @@ $('publish').addEventListener('click', function(){
     records[f] = MEM.tables[k.kind];
   });
   records['geo.json'] = MEM.geo; records['graph.json'] = MEM.graph; records['index.json'] = idx;
+  return records;
+}
+$('publish').addEventListener('click', function(){
+  if(!MEM) return;
+  var records = memRecords(), names = Object.keys(records);
+  names.forEach(function(f, i){
+    setTimeout(function(){ downloadText(f, JSON.stringify(records[f], null, 1)); }, i * 250);
+  });
+  toast(names.length + ' files: drop them on an assets item whose text is  rcn-table/' + MEM.database
+        + '  — and, once per site, the three tool files on one named  rcn-table');
+});
+
+// The three tool files, for a site that does not have them yet. Fetched from
+// beside this page — dist/ first for the graph tool, because the plain one
+// needs sidecars a flat assets folder cannot serve.
+$('tools').addEventListener('click', function(){
   var here = location.href.split('?')[0];
-  var toolFetches = [
+  var want = [
     ['rcn-table.html', [here]],
     ['rcn-table-map.html', [new URL('rcn-table-map.html', here).href]],
     ['graph-tool-v22.html', [new URL('dist/graph-tool-v22.html', here).href, new URL('graph-tool-v22.html', here).href]]
   ];
-  var missing = [];
   function fetchFirst(urls){
     return urls.reduce(function(p, u){
       return p.then(function(t){ return t != null ? t : fetch(u).then(function(r){ return r.ok ? r.text() : null; }).catch(function(){ return null; }); });
     }, Promise.resolve(null));
   }
-  var zipLib = (typeof JSZip !== 'undefined') ? Promise.resolve()
-    : loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
-  zipLib.then(function(){
-    var zip = new JSZip(), root = zip.folder('rcn-table');
-    Object.keys(records).forEach(function(f){ root.file(db + '/' + f, JSON.stringify(records[f], null, 1)); });
-    return Promise.all(toolFetches.map(function(t){
-      return fetchFirst(t[1]).then(function(text){ if(text) root.file(t[0], text); else missing.push(t[0]); });
-    })).then(function(){ return zip.generateAsync({type:'blob'}); });
-  }).then(function(blob){
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = 'rcn-table.zip'; a.click();
-    toast('rcn-table.zip: unzip it and put the rcn-table folder in your site\'s assets'
-          + (missing.length ? ' — could not include ' + missing.join(', ') + '; copy those in by hand' : ''));
-  }).catch(function(e){
-    // No zip library (offline, say): hand over the records one file at a time.
-    Object.keys(records).forEach(function(f){
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([JSON.stringify(records[f], null, 1)], {type:'application/json'}));
-      a.download = f; a.click();
+  var missing = [];
+  Promise.all(want.map(function(w, i){
+    return fetchFirst(w[1]).then(function(text){
+      if(!text){ missing.push(w[0]); return; }
+      setTimeout(function(){ downloadText(w[0], text, 'text/html'); }, i * 250);
     });
-    toast('Zip unavailable (' + e.message + '); downloaded the record files one by one — put them in assets/rcn-table/' + db + '/');
+  })).then(function(){
+    toast((3 - missing.length) + ' tool files: drop them on an assets item whose text is  rcn-table'
+          + (missing.length ? ' — could not fetch ' + missing.join(', ') : ''));
   });
 });
 
