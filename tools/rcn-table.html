@@ -148,6 +148,21 @@ var SUBSTRATE_BASE = (function(){
   return '';
 })();
 
+// TWO SOURCES, ONE TABLE. ?substrate= names a live api.py; ?src= names a FOLDER
+// of the same projections written once by substrate/export.py — index.json,
+// table-<kind>.json, geo.json, graph.json. The folder is what travels: a
+// steward drops it into their FedWiki site's assets and a reader with no
+// account, no key and no Neo4j gets the whole table. Everything below the
+// fetch is identical in both modes; api() is the only place that knows. The
+// opener can also hand a src over in loadTable, which is how the wiki plugin
+// points this popup at the site's own assets.
+var SRC = (function(){
+  var q = new URLSearchParams(location.search).get('src');
+  return q ? q.replace(/\/+$/,'') + '/' : '';
+})();
+var srcIndex = null;   // index.json, fetched once per folder
+var srcGraph = null;   // graph.json, fetched the first time a neighbourhood is asked for
+
 var FILL_FLOOR = 0.10;      // columns filled for fewer rows than this start hidden
 var ITEM_ROW_CAP = 200;     // what a wiki item carries; see decisions log
 
@@ -172,10 +187,33 @@ function fillOf(col){
 }
 
 // ── loading ───────────────────────────────────────────────────────────
-function api(path){
-  return fetch(SUBSTRATE_BASE + path).then(function(r){
-    if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
+function getJSON(url){
+  return fetch(url).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status+' '+url); return r.json();
   });
+}
+function srcIndexOnce(){
+  return srcIndex ? Promise.resolve(srcIndex)
+                  : getJSON(SRC + 'index.json').then(function(j){ srcIndex = j; return j; });
+}
+function api(path){
+  if(!SRC) return getJSON(SUBSTRATE_BASE + path);
+  // The folder answers the same three questions the server does. Names of
+  // files come from index.json when it lists them and from the slug rule when
+  // it does not, so a hand-made folder with no index still works.
+  var bare = path.split('?')[0];
+  if(bare === '/projection')
+    return srcIndexOnce().then(function(i){ return {databases:[i.database], default:i.database}; });
+  if(bare === '/projection/tables')
+    return srcIndexOnce().then(function(i){ return {database:i.database, kinds:i.kinds||[]}; });
+  if(bare.indexOf('/projection/table/') === 0){
+    var kind = decodeURIComponent(bare.slice('/projection/table/'.length));
+    return srcIndexOnce().then(function(i){
+      var f = (i.files && i.files.tables && i.files.tables[kind]) || ('table-'+asSlug(kind)+'.json');
+      return getJSON(SRC + f);
+    });
+  }
+  return Promise.reject(new Error('no file in the folder answers '+bare));
 }
 
 function loadDatabases(){
@@ -211,7 +249,8 @@ function loadTable(){
     renderColumns(); render(); renderInspector();
   }).catch(function(e){
     $('tablewrap').innerHTML = '<div class="empty">Could not load: '+esc(e.message)
-      + '<br><br>Is the substrate running on 8768?</div>';
+      + '<br><br>' + (SRC ? 'Is there an export folder at '+esc(SRC)+'?'
+                          : 'Is the substrate running on 8768?') + '</div>';
   });
 }
 
@@ -374,12 +413,119 @@ $('neighbourhood').addEventListener('click', function(){
   if(sel.length !== 1 || !state.subject) return;
   var name = String(sel[0][state.subject] || '');
   if(!name) return;
+  if(SRC){ neighbourhoodFromFolder(name); return; }
   var url = SUBSTRATE_BASE + '/tools/graph-tool-v22.html?url='
           + encodeURIComponent('/projection/neighbours/' + encodeURIComponent(name)
                                + '?db=' + encodeURIComponent(state.db));
   window.open(url, 'rcngraph');
   toast('Drawing the neighbourhood of ' + name);
 });
+
+// ── neighbours without a server ───────────────────────────────────────
+// /projection/neighbours is a walk over 409 nodes and 770 links. That is not a
+// database's job; a browser does it in a millisecond from graph.json. This is
+// a port of api.py's neighbours_projection — same ring layout, same colours,
+// same legend — so the drawing is the one you would have got from the server.
+// It reaches the graph tool through the opener handshake the tool already
+// has (graphToolReady → loadGraph), because a computed graph has no URL.
+var KIND_FILL = {Entity:'#dbeafe', Person:'#dcfce7', Program:'#fef3c7',
+                 Theme:'#ede9fe', Promise:'#ffe4e6', Result:'#ccfbf1', Scrum:'#f1f5f9'};
+var KIND_EDGE = {Entity:'#2563eb', Person:'#16a34a', Program:'#d97706',
+                 Theme:'#7c3aed', Promise:'#e11d48', Result:'#0d9488', Scrum:'#64748b'};
+
+function srcGraphOnce(){
+  if(srcGraph) return Promise.resolve(srcGraph);
+  return srcIndexOnce().then(function(i){
+    return getJSON(SRC + ((i.files && i.files.graph) || 'graph.json'));
+  }).then(function(g){ srcGraph = g; return g; });
+}
+
+function neighboursFromGraph(g, root, depth){
+  depth = Math.max(1, Math.min(depth|0 || 1, 3));
+  var byKey = {}, adj = {}, lc = root.toLowerCase(), rootKey = null;
+  g.nodes.forEach(function(n){ byKey[n.key] = n; adj[n.key] = []; });
+  g.nodes.forEach(function(n){
+    if(rootKey === null && (String(n.key).toLowerCase() === lc || String(n.name).toLowerCase() === lc))
+      rootKey = n.key;
+  });
+  if(rootKey === null) throw new Error('no concept matching "'+root+'" in '+g.database);
+  g.edges.forEach(function(e){
+    if(adj[e.src] && adj[e.tgt]){ adj[e.src].push(e.tgt); adj[e.tgt].push(e.src); }
+  });
+  // breadth-first: hop = shortest distance, exactly min(length(p)) in Cypher
+  var hop = {}; hop[rootKey] = 0; var frontier = [rootKey];
+  for(var d = 1; d <= depth && frontier.length; d++){
+    var next = [];
+    frontier.forEach(function(k){ adj[k].forEach(function(m){
+      if(hop[m] === undefined){ hop[m] = d; next.push(m); } }); });
+    frontier = next;
+  }
+  var byHop = {};
+  Object.keys(hop).forEach(function(k){ (byHop[hop[k]] = byHop[hop[k]] || []).push(byKey[k]); });
+  var ids = {}, nodes = [];
+  Object.keys(byHop).map(Number).sort(function(a,b){ return a-b; }).forEach(function(h){
+    var group = byHop[h].sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
+    group.forEach(function(n, i){
+      var nid = 'n' + nodes.length; ids[n.key] = nid;
+      var x = 620, y = 400;
+      if(h > 0){
+        var ang = 2*Math.PI*i/Math.max(1, group.length);
+        var rad = h * Math.max(250, group.length*175/(2*Math.PI));
+        x = Math.round(620 + rad*Math.cos(ang)); y = Math.round(400 + rad*Math.sin(ang)*0.78);
+      }
+      var kind = n.kind || 'Entity';
+      nodes.push({id:nid, label:n.name || n.key, x:x, y:y, w:150, h:56, shape:'roundrect',
+        color:KIND_FILL[kind] || '#f1f5f9', borderColor:KIND_EDGE[kind] || '#64748b',
+        borderWidth: h === 0 ? 3 : 1.5, fontColor:'#16233b', fontSize:12,
+        props:{kind:kind, schemaLabel:n.key, hop:String(h)}});
+    });
+  });
+  var seen = {}, edges = [];
+  g.edges.forEach(function(e){
+    var sv = ids[e.src], tv = ids[e.tgt]; if(!sv || !tv) return;
+    var sig = sv+'>'+tv+'|'+(e.label||''); if(seen[sig]) return; seen[sig] = 1;
+    edges.push({id:'e'+edges.length, src:sv, tgt:tv, label:e.label||'', polarity:'none',
+      color:'#64748b', width:1.5, fontSize:10, curved:true, dash:'solid', props:{}});
+  });
+  var kinds = {}; nodes.forEach(function(n){ kinds[n.props.kind] = 1; });
+  var rootName = byKey[rootKey].name || rootKey;
+  return {version:'1.0',
+    modelName: rootName + ' \u2014 neighbourhood, ' + depth + ' hop' + (depth === 1 ? '' : 's'),
+    modelNote: 'Computed in the browser from ' + g.database + '/graph.json. The thick border '
+             + 'is the row you came from; each ring is one more hop away.',
+    canvasBg:'#ffffff', legendVisible:true,
+    legendEntries: Object.keys(kinds).sort().map(function(k){
+      return {id:'lg_'+k.toLowerCase(), kind:'node', label:k,
+              color:KIND_FILL[k] || '#f1f5f9', borderColor:KIND_EDGE[k] || '#64748b', borderWidth:1.5}; }),
+    nodes:nodes, edges:edges};
+}
+
+// The graph tool sits beside this file when deployed as a folder (the
+// self-contained tools/dist build), and beside it in tools/ at home.
+var GRAPH_TOOL_URL = new URL('graph-tool-v22.html', location.href).href;
+var pendingGraph = null, graphWin = null;
+function deliverGraph(){
+  if(!pendingGraph || !graphWin || graphWin.closed) return;
+  graphWin.postMessage({action:'loadGraph', graphJSON:pendingGraph.graph,
+                        pageTitle:pendingGraph.title}, '*');
+  pendingGraph = null;
+}
+window.addEventListener('message', function(ev){
+  if(ev.data && ev.data.toolType === 'rcn-graph' && ev.data.action === 'graphToolReady'
+     && ev.source === graphWin) deliverGraph();
+});
+function neighbourhoodFromFolder(name){
+  srcGraphOnce().then(function(g){
+    var graph = neighboursFromGraph(g, name, 1);
+    pendingGraph = {graph:graph, title:graph.modelName};
+    graphWin = window.open(GRAPH_TOOL_URL, 'rcngraph');
+    if(graphWin) graphWin.focus();
+    // A tool already open under this name does not reload, so never says ready
+    // again; its listener is still there, so deliver anyway after a beat.
+    setTimeout(deliverGraph, 1500);
+    toast('Drawing the neighbourhood of ' + name + ' (' + graph.nodes.length + ' nodes)');
+  }).catch(function(e){ toast('Could not draw: ' + e.message); });
+}
 
 // THE MAP IS A VIEW OF THIS TABLE, not a separate errand. Perspectives makes
 // Geographical View and Logical View two tabs of one area over one model; we
@@ -390,8 +536,10 @@ $('neighbourhood').addEventListener('click', function(){
 var mapWin = null;
 $('mapview').addEventListener('click', function(){
   var shown = rows();
-  var url = SUBSTRATE_BASE + '/tools/rcn-table-map.html?db='
-          + encodeURIComponent(state.db) + '&kind=' + encodeURIComponent(state.kind);
+  var url = (SRC ? new URL('rcn-table-map.html', location.href).href
+                 : SUBSTRATE_BASE + '/tools/rcn-table-map.html')
+          + '?db=' + encodeURIComponent(state.db) + '&kind=' + encodeURIComponent(state.kind)
+          + (SRC ? '&src=' + encodeURIComponent(SRC) : '');
   mapWin = window.open(url, 'rcntablemap');
   if(mapWin) mapWin.focus();
   toast('Mapping ' + shown.filter(hasCoord).length + ' rows');
@@ -481,6 +629,7 @@ if(window.opener){
       window._pageKey = ev.data.pageKey || null;
       if(ev.data.database) state.db = ev.data.database;
       if(ev.data.kind) state.kind = ev.data.kind;
+      if(ev.data.src){ SRC = String(ev.data.src).replace(/\/+$/,'') + '/'; srcIndex = srcGraph = null; }
       boot();
     }
   });
@@ -490,9 +639,12 @@ function boot(){
   var p = new URLSearchParams(location.search);
   state.db = state.db || p.get('db') || 'whatcom';
   state.kind = state.kind || p.get('kind') || '';
-  loadDatabases().then(loadKinds).then(loadTable).catch(function(e){
-    $('tablewrap').innerHTML = '<div class="empty">Could not reach the substrate at '
-      + esc(SUBSTRATE_BASE || '(relative)') + '<br><br>' + esc(e.message) + '</div>';
+  var first = SRC ? srcIndexOnce().then(function(i){ state.db = i.database; return loadDatabases(); })
+                  : loadDatabases();
+  first.then(loadKinds).then(loadTable).catch(function(e){
+    $('tablewrap').innerHTML = '<div class="empty">Could not reach '
+      + (SRC ? 'the export folder at ' + esc(SRC) : 'the substrate at ' + esc(SUBSTRATE_BASE || '(relative)'))
+      + '<br><br>' + esc(e.message) + '</div>';
   });
 }
 boot();

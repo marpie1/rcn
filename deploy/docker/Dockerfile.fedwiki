@@ -40,6 +40,13 @@ COPY wiki-plugin-rcn-graph/ \
 COPY wiki-plugin-rcn-outliner/ \
      /usr/local/lib/node_modules/wiki/node_modules/wiki-plugin-rcnoutliner/
 
+# The RCN Table page item. Not on npm. Its Open Table popup reads the site's
+# own /assets/rcn-table/ folder (tools + one exported database per subfolder,
+# written by substrate/export.py) — no database, no new service, nothing else
+# in this image changes. See substrate/layer1-static-projections.rcn.json.
+COPY wiki-plugin-rcn-table/ \
+     /usr/local/lib/node_modules/wiki/node_modules/wiki-plugin-rcntable/
+
 EXPOSE 3000
 
 # FedWiki defaults data dir to ~/.wiki (= /root/.wiki in this image).

@@ -89,6 +89,14 @@ var SUBSTRATE_BASE = (function(){
   return '';
 })();
 
+// ?src= names a folder written by substrate/export.py (see rcn-table.html for
+// the whole story). geo.json there is /projection/geo with no filter applied,
+// so the filtering the server did by kind and names happens here instead.
+var SRC = (function(){
+  var q = new URLSearchParams(location.search).get('src');
+  return q ? q.replace(/\/+$/,'') + '/' : '';
+})();
+
 var HOST = null;   // set at the handshake below
 var $ = function(id){ return document.getElementById(id); };
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -255,7 +263,23 @@ function load(opts){
   if(opts.names && opts.names.length && opts.names.length <= 400)
     q += '&names=' + encodeURIComponent(opts.names.join('|'));
   $('count').textContent = 'Loading…';
-  return fetch(SUBSTRATE_BASE + q).then(function(r){ return r.json(); })
+  var fetched = SRC
+    ? fetch(SRC + 'geo.json').then(function(r){ return r.json(); }).then(function(j){
+        // Same two filters geo_projection applies, in the same order: kinds,
+        // then names matched against either label. Edges then keep only pairs
+        // still on the map, because an edge to nothing has nowhere to land.
+        var nodes = j.nodes || [];
+        if(opts.kind) nodes = nodes.filter(function(n){ return n.kind === opts.kind; });
+        if(opts.names && opts.names.length && opts.names.length <= 400){
+          var want = {}; opts.names.forEach(function(n){ want[n] = 1; });
+          nodes = nodes.filter(function(n){ return want[n.name] || want[n.key]; });
+        }
+        var on = {}; nodes.forEach(function(n){ on[n.key] = 1; });
+        return {nodes:nodes, total:nodes.length,
+                edges:(j.edges || []).filter(function(e){ return on[e.src] && on[e.tgt]; })};
+      })
+    : fetch(SUBSTRATE_BASE + q).then(function(r){ return r.json(); });
+  return fetched
     .then(function(j){
       if(j.error) throw new Error(j.error);
       state.nodes = j.nodes || []; state.edges = j.edges || [];

@@ -29,9 +29,27 @@
   // Farm sites are alice.localhost, scp-experiment.localhost, … so match the
   // suffix rather than the bare hostname.
   const LOCAL = /(^|\.)localhost$/.test(window.location.hostname)
-  const TABLE_URL = LOCAL
+
+  // THE SITE'S OWN ASSETS, NOT A CENTRAL SERVER. Deployed, the table reads a
+  // folder that substrate/export.py wrote and the site owner dropped into
+  // /assets/rcn-table/ — the tools beside one subfolder per database:
+  //
+  //   assets/rcn-table/rcn-table.html
+  //   assets/rcn-table/rcn-table-map.html
+  //   assets/rcn-table/graph-tool-v22.html     (the self-contained dist build)
+  //   assets/rcn-table/<database>/index.json, table-<kind>.json, geo.json, graph.json
+  //
+  // So every site is its own substrate: whoever owns the site is the DBA, and
+  // anyone who can read the page can read the table. Nothing talks to Neo4j.
+  // An item may override either path (`tool`, `src`) to read another site's
+  // folder — federation for tables. At home the popup keeps reading the live
+  // api.py on 8768 so a steward sees Neo4j as it is, not as it was exported.
+  const ASSETS = window.location.origin + '/assets/rcn-table/'
+  const tableURL = item => item.tool || (LOCAL
     ? 'http://localhost:8765/tools/rcn-table.html'
-    : 'https://marc.relocalizecreativity.net/assets/Drag/rcn-table.html'
+    : ASSETS + 'rcn-table.html')
+  const tableSrc = item => item.src || (LOCAL ? null
+    : ASSETS + encodeURIComponent(item.database || 'whatcom') + '/')
   const WINDOW_NAME = 'rcntable'
   const SAMPLE_ROWS = 3
 
@@ -106,7 +124,7 @@
     $item.on('click', '.open-table', () => {
       pendingItem = item
       pending$item = $item
-      const popup = window.open(TABLE_URL, WINDOW_NAME, 'popup,height=820,width=1440')
+      const popup = window.open(tableURL(item), WINDOW_NAME, 'popup,height=820,width=1440')
       if (popup) popup.focus()
     })
 
@@ -141,6 +159,7 @@
           action: 'loadTable',
           database: pendingItem.database || null,
           kind: pendingItem.kind || null,
+          src: tableSrc(pendingItem),
           pageKey: pending$item.parents('.page').data('key')
         }, '*')
         break
