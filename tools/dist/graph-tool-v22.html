@@ -304,6 +304,17 @@ vsmCheck() checks an OBSERVATION, not a diagram: nothing in the patient lane, no
   all-VA-no-waiting ("did you reconstruct this rather than watch it?"), a ratio
   over 50% ("check the units"), no handoffs, no information flow.
 
+── CLD LOOP TYPE FILTER (September 17 2026) ─────────────────────────
+
+All / R only / B only under the Loop labels button. A VIEW, not a model
+change: with 'R only', balancing loop labels disappear and every node or
+edge that sits on no reinforcing loop dims (same opacity path search uses,
+so it survives into SVG/PNG exports). cldLoopFilter holds the choice;
+cldLoopVisible(loop) gates labels and the node loop lists (getNodeLoops);
+cldOnFilteredLoop(kind,id) gates dimming in renderNode/renderEdge and is
+always true outside CLD mode, so nothing leaks into other modes. Not
+persisted in buildState — it is a way of looking, not part of the drawing.
+
 ── CLD NODE LOOPS POPUP (April 25 2026) ─────────────────────────────
 
 Clicking a node in CLD mode shows a floating popup listing all loops
@@ -924,6 +935,13 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
 .cld-loop-label.B{background:#dbeafe;color:#1d4ed8;border:2px solid #93c5fd}
 .cld-loop-label.U{background:#f1f5f9;color:#64748b;border:2px solid #cbd5e1}
 .cld-loop-label.active-loop{box-shadow:0 0 0 3px #f59e0b,0 2px 8px rgba(0,0,0,.2)}
+/* one loop highlighted: the other labels collapse to dots so the drawing shows through.
+   A 26px disc becomes a 9px dot (margin keeps it centred on the same point); hover grows it
+   back to a readable, clickable label, so you can step to the next loop without deselecting. */
+.cld-loop-label.other-loop{width:9px;height:9px;margin:8.5px;font-size:0;opacity:.4;box-shadow:none;border-width:1.5px}
+.cld-loop-label.other-loop .cld-loop-name-tag{display:none}
+.cld-loop-label.other-loop:hover{width:26px;height:26px;margin:0;font-size:13px;opacity:1;border-width:2px}
+.cld-loop-label.other-loop:hover .cld-loop-name-tag{display:block}
 .cld-loop-label.node-loop{box-shadow:0 0 0 2px #7c3aed,0 2px 8px rgba(0,0,0,.18);transform:scale(1.1)}
 .cld-loop-name-tag{position:absolute;top:29px;left:50%;transform:translateX(-50%);background:rgba(254,249,195,0.93);color:#854d0e;font-size:9px;font-weight:600;padding:1px 5px;border-radius:4px;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 3px rgba(0,0,0,.1);pointer-events:none;border:1px solid rgba(253,224,71,.6);opacity:0;transition:opacity .15s;z-index:30}
 .cld-loop-label:hover .cld-loop-name-tag{opacity:1}
@@ -1275,6 +1293,11 @@ body.presenting #present-exit{display:flex}
       </div>
       <div id="cld-mode-opts" style="display:none;margin-top:4px">
         <button id="btn-loops" class="tb-btn active" onclick="toggleCLDLoops()" style="font-size:10px;border-color:#7c3aed;color:#7c3aed;width:100%">Loop labels</button>
+        <div style="display:flex;gap:3px;margin-top:4px" title="Show only one kind of loop — everything not on a loop of that kind fades back. Exports the same way.">
+          <button id="btn-loopf-all" class="tb-btn active" onclick="setCLDLoopFilter('all')" style="flex:1;font-size:10px;text-align:center;border-color:#7c3aed;color:#7c3aed">All</button>
+          <button id="btn-loopf-R" class="tb-btn" onclick="setCLDLoopFilter('R')" style="flex:1;font-size:10px;text-align:center;border-color:#fde047;color:#854d0e">R only</button>
+          <button id="btn-loopf-B" class="tb-btn" onclick="setCLDLoopFilter('B')" style="flex:1;font-size:10px;text-align:center;border-color:#93c5fd;color:#1d4ed8">B only</button>
+        </div>
         <div id="cld-loops-list-hdr" style="display:none;margin-top:5px;cursor:pointer;align-items:center;justify-content:space-between;padding:1px 2px" onclick="toggleCLDLoopsList()">
           <span id="cld-loops-list-title" style="font-size:10px;font-weight:600;color:#7c3aed;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0"></span>
           <span id="cld-loops-chevron" style="font-size:9px;color:#7c3aed;flex-shrink:0;margin-left:4px">▼</span>
@@ -1360,10 +1383,10 @@ body.presenting #present-exit{display:flex}
     <div id="import-section">
       <div class="io-label">Import</div>
       <div class="io-btns">
+        <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="importJSON()">JSON</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="showExamples()">Examples</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#276749" onclick="showImport('cypher')">Cypher</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="showImport('match')">MATCH</button>
-        <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="importJSON()">JSON</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#0f766e" onclick="importMerge()">Merge</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#2b6cb0" onclick="importArrows()">Arrows</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#7c3aed" onclick="importXMILE()">XMILE</button>
@@ -1374,6 +1397,7 @@ body.presenting #present-exit{display:flex}
     <div id="export-section">
       <div class="io-label">Export</div>
       <div class="io-btns">
+        <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportJSON()">JSON</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportSVG()">SVG</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#7c3aed" onclick="sendToWikiSVG()" title="Send SVG to FedWiki lineup as ghost page">→ Wiki</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#2563eb" onclick="sendToWikiItem()" title="Save graph JSON + SVG back into the originating FedWiki plugin item">→ Item</button>
@@ -1383,7 +1407,6 @@ body.presenting #present-exit{display:flex}
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportCypher()">Cypher</button>
         <button class="tb-btn" id="btn-substrate" title="Save this drawing to BOTH the Neo4j substrate and its source file, so neither can silently revert the other. Other drawings are untouched — concepts they also contain keep their other witnesses." style="background:transparent;border-color:transparent;color:#7c3aed" onclick="saveToSubstrate()">→ Substrate</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportURL()">URL</button>
-        <button class="tb-btn" style="background:transparent;border-color:transparent" onclick="exportJSON()">JSON</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#b45309" onclick="exportSnapshot()" title="Download a single HTML file with this diagram baked in — share without a separate JSON file">Snapshot</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#7c3aed" onclick="exportXMILE()">XMILE</button>
         <button class="tb-btn" style="background:transparent;border-color:transparent;color:#0d9488" onclick="exportMDL()">MDL</button>
@@ -1637,9 +1660,11 @@ var RCN_ICONS = [
        +'<path d="M3.6 6.4v5.2c0 1.7 3.8 3 8.4 3s8.4-1.3 8.4-3V6.4"/>'
        +'<path d="M3.6 11.6v5.2c0 1.7 3.8 3 8.4 3s8.4-1.3 8.4-3v-5.2"/>' },
 
+  // Open-end spanner. The jaw is a wide C with a square notch cut out of it —
+  // the previous drawing closed the jaw to a small arc and read as a syringe
+  // at 13px. Silhouette test: head at top-right, straight handle to bottom-left.
   { key:'rcn_work', label:'Work', cat:'Resource',
-    svg:'<path d="M14.8 3.4a4.6 4.6 0 0 0 5.8 6l-8.4 8.4a2.8 2.8 0 0 1-4-4l8.4-8.4z"/>'
-       +'<path d="M6.6 17.4 4 20"/>' },
+    svg:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9L6.7 20.3a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8z"/>' },
 
   { key:'rcn_energy', label:'Energy', cat:'Resource',
     svg:'<path d="M13.6 2.4 5 13.6h6L10.4 21.6 19 10.4h-6z" fill="currentColor" stroke="none"/>' },
@@ -1779,7 +1804,17 @@ var RCN_ICONS = [
   { key:'rcn_possibility', label:'Possibility', cat:'System',
     svg:'<path d="M9 18.4a6.6 6.6 0 1 1 6 0"/>'
        +'<path d="M9.4 18.4h5.2v2.2H9.4z"/>'
-       +'<path d="M10.4 21.6h3.2"/>' }
+       +'<path d="M10.4 21.6h3.2"/>' },
+
+  // Software that runs: a gear. A machine that does something on its own is
+  // what people already read a cog as; the first draft was a terminal prompt
+  // (>_), which only programmers parse. The first icon for the toolset itself
+  // rather than the neighbourhood — needed the moment a drawing shows the tools
+  // as parts (loaders, api.py, the table, a plugin). Distinct from Work (labour,
+  // the wrench) and Action (a thing to do). Eight teeth, generated, not traced.
+  { key:'rcn_program', label:'Program', cat:'System',
+    svg:'<path d="M19.6 12.0 L19.2 14.5 L21.4 15.9 L19.7 18.7 L17.4 17.4 L17.4 17.4 L15.3 18.8 L15.9 21.4 L12.6 22.2 L12.0 19.6 L12.0 19.6 L9.5 19.2 L8.1 21.4 L5.3 19.7 L6.6 17.4 L6.6 17.4 L5.2 15.3 L2.6 15.9 L1.8 12.6 L4.4 12.0 L4.4 12.0 L4.8 9.5 L2.6 8.1 L4.3 5.3 L6.6 6.6 L6.6 6.6 L8.7 5.2 L8.1 2.6 L11.4 1.8 L12.0 4.4 L12.0 4.4 L14.5 4.8 L15.9 2.6 L18.7 4.3 L17.4 6.6 L17.4 6.6 L18.8 8.7 L21.4 8.1 L22.2 11.4 L19.6 12.0z"/>'
+       +'<circle cx="12" cy="12" r="3.2"/>' }
 ];
 
 /* Convenience: look up one icon by key. Returns null if absent. */
@@ -2611,10 +2646,36 @@ function applyEIPToNewNode(n){
 //   1. labels already on this canvas
 //   2. labels used across the substrate, with how widely (needs api.py)
 //   3. the verb lists in edge-families.js — a curated starting vocabulary
+// ── WHERE THE SUBSTRATE LIVES ───────────────────────────────────
+// Every substrate call below used a bare relative path ('/subgraph/...'), which
+// resolves only when this tool is served BY api.py itself on :8768. But the tool
+// is opened from three other origins — the static server on :8765, the FedWiki
+// plugin popup, and the deployed asset folder — and from each of those a relative
+// '/subgraph/' addressed the wrong host and 404'd. So the round trip existed, and
+// the wiki path existed, and they could not meet. This is the same class of
+// failure as the deployed build's relative sidecars.
+//
+// Resolve against an explicit base instead. Order of authority:
+//   1. ?substrate=<origin> on the URL — one canvas can address another server
+//   2. already served by the substrate (:8768) — stay relative, as before
+//   3. any localhost origin, or file:// — the local prototype substrate
+//   4. deployed — '' , so a public page never silently phones home
+// api.py already sends Access-Control-Allow-Origin: * , so the cross-origin call
+// from :8765 or :3000 needs nothing further. It binds 127.0.0.1, so this reaches
+// the substrate on THIS MACHINE only — which is what a prototype wants.
+var SUBSTRATE_BASE = (function(){
+  var q = new URLSearchParams(location.search).get('substrate');
+  if(q) return q.replace(/\/+$/,'');
+  if(location.port === '8768') return '';
+  if(location.protocol === 'file:') return 'http://127.0.0.1:8768';
+  if(/(^|\.)localhost$/.test(location.hostname) || location.hostname === '127.0.0.1')
+    return 'http://127.0.0.1:8768';
+  return '';
+})();
 var _subVocab = null;
 function loadSubstrateVocab(){
   if(_subVocab!==null) return Promise.resolve(_subVocab);
-  return fetch('/vocabulary/edge-labels').then(function(r){ return r.ok?r.json():null; })
+  return fetch(SUBSTRATE_BASE+'/vocabulary/edge-labels').then(function(r){ return r.ok?r.json():null; })
     .then(function(j){ _subVocab = (j&&j.labels)||[]; return _subVocab; })
     .catch(function(){ _subVocab = []; return _subVocab; });
 }
@@ -2724,7 +2785,13 @@ document.addEventListener('scroll', hideLabelSuggest, true);
 // witness at all, then re-inserts what you send. A concept another drawing also
 // contains keeps its other witnesses and survives. You cannot delete a
 // collaborator's work, even by saving an empty canvas.
-var substrateSubgraph = null;   // set by loadGraphJSON when the file names one
+var substrateSubgraph = null;   // set by loadFromQueryParam when the URL names one
+// WHICH DATABASE THIS DRAWING CAME FROM. Without it every write-back went to the
+// server's default (aspects16) whatever you had loaded — open a `vna` drawing,
+// press "→ Substrate", and its concepts landed in the wrong database. The name of
+// a drawing is not unique across databases, so the name alone cannot say where to
+// put it back. Captured on load, sent on both legs of the save.
+var substrateDb = null;
 
 function saveToSubstrate(){
   var name = substrateSubgraph;
@@ -2740,6 +2807,10 @@ function saveToSubstrate(){
                    + 'Other drawings are untouched.')){
     return;
   }
+  // Both legs carry the database, or neither does: a save that put the graph in
+  // one database and the file in another would be exactly the drift this round
+  // trip exists to prevent.
+  var dbq = substrateDb ? '?db='+encodeURIComponent(substrateDb) : '';
   var body = JSON.stringify({
     nodes: nodes.map(function(n){
       return {id:n.id, label:n.label, schemaLabel:n.schemaLabel||(n.props&&n.props.schemaLabel)||n.label,
@@ -2758,7 +2829,7 @@ function saveToSubstrate(){
   // canonical so git keeps the history; the database is rebuildable from it.
   var jok = function(r){ return r.json().then(function(j){
     if(!r.ok) throw new Error(j.error||('HTTP '+r.status)); return j; }); };
-  fetch('/subgraph/'+encodeURIComponent(name), {
+  fetch(SUBSTRATE_BASE+'/subgraph/'+encodeURIComponent(name)+dbq, {
     method:'PUT', headers:{'Content-Type':'application/json'}, body:body
   }).then(jok)
     .then(function(j){
@@ -2769,9 +2840,20 @@ function saveToSubstrate(){
       var pos={};
       nodes.forEach(function(n){
         var sl=n.schemaLabel||(n.props&&n.props.schemaLabel);
-        if(sl) pos[String(sl).replace(/\s+/g,'')]={x:Math.round(n.x),y:Math.round(n.y)};
+        // FIRST PLACEMENT WINS — the same rule aspect_file.layout_of() and
+        // build_file() use. A concept drawn twice (org draws "Effectiveness of
+        // ORG" twice so its edges do not cross) has two positions on this
+        // canvas but only one slot in this map. Letting the LAST one win sent
+        // the second placement's coordinates as if they were the first's, and
+        // build_file then re-derived every duplicate from that wrong base: on a
+        // round trip with no edits at all, n4 took n5's old position and n5
+        // took its own plus the same delta. The placements walked one slot per
+        // save, and drifted further every time.
+        if(sl){var _k=String(sl).replace(/\s+/g,'');
+               if(!Object.prototype.hasOwnProperty.call(pos,_k))
+                 pos[_k]={x:Math.round(n.x),y:Math.round(n.y)};}
       });
-      return fetch('/subgraph/'+encodeURIComponent(name)+'/file', {
+      return fetch(SUBSTRATE_BASE+'/subgraph/'+encodeURIComponent(name)+'/file'+dbq, {
           method:'POST', headers:{'Content-Type':'application/json'},
           body:JSON.stringify({positions:pos})})
         .then(jok).then(function(f){ return [j, f]; });
@@ -5913,6 +5995,7 @@ var cldPropResult={};     // nodeId -> 'up'|'down'|'ambiguous'
 var cldPropEdges={};      // edgeId -> 'up'|'down'|'ambiguous'
 var cldLoopCounter={R:0,B:0,U:0};
 var cldShowLoops=true;
+var cldLoopFilter='all';  // 'all' | 'R' | 'B' — show only loops of one type; members of the other type fade
 var cldNodePopupId=null;  // node id whose loops popup is currently shown
 var cldLoopsListCollapsed=false; // user-collapsed state for the node-loops sidebar list
 var TRACE_COLORS=['#f97316','#8b5cf6','#06b6d4','#f43f5e'];
@@ -6155,6 +6238,27 @@ function clearPropagation(){
   cldPropResult={};cldPropEdges={};
   document.getElementById('cld-controls').style.display='none';
   renderAll();renderCLDOverlay();
+}
+// ── Loop type filter ──────────────────────────────────────
+// 'R only' / 'B only' is a VIEW: nothing in the model changes. Loops of the
+// other type lose their labels, and any node or edge that sits on no loop of
+// the chosen type is dimmed the same way search dims non-matches — so the
+// reinforcing structure and the balancing structure can be looked at, and
+// exported, one at a time.
+function cldLoopVisible(loop){return cldLoopFilter==='all'||loop.type===cldLoopFilter;}
+function cldOnFilteredLoop(kind,id){
+  if(mode!=='cld'||cldLoopFilter==='all')return true;
+  var f=kind==='node'?'nodeIds':'edgeIds';
+  for(var i=0;i<cldLoops.length;i++){if(cldLoops[i].type===cldLoopFilter&&cldLoops[i][f].indexOf(id)>=0)return true;}
+  return false;
+}
+function setCLDLoopFilter(f){
+  cldLoopFilter=f;
+  ['all','R','B'].forEach(function(k){var b=document.getElementById('btn-loopf-'+k);if(b)b.classList.toggle('active',k===f);});
+  // a highlighted loop of the hidden type would be an orphan — drop it
+  if(cldActiveLoop){for(var i=0;i<cldLoops.length;i++){if(cldLoops[i].id===cldActiveLoop&&!cldLoopVisible(cldLoops[i])){cldActiveLoop=null;break;}}}
+  renderAll();
+  refreshNodeLoopsPopup();
 }
 function toggleCLDLoops(){
   cldShowLoops=!cldShowLoops;
@@ -6456,10 +6560,11 @@ function renderCLDOverlay(){
   if(mode!=='cld')return;
   if(!cldShowLoops)return;
   cldLoops.forEach(function(loop){
+    if(!cldLoopVisible(loop))return;
     var c=loopCentroid(loop);
     var sc=toScreen(c.x,c.y);
     var el=document.createElement('div');
-    el.className='cld-loop-label '+loop.type+(cldActiveLoop===loop.id?' active-loop':'');
+    el.className='cld-loop-label '+loop.type+(cldActiveLoop===loop.id?' active-loop':cldActiveLoop?' other-loop':'');
     el.textContent=loop.label;
     el.style.left=(sc.x-13)+'px';
     el.style.top=(sc.y-13)+'px';
@@ -6532,7 +6637,7 @@ function commitLoopName(){
 
 // ── Node loops sidebar ────────────────────────────────────
 function getNodeLoops(nodeId){
-  return cldLoops.filter(function(l){return l.nodeIds.indexOf(nodeId)>=0;});
+  return cldLoops.filter(function(l){return cldLoopVisible(l)&&l.nodeIds.indexOf(nodeId)>=0;});
 }
 function renderCLDNodeLoopsPanel(){
   var sec=document.getElementById('cld-node-loops');
@@ -6740,7 +6845,7 @@ function darken(hex){var r=parseInt(hex.slice(1,3),16)||0,g=parseInt(hex.slice(3
 function onSearch(v){searchTerm=v.trim().toLowerCase();renderAll();var m=searchTerm?nodes.filter(nMatch).length:0;document.getElementById('search-count').textContent=searchTerm?(m+' match'+(m===1?'':'es')):'';;}
 function nMatch(n){if(!searchTerm)return false;if(n.label.toLowerCase().indexOf(searchTerm)>=0)return true;if(n.extraLabels&&n.extraLabels.some(function(el){return el.toLowerCase().indexOf(searchTerm)>=0;}))return true;return Object.keys(n.props||{}).some(function(k){return k.toLowerCase().indexOf(searchTerm)>=0||String(n.props[k]).toLowerCase().indexOf(searchTerm)>=0;});}
 function renderAll(){while(edgesLayer.firstChild)edgesLayer.removeChild(edgesLayer.firstChild);while(nodesLayer.firstChild)nodesLayer.removeChild(nodesLayer.firstChild);while(linesLayer.firstChild)linesLayer.removeChild(linesLayer.firstChild);while(triplesLayer.firstChild)triplesLayer.removeChild(triplesLayer.firstChild);renderWardleyLayer();renderLOPLayer();renderVSMLayer();edges.forEach(renderEdge);nodes.forEach(renderNode);lines.forEach(renderLine);renderTripleDots();renderCLDOverlay();renderLegendSVG();renderOPMChart();renderEIPStatement();buildLayerFilter();}
-function renderNode(n){autoSize(n);if(n.layer&&n.layer.trim()&&hiddenLayers[n.layer.trim()])return;var isSel=selected.nodes.indexOf(n.id)>=0,isMatch=searchTerm&&nMatch(n),isDim=searchTerm&&!isMatch;var fill=sv(n,'color')||'#93c5fd';
+function renderNode(n){autoSize(n);if(n.layer&&n.layer.trim()&&hiddenLayers[n.layer.trim()])return;var isSel=selected.nodes.indexOf(n.id)>=0,isMatch=searchTerm&&nMatch(n),isDim=(searchTerm&&!isMatch)||!cldOnFilteredLoop('node',n.id);var fill=sv(n,'color')||'#93c5fd';
 // EIP mode: override fill if node has an EIP column
 if(mode==='eip'){var ec=eipColorForNode(n);if(ec)fill=ec;else{var autoCol=eipColForX(n.x);fill=EIP_COLS[autoCol].color;}}
 // NRM mode: override fill if node has an nrmType
@@ -6783,7 +6888,7 @@ g.addEventListener('mouseenter',function(ev){if(!_vsBadgeHover)showObjTooltip(n,
 g.addEventListener('mousemove',function(ev){moveTooltip(ev);});
 g.addEventListener('mouseleave',function(){_vsBadgeHover=false;hideTooltip();});
 nodesLayer.appendChild(g);}
-function renderEdge(e){var src=nodeById(e.src),tgt=nodeById(e.tgt);if(!src||!tgt)return;if(e.layer&&e.layer.trim()&&hiddenLayers[e.layer.trim()])return;if(src.layer&&src.layer.trim()&&hiddenLayers[src.layer.trim()])return;if(tgt.layer&&tgt.layer.trim()&&hiddenLayers[tgt.layer.trim()])return;var isSel=selected.edges.indexOf(e.id)>=0;var isCurveDrag=curveDrag&&curveDrag.edgeId===e.id;var isMatch=searchTerm&&((e.label&&e.label.toLowerCase().indexOf(searchTerm)>=0)||Object.keys(e.props||{}).some(function(k){return k.toLowerCase().indexOf(searchTerm)>=0||String(e.props[k]).toLowerCase().indexOf(searchTerm)>=0;}));var isDim=searchTerm&&!isMatch;
+function renderEdge(e){var src=nodeById(e.src),tgt=nodeById(e.tgt);if(!src||!tgt)return;if(e.layer&&e.layer.trim()&&hiddenLayers[e.layer.trim()])return;if(src.layer&&src.layer.trim()&&hiddenLayers[src.layer.trim()])return;if(tgt.layer&&tgt.layer.trim()&&hiddenLayers[tgt.layer.trim()])return;var isSel=selected.edges.indexOf(e.id)>=0;var isCurveDrag=curveDrag&&curveDrag.edgeId===e.id;var isMatch=searchTerm&&((e.label&&e.label.toLowerCase().indexOf(searchTerm)>=0)||Object.keys(e.props||{}).some(function(k){return k.toLowerCase().indexOf(searchTerm)>=0||String(e.props[k]).toLowerCase().indexOf(searchTerm)>=0;}));var isDim=(searchTerm&&!isMatch)||!cldOnFilteredLoop('edge',e.id);
 // long-press highlight
 var isLongPress=longPressActive&&longPressNodeId&&(e.src===longPressNodeId||e.tgt===longPressNodeId);
 // CLD overlays
@@ -7930,7 +8035,11 @@ if(mode==='eip'){
 buildSelectionPanel(pc,sN,sE);renderCLDNodeLoopsPanel();updateDriveTreeSection();}
 function buildSelectionPanel(pc,sN,sE){if(!sN.length&&!sE.length){pc.innerHTML='<div style="padding:12px;font-size:12px;color:#64748b">Select a node, edge, or line to edit.</div>';return;}
 if(sN.length&&!sE.length){if(panelColorTarget!=='fill'&&panelColorTarget!=='font'&&panelColorTarget!=='border')panelColorTarget='fill';var multi=sN.length>1,n=sN[0],nfs=nodeFontSize(n),nfc=n.fontColor||'auto',bw=n.borderWidth||1.5,bc=n.borderColor||'',bd=n.borderDash||'solid',pr='';if(!multi){var pKeys=Object.keys(n.props||{});pKeys.forEach(function(k,i){var v=n.props[k];pr+='<div class="prop-kv-row"><button style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:10px;padding:0 1px;line-height:1" onclick="moveProp(\''+n.id+'\','+i+',-1)"'+(i===0?' disabled':'')+'>↑</button><button style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:10px;padding:0 1px;line-height:1" onclick="moveProp(\''+n.id+'\','+i+',1)"'+(i===pKeys.length-1?' disabled':'')+'>↓</button><input placeholder="key" value="'+escH(k)+'" onchange="uPK(\''+n.id+'\',\''+escH(k)+'\',this.value)"/><input placeholder="value" value="'+escH(v)+'" onchange="uPV(\''+n.id+'\',\''+escH(k)+'\',this.value)"/>'+(isURL(v)?'<a href="'+escH(v)+'" target="_blank" rel="noopener" style="color:#2563eb;font-size:13px;text-decoration:none;padding:0 1px;flex-shrink:0" title="Open URL">&#8599;</a>':'')+'<button style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:14px;padding:0 2px" onclick="rP(\''+n.id+'\',\''+escH(k)+'\')">x</button></div>';});}
-pc.innerHTML=(multi?'<div style="padding:8px 12px 4px;font-size:12px;color:#64748b">'+sN.length+' nodes &mdash; edits apply to all</div>':'')
+pc.innerHTML=(!multi&&canExpand(n)?'<div class="prop-row" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'
++'<button class="tb-btn" style="font-size:11px;padding:3px 9px" title="Draw what this is connected to, without losing what is already here" onclick="expandNode(\''+n.id+'\')">Expand \u2198</button>'
++((n.props||{})._expanded?'<button class="tb-btn" style="font-size:11px;padding:3px 9px" title="Remove only what expanding this node brought in" onclick="collapseNode(\''+n.id+'\')">Collapse</button>':'')
++'<span style="font-size:10px;color:#94a3b8">'+escH(substrateDb||'')+'</span></div>':'')
++(multi?'<div style="padding:8px 12px 4px;font-size:12px;color:#64748b">'+sN.length+' nodes &mdash; edits apply to all</div>':'')
 +(!multi?'<div class="prop-row"><div class="prop-label">Label (primary)</div><input class="prop-input" spellcheck="true" value="'+escH(n.label)+'" onchange="uNL(\''+n.id+'\',this.value)"/></div>':'')
 +(!multi?(function(){var el=n.extraLabels||[];var rows=el.map(function(lbl,i){return'<div class="prop-kv-row"><span style="font-size:11px;color:#64748b;padding:0 2px">:</span><input value="'+escH(lbl)+'" style="flex:1;font-size:11px;padding:2px 4px;border:1px solid #e2e8f0;border-radius:4px;min-width:0" onchange="uNEL(\''+n.id+'\','+i+',this.value)"/><button style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:14px;padding:0 2px" onclick="rNEL(\''+n.id+'\','+i+')">x</button></div>';}).join('');return'<div class="section-hd">Extra labels <span style="font-size:10px;color:#94a3b8">(Neo4j multi-label)</span></div>'+rows+'<button class="add-prop-btn" onclick="aNEL(\''+n.id+'\')">+ Add label</button>';})():'')
 +(!multi?'<div class="section-hd">Properties</div>'+pr+'<button class="add-prop-btn" onclick="aP(\''+n.id+'\')">+ Add property</button>':'')
@@ -9126,6 +9235,11 @@ Array.prototype.forEach.call(clone.querySelectorAll('g[id^="edge-"], g[id^="node
 // live tooltip uses, emitted as <title>.
 // (no 'rent' — a <title> child inside a <text> element renders as label text)
 nodes.forEach(function(n){['band','shadow','pressure','pin'].forEach(function(k){var el=clone.querySelector('#rba-'+k+'-'+n.id);if(!el)return;var lines=rbaTipLines(n,k);if(!lines.length)return;var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=lines.join('\n');el.insertBefore(t,el.firstChild);});});
+// The graph's name, top-left, in viewport coordinates (appended last so nothing
+// draws over it). Every export path — SVG, PNG, Copy, Print, both wiki sends —
+// goes through this clone, so a drawing never leaves without saying what it is.
+var rawName=(document.getElementById('model-name').value||'').trim();
+if(rawName){var tt=document.createElementNS('http://www.w3.org/2000/svg','text');tt.setAttribute('x','16');tt.setAttribute('y','26');tt.setAttribute('font-family','system-ui,sans-serif');tt.setAttribute('font-size','15');tt.setAttribute('font-weight','600');tt.setAttribute('fill','#1e293b');tt.setAttribute('pointer-events','none');tt.textContent=rawName;clone.appendChild(tt);}
 return clone;}
 function exportSVG(){var clone=buildExportSVG();var str=new XMLSerializer().serializeToString(clone);download(dlName('svg'),'image/svg+xml',str);toast('Downloaded '+dlName('svg'));}
 // Enrich every text element as an internal wiki link (Ward's "Enrich Any SVG" pattern).
@@ -9190,7 +9304,11 @@ function download(fname,mime,content){var blob=new Blob([content],{type:mime});v
 var toastT;
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},2400);}
 function loadFromURL(){var h=location.hash;if(h.indexOf('#graph=')<0)return;try{var raw=h.split('#graph=')[1];var st=JSON.parse(decodeURIComponent(escape(atob(raw))));nodes=st.nodes||[];edges=st.edges||[];if(st.modelName)document.getElementById('model-name').value=st.modelName;if(st.canvasBg)setBgColor(st.canvasBg);if(st.graphAttrs)graphAttrs=st.graphAttrs;if(st.cldLoopNames)cldLoopNames=st.cldLoopNames;var _mn2=document.getElementById('model-note');_mn2.value=st.modelNote||'';renderModelNote();edges.forEach(function(e){e.polarity=e.polarity||'none';e.delay=!!e.delay;e.dash=e.dash||'solid';if(!e.note)e.note='';if(e.color)getMarkerId(e.color);if(e.opmMarker&&e.color)getOPMMarkerId(e.opmMarker,e.color);});nodes.forEach(function(n){if(!n.fontSize)n.fontSize=DEF_NFS;if(!n.fontColor)n.fontColor='auto';if(!n.borderColor)n.borderColor='';if(!n.borderWidth)n.borderWidth=1.5;if(!n.borderDash)n.borderDash='solid';if(!n.note)n.note='';if(!n.extraLabels)n.extraLabels=[];autoSize(n);});var ids=nodes.map(function(n){return+String(n.id).replace(/\D/g,'')||0;}).concat(edges.map(function(e){return+String(e.id).replace(/\D/g,'')||0;}));nextId=(ids.length?Math.max.apply(null,ids):0)+1;renderAll();zoomFit();syncCC();toast('Loaded: '+nodes.length+' nodes, '+edges.length+' edges');}catch(err){console.warn('URL load failed',err);setTimeout(function(){toast('\u26a0\ufe0f URL load failed \u2014 link may be truncated. Use JSON export for large diagrams.');},400);}}
-function loadFromQueryParam(){var params=new URLSearchParams(window.location.search);var url=params.get('url');if(url&&/\/projection\/subgraph\//.test(url)){substrateSubgraph=decodeURIComponent(url.split('/projection/subgraph/')[1].split('?')[0]);}if(!url)return;fetch(url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(text){loadGraphJSON(text);zoomFit();}).catch(function(err){console.warn('?url= load failed',err);setTimeout(function(){toast('\u26a0\ufe0f Could not load model \u2014 check URL and CORS headers');},400);});}
+function loadFromQueryParam(){var params=new URLSearchParams(window.location.search);var url=params.get('url');if(url&&/\/projection\/subgraph\//.test(url)){var _tail=url.split('/projection/subgraph/')[1];substrateSubgraph=decodeURIComponent(_tail.split('?')[0]);var _qi=_tail.indexOf('?');substrateDb=_qi<0?null:(new URLSearchParams(_tail.slice(_qi+1)).get('db')||null);}
+  // Any projection names its database, not just a subgraph — a neighbourhood
+  // arrives as /projection/neighbours/<name>?db=whatcom, and expanding a node
+  // in it has to know which database to ask.
+  else if(url&&/\/projection\//.test(url)){var _q2=url.indexOf('?');if(_q2>=0)substrateDb=new URLSearchParams(url.slice(_q2+1)).get('db')||null;}if(!url)return;fetch(url.charAt(0)==='/'?SUBSTRATE_BASE+url:url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(text){loadGraphJSON(text);zoomFit();}).catch(function(err){console.warn('?url= load failed',err);setTimeout(function(){toast('\u26a0\ufe0f Could not load model \u2014 check URL and CORS headers');},400);});}
 function sendToWikiItem(){
   if(!window.opener){toast('Not running as wiki popup — use → Wiki for ghost page');return;}
   // Refuse to overwrite a good diagram with an icon-less rendering of itself.
@@ -9225,6 +9343,121 @@ function sendToWikiItem(){
   window.opener.postMessage({toolType:'rcn-graph',action:'saveGraph',graphJSON:buildState(),svgString:svgString},'*');
   window.opener.focus();
   toast('Saved to wiki item');
+}
+
+// ── EXPAND AND COLLAPSE IN THE CANVAS ───────────────────────────────────
+// The other half of drill-down. /projection/neighbours draws the neighbourhood
+// of one row, but it REPLACES the canvas: you could see a thing's connections
+// and then, to follow one of them, you threw the picture away and drew another.
+// Perspectives grows the graph in place instead, and that is the difference
+// between looking things up and following a thread.
+//
+// A node is expandable when it carries a schemaLabel — the substrate's merge
+// key, which is also what the projection returns — and we know which database
+// it came from.
+//
+// MERGE, NEVER APPEND. A concept already on the canvas is the same concept,
+// so expanding onto it draws the new EDGE and reuses the existing node. That
+// is what lets two expansions meet in the middle and show you a shared
+// funder, which is the whole reason to do this in place.
+function schemaOf(n){ return n && (n.schemaLabel || (n.props||{}).schemaLabel) || ''; }
+function canExpand(n){ return !!(schemaOf(n) && substrateDb); }
+
+function expandNode(id){
+  var n=nodeById(id); if(!n) return;
+  var key=schemaOf(n); if(!key||!substrateDb){toast('No substrate behind this node');return;}
+  var url=SUBSTRATE_BASE+'/projection/neighbours/'+encodeURIComponent(key)
+         +'?db='+encodeURIComponent(substrateDb)+'&depth=1';
+  toast('Expanding '+n.label+'…');
+  fetch(url).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+  .then(function(g){
+    if(g.error) throw new Error(g.error);
+    snap();
+    var bySchema={}; nodes.forEach(function(x){var k=schemaOf(x); if(k)bySchema[k]=x;});
+    // Where the new ones go: a ring around the node being expanded, rotated so
+    // it opens AWAY from whatever this node is already joined to, and widened
+    // until each new node has room. The substrate stores no coordinates, so
+    // placement is always the canvas's business.
+    var incoming=(g.nodes||[]).filter(function(x){ return schemaOf(x)!==key && !bySchema[schemaOf(x)]; });
+    var joined=edges.filter(function(e){return e.src===id||e.tgt===id;})
+                    .map(function(e){return nodeById(e.src===id?e.tgt:e.src);}).filter(Boolean);
+    var ox=0, oy=0;
+    joined.forEach(function(m){ ox+=m.x-n.x; oy+=m.y-n.y; });
+    var away = joined.length ? Math.atan2(-oy,-ox) : -Math.PI/2;
+    var rad = Math.max(240, incoming.length*170/(2*Math.PI));
+    var added=[];
+    incoming.forEach(function(x,i){
+      var ang = away + (i - (incoming.length-1)/2) * (2*Math.PI/Math.max(6,incoming.length));
+      var r2 = rad, px, py, tries=0;
+      do {
+        px = Math.round(n.x + r2*Math.cos(ang));
+        py = Math.round(n.y + r2*Math.sin(ang)*0.82);
+        var clash = nodes.some(function(m){ return Math.abs(m.x-px)<130 && Math.abs(m.y-py)<64; });
+        r2 += 70; tries++;
+      } while(clash && tries<8);
+      var nn=makeNode(px,py,x.label||schemaOf(x),x.color||'#eef2ff',x.shape||'rounded');
+      nn.borderColor=x.borderColor||'#64748b';
+      nn.schemaLabel=schemaOf(x);
+      nn.props=Object.assign({},x.props||{},{_addedBy:id});
+      autoSize(nn);
+      bySchema[nn.schemaLabel]=nn;
+      added.push(nn);
+    });
+    bySchema[key]=n;
+    // Edges last, so both endpoints exist however the projection ordered them.
+    var idOfProj={}; (g.nodes||[]).forEach(function(x){ idOfProj[x.id]=schemaOf(x); });
+    var newEdges=0;
+    (g.edges||[]).forEach(function(pe){
+      var sK=idOfProj[pe.src], tK=idOfProj[pe.tgt];
+      var a=bySchema[sK], b=bySchema[tK];
+      if(!a||!b) return;
+      var dup=edges.some(function(e){ return e.src===a.id && e.tgt===b.id && (e.label||'')===(pe.label||''); });
+      if(dup) return;
+      var e=Object.assign({},DEF_EDGE,{id:'e'+nextId++,src:a.id,tgt:b.id,
+            label:pe.label||'',props:{_addedBy:id},color:'#64748b',curved:true});
+      edges.push(e); newEdges++;
+    });
+    // Only claim to be expanded if something actually arrived. Expanding a node
+    // whose neighbours are all on the canvas already changes nothing, and
+    // offering Collapse for it would promise an undo of a thing that never
+    // happened.
+    if(added.length||newEdges) n.props=Object.assign({},n.props||{},{_expanded:'true'});
+    renderAll(); buildPanel();
+    toast(added.length?('+'+added.length+' nodes, +'+newEdges+' links'):'Nothing new — already on the canvas');
+  }).catch(function(err){ toast('\u26a0\ufe0f Expand failed: '+err.message); });
+}
+
+// Collapse removes what THIS expansion introduced, and what those nodes went on
+// to introduce — never anything that was on the canvas before, and never a node
+// you have since expanded yourself into a branch of its own. Anything already
+// present when the expansion happened was not marked, so it simply stays.
+function collapseNode(id){
+  var n=nodeById(id); if(!n) return;
+  var doomed={}, wave=[id];
+  while(wave.length){
+    var parent=wave.pop();
+    nodes.forEach(function(x){
+      if((x.props||{})._addedBy===parent && !doomed[x.id]){ doomed[x.id]=true; wave.push(x.id); }
+    });
+  }
+  var ids=Object.keys(doomed);
+  if(!ids.length){ toast('Nothing was added from this node'); return; }
+  snap();
+  // An expansion can also draw an edge between two nodes that both SURVIVE the
+  // collapse — a link back into material already on the canvas. Removing only
+  // by endpoint would leave those behind, so collapse would not be the inverse
+  // of expand and the picture would drift with every open and close. Edges
+  // carry the same _addedBy mark, so drop those too.
+  var fromHere={}; fromHere[id]=true; Object.keys(doomed).forEach(function(k){fromHere[k]=true;});
+  nodes=nodes.filter(function(x){ return !doomed[x.id]; });
+  edges=edges.filter(function(e){
+    if(doomed[e.src]||doomed[e.tgt]) return false;
+    return !fromHere[(e.props||{})._addedBy];
+  });
+  selected={nodes:[id],edges:[],lines:[],triples:[]};
+  if(n.props) delete n.props._expanded;
+  renderAll(); buildPanel();
+  toast('\u2212'+ids.length+' nodes');
 }
 
 // Opener handshake — signal ready, listen for loadGraph

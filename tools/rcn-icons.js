@@ -178,9 +178,11 @@ var RCN_ICONS = [
        +'<path d="M3.6 6.4v5.2c0 1.7 3.8 3 8.4 3s8.4-1.3 8.4-3V6.4"/>'
        +'<path d="M3.6 11.6v5.2c0 1.7 3.8 3 8.4 3s8.4-1.3 8.4-3v-5.2"/>' },
 
+  // Open-end spanner. The jaw is a wide C with a square notch cut out of it —
+  // the previous drawing closed the jaw to a small arc and read as a syringe
+  // at 13px. Silhouette test: head at top-right, straight handle to bottom-left.
   { key:'rcn_work', label:'Work', cat:'Resource',
-    svg:'<path d="M14.8 3.4a4.6 4.6 0 0 0 5.8 6l-8.4 8.4a2.8 2.8 0 0 1-4-4l8.4-8.4z"/>'
-       +'<path d="M6.6 17.4 4 20"/>' },
+    svg:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9L6.7 20.3a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8z"/>' },
 
   { key:'rcn_energy', label:'Energy', cat:'Resource',
     svg:'<path d="M13.6 2.4 5 13.6h6L10.4 21.6 19 10.4h-6z" fill="currentColor" stroke="none"/>' },
@@ -320,7 +322,17 @@ var RCN_ICONS = [
   { key:'rcn_possibility', label:'Possibility', cat:'System',
     svg:'<path d="M9 18.4a6.6 6.6 0 1 1 6 0"/>'
        +'<path d="M9.4 18.4h5.2v2.2H9.4z"/>'
-       +'<path d="M10.4 21.6h3.2"/>' }
+       +'<path d="M10.4 21.6h3.2"/>' },
+
+  // Software that runs: a gear. A machine that does something on its own is
+  // what people already read a cog as; the first draft was a terminal prompt
+  // (>_), which only programmers parse. The first icon for the toolset itself
+  // rather than the neighbourhood — needed the moment a drawing shows the tools
+  // as parts (loaders, api.py, the table, a plugin). Distinct from Work (labour,
+  // the wrench) and Action (a thing to do). Eight teeth, generated, not traced.
+  { key:'rcn_program', label:'Program', cat:'System',
+    svg:'<path d="M19.6 12.0 L19.2 14.5 L21.4 15.9 L19.7 18.7 L17.4 17.4 L17.4 17.4 L15.3 18.8 L15.9 21.4 L12.6 22.2 L12.0 19.6 L12.0 19.6 L9.5 19.2 L8.1 21.4 L5.3 19.7 L6.6 17.4 L6.6 17.4 L5.2 15.3 L2.6 15.9 L1.8 12.6 L4.4 12.0 L4.4 12.0 L4.8 9.5 L2.6 8.1 L4.3 5.3 L6.6 6.6 L6.6 6.6 L8.7 5.2 L8.1 2.6 L11.4 1.8 L12.0 4.4 L12.0 4.4 L14.5 4.8 L15.9 2.6 L18.7 4.3 L17.4 6.6 L17.4 6.6 L18.8 8.7 L21.4 8.1 L22.2 11.4 L19.6 12.0z"/>'
+       +'<circle cx="12" cy="12" r="3.2"/>' }
 ];
 
 /* Convenience: look up one icon by key. Returns null if absent. */
