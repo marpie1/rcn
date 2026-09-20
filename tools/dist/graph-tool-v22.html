@@ -809,6 +809,19 @@ exhibits Variable B, as well as Process C", with the converse printed as the
 possessive "Variable B of Variable A"). Docs updated in the same pass: manual
 §9f, deck slide 7, and the new FedWiki page docs/opm-relationships.md.
 
+── EDGE HOVER SAYS THE SENTENCE (Sep 21 2026) ──────────────────────
+
+Hovering an edge showed a popup only when the edge carried a note, OPL or
+props — the same rule as nodes. Marc hovered a "funded by" spoke in a
+32-spoke neighbourhood and got nothing, and asked why edges differ from
+nodes. They did not; the neighbourhood's nodes carried props and its edges
+did not. But an edge with a label already has something to say: the
+sentence it draws. showObjTooltip now falls back to "A — label → B" for any
+labelled edge with nothing else, labels flattened to one line. The label's
+own transparent hit rect (lhr, the drag handle) is what makes hovering the
+word reach the edge group, so no pointer-events change was needed. Nodes are
+left alone: a node with nothing to say still shows nothing.
+
 ── DECISIONS LOG MAINTENANCE ────────────────────────────────────────
 
 This block lives at the top of the HTML file as an HTML comment (invisible to browser).
@@ -2132,7 +2145,10 @@ var globalLabelWrap=false;
 function isURL(s){return typeof s==='string'&&/^https?:\/\//i.test(s.trim());}
 function openURL(s){window.open(s.trim(),'_blank','noopener');}
 var _ttHideTimer=null;
-function showObjTooltip(n,e,ev){if(!noteTooltipsEnabled){hideTooltip();return;}if(!_ttEl){_ttEl=document.getElementById('prop-tooltip');_ttEl.addEventListener('mouseenter',function(){clearTimeout(_ttHideTimer);});_ttEl.addEventListener('mouseleave',function(){_ttHideTimer=setTimeout(function(){if(_ttEl)_ttEl.style.display='none';},80);});}clearTimeout(_ttHideTimer);var lines=[];var obj=n||e;if(obj){var pK=Object.keys(obj.props||{});if(e&&e.opl&&e.opl.trim())lines.push({text:'OPL: '+e.opl.trim()});if(obj.note&&obj.note.trim())lines.push({text:'\uD83D\uDCCC '+obj.note.trim()});pK.forEach(function(k){var v=String(obj.props[k]);lines.push(isURL(v)?{url:v,key:k,disp:isDisplayKey(k)}:{text:k+': '+v,disp:isDisplayKey(k)});});}if(!lines.length){_ttEl.style.display='none';return;}_ttEl.innerHTML=lines.map(function(l){if(l.url)return'<a href="'+escH(l.url)+'" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:underline;display:block">&#128279; '+escH(l.key)+': '+escH(l.url)+'</a>';return'<span'+(l.disp?' style="font-style:italic;opacity:.75"':'')+'>'+escH(l.text)+'</span>';}).join('<br>');_ttEl.style.display='block';moveTooltip(ev);}
+function showObjTooltip(n,e,ev){if(!noteTooltipsEnabled){hideTooltip();return;}if(!_ttEl){_ttEl=document.getElementById('prop-tooltip');_ttEl.addEventListener('mouseenter',function(){clearTimeout(_ttHideTimer);});_ttEl.addEventListener('mouseleave',function(){_ttHideTimer=setTimeout(function(){if(_ttEl)_ttEl.style.display='none';},80);});}clearTimeout(_ttHideTimer);var lines=[];var obj=n||e;if(obj){var pK=Object.keys(obj.props||{});if(e&&e.opl&&e.opl.trim())lines.push({text:'OPL: '+e.opl.trim()});if(obj.note&&obj.note.trim())lines.push({text:'\uD83D\uDCCC '+obj.note.trim()});pK.forEach(function(k){var v=String(obj.props[k]);lines.push(isURL(v)?{url:v,key:k,disp:isDisplayKey(k)}:{text:k+': '+v,disp:isDisplayKey(k)});});}
+// An edge with a label and nothing else still has something to say: the sentence it draws. Small italic labels on thin lines are the hardest thing on a canvas to read; the popup says it in full, in reading order.
+if(!lines.length&&e){var _es=nodeById(e.src),_et=nodeById(e.tgt),_el=edgeDisplayText(e);if(_es&&_et&&_el)lines.push({text:String(_es.label||'').replace(/\n/g,' ')+' \u2014 '+_el.replace(/\n/g,' ')+' \u2192 '+String(_et.label||'').replace(/\n/g,' ')});}
+if(!lines.length){_ttEl.style.display='none';return;}_ttEl.innerHTML=lines.map(function(l){if(l.url)return'<a href="'+escH(l.url)+'" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:underline;display:block">&#128279; '+escH(l.key)+': '+escH(l.url)+'</a>';return'<span'+(l.disp?' style="font-style:italic;opacity:.75"':'')+'>'+escH(l.text)+'</span>';}).join('<br>');_ttEl.style.display='block';moveTooltip(ev);}
 function moveTooltip(ev){if(!_ttEl||_ttEl.style.display==='none')return;var x=ev.clientX+14,y=ev.clientY-10;if(x+270>window.innerWidth)x=ev.clientX-280;_ttEl.style.left=x+'px';_ttEl.style.top=y+'px';}
 function hideTooltip(){clearTimeout(_ttHideTimer);_ttHideTimer=setTimeout(function(){if(_ttEl)_ttEl.style.display='none';},150);}
 
