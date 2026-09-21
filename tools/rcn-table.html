@@ -65,6 +65,10 @@ button:hover{background:#eef6f5;border-color:var(--accent)}
   border:1px solid var(--line);border-radius:5px;background:#fff;white-space:nowrap}
 .doclink:hover{background:#eef6f5;border-color:var(--accent);color:var(--accent)}
 .count{color:var(--dim);font-size:12px;white-space:nowrap}
+.seal{font-size:11px;white-space:nowrap;padding:2px 8px;border-radius:10px;border:1px solid var(--line);color:var(--dim);cursor:default}
+.seal.ok{color:#166534;border-color:#86efac;background:#f0fdf4}
+.seal.bad{color:#991b1b;border-color:#fca5a5;background:#fef2f2}
+.seal.wait{color:#92400e;border-color:#fde68a;background:#fffbeb}
 main{flex:1;display:flex;min-height:0}
 #tablewrap{flex:1;min-width:0;overflow:auto;background:var(--panel)}  /* min-width:0 — a flex child's default min-width is its content; 22 nowrap columns pushed the Inspector off the right edge */
 table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px}
@@ -108,6 +112,7 @@ footer{padding:5px 12px;background:var(--panel);border-top:1px solid var(--line)
   <select id="kind"></select>
   <input id="search" placeholder="Filter rows…">
   <span class="count" id="count"></span>
+  <span class="seal" id="seal" hidden></span>
   <span style="flex:1"></span>
   <button id="neighbourhood" disabled>Neighbourhood ↗</button>
   <button id="mapview" disabled title="Show these rows on a map">Map ↗</button>
@@ -115,6 +120,8 @@ footer{padding:5px 12px;background:var(--panel);border-top:1px solid var(--line)
   <button id="toWiki">→ Wiki item</button>
   <button id="csv">CSV</button>
   <button id="openfile" title="Open a CSV or Excel file — one sheet per kind of thing, an optional Links sheet (From, Relation, To)">Open spreadsheet…</button>
+  <input id="sealname" hidden placeholder="Seal as (name)" title="Optional: who vouches for these records. Shown to readers with a ✓ once verified." style="width:130px">
+  <input id="sealseed" hidden type="password" placeholder="seed (64 hex)" title="Optional: your Ed25519 seed, the 64-character one SODOTO keys use. Never stored, never sent." style="width:120px">
   <button id="publish" hidden title="Download the record files for your site's assets item named rcn-table/<name>">Publish records ↓</button>
   <button id="tools" hidden title="Download the three tool files, once per site, for an assets item named rcn-table">Tool files ↓</button>
   <input id="filepick" type="file" accept=".csv,.tsv,.xlsx,.xls,.ods" multiple hidden>
@@ -202,12 +209,96 @@ function fillOf(col){
 // ── loading ───────────────────────────────────────────────────────────
 function getJSON(url){
   return fetch(url).then(function(r){
-    if(!r.ok) throw new Error('HTTP '+r.status+' '+url); return r.json();
+    if(!r.ok) throw new Error('HTTP '+r.status+' '+url); return r.text();
+  }).then(function(text){
+    // A record file from a sealed folder is checked against the seal as it
+    // arrives, byte for byte, before anyone acts on it.
+    if(SRC && url.indexOf(SRC) === 0) sealCheckFile(url.slice(SRC.length), text);
+    return JSON.parse(text);
   });
 }
 function srcIndexOnce(){
   return srcIndex ? Promise.resolve(srcIndex)
-                  : getJSON(SRC + 'index.json').then(function(j){ srcIndex = j; return j; });
+                  : getJSON(SRC + 'index.json').then(function(j){ srcIndex = j; sealStart(j); return j; });
+}
+
+// ── the seal ──────────────────────────────────────────────────────────
+// index.json may carry {seal:{jwt, issuer, name, sealed}} written by
+// substrate/seal.js or by Publish below: an EdDSA JWT over the sha256 of
+// every record file. Verified here the way a SODOTO badge is — the public key
+// is inside the did:key, so no server is asked — and each file is hashed as it
+// is fetched. The chip says who vouches for these records and whether they
+// are still what was vouched for. It is not a lock; it is provenance.
+var sealState = null;   // {name, issuer, sealed, files:{name:hash}, sig:null|true|false, bad:[], note}
+function b64uToBytes(s){ return Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')), function(c){ return c.charCodeAt(0); }); }
+function b58decode(str){
+  var B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz', n = 0n;
+  for(var i = 0; i < str.length; i++){ var d = B58.indexOf(str[i]); if(d < 0) throw new Error('bad base58'); n = n * 58n + BigInt(d); }
+  var h = n.toString(16); if(h.length % 2) h = '0' + h;
+  return new Uint8Array(h.match(/.{2}/g).map(function(b){ return parseInt(b, 16); }));
+}
+function didToPublicKey(did){
+  if(!/^did:key:z/.test(did || '')) throw new Error('not a did:key');
+  var b = b58decode(did.slice(9));
+  if(b[0] !== 0xed || b[1] !== 0x01) throw new Error('not Ed25519');
+  return b.slice(2);
+}
+function sha256Hex(text){
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)).then(function(buf){
+    return 'sha256:' + Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2, '0'); }).join('');
+  });
+}
+function importEd25519(raw, use){
+  return crypto.subtle.importKey(use === 'sign' ? 'pkcs8' : 'raw', raw, {name:'Ed25519'}, false, [use]);
+}
+function sealStart(index){
+  var seal = index && index.seal;
+  if(!seal || !seal.jwt){ sealState = null; renderSeal(); return; }
+  sealState = {name:seal.name || '?', issuer:seal.issuer || '', sealed:seal.sealed || '', files:{}, sig:null, bad:[], note:''};
+  renderSeal();
+  var parts = String(seal.jwt).split('.');
+  Promise.resolve().then(function(){
+    if(parts.length !== 3) throw new Error('malformed seal');
+    var header = JSON.parse(atob(parts[0].replace(/-/g,'+').replace(/_/g,'/')));
+    if(header.alg !== 'EdDSA') throw new Error('not EdDSA');
+    var payload = JSON.parse(new TextDecoder().decode(b64uToBytes(parts[1])));
+    sealState.files = payload.files || {};
+    if(payload.sub !== 'rcn-table/' + index.database) throw new Error('sealed for ' + payload.sub);
+    return importEd25519(didToPublicKey(seal.issuer), 'verify').then(function(key){
+      return crypto.subtle.verify({name:'Ed25519'}, key, b64uToBytes(parts[2]), new TextEncoder().encode(parts[0] + '.' + parts[1]));
+    });
+  }).then(function(ok){
+    sealState.sig = !!ok; if(!ok) sealState.note = 'signature does not verify';
+    renderSeal();
+  }).catch(function(e){
+    // No Ed25519 in this browser is not the same as a bad seal; say which.
+    sealState.sig = /Ed25519|importKey|not supported|Algorithm/i.test(e.message) ? null : false;
+    sealState.note = sealState.sig === null ? 'this browser cannot verify Ed25519' : e.message;
+    renderSeal();
+  });
+}
+function sealCheckFile(name, text){
+  if(!sealState || !sealState.files[name]) return;
+  sha256Hex(text).then(function(h){
+    if(h !== sealState.files[name] && sealState.bad.indexOf(name) < 0){ sealState.bad.push(name); renderSeal(); }
+  });
+}
+function renderSeal(){
+  var el = $('seal');
+  if(!sealState){ el.hidden = true; return; }
+  el.hidden = false; el.className = 'seal';
+  var who = sealState.name, when = sealState.sealed ? sealState.sealed.slice(0, 10) : '';
+  if(sealState.bad.length){
+    el.className += ' bad'; el.textContent = '\u26a0 seal broken: ' + sealState.bad.join(', ') + ' changed since ' + who + ' sealed it';
+  }else if(sealState.sig === false){
+    el.className += ' bad'; el.textContent = '\u26a0 seal invalid \u2014 ' + sealState.note;
+  }else if(sealState.sig === true){
+    el.className += ' ok'; el.textContent = '\u2713 sealed by ' + who + (when ? ' \u00b7 ' + when : '');
+  }else{
+    el.className += ' wait'; el.textContent = (sealState.note || 'verifying seal') + ' \u00b7 ' + who;
+  }
+  el.title = 'Issuer ' + sealState.issuer + (sealState.sealed ? '\nSealed ' + sealState.sealed : '')
+           + '\n' + Object.keys(sealState.files).length + ' record files covered. Verified in this browser from the key inside the DID; no server asked.';
 }
 function api(path){
   if(MEM){
@@ -774,7 +865,7 @@ function openSpreadsheet(files){
     m.sourceName = Array.prototype.map.call(files, function(f){ return f.name; }).join(', ');
     MEM = m; SRC = ''; srcIndex = srcGraph = null;
     state.db = m.database; state.kind = m.kinds[0].kind;
-    $('publish').hidden = false; $('tools').hidden = false;
+    $('publish').hidden = false; $('tools').hidden = false; $('sealname').hidden = false; $('sealseed').hidden = false;
     loadDatabases().then(loadKinds).then(loadTable).then(function(){
       toast('Opened ' + m.sourceName + ': ' + m.kinds.map(function(k){ return k.rows + ' ' + k.kind; }).join(', ')
             + (m.graph.edges.length ? ', ' + m.graph.edges.length + ' links' : '')
@@ -815,14 +906,60 @@ function memRecords(){
   records['geo.json'] = MEM.geo; records['graph.json'] = MEM.graph; records['index.json'] = idx;
   return records;
 }
-$('publish').addEventListener('click', function(){
-  if(!MEM) return;
-  var records = memRecords(), names = Object.keys(records);
+// SEALING IN THE BROWSER. The steward's key never leaves this page: a
+// 64-hex-character Ed25519 seed (the same seed SODOTO keys use), typed into a
+// field that is not kept. Same JWT as substrate/seal.js, same verifier above.
+// Optional — an unsealed folder is still a folder; it just says "unsealed".
+function b64u(bytes){ return btoa(String.fromCharCode.apply(null, Array.from(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function b64uJSON(o){ return b64u(new TextEncoder().encode(JSON.stringify(o))); }
+function sealInBrowser(records, name, seedHex){
+  var seed = new Uint8Array(seedHex.match(/.{2}/g).map(function(b){ return parseInt(b, 16); }));
+  var PKCS8 = [0x30,0x2e,0x02,0x01,0x00,0x30,0x05,0x06,0x03,0x2b,0x65,0x70,0x04,0x22,0x04,0x20];
+  var pkcs8 = new Uint8Array(PKCS8.length + 32); pkcs8.set(PKCS8); pkcs8.set(seed, PKCS8.length);
+  var index = records['index.json'], files = {}, order = Object.keys(records).filter(function(f){ return f !== 'index.json'; });
+  return Promise.all(order.map(function(f){ return sha256Hex(JSON.stringify(records[f], null, 1)).then(function(h){ files[f] = h; }); }))
+  .then(function(){ return crypto.subtle.importKey('pkcs8', pkcs8, {name:'Ed25519'}, true, ['sign']); })
+  .then(function(priv){
+    // did:key from the public half, which the JWK carries as x.
+    return crypto.subtle.exportKey('jwk', priv).then(function(jwk){
+      var pub = b64uToBytes(jwk.x);
+      var B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+      var bytes = new Uint8Array(34); bytes[0] = 0xed; bytes[1] = 0x01; bytes.set(pub, 2);
+      var n = 0n; bytes.forEach(function(b){ n = n * 256n + BigInt(b); });
+      var str = ''; while(n > 0n){ str = B58[Number(n % 58n)] + str; n /= 58n; }
+      var did = 'did:key:z' + str;
+      var now = new Date();
+      var payload = {iss:did, sub:'rcn-table/' + index.database, iat:Math.floor(now / 1000), name:name,
+                     database:index.database, exported:index.exported, counts:index.counts, files:files};
+      var si = b64uJSON({alg:'EdDSA', typ:'JWT'}) + '.' + b64uJSON(payload);
+      return crypto.subtle.sign({name:'Ed25519'}, priv, new TextEncoder().encode(si)).then(function(sig){
+        index.seal = {jwt: si + '.' + b64u(new Uint8Array(sig)), issuer:did, name:name, sealed:now.toISOString()};
+        return did;
+      });
+    });
+  });
+}
+function publishFiles(records){
+  var names = Object.keys(records);
   names.forEach(function(f, i){
     setTimeout(function(){ downloadText(f, JSON.stringify(records[f], null, 1)); }, i * 250);
   });
   toast(names.length + ' files: drop them on an assets item whose text is  rcn-table/' + MEM.database
         + '  — and, once per site, the three tool files on one named  rcn-table');
+}
+$('publish').addEventListener('click', function(){
+  if(!MEM) return;
+  var records = memRecords();
+  var name = $('sealname').value.trim(), seed = $('sealseed').value.trim();
+  $('sealseed').value = '';
+  if(name && /^[0-9a-f]{64}$/i.test(seed)){
+    sealInBrowser(records, name, seed).then(function(did){
+      toast('Sealed as ' + name + ' (' + did.slice(0, 16) + '\u2026)'); publishFiles(records);
+    }).catch(function(e){ toast('Could not seal (' + e.message + '); publishing unsealed'); publishFiles(records); });
+  }else{
+    if(name || seed) toast('To seal, give both a name and a 64-character seed; publishing unsealed');
+    publishFiles(records);
+  }
 });
 
 // The three tool files, for a site that does not have them yet. Fetched from
