@@ -1633,6 +1633,15 @@ function namesOf(v) {
 }
 
 // ── INIT ──
+// A link copied from a copy opened off disk (file:///Users/...) only works on
+// that one computer, so share links always point at the hosted copy instead.
+const HOSTED_URL = "https://ndcgroup.relocalizecreativity.net/assets/NDC/bias-checker.html";
+function shareUrl(sessionId) {
+  const url = location.protocol === "file:" ? new URL(HOSTED_URL) : new URL(location.href);
+  if (sessionId) url.searchParams.set("s", sessionId);
+  return url.toString();
+}
+
 function getSessionFromUrl() {
   const p = new URLSearchParams(window.location.search);
   return p.get("s");
@@ -1760,7 +1769,7 @@ window.join = function() {
 
   // share URL
   document.getElementById("sessionShare").style.display = "block";
-  document.getElementById("shareUrl").textContent = window.location.href;
+  document.getElementById("shareUrl").textContent = shareUrl(sessionId);
 
   rememberSession();
   // restore the title you gave this session last time you were in it
@@ -2393,7 +2402,7 @@ window.toggleHelp = function() {
 };
 
 window.copyUrl = function() {
-  navigator.clipboard.writeText(window.location.href)
+  navigator.clipboard.writeText(shareUrl(sessionId))
     .then(() => showMsg("joinMsg", "Link copied.", "ok"))
     .catch(() => showMsg("joinMsg", "Copy failed — select and copy manually.", "error"));
 };

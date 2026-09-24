@@ -132,7 +132,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
       <p class="doc-sub">Complete reference for all features</p>
       <!-- UPDATE: date when tool changes significantly -->
       <div class="doc-meta">
-        <span class="version-badge">August 2026</span>
+        <span class="version-badge">September 2026</span>
         <a href="bias-checker-intro.html">Introduction &amp; positioning →</a>
       </div>
     </div>
@@ -148,15 +148,15 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
       <p>The interface has two panels:</p>
       <ul>
         <li><strong>Left panel</strong> — your controls: join session, share link, session title, identity/consent, intent selection, bias checklist.</li>
-        <li><strong>Right panel</strong> — shared views: four tabs described below.</li>
+        <li><strong>Right panel</strong> — shared views: five tabs described below.</li>
       </ul>
       <p>
         The header shows the tool name, the current session ID, and a live indicator dot — green
         when connected to Firebase, grey when offline.
       </p>
       <p>
-        The right panel has four tabs at the top: <strong>Participants</strong>, <strong>Models</strong>,
-        <strong>Topics</strong>, and <strong>Export</strong>.
+        The right panel has five tabs at the top: <strong>Participants</strong>, <strong>Models</strong>,
+        <strong>Topics</strong>, <strong>Export</strong>, and <strong>Session</strong>.
         Stat pills in the tab bar always show the current participant count, total active biases,
         and intent–bias conflict count across the session.
       </p>
@@ -208,6 +208,12 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
         The <strong>Intent</strong> and <strong>Biases</strong> sections appear. The
         <strong>Share This Session</strong> box shows the URL — click <strong>Copy Link</strong>
         to copy it to the clipboard and share with others.
+      </p>
+      <p>
+        The link it gives you always points at the copy of the tool hosted on Wiki Café, even if
+        you opened the tool from a file on your own computer. A <code>file:///</code> address only
+        works on the computer it came from, so never share the address from your browser's
+        address bar if it starts with <code>file:</code> — use Copy Link.
       </p>
       <p>
         Your participant card appears in the Participants view immediately after joining.
@@ -609,31 +615,41 @@ code{font-family:ui-monospace,monospace;font-size:12px;background:#f1f5f9;paddin
         participants.
       </p>
 
-      <p>Three session controls appear at the top of the Models tab:</p>
+      <p>The session controls live on the <strong>Session</strong> tab of the right panel:</p>
       <table class="feat-table">
-        <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+        <thead><tr><th>Control</th><th>What it does</th></tr></thead>
         <tbody>
           <tr>
-            <td><strong>Reset interactions</strong></td>
-            <td>Clears all model node and edge click counts for the entire session. Asks for confirmation. Participant intent and bias data is not affected. Use this to start a fresh round of model interaction without starting a new session.</td>
+            <td><strong>Sessions you have joined</strong></td>
+            <td>Lists every session you have joined from this browser, with its title and when you were last in it. <strong>Open ↗</strong> reopens one in a new tab; <strong>×</strong> forgets it locally without deleting anything. See §20.</td>
           </tr>
           <tr>
-            <td><strong>New session</strong></td>
-            <td>Generates a new session ID and reloads the page. All session data — participants, intents, biases, model interactions — is abandoned. Use this to start a completely fresh session. Share the new URL with participants.</td>
+            <td><strong>Start another session ↗</strong></td>
+            <td>Opens a new session, with a new ID, in a new tab. The session you are in keeps running and stays in the list, so nothing is abandoned. Share the new tab's link with its participants.</td>
           </tr>
           <tr>
-            <td><strong>Upload graph JSON</strong></td>
-            <td>Opens a file picker to upload a custom graph model. See §15.</td>
+            <td><strong>Clear all model interactions</strong></td>
+            <td>Wipes every node and edge click on every model, for everyone. Participants, topics and scores are untouched. Use it to start a fresh round of model interaction without starting a new session.</td>
+          </tr>
+          <tr>
+            <td><strong>End session and delete all data</strong></td>
+            <td>Deletes every participant record, all topics and all model interactions, for everyone. You must retype the session ID first. See §20.</td>
           </tr>
         </tbody>
       </table>
-      <div class="warn">Reset interactions and New session are irreversible. There is no undo. Download any SVGs you want to keep before clicking either.</div>
+      <div class="warn">Clear all model interactions and End session are irreversible. There is no undo. Download the exports and any SVGs you want to keep before using either.</div>
+      <p>
+        <strong>Upload graph JSON</strong>, at the top of the Models tab, adds a custom graph model.
+        See §15.
+      </p>
 
       <h3>Leaving a session</h3>
       <p>
-        Closing your browser tab automatically removes your participant entry from Firebase. Other
-        participants see your card disappear within a few seconds. Your name becomes available
-        again for someone else to use if the session continues.
+        Closing your browser tab does not remove what you contributed. Your card is marked
+        <em>left</em> and greys out for everyone else, and your intents, biases and scores stay in
+        the session and in its exports. Reopen the link from the same browser and you resume the
+        same card. To delete your card and everything you contributed, use
+        <strong>Remove my input</strong> at the bottom of the left panel before you go.
       </p>
     </section>
 
