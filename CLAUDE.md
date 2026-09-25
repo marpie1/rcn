@@ -4,6 +4,14 @@ Before producing any document deliverable, ASK Marc once per session which forma
 
 "FedWiki Format" means: page JSON (or an importer bundle for multiple pages) built with ~/rcn/.claude/skills/fedwiki-page/scripts/md-to-fedwiki-page.js — markdown story items, one paragraph per item, no hard line-wrapping, headings as their own items, a whole list as one item, tables as labeled paragraphs unless grid-shaped data needs an html item.
 
+## Attribution on every document
+
+Every document produced here carries its attribution on the artifact itself: **Marc Pierson and the model that drafted it, with the month.** Not in a commit message, not in a covering note — on the thing, because documents get forked and forwarded away from the conversation that made them.
+
+FedWiki: a final story item on **every page**, carrying `attribution: true` so the stamp is machine-findable and idempotent, plus `author` on the journal `create` action. Run `~/rcn/.claude/skills/fedwiki-page/scripts/fedwiki-attribution.js <drop-file>` as the **last** step of the build — a rebuild from markdown regenerates the pages and drops any earlier stamp.
+
+Decks, HTML, PDF and .md: the same line on the title and closing surfaces.
+
 ## Markdown house style — write every .md unwrapped
 
 Default for ALL .md files, including pipeline files: **one line per paragraph, no hard line-wrapping.** Do not break prose at 80 columns. A paragraph is a single long line that reflows to whatever width it lands in — a narrow FedWiki column, a phone, a PDF. Same for each bullet in a list: one line per bullet.
