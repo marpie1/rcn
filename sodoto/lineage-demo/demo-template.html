@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SODOTO Lineage Demo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap">
+<style>
+/* ── the real badge plugin's styles, copied in by make-demo.js ── */
+/*__PLUGIN_STYLES__*/
+
+/* ── demo page: tokens first, so the page follows the viewer's theme.
+   The badge itself stays a light object in both themes, as it is in FedWiki. ── */
+:root {
+  --ground: #ebe7df; --ink: #1d1a15; --muted: #675d51; --paper: #ffffff; --paper-line: #d9d0c2;
+  --panel: #f7f5f0; --panel-line: #ddd4c6; --accent: #2a5c3f;
+  --warn-bg: #fbf3df; --warn-line: #e1c98c; --danger: #8b1a1a; --code-bg: #efe9de;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #171a17; --ink: #e8e4dc; --muted: #a79d90; --paper: #20241f; --paper-line: #343a33;
+    --panel: #1c211d; --panel-line: #33403a; --accent: #7fbf98;
+    --warn-bg: #2a2418; --warn-line: #5e4c26; --danger: #f08c8c; --code-bg: #2b302a;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #171a17; --ink: #e8e4dc; --muted: #a79d90; --paper: #20241f; --paper-line: #343a33;
+  --panel: #1c211d; --panel-line: #33403a; --accent: #7fbf98;
+  --warn-bg: #2a2418; --warn-line: #5e4c26; --danger: #f08c8c; --code-bg: #2b302a;
+}
+body { margin: 0; background: var(--ground); color: var(--ink); font-family: 'Source Serif 4', Georgia, serif; }
+.wrap { max-width: 720px; margin: 0 auto; padding-block: 28px 60px; padding-inline: 16px; }
+.eyebrow { font-family: system-ui, sans-serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: 26px; line-height: 1.2; margin: 6px 0 4px; font-weight: 600; text-wrap: balance; }
+.byline { font-family: system-ui, sans-serif; font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+.lede { font-size: 16px; line-height: 1.55; margin: 0 0 10px; max-width: 65ch; }
+.lede code, .note code { font-size: 12px; background: var(--code-bg); padding: 1px 4px; border-radius: 3px; }
+.real { font-family: system-ui, sans-serif; font-size: 12.5px; line-height: 1.5; color: var(--ink); background: var(--panel); border: 1px solid var(--panel-line); padding: 10px 12px; border-radius: 4px; margin: 14px 0 22px; }
+.page { background: var(--paper); border: 1px solid var(--paper-line); border-radius: 4px; padding: 18px 20px 22px; margin-bottom: 22px; }
+.page-title { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+.page-sub { font-family: system-ui, sans-serif; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.controls { font-family: system-ui, sans-serif; font-size: 13px; background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 4px; padding: 12px 14px; margin: 0 0 22px; line-height: 1.5; }
+.controls b { font-weight: 700; }
+.controls .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.controls button { font-family: system-ui, sans-serif; font-size: 12px; font-weight: 600; padding: 6px 12px; border: 1px solid var(--danger); background: var(--paper); color: var(--danger); border-radius: 4px; cursor: pointer; }
+.controls button.on { background: var(--danger); color: var(--paper); }
+.controls button.reset { border-color: var(--muted); color: var(--ink); }
+.controls button:focus-visible, .lineage-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.note { font-family: system-ui, sans-serif; font-size: 13.5px; line-height: 1.55; color: var(--ink); max-width: 68ch; }
+.note h2 { font-family: 'Source Serif 4', Georgia, serif; font-size: 18px; margin: 26px 0 8px; }
+.note li { margin-bottom: 5px; }
+.foot { font-family: system-ui, sans-serif; font-size: 12px; color: var(--muted); border-top: 1px solid var(--paper-line); margin-top: 30px; padding-top: 12px; }
+@media (max-width: 480px) { .page { padding: 14px 10px 16px; } .lineage { padding: 12px 12px 14px; } }
+
+/* ── new in v0.6: lineage row + chain view (would move into the plugin) ── */
+.lineage-btn { font-family: system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; color: #2a6b5a; background: #fff; border: 1px solid #b9d6c6; border-radius: 3px; padding: 2px 8px; cursor: pointer; margin-left: 4px; }
+.lineage-btn:hover { background: #e8f4ed; }
+.lineage { border-top: 1px solid #e0d8cc; background: #fbfaf7; padding: 12px 20px 16px; font-family: system-ui, sans-serif; }
+.lin-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.lin-title { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #6b6055; }
+.lin-status { font-size: 12px; font-weight: 600; }
+.lin-status.ok { color: #2a5c3f; } .lin-status.bad { color: #8b1a1a; } .lin-status.busy { color: #8a8170; font-weight: 400; }
+.chain { list-style: none; margin: 0; padding: 0; position: relative; }
+.chain li { position: relative; padding: 0 0 12px 26px; }
+.chain li::before { content: ''; position: absolute; left: 7px; top: 14px; bottom: -2px; width: 2px; background: #cfe3d7; }
+.chain li:last-child::before { display: none; }
+.chain li.broken::before, .chain li.after-break::before { background: repeating-linear-gradient(#e9b8b8 0 4px, transparent 4px 8px); }
+.dot { position: absolute; left: 0; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 2px solid #2a5c3f; box-sizing: border-box; }
+.chain li.root .dot { background: #2a5c3f; }
+.chain li.self .dot { background: #fde68a; border-color: #b8860b; }
+.chain li.broken .dot { border-color: #8b1a1a; background: #fbe9e9; }
+.chain li.pending .dot { border-color: #cbbfae; border-style: dashed; }
+.chain li.down .dot { border-color: #3d6e8f; }
+.who { font-family: 'Source Serif 4', Georgia, serif; font-size: 14px; font-weight: 600; color: #1a1208; }
+.who a { color: #2a6b5a; text-decoration: underline; }
+.what { font-size: 11.5px; color: #6b6055; margin-top: 1px; line-height: 1.4; }
+.checks { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.chk { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px; border: 1px solid #b9d6c6; background: #eef7f1; color: #2a5c3f; cursor: help; }
+.chk.no { border-color: #e2a9a9; background: #fbe9e9; color: #8b1a1a; }
+.why { font-size: 11.5px; color: #8b1a1a; margin-top: 4px; line-height: 1.4; }
+.section-label { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #3d6e8f; margin: 4px 0 8px 26px; }
+.stopnote { font-size: 11.5px; color: #8a8170; font-style: italic; margin: -4px 0 8px 26px; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">SODOTO · design demo · credential v0.6</div>
+  <h1>A badge that knows where its skill came from</h1>
+  <div class="byline">Marc Pierson and Claude Opus 5.5 · September 2026</div>
+
+  <p class="lede">Today a SODOTO badge names the mentor who witnessed each gate, and stops there. In v0.6 each mentor also carries a pointer to <em>the credential that qualified them</em>: a hash of that credential's signed record, and where to find it. Follow the pointers and you reach the NDC's founding cohort. Check each hash and signature on the way, and you know the whole chain is genuine.</p>
+  <p class="lede">Click <b>Verify Credential</b> on Sam's badge, then <b>Show lineage</b>.</p>
+
+  <div class="real"><b>What is real here:</b> every key, signature and hash. The page made fresh Ed25519 keys for a fictional NDC and seven fictional people, signed their credentials and a founding statement, and your browser checks all of it when you click. <b>What is simulated:</b> the network. Fetching each person's portfolio page reads from data inside this page, with a short delay so you can watch the walk.</div>
+
+  <div class="page">
+    <div class="page-title">Sam Rivera SODOTO Portfolio</div>
+    <div class="page-sub">sam-rivera.wiki-sodoto.demo.example</div>
+    <div id="badge-sam"></div>
+  </div>
+
+  <div class="controls">
+    <b>Try breaking it.</b> Suppose someone edits Maria Lopez's badge on her own site to back-date her credential. Sam's badge still points at the <em>original</em> by its hash, so the edit shows up as a broken link, and the walk stops there. Nothing above a tampered credential can be trusted through it.
+    <div class="row">
+      <button id="tamper">Tamper with Maria's credential</button>
+      <button id="reset" class="reset">Put it back</button>
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="page-title">Omar Haddad SODOTO Portfolio</div>
+    <div class="page-sub">issued before v0.6, for comparison</div>
+    <div id="badge-omar"></div>
+  </div>
+
+  <div class="note">
+    <h2>What changed from today's badge</h2>
+    <ul>
+      <li>The label adds <b>lineage recorded</b> beside <b>mutually attested</b>.</li>
+      <li>The verify panel gains a <b>Lineage</b> row: how many generations back to the founding cohort, and a <b>Show lineage</b> button.</li>
+      <li>The chain view lists each generation oldest first. Every link gets five checks: <b>hash</b> (the pointer matches the record), <b>signed</b> (the NDC's signature is valid), <b>holder</b> (the credential belongs to the mentor who signed this person's gate), <b>skill</b> (same skill), and <b>in time</b> (the mentor held it before they taught it). Hover a check to see what it means.</li>
+      <li><b>Went on to</b> lists who this person taught. The Teach One student comes from the badge itself. Anyone who later earned the skill with this person as mentor is found through the NDC's ledger, then checked the same way. The ledger can only help find people; it can never add someone whose own credential doesn't point back.</li>
+      <li>Credentials issued before v0.6 have no pointer. The walk stops at them and says so, rather than guessing.</li>
+    </ul>
+    <p>The design, its checks and the open decisions are in <code>docs/sodoto-lineage-spec.md</code>.</p>
+  </div>
+
+  <div class="foot">Marc Pierson and Claude Opus 5.5 · September 2026 · built by <code>sodoto/lineage-demo/make-demo.js</code></div>
+</div>
+
+<script>
+const DATA = /*__DATA__*/null
+const ORIGINAL_SITES = JSON.parse(JSON.stringify(DATA.sites))
+
+// ── crypto: the same in-browser checks the badge plugin already does ──────────
+const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+function b58decode(s) {
+  let n = 0n
+  for (const c of s) n = n * 58n + BigInt(B58.indexOf(c))
+  const h = n.toString(16).padStart(68, '0')
+  return new Uint8Array(h.match(/.{2}/g).map(b => parseInt(b, 16)))
+}
+const fromB64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0))
+const toB64u = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+const payloadOf = jwt => JSON.parse(decodeURIComponent(escape(atob(jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))))
+
+async function verifyJWT(jwt, did) {
+  try {
+    const [h, p, s] = jwt.split('.')
+    const pub = b58decode(did.replace('did:key:z', '')).slice(-32)
+    let key
+    try { key = await crypto.subtle.importKey('raw', pub, { name: 'Ed25519' }, false, ['verify']) }
+    catch (_) { key = await crypto.subtle.importKey('raw', pub, { name: 'NODE-ED25519', namedCurve: 'NODE-ED25519' }, false, ['verify']) }
+    return await crypto.subtle.verify({ name: key.algorithm.name }, key, fromB64u(s), new TextEncoder().encode(h + '.' + p))
+  } catch (_) { return false }
+}
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+// ── the "network": a FedWiki page-JSON fetch, simulated ──────────────────────
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+async function fetchPage(url) {
+  await sleep(320)
+  if (!DATA.sites[url]) throw new Error('not reachable')
+  return JSON.parse(JSON.stringify(DATA.sites[url]))
+}
+const badgeIn = (page, contractId) => (page.story.find(i => i.type === 'sodoto-badge' && i.credential.contractId === contractId) || {}).credential
+
+// ── formatting ────────────────────────────────────────────────────────────────
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const fmt = iso => { const [y, m, d] = iso.split('-'); return `${MON[+m - 1]} ${+d} ${y}` }
+const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const nbfDate = jwt => new Date(payloadOf(jwt).nbf * 1000).toISOString().slice(0, 10)
+
+// ── one link: is this mentor qualified by what the pointer says? ─────────────
+// Five checks, each reported separately, so a failure says exactly what broke.
+const CHECK_HELP = {
+  hash:   'The record found has exactly the hash this badge points to — not one byte changed.',
+  signed: "The issuing NDC's signature on that record is valid.",
+  holder: "That record belongs to the mentor who signed this person's gates.",
+  skill:  'It certifies the same skill.',
+  time:   'It was issued before the mentor witnessed the first gate — they held the skill when they taught it.',
+  cohort: 'The mentor is named in the founding cohort.',
+}
+async function verifyLink(childCred, mentor, ref) {
+  const firstGate = ['SeeOne', 'DoOne', 'TeachOne'].map(g => childCred.gates[g]).find(g => g && g.mentor && g.mentor.did === mentor.did)
+  const taughtOn = firstGate ? firstGate.completedAt : childCred.issuedAt
+  let page
+  try { page = await fetchPage(ref.at) } catch (e) { return { ok: false, unreachable: true, checks: [], why: `Couldn't fetch ${ref.at}. The record's hash is ${ref.digest.slice(0, 19)}…, so any copy of it would do.` } }
+
+  if (ref.type === 'founding') {
+    const st = (page.story.find(i => i.type === 'sodoto-founding') || {}).statement
+    if (!st) return { ok: false, checks: [], why: 'No founding statement on that page.' }
+    const p = payloadOf(st.jwt)
+    const checks = [
+      { k: 'hash',   ok: (await sha256(st.jwt)) === ref.digest },
+      { k: 'signed', ok: await verifyJWT(st.jwt, ref.issuerDid) && p.iss === ref.issuerDid },
+      { k: 'cohort', ok: p.sodotoFounding.cohort.some(c => c.did === mentor.did) },
+      { k: 'skill',  ok: p.sodotoFounding.skillSlug === ref.skillSlug },
+      { k: 'time',   ok: p.sodotoFounding.date <= taughtOn },
+    ]
+    return { ok: checks.every(c => c.ok), checks, founding: { ...p.sodotoFounding, issuer: st.issuer } }
+  }
+
+  const parent = badgeIn(page, ref.contractId)
+  if (!parent) return { ok: false, checks: [], why: `No badge ${ref.contractId} on that page.` }
+  const p = payloadOf(parent.jwt)
+  const s = p.vc.credentialSubject.sodoto
+  const checks = [
+    { k: 'hash',   ok: (await sha256(parent.jwt)) === ref.digest },
+    { k: 'signed', ok: await verifyJWT(parent.jwt, ref.issuerDid) && p.iss === ref.issuerDid },
+    { k: 'holder', ok: p.sub === mentor.did },
+    { k: 'skill',  ok: s.skillSlug === ref.skillSlug && !s.partial },
+    { k: 'time',   ok: nbfDate(parent.jwt) <= taughtOn },
+  ]
+  const why = !checks[0].ok ? "This record isn't the one the badge points to. It has been changed since it was issued."
+            : !checks[1].ok ? 'The signature on this record is not valid.' : ''
+  return { ok: checks.every(c => c.ok), checks, parent, why }
+}
+
+// Mentors of a credential, one per distinct DID, with the pointer each carries.
+function mentorsOf(cred) {
+  const seen = new Map()
+  for (const g of ['SeeOne', 'DoOne', 'TeachOne']) {
+    const m = cred.gates[g] && cred.gates[g].mentor
+    if (m && m.did && !seen.has(m.did)) seen.set(m.did, m)
+  }
+  return [...seen.values()]
+}
+
+// ── the badge (markup follows the plugin's renderBadge) ──────────────────────
+function checkSVG() { return '<svg viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' }
+function sealSVG(verified, did) {
+  const is = DATA.issuers[did] || { initial: '?', color: '#6B6055' }
+  const ov = verified ? '<circle cx="58" cy="58" r="12" fill="#2a5c3f" stroke="white" stroke-width="2"/><text x="58" y="63" text-anchor="middle" fill="white" font-family="sans-serif" font-size="13" font-weight="700">✓</text>' : ''
+  return `<svg class="seal-svg" viewBox="0 0 76 76" fill="none"><circle cx="38" cy="38" r="36" fill="${is.color}" opacity="0.15"/><circle cx="38" cy="38" r="32" fill="${is.color}" opacity="0.25"/><circle cx="38" cy="38" r="28" fill="${is.color}"/><text x="38" y="47" text-anchor="middle" fill="white" font-family="Fraunces,Georgia,serif" font-size="34" font-weight="700" letter-spacing="-1">${is.initial}</text>${ov}</svg>`
+}
+const personLink = p => p && p.portfolio ? `<a class="sodoto-pagelink" href="#" onclick="return false" style="color:#2a6b5a;text-decoration:underline;">${esc(p.name)}</a>` : esc(p && p.name)
+
+function renderBadge(cred, container) {
+  const el = document.createElement('div')
+  el.className = 'sodoto-badge'
+  container.innerHTML = ''; container.appendChild(el)
+  const state = { verify: null, attest: null, lineage: null, lineageOpen: false, walking: false }
+  const v06 = cred.version === '0.6' || cred.lineageRecorded
+
+  function tag(g, role, ok) {
+    const has = role === 'student' ? cred.gates.TeachOne.studentJwt : cred.gates[g][role + 'Jwt']
+    if (!has) return ''
+    return ok === true ? ` &middot; <span style="color:#2a5c3f;font-weight:600;">${role} &#x2713;</span>`
+         : ok === false ? ` &middot; <span style="color:#b91c1c;font-weight:600;">${role} &#x2717;</span>`
+         : ` &middot; <span style="color:#8a8170;">${role} signed</span>`
+  }
+  const a = state => state.attest || { learner: {}, mentor: {}, student: null }
+
+  function lineageRow() {
+    if (!v06) return `<div class="verify-row"><div class="verify-row-label">Lineage</div><div class="verify-row-value" style="color:#888;font-style:italic;">Not recorded — issued before v0.6. The mentor is named, but not the credential that qualified them.</div></div>`
+    const L = state.lineage
+    const summary = !L ? 'Recorded — back to the founding cohort'
+      : L.complete ? `${L.up.length} generation${L.up.length === 1 ? '' : 's'} back to the founding cohort, every link verified`
+      : 'Broken — see below'
+    return `<div class="verify-row"><div class="verify-row-label">Lineage</div><div class="verify-row-value">${summary}<button class="lineage-btn">${state.lineageOpen ? 'Hide lineage' : 'Show lineage'}</button></div></div>`
+  }
+
+  function chips(checks) {
+    return `<div class="checks">${checks.map(c => `<span class="chk${c.ok ? '' : ' no'}" title="${esc(CHECK_HELP[c.k])}">${c.k === 'time' ? 'in time' : c.k} ${c.ok ? '✓' : '✗'}</span>`).join('')}</div>`
+  }
+
+  function lineageView() {
+    if (!state.lineageOpen) return ''
+    const L = state.lineage || { up: [], down: [] }
+    const status = state.walking ? `<span class="lin-status busy">${L.upDone ? 'finding who it went on to…' : `checking generation ${L.up.length}…`}</span>`
+      : L.complete ? '<span class="lin-status ok">✓ complete to the founding cohort</span>'
+      : '<span class="lin-status bad">✗ broken link — walk stopped</span>'
+    // oldest first: reverse the walk, which runs from this credential upward
+    const rows = []
+    const up = [...L.up].reverse()
+    let broken = false
+    for (const step of up) {
+      const cls = step.pending ? 'pending' : !step.ok ? 'broken' : step.founding ? 'root' : ''
+      if (step.pending) { rows.push(`<li class="pending"><span class="dot"></span><div class="who" style="color:#8a8170;">checking…</div></li>`); continue }
+      if (step.founding) {
+        rows.push(`<li class="${cls}"><span class="dot"></span><div class="who">${esc(step.founding.issuer)} — founding cohort</div>
+          <div class="what">${esc(step.founding.skill)} · ${fmt(step.founding.date)} · ${step.founding.cohort.map(c => esc(c.name)).join(', ')}</div>${chips(step.checks)}</li>`)
+        continue
+      }
+      if (!step.ok) broken = true
+      const holder = step.parent ? { name: step.parent.holderName, portfolio: step.parent.holderPortfolio } : { name: step.mentor.name }
+      const tamperedDate = step.parent ? nbfDate(step.parent.jwt) : ''
+      rows.push(`<li class="${cls}"><span class="dot"></span><div class="who">${personLink(holder)}</div>
+        <div class="what">${step.parent ? `earned ${fmt(step.parent.issuedAt)} · mentor ${esc(step.parent.gates.DoOne.mentor.name)} · <span style="font-family:'SF Mono',monospace;font-size:10px;">${esc(step.parent.contractId)}</span>` : 'record not found'}</div>
+        ${chips(step.checks)}${step.why ? `<div class="why">${esc(step.why)}</div>` : ''}</li>`)
+    }
+    if (broken) rows.unshift(`<li class="after-break"><span class="dot" style="border-style:dashed;border-color:#e2a9a9;"></span><div class="who" style="color:#8a8170;">not checked</div><div class="what">Everything above a broken link is unverified through it.</div></li>`)
+    rows.push(`<li class="self"><span class="dot"></span><div class="who">${esc(cred.holderName)}</div><div class="what">this credential · issued ${fmt(cred.issuedAt)} · mentor ${esc(cred.gates.DoOne.mentor.name)}</div></li>`)
+
+    let down = ''
+    if (!state.walking && L.downDone) {
+      const t = cred.gates.TeachOne.student
+      const items = [`<li class="down"><span class="dot"></span><div class="who">${personLink(t)}</div><div class="what">taught at Teach One, ${fmt(cred.gates.TeachOne.completedAt)} · signed by the student on this badge</div></li>`]
+      for (const d of L.down) {
+        if (d.did === t.did) items[0] = `<li class="down"><span class="dot"></span><div class="who">${personLink({ name: d.name, portfolio: d.portfolio })}</div><div class="what">taught at Teach One, ${fmt(cred.gates.TeachOne.completedAt)} · went on to earn it ${fmt(d.issuedAt)}, with ${esc(cred.holderName)} as mentor</div>${chips(d.checks)}</li>`
+        else items.push(`<li class="down"><span class="dot"></span><div class="who">${personLink({ name: d.name, portfolio: d.portfolio })}</div><div class="what">earned it ${fmt(d.issuedAt)}, with ${esc(cred.holderName)} as mentor</div>${chips(d.checks)}</li>`)
+      }
+      down = `<div class="section-label">Went on to</div><ul class="chain">${items.join('')}</ul>
+        <div class="stopnote">Found through the NDC ledger, then checked: each credential listed points back to this one by its hash.</div>`
+    }
+    return `<div class="lineage"><div class="lin-head"><span class="lin-title">Lineage · ${esc(cred.skill)}</span>${status}</div>
+      <ul class="chain">${rows.join('')}</ul>${down}</div>`
+  }
+
+  function render() {
+    const sv = state.verify === 'valid'
+    const r = a(state)
+    const g = cred.gates
+    el.innerHTML = `
+      <div class="badge-band"></div>
+      <div class="badge-body">
+        <div class="badge-main">
+          <div class="badge-label">SODOTO Credential &middot; <span style="color:#2a5c3f;font-weight:600;">mutually attested</span>${v06 ? ' &middot; <span style="color:#2a5c3f;font-weight:600;">lineage recorded</span>' : ''}</div>
+          <div class="badge-skill">${esc(cred.skill)}</div>
+          <div class="badge-gates">${['SeeOne', 'DoOne', 'TeachOne'].map(k => `<div class="gate-pill">${checkSVG()} ${k.replace('One', ' One')}</div>`).join('')}</div>
+          <div class="badge-issuer">${esc(cred.issuer)} &middot; ${cred.issuedAt}</div>
+        </div>
+        <a class="badge-seal" href="#" title="${esc(cred.issuer)}">${sealSVG(sv, cred.issuerDid)}</a>
+      </div>
+      <div class="badge-footer">
+        <button class="verify-btn" data-state="${state.verify || 'idle'}">${state.verify === 'pending' ? '<span class="verify-pulse"></span> Verifying...' : state.verify === 'valid' ? checkSVG() + ' Verified' : state.verify === 'invalid' ? '&#x2717; Invalid' : 'Verify Credential'}</button>
+        <div class="verify-contract">${esc(cred.contractId)}</div>
+      </div>
+      ${state.verify === 'valid' || state.verify === 'invalid' ? `
+      <div class="verify-panel">
+        <div class="verify-row"><div class="verify-row-label">Skill</div><div class="verify-row-value">${esc(cred.skill)}</div></div>
+        <div class="verify-row"><div class="verify-row-label">Issued</div><div class="verify-row-value">${cred.issuedAt}</div></div>
+        <div class="verify-row"><div class="verify-row-label">Contract</div><div class="verify-row-value hash"><span class="hash-text">${esc(cred.contractId)}</span></div></div>
+        <div class="verify-row"><div class="verify-row-label">Issuer DID</div><div class="verify-row-value hash"><span class="hash-text">${esc(cred.issuerDid)}</span></div></div>
+        <div class="verify-row"><div class="verify-row-label">Holder DID</div><div class="verify-row-value hash"><span class="hash-text">${esc(cred.holderDid)}</span></div></div>
+        <div class="verify-row"><div class="verify-row-label">See One</div><div class="verify-row-value">${g.SeeOne.completedAt} &middot; ${personLink(g.SeeOne.mentor)} witnessed${tag('SeeOne', 'learner', r.learner.SeeOne)}${tag('SeeOne', 'mentor', r.mentor.SeeOne)}</div></div>
+        <div class="verify-row"><div class="verify-row-label">Do One</div><div class="verify-row-value">${g.DoOne.completedAt} &middot; ${personLink(g.DoOne.mentor)} witnessed${tag('DoOne', 'learner', r.learner.DoOne)}${tag('DoOne', 'mentor', r.mentor.DoOne)}</div></div>
+        <div class="verify-row"><div class="verify-row-label">Teach One</div><div class="verify-row-value">${g.TeachOne.completedAt} &middot; ${personLink(g.TeachOne.mentor)} verifies ${esc(cred.skill)} taught to ${personLink(g.TeachOne.student)}${tag('TeachOne', 'learner', r.learner.TeachOne)}${tag('TeachOne', 'mentor', r.mentor.TeachOne)}${tag('TeachOne', 'student', r.student)}</div></div>
+        ${lineageRow()}
+      </div>${lineageView()}` : ''}`
+    el.querySelector('.verify-btn').onclick = doVerify
+    el.querySelector('.badge-seal').onclick = e => { e.preventDefault(); if (!state.verify) doVerify() }
+    const lb = el.querySelector('.lineage-btn')
+    if (lb) lb.onclick = () => { state.lineageOpen = !state.lineageOpen; if (state.lineageOpen && !state.walking) walk(); else render() }
+  }
+
+  async function doVerify() {
+    if (state.verify === 'pending') return
+    state.verify = 'pending'; render()
+    const ok = await verifyJWT(cred.jwt, cred.issuerDid)
+    const r = { learner: {}, mentor: {}, student: null }
+    for (const k of ['SeeOne', 'DoOne', 'TeachOne']) {
+      r.learner[k] = await verifyJWT(cred.gates[k].learnerJwt, cred.holderDid)
+      r.mentor[k] = await verifyJWT(cred.gates[k].mentorJwt, cred.gates[k].mentor.did)
+    }
+    r.student = await verifyJWT(cred.gates.TeachOne.studentJwt, cred.gates.TeachOne.student.did)
+    await sleep(250)
+    state.verify = ok ? 'valid' : 'invalid'; state.attest = r; render()
+  }
+
+  // Walk upward one link at a time, redrawing as each is checked; then look down.
+  async function walk() {
+    state.walking = true
+    state.lineage = { up: [], down: [], complete: false, downDone: false }
+    render()
+    let cur = cred, guard = 0
+    const visited = new Set([cred.contractId])
+    while (cur && guard++ < 50) {
+      const mentor = mentorsOf(cur)[0]          // the demo chain has one mentor per credential
+      const ref = mentor && mentor.qualifiedBy
+      if (!ref) break
+      state.lineage.up.push({ pending: true }); render()
+      const res = await verifyLink(cur, mentor, ref)
+      state.lineage.up[state.lineage.up.length - 1] = { ...res, mentor }
+      render()
+      if (!res.ok) break
+      if (res.founding) { state.lineage.complete = true; break }
+      if (visited.has(res.parent.contractId)) break
+      visited.add(res.parent.contractId)
+      cur = res.parent
+    }
+    state.lineage.upDone = true; render()
+    // Downstream: the ledger finds candidates; each must point back to us by hash.
+    const mine = await sha256(cred.jwt)
+    for (const row of DATA.ledger.filter(r => r.qualifiedByDigest === mine)) {
+      try {
+        const child = badgeIn(await fetchPage(row.at), row.contractId)
+        const m = mentorsOf(child).find(x => x.did === cred.holderDid)
+        if (!m || !m.qualifiedBy || m.qualifiedBy.digest !== mine) continue
+        const checks = [
+          { k: 'hash',   ok: true },
+          { k: 'signed', ok: await verifyJWT(child.jwt, child.issuerDid) },
+          { k: 'skill',  ok: payloadOf(child.jwt).vc.credentialSubject.sodoto.skillSlug === payloadOf(cred.jwt).vc.credentialSubject.sodoto.skillSlug },
+        ]
+        if (checks.every(c => c.ok)) state.lineage.down.push({ name: child.holderName, portfolio: child.holderPortfolio, did: child.holderDid, issuedAt: child.issuedAt, checks })
+      } catch (_) { /* unreachable descendant: simply not shown */ }
+    }
+    state.lineage.downDone = true
+    state.walking = false
+    render()
+  }
+
+  render()
+}
+
+// ── boot + the tamper control ────────────────────────────────────────────────
+async function boot() {
+  for (const [id, show] of [['badge-sam', DATA.show[0]], ['badge-omar', DATA.show[1]]])
+    renderBadge(badgeIn(DATA.sites[show.url], show.contractId), document.getElementById(id))
+}
+document.getElementById('tamper').onclick = () => {
+  const t = DATA.taintTarget
+  const cred = badgeIn(DATA.sites[t.url], t.contractId)
+  const [h, p, s] = cred.jwt.split('.')
+  const body = payloadOf(cred.jwt)
+  body.nbf -= 86400 * 200                       // back-date by 200 days
+  cred.jwt = h + '.' + toB64u(JSON.stringify(body)) + '.' + s
+  cred.issuedAt = new Date(body.nbf * 1000).toISOString().slice(0, 10)
+  document.getElementById('tamper').classList.add('on')
+  document.getElementById('tamper').textContent = "Maria's credential is tampered — verify Sam's lineage again"
+  boot()
+}
+document.getElementById('reset').onclick = () => {
+  DATA.sites = JSON.parse(JSON.stringify(ORIGINAL_SITES))
+  document.getElementById('tamper').classList.remove('on')
+  document.getElementById('tamper').textContent = "Tamper with Maria's credential"
+  boot()
+}
+boot()
+</script>
+</body>
+</html>

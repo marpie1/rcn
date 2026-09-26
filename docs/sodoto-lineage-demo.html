@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SODOTO Lineage Demo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap">
+<style>
+/* ── the real badge plugin's styles, copied in by make-demo.js ── */
+
+  .sodoto-badge {
+    font-family: 'Source Serif 4', Georgia, serif;
+    max-width: 480px;
+    margin: 12px auto;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.08);
+    background: #faf8f5;
+    border: 1px solid #e0d8cc;
+  }
+  .badge-band {
+    height: 6px;
+    background: linear-gradient(90deg, #2a5c3f 0%, #4a8c6f 50%, #2a5c3f 100%);
+  }
+  .badge-body {
+    display: flex;
+    align-items: center;
+    padding: 18px 20px 14px;
+    gap: 16px;
+  }
+  .badge-main { flex: 1; min-width: 0; }
+  .badge-label {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #6b6055;
+    margin-bottom: 4px;
+  }
+  .badge-skill {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1208;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .badge-gates {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .gate-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: #2a5c3f;
+    color: white;
+  }
+  .gate-pill-open {
+    background: transparent;
+    border: 1px solid #aaa;
+    color: #888;
+    font-weight: 400;
+  }
+  .gate-pill svg { width: 9px; height: 9px; }
+  .badge-issuer {
+    font-size: 10px;
+    color: #6b6055;
+    font-style: italic;
+  }
+  .badge-seal {
+    flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .badge-seal .seal-svg { width: 72px; height: 72px; }
+  .badge-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 20px 12px;
+    border-top: 1px solid #e0d8cc;
+    gap: 12px;
+  }
+  .verify-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 5px 12px;
+    border-radius: 4px;
+    border: 1.5px solid #2a5c3f;
+    background: transparent;
+    color: #2a5c3f;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .verify-btn:hover { background: #2a5c3f; color: white; }
+  .verify-btn[data-state="valid"]   { border-color: #2a5c3f; background: #2a5c3f; color: white; }
+  .verify-btn[data-state="invalid"] { border-color: #8b1a1a; background: #8b1a1a; color: white; }
+  .verify-btn svg { width: 10px; height: 10px; }
+  .verify-pulse {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #2a5c3f;
+    animation: vpulse 0.8s ease-in-out infinite alternate;
+  }
+  @keyframes vpulse { from { opacity: 1; } to { opacity: 0.2; } }
+  .verify-contract {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: #9b8f82;
+    font-family: 'SF Mono', 'Fira Mono', monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+  }
+  .verify-panel {
+    background: #f5f0e8;
+    border-top: 1px solid #e0d8cc;
+    padding: 14px 20px;
+  }
+  .verify-row {
+    display: flex;
+    gap: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid #e8e0d4;
+    font-size: 10px;
+  }
+  .verify-row:last-child { border-bottom: none; }
+  .verify-row-label {
+    width: 72px;
+    flex-shrink: 0;
+    color: #6b6055;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 9px;
+    padding-top: 1px;
+  }
+  .verify-row-value {
+    color: #1a1208;
+    overflow-wrap: break-word;
+    word-break: normal;
+    line-height: 1.4;
+  }
+  .verify-row-value.hash {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .verify-row-value.hash .hash-text {
+    font-family: 'SF Mono', 'Fira Mono', monospace;
+    font-size: 9px;
+    color: #4a3f35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+  }
+  .verify-row-value.hash .copy-btn {
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0 2px;
+    color: #2a6b5a;
+    font-size: 11px;
+    line-height: 1;
+  }
+  .verify-row-value.hash:hover .copy-btn {
+    opacity: 1;
+  }
+  .verify-row-value.hash .copy-btn.copied {
+    color: #2a5c3f;
+  }
+
+/* ── demo page: tokens first, so the page follows the viewer's theme.
+   The badge itself stays a light object in both themes, as it is in FedWiki. ── */
+:root {
+  --ground: #ebe7df; --ink: #1d1a15; --muted: #675d51; --paper: #ffffff; --paper-line: #d9d0c2;
+  --panel: #f7f5f0; --panel-line: #ddd4c6; --accent: #2a5c3f;
+  --warn-bg: #fbf3df; --warn-line: #e1c98c; --danger: #8b1a1a; --code-bg: #efe9de;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #171a17; --ink: #e8e4dc; --muted: #a79d90; --paper: #20241f; --paper-line: #343a33;
+    --panel: #1c211d; --panel-line: #33403a; --accent: #7fbf98;
+    --warn-bg: #2a2418; --warn-line: #5e4c26; --danger: #f08c8c; --code-bg: #2b302a;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #171a17; --ink: #e8e4dc; --muted: #a79d90; --paper: #20241f; --paper-line: #343a33;
+  --panel: #1c211d; --panel-line: #33403a; --accent: #7fbf98;
+  --warn-bg: #2a2418; --warn-line: #5e4c26; --danger: #f08c8c; --code-bg: #2b302a;
+}
+body { margin: 0; background: var(--ground); color: var(--ink); font-family: 'Source Serif 4', Georgia, serif; }
+.wrap { max-width: 720px; margin: 0 auto; padding-block: 28px 60px; padding-inline: 16px; }
+.eyebrow { font-family: system-ui, sans-serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: 26px; line-height: 1.2; margin: 6px 0 4px; font-weight: 600; text-wrap: balance; }
+.byline { font-family: system-ui, sans-serif; font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+.lede { font-size: 16px; line-height: 1.55; margin: 0 0 10px; max-width: 65ch; }
+.lede code, .note code { font-size: 12px; background: var(--code-bg); padding: 1px 4px; border-radius: 3px; }
+.real { font-family: system-ui, sans-serif; font-size: 12.5px; line-height: 1.5; color: var(--ink); background: var(--panel); border: 1px solid var(--panel-line); padding: 10px 12px; border-radius: 4px; margin: 14px 0 22px; }
+.page { background: var(--paper); border: 1px solid var(--paper-line); border-radius: 4px; padding: 18px 20px 22px; margin-bottom: 22px; }
+.page-title { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+.page-sub { font-family: system-ui, sans-serif; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.controls { font-family: system-ui, sans-serif; font-size: 13px; background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 4px; padding: 12px 14px; margin: 0 0 22px; line-height: 1.5; }
+.controls b { font-weight: 700; }
+.controls .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.controls button { font-family: system-ui, sans-serif; font-size: 12px; font-weight: 600; padding: 6px 12px; border: 1px solid var(--danger); background: var(--paper); color: var(--danger); border-radius: 4px; cursor: pointer; }
+.controls button.on { background: var(--danger); color: var(--paper); }
+.controls button.reset { border-color: var(--muted); color: var(--ink); }
+.controls button:focus-visible, .lineage-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.note { font-family: system-ui, sans-serif; font-size: 13.5px; line-height: 1.55; color: var(--ink); max-width: 68ch; }
+.note h2 { font-family: 'Source Serif 4', Georgia, serif; font-size: 18px; margin: 26px 0 8px; }
+.note li { margin-bottom: 5px; }
+.foot { font-family: system-ui, sans-serif; font-size: 12px; color: var(--muted); border-top: 1px solid var(--paper-line); margin-top: 30px; padding-top: 12px; }
+@media (max-width: 480px) { .page { padding: 14px 10px 16px; } .lineage { padding: 12px 12px 14px; } }
+
+/* ── new in v0.6: lineage row + chain view (would move into the plugin) ── */
+.lineage-btn { font-family: system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; color: #2a6b5a; background: #fff; border: 1px solid #b9d6c6; border-radius: 3px; padding: 2px 8px; cursor: pointer; margin-left: 4px; }
+.lineage-btn:hover { background: #e8f4ed; }
+.lineage { border-top: 1px solid #e0d8cc; background: #fbfaf7; padding: 12px 20px 16px; font-family: system-ui, sans-serif; }
+.lin-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.lin-title { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #6b6055; }
+.lin-status { font-size: 12px; font-weight: 600; }
+.lin-status.ok { color: #2a5c3f; } .lin-status.bad { color: #8b1a1a; } .lin-status.busy { color: #8a8170; font-weight: 400; }
+.chain { list-style: none; margin: 0; padding: 0; position: relative; }
+.chain li { position: relative; padding: 0 0 12px 26px; }
+.chain li::before { content: ''; position: absolute; left: 7px; top: 14px; bottom: -2px; width: 2px; background: #cfe3d7; }
+.chain li:last-child::before { display: none; }
+.chain li.broken::before, .chain li.after-break::before { background: repeating-linear-gradient(#e9b8b8 0 4px, transparent 4px 8px); }
+.dot { position: absolute; left: 0; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 2px solid #2a5c3f; box-sizing: border-box; }
+.chain li.root .dot { background: #2a5c3f; }
+.chain li.self .dot { background: #fde68a; border-color: #b8860b; }
+.chain li.broken .dot { border-color: #8b1a1a; background: #fbe9e9; }
+.chain li.pending .dot { border-color: #cbbfae; border-style: dashed; }
+.chain li.down .dot { border-color: #3d6e8f; }
+.who { font-family: 'Source Serif 4', Georgia, serif; font-size: 14px; font-weight: 600; color: #1a1208; }
+.who a { color: #2a6b5a; text-decoration: underline; }
+.what { font-size: 11.5px; color: #6b6055; margin-top: 1px; line-height: 1.4; }
+.checks { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.chk { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px; border: 1px solid #b9d6c6; background: #eef7f1; color: #2a5c3f; cursor: help; }
+.chk.no { border-color: #e2a9a9; background: #fbe9e9; color: #8b1a1a; }
+.why { font-size: 11.5px; color: #8b1a1a; margin-top: 4px; line-height: 1.4; }
+.section-label { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #3d6e8f; margin: 4px 0 8px 26px; }
+.stopnote { font-size: 11.5px; color: #8a8170; font-style: italic; margin: -4px 0 8px 26px; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">SODOTO · design demo · credential v0.6</div>
+  <h1>A badge that knows where its skill came from</h1>
+  <div class="byline">Marc Pierson and Claude Opus 5.5 · September 2026</div>
+
+  <p class="lede">Today a SODOTO badge names the mentor who witnessed each gate, and stops there. In v0.6 each mentor also carries a pointer to <em>the credential that qualified them</em>: a hash of that credential's signed record, and where to find it. Follow the pointers and you reach the NDC's founding cohort. Check each hash and signature on the way, and you know the whole chain is genuine.</p>
+  <p class="lede">Click <b>Verify Credential</b> on Sam's badge, then <b>Show lineage</b>.</p>
+
+  <div class="real"><b>What is real here:</b> every key, signature and hash. The page made fresh Ed25519 keys for a fictional NDC and seven fictional people, signed their credentials and a founding statement, and your browser checks all of it when you click. <b>What is simulated:</b> the network. Fetching each person's portfolio page reads from data inside this page, with a short delay so you can watch the walk.</div>
+
+  <div class="page">
+    <div class="page-title">Sam Rivera SODOTO Portfolio</div>
+    <div class="page-sub">sam-rivera.wiki-sodoto.demo.example</div>
+    <div id="badge-sam"></div>
+  </div>
+
+  <div class="controls">
+    <b>Try breaking it.</b> Suppose someone edits Maria Lopez's badge on her own site to back-date her credential. Sam's badge still points at the <em>original</em> by its hash, so the edit shows up as a broken link, and the walk stops there. Nothing above a tampered credential can be trusted through it.
+    <div class="row">
+      <button id="tamper">Tamper with Maria's credential</button>
+      <button id="reset" class="reset">Put it back</button>
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="page-title">Omar Haddad SODOTO Portfolio</div>
+    <div class="page-sub">issued before v0.6, for comparison</div>
+    <div id="badge-omar"></div>
+  </div>
+
+  <div class="note">
+    <h2>What changed from today's badge</h2>
+    <ul>
+      <li>The label adds <b>lineage recorded</b> beside <b>mutually attested</b>.</li>
+      <li>The verify panel gains a <b>Lineage</b> row: how many generations back to the founding cohort, and a <b>Show lineage</b> button.</li>
+      <li>The chain view lists each generation oldest first. Every link gets five checks: <b>hash</b> (the pointer matches the record), <b>signed</b> (the NDC's signature is valid), <b>holder</b> (the credential belongs to the mentor who signed this person's gate), <b>skill</b> (same skill), and <b>in time</b> (the mentor held it before they taught it). Hover a check to see what it means.</li>
+      <li><b>Went on to</b> lists who this person taught. The Teach One student comes from the badge itself. Anyone who later earned the skill with this person as mentor is found through the NDC's ledger, then checked the same way. The ledger can only help find people; it can never add someone whose own credential doesn't point back.</li>
+      <li>Credentials issued before v0.6 have no pointer. The walk stops at them and says so, rather than guessing.</li>
+    </ul>
+    <p>The design, its checks and the open decisions are in <code>docs/sodoto-lineage-spec.md</code>.</p>
+  </div>
+
+  <div class="foot">Marc Pierson and Claude Opus 5.5 · September 2026 · built by <code>sodoto/lineage-demo/make-demo.js</code></div>
+</div>
+
+<script>
+const DATA = {"sites":{"https://demo-ndc.example/sodoto-founding-cld.json":{"title":"SODOTO Founding Cohort — Causal Loop Diagramming","story":[{"type":"sodoto-founding","id":"founding-cld","text":"Causal Loop Diagramming","statement":{"statementId":"sodoto-founding-cld-demo-2025","skill":"Causal Loop Diagramming","skillSlug":"cld","date":"2025-03-03","cohort":[{"name":"Rosa Alvarez","did":"did:key:z6Mksy82s8Ej7fRFkBVRG9RxsWa7hBGtEvTYEtVqmkb1QpM7","portfolio":"rosa-alvarez-sodoto-portfolio"}],"issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","issuer":"DEMO NDC · Superior AZ","jwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtuUGdEdk5xNVVNeVA4N3dLNU5zUUZtVWducmtxNjYxaEhFQ2FHRnozOTRUeiIsIm5iZiI6MTc0MTAwMzIwMCwic29kb3RvRm91bmRpbmciOnsic3RhdGVtZW50SWQiOiJzb2RvdG8tZm91bmRpbmctY2xkLWRlbW8tMjAyNSIsInNraWxsIjoiQ2F1c2FsIExvb3AgRGlhZ3JhbW1pbmciLCJza2lsbFNsdWciOiJjbGQiLCJkYXRlIjoiMjAyNS0wMy0wMyIsImNvaG9ydCI6W3sibmFtZSI6IlJvc2EgQWx2YXJleiIsImRpZCI6ImRpZDprZXk6ejZNa3N5ODJzOEVqN2ZSRmtCVlJHOVJ4c1dhN2hCR3RFdlRZRXRWcW1rYjFRcE03IiwicG9ydGZvbGlvIjoicm9zYS1hbHZhcmV6LXNvZG90by1wb3J0Zm9saW8ifV19fQ.OIp1Lm0nedEgDlkemRBkYjUWBhcw4hcMp3E7j5LOVfUnHi4TjejOkO-7rm6th8ks8qMce-REOQ6ucRfd5e8JDw"}}]},"https://maria-lopez.wiki-sodoto.demo.example/maria-lopez-sodoto-portfolio.json":{"title":"Maria Lopez SODOTO Portfolio","story":[{"type":"sodoto-badge","id":"badge-sodoto-cld-demo-2025-0001","text":"Causal Loop Diagramming","credential":{"id":"urn:uuid:sodoto-cld-demo-2025-0001","skill":"Causal Loop Diagramming","issuer":"DEMO NDC · Superior AZ","issuerUrl":"https://demo-ndc.example","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","holderDid":"did:key:z6MkkTiGzxhuNvwpnahuDPyUinjR5xoRsVvVsJY1SCuGbKg1","holderName":"Maria Lopez","holderPortfolio":"maria-lopez-sodoto-portfolio","holderSite":"maria-lopez.wiki-sodoto.demo.example","contractId":"sodoto-cld-demo-2025-0001","contractHash":"sha256:e92638ecdc1f58943b912c2bae739acea392c3bc28f631bb5c4631f81a0fac33","issuedAt":"2025-11-12","gates":{"SeeOne":{"completedAt":"2025-06-10","mentor":{"name":"Rosa Alvarez","did":"did:key:z6Mksy82s8Ej7fRFkBVRG9RxsWa7hBGtEvTYEtVqmkb1QpM7","portfolio":"rosa-alvarez-sodoto-portfolio","qualifiedBy":{"type":"founding","statementId":"sodoto-founding-cld-demo-2025","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","skillSlug":"cld","digest":"sha256:bfa6daeeec18fc054999f5f2d6f3b32e5978d94a0fa5cd9aace094062f64ed5d","at":"https://demo-ndc.example/sodoto-founding-cld.json"}},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrVGlHenhodU52d3BuYWh1RFB5VWlualI1eG9Sc1Z2VnNKWTFTQ3VHYktnMSIsIm5iZiI6MTc0OTU1NjgwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNS0wMDAxIiwiZ2F0ZSI6IlNlZU9uZSIsInNraWxsIjoiY2xkIiwicm9sZSI6ImxlYXJuZXIiLCJkYXRlIjoiMjAyNS0wNi0xMCJ9fQ.eIIWzzOyzI_MrLGgcK7nEFKUUTzGRKyDgzJNN2s60iYvAgFPc5SgNdj8XW6Q0hCk86LfuRITPFYK8rlAleiJBw","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtzeTgyczhFajdmUkZrQlZSRzlSeHNXYTdoQkd0RXZUWUV0VnFta2IxUXBNNyIsIm5iZiI6MTc0OTU1NjgwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNS0wMDAxIiwiZ2F0ZSI6IlNlZU9uZSIsInNraWxsIjoiY2xkIiwicm9sZSI6Im1lbnRvciIsImRhdGUiOiIyMDI1LTA2LTEwIn19.Tu-LL4kcciCDrXxI9bBH5k2IOwThamee5Kud9gpnCA_ZKfDam7PF5pKZ9PvUwRXC8vau-FQXDtvfSwfiePtCDQ"},"DoOne":{"completedAt":"2025-08-21","mentor":{"name":"Rosa Alvarez","did":"did:key:z6Mksy82s8Ej7fRFkBVRG9RxsWa7hBGtEvTYEtVqmkb1QpM7","portfolio":"rosa-alvarez-sodoto-portfolio","qualifiedBy":{"type":"founding","statementId":"sodoto-founding-cld-demo-2025","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","skillSlug":"cld","digest":"sha256:bfa6daeeec18fc054999f5f2d6f3b32e5978d94a0fa5cd9aace094062f64ed5d","at":"https://demo-ndc.example/sodoto-founding-cld.json"}},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrVGlHenhodU52d3BuYWh1RFB5VWlualI1eG9Sc1Z2VnNKWTFTQ3VHYktnMSIsIm5iZiI6MTc1NTc3NzYwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNS0wMDAxIiwiZ2F0ZSI6IkRvT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibGVhcm5lciIsImRhdGUiOiIyMDI1LTA4LTIxIn19.0NZnuo1lYIk7KJFS_FKkXm8jLZJyo3OMvJo9WpSKZN2K3Yzi9mqv3qBaszFW2JHD6NQIP9i3TcZpPZujuVBkBg","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtzeTgyczhFajdmUkZrQlZSRzlSeHNXYTdoQkd0RXZUWUV0VnFta2IxUXBNNyIsIm5iZiI6MTc1NTc3NzYwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNS0wMDAxIiwiZ2F0ZSI6IkRvT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibWVudG9yIiwiZGF0ZSI6IjIwMjUtMDgtMjEifX0.GwNiy0fHr8xoONZywvUKf6dlkB_Bv2ffVMLB2Levs-Wta2yINyMIaUUe2jHieiKwD4j5pIaWKNOxVf5Kq2FsAQ"},"TeachOne":{"completedAt":"2025-11-04","mentor":{"name":"Rosa Alvarez","did":"did:key:z6Mksy82s8Ej7fRFkBVRG9RxsWa7hBGtEvTYEtVqmkb1QpM7","portfolio":"rosa-alvarez-sodoto-portfolio","qualifiedBy":{"type":"founding","statementId":"sodoto-founding-cld-demo-2025","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","skillSlug":"cld","digest":"sha256:bfa6daeeec18fc054999f5f2d6f3b32e5978d94a0fa5cd9aace094062f64ed5d","at":"https://demo-ndc.example/sodoto-founding-cld.json"}},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrVGlHenhodU52d3BuYWh1RFB5VWlualI1eG9Sc1Z2VnNKWTFTQ3VHYktnMSIsIm5iZiI6MTc2MjI1NzYwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNS0wMDAxIiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibGVhcm5lciIsImRhdGUiOiIyMDI1LTExLTA0In19.KQ2NCTjQ5fcoUpNHCrv4LyjweYJR1d2vqYt7vNlINsAN4_kI-Y9cJPmz_wt03j8t6ZlJT4wPdIiCPECwx5W7AQ","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtzeTgyczhFajdmUkZrQlZSRzlSeHNXYTdoQkd0RXZUWUV0VnFta2IxUXBNNyIsIm5iZiI6MTc2MjI1NzYwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNS0wMDAxIiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibWVudG9yIiwiZGF0ZSI6IjIwMjUtMTEtMDQifX0.4U_8hBMq7h71TTphmJJXEVZCLinRUQ4XazOd7FSX9HrHU7COBJ0wYFyPpkgHsor3F5GDwweB8_4fpN13S20mBQ","student":{"name":"Omar Haddad","did":"did:key:z6MknEB4PCVyBBEDuRxJegpdcjkx2pSnrLeTqVkm3Vpg2AXL","portfolio":"omar-haddad-sodoto-portfolio"},"studentJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtuRUI0UENWeUJCRUR1UnhKZWdwZGNqa3gycFNuckxlVHFWa20zVnBnMkFYTCIsIm5iZiI6MTc2MjI1NzYwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNS0wMDAxIiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoic3R1ZGVudCIsImRhdGUiOiIyMDI1LTExLTA0In19.YpzpGN-m74LKRtGsUepD7J6PCJ1EkME9YRU3ifNG0wHSR1sc-nQ7LLFDb7yqZdoy_FDEWZPy1xa9BguuwYzGCg"}},"version":"0.6","learnerAttested":true,"mutuallyAttested":true,"lineageRecorded":true,"jwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vcmNuLndpa2kvY3JlZGVudGlhbHMvc29kb3RvL3YxIl0sInR5cGUiOlsiVmVyaWZpYWJsZUNyZWRlbnRpYWwiLCJTT0RPVE9DcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7Im5hbWUiOiJNYXJpYSBMb3BleiIsInNvZG90byI6eyJza2lsbCI6IkNhdXNhbCBMb29wIERpYWdyYW1taW5nIiwic2tpbGxTbHVnIjoiY2xkIiwidmVyc2lvbiI6IjAuNiIsImxlYXJuZXJBdHRlc3RlZCI6dHJ1ZSwibXV0dWFsbHlBdHRlc3RlZCI6dHJ1ZSwibGluZWFnZVJlY29yZGVkIjp0cnVlLCJnYXRlcyI6eyJTZWVPbmUiOnsiY29tcGxldGVkQXQiOiIyMDI1LTA2LTEwIiwibWVudG9yIjp7Im5hbWUiOiJSb3NhIEFsdmFyZXoiLCJkaWQiOiJkaWQ6a2V5Ono2TWtzeTgyczhFajdmUkZrQlZSRzlSeHNXYTdoQkd0RXZUWUV0VnFta2IxUXBNNyIsInBvcnRmb2xpbyI6InJvc2EtYWx2YXJlei1zb2RvdG8tcG9ydGZvbGlvIiwicXVhbGlmaWVkQnkiOnsidHlwZSI6ImZvdW5kaW5nIiwic3RhdGVtZW50SWQiOiJzb2RvdG8tZm91bmRpbmctY2xkLWRlbW8tMjAyNSIsImlzc3VlckRpZCI6ImRpZDprZXk6ejZNa25QZ0R2TnE1VU15UDg3d0s1TnNRRm1VZ25ya3E2NjFoSEVDYUdGejM5NFR6Iiwic2tpbGxTbHVnIjoiY2xkIiwiZGlnZXN0Ijoic2hhMjU2OmJmYTZkYWVlZWMxOGZjMDU0OTk5ZjVmMmQ2ZjNiMzJlNTk3OGQ5NGEwZmE1Y2Q5YWFjZTA5NDA2MmY2NGVkNWQiLCJhdCI6Imh0dHBzOi8vZGVtby1uZGMuZXhhbXBsZS9zb2RvdG8tZm91bmRpbmctY2xkLmpzb24ifX0sImxlYXJuZXJKd3QiOiJleUpoYkdjaU9pSkZaRVJUUVNJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUprYVdRNmEyVjVPbm8yVFd0clZHbEhlbmhvZFU1MmQzQnVZV2gxUkZCNVZXbHVhbEkxZUc5U2MxWjJWbk5LV1RGVFEzVkhZa3RuTVNJc0ltNWlaaUk2TVRjME9UVTFOamd3TUN3aWMyOWtiM1J2UVhSMFpYTjBJanA3SW1OdmJuUnlZV04wU1dRaU9pSnpiMlJ2ZEc4dFkyeGtMV1JsYlc4dE1qQXlOUzB3TURBeElpd2laMkYwWlNJNklsTmxaVTl1WlNJc0luTnJhV3hzSWpvaVkyeGtJaXdpY205c1pTSTZJbXhsWVhKdVpYSWlMQ0prWVhSbElqb2lNakF5TlMwd05pMHhNQ0o5ZlEuZUlJV3p6T3l6SV9NckxHZ2NLN25FRktVVVR6R1JLeURnekpOTjJzNjBpWXZBZ0ZQYzVTZ05kajhYVzZRMGhDazg2TGZ1UklUUEZZSzhybEFsZWlKQnciLCJtZW50b3JKd3QiOiJleUpoYkdjaU9pSkZaRVJUUVNJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUprYVdRNmEyVjVPbm8yVFd0emVUZ3ljemhGYWpkbVVrWnJRbFpTUnpsU2VITlhZVGRvUWtkMFJYWlVXVVYwVm5GdGEySXhVWEJOTnlJc0ltNWlaaUk2TVRjME9UVTFOamd3TUN3aWMyOWtiM1J2UVhSMFpYTjBJanA3SW1OdmJuUnlZV04wU1dRaU9pSnpiMlJ2ZEc4dFkyeGtMV1JsYlc4dE1qQXlOUzB3TURBeElpd2laMkYwWlNJNklsTmxaVTl1WlNJc0luTnJhV3hzSWpvaVkyeGtJaXdpY205c1pTSTZJbTFsYm5SdmNpSXNJbVJoZEdVaU9pSXlNREkxTFRBMkxURXdJbjE5LlR1LUxMNGtjY2lDRHJYeEk5YkJINWsySU93VGhhbWVlNUt1ZDlncG5DQV9aS2ZEYW03UEY1cEtaOVB2VXdSWEM4dmF1LUZRWER0dmZTd2ZpZVB0Q0RRIn0sIkRvT25lIjp7ImNvbXBsZXRlZEF0IjoiMjAyNS0wOC0yMSIsIm1lbnRvciI6eyJuYW1lIjoiUm9zYSBBbHZhcmV6IiwiZGlkIjoiZGlkOmtleTp6Nk1rc3k4MnM4RWo3ZlJGa0JWUkc5UnhzV2E3aEJHdEV2VFlFdFZxbWtiMVFwTTciLCJwb3J0Zm9saW8iOiJyb3NhLWFsdmFyZXotc29kb3RvLXBvcnRmb2xpbyIsInF1YWxpZmllZEJ5Ijp7InR5cGUiOiJmb3VuZGluZyIsInN0YXRlbWVudElkIjoic29kb3RvLWZvdW5kaW5nLWNsZC1kZW1vLTIwMjUiLCJpc3N1ZXJEaWQiOiJkaWQ6a2V5Ono2TWtuUGdEdk5xNVVNeVA4N3dLNU5zUUZtVWducmtxNjYxaEhFQ2FHRnozOTRUeiIsInNraWxsU2x1ZyI6ImNsZCIsImRpZ2VzdCI6InNoYTI1NjpiZmE2ZGFlZWVjMThmYzA1NDk5OWY1ZjJkNmYzYjMyZTU5NzhkOTRhMGZhNWNkOWFhY2UwOTQwNjJmNjRlZDVkIiwiYXQiOiJodHRwczovL2RlbW8tbmRjLmV4YW1wbGUvc29kb3RvLWZvdW5kaW5nLWNsZC5qc29uIn19LCJsZWFybmVySnd0IjoiZXlKaGJHY2lPaUpGWkVSVFFTSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKa2FXUTZhMlY1T25vMlRXdHJWR2xIZW5ob2RVNTJkM0J1WVdoMVJGQjVWV2x1YWxJMWVHOVNjMVoyVm5OS1dURlRRM1ZIWWt0bk1TSXNJbTVpWmlJNk1UYzFOVGMzTnpZd01Dd2ljMjlrYjNSdlFYUjBaWE4wSWpwN0ltTnZiblJ5WVdOMFNXUWlPaUp6YjJSdmRHOHRZMnhrTFdSbGJXOHRNakF5TlMwd01EQXhJaXdpWjJGMFpTSTZJa1J2VDI1bElpd2ljMnRwYkd3aU9pSmpiR1FpTENKeWIyeGxJam9pYkdWaGNtNWxjaUlzSW1SaGRHVWlPaUl5TURJMUxUQTRMVEl4SW4xOS4wTlpudW8xbFlJazdLSkZTX0ZLa1htOGpMWkp5bzNPTXZKbzlXcFNLWk4ySzNZemk5bXF2M3FCYXN6RlcySkhENk5RSVA5aTNUY1pwUFp1anVWQmtCZyIsIm1lbnRvckp3dCI6ImV5SmhiR2NpT2lKRlpFUlRRU0lzSW5SNWNDSTZJa3BYVkNKOS5leUpwYzNNaU9pSmthV1E2YTJWNU9ubzJUV3R6ZVRneWN6aEZhamRtVWtaclFsWlNSemxTZUhOWFlUZG9Ra2QwUlhaVVdVVjBWbkZ0YTJJeFVYQk5OeUlzSW01aVppSTZNVGMxTlRjM056WXdNQ3dpYzI5a2IzUnZRWFIwWlhOMElqcDdJbU52Ym5SeVlXTjBTV1FpT2lKemIyUnZkRzh0WTJ4a0xXUmxiVzh0TWpBeU5TMHdNREF4SWl3aVoyRjBaU0k2SWtSdlQyNWxJaXdpYzJ0cGJHd2lPaUpqYkdRaUxDSnliMnhsSWpvaWJXVnVkRzl5SWl3aVpHRjBaU0k2SWpJd01qVXRNRGd0TWpFaWZYMC5Hd05peTBmSHI4eG9PTlp5d3ZVS2Y2ZGxrQl9CdjJmZlZNTEIyTGV2cy1XdGEyeUlOeU1JYVVVZTJqSGllaUt3RDRqNXBJYVdLTk94VmY1S3EyRnNBUSJ9LCJUZWFjaE9uZSI6eyJjb21wbGV0ZWRBdCI6IjIwMjUtMTEtMDQiLCJtZW50b3IiOnsibmFtZSI6IlJvc2EgQWx2YXJleiIsImRpZCI6ImRpZDprZXk6ejZNa3N5ODJzOEVqN2ZSRmtCVlJHOVJ4c1dhN2hCR3RFdlRZRXRWcW1rYjFRcE03IiwicG9ydGZvbGlvIjoicm9zYS1hbHZhcmV6LXNvZG90by1wb3J0Zm9saW8iLCJxdWFsaWZpZWRCeSI6eyJ0eXBlIjoiZm91bmRpbmciLCJzdGF0ZW1lbnRJZCI6InNvZG90by1mb3VuZGluZy1jbGQtZGVtby0yMDI1IiwiaXNzdWVyRGlkIjoiZGlkOmtleTp6Nk1rblBnRHZOcTVVTXlQODd3SzVOc1FGbVVnbnJrcTY2MWhIRUNhR0Z6Mzk0VHoiLCJza2lsbFNsdWciOiJjbGQiLCJkaWdlc3QiOiJzaGEyNTY6YmZhNmRhZWVlYzE4ZmMwNTQ5OTlmNWYyZDZmM2IzMmU1OTc4ZDk0YTBmYTVjZDlhYWNlMDk0MDYyZjY0ZWQ1ZCIsImF0IjoiaHR0cHM6Ly9kZW1vLW5kYy5leGFtcGxlL3NvZG90by1mb3VuZGluZy1jbGQuanNvbiJ9fSwibGVhcm5lckp3dCI6ImV5SmhiR2NpT2lKRlpFUlRRU0lzSW5SNWNDSTZJa3BYVkNKOS5leUpwYzNNaU9pSmthV1E2YTJWNU9ubzJUV3RyVkdsSGVuaG9kVTUyZDNCdVlXaDFSRkI1VldsdWFsSTFlRzlTYzFaMlZuTktXVEZUUTNWSFlrdG5NU0lzSW01aVppSTZNVGMyTWpJMU56WXdNQ3dpYzI5a2IzUnZRWFIwWlhOMElqcDdJbU52Ym5SeVlXTjBTV1FpT2lKemIyUnZkRzh0WTJ4a0xXUmxiVzh0TWpBeU5TMHdNREF4SWl3aVoyRjBaU0k2SWxSbFlXTm9UMjVsSWl3aWMydHBiR3dpT2lKamJHUWlMQ0p5YjJ4bElqb2liR1ZoY201bGNpSXNJbVJoZEdVaU9pSXlNREkxTFRFeExUQTBJbjE5LktRMk5DVGpRNWZjb1VwTkhDcnY0THlqd2VZSlIxZDJ2cVl0N3ZObElOc0FONF9rSS1ZOWNKUG16X3d0MDNqOHQ2WmxKVDR3UGRJaUNQRUN3eDVXN0FRIiwibWVudG9ySnd0IjoiZXlKaGJHY2lPaUpGWkVSVFFTSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKa2FXUTZhMlY1T25vMlRXdHplVGd5Y3poRmFqZG1Va1pyUWxaU1J6bFNlSE5YWVRkb1FrZDBSWFpVV1VWMFZuRnRhMkl4VVhCTk55SXNJbTVpWmlJNk1UYzJNakkxTnpZd01Dd2ljMjlrYjNSdlFYUjBaWE4wSWpwN0ltTnZiblJ5WVdOMFNXUWlPaUp6YjJSdmRHOHRZMnhrTFdSbGJXOHRNakF5TlMwd01EQXhJaXdpWjJGMFpTSTZJbFJsWVdOb1QyNWxJaXdpYzJ0cGJHd2lPaUpqYkdRaUxDSnliMnhsSWpvaWJXVnVkRzl5SWl3aVpHRjBaU0k2SWpJd01qVXRNVEV0TURRaWZYMC40VV84aEJNcTdoNzFUVHBobUpKWEVWWkNMaW5SVVE0WGF6T2Q3RlNYOUhySFU3Q09CSjB3WUZ5UHBrZ0hzb3IzRjVHRHd3ZUI4XzRmcE4xM1MyMG1CUSIsInN0dWRlbnQiOnsibmFtZSI6Ik9tYXIgSGFkZGFkIiwiZGlkIjoiZGlkOmtleTp6Nk1rbkVCNFBDVnlCQkVEdVJ4SmVncGRjamt4MnBTbnJMZVRxVmttM1ZwZzJBWEwiLCJwb3J0Zm9saW8iOiJvbWFyLWhhZGRhZC1zb2RvdG8tcG9ydGZvbGlvIn0sInN0dWRlbnRKd3QiOiJleUpoYkdjaU9pSkZaRVJUUVNJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUprYVdRNmEyVjVPbm8yVFd0dVJVSTBVRU5XZVVKQ1JVUjFVbmhLWldkd1pHTnFhM2d5Y0ZOdWNreGxWSEZXYTIwelZuQm5Na0ZZVENJc0ltNWlaaUk2TVRjMk1qSTFOell3TUN3aWMyOWtiM1J2UVhSMFpYTjBJanA3SW1OdmJuUnlZV04wU1dRaU9pSnpiMlJ2ZEc4dFkyeGtMV1JsYlc4dE1qQXlOUzB3TURBeElpd2laMkYwWlNJNklsUmxZV05vVDI1bElpd2ljMnRwYkd3aU9pSmpiR1FpTENKeWIyeGxJam9pYzNSMVpHVnVkQ0lzSW1SaGRHVWlPaUl5TURJMUxURXhMVEEwSW4xOS5ZcHpwR04tbTc0TEtSdEdzVWVwRDdKNlBDSjFFa01FOVlSVTNpZk5HMHdIU1Ixc2MtblE3TExGRGI3eXFaZG95X0ZERVdaUHkxeGE5Qmd1dXdZekdDZyJ9fSwiY29udHJhY3RJZCI6InNvZG90by1jbGQtZGVtby0yMDI1LTAwMDEiLCJjb250cmFjdEhhc2giOiJzaGEyNTY6ZTkyNjM4ZWNkYzFmNTg5NDNiOTEyYzJiYWU3MzlhY2VhMzkyYzNiYzI4ZjYzMWJiNWM0NjMxZjgxYTBmYWMzMyJ9fX0sImlzc3VlciI6eyJuYW1lIjoiREVNTyBOREMgwrcgU3VwZXJpb3IgQVoiLCJ1cmwiOiJodHRwczovL2RlbW8tbmRjLmV4YW1wbGUifSwic3ViIjoiZGlkOmtleTp6Nk1ra1RpR3p4aHVOdndwbmFodURQeVVpbmpSNXhvUnNWdlZzSlkxU0N1R2JLZzEiLCJuYmYiOjE3NjI5NDg4MDAsImlzcyI6ImRpZDprZXk6ejZNa25QZ0R2TnE1VU15UDg3d0s1TnNRRm1VZ25ya3E2NjFoSEVDYUdGejM5NFR6In0.P2IJSUvocy_DwIoQx4sN9q2-J6iSDsYrLwF-eX7wnLGBPeuvWx5pvRL2vIPC-gKd5lUYIHku3ynoqgKL3OHkAw"}}]},"https://dana-okafor.wiki-sodoto.demo.example/dana-okafor-sodoto-portfolio.json":{"title":"Dana Okafor SODOTO Portfolio","story":[{"type":"sodoto-badge","id":"badge-sodoto-cld-demo-2026-0002","text":"Causal Loop Diagramming","credential":{"id":"urn:uuid:sodoto-cld-demo-2026-0002","skill":"Causal Loop Diagramming","issuer":"DEMO NDC · Superior AZ","issuerUrl":"https://demo-ndc.example","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","holderDid":"did:key:z6MkkuyxNfvZ55yQB98vUTUr3STiSuoon8aWL35JwzYyXtfD","holderName":"Dana Okafor","holderPortfolio":"dana-okafor-sodoto-portfolio","holderSite":"dana-okafor.wiki-sodoto.demo.example","contractId":"sodoto-cld-demo-2026-0002","contractHash":"sha256:19ea12e9d2eb3ecdf210f2c51d5e708fb4abdd52b131a6dcae64027e4a3cb735","issuedAt":"2026-02-20","gates":{"SeeOne":{"completedAt":"2025-12-02","mentor":{"name":"Maria Lopez","did":"did:key:z6MkkTiGzxhuNvwpnahuDPyUinjR5xoRsVvVsJY1SCuGbKg1","portfolio":"maria-lopez-sodoto-portfolio","qualifiedBy":{"type":"credential","contractId":"sodoto-cld-demo-2025-0001","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","skillSlug":"cld","digest":"sha256:b9ba68f808200ae5c75fe2706a9bf9ed6551980c66549e631f0571e2ec0d60e3","at":"https://maria-lopez.wiki-sodoto.demo.example/maria-lopez-sodoto-portfolio.json"}},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrdXl4TmZ2WjU1eVFCOTh2VVRVcjNTVGlTdW9vbjhhV0wzNUp3ell5WHRmRCIsIm5iZiI6MTc2NDY3NjgwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAyIiwiZ2F0ZSI6IlNlZU9uZSIsInNraWxsIjoiY2xkIiwicm9sZSI6ImxlYXJuZXIiLCJkYXRlIjoiMjAyNS0xMi0wMiJ9fQ.Q_MEL7MvnJqmR5tcfoalVuUujfywyWqySJE1dzPSvY4kGNKR81286zR4KbzIdmWUOeVAG9diOpUatNvIXav3Cg","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrVGlHenhodU52d3BuYWh1RFB5VWlualI1eG9Sc1Z2VnNKWTFTQ3VHYktnMSIsIm5iZiI6MTc2NDY3NjgwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAyIiwiZ2F0ZSI6IlNlZU9uZSIsInNraWxsIjoiY2xkIiwicm9sZSI6Im1lbnRvciIsImRhdGUiOiIyMDI1LTEyLTAyIn19.JWIUB7GTevTM6cJUD6stGalecXk5b63GQ-wFCHv0-JVAJovM82Rp2Yc-l2SyXaICN-_4JJneM8b96v2M9xoOAw"},"DoOne":{"completedAt":"2026-01-15","mentor":{"name":"Maria Lopez","did":"did:key:z6MkkTiGzxhuNvwpnahuDPyUinjR5xoRsVvVsJY1SCuGbKg1","portfolio":"maria-lopez-sodoto-portfolio","qualifiedBy":{"type":"credential","contractId":"sodoto-cld-demo-2025-0001","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","skillSlug":"cld","digest":"sha256:b9ba68f808200ae5c75fe2706a9bf9ed6551980c66549e631f0571e2ec0d60e3","at":"https://maria-lopez.wiki-sodoto.demo.example/maria-lopez-sodoto-portfolio.json"}},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrdXl4TmZ2WjU1eVFCOTh2VVRVcjNTVGlTdW9vbjhhV0wzNUp3ell5WHRmRCIsIm5iZiI6MTc2ODQ3ODQwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAyIiwiZ2F0ZSI6IkRvT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibGVhcm5lciIsImRhdGUiOiIyMDI2LTAxLTE1In19.QA8-XgGa3N1UdZz2aehpiighNswPJ3F7gb31-gTOElzrAY_oHzqTS8UnM9MZBlahHdBEFvOHHZXHZtXinOdsAQ","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrVGlHenhodU52d3BuYWh1RFB5VWlualI1eG9Sc1Z2VnNKWTFTQ3VHYktnMSIsIm5iZiI6MTc2ODQ3ODQwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAyIiwiZ2F0ZSI6IkRvT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibWVudG9yIiwiZGF0ZSI6IjIwMjYtMDEtMTUifX0.cOcvQAUoIgUTqJRdT2Q1vSaXGfdeNBZEeAn_QtzgFQXUiu6WqeaJpAXCjonc4DhOXLoQU2Crak-IkW0PhPr5Dw"},"TeachOne":{"completedAt":"2026-02-11","mentor":{"name":"Maria Lopez","did":"did:key:z6MkkTiGzxhuNvwpnahuDPyUinjR5xoRsVvVsJY1SCuGbKg1","portfolio":"maria-lopez-sodoto-portfolio","qualifiedBy":{"type":"credential","contractId":"sodoto-cld-demo-2025-0001","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","skillSlug":"cld","digest":"sha256:b9ba68f808200ae5c75fe2706a9bf9ed6551980c66549e631f0571e2ec0d60e3","at":"https://maria-lopez.wiki-sodoto.demo.example/maria-lopez-sodoto-portfolio.json"}},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrdXl4TmZ2WjU1eVFCOTh2VVRVcjNTVGlTdW9vbjhhV0wzNUp3ell5WHRmRCIsIm5iZiI6MTc3MDgxMTIwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAyIiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibGVhcm5lciIsImRhdGUiOiIyMDI2LTAyLTExIn19.R5pSppIkIxubudtr-0xID2pnpQdUaF-7mnWdySrT68SauBhmthifiKRtFeR6Y2Xqru6nNFY-7zrJmxvFM-jyAg","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrVGlHenhodU52d3BuYWh1RFB5VWlualI1eG9Sc1Z2VnNKWTFTQ3VHYktnMSIsIm5iZiI6MTc3MDgxMTIwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAyIiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibWVudG9yIiwiZGF0ZSI6IjIwMjYtMDItMTEifX0.z-D61jcOMgUdqLxGOOJ14d7--8OK7aHcJUzzx7WRfy4HRMsosYAs8UOfaszGkSq2vCAqk95jutJYI9f1DRf4Ag","student":{"name":"Lina Begay","did":"did:key:z6MkryX98cwgnxmwo7GrfrDRQYNcioSF1QiT2BBoojaBANyU","portfolio":"lina-begay-sodoto-portfolio"},"studentJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtyeVg5OGN3Z254bXdvN0dyZnJEUlFZTmNpb1NGMVFpVDJCQm9vamFCQU55VSIsIm5iZiI6MTc3MDgxMTIwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAyIiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoic3R1ZGVudCIsImRhdGUiOiIyMDI2LTAyLTExIn19.vhlNdF5YTT9nE_xCTpMWPgg66Oj7by0X2Du-ANRbA0YgvMX9Pc-DP7RbIaBK5UH5aNdW07Bm_wb0xNX8q90eDQ"}},"version":"0.6","learnerAttested":true,"mutuallyAttested":true,"lineageRecorded":true,"jwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vcmNuLndpa2kvY3JlZGVudGlhbHMvc29kb3RvL3YxIl0sInR5cGUiOlsiVmVyaWZpYWJsZUNyZWRlbnRpYWwiLCJTT0RPVE9DcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7Im5hbWUiOiJEYW5hIE9rYWZvciIsInNvZG90byI6eyJza2lsbCI6IkNhdXNhbCBMb29wIERpYWdyYW1taW5nIiwic2tpbGxTbHVnIjoiY2xkIiwidmVyc2lvbiI6IjAuNiIsImxlYXJuZXJBdHRlc3RlZCI6dHJ1ZSwibXV0dWFsbHlBdHRlc3RlZCI6dHJ1ZSwibGluZWFnZVJlY29yZGVkIjp0cnVlLCJnYXRlcyI6eyJTZWVPbmUiOnsiY29tcGxldGVkQXQiOiIyMDI1LTEyLTAyIiwibWVudG9yIjp7Im5hbWUiOiJNYXJpYSBMb3BleiIsImRpZCI6ImRpZDprZXk6ejZNa2tUaUd6eGh1TnZ3cG5haHVEUHlVaW5qUjV4b1JzVnZWc0pZMVNDdUdiS2cxIiwicG9ydGZvbGlvIjoibWFyaWEtbG9wZXotc29kb3RvLXBvcnRmb2xpbyIsInF1YWxpZmllZEJ5Ijp7InR5cGUiOiJjcmVkZW50aWFsIiwiY29udHJhY3RJZCI6InNvZG90by1jbGQtZGVtby0yMDI1LTAwMDEiLCJpc3N1ZXJEaWQiOiJkaWQ6a2V5Ono2TWtuUGdEdk5xNVVNeVA4N3dLNU5zUUZtVWducmtxNjYxaEhFQ2FHRnozOTRUeiIsInNraWxsU2x1ZyI6ImNsZCIsImRpZ2VzdCI6InNoYTI1NjpiOWJhNjhmODA4MjAwYWU1Yzc1ZmUyNzA2YTliZjllZDY1NTE5ODBjNjY1NDllNjMxZjA1NzFlMmVjMGQ2MGUzIiwiYXQiOiJodHRwczovL21hcmlhLWxvcGV6Lndpa2ktc29kb3RvLmRlbW8uZXhhbXBsZS9tYXJpYS1sb3Blei1zb2RvdG8tcG9ydGZvbGlvLmpzb24ifX0sImxlYXJuZXJKd3QiOiJleUpoYkdjaU9pSkZaRVJUUVNJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUprYVdRNmEyVjVPbm8yVFd0cmRYbDRUbVoyV2pVMWVWRkNPVGgyVlZSVmNqTlRWR2xUZFc5dmJqaGhWMHd6TlVwM2VsbDVXSFJtUkNJc0ltNWlaaUk2TVRjMk5EWTNOamd3TUN3aWMyOWtiM1J2UVhSMFpYTjBJanA3SW1OdmJuUnlZV04wU1dRaU9pSnpiMlJ2ZEc4dFkyeGtMV1JsYlc4dE1qQXlOaTB3TURBeUlpd2laMkYwWlNJNklsTmxaVTl1WlNJc0luTnJhV3hzSWpvaVkyeGtJaXdpY205c1pTSTZJbXhsWVhKdVpYSWlMQ0prWVhSbElqb2lNakF5TlMweE1pMHdNaUo5ZlEuUV9NRUw3TXZuSnFtUjV0Y2ZvYWxWdVV1amZ5d3lXcXlTSkUxZHpQU3ZZNGtHTktSODEyODZ6UjRLYnpJZG1XVU9lVkFHOWRpT3BVYXROdklYYXYzQ2ciLCJtZW50b3JKd3QiOiJleUpoYkdjaU9pSkZaRVJUUVNJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUprYVdRNmEyVjVPbm8yVFd0clZHbEhlbmhvZFU1MmQzQnVZV2gxUkZCNVZXbHVhbEkxZUc5U2MxWjJWbk5LV1RGVFEzVkhZa3RuTVNJc0ltNWlaaUk2TVRjMk5EWTNOamd3TUN3aWMyOWtiM1J2UVhSMFpYTjBJanA3SW1OdmJuUnlZV04wU1dRaU9pSnpiMlJ2ZEc4dFkyeGtMV1JsYlc4dE1qQXlOaTB3TURBeUlpd2laMkYwWlNJNklsTmxaVTl1WlNJc0luTnJhV3hzSWpvaVkyeGtJaXdpY205c1pTSTZJbTFsYm5SdmNpSXNJbVJoZEdVaU9pSXlNREkxTFRFeUxUQXlJbjE5LkpXSVVCN0dUZXZUTTZjSlVENnN0R2FsZWNYazViNjNHUS13RkNIdjAtSlZBSm92TTgyUnAyWWMtbDJTeVhhSUNOLV80SkpuZU04Yjk2djJNOXhvT0F3In0sIkRvT25lIjp7ImNvbXBsZXRlZEF0IjoiMjAyNi0wMS0xNSIsIm1lbnRvciI6eyJuYW1lIjoiTWFyaWEgTG9wZXoiLCJkaWQiOiJkaWQ6a2V5Ono2TWtrVGlHenhodU52d3BuYWh1RFB5VWlualI1eG9Sc1Z2VnNKWTFTQ3VHYktnMSIsInBvcnRmb2xpbyI6Im1hcmlhLWxvcGV6LXNvZG90by1wb3J0Zm9saW8iLCJxdWFsaWZpZWRCeSI6eyJ0eXBlIjoiY3JlZGVudGlhbCIsImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNS0wMDAxIiwiaXNzdWVyRGlkIjoiZGlkOmtleTp6Nk1rblBnRHZOcTVVTXlQODd3SzVOc1FGbVVnbnJrcTY2MWhIRUNhR0Z6Mzk0VHoiLCJza2lsbFNsdWciOiJjbGQiLCJkaWdlc3QiOiJzaGEyNTY6YjliYTY4ZjgwODIwMGFlNWM3NWZlMjcwNmE5YmY5ZWQ2NTUxOTgwYzY2NTQ5ZTYzMWYwNTcxZTJlYzBkNjBlMyIsImF0IjoiaHR0cHM6Ly9tYXJpYS1sb3Blei53aWtpLXNvZG90by5kZW1vLmV4YW1wbGUvbWFyaWEtbG9wZXotc29kb3RvLXBvcnRmb2xpby5qc29uIn19LCJsZWFybmVySnd0IjoiZXlKaGJHY2lPaUpGWkVSVFFTSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKa2FXUTZhMlY1T25vMlRXdHJkWGw0VG1aMldqVTFlVkZDT1RoMlZWUlZjak5UVkdsVGRXOXZiamhoVjB3ek5VcDNlbGw1V0hSbVJDSXNJbTVpWmlJNk1UYzJPRFEzT0RRd01Dd2ljMjlrYjNSdlFYUjBaWE4wSWpwN0ltTnZiblJ5WVdOMFNXUWlPaUp6YjJSdmRHOHRZMnhrTFdSbGJXOHRNakF5Tmkwd01EQXlJaXdpWjJGMFpTSTZJa1J2VDI1bElpd2ljMnRwYkd3aU9pSmpiR1FpTENKeWIyeGxJam9pYkdWaGNtNWxjaUlzSW1SaGRHVWlPaUl5TURJMkxUQXhMVEUxSW4xOS5RQTgtWGdHYTNOMVVkWnoyYWVocGlpZ2hOc3dQSjNGN2diMzEtZ1RPRWx6ckFZX29IenFUUzhVbk05TVpCbGFoSGRCRUZ2T0hIWlhIWnRYaW5PZHNBUSIsIm1lbnRvckp3dCI6ImV5SmhiR2NpT2lKRlpFUlRRU0lzSW5SNWNDSTZJa3BYVkNKOS5leUpwYzNNaU9pSmthV1E2YTJWNU9ubzJUV3RyVkdsSGVuaG9kVTUyZDNCdVlXaDFSRkI1VldsdWFsSTFlRzlTYzFaMlZuTktXVEZUUTNWSFlrdG5NU0lzSW01aVppSTZNVGMyT0RRM09EUXdNQ3dpYzI5a2IzUnZRWFIwWlhOMElqcDdJbU52Ym5SeVlXTjBTV1FpT2lKemIyUnZkRzh0WTJ4a0xXUmxiVzh0TWpBeU5pMHdNREF5SWl3aVoyRjBaU0k2SWtSdlQyNWxJaXdpYzJ0cGJHd2lPaUpqYkdRaUxDSnliMnhsSWpvaWJXVnVkRzl5SWl3aVpHRjBaU0k2SWpJd01qWXRNREV0TVRVaWZYMC5jT2N2UUFVb0lnVVRxSlJkVDJRMXZTYVhHZmRlTkJaRWVBbl9RdHpnRlFYVWl1NldxZWFKcEFYQ2pvbmM0RGhPWExvUVUyQ3Jhay1Ja1cwUGhQcjVEdyJ9LCJUZWFjaE9uZSI6eyJjb21wbGV0ZWRBdCI6IjIwMjYtMDItMTEiLCJtZW50b3IiOnsibmFtZSI6Ik1hcmlhIExvcGV6IiwiZGlkIjoiZGlkOmtleTp6Nk1ra1RpR3p4aHVOdndwbmFodURQeVVpbmpSNXhvUnNWdlZzSlkxU0N1R2JLZzEiLCJwb3J0Zm9saW8iOiJtYXJpYS1sb3Blei1zb2RvdG8tcG9ydGZvbGlvIiwicXVhbGlmaWVkQnkiOnsidHlwZSI6ImNyZWRlbnRpYWwiLCJjb250cmFjdElkIjoic29kb3RvLWNsZC1kZW1vLTIwMjUtMDAwMSIsImlzc3VlckRpZCI6ImRpZDprZXk6ejZNa25QZ0R2TnE1VU15UDg3d0s1TnNRRm1VZ25ya3E2NjFoSEVDYUdGejM5NFR6Iiwic2tpbGxTbHVnIjoiY2xkIiwiZGlnZXN0Ijoic2hhMjU2OmI5YmE2OGY4MDgyMDBhZTVjNzVmZTI3MDZhOWJmOWVkNjU1MTk4MGM2NjU0OWU2MzFmMDU3MWUyZWMwZDYwZTMiLCJhdCI6Imh0dHBzOi8vbWFyaWEtbG9wZXoud2lraS1zb2RvdG8uZGVtby5leGFtcGxlL21hcmlhLWxvcGV6LXNvZG90by1wb3J0Zm9saW8uanNvbiJ9fSwibGVhcm5lckp3dCI6ImV5SmhiR2NpT2lKRlpFUlRRU0lzSW5SNWNDSTZJa3BYVkNKOS5leUpwYzNNaU9pSmthV1E2YTJWNU9ubzJUV3RyZFhsNFRtWjJXalUxZVZGQ09UaDJWVlJWY2pOVFZHbFRkVzl2YmpoaFYwd3pOVXAzZWxsNVdIUm1SQ0lzSW01aVppSTZNVGMzTURneE1USXdNQ3dpYzI5a2IzUnZRWFIwWlhOMElqcDdJbU52Ym5SeVlXTjBTV1FpT2lKemIyUnZkRzh0WTJ4a0xXUmxiVzh0TWpBeU5pMHdNREF5SWl3aVoyRjBaU0k2SWxSbFlXTm9UMjVsSWl3aWMydHBiR3dpT2lKamJHUWlMQ0p5YjJ4bElqb2liR1ZoY201bGNpSXNJbVJoZEdVaU9pSXlNREkyTFRBeUxURXhJbjE5LlI1cFNwcElrSXh1YnVkdHItMHhJRDJwbnBRZFVhRi03bW5XZHlTclQ2OFNhdUJobXRoaWZpS1J0RmVSNlkyWHFydTZuTkZZLTd6ckpteHZGTS1qeUFnIiwibWVudG9ySnd0IjoiZXlKaGJHY2lPaUpGWkVSVFFTSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKa2FXUTZhMlY1T25vMlRXdHJWR2xIZW5ob2RVNTJkM0J1WVdoMVJGQjVWV2x1YWxJMWVHOVNjMVoyVm5OS1dURlRRM1ZIWWt0bk1TSXNJbTVpWmlJNk1UYzNNRGd4TVRJd01Dd2ljMjlrYjNSdlFYUjBaWE4wSWpwN0ltTnZiblJ5WVdOMFNXUWlPaUp6YjJSdmRHOHRZMnhrTFdSbGJXOHRNakF5Tmkwd01EQXlJaXdpWjJGMFpTSTZJbFJsWVdOb1QyNWxJaXdpYzJ0cGJHd2lPaUpqYkdRaUxDSnliMnhsSWpvaWJXVnVkRzl5SWl3aVpHRjBaU0k2SWpJd01qWXRNREl0TVRFaWZYMC56LUQ2MWpjT01nVWRxTHhHT09KMTRkNy0tOE9LN2FIY0pVenp4N1dSZnk0SFJNc29zWUFzOFVPZmFzekdrU3EydkNBcWs5NWp1dEpZSTlmMURSZjRBZyIsInN0dWRlbnQiOnsibmFtZSI6IkxpbmEgQmVnYXkiLCJkaWQiOiJkaWQ6a2V5Ono2TWtyeVg5OGN3Z254bXdvN0dyZnJEUlFZTmNpb1NGMVFpVDJCQm9vamFCQU55VSIsInBvcnRmb2xpbyI6ImxpbmEtYmVnYXktc29kb3RvLXBvcnRmb2xpbyJ9LCJzdHVkZW50Snd0IjoiZXlKaGJHY2lPaUpGWkVSVFFTSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKa2FXUTZhMlY1T25vMlRXdHllVmc1T0dOM1oyNTRiWGR2TjBkeVpuSkVVbEZaVG1OcGIxTkdNVkZwVkRKQ1FtOXZhbUZDUVU1NVZTSXNJbTVpWmlJNk1UYzNNRGd4TVRJd01Dd2ljMjlrYjNSdlFYUjBaWE4wSWpwN0ltTnZiblJ5WVdOMFNXUWlPaUp6YjJSdmRHOHRZMnhrTFdSbGJXOHRNakF5Tmkwd01EQXlJaXdpWjJGMFpTSTZJbFJsWVdOb1QyNWxJaXdpYzJ0cGJHd2lPaUpqYkdRaUxDSnliMnhsSWpvaWMzUjFaR1Z1ZENJc0ltUmhkR1VpT2lJeU1ESTJMVEF5TFRFeEluMTkudmhsTmRGNVlUVDluRV94Q1RwTVdQZ2c2Nk9qN2J5MFgyRHUtQU5SYkEwWWd2TVg5UGMtRFA3UmJJYUJLNVVINWFOZFcwN0JtX3diMHhOWDhxOTBlRFEifX0sImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAyIiwiY29udHJhY3RIYXNoIjoic2hhMjU2OjE5ZWExMmU5ZDJlYjNlY2RmMjEwZjJjNTFkNWU3MDhmYjRhYmRkNTJiMTMxYTZkY2FlNjQwMjdlNGEzY2I3MzUifX19LCJpc3N1ZXIiOnsibmFtZSI6IkRFTU8gTkRDIMK3IFN1cGVyaW9yIEFaIiwidXJsIjoiaHR0cHM6Ly9kZW1vLW5kYy5leGFtcGxlIn0sInN1YiI6ImRpZDprZXk6ejZNa2t1eXhOZnZaNTV5UUI5OHZVVFVyM1NUaVN1b29uOGFXTDM1Snd6WXlYdGZEIiwibmJmIjoxNzcxNTg4ODAwLCJpc3MiOiJkaWQ6a2V5Ono2TWtuUGdEdk5xNVVNeVA4N3dLNU5zUUZtVWducmtxNjYxaEhFQ2FHRnozOTRUeiJ9.6QaIz_bT7wGxUmwQWc39p86ZLs2kH9lADjwHss2BfZu0YKmch9kEijACVBBySuugeEMAhBdGtlOkDMKJfpZUBg"}}]},"https://sam-rivera.wiki-sodoto.demo.example/sam-rivera-sodoto-portfolio.json":{"title":"Sam Rivera SODOTO Portfolio","story":[{"type":"sodoto-badge","id":"badge-sodoto-cld-demo-2026-0003","text":"Causal Loop Diagramming","credential":{"id":"urn:uuid:sodoto-cld-demo-2026-0003","skill":"Causal Loop Diagramming","issuer":"DEMO NDC · Superior AZ","issuerUrl":"https://demo-ndc.example","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","holderDid":"did:key:z6MksGWdsX5avzYAW2efz1C7wLjeYPjPSEiAihi5Xb9voSGC","holderName":"Sam Rivera","holderPortfolio":"sam-rivera-sodoto-portfolio","holderSite":"sam-rivera.wiki-sodoto.demo.example","contractId":"sodoto-cld-demo-2026-0003","contractHash":"sha256:c8c293084b6b3062ec1ec413eee6a91b8669c573cef688fe21bc8d86bf9eaf49","issuedAt":"2026-06-18","gates":{"SeeOne":{"completedAt":"2026-03-09","mentor":{"name":"Dana Okafor","did":"did:key:z6MkkuyxNfvZ55yQB98vUTUr3STiSuoon8aWL35JwzYyXtfD","portfolio":"dana-okafor-sodoto-portfolio","qualifiedBy":{"type":"credential","contractId":"sodoto-cld-demo-2026-0002","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","skillSlug":"cld","digest":"sha256:ec41ec645e3735c2e00963d092c5e59c001c9cb461e30a2a746d68d2a92c163e","at":"https://dana-okafor.wiki-sodoto.demo.example/dana-okafor-sodoto-portfolio.json"}},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtzR1dkc1g1YXZ6WUFXMmVmejFDN3dMamVZUGpQU0VpQWloaTVYYjl2b1NHQyIsIm5iZiI6MTc3MzA1NzYwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAzIiwiZ2F0ZSI6IlNlZU9uZSIsInNraWxsIjoiY2xkIiwicm9sZSI6ImxlYXJuZXIiLCJkYXRlIjoiMjAyNi0wMy0wOSJ9fQ.7EfnODfoEd7mJ2vxx9Mw3rDx9LX270UHQ6MppYQkhPxoBcPW4rmA5u41VkuXsbr6attf5wPhzAQx7bu90CrPDw","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrdXl4TmZ2WjU1eVFCOTh2VVRVcjNTVGlTdW9vbjhhV0wzNUp3ell5WHRmRCIsIm5iZiI6MTc3MzA1NzYwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAzIiwiZ2F0ZSI6IlNlZU9uZSIsInNraWxsIjoiY2xkIiwicm9sZSI6Im1lbnRvciIsImRhdGUiOiIyMDI2LTAzLTA5In19.dVZOvQzlP-LMx4koi1UqBEYYKMkYol-PV8YwUyKtuz5rNtGqbHAdc3rRLEDeEDNICUrL_YN_2pmueOl7p2gJDw"},"DoOne":{"completedAt":"2026-04-28","mentor":{"name":"Dana Okafor","did":"did:key:z6MkkuyxNfvZ55yQB98vUTUr3STiSuoon8aWL35JwzYyXtfD","portfolio":"dana-okafor-sodoto-portfolio","qualifiedBy":{"type":"credential","contractId":"sodoto-cld-demo-2026-0002","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","skillSlug":"cld","digest":"sha256:ec41ec645e3735c2e00963d092c5e59c001c9cb461e30a2a746d68d2a92c163e","at":"https://dana-okafor.wiki-sodoto.demo.example/dana-okafor-sodoto-portfolio.json"}},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtzR1dkc1g1YXZ6WUFXMmVmejFDN3dMamVZUGpQU0VpQWloaTVYYjl2b1NHQyIsIm5iZiI6MTc3NzM3NzYwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAzIiwiZ2F0ZSI6IkRvT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibGVhcm5lciIsImRhdGUiOiIyMDI2LTA0LTI4In19.4Jk9FExf3qrGn1xNu8Y5zhhXXcPdxyVsHIAZeVHz0bQQaX8yzM1VJjjo617vCsd3zr21szd8I8CMONLVKd2QAA","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrdXl4TmZ2WjU1eVFCOTh2VVRVcjNTVGlTdW9vbjhhV0wzNUp3ell5WHRmRCIsIm5iZiI6MTc3NzM3NzYwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAzIiwiZ2F0ZSI6IkRvT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibWVudG9yIiwiZGF0ZSI6IjIwMjYtMDQtMjgifX0.-XHyuex2J60F-wkI8ANbyxfOFZX2CofpQ1KNogsdYCZlKBeZAd1XxhDP1ik5GrCNkb2DFtdfXepREFu_UTs4DA"},"TeachOne":{"completedAt":"2026-06-10","mentor":{"name":"Dana Okafor","did":"did:key:z6MkkuyxNfvZ55yQB98vUTUr3STiSuoon8aWL35JwzYyXtfD","portfolio":"dana-okafor-sodoto-portfolio","qualifiedBy":{"type":"credential","contractId":"sodoto-cld-demo-2026-0002","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","skillSlug":"cld","digest":"sha256:ec41ec645e3735c2e00963d092c5e59c001c9cb461e30a2a746d68d2a92c163e","at":"https://dana-okafor.wiki-sodoto.demo.example/dana-okafor-sodoto-portfolio.json"}},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtzR1dkc1g1YXZ6WUFXMmVmejFDN3dMamVZUGpQU0VpQWloaTVYYjl2b1NHQyIsIm5iZiI6MTc4MTA5MjgwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAzIiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibGVhcm5lciIsImRhdGUiOiIyMDI2LTA2LTEwIn19.VNHq2sDvH9cXPJub0xKaWOMAcGpdPUBNqEOmwz_hlu0hZGiFrcvVLRZcXjrwQykIlDmoqne5W8FPdWtOjo6NBg","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrdXl4TmZ2WjU1eVFCOTh2VVRVcjNTVGlTdW9vbjhhV0wzNUp3ell5WHRmRCIsIm5iZiI6MTc4MTA5MjgwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAzIiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibWVudG9yIiwiZGF0ZSI6IjIwMjYtMDYtMTAifX0.4McYDO6tVi3KixK3-v28WdR9IEeWGXUtxigQ5e_pax0RBRFEkJrTxAdQP5AKegZqEzlRX_0VyafJF9lw-PywDw","student":{"name":"Jules Navarro","did":"did:key:z6MkoMCEZagsfhMEBE6QN1w2CVMc5kPScYnrjrf8PuiWpG7v","portfolio":"jules-navarro-sodoto-portfolio"},"studentJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtvTUNFWmFnc2ZoTUVCRTZRTjF3MkNWTWM1a1BTY1lucmpyZjhQdWlXcEc3diIsIm5iZiI6MTc4MTA5MjgwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAzIiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoic3R1ZGVudCIsImRhdGUiOiIyMDI2LTA2LTEwIn19.QLq8tnBEDaL69S4HgzuQIfFIgPhElC7LoSmQfo4YTGhu3bzEv_-Ms_i0wmLC26ccxAd_iJ63GYX8uCGgZ-n1Aw"}},"version":"0.6","learnerAttested":true,"mutuallyAttested":true,"lineageRecorded":true,"jwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vcmNuLndpa2kvY3JlZGVudGlhbHMvc29kb3RvL3YxIl0sInR5cGUiOlsiVmVyaWZpYWJsZUNyZWRlbnRpYWwiLCJTT0RPVE9DcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7Im5hbWUiOiJTYW0gUml2ZXJhIiwic29kb3RvIjp7InNraWxsIjoiQ2F1c2FsIExvb3AgRGlhZ3JhbW1pbmciLCJza2lsbFNsdWciOiJjbGQiLCJ2ZXJzaW9uIjoiMC42IiwibGVhcm5lckF0dGVzdGVkIjp0cnVlLCJtdXR1YWxseUF0dGVzdGVkIjp0cnVlLCJsaW5lYWdlUmVjb3JkZWQiOnRydWUsImdhdGVzIjp7IlNlZU9uZSI6eyJjb21wbGV0ZWRBdCI6IjIwMjYtMDMtMDkiLCJtZW50b3IiOnsibmFtZSI6IkRhbmEgT2thZm9yIiwiZGlkIjoiZGlkOmtleTp6Nk1ra3V5eE5mdlo1NXlRQjk4dlVUVXIzU1RpU3Vvb244YVdMMzVKd3pZeVh0ZkQiLCJwb3J0Zm9saW8iOiJkYW5hLW9rYWZvci1zb2RvdG8tcG9ydGZvbGlvIiwicXVhbGlmaWVkQnkiOnsidHlwZSI6ImNyZWRlbnRpYWwiLCJjb250cmFjdElkIjoic29kb3RvLWNsZC1kZW1vLTIwMjYtMDAwMiIsImlzc3VlckRpZCI6ImRpZDprZXk6ejZNa25QZ0R2TnE1VU15UDg3d0s1TnNRRm1VZ25ya3E2NjFoSEVDYUdGejM5NFR6Iiwic2tpbGxTbHVnIjoiY2xkIiwiZGlnZXN0Ijoic2hhMjU2OmVjNDFlYzY0NWUzNzM1YzJlMDA5NjNkMDkyYzVlNTljMDAxYzljYjQ2MWUzMGEyYTc0NmQ2OGQyYTkyYzE2M2UiLCJhdCI6Imh0dHBzOi8vZGFuYS1va2Fmb3Iud2lraS1zb2RvdG8uZGVtby5leGFtcGxlL2RhbmEtb2thZm9yLXNvZG90by1wb3J0Zm9saW8uanNvbiJ9fSwibGVhcm5lckp3dCI6ImV5SmhiR2NpT2lKRlpFUlRRU0lzSW5SNWNDSTZJa3BYVkNKOS5leUpwYzNNaU9pSmthV1E2YTJWNU9ubzJUV3R6UjFka2MxZzFZWFo2V1VGWE1tVm1lakZETjNkTWFtVlpVR3BRVTBWcFFXbG9hVFZZWWpsMmIxTkhReUlzSW01aVppSTZNVGMzTXpBMU56WXdNQ3dpYzI5a2IzUnZRWFIwWlhOMElqcDdJbU52Ym5SeVlXTjBTV1FpT2lKemIyUnZkRzh0WTJ4a0xXUmxiVzh0TWpBeU5pMHdNREF6SWl3aVoyRjBaU0k2SWxObFpVOXVaU0lzSW5OcmFXeHNJam9pWTJ4a0lpd2ljbTlzWlNJNklteGxZWEp1WlhJaUxDSmtZWFJsSWpvaU1qQXlOaTB3TXkwd09TSjlmUS43RWZuT0Rmb0VkN21KMnZ4eDlNdzNyRHg5TFgyNzBVSFE2TXBwWVFraFB4b0JjUFc0cm1BNXU0MVZrdVhzYnI2YXR0ZjV3UGh6QVF4N2J1OTBDclBEdyIsIm1lbnRvckp3dCI6ImV5SmhiR2NpT2lKRlpFUlRRU0lzSW5SNWNDSTZJa3BYVkNKOS5leUpwYzNNaU9pSmthV1E2YTJWNU9ubzJUV3RyZFhsNFRtWjJXalUxZVZGQ09UaDJWVlJWY2pOVFZHbFRkVzl2YmpoaFYwd3pOVXAzZWxsNVdIUm1SQ0lzSW01aVppSTZNVGMzTXpBMU56WXdNQ3dpYzI5a2IzUnZRWFIwWlhOMElqcDdJbU52Ym5SeVlXTjBTV1FpT2lKemIyUnZkRzh0WTJ4a0xXUmxiVzh0TWpBeU5pMHdNREF6SWl3aVoyRjBaU0k2SWxObFpVOXVaU0lzSW5OcmFXeHNJam9pWTJ4a0lpd2ljbTlzWlNJNkltMWxiblJ2Y2lJc0ltUmhkR1VpT2lJeU1ESTJMVEF6TFRBNUluMTkuZFZaT3ZRemxQLUxNeDRrb2kxVXFCRVlZS01rWW9sLVBWOFl3VXlLdHV6NXJOdEdxYkhBZGMzclJMRURlRUROSUNVckxfWU5fMnBtdWVPbDdwMmdKRHcifSwiRG9PbmUiOnsiY29tcGxldGVkQXQiOiIyMDI2LTA0LTI4IiwibWVudG9yIjp7Im5hbWUiOiJEYW5hIE9rYWZvciIsImRpZCI6ImRpZDprZXk6ejZNa2t1eXhOZnZaNTV5UUI5OHZVVFVyM1NUaVN1b29uOGFXTDM1Snd6WXlYdGZEIiwicG9ydGZvbGlvIjoiZGFuYS1va2Fmb3Itc29kb3RvLXBvcnRmb2xpbyIsInF1YWxpZmllZEJ5Ijp7InR5cGUiOiJjcmVkZW50aWFsIiwiY29udHJhY3RJZCI6InNvZG90by1jbGQtZGVtby0yMDI2LTAwMDIiLCJpc3N1ZXJEaWQiOiJkaWQ6a2V5Ono2TWtuUGdEdk5xNVVNeVA4N3dLNU5zUUZtVWducmtxNjYxaEhFQ2FHRnozOTRUeiIsInNraWxsU2x1ZyI6ImNsZCIsImRpZ2VzdCI6InNoYTI1NjplYzQxZWM2NDVlMzczNWMyZTAwOTYzZDA5MmM1ZTU5YzAwMWM5Y2I0NjFlMzBhMmE3NDZkNjhkMmE5MmMxNjNlIiwiYXQiOiJodHRwczovL2RhbmEtb2thZm9yLndpa2ktc29kb3RvLmRlbW8uZXhhbXBsZS9kYW5hLW9rYWZvci1zb2RvdG8tcG9ydGZvbGlvLmpzb24ifX0sImxlYXJuZXJKd3QiOiJleUpoYkdjaU9pSkZaRVJUUVNJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUprYVdRNmEyVjVPbm8yVFd0elIxZGtjMWcxWVhaNldVRlhNbVZtZWpGRE4zZE1hbVZaVUdwUVUwVnBRV2xvYVRWWVlqbDJiMU5IUXlJc0ltNWlaaUk2TVRjM056TTNOell3TUN3aWMyOWtiM1J2UVhSMFpYTjBJanA3SW1OdmJuUnlZV04wU1dRaU9pSnpiMlJ2ZEc4dFkyeGtMV1JsYlc4dE1qQXlOaTB3TURBeklpd2laMkYwWlNJNklrUnZUMjVsSWl3aWMydHBiR3dpT2lKamJHUWlMQ0p5YjJ4bElqb2liR1ZoY201bGNpSXNJbVJoZEdVaU9pSXlNREkyTFRBMExUSTRJbjE5LjRKazlGRXhmM3FyR24xeE51OFk1emhoWFhjUGR4eVZzSElBWmVWSHowYlFRYVg4eXpNMVZKampvNjE3dkNzZDN6cjIxc3pkOEk4Q01PTkxWS2QyUUFBIiwibWVudG9ySnd0IjoiZXlKaGJHY2lPaUpGWkVSVFFTSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKa2FXUTZhMlY1T25vMlRXdHJkWGw0VG1aMldqVTFlVkZDT1RoMlZWUlZjak5UVkdsVGRXOXZiamhoVjB3ek5VcDNlbGw1V0hSbVJDSXNJbTVpWmlJNk1UYzNOek0zTnpZd01Dd2ljMjlrYjNSdlFYUjBaWE4wSWpwN0ltTnZiblJ5WVdOMFNXUWlPaUp6YjJSdmRHOHRZMnhrTFdSbGJXOHRNakF5Tmkwd01EQXpJaXdpWjJGMFpTSTZJa1J2VDI1bElpd2ljMnRwYkd3aU9pSmpiR1FpTENKeWIyeGxJam9pYldWdWRHOXlJaXdpWkdGMFpTSTZJakl3TWpZdE1EUXRNamdpZlgwLi1YSHl1ZXgySjYwRi13a0k4QU5ieXhmT0ZaWDJDb2ZwUTFLTm9nc2RZQ1psS0JlWkFkMVh4aERQMWlrNUdyQ05rYjJERnRkZlhlcFJFRnVfVVRzNERBIn0sIlRlYWNoT25lIjp7ImNvbXBsZXRlZEF0IjoiMjAyNi0wNi0xMCIsIm1lbnRvciI6eyJuYW1lIjoiRGFuYSBPa2Fmb3IiLCJkaWQiOiJkaWQ6a2V5Ono2TWtrdXl4TmZ2WjU1eVFCOTh2VVRVcjNTVGlTdW9vbjhhV0wzNUp3ell5WHRmRCIsInBvcnRmb2xpbyI6ImRhbmEtb2thZm9yLXNvZG90by1wb3J0Zm9saW8iLCJxdWFsaWZpZWRCeSI6eyJ0eXBlIjoiY3JlZGVudGlhbCIsImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDAyIiwiaXNzdWVyRGlkIjoiZGlkOmtleTp6Nk1rblBnRHZOcTVVTXlQODd3SzVOc1FGbVVnbnJrcTY2MWhIRUNhR0Z6Mzk0VHoiLCJza2lsbFNsdWciOiJjbGQiLCJkaWdlc3QiOiJzaGEyNTY6ZWM0MWVjNjQ1ZTM3MzVjMmUwMDk2M2QwOTJjNWU1OWMwMDFjOWNiNDYxZTMwYTJhNzQ2ZDY4ZDJhOTJjMTYzZSIsImF0IjoiaHR0cHM6Ly9kYW5hLW9rYWZvci53aWtpLXNvZG90by5kZW1vLmV4YW1wbGUvZGFuYS1va2Fmb3Itc29kb3RvLXBvcnRmb2xpby5qc29uIn19LCJsZWFybmVySnd0IjoiZXlKaGJHY2lPaUpGWkVSVFFTSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKa2FXUTZhMlY1T25vMlRXdHpSMWRrYzFnMVlYWjZXVUZYTW1WbWVqRkROM2RNYW1WWlVHcFFVMFZwUVdsb2FUVllZamwyYjFOSFF5SXNJbTVpWmlJNk1UYzRNVEE1TWpnd01Dd2ljMjlrYjNSdlFYUjBaWE4wSWpwN0ltTnZiblJ5WVdOMFNXUWlPaUp6YjJSdmRHOHRZMnhrTFdSbGJXOHRNakF5Tmkwd01EQXpJaXdpWjJGMFpTSTZJbFJsWVdOb1QyNWxJaXdpYzJ0cGJHd2lPaUpqYkdRaUxDSnliMnhsSWpvaWJHVmhjbTVsY2lJc0ltUmhkR1VpT2lJeU1ESTJMVEEyTFRFd0luMTkuVk5IcTJzRHZIOWNYUEp1YjB4S2FXT01BY0dwZFBVQk5xRU9td3pfaGx1MGhaR2lGcmN2VkxSWmNYanJ3UXlrSWxEbW9xbmU1VzhGUGRXdE9qbzZOQmciLCJtZW50b3JKd3QiOiJleUpoYkdjaU9pSkZaRVJUUVNJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUprYVdRNmEyVjVPbm8yVFd0cmRYbDRUbVoyV2pVMWVWRkNPVGgyVlZSVmNqTlRWR2xUZFc5dmJqaGhWMHd6TlVwM2VsbDVXSFJtUkNJc0ltNWlaaUk2TVRjNE1UQTVNamd3TUN3aWMyOWtiM1J2UVhSMFpYTjBJanA3SW1OdmJuUnlZV04wU1dRaU9pSnpiMlJ2ZEc4dFkyeGtMV1JsYlc4dE1qQXlOaTB3TURBeklpd2laMkYwWlNJNklsUmxZV05vVDI1bElpd2ljMnRwYkd3aU9pSmpiR1FpTENKeWIyeGxJam9pYldWdWRHOXlJaXdpWkdGMFpTSTZJakl3TWpZdE1EWXRNVEFpZlgwLjRNY1lETzZ0VmkzS2l4SzMtdjI4V2RSOUlFZVdHWFV0eGlnUTVlX3BheDBSQlJGRWtKclR4QWRRUDVBS2VnWnFFemxSWF8wVnlhZkpGOWx3LVB5d0R3Iiwic3R1ZGVudCI6eyJuYW1lIjoiSnVsZXMgTmF2YXJybyIsImRpZCI6ImRpZDprZXk6ejZNa29NQ0VaYWdzZmhNRUJFNlFOMXcyQ1ZNYzVrUFNjWW5yanJmOFB1aVdwRzd2IiwicG9ydGZvbGlvIjoianVsZXMtbmF2YXJyby1zb2RvdG8tcG9ydGZvbGlvIn0sInN0dWRlbnRKd3QiOiJleUpoYkdjaU9pSkZaRVJUUVNJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUprYVdRNmEyVjVPbm8yVFd0dlRVTkZXbUZuYzJab1RVVkNSVFpSVGpGM01rTldUV00xYTFCVFkxbHVjbXB5WmpoUWRXbFhjRWMzZGlJc0ltNWlaaUk2TVRjNE1UQTVNamd3TUN3aWMyOWtiM1J2UVhSMFpYTjBJanA3SW1OdmJuUnlZV04wU1dRaU9pSnpiMlJ2ZEc4dFkyeGtMV1JsYlc4dE1qQXlOaTB3TURBeklpd2laMkYwWlNJNklsUmxZV05vVDI1bElpd2ljMnRwYkd3aU9pSmpiR1FpTENKeWIyeGxJam9pYzNSMVpHVnVkQ0lzSW1SaGRHVWlPaUl5TURJMkxUQTJMVEV3SW4xOS5RTHE4dG5CRURhTDY5UzRIZ3p1UUlmRklnUGhFbEM3TG9TbVFmbzRZVEdodTNiekV2Xy1Nc19pMHdtTEMyNmNjeEFkX2lKNjNHWVg4dUNHZ1otbjFBdyJ9fSwiY29udHJhY3RJZCI6InNvZG90by1jbGQtZGVtby0yMDI2LTAwMDMiLCJjb250cmFjdEhhc2giOiJzaGEyNTY6YzhjMjkzMDg0YjZiMzA2MmVjMWVjNDEzZWVlNmE5MWI4NjY5YzU3M2NlZjY4OGZlMjFiYzhkODZiZjllYWY0OSJ9fX0sImlzc3VlciI6eyJuYW1lIjoiREVNTyBOREMgwrcgU3VwZXJpb3IgQVoiLCJ1cmwiOiJodHRwczovL2RlbW8tbmRjLmV4YW1wbGUifSwic3ViIjoiZGlkOmtleTp6Nk1rc0dXZHNYNWF2ellBVzJlZnoxQzd3TGplWVBqUFNFaUFpaGk1WGI5dm9TR0MiLCJuYmYiOjE3ODE3ODQwMDAsImlzcyI6ImRpZDprZXk6ejZNa25QZ0R2TnE1VU15UDg3d0s1TnNRRm1VZ25ya3E2NjFoSEVDYUdGejM5NFR6In0.2zql1TfydV0eg-OlQrLyXknenoxE3leu4uB87VhEcEpgwh_rTnXJ1D-zH_Pl5keViham29-J7fiCU3r0X67CAQ"}}]},"https://jules-navarro.wiki-sodoto.demo.example/jules-navarro-sodoto-portfolio.json":{"title":"Jules Navarro SODOTO Portfolio","story":[{"type":"sodoto-badge","id":"badge-sodoto-cld-demo-2026-0004","text":"Causal Loop Diagramming","credential":{"id":"urn:uuid:sodoto-cld-demo-2026-0004","skill":"Causal Loop Diagramming","issuer":"DEMO NDC · Superior AZ","issuerUrl":"https://demo-ndc.example","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","holderDid":"did:key:z6MkoMCEZagsfhMEBE6QN1w2CVMc5kPScYnrjrf8PuiWpG7v","holderName":"Jules Navarro","holderPortfolio":"jules-navarro-sodoto-portfolio","holderSite":"jules-navarro.wiki-sodoto.demo.example","contractId":"sodoto-cld-demo-2026-0004","contractHash":"sha256:a56663b681235d9628f21241b54630f0b81f739d95cf8a7fdcb8d9dee6930d33","issuedAt":"2026-09-09","gates":{"SeeOne":{"completedAt":"2026-07-01","mentor":{"name":"Sam Rivera","did":"did:key:z6MksGWdsX5avzYAW2efz1C7wLjeYPjPSEiAihi5Xb9voSGC","portfolio":"sam-rivera-sodoto-portfolio","qualifiedBy":{"type":"credential","contractId":"sodoto-cld-demo-2026-0003","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","skillSlug":"cld","digest":"sha256:30da4ac7d30d100c96f1f5a8410ff44ac7768073ff2e16a84e93e308826e0a76","at":"https://sam-rivera.wiki-sodoto.demo.example/sam-rivera-sodoto-portfolio.json"}},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtvTUNFWmFnc2ZoTUVCRTZRTjF3MkNWTWM1a1BTY1lucmpyZjhQdWlXcEc3diIsIm5iZiI6MTc4MjkwNzIwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDA0IiwiZ2F0ZSI6IlNlZU9uZSIsInNraWxsIjoiY2xkIiwicm9sZSI6ImxlYXJuZXIiLCJkYXRlIjoiMjAyNi0wNy0wMSJ9fQ.2wJqBEJNM72PWaCMYKz41RSyT0P83zSvAVGQ6QB1AL3fXf22HV2H-ULpkV9u45MhCaHCrOMg8GmFA7VyyzX4Bw","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtzR1dkc1g1YXZ6WUFXMmVmejFDN3dMamVZUGpQU0VpQWloaTVYYjl2b1NHQyIsIm5iZiI6MTc4MjkwNzIwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDA0IiwiZ2F0ZSI6IlNlZU9uZSIsInNraWxsIjoiY2xkIiwicm9sZSI6Im1lbnRvciIsImRhdGUiOiIyMDI2LTA3LTAxIn19.9OJob_wvn_kEgdSoBrdz81AN_K_UrH0VxspiMBBvnwwLvmFX6LaDXPvDn9PN4gvm3EM0jiUDZhSWyM0bjMikDg"},"DoOne":{"completedAt":"2026-08-05","mentor":{"name":"Sam Rivera","did":"did:key:z6MksGWdsX5avzYAW2efz1C7wLjeYPjPSEiAihi5Xb9voSGC","portfolio":"sam-rivera-sodoto-portfolio","qualifiedBy":{"type":"credential","contractId":"sodoto-cld-demo-2026-0003","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","skillSlug":"cld","digest":"sha256:30da4ac7d30d100c96f1f5a8410ff44ac7768073ff2e16a84e93e308826e0a76","at":"https://sam-rivera.wiki-sodoto.demo.example/sam-rivera-sodoto-portfolio.json"}},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtvTUNFWmFnc2ZoTUVCRTZRTjF3MkNWTWM1a1BTY1lucmpyZjhQdWlXcEc3diIsIm5iZiI6MTc4NTkzMTIwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDA0IiwiZ2F0ZSI6IkRvT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibGVhcm5lciIsImRhdGUiOiIyMDI2LTA4LTA1In19.Y1MlrYXwDlirEJLqBhUVElxB7PktX21L_pgyaQSvnJrkBXLr-RYJi4QG_Q_QkEJL4H7opsZm1qLYnjsqfFNhBg","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtzR1dkc1g1YXZ6WUFXMmVmejFDN3dMamVZUGpQU0VpQWloaTVYYjl2b1NHQyIsIm5iZiI6MTc4NTkzMTIwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDA0IiwiZ2F0ZSI6IkRvT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibWVudG9yIiwiZGF0ZSI6IjIwMjYtMDgtMDUifX0.b1Puqm08Apqr21RraIekBNRs1lWcBsUoCVf9iUY6ZAwhB5NWbZ7GoxKFVhfzPYHqTspqlIvpo3ppeatsJYirBA"},"TeachOne":{"completedAt":"2026-09-02","mentor":{"name":"Sam Rivera","did":"did:key:z6MksGWdsX5avzYAW2efz1C7wLjeYPjPSEiAihi5Xb9voSGC","portfolio":"sam-rivera-sodoto-portfolio","qualifiedBy":{"type":"credential","contractId":"sodoto-cld-demo-2026-0003","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","skillSlug":"cld","digest":"sha256:30da4ac7d30d100c96f1f5a8410ff44ac7768073ff2e16a84e93e308826e0a76","at":"https://sam-rivera.wiki-sodoto.demo.example/sam-rivera-sodoto-portfolio.json"}},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtvTUNFWmFnc2ZoTUVCRTZRTjF3MkNWTWM1a1BTY1lucmpyZjhQdWlXcEc3diIsIm5iZiI6MTc4ODM1MDQwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDA0IiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibGVhcm5lciIsImRhdGUiOiIyMDI2LTA5LTAyIn19.I7-7QeJa3iIvXFnEKono-8hKFb6Dqpa2IaAz-7lcHrkaOeKmYuGc_Sfpf9eVkeq3kpg0ysu1AsrlRhv90Yb3AQ","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtzR1dkc1g1YXZ6WUFXMmVmejFDN3dMamVZUGpQU0VpQWloaTVYYjl2b1NHQyIsIm5iZiI6MTc4ODM1MDQwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDA0IiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibWVudG9yIiwiZGF0ZSI6IjIwMjYtMDktMDIifX0.4eC7n7e6obiZ8aXvqUpLSjfI9xLdJ1ZFbIMVuUtCYAmhgKVnvP5wv4WU0LWnFNvbkm2EwFGjKwWlWTQDkNXMCg","student":{"name":"Lina Begay","did":"did:key:z6MkryX98cwgnxmwo7GrfrDRQYNcioSF1QiT2BBoojaBANyU","portfolio":"lina-begay-sodoto-portfolio"},"studentJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtyeVg5OGN3Z254bXdvN0dyZnJEUlFZTmNpb1NGMVFpVDJCQm9vamFCQU55VSIsIm5iZiI6MTc4ODM1MDQwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDA0IiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoic3R1ZGVudCIsImRhdGUiOiIyMDI2LTA5LTAyIn19.ynkZVMQgN48VAMAyQ0_hLu-ZuXEu407Lv__a37XHKPyEIIbJxVAtrO2Z-70c0Z8xrOaEThJorZseRmWTOdqDAQ"}},"version":"0.6","learnerAttested":true,"mutuallyAttested":true,"lineageRecorded":true,"jwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vcmNuLndpa2kvY3JlZGVudGlhbHMvc29kb3RvL3YxIl0sInR5cGUiOlsiVmVyaWZpYWJsZUNyZWRlbnRpYWwiLCJTT0RPVE9DcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7Im5hbWUiOiJKdWxlcyBOYXZhcnJvIiwic29kb3RvIjp7InNraWxsIjoiQ2F1c2FsIExvb3AgRGlhZ3JhbW1pbmciLCJza2lsbFNsdWciOiJjbGQiLCJ2ZXJzaW9uIjoiMC42IiwibGVhcm5lckF0dGVzdGVkIjp0cnVlLCJtdXR1YWxseUF0dGVzdGVkIjp0cnVlLCJsaW5lYWdlUmVjb3JkZWQiOnRydWUsImdhdGVzIjp7IlNlZU9uZSI6eyJjb21wbGV0ZWRBdCI6IjIwMjYtMDctMDEiLCJtZW50b3IiOnsibmFtZSI6IlNhbSBSaXZlcmEiLCJkaWQiOiJkaWQ6a2V5Ono2TWtzR1dkc1g1YXZ6WUFXMmVmejFDN3dMamVZUGpQU0VpQWloaTVYYjl2b1NHQyIsInBvcnRmb2xpbyI6InNhbS1yaXZlcmEtc29kb3RvLXBvcnRmb2xpbyIsInF1YWxpZmllZEJ5Ijp7InR5cGUiOiJjcmVkZW50aWFsIiwiY29udHJhY3RJZCI6InNvZG90by1jbGQtZGVtby0yMDI2LTAwMDMiLCJpc3N1ZXJEaWQiOiJkaWQ6a2V5Ono2TWtuUGdEdk5xNVVNeVA4N3dLNU5zUUZtVWducmtxNjYxaEhFQ2FHRnozOTRUeiIsInNraWxsU2x1ZyI6ImNsZCIsImRpZ2VzdCI6InNoYTI1NjozMGRhNGFjN2QzMGQxMDBjOTZmMWY1YTg0MTBmZjQ0YWM3NzY4MDczZmYyZTE2YTg0ZTkzZTMwODgyNmUwYTc2IiwiYXQiOiJodHRwczovL3NhbS1yaXZlcmEud2lraS1zb2RvdG8uZGVtby5leGFtcGxlL3NhbS1yaXZlcmEtc29kb3RvLXBvcnRmb2xpby5qc29uIn19LCJsZWFybmVySnd0IjoiZXlKaGJHY2lPaUpGWkVSVFFTSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKa2FXUTZhMlY1T25vMlRXdHZUVU5GV21GbmMyWm9UVVZDUlRaUlRqRjNNa05XVFdNMWExQlRZMWx1Y21weVpqaFFkV2xYY0VjM2RpSXNJbTVpWmlJNk1UYzRNamt3TnpJd01Dd2ljMjlrYjNSdlFYUjBaWE4wSWpwN0ltTnZiblJ5WVdOMFNXUWlPaUp6YjJSdmRHOHRZMnhrTFdSbGJXOHRNakF5Tmkwd01EQTBJaXdpWjJGMFpTSTZJbE5sWlU5dVpTSXNJbk5yYVd4c0lqb2lZMnhrSWl3aWNtOXNaU0k2SW14bFlYSnVaWElpTENKa1lYUmxJam9pTWpBeU5pMHdOeTB3TVNKOWZRLjJ3SnFCRUpOTTcyUFdhQ01ZS3o0MVJTeVQwUDgzelN2QVZHUTZRQjFBTDNmWGYyMkhWMkgtVUxwa1Y5dTQ1TWhDYUhDck9NZzhHbUZBN1Z5eXpYNEJ3IiwibWVudG9ySnd0IjoiZXlKaGJHY2lPaUpGWkVSVFFTSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKa2FXUTZhMlY1T25vMlRXdHpSMWRrYzFnMVlYWjZXVUZYTW1WbWVqRkROM2RNYW1WWlVHcFFVMFZwUVdsb2FUVllZamwyYjFOSFF5SXNJbTVpWmlJNk1UYzRNamt3TnpJd01Dd2ljMjlrYjNSdlFYUjBaWE4wSWpwN0ltTnZiblJ5WVdOMFNXUWlPaUp6YjJSdmRHOHRZMnhrTFdSbGJXOHRNakF5Tmkwd01EQTBJaXdpWjJGMFpTSTZJbE5sWlU5dVpTSXNJbk5yYVd4c0lqb2lZMnhrSWl3aWNtOXNaU0k2SW0xbGJuUnZjaUlzSW1SaGRHVWlPaUl5TURJMkxUQTNMVEF4SW4xOS45T0pvYl93dm5fa0VnZFNvQnJkejgxQU5fS19VckgwVnhzcGlNQkJ2bnd3THZtRlg2TGFEWFB2RG45UE40Z3ZtM0VNMGppVURaaFNXeU0wYmpNaWtEZyJ9LCJEb09uZSI6eyJjb21wbGV0ZWRBdCI6IjIwMjYtMDgtMDUiLCJtZW50b3IiOnsibmFtZSI6IlNhbSBSaXZlcmEiLCJkaWQiOiJkaWQ6a2V5Ono2TWtzR1dkc1g1YXZ6WUFXMmVmejFDN3dMamVZUGpQU0VpQWloaTVYYjl2b1NHQyIsInBvcnRmb2xpbyI6InNhbS1yaXZlcmEtc29kb3RvLXBvcnRmb2xpbyIsInF1YWxpZmllZEJ5Ijp7InR5cGUiOiJjcmVkZW50aWFsIiwiY29udHJhY3RJZCI6InNvZG90by1jbGQtZGVtby0yMDI2LTAwMDMiLCJpc3N1ZXJEaWQiOiJkaWQ6a2V5Ono2TWtuUGdEdk5xNVVNeVA4N3dLNU5zUUZtVWducmtxNjYxaEhFQ2FHRnozOTRUeiIsInNraWxsU2x1ZyI6ImNsZCIsImRpZ2VzdCI6InNoYTI1NjozMGRhNGFjN2QzMGQxMDBjOTZmMWY1YTg0MTBmZjQ0YWM3NzY4MDczZmYyZTE2YTg0ZTkzZTMwODgyNmUwYTc2IiwiYXQiOiJodHRwczovL3NhbS1yaXZlcmEud2lraS1zb2RvdG8uZGVtby5leGFtcGxlL3NhbS1yaXZlcmEtc29kb3RvLXBvcnRmb2xpby5qc29uIn19LCJsZWFybmVySnd0IjoiZXlKaGJHY2lPaUpGWkVSVFFTSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKa2FXUTZhMlY1T25vMlRXdHZUVU5GV21GbmMyWm9UVVZDUlRaUlRqRjNNa05XVFdNMWExQlRZMWx1Y21weVpqaFFkV2xYY0VjM2RpSXNJbTVpWmlJNk1UYzROVGt6TVRJd01Dd2ljMjlrYjNSdlFYUjBaWE4wSWpwN0ltTnZiblJ5WVdOMFNXUWlPaUp6YjJSdmRHOHRZMnhrTFdSbGJXOHRNakF5Tmkwd01EQTBJaXdpWjJGMFpTSTZJa1J2VDI1bElpd2ljMnRwYkd3aU9pSmpiR1FpTENKeWIyeGxJam9pYkdWaGNtNWxjaUlzSW1SaGRHVWlPaUl5TURJMkxUQTRMVEExSW4xOS5ZMU1scllYd0RsaXJFSkxxQmhVVkVseEI3UGt0WDIxTF9wZ3lhUVN2bkpya0JYTHItUllKaTRRR19RX1FrRUpMNEg3b3BzWm0xcUxZbmpzcWZGTmhCZyIsIm1lbnRvckp3dCI6ImV5SmhiR2NpT2lKRlpFUlRRU0lzSW5SNWNDSTZJa3BYVkNKOS5leUpwYzNNaU9pSmthV1E2YTJWNU9ubzJUV3R6UjFka2MxZzFZWFo2V1VGWE1tVm1lakZETjNkTWFtVlpVR3BRVTBWcFFXbG9hVFZZWWpsMmIxTkhReUlzSW01aVppSTZNVGM0TlRrek1USXdNQ3dpYzI5a2IzUnZRWFIwWlhOMElqcDdJbU52Ym5SeVlXTjBTV1FpT2lKemIyUnZkRzh0WTJ4a0xXUmxiVzh0TWpBeU5pMHdNREEwSWl3aVoyRjBaU0k2SWtSdlQyNWxJaXdpYzJ0cGJHd2lPaUpqYkdRaUxDSnliMnhsSWpvaWJXVnVkRzl5SWl3aVpHRjBaU0k2SWpJd01qWXRNRGd0TURVaWZYMC5iMVB1cW0wOEFwcXIyMVJyYUlla0JOUnMxbFdjQnNVb0NWZjlpVVk2WkF3aEI1TldiWjdHb3hLRlZoZnpQWUhxVHNwcWxJdnBvM3BwZWF0c0pZaXJCQSJ9LCJUZWFjaE9uZSI6eyJjb21wbGV0ZWRBdCI6IjIwMjYtMDktMDIiLCJtZW50b3IiOnsibmFtZSI6IlNhbSBSaXZlcmEiLCJkaWQiOiJkaWQ6a2V5Ono2TWtzR1dkc1g1YXZ6WUFXMmVmejFDN3dMamVZUGpQU0VpQWloaTVYYjl2b1NHQyIsInBvcnRmb2xpbyI6InNhbS1yaXZlcmEtc29kb3RvLXBvcnRmb2xpbyIsInF1YWxpZmllZEJ5Ijp7InR5cGUiOiJjcmVkZW50aWFsIiwiY29udHJhY3RJZCI6InNvZG90by1jbGQtZGVtby0yMDI2LTAwMDMiLCJpc3N1ZXJEaWQiOiJkaWQ6a2V5Ono2TWtuUGdEdk5xNVVNeVA4N3dLNU5zUUZtVWducmtxNjYxaEhFQ2FHRnozOTRUeiIsInNraWxsU2x1ZyI6ImNsZCIsImRpZ2VzdCI6InNoYTI1NjozMGRhNGFjN2QzMGQxMDBjOTZmMWY1YTg0MTBmZjQ0YWM3NzY4MDczZmYyZTE2YTg0ZTkzZTMwODgyNmUwYTc2IiwiYXQiOiJodHRwczovL3NhbS1yaXZlcmEud2lraS1zb2RvdG8uZGVtby5leGFtcGxlL3NhbS1yaXZlcmEtc29kb3RvLXBvcnRmb2xpby5qc29uIn19LCJsZWFybmVySnd0IjoiZXlKaGJHY2lPaUpGWkVSVFFTSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKa2FXUTZhMlY1T25vMlRXdHZUVU5GV21GbmMyWm9UVVZDUlRaUlRqRjNNa05XVFdNMWExQlRZMWx1Y21weVpqaFFkV2xYY0VjM2RpSXNJbTVpWmlJNk1UYzRPRE0xTURRd01Dd2ljMjlrYjNSdlFYUjBaWE4wSWpwN0ltTnZiblJ5WVdOMFNXUWlPaUp6YjJSdmRHOHRZMnhrTFdSbGJXOHRNakF5Tmkwd01EQTBJaXdpWjJGMFpTSTZJbFJsWVdOb1QyNWxJaXdpYzJ0cGJHd2lPaUpqYkdRaUxDSnliMnhsSWpvaWJHVmhjbTVsY2lJc0ltUmhkR1VpT2lJeU1ESTJMVEE1TFRBeUluMTkuSTctN1FlSmEzaUl2WEZuRUtvbm8tOGhLRmI2RHFwYTJJYUF6LTdsY0hya2FPZUttWXVHY19TZnBmOWVWa2VxM2twZzB5c3UxQXNybFJodjkwWWIzQVEiLCJtZW50b3JKd3QiOiJleUpoYkdjaU9pSkZaRVJUUVNJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUprYVdRNmEyVjVPbm8yVFd0elIxZGtjMWcxWVhaNldVRlhNbVZtZWpGRE4zZE1hbVZaVUdwUVUwVnBRV2xvYVRWWVlqbDJiMU5IUXlJc0ltNWlaaUk2TVRjNE9ETTFNRFF3TUN3aWMyOWtiM1J2UVhSMFpYTjBJanA3SW1OdmJuUnlZV04wU1dRaU9pSnpiMlJ2ZEc4dFkyeGtMV1JsYlc4dE1qQXlOaTB3TURBMElpd2laMkYwWlNJNklsUmxZV05vVDI1bElpd2ljMnRwYkd3aU9pSmpiR1FpTENKeWIyeGxJam9pYldWdWRHOXlJaXdpWkdGMFpTSTZJakl3TWpZdE1Ea3RNRElpZlgwLjRlQzduN2U2b2JpWjhhWHZxVXBMU2pmSTl4TGRKMVpGYklNVnVVdENZQW1oZ0tWbnZQNXd2NFdVMExXbkZOdmJrbTJFd0ZHakt3V2xXVFFEa05YTUNnIiwic3R1ZGVudCI6eyJuYW1lIjoiTGluYSBCZWdheSIsImRpZCI6ImRpZDprZXk6ejZNa3J5WDk4Y3dnbnhtd283R3JmckRSUVlOY2lvU0YxUWlUMkJCb29qYUJBTnlVIiwicG9ydGZvbGlvIjoibGluYS1iZWdheS1zb2RvdG8tcG9ydGZvbGlvIn0sInN0dWRlbnRKd3QiOiJleUpoYkdjaU9pSkZaRVJUUVNJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUprYVdRNmEyVjVPbm8yVFd0eWVWZzVPR04zWjI1NGJYZHZOMGR5Wm5KRVVsRlpUbU5wYjFOR01WRnBWREpDUW05dmFtRkNRVTU1VlNJc0ltNWlaaUk2TVRjNE9ETTFNRFF3TUN3aWMyOWtiM1J2UVhSMFpYTjBJanA3SW1OdmJuUnlZV04wU1dRaU9pSnpiMlJ2ZEc4dFkyeGtMV1JsYlc4dE1qQXlOaTB3TURBMElpd2laMkYwWlNJNklsUmxZV05vVDI1bElpd2ljMnRwYkd3aU9pSmpiR1FpTENKeWIyeGxJam9pYzNSMVpHVnVkQ0lzSW1SaGRHVWlPaUl5TURJMkxUQTVMVEF5SW4xOS55bmtaVk1RZ040OFZBTUF5UTBfaEx1LVp1WEV1NDA3THZfX2EzN1hIS1B5RUlJYkp4VkF0ck8yWi03MGMwWjh4ck9hRVRoSm9yWnNlUm1XVE9kcURBUSJ9fSwiY29udHJhY3RJZCI6InNvZG90by1jbGQtZGVtby0yMDI2LTAwMDQiLCJjb250cmFjdEhhc2giOiJzaGEyNTY6YTU2NjYzYjY4MTIzNWQ5NjI4ZjIxMjQxYjU0NjMwZjBiODFmNzM5ZDk1Y2Y4YTdmZGNiOGQ5ZGVlNjkzMGQzMyJ9fX0sImlzc3VlciI6eyJuYW1lIjoiREVNTyBOREMgwrcgU3VwZXJpb3IgQVoiLCJ1cmwiOiJodHRwczovL2RlbW8tbmRjLmV4YW1wbGUifSwic3ViIjoiZGlkOmtleTp6Nk1rb01DRVphZ3NmaE1FQkU2UU4xdzJDVk1jNWtQU2NZbnJqcmY4UHVpV3BHN3YiLCJuYmYiOjE3ODg5NTUyMDAsImlzcyI6ImRpZDprZXk6ejZNa25QZ0R2TnE1VU15UDg3d0s1TnNRRm1VZ25ya3E2NjFoSEVDYUdGejM5NFR6In0.nMkHgtScNwQd7AmuUgOuOUHF21VcOxRFyURcGYw5N50h7_NOp2lOr9ZF9EnsHAPIXdWSXHgatANe_6pCBoq9Bw"}}]},"https://omar-haddad.wiki-sodoto.demo.example/omar-haddad-sodoto-portfolio.json":{"title":"Omar Haddad SODOTO Portfolio","story":[{"type":"sodoto-badge","id":"badge-sodoto-cld-demo-2026-0005","text":"Causal Loop Diagramming","credential":{"id":"urn:uuid:sodoto-cld-demo-2026-0005","skill":"Causal Loop Diagramming","issuer":"DEMO NDC · Superior AZ","issuerUrl":"https://demo-ndc.example","issuerDid":"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz","holderDid":"did:key:z6MknEB4PCVyBBEDuRxJegpdcjkx2pSnrLeTqVkm3Vpg2AXL","holderName":"Omar Haddad","holderPortfolio":"omar-haddad-sodoto-portfolio","holderSite":"omar-haddad.wiki-sodoto.demo.example","contractId":"sodoto-cld-demo-2026-0005","contractHash":"sha256:0757bf3499d755c0d801230eb4949f16f04fb5ce7b6d3d8ea4950c5ea0df131d","issuedAt":"2026-04-02","gates":{"SeeOne":{"completedAt":"2026-01-06","mentor":{"name":"Maria Lopez","did":"did:key:z6MkkTiGzxhuNvwpnahuDPyUinjR5xoRsVvVsJY1SCuGbKg1","portfolio":"maria-lopez-sodoto-portfolio"},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtuRUI0UENWeUJCRUR1UnhKZWdwZGNqa3gycFNuckxlVHFWa20zVnBnMkFYTCIsIm5iZiI6MTc2NzcwMDgwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDA1IiwiZ2F0ZSI6IlNlZU9uZSIsInNraWxsIjoiY2xkIiwicm9sZSI6ImxlYXJuZXIiLCJkYXRlIjoiMjAyNi0wMS0wNiJ9fQ.NRo8IGNz2-tnW0URCa6Qud9PDfaM9fTaoYJhh-w2S6jVSzL8d4PZrSYcjnIYV9NNzeB63fhi90Rmb3LhrazoDg","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrVGlHenhodU52d3BuYWh1RFB5VWlualI1eG9Sc1Z2VnNKWTFTQ3VHYktnMSIsIm5iZiI6MTc2NzcwMDgwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDA1IiwiZ2F0ZSI6IlNlZU9uZSIsInNraWxsIjoiY2xkIiwicm9sZSI6Im1lbnRvciIsImRhdGUiOiIyMDI2LTAxLTA2In19.2lTCx7QcN4xG3adF8qXPss8CIZS0SIq45GBE_Tz3rSwEnDp4WxXuSLdwer7KngZaKxYMl0vMsLwguONi_WJFBA"},"DoOne":{"completedAt":"2026-02-17","mentor":{"name":"Maria Lopez","did":"did:key:z6MkkTiGzxhuNvwpnahuDPyUinjR5xoRsVvVsJY1SCuGbKg1","portfolio":"maria-lopez-sodoto-portfolio"},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtuRUI0UENWeUJCRUR1UnhKZWdwZGNqa3gycFNuckxlVHFWa20zVnBnMkFYTCIsIm5iZiI6MTc3MTMyOTYwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDA1IiwiZ2F0ZSI6IkRvT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibGVhcm5lciIsImRhdGUiOiIyMDI2LTAyLTE3In19.59SPVlkGzJfCBx6mmiAWOVUQo-gLD6BQKAusMMNXGvKVi4m1MEhBOEGNnzLB7MHbFZkg7j72cLh0uaDl3cw7Cw","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrVGlHenhodU52d3BuYWh1RFB5VWlualI1eG9Sc1Z2VnNKWTFTQ3VHYktnMSIsIm5iZiI6MTc3MTMyOTYwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDA1IiwiZ2F0ZSI6IkRvT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibWVudG9yIiwiZGF0ZSI6IjIwMjYtMDItMTcifX0.yrQ-cTJ2RuOr5jxKevKDEQrnPVjuMWNde11Hh65T_YPPpiQPPeMlEraXtI6ZDosA7uz9VkchXaXeMj7wysu6BQ"},"TeachOne":{"completedAt":"2026-03-24","mentor":{"name":"Maria Lopez","did":"did:key:z6MkkTiGzxhuNvwpnahuDPyUinjR5xoRsVvVsJY1SCuGbKg1","portfolio":"maria-lopez-sodoto-portfolio"},"learnerJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtuRUI0UENWeUJCRUR1UnhKZWdwZGNqa3gycFNuckxlVHFWa20zVnBnMkFYTCIsIm5iZiI6MTc3NDM1MzYwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDA1IiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibGVhcm5lciIsImRhdGUiOiIyMDI2LTAzLTI0In19.KS7pIYbw63dBVzwiF7K6ejhGrUBwvohJYfxMGi8xHMOq5Hl6JxvJ3q7WyGdYj6qBkUT9aS-GgZuNLLA5BYl3AQ","mentorJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtrVGlHenhodU52d3BuYWh1RFB5VWlualI1eG9Sc1Z2VnNKWTFTQ3VHYktnMSIsIm5iZiI6MTc3NDM1MzYwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDA1IiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoibWVudG9yIiwiZGF0ZSI6IjIwMjYtMDMtMjQifX0.cPZlJ6KVFnA-pMEuo7GgrOonwdg_sk-EJI1r2fAAiuBA-rENaEhAQe4mVnv2nDM2VgqMxk1E_6Nk8rIm5CZfAQ","student":{"name":"Lina Begay","did":"did:key:z6MkryX98cwgnxmwo7GrfrDRQYNcioSF1QiT2BBoojaBANyU","portfolio":"lina-begay-sodoto-portfolio"},"studentJwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkaWQ6a2V5Ono2TWtyeVg5OGN3Z254bXdvN0dyZnJEUlFZTmNpb1NGMVFpVDJCQm9vamFCQU55VSIsIm5iZiI6MTc3NDM1MzYwMCwic29kb3RvQXR0ZXN0Ijp7ImNvbnRyYWN0SWQiOiJzb2RvdG8tY2xkLWRlbW8tMjAyNi0wMDA1IiwiZ2F0ZSI6IlRlYWNoT25lIiwic2tpbGwiOiJjbGQiLCJyb2xlIjoic3R1ZGVudCIsImRhdGUiOiIyMDI2LTAzLTI0In19.69GIpwLxh0dH6gtJCn3NSwpmV6Ny2EgWIzzzrx_q79JdpQQx_y5ihQUPZkQLiAbR2gDTUNeUTE4TAfcJx0CMCw"}},"version":"0.5","learnerAttested":true,"mutuallyAttested":true,"jwt":"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vcmNuLndpa2kvY3JlZGVudGlhbHMvc29kb3RvL3YxIl0sInR5cGUiOlsiVmVyaWZpYWJsZUNyZWRlbnRpYWwiLCJTT0RPVE9DcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7Im5hbWUiOiJPbWFyIEhhZGRhZCIsInNvZG90byI6eyJza2lsbCI6IkNhdXNhbCBMb29wIERpYWdyYW1taW5nIiwic2tpbGxTbHVnIjoiY2xkIiwidmVyc2lvbiI6IjAuNSIsImxlYXJuZXJBdHRlc3RlZCI6dHJ1ZSwibXV0dWFsbHlBdHRlc3RlZCI6dHJ1ZSwiZ2F0ZXMiOnsiU2VlT25lIjp7ImNvbXBsZXRlZEF0IjoiMjAyNi0wMS0wNiIsIm1lbnRvciI6eyJuYW1lIjoiTWFyaWEgTG9wZXoiLCJkaWQiOiJkaWQ6a2V5Ono2TWtrVGlHenhodU52d3BuYWh1RFB5VWlualI1eG9Sc1Z2VnNKWTFTQ3VHYktnMSIsInBvcnRmb2xpbyI6Im1hcmlhLWxvcGV6LXNvZG90by1wb3J0Zm9saW8ifSwibGVhcm5lckp3dCI6ImV5SmhiR2NpT2lKRlpFUlRRU0lzSW5SNWNDSTZJa3BYVkNKOS5leUpwYzNNaU9pSmthV1E2YTJWNU9ubzJUV3R1UlVJMFVFTldlVUpDUlVSMVVuaEtaV2R3WkdOcWEzZ3ljRk51Y2t4bFZIRldhMjB6Vm5Cbk1rRllUQ0lzSW01aVppSTZNVGMyTnpjd01EZ3dNQ3dpYzI5a2IzUnZRWFIwWlhOMElqcDdJbU52Ym5SeVlXTjBTV1FpT2lKemIyUnZkRzh0WTJ4a0xXUmxiVzh0TWpBeU5pMHdNREExSWl3aVoyRjBaU0k2SWxObFpVOXVaU0lzSW5OcmFXeHNJam9pWTJ4a0lpd2ljbTlzWlNJNklteGxZWEp1WlhJaUxDSmtZWFJsSWpvaU1qQXlOaTB3TVMwd05pSjlmUS5OUm84SUdOejItdG5XMFVSQ2E2UXVkOVBEZmFNOWZUYW9ZSmhoLXcyUzZqVlN6TDhkNFBaclNZY2puSVlWOU5OemVCNjNmaGk5MFJtYjNMaHJhem9EZyIsIm1lbnRvckp3dCI6ImV5SmhiR2NpT2lKRlpFUlRRU0lzSW5SNWNDSTZJa3BYVkNKOS5leUpwYzNNaU9pSmthV1E2YTJWNU9ubzJUV3RyVkdsSGVuaG9kVTUyZDNCdVlXaDFSRkI1VldsdWFsSTFlRzlTYzFaMlZuTktXVEZUUTNWSFlrdG5NU0lzSW01aVppSTZNVGMyTnpjd01EZ3dNQ3dpYzI5a2IzUnZRWFIwWlhOMElqcDdJbU52Ym5SeVlXTjBTV1FpT2lKemIyUnZkRzh0WTJ4a0xXUmxiVzh0TWpBeU5pMHdNREExSWl3aVoyRjBaU0k2SWxObFpVOXVaU0lzSW5OcmFXeHNJam9pWTJ4a0lpd2ljbTlzWlNJNkltMWxiblJ2Y2lJc0ltUmhkR1VpT2lJeU1ESTJMVEF4TFRBMkluMTkuMmxUQ3g3UWNONHhHM2FkRjhxWFBzczhDSVpTMFNJcTQ1R0JFX1R6M3JTd0VuRHA0V3hYdVNMZHdlcjdLbmdaYUt4WU1sMHZNc0x3Z3VPTmlfV0pGQkEifSwiRG9PbmUiOnsiY29tcGxldGVkQXQiOiIyMDI2LTAyLTE3IiwibWVudG9yIjp7Im5hbWUiOiJNYXJpYSBMb3BleiIsImRpZCI6ImRpZDprZXk6ejZNa2tUaUd6eGh1TnZ3cG5haHVEUHlVaW5qUjV4b1JzVnZWc0pZMVNDdUdiS2cxIiwicG9ydGZvbGlvIjoibWFyaWEtbG9wZXotc29kb3RvLXBvcnRmb2xpbyJ9LCJsZWFybmVySnd0IjoiZXlKaGJHY2lPaUpGWkVSVFFTSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKa2FXUTZhMlY1T25vMlRXdHVSVUkwVUVOV2VVSkNSVVIxVW5oS1pXZHdaR05xYTNneWNGTnVja3hsVkhGV2EyMHpWbkJuTWtGWVRDSXNJbTVpWmlJNk1UYzNNVE15T1RZd01Dd2ljMjlrYjNSdlFYUjBaWE4wSWpwN0ltTnZiblJ5WVdOMFNXUWlPaUp6YjJSdmRHOHRZMnhrTFdSbGJXOHRNakF5Tmkwd01EQTFJaXdpWjJGMFpTSTZJa1J2VDI1bElpd2ljMnRwYkd3aU9pSmpiR1FpTENKeWIyeGxJam9pYkdWaGNtNWxjaUlzSW1SaGRHVWlPaUl5TURJMkxUQXlMVEUzSW4xOS41OVNQVmxrR3pKZkNCeDZtbWlBV09WVVFvLWdMRDZCUUtBdXNNTU5YR3ZLVmk0bTFNRWhCT0VHTm56TEI3TUhiRlprZzdqNzJjTGgwdWFEbDNjdzdDdyIsIm1lbnRvckp3dCI6ImV5SmhiR2NpT2lKRlpFUlRRU0lzSW5SNWNDSTZJa3BYVkNKOS5leUpwYzNNaU9pSmthV1E2YTJWNU9ubzJUV3RyVkdsSGVuaG9kVTUyZDNCdVlXaDFSRkI1VldsdWFsSTFlRzlTYzFaMlZuTktXVEZUUTNWSFlrdG5NU0lzSW01aVppSTZNVGMzTVRNeU9UWXdNQ3dpYzI5a2IzUnZRWFIwWlhOMElqcDdJbU52Ym5SeVlXTjBTV1FpT2lKemIyUnZkRzh0WTJ4a0xXUmxiVzh0TWpBeU5pMHdNREExSWl3aVoyRjBaU0k2SWtSdlQyNWxJaXdpYzJ0cGJHd2lPaUpqYkdRaUxDSnliMnhsSWpvaWJXVnVkRzl5SWl3aVpHRjBaU0k2SWpJd01qWXRNREl0TVRjaWZYMC55clEtY1RKMlJ1T3I1anhLZXZLREVRcm5QVmp1TVdOZGUxMUhoNjVUX1lQUHBpUVBQZU1sRXJhWHRJNlpEb3NBN3V6OVZrY2hYYVhlTWo3d3lzdTZCUSJ9LCJUZWFjaE9uZSI6eyJjb21wbGV0ZWRBdCI6IjIwMjYtMDMtMjQiLCJtZW50b3IiOnsibmFtZSI6Ik1hcmlhIExvcGV6IiwiZGlkIjoiZGlkOmtleTp6Nk1ra1RpR3p4aHVOdndwbmFodURQeVVpbmpSNXhvUnNWdlZzSlkxU0N1R2JLZzEiLCJwb3J0Zm9saW8iOiJtYXJpYS1sb3Blei1zb2RvdG8tcG9ydGZvbGlvIn0sImxlYXJuZXJKd3QiOiJleUpoYkdjaU9pSkZaRVJUUVNJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUprYVdRNmEyVjVPbm8yVFd0dVJVSTBVRU5XZVVKQ1JVUjFVbmhLWldkd1pHTnFhM2d5Y0ZOdWNreGxWSEZXYTIwelZuQm5Na0ZZVENJc0ltNWlaaUk2TVRjM05ETTFNell3TUN3aWMyOWtiM1J2UVhSMFpYTjBJanA3SW1OdmJuUnlZV04wU1dRaU9pSnpiMlJ2ZEc4dFkyeGtMV1JsYlc4dE1qQXlOaTB3TURBMUlpd2laMkYwWlNJNklsUmxZV05vVDI1bElpd2ljMnRwYkd3aU9pSmpiR1FpTENKeWIyeGxJam9pYkdWaGNtNWxjaUlzSW1SaGRHVWlPaUl5TURJMkxUQXpMVEkwSW4xOS5LUzdwSVlidzYzZEJWendpRjdLNmVqaEdyVUJ3dm9oSllmeE1HaTh4SE1PcTVIbDZKeHZKM3E3V3lHZFlqNnFCa1VUOWFTLUdnWnVOTExBNUJZbDNBUSIsIm1lbnRvckp3dCI6ImV5SmhiR2NpT2lKRlpFUlRRU0lzSW5SNWNDSTZJa3BYVkNKOS5leUpwYzNNaU9pSmthV1E2YTJWNU9ubzJUV3RyVkdsSGVuaG9kVTUyZDNCdVlXaDFSRkI1VldsdWFsSTFlRzlTYzFaMlZuTktXVEZUUTNWSFlrdG5NU0lzSW01aVppSTZNVGMzTkRNMU16WXdNQ3dpYzI5a2IzUnZRWFIwWlhOMElqcDdJbU52Ym5SeVlXTjBTV1FpT2lKemIyUnZkRzh0WTJ4a0xXUmxiVzh0TWpBeU5pMHdNREExSWl3aVoyRjBaU0k2SWxSbFlXTm9UMjVsSWl3aWMydHBiR3dpT2lKamJHUWlMQ0p5YjJ4bElqb2liV1Z1ZEc5eUlpd2laR0YwWlNJNklqSXdNall0TURNdE1qUWlmWDAuY1BabEo2S1ZGbkEtcE1FdW83R2dyT29ud2RnX3NrLUVKSTFyMmZBQWl1QkEtckVOYUVoQVFlNG1WbnYybkRNMlZncU14azFFXzZOazhySW01Q1pmQVEiLCJzdHVkZW50Ijp7Im5hbWUiOiJMaW5hIEJlZ2F5IiwiZGlkIjoiZGlkOmtleTp6Nk1rcnlYOThjd2dueG13bzdHcmZyRFJRWU5jaW9TRjFRaVQyQkJvb2phQkFOeVUiLCJwb3J0Zm9saW8iOiJsaW5hLWJlZ2F5LXNvZG90by1wb3J0Zm9saW8ifSwic3R1ZGVudEp3dCI6ImV5SmhiR2NpT2lKRlpFUlRRU0lzSW5SNWNDSTZJa3BYVkNKOS5leUpwYzNNaU9pSmthV1E2YTJWNU9ubzJUV3R5ZVZnNU9HTjNaMjU0Ylhkdk4wZHlabkpFVWxGWlRtTnBiMU5HTVZGcFZESkNRbTl2YW1GQ1FVNTVWU0lzSW01aVppSTZNVGMzTkRNMU16WXdNQ3dpYzI5a2IzUnZRWFIwWlhOMElqcDdJbU52Ym5SeVlXTjBTV1FpT2lKemIyUnZkRzh0WTJ4a0xXUmxiVzh0TWpBeU5pMHdNREExSWl3aVoyRjBaU0k2SWxSbFlXTm9UMjVsSWl3aWMydHBiR3dpT2lKamJHUWlMQ0p5YjJ4bElqb2ljM1IxWkdWdWRDSXNJbVJoZEdVaU9pSXlNREkyTFRBekxUSTBJbjE5LjY5R0lwd0x4aDBkSDZndEpDbjNOU3dwbVY2TnkyRWdXSXp6enJ4X3E3OUpkcFFReF95NWloUVVQWmtRTGlBYlIyZ0RUVU5lVVRFNFRBZmNKeDBDTUN3In19LCJjb250cmFjdElkIjoic29kb3RvLWNsZC1kZW1vLTIwMjYtMDAwNSIsImNvbnRyYWN0SGFzaCI6InNoYTI1NjowNzU3YmYzNDk5ZDc1NWMwZDgwMTIzMGViNDk0OWYxNmYwNGZiNWNlN2I2ZDNkOGVhNDk1MGM1ZWEwZGYxMzFkIn19fSwiaXNzdWVyIjp7Im5hbWUiOiJERU1PIE5EQyDCtyBTdXBlcmlvciBBWiIsInVybCI6Imh0dHBzOi8vZGVtby1uZGMuZXhhbXBsZSJ9LCJzdWIiOiJkaWQ6a2V5Ono2TWtuRUI0UENWeUJCRUR1UnhKZWdwZGNqa3gycFNuckxlVHFWa20zVnBnMkFYTCIsIm5iZiI6MTc3NTEzMTIwMCwiaXNzIjoiZGlkOmtleTp6Nk1rblBnRHZOcTVVTXlQODd3SzVOc1FGbVVnbnJrcTY2MWhIRUNhR0Z6Mzk0VHoifQ.kayhS49MZRmUcJ2fn-Czyt9adq5qoraKOFbX6RjE6mivcpvVGeYxuRlgUBtMVQ1mCEPwDwkkZtDehBR-qlOWBA"}}]}},"ledger":[{"contractId":"sodoto-cld-demo-2025-0001","holder":"Maria Lopez","issuedAt":"2025-11-12","at":"https://maria-lopez.wiki-sodoto.demo.example/maria-lopez-sodoto-portfolio.json","qualifiedByDigest":null},{"contractId":"sodoto-cld-demo-2026-0002","holder":"Dana Okafor","issuedAt":"2026-02-20","at":"https://dana-okafor.wiki-sodoto.demo.example/dana-okafor-sodoto-portfolio.json","qualifiedByDigest":"sha256:b9ba68f808200ae5c75fe2706a9bf9ed6551980c66549e631f0571e2ec0d60e3"},{"contractId":"sodoto-cld-demo-2026-0003","holder":"Sam Rivera","issuedAt":"2026-06-18","at":"https://sam-rivera.wiki-sodoto.demo.example/sam-rivera-sodoto-portfolio.json","qualifiedByDigest":"sha256:ec41ec645e3735c2e00963d092c5e59c001c9cb461e30a2a746d68d2a92c163e"},{"contractId":"sodoto-cld-demo-2026-0004","holder":"Jules Navarro","issuedAt":"2026-09-09","at":"https://jules-navarro.wiki-sodoto.demo.example/jules-navarro-sodoto-portfolio.json","qualifiedByDigest":"sha256:30da4ac7d30d100c96f1f5a8410ff44ac7768073ff2e16a84e93e308826e0a76"},{"contractId":"sodoto-cld-demo-2026-0005","holder":"Omar Haddad","issuedAt":"2026-04-02","at":"https://omar-haddad.wiki-sodoto.demo.example/omar-haddad-sodoto-portfolio.json","qualifiedByDigest":null}],"show":[{"url":"https://sam-rivera.wiki-sodoto.demo.example/sam-rivera-sodoto-portfolio.json","contractId":"sodoto-cld-demo-2026-0003"},{"url":"https://omar-haddad.wiki-sodoto.demo.example/omar-haddad-sodoto-portfolio.json","contractId":"sodoto-cld-demo-2026-0005"}],"issuers":{"did:key:z6MknPgDvNq5UMyP87wK5NsQFmUgnrkq661hHECaGFz394Tz":{"label":"DEMO NDC","initial":"D","color":"#2A6B5A"}},"taintTarget":{"url":"https://maria-lopez.wiki-sodoto.demo.example/maria-lopez-sodoto-portfolio.json","contractId":"sodoto-cld-demo-2025-0001","name":"Maria Lopez"}}
+const ORIGINAL_SITES = JSON.parse(JSON.stringify(DATA.sites))
+
+// ── crypto: the same in-browser checks the badge plugin already does ──────────
+const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+function b58decode(s) {
+  let n = 0n
+  for (const c of s) n = n * 58n + BigInt(B58.indexOf(c))
+  const h = n.toString(16).padStart(68, '0')
+  return new Uint8Array(h.match(/.{2}/g).map(b => parseInt(b, 16)))
+}
+const fromB64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0))
+const toB64u = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+const payloadOf = jwt => JSON.parse(decodeURIComponent(escape(atob(jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))))
+
+async function verifyJWT(jwt, did) {
+  try {
+    const [h, p, s] = jwt.split('.')
+    const pub = b58decode(did.replace('did:key:z', '')).slice(-32)
+    let key
+    try { key = await crypto.subtle.importKey('raw', pub, { name: 'Ed25519' }, false, ['verify']) }
+    catch (_) { key = await crypto.subtle.importKey('raw', pub, { name: 'NODE-ED25519', namedCurve: 'NODE-ED25519' }, false, ['verify']) }
+    return await crypto.subtle.verify({ name: key.algorithm.name }, key, fromB64u(s), new TextEncoder().encode(h + '.' + p))
+  } catch (_) { return false }
+}
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
+  return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+// ── the "network": a FedWiki page-JSON fetch, simulated ──────────────────────
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+async function fetchPage(url) {
+  await sleep(320)
+  if (!DATA.sites[url]) throw new Error('not reachable')
+  return JSON.parse(JSON.stringify(DATA.sites[url]))
+}
+const badgeIn = (page, contractId) => (page.story.find(i => i.type === 'sodoto-badge' && i.credential.contractId === contractId) || {}).credential
+
+// ── formatting ────────────────────────────────────────────────────────────────
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const fmt = iso => { const [y, m, d] = iso.split('-'); return `${MON[+m - 1]} ${+d} ${y}` }
+const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const nbfDate = jwt => new Date(payloadOf(jwt).nbf * 1000).toISOString().slice(0, 10)
+
+// ── one link: is this mentor qualified by what the pointer says? ─────────────
+// Five checks, each reported separately, so a failure says exactly what broke.
+const CHECK_HELP = {
+  hash:   'The record found has exactly the hash this badge points to — not one byte changed.',
+  signed: "The issuing NDC's signature on that record is valid.",
+  holder: "That record belongs to the mentor who signed this person's gates.",
+  skill:  'It certifies the same skill.',
+  time:   'It was issued before the mentor witnessed the first gate — they held the skill when they taught it.',
+  cohort: 'The mentor is named in the founding cohort.',
+}
+async function verifyLink(childCred, mentor, ref) {
+  const firstGate = ['SeeOne', 'DoOne', 'TeachOne'].map(g => childCred.gates[g]).find(g => g && g.mentor && g.mentor.did === mentor.did)
+  const taughtOn = firstGate ? firstGate.completedAt : childCred.issuedAt
+  let page
+  try { page = await fetchPage(ref.at) } catch (e) { return { ok: false, unreachable: true, checks: [], why: `Couldn't fetch ${ref.at}. The record's hash is ${ref.digest.slice(0, 19)}…, so any copy of it would do.` } }
+
+  if (ref.type === 'founding') {
+    const st = (page.story.find(i => i.type === 'sodoto-founding') || {}).statement
+    if (!st) return { ok: false, checks: [], why: 'No founding statement on that page.' }
+    const p = payloadOf(st.jwt)
+    const checks = [
+      { k: 'hash',   ok: (await sha256(st.jwt)) === ref.digest },
+      { k: 'signed', ok: await verifyJWT(st.jwt, ref.issuerDid) && p.iss === ref.issuerDid },
+      { k: 'cohort', ok: p.sodotoFounding.cohort.some(c => c.did === mentor.did) },
+      { k: 'skill',  ok: p.sodotoFounding.skillSlug === ref.skillSlug },
+      { k: 'time',   ok: p.sodotoFounding.date <= taughtOn },
+    ]
+    return { ok: checks.every(c => c.ok), checks, founding: { ...p.sodotoFounding, issuer: st.issuer } }
+  }
+
+  const parent = badgeIn(page, ref.contractId)
+  if (!parent) return { ok: false, checks: [], why: `No badge ${ref.contractId} on that page.` }
+  const p = payloadOf(parent.jwt)
+  const s = p.vc.credentialSubject.sodoto
+  const checks = [
+    { k: 'hash',   ok: (await sha256(parent.jwt)) === ref.digest },
+    { k: 'signed', ok: await verifyJWT(parent.jwt, ref.issuerDid) && p.iss === ref.issuerDid },
+    { k: 'holder', ok: p.sub === mentor.did },
+    { k: 'skill',  ok: s.skillSlug === ref.skillSlug && !s.partial },
+    { k: 'time',   ok: nbfDate(parent.jwt) <= taughtOn },
+  ]
+  const why = !checks[0].ok ? "This record isn't the one the badge points to. It has been changed since it was issued."
+            : !checks[1].ok ? 'The signature on this record is not valid.' : ''
+  return { ok: checks.every(c => c.ok), checks, parent, why }
+}
+
+// Mentors of a credential, one per distinct DID, with the pointer each carries.
+function mentorsOf(cred) {
+  const seen = new Map()
+  for (const g of ['SeeOne', 'DoOne', 'TeachOne']) {
+    const m = cred.gates[g] && cred.gates[g].mentor
+    if (m && m.did && !seen.has(m.did)) seen.set(m.did, m)
+  }
+  return [...seen.values()]
+}
+
+// ── the badge (markup follows the plugin's renderBadge) ──────────────────────
+function checkSVG() { return '<svg viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' }
+function sealSVG(verified, did) {
+  const is = DATA.issuers[did] || { initial: '?', color: '#6B6055' }
+  const ov = verified ? '<circle cx="58" cy="58" r="12" fill="#2a5c3f" stroke="white" stroke-width="2"/><text x="58" y="63" text-anchor="middle" fill="white" font-family="sans-serif" font-size="13" font-weight="700">✓</text>' : ''
+  return `<svg class="seal-svg" viewBox="0 0 76 76" fill="none"><circle cx="38" cy="38" r="36" fill="${is.color}" opacity="0.15"/><circle cx="38" cy="38" r="32" fill="${is.color}" opacity="0.25"/><circle cx="38" cy="38" r="28" fill="${is.color}"/><text x="38" y="47" text-anchor="middle" fill="white" font-family="Fraunces,Georgia,serif" font-size="34" font-weight="700" letter-spacing="-1">${is.initial}</text>${ov}</svg>`
+}
+const personLink = p => p && p.portfolio ? `<a class="sodoto-pagelink" href="#" onclick="return false" style="color:#2a6b5a;text-decoration:underline;">${esc(p.name)}</a>` : esc(p && p.name)
+
+function renderBadge(cred, container) {
+  const el = document.createElement('div')
+  el.className = 'sodoto-badge'
+  container.innerHTML = ''; container.appendChild(el)
+  const state = { verify: null, attest: null, lineage: null, lineageOpen: false, walking: false }
+  const v06 = cred.version === '0.6' || cred.lineageRecorded
+
+  function tag(g, role, ok) {
+    const has = role === 'student' ? cred.gates.TeachOne.studentJwt : cred.gates[g][role + 'Jwt']
+    if (!has) return ''
+    return ok === true ? ` &middot; <span style="color:#2a5c3f;font-weight:600;">${role} &#x2713;</span>`
+         : ok === false ? ` &middot; <span style="color:#b91c1c;font-weight:600;">${role} &#x2717;</span>`
+         : ` &middot; <span style="color:#8a8170;">${role} signed</span>`
+  }
+  const a = state => state.attest || { learner: {}, mentor: {}, student: null }
+
+  function lineageRow() {
+    if (!v06) return `<div class="verify-row"><div class="verify-row-label">Lineage</div><div class="verify-row-value" style="color:#888;font-style:italic;">Not recorded — issued before v0.6. The mentor is named, but not the credential that qualified them.</div></div>`
+    const L = state.lineage
+    const summary = !L ? 'Recorded — back to the founding cohort'
+      : L.complete ? `${L.up.length} generation${L.up.length === 1 ? '' : 's'} back to the founding cohort, every link verified`
+      : 'Broken — see below'
+    return `<div class="verify-row"><div class="verify-row-label">Lineage</div><div class="verify-row-value">${summary}<button class="lineage-btn">${state.lineageOpen ? 'Hide lineage' : 'Show lineage'}</button></div></div>`
+  }
+
+  function chips(checks) {
+    return `<div class="checks">${checks.map(c => `<span class="chk${c.ok ? '' : ' no'}" title="${esc(CHECK_HELP[c.k])}">${c.k === 'time' ? 'in time' : c.k} ${c.ok ? '✓' : '✗'}</span>`).join('')}</div>`
+  }
+
+  function lineageView() {
+    if (!state.lineageOpen) return ''
+    const L = state.lineage || { up: [], down: [] }
+    const status = state.walking ? `<span class="lin-status busy">${L.upDone ? 'finding who it went on to…' : `checking generation ${L.up.length}…`}</span>`
+      : L.complete ? '<span class="lin-status ok">✓ complete to the founding cohort</span>'
+      : '<span class="lin-status bad">✗ broken link — walk stopped</span>'
+    // oldest first: reverse the walk, which runs from this credential upward
+    const rows = []
+    const up = [...L.up].reverse()
+    let broken = false
+    for (const step of up) {
+      const cls = step.pending ? 'pending' : !step.ok ? 'broken' : step.founding ? 'root' : ''
+      if (step.pending) { rows.push(`<li class="pending"><span class="dot"></span><div class="who" style="color:#8a8170;">checking…</div></li>`); continue }
+      if (step.founding) {
+        rows.push(`<li class="${cls}"><span class="dot"></span><div class="who">${esc(step.founding.issuer)} — founding cohort</div>
+          <div class="what">${esc(step.founding.skill)} · ${fmt(step.founding.date)} · ${step.founding.cohort.map(c => esc(c.name)).join(', ')}</div>${chips(step.checks)}</li>`)
+        continue
+      }
+      if (!step.ok) broken = true
+      const holder = step.parent ? { name: step.parent.holderName, portfolio: step.parent.holderPortfolio } : { name: step.mentor.name }
+      const tamperedDate = step.parent ? nbfDate(step.parent.jwt) : ''
+      rows.push(`<li class="${cls}"><span class="dot"></span><div class="who">${personLink(holder)}</div>
+        <div class="what">${step.parent ? `earned ${fmt(step.parent.issuedAt)} · mentor ${esc(step.parent.gates.DoOne.mentor.name)} · <span style="font-family:'SF Mono',monospace;font-size:10px;">${esc(step.parent.contractId)}</span>` : 'record not found'}</div>
+        ${chips(step.checks)}${step.why ? `<div class="why">${esc(step.why)}</div>` : ''}</li>`)
+    }
+    if (broken) rows.unshift(`<li class="after-break"><span class="dot" style="border-style:dashed;border-color:#e2a9a9;"></span><div class="who" style="color:#8a8170;">not checked</div><div class="what">Everything above a broken link is unverified through it.</div></li>`)
+    rows.push(`<li class="self"><span class="dot"></span><div class="who">${esc(cred.holderName)}</div><div class="what">this credential · issued ${fmt(cred.issuedAt)} · mentor ${esc(cred.gates.DoOne.mentor.name)}</div></li>`)
+
+    let down = ''
+    if (!state.walking && L.downDone) {
+      const t = cred.gates.TeachOne.student
+      const items = [`<li class="down"><span class="dot"></span><div class="who">${personLink(t)}</div><div class="what">taught at Teach One, ${fmt(cred.gates.TeachOne.completedAt)} · signed by the student on this badge</div></li>`]
+      for (const d of L.down) {
+        if (d.did === t.did) items[0] = `<li class="down"><span class="dot"></span><div class="who">${personLink({ name: d.name, portfolio: d.portfolio })}</div><div class="what">taught at Teach One, ${fmt(cred.gates.TeachOne.completedAt)} · went on to earn it ${fmt(d.issuedAt)}, with ${esc(cred.holderName)} as mentor</div>${chips(d.checks)}</li>`
+        else items.push(`<li class="down"><span class="dot"></span><div class="who">${personLink({ name: d.name, portfolio: d.portfolio })}</div><div class="what">earned it ${fmt(d.issuedAt)}, with ${esc(cred.holderName)} as mentor</div>${chips(d.checks)}</li>`)
+      }
+      down = `<div class="section-label">Went on to</div><ul class="chain">${items.join('')}</ul>
+        <div class="stopnote">Found through the NDC ledger, then checked: each credential listed points back to this one by its hash.</div>`
+    }
+    return `<div class="lineage"><div class="lin-head"><span class="lin-title">Lineage · ${esc(cred.skill)}</span>${status}</div>
+      <ul class="chain">${rows.join('')}</ul>${down}</div>`
+  }
+
+  function render() {
+    const sv = state.verify === 'valid'
+    const r = a(state)
+    const g = cred.gates
+    el.innerHTML = `
+      <div class="badge-band"></div>
+      <div class="badge-body">
+        <div class="badge-main">
+          <div class="badge-label">SODOTO Credential &middot; <span style="color:#2a5c3f;font-weight:600;">mutually attested</span>${v06 ? ' &middot; <span style="color:#2a5c3f;font-weight:600;">lineage recorded</span>' : ''}</div>
+          <div class="badge-skill">${esc(cred.skill)}</div>
+          <div class="badge-gates">${['SeeOne', 'DoOne', 'TeachOne'].map(k => `<div class="gate-pill">${checkSVG()} ${k.replace('One', ' One')}</div>`).join('')}</div>
+          <div class="badge-issuer">${esc(cred.issuer)} &middot; ${cred.issuedAt}</div>
+        </div>
+        <a class="badge-seal" href="#" title="${esc(cred.issuer)}">${sealSVG(sv, cred.issuerDid)}</a>
+      </div>
+      <div class="badge-footer">
+        <button class="verify-btn" data-state="${state.verify || 'idle'}">${state.verify === 'pending' ? '<span class="verify-pulse"></span> Verifying...' : state.verify === 'valid' ? checkSVG() + ' Verified' : state.verify === 'invalid' ? '&#x2717; Invalid' : 'Verify Credential'}</button>
+        <div class="verify-contract">${esc(cred.contractId)}</div>
+      </div>
+      ${state.verify === 'valid' || state.verify === 'invalid' ? `
+      <div class="verify-panel">
+        <div class="verify-row"><div class="verify-row-label">Skill</div><div class="verify-row-value">${esc(cred.skill)}</div></div>
+        <div class="verify-row"><div class="verify-row-label">Issued</div><div class="verify-row-value">${cred.issuedAt}</div></div>
+        <div class="verify-row"><div class="verify-row-label">Contract</div><div class="verify-row-value hash"><span class="hash-text">${esc(cred.contractId)}</span></div></div>
+        <div class="verify-row"><div class="verify-row-label">Issuer DID</div><div class="verify-row-value hash"><span class="hash-text">${esc(cred.issuerDid)}</span></div></div>
+        <div class="verify-row"><div class="verify-row-label">Holder DID</div><div class="verify-row-value hash"><span class="hash-text">${esc(cred.holderDid)}</span></div></div>
+        <div class="verify-row"><div class="verify-row-label">See One</div><div class="verify-row-value">${g.SeeOne.completedAt} &middot; ${personLink(g.SeeOne.mentor)} witnessed${tag('SeeOne', 'learner', r.learner.SeeOne)}${tag('SeeOne', 'mentor', r.mentor.SeeOne)}</div></div>
+        <div class="verify-row"><div class="verify-row-label">Do One</div><div class="verify-row-value">${g.DoOne.completedAt} &middot; ${personLink(g.DoOne.mentor)} witnessed${tag('DoOne', 'learner', r.learner.DoOne)}${tag('DoOne', 'mentor', r.mentor.DoOne)}</div></div>
+        <div class="verify-row"><div class="verify-row-label">Teach One</div><div class="verify-row-value">${g.TeachOne.completedAt} &middot; ${personLink(g.TeachOne.mentor)} verifies ${esc(cred.skill)} taught to ${personLink(g.TeachOne.student)}${tag('TeachOne', 'learner', r.learner.TeachOne)}${tag('TeachOne', 'mentor', r.mentor.TeachOne)}${tag('TeachOne', 'student', r.student)}</div></div>
+        ${lineageRow()}
+      </div>${lineageView()}` : ''}`
+    el.querySelector('.verify-btn').onclick = doVerify
+    el.querySelector('.badge-seal').onclick = e => { e.preventDefault(); if (!state.verify) doVerify() }
+    const lb = el.querySelector('.lineage-btn')
+    if (lb) lb.onclick = () => { state.lineageOpen = !state.lineageOpen; if (state.lineageOpen && !state.walking) walk(); else render() }
+  }
+
+  async function doVerify() {
+    if (state.verify === 'pending') return
+    state.verify = 'pending'; render()
+    const ok = await verifyJWT(cred.jwt, cred.issuerDid)
+    const r = { learner: {}, mentor: {}, student: null }
+    for (const k of ['SeeOne', 'DoOne', 'TeachOne']) {
+      r.learner[k] = await verifyJWT(cred.gates[k].learnerJwt, cred.holderDid)
+      r.mentor[k] = await verifyJWT(cred.gates[k].mentorJwt, cred.gates[k].mentor.did)
+    }
+    r.student = await verifyJWT(cred.gates.TeachOne.studentJwt, cred.gates.TeachOne.student.did)
+    await sleep(250)
+    state.verify = ok ? 'valid' : 'invalid'; state.attest = r; render()
+  }
+
+  // Walk upward one link at a time, redrawing as each is checked; then look down.
+  async function walk() {
+    state.walking = true
+    state.lineage = { up: [], down: [], complete: false, downDone: false }
+    render()
+    let cur = cred, guard = 0
+    const visited = new Set([cred.contractId])
+    while (cur && guard++ < 50) {
+      const mentor = mentorsOf(cur)[0]          // the demo chain has one mentor per credential
+      const ref = mentor && mentor.qualifiedBy
+      if (!ref) break
+      state.lineage.up.push({ pending: true }); render()
+      const res = await verifyLink(cur, mentor, ref)
+      state.lineage.up[state.lineage.up.length - 1] = { ...res, mentor }
+      render()
+      if (!res.ok) break
+      if (res.founding) { state.lineage.complete = true; break }
+      if (visited.has(res.parent.contractId)) break
+      visited.add(res.parent.contractId)
+      cur = res.parent
+    }
+    state.lineage.upDone = true; render()
+    // Downstream: the ledger finds candidates; each must point back to us by hash.
+    const mine = await sha256(cred.jwt)
+    for (const row of DATA.ledger.filter(r => r.qualifiedByDigest === mine)) {
+      try {
+        const child = badgeIn(await fetchPage(row.at), row.contractId)
+        const m = mentorsOf(child).find(x => x.did === cred.holderDid)
+        if (!m || !m.qualifiedBy || m.qualifiedBy.digest !== mine) continue
+        const checks = [
+          { k: 'hash',   ok: true },
+          { k: 'signed', ok: await verifyJWT(child.jwt, child.issuerDid) },
+          { k: 'skill',  ok: payloadOf(child.jwt).vc.credentialSubject.sodoto.skillSlug === payloadOf(cred.jwt).vc.credentialSubject.sodoto.skillSlug },
+        ]
+        if (checks.every(c => c.ok)) state.lineage.down.push({ name: child.holderName, portfolio: child.holderPortfolio, did: child.holderDid, issuedAt: child.issuedAt, checks })
+      } catch (_) { /* unreachable descendant: simply not shown */ }
+    }
+    state.lineage.downDone = true
+    state.walking = false
+    render()
+  }
+
+  render()
+}
+
+// ── boot + the tamper control ────────────────────────────────────────────────
+async function boot() {
+  for (const [id, show] of [['badge-sam', DATA.show[0]], ['badge-omar', DATA.show[1]]])
+    renderBadge(badgeIn(DATA.sites[show.url], show.contractId), document.getElementById(id))
+}
+document.getElementById('tamper').onclick = () => {
+  const t = DATA.taintTarget
+  const cred = badgeIn(DATA.sites[t.url], t.contractId)
+  const [h, p, s] = cred.jwt.split('.')
+  const body = payloadOf(cred.jwt)
+  body.nbf -= 86400 * 200                       // back-date by 200 days
+  cred.jwt = h + '.' + toB64u(JSON.stringify(body)) + '.' + s
+  cred.issuedAt = new Date(body.nbf * 1000).toISOString().slice(0, 10)
+  document.getElementById('tamper').classList.add('on')
+  document.getElementById('tamper').textContent = "Maria's credential is tampered — verify Sam's lineage again"
+  boot()
+}
+document.getElementById('reset').onclick = () => {
+  DATA.sites = JSON.parse(JSON.stringify(ORIGINAL_SITES))
+  document.getElementById('tamper').classList.remove('on')
+  document.getElementById('tamper').textContent = "Tamper with Maria's credential"
+  boot()
+}
+boot()
+</script>
+</body>
+</html>
