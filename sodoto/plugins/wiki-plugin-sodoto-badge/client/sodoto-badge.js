@@ -236,6 +236,7 @@
     'did:key:z6MkkPjFHVtxRRYNo2r5upSpNMsLekjv6JGPcFGGTr8pokv1': { label: "The Fledge",                   initial: "F",   color: "#3D6E8F", icon: "placeholder" },
     'did:key:z6MksuEnHPDjSXK5mwDXdmwoEttkDuJ8VW2kYpnuu5vTXTiP': { label: "Leo's",                        initial: "L",   color: "#6E1818", icon: "placeholder" },
     'did:key:z6MknaMKoMZwrjYTE8PfwR5wtMG3rwWY1neofsgMB89UoHam': { label: "Kula",                         initial: "K",   color: "#C06018", icon: "placeholder" },
+    'did:key:z6MknboYz3H5s5UsmBL34edVefo2yawzPAr4v8isbgpJP6CB': { label: "Superior AZ NDC",              initial: "S",   color: "#9A5B2E", icon: "placeholder" },   // copper — Superior is a copper town
   }
   const UNKNOWN_ISSUER = { label: "Unknown Issuer", initial: "?", color: "#6B6055", icon: "placeholder" }
 
