@@ -55,6 +55,13 @@
     .attempt-history strong { color: #1a1208; }
     input[type=radio] { margin-right: 4px; }
     .radio-group { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
+    .picker { position: relative; }
+    .picker-list { position: absolute; z-index: 10; left: 0; right: 0; top: 100%; background: #fff; border: 1px solid #999; border-top: none; max-height: 320px; overflow-y: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+    .picker-item { padding: 6px 8px; cursor: pointer; font-size: 12px; border-bottom: 1px solid #eee; }
+    .picker-item .sub { font-family: 'SF Mono', 'Fira Mono', monospace; font-size: 10px; color: #888; }
+    .picker-item.hi { background: #e8f4ed; }
+    .picker-more { padding: 5px 8px; font-size: 11px; color: #888; font-style: italic; }
+    .dup-did { color: #8b1a1a; font-weight: 700; }
     .radio-group label.inline { font-size: 12px; font-weight: 400; text-transform: none; letter-spacing: 0; color: #1a1208; cursor: pointer; }
   </style>
 </head>
@@ -144,9 +151,7 @@
   <div class="row2">
     <div>
       <label>Learner</label>
-      <select id="sel-learner" onchange="onContractChange()">
-        <option value="">— select learner —</option>
-      </select>
+      <div class="picker" data-for="sel-learner"><input type="text" class="picker-q" placeholder="type a name…" autocomplete="off" spellcheck="false"><input type="hidden" id="sel-learner"><div class="picker-list" hidden></div></div>
     </div>
     <div style="display:flex;align-items:flex-end;">
       <button onclick="openContract()" class="secondary" style="width:100%">Open / Resume Contract</button>
@@ -180,9 +185,7 @@
       </div>
       <div>
         <label>Mentor</label>
-        <select id="sel-mentor">
-          <option value="">— select mentor —</option>
-        </select>
+        <div class="picker" data-for="sel-mentor"><input type="text" class="picker-q" placeholder="type a name…" autocomplete="off" spellcheck="false"><input type="hidden" id="sel-mentor"><div class="picker-list" hidden></div></div>
       </div>
     </div>
 
@@ -214,9 +217,7 @@
       <div class="row2">
         <div>
           <label>Student (person you taught)</label>
-          <select id="sel-student">
-            <option value="">— select student —</option>
-          </select>
+          <div class="picker" data-for="sel-student"><input type="text" class="picker-q" placeholder="type a name…" autocomplete="off" spellcheck="false"><input type="hidden" id="sel-student"><div class="picker-list" hidden></div></div>
         </div>
         <div>
           <label>Evidence Slug
@@ -397,13 +398,14 @@ let lastSignedCredential = null
 
 async function loadState() {
   // Try server registry first — shared across all issuers' browsers
-  let serverPeople = null
+  let serverPeople = null, serverEmpty = false
   try {
     const headers = PROXY_SECRET ? { Authorization: `Bearer ${PROXY_SECRET}` } : {}
     const r = await fetch(PROXY + '/api/people-registry', { headers })
     if (r.ok) {
       const data = await r.json()
       if (Array.isArray(data.people) && data.people.length > 0) serverPeople = data.people
+      else serverEmpty = true
     }
   } catch (_) { /* offline — fall back to localStorage */ }
 
@@ -422,6 +424,14 @@ async function loadState() {
     } else {
       people = SEED_PEOPLE.map(x => ({...x}))
     }
+    // First contact with an empty server registry: this browser's list becomes
+    // the server's first copy. The server accepts a whole list only when it is
+    // empty; after that, changes go one person at a time (registryOp).
+    if (serverEmpty && people.length) {
+      fetch(PROXY + '/api/people-registry', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ people }) })
+        .then(r => { if (!r.ok) r.text().then(t => console.warn('registry init refused:', t)) })
+        .catch(() => {})
+    }
   }
 
   const rc = localStorage.getItem(LS_CONTRACTS)
@@ -436,12 +446,26 @@ function saveState() {
   localStorage.setItem(LS_CONTRACTS, JSON.stringify(contracts))
   if (active) localStorage.setItem(LS_ACTIVE, JSON.stringify(active))
   else        localStorage.removeItem(LS_ACTIVE)
-  // Sync people registry to server (fire-and-forget)
-  fetch(PROXY + '/api/people-registry', {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify({ people })
-  }).catch(() => {})
+  // The people registry is NOT sent from here any more. Posting the whole list
+  // on every save let one issuer's stale copy wipe another's new people; each
+  // change now goes to the server on its own through registryOp().
+}
+
+// One registry change — add, update or remove a single person. Resolves to
+// { ok, status, data }; status 0 means the proxy could not be reached at all.
+async function registryOp(op, payload) {
+  const send = () => fetch(PROXY + '/api/people-registry/person', {
+    method: 'POST', headers: authHeaders(), body: JSON.stringify({ op, ...payload })
+  })
+  try {
+    let r = await send()
+    if (r.status === 401) { await reauth(); r = await send() }
+    let data = {}
+    try { data = await r.json() } catch (_) {}
+    return { ok: r.ok, status: r.status, data }
+  } catch (_) {
+    return { ok: false, status: 0, data: {} }
+  }
 }
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
@@ -488,18 +512,50 @@ function logTo(logId, cls, msg) {
 
 // ─── People ───────────────────────────────────────────────────────────────────
 
-function addPerson() {
+// A DID pasted back from a phone often carries a stray space or line break.
+function normalizeDid(d) { return (d || '').replace(/\s+/g, '') }
+
+function describePerson(p) {
+  return `${p.name} (${p.slug}, DID …${(p.did || '').slice(-12)})`
+}
+
+async function addPerson() {
   const name  = el('add-name').value.trim()
   const slug  = el('add-slug').value.trim() || slugify(name)
-  const did   = el('add-did').value.trim()
+  const did   = normalizeDid(el('add-did').value)
   const site  = el('add-site').value.trim() || 'localhost'
   const pSlug = el('add-portfolio').value.trim() || `${slug}-sodoto-portfolio`
 
   if (!name || !slug || !did) { logTo('registry-log','err','Name, slug, and DID are required.'); return }
-  if (!did.startsWith('did:key:z')) { logTo('registry-log','err','DID must start with did:key:z'); return }
+  if (!/^did:key:z[1-9A-HJ-NP-Za-km-z]{40,}$/.test(did)) { logTo('registry-log','err','That is not a complete did:key — it should start did:key:z and run about 56 characters. Check nothing was cut off when it was copied.'); return }
+
+  // One DID, one person. Same DID under a second slug is the same human twice.
+  const sameDid = people.find(p => normalizeDid(p.did) === did)
+  if (sameDid) {
+    logTo('registry-log','err',`This DID is already registered to ${describePerson(sameDid)}. Nothing added.`)
+    logTo('registry-log','dim',`  If that is the same person, use their existing entry. If the name is wrong, fix it there.`)
+    return
+  }
   if (people.find(p => p.slug === slug)) { logTo('registry-log','err',`Slug "${slug}" already in registry.`); return }
 
-  people.push({ slug, name, did, site, portfolioSlug: pSlug })
+  const person = { slug, name, did, site, portfolioSlug: pSlug }
+  const res = await registryOp('add', { person })
+  if (res.status === 409) {
+    // Another issuer registered them since this page loaded.
+    const ex = res.data.existing
+    if (ex && !personBySlug(ex.slug)) people.push(ex)
+    renderPeople(); rebuildPeopleSelects(); saveState()
+    logTo('registry-log','err',`The server already has this ${res.data.field === 'did' ? 'DID' : 'slug'}: ${ex ? describePerson(ex) : '?'} — probably added from another browser. Nothing added.`)
+    return
+  }
+  if (res.status === 0) {
+    logTo('registry-log','err',`Couldn't reach the server — ${name} is saved in this browser only, and other issuers won't see them yet.`)
+  } else if (!res.ok) {
+    logTo('registry-log','err',`Server refused: ${res.data.error || 'HTTP ' + res.status}. Nothing added.`)
+    return
+  }
+
+  people.push(person)
   saveState()
   renderPeople()
   rebuildPeopleSelects()
@@ -533,8 +589,13 @@ function copyOnboardLink() {
     .catch(() => logTo('registry-log','err','Copy failed — select the link and copy manually.'))
 }
 
-function removePerson(slug) {
+async function removePerson(slug) {
   if (SEED_PEOPLE.find(s => s.slug === slug)) { logTo('registry-log','err','Cannot remove seeded people.'); return }
+  const res = await registryOp('remove', { slug })
+  if (!res.ok && res.status !== 404 && res.status !== 0) {
+    logTo('registry-log','err',`Server refused to remove ${slug}: ${res.data.error || 'HTTP ' + res.status}`); return
+  }
+  if (res.status === 0) logTo('registry-log','err',`Couldn't reach the server — ${slug} removed in this browser only.`)
   people = people.filter(p => p.slug !== slug)
   saveState(); renderPeople(); rebuildPeopleSelects()
 }
@@ -613,7 +674,7 @@ function renderAttemptHistory() {
 
 function clearAttemptForm() {
   el('gate-date').value = today()
-  el('sel-mentor').value = ''
+  setPicker('sel-mentor', '')
   el('sel-mentor-assertion').selectedIndex = 0
   el('sel-learner-assertion').selectedIndex = 0
   document.querySelectorAll('input[name=outcome]').forEach((r, i) => r.checked = i === 1)
@@ -1383,6 +1444,8 @@ async function provisionPersonSite(slug) {
   // Only move them once the site exists, so a failure never strands a person on
   // a host that was never created — the failure mode that hid all day today.
   p.site = res.site || site
+  const reg = await registryOp('update', { slug: p.slug, changes: { site: p.site } })
+  if (!reg.ok) logTo('registry-log','err',`  Site created, but the shared registry wasn't updated (${reg.data.error || (reg.status ? 'HTTP ' + reg.status : 'server unreachable')}) — other issuers still see ${p.name} on the old site.`)
   saveState()
   renderPeople(); rebuildPeopleSelects()
   logTo('registry-log','ok',`  ${p.name} → ${p.site}`)
@@ -1413,6 +1476,9 @@ function pageLink(slug, text, style) {
 function renderPeople() {
   const tbody = el('people-tbody')
   tbody.innerHTML = ''
+  // Entries made before the one-DID rule may already share a DID; say so on the row.
+  const didCount = {}
+  for (const p of people) { const d = normalizeDid(p.did); didCount[d] = (didCount[d] || 0) + 1 }
   for (const p of people) {
     const canRemove = !SEED_PEOPLE.find(s => s.slug === p.slug)
     const nameCell = `<a href="${wikiPageUrl(p.site, p.portfolioSlug)}" target="_blank" rel="noopener" style="color:#2a6b5a;text-decoration:underline;">${p.name}</a>`
@@ -1423,31 +1489,119 @@ function renderPeople() {
       : `<button class="small" onclick="provisionPersonSite('${p.slug}')" title="Create ${personalSite(p.slug)} — a site this person owns">Provision</button>`
     const tr = document.createElement('tr')
     tr.innerHTML = `<td class="name">${nameCell}</td><td>${p.slug}</td><td>${p.site}</td>`
-      + `<td title="${p.did}">…${p.did.slice(-12)}</td><td>${p.portfolioSlug}</td>`
+      + (didCount[normalizeDid(p.did)] > 1
+          ? `<td title="${p.did} — shared with another entry: same person twice?" class="dup-did">⚠ …${p.did.slice(-12)}</td>`
+          : `<td title="${p.did}">…${p.did.slice(-12)}</td>`)
+      + `<td>${p.portfolioSlug}</td>`
       + `<td>${ownCell}</td>`
       + `<td>${canRemove ? `<button class="small danger" onclick="removePerson('${p.slug}')">×</button>` : ''}</td>`
     tbody.appendChild(tr)
   }
 }
 
-function rebuildPeopleSelects() {
-  const prevLearner = el('sel-learner').value
-  const prevMentor  = el('sel-mentor').value
-  const prevStudent = el('sel-student').value
-  for (const [id, ph, prev] of [
-    ['sel-learner','— select learner —', prevLearner],
-    ['sel-mentor', '— select mentor —',  prevMentor ],
-    ['sel-student','— select student —', prevStudent],
-  ]) {
-    const sel = el(id)
-    sel.innerHTML = `<option value="">${ph}</option>`
-    for (const p of people) {
-      const o = document.createElement('option')
-      o.value = p.slug; o.textContent = p.name
-      if (p.slug === prev) o.selected = true
-      sel.appendChild(o)
-    }
+// ─── Person pickers ───────────────────────────────────────────────────────────
+// Type-ahead search instead of a <select> of everyone: a dropdown of a thousand
+// names is unusable, and two people with the same name are indistinguishable in
+// one. Each result shows the site and the DID tail so they can be told apart.
+// The hidden input keeps the old id, so el('sel-learner').value still works.
+
+const PICKER_LIMIT = 10
+const LS_RECENT    = 'sodoto-recent-people'
+
+function escHtml(t) { return String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) }
+
+function recentSlugs() {
+  try { return JSON.parse(localStorage.getItem(LS_RECENT)) || [] } catch (_) { return [] }
+}
+function noteRecent(slug) {
+  try { localStorage.setItem(LS_RECENT, JSON.stringify([slug, ...recentSlugs().filter(x => x !== slug)].slice(0, 20))) } catch (_) {}
+}
+
+// Every word typed must appear in the name, slug or DID; names that start with
+// the query rank first. Empty query: recently picked people, then A–Z.
+function searchPeople(q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean)
+  if (!words.length) {
+    const recent = recentSlugs().map(personBySlug).filter(Boolean)
+    const rest   = people.filter(p => !recent.includes(p)).sort((a, b) => a.name.localeCompare(b.name))
+    return [...recent, ...rest]
   }
+  const hits = people.filter(p => {
+    const hay = `${p.name} ${p.slug} ${p.did}`.toLowerCase()
+    return words.every(w => hay.includes(w))
+  })
+  const q0 = words[0]
+  return hits.sort((a, b) => {
+    const pa = a.name.toLowerCase().startsWith(q0) ? 0 : 1
+    const pb = b.name.toLowerCase().startsWith(q0) ? 0 : 1
+    return pa - pb || a.name.localeCompare(b.name)
+  })
+}
+
+function pickerParts(id) {
+  const root = document.querySelector(`.picker[data-for="${id}"]`)
+  return { root, q: root.querySelector('.picker-q'), val: el(id), list: root.querySelector('.picker-list') }
+}
+
+function setPicker(id, slug) {
+  const { q, val } = pickerParts(id)
+  const p = slug ? personBySlug(slug) : null
+  val.value = p ? p.slug : ''
+  q.value   = p ? p.name : ''
+}
+
+function initPicker(id, onPick) {
+  const { q, val, list } = pickerParts(id)
+  let shown = [], hi = 0
+
+  const paint = () => {
+    const all = searchPeople(q.value)
+    shown = all.slice(0, PICKER_LIMIT)
+    hi = Math.min(hi, Math.max(shown.length - 1, 0))
+    // The count goes first: below a scrolling list it is never seen.
+    list.innerHTML = (all.length > shown.length
+          ? `<div class="picker-more">${q.value.trim() ? `${all.length} matches` : `${people.length} people`} — showing ${shown.length}, keep typing to narrow</div>`
+          : (!all.length ? `<div class="picker-more">${people.length ? `No one matches “${escHtml(q.value)}”.` : 'No one registered yet — add people on the Registry tab.'}</div>` : ''))
+      + shown.map((p, i) =>
+      `<div class="picker-item${i === hi ? ' hi' : ''}" data-i="${i}">${escHtml(p.name)}`
+      + `<div class="sub">${escHtml(p.site)} · …${escHtml((p.did || '').slice(-12))}</div></div>`).join('')
+    list.hidden = false
+  }
+  const choose = p => {
+    val.value = p.slug; q.value = p.name; list.hidden = true
+    noteRecent(p.slug)
+    if (onPick) onPick()
+  }
+
+  q.addEventListener('focus', () => { hi = 0; paint(); q.select() })
+  q.addEventListener('input', () => {
+    hi = 0
+    if (val.value) { val.value = ''; if (onPick) onPick() }   // editing the text un-picks
+    paint()
+  })
+  q.addEventListener('keydown', e => {
+    if (list.hidden) return
+    if (e.key === 'ArrowDown') { hi = Math.min(hi + 1, shown.length - 1); paint(); e.preventDefault() }
+    else if (e.key === 'ArrowUp') { hi = Math.max(hi - 1, 0); paint(); e.preventDefault() }
+    else if (e.key === 'Enter') { if (shown[hi]) choose(shown[hi]); e.preventDefault() }
+    else if (e.key === 'Escape') { list.hidden = true }
+  })
+  // mousedown, not click: it lands before the input's blur hides the list
+  list.addEventListener('mousedown', e => {
+    const item = e.target.closest('.picker-item')
+    e.preventDefault()
+    if (item) choose(shown[+item.dataset.i])
+  })
+  q.addEventListener('blur', () => {
+    list.hidden = true
+    if (!val.value) q.value = ''                               // no half-typed ghosts
+    else q.value = personBySlug(val.value)?.name || ''
+  })
+}
+
+// Registry changed: keep each picker's choice if that person still exists.
+function rebuildPeopleSelects() {
+  for (const id of ['sel-learner', 'sel-mentor', 'sel-student']) setPicker(id, el(id).value)
 }
 
 function renderIssuersAndSkills() {
@@ -1559,12 +1713,14 @@ async function init() {
   el('add-site').value = WIKI_SITE
   renderPeople()
   renderIssuersAndSkills()
-  rebuildPeopleSelects()
+  initPicker('sel-learner', onContractChange)
+  initPicker('sel-mentor')
+  initPicker('sel-student')
 
   if (active) {
     el('sel-issuer').value  = active.issuerId
     el('sel-skill').value   = active.skillSlug
-    el('sel-learner').value = active.learnerSlug
+    setPicker('sel-learner', active.learnerSlug)
     renderContractDetail()
   }
 

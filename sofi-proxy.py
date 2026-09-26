@@ -7,7 +7,7 @@ Usage:
 
 Then open evsm-aggregator.html via http://localhost:8765
 """
-import os, json, hmac, sys, urllib.request, urllib.error
+import os, re, json, hmac, sys, threading, urllib.request, urllib.error
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 # Line-buffer stdout so the audit lines below actually reach the logs. Python
@@ -36,6 +36,7 @@ DID_OWNERSHIP = os.environ.get('SODOTO_DID_OWNERSHIP', '').strip().lower() not i
 # is reached by patient-facing tools whose users don't hold that passphrase.
 ADMIN_PATHS = {
     '/api/people-registry',
+    '/api/people-registry/person',
     '/api/list-patients',
     '/api/provision-patient',
     '/api/sodoto-provision-site',
@@ -55,6 +56,110 @@ eVSM_DIR = os.path.dirname(os.path.abspath(__file__))
 WIKI_SITE = os.environ.get('WIKI_SITE', 'localhost')
 WIKI_PAGES_DIR = os.path.expanduser(f'~/.wiki/{WIKI_SITE}/pages')
 PEOPLE_REGISTRY_FILE = os.path.expanduser('~/.sodoto/people-registry.json')
+
+# ─── People registry: one person per write, one DID per person ───────────────
+# The registry used to be replaced wholesale by whichever issuer browser saved
+# last, so two coordinators working at once silently dropped each other's
+# additions — and a dropped person got re-added, often with a freshly minted
+# key: two DIDs, one human. Now every change is a single add/update/remove,
+# read-modify-written under a lock, and a slug or DID already in the registry
+# is refused. The server is the gate; the issuer's own check is a courtesy.
+REGISTRY_LOCK = threading.Lock()
+DID_KEY_RE = re.compile(r'^did:key:z[1-9A-HJ-NP-Za-km-z]{40,}$')   # base58btc, Ed25519 is 48 chars
+PERSON_FIELDS = ('slug', 'name', 'did', 'site', 'portfolioSlug')
+
+def normalize_did(did):
+    """A DID pasted from a phone arrives with stray spaces or line breaks."""
+    return re.sub(r'\s+', '', did or '')
+
+def registry_load():
+    try:
+        with open(PEOPLE_REGISTRY_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        data = {}
+    data.setdefault('people', [])
+    return data
+
+def registry_save(data):
+    os.makedirs(os.path.dirname(PEOPLE_REGISTRY_FILE), exist_ok=True)
+    tmp = PEOPLE_REGISTRY_FILE + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, PEOPLE_REGISTRY_FILE)   # a crash mid-write never leaves half a registry
+
+def registry_conflict(people, slug=None, did=None, ignore_slug=None):
+    """The person who already holds this slug or DID, as (field, person), or None."""
+    for p in people:
+        if p.get('slug') == ignore_slug:
+            continue
+        if slug and p.get('slug') == slug:
+            return 'slug', p
+        if did and normalize_did(p.get('did')) == did:
+            return 'did', p
+    return None
+
+def registry_duplicates(people):
+    """Every (field, value) held by more than one entry — for refusing a bulk write."""
+    seen, dups = {}, []
+    for p in people:
+        for field in ('slug', 'did'):
+            v = normalize_did(p.get(field)) if field == 'did' else p.get(field)
+            if not v:
+                continue
+            if (field, v) in seen:
+                dups.append({'field': field, 'value': v, 'people': [seen[(field, v)], p.get('slug')]})
+            else:
+                seen[(field, v)] = p.get('slug')
+    return dups
+
+def registry_apply(op, body):
+    """Apply one change. Returns (http_status, response_dict)."""
+    with REGISTRY_LOCK:
+        data = registry_load()
+        people = data['people']
+        if op == 'add':
+            p = {k: (body.get('person') or {}).get(k) for k in PERSON_FIELDS}
+            p = {k: (v.strip() if isinstance(v, str) else v) for k, v in p.items()}
+            p['did'] = normalize_did(p['did'])
+            if not (p['slug'] and p['name'] and p['did']):
+                return 400, {'error': 'slug, name and did are required'}
+            if not DID_KEY_RE.match(p['did']):
+                return 400, {'error': 'did must be a did:key:z… identifier'}
+            hit = registry_conflict(people, slug=p['slug'], did=p['did'])
+            if hit:
+                return 409, {'error': f'{hit[0]} already registered', 'field': hit[0], 'existing': hit[1]}
+            people.append({k: v for k, v in p.items() if v})
+            registry_save(data)
+            print(f"  REGISTRY ADD  {p['slug']} {p['did'][-12:]}")
+            return 200, {'ok': True, 'person': people[-1]}
+        if op == 'update':
+            slug = body.get('slug')
+            p = next((x for x in people if x.get('slug') == slug), None)
+            if not p:
+                return 404, {'error': f'no such person: {slug}'}
+            changes = {k: v for k, v in (body.get('changes') or {}).items() if k in PERSON_FIELDS and k != 'slug'}
+            if 'did' in changes:
+                changes['did'] = normalize_did(changes['did'])
+                if not DID_KEY_RE.match(changes['did']):
+                    return 400, {'error': 'did must be a did:key:z… identifier'}
+                hit = registry_conflict(people, did=changes['did'], ignore_slug=slug)
+                if hit:
+                    return 409, {'error': 'did already registered', 'field': 'did', 'existing': hit[1]}
+            p.update(changes)
+            registry_save(data)
+            print(f"  REGISTRY UPDATE {slug} {sorted(changes)}")
+            return 200, {'ok': True, 'person': p}
+        if op == 'remove':
+            slug = body.get('slug')
+            kept = [x for x in people if x.get('slug') != slug]
+            if len(kept) == len(people):
+                return 404, {'error': f'no such person: {slug}'}
+            data['people'] = kept
+            registry_save(data)
+            print(f"  REGISTRY REMOVE {slug}")
+            return 200, {'ok': True}
+        return 400, {'error': f'unknown op: {op}'}
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
@@ -427,21 +532,41 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({'error': str(e)}).encode())
             return
 
+        if self.path == '/api/people-registry/person':
+            length = int(self.headers.get('Content-Length', 0))
+            try:
+                body = json.loads(self.rfile.read(length))
+                status, resp = registry_apply(body.get('op'), body)
+            except Exception as e:
+                status, resp = 500, {'error': str(e)}
+            self.send_response(status); self._cors()
+            self.send_header('Content-Type', 'application/json'); self.end_headers()
+            self.wfile.write(json.dumps(resp).encode())
+            return
+
+        # Whole-registry write: now ONLY to fill an empty registry (an issuer's
+        # local list becoming the first server copy). Replacing a live registry
+        # wholesale is exactly the lost-update that re-minted people; every
+        # change after the first goes through /api/people-registry/person.
         if self.path == '/api/people-registry':
             length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(length)
             try:
-                data = json.loads(body)
-                os.makedirs(os.path.dirname(PEOPLE_REGISTRY_FILE), exist_ok=True)
-                with open(PEOPLE_REGISTRY_FILE, 'w', encoding='utf-8') as f:
-                    json.dump(data, f, ensure_ascii=False, indent=2)
-                print(f"  REGISTRY WRITE {len(data.get('people', []))} people")
-                self.send_response(200); self._cors()
-                self.send_header('Content-Type', 'application/json'); self.end_headers()
-                self.wfile.write(b'{"ok":true}')
+                data = json.loads(self.rfile.read(length))
+                incoming = data.get('people', [])
+                with REGISTRY_LOCK:
+                    if registry_load()['people']:
+                        status, resp = 409, {'error': 'registry is not empty — change it one person at a time via /api/people-registry/person'}
+                    elif registry_duplicates(incoming):
+                        status, resp = 409, {'error': 'duplicate slug or DID in the list', 'duplicates': registry_duplicates(incoming)}
+                    else:
+                        registry_save({'people': incoming})
+                        print(f"  REGISTRY INIT {len(incoming)} people")
+                        status, resp = 200, {'ok': True}
             except Exception as e:
-                self.send_response(500); self._cors(); self.end_headers()
-                self.wfile.write(str(e).encode())
+                status, resp = 500, {'error': str(e)}
+            self.send_response(status); self._cors()
+            self.send_header('Content-Type', 'application/json'); self.end_headers()
+            self.wfile.write(json.dumps(resp).encode())
             return
 
         if self.path == '/api/wiki-write':
