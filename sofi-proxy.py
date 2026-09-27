@@ -7,7 +7,7 @@ Usage:
 
 Then open evsm-aggregator.html via http://localhost:8765
 """
-import os, re, json, hmac, sys, threading, urllib.request, urllib.error
+import os, re, glob, json, hmac, sys, threading, urllib.request, urllib.error
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 # Line-buffer stdout so the audit lines below actually reach the logs. Python
@@ -37,6 +37,7 @@ DID_OWNERSHIP = os.environ.get('SODOTO_DID_OWNERSHIP', '').strip().lower() not i
 ADMIN_PATHS = {
     '/api/people-registry',
     '/api/people-registry/person',
+    '/api/sodoto-contract-id',
     '/api/list-patients',
     '/api/provision-patient',
     '/api/sodoto-provision-site',
@@ -112,6 +113,48 @@ def registry_duplicates(people):
             else:
                 seen[(field, v)] = p.get('slug')
     return dups
+
+# ─── Contract IDs: allocated here, never by a browser ─────────────────────────
+# The issuer used to number contracts from its own localStorage, so two issuer
+# browsers each produced sodoto-eip-basic-rcn-2026-0001 — for two different
+# people's badges. Now the proxy allocates the next number under a lock: higher
+# than any ID already on any site's badges, any number it has handed out before,
+# and any open contract the asking browser reports.
+CONTRACT_IDS_FILE = os.path.expanduser('~/.sodoto/contract-ids.json')
+CONTRACT_LOCK = threading.Lock()
+SLUG_PART_RE = re.compile(r'^[A-Za-z0-9-]{1,40}$')
+
+def allocate_contract_id(issuer_id, skill_slug, year, known=()):
+    prefix = f'sodoto-{skill_slug}-{issuer_id}-{year}-'
+    num_re = re.compile(re.escape(prefix) + r'(\d{4,})')
+    with CONTRACT_LOCK:
+        try:
+            with open(CONTRACT_IDS_FILE, encoding='utf-8') as f:
+                issued = json.load(f)
+        except FileNotFoundError:
+            issued = {}
+        used = set(issued.get(prefix, []))
+        for k in known:
+            m = num_re.fullmatch(str(k))
+            if m: used.add(int(m.group(1)))
+        for path in glob.glob(os.path.expanduser('~/.wiki/*/pages/*')):
+            try:
+                with open(path, encoding='utf-8', errors='ignore') as f:
+                    text = f.read()
+            except OSError:
+                continue
+            if prefix in text:
+                used.update(int(n) for n in num_re.findall(text))
+        n = max(used, default=0) + 1
+        issued[prefix] = sorted(used | {n})
+        os.makedirs(os.path.dirname(CONTRACT_IDS_FILE), exist_ok=True)
+        tmp = CONTRACT_IDS_FILE + '.tmp'
+        with open(tmp, 'w', encoding='utf-8') as f:
+            json.dump(issued, f, indent=2)
+        os.replace(tmp, CONTRACT_IDS_FILE)
+        cid = f'{prefix}{n:04d}'
+        print(f"  CONTRACT ID {cid}")
+        return cid
 
 def registry_apply(op, body):
     """Apply one change. Returns (http_status, response_dict)."""
@@ -530,6 +573,23 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 self.send_response(400); self._cors(); self.end_headers()
                 self.wfile.write(json.dumps({'error': str(e)}).encode())
+            return
+
+        if self.path == '/api/sodoto-contract-id':
+            length = int(self.headers.get('Content-Length', 0))
+            try:
+                body = json.loads(self.rfile.read(length))
+                issuer_id, skill_slug = str(body.get('issuerId', '')), str(body.get('skillSlug', ''))
+                year = int(body.get('year') or 0)
+                if not (SLUG_PART_RE.match(issuer_id) and SLUG_PART_RE.match(skill_slug) and 2000 <= year <= 2100):
+                    status, resp = 400, {'error': 'issuerId, skillSlug and year are required'}
+                else:
+                    status, resp = 200, {'contractId': allocate_contract_id(issuer_id, skill_slug, year, body.get('known') or [])}
+            except Exception as e:
+                status, resp = 500, {'error': str(e)}
+            self.send_response(status); self._cors()
+            self.send_header('Content-Type', 'application/json'); self.end_headers()
+            self.wfile.write(json.dumps(resp).encode())
             return
 
         if self.path == '/api/people-registry/person':

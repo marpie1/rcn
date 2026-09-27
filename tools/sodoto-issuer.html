@@ -516,13 +516,6 @@ function gatesCompleted() {
   return GATES.filter(gateComplete)
 }
 
-function generateContractId(issuerId, skillSlug) {
-  const year   = new Date().getFullYear()
-  const prefix = `sodoto-${skillSlug}-${issuerId}-${year}-`
-  const n      = Object.values(contracts).filter(c => c.contractId.startsWith(prefix)).length
-  return prefix + String(n + 1).padStart(4, '0')
-}
-
 function logTo(logId, cls, msg) {
   const div = el(logId)
   div.style.display = 'block'
@@ -627,7 +620,23 @@ async function removePerson(slug) {
 
 // ─── Contract ─────────────────────────────────────────────────────────────────
 
-function openContract() {
+// A new contract's ID comes from the server, which checks every badge on every
+// site. Numbering from this browser's own records is how two issuers both
+// produced sodoto-eip-basic-rcn-2026-0001 for two different people.
+async function allocateContractId(issuerId, skillSlug) {
+  const year  = new Date().getFullYear()
+  const known = Object.values(contracts).map(c => c.contractId)
+  const send  = () => fetch(PROXY + '/api/sodoto-contract-id', {
+    method: 'POST', headers: authHeaders(), body: JSON.stringify({ issuerId, skillSlug, year, known })
+  })
+  let r = await send()
+  if (r.status === 401) { await reauth(); r = await send() }
+  const data = await r.json().catch(() => ({}))
+  if (!r.ok || !data.contractId) throw new Error(data.error || `HTTP ${r.status}`)
+  return data.contractId
+}
+
+async function openContract() {
   const issuerId    = el('sel-issuer').value
   const skillSlug   = el('sel-skill').value
   const learnerSlug = el('sel-learner').value
@@ -635,8 +644,16 @@ function openContract() {
 
   const key = contractKey(issuerId, skillSlug, learnerSlug)
   if (!contracts[key]) {
+    let contractId
+    try {
+      contractId = await allocateContractId(issuerId, skillSlug)
+    } catch (e) {
+      el('contract-detail').style.display = 'none'
+      alert(`Couldn't get a contract number from the server (${e.message}). The contract wasn't opened — check the connection and try again.`)
+      return
+    }
     contracts[key] = {
-      contractId: generateContractId(issuerId, skillSlug),
+      contractId,
       issuerId, skillSlug, learnerSlug,
       createdAt: today(),
       gates: { SeeOne: { attempts: [] }, DoOne: { attempts: [] }, TeachOne: { attempts: [] } }

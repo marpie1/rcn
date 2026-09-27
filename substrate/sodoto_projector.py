@@ -7,7 +7,11 @@ teaching edges (TAUGHT / ATTESTED / HOLDS / ISSUED / CERTIFIES). The badge on th
 portfolio stays the source of truth; Neo4j is a queryable lens over it. Issuing a
 badge never depends on this running.
 
-Idempotent on contractId — safe to re-run (MERGE everywhere; re-runs are no-ops).
+Idempotent on (contractId, holderDid) — safe to re-run (MERGE everywhere; re-runs
+are no-ops). Not contractId alone: before Sep 2026 the issuer numbered contracts
+per browser, so two browsers could give two different people's badges the same
+contractId, and keying on it merged Kerry Turner's EIP Basic into Marc's. The
+holder is what makes a badge's identity unique; --check warns about any shared IDs.
 No (:Debt) node: debt/value is the separate currency layer (CfA-dSC), not SODOTO
 provenance. See project_signed_substrate_no_chain / the SODOTO reference doc.
 
@@ -16,6 +20,7 @@ Usage:
     python3 substrate/sodoto_projector.py --pages DIR # a specific pages folder
     python3 substrate/sodoto_projector.py --check      # dry run — what would project (no Neo4j needed)
     python3 substrate/sodoto_projector.py --summary    # project, then print a lineage summary
+    python3 substrate/sodoto_projector.py --rebuild    # clear this projector's nodes/edges, then project
 
 Credentials for Neo4j come from ~/rcn/.env.neo4j via db.py (stdlib, Desktop only).
 """
@@ -34,7 +39,7 @@ MERGE (org:Organization {did: $cred.issuerDid})
 MERGE (learner:Person {did: $cred.holderDid})
   SET learner.name = coalesce($cred.holderName, learner.name)
 MERGE (skill:Skill {name: $cred.skill})
-MERGE (c:Credential {contractId: $cred.contractId})
+MERGE (c:Credential {contractId: $cred.contractId, holderDid: $cred.holderDid})
   SET c.skill = $cred.skill, c.issuedAt = $cred.issuedAt, c.version = $cred.version,
       c.issuerDid = $cred.issuerDid, c.holderDid = $cred.holderDid,
       c.contractHash = $cred.contractHash, c.partial = $cred.partial,
@@ -49,7 +54,7 @@ UNWIND $gates AS g
   MERGE (m)-[att:ATTESTED {contractId: $cred.contractId, gate: g.gate}]->(learner)
     SET att.completedAt = g.completedAt
   MERGE (m)-[:TAUGHT {contractId: $cred.contractId, skill: $cred.skill}]->(learner)
-  MERGE (ga:GateAttempt {contractId: $cred.contractId, gate: g.gate})
+  MERGE (ga:GateAttempt {contractId: $cred.contractId, holderDid: $cred.holderDid, gate: g.gate})
     SET ga.completedAt = g.completedAt, ga.attempts = g.attempts,
         ga.learnerAttested = g.learnerAttested
   MERGE (c)-[:HAS_GATE]->(ga)
@@ -79,6 +84,23 @@ def collect_credentials(pages_dir):
             if item.get('type') == 'sodoto-badge' and item.get('credential'):
                 out.append((os.path.basename(path), item['credential']))
     return out
+
+
+def shared_contract_ids(creds):
+    """contractIds carried by badges of more than one holder: {contractId: [holder names]}."""
+    holders = {}
+    for c in creds:
+        holders.setdefault(c.get('contractId'), {})[c.get('holderDid')] = c.get('holderName') or c.get('holderDid')
+    return {cid: sorted(h.values()) for cid, h in holders.items() if len(h) > 1}
+
+
+# Everything this projector creates that --rebuild may remove. Person, Organization
+# and Skill are left alone: they are shared, and MERGE brings them straight back.
+REBUILD = [
+    "MATCH ()-[r:TAUGHT|ATTESTED]->() WHERE r.contractId IS NOT NULL DELETE r",
+    "MATCH (ga:GateAttempt) DETACH DELETE ga",
+    "MATCH (c:Credential) DETACH DELETE c",
+]
 
 
 def projectable(cred):
@@ -138,6 +160,7 @@ def main():
     ap.add_argument('--pages', default=DEFAULT_PAGES, help='FedWiki pages folder to read')
     ap.add_argument('--check', action='store_true', help='dry run: list what would project (no Neo4j)')
     ap.add_argument('--summary', action='store_true', help='after projecting, print a lineage summary')
+    ap.add_argument('--rebuild', action='store_true', help="clear this projector's credentials, gate attempts and teaching edges, then project")
     args = ap.parse_args()
 
     if not os.path.isdir(args.pages):
@@ -147,6 +170,8 @@ def main():
     good = [(src, c) for src, c in found if projectable(c)]
     skipped = len(found) - len(good)
     print(f"found {len(found)} badge(s) in {args.pages} — {len(good)} projectable, {skipped} skipped")
+    for cid, names in shared_contract_ids([c for _s, c in good]).items():
+        print(f"  WARNING: {cid} is used by {len(names)} different holders' badges ({', '.join(names)}) — kept apart by holder")
 
     if args.check:
         for _src, c in good:
@@ -157,6 +182,10 @@ def main():
         return
 
     from db import run  # imported here so --check needs no Neo4j / .env.neo4j
+    if args.rebuild:
+        for q in REBUILD:
+            run(q)
+        print("cleared this projector's credentials, gate attempts and teaching edges")
     projected = 0
     for _src, c in good:
         try:
