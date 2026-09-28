@@ -888,14 +888,25 @@
 const map = L.map('map', {zoomControl: false}).setView([39,-98],4);
 
 // ── Base layers ───────────────────────────────────────────────────────
-const baseLayers = {
-  'Light (default)': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
-    subdomains: 'abcd', maxZoom: 19
+// No-key tile sources only. Carto's basemaps.cartocdn.com started stamping
+// "API KEY REQUIRED" over every tile (Sep 2026). Esri's Canvas basemaps have
+// no place names, so each is a group: base plus a labels layer drawn on top.
+// They stop at zoom 16; Leaflet upscales past that.
+const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+const esriCanvas = shade => L.layerGroup([
+  L.tileLayer(ESRI + `World_${shade}_Gray_Base/MapServer/tile/{z}/{y}/{x}`, {
+    attribution: 'Tiles © Esri — Esri, HERE, Garmin, © OpenStreetMap contributors',
+    maxNativeZoom: 16, maxZoom: 19, zIndex: 1
   }),
-  'OpenStreetMap (Voyager)': L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
-    subdomains: 'abcd', maxZoom: 19
+  L.tileLayer(ESRI + `World_${shade}_Gray_Reference/MapServer/tile/{z}/{y}/{x}`, {
+    maxNativeZoom: 16, maxZoom: 19, zIndex: 2
+  })
+]);
+const baseLayers = {
+  'Light': esriCanvas('Light'),
+  'OpenStreetMap': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
   }),
   'Satellite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles © Esri — Source: Esri, USGS, NOAA',
@@ -913,10 +924,7 @@ const baseLayers = {
     attribution: '© <a href="https://memomaps.de">MeMoMaps</a> — © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 18
   }),
-  'Dark': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
-    subdomains: 'abcd', maxZoom: 19
-  })
+  'Dark': esriCanvas('Dark')
 };
 baseLayers['Topo'].addTo(map);
 
