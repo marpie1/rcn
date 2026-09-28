@@ -515,22 +515,31 @@ const lawBorderColor       = { state: 'rgba(74,180,232,0.4)', county: 'rgba(160,
 const stanceColor          = { pro: '#1a7a4a', con: '#c0392b', unknown: '#8090b0' };
 
 let ISSUE, PARCELS, META, apnPrefix;
-let map, layers = {}, parcelMarkers = [], baseTile;
+let map, layers = {}, parcelMarkers = [], baseTile, baseLabels;
 let parcelNewCount = 0; // always-increasing counter so IDs are unique even after deletes
 
+// No-key tile sources only. Carto's basemaps.cartocdn.com started stamping
+// "API KEY REQUIRED" over every tile (Sep 2026). Esri's Canvas basemaps have
+// no place names, so they carry a separate labels layer drawn on top; they
+// stop at zoom 16 and Leaflet upscales past that (native).
+const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
 const BASEMAPS = {
-  light:  { url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',                              attr: '© CartoDB © OpenStreetMap contributors' },
-  osm:    { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',                    attr: '© CartoDB © OpenStreetMap contributors' },
-  topo:   { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',                                            attr: '© OpenTopoMap © OpenStreetMap contributors' },
-  sat:    { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr: '© Esri' },
-  dark:   { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',                               attr: '© CartoDB © OpenStreetMap contributors' }
+  light:  { url: ESRI + 'Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', labels: ESRI + 'Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', native: 16, attr: '© Esri' },
+  osm:    { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',                                              attr: '© OpenStreetMap contributors' },
+  topo:   { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', native: 17,                                attr: '© OpenTopoMap © OpenStreetMap contributors' },
+  sat:    { url: ESRI + 'World_Imagery/MapServer/tile/{z}/{y}/{x}',                                              attr: '© Esri' },
+  dark:   { url: ESRI + 'Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',  labels: ESRI + 'Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',  native: 16, attr: '© Esri' }
 };
 
 function setBasemap(key) {
   if (!map || !BASEMAPS[key]) return;
-  if (baseTile) map.removeLayer(baseTile);
-  baseTile = L.tileLayer(BASEMAPS[key].url, { maxZoom: 19, attribution: BASEMAPS[key].attr }).addTo(map);
-  baseTile.bringToBack();
+  const b = BASEMAPS[key];
+  const opts = { maxZoom: 19, maxNativeZoom: b.native || 19 };
+  if (baseTile)   map.removeLayer(baseTile);
+  if (baseLabels) map.removeLayer(baseLabels);
+  // zIndex keeps labels above the base; both sit in the tile pane, under every marker and polygon
+  baseTile   = L.tileLayer(b.url, { ...opts, zIndex: 1, attribution: b.attr }).addTo(map);
+  baseLabels = b.labels ? L.tileLayer(b.labels, { ...opts, zIndex: 2 }).addTo(map) : null;
   document.querySelectorAll('[id^="bm-"]').forEach(b => b.classList.remove('basemap-active'));
   document.getElementById('bm-' + key).classList.add('basemap-active');
 }
@@ -619,8 +628,8 @@ function initMap(data) {
   buildSidebar(data);
 
   // Map
-  map = L.map('map', { center: ISSUE.centroid, zoom: 15, zoomControl: true, attributionControl: false });
-  baseTile = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+  map = L.map('map', { center: ISSUE.centroid, zoom: 15, zoomControl: true, attributionControl: true });
+  setBasemap('light');
 
   // County boundary
   if (data.boundaries && data.boundaries.county) {
