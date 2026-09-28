@@ -112,7 +112,7 @@ a.tb-btn.help:hover{background:#dbeafe}
 #sentence{font-size:12px;padding:4px 9px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#1e293b;flex:0 1 228px;min-width:120px}
 #sentence:focus{outline:none;border-color:#93c5fd}
 #main{display:flex;flex:1;overflow:hidden}
-#canvas-wrap{flex:1;position:relative;overflow:auto;background:#fff;touch-action:none}
+#canvas-wrap{flex:1;position:relative;overflow-x:hidden;overflow-y:auto;background:#fff;touch-action:none}
 #svg{display:block}
 #panel{width:248px;border-left:1px solid #e2e8f0;background:#fff;display:flex;flex-direction:column;overflow-y:auto;font-size:12px;flex-shrink:0}
 #panel-header{padding:9px 12px 6px;font-size:11px;font-weight:500;color:#64748b;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e2e8f0}
@@ -199,8 +199,8 @@ textarea.prop-input{resize:vertical;min-height:44px;font-family:inherit}
     <input id="sentence" title="Type an assertion and press Enter — e.g. &quot;Pilot before Grant&quot;, &quot;Report = Jan 2026 .. Jun 2026&quot;, &quot;Scale-up lasts 6 months&quot;, &quot;pin Report&quot;" placeholder='say it:  "Pilot before Grant"   ·   "Report = Jan 2026 .. Jun 2026"   ·   "pin Report"'>
     <span class="tb-sep"></span>
     <button class="tb-btn" id="btn-fit" title="Zoom and pan to fit all intervals in view">Fit</button>
-    <button class="tb-btn" id="btn-zin" title="Zoom in (or scroll up over the canvas)">＋</button>
-    <button class="tb-btn" id="btn-zout" title="Zoom out (or scroll down over the canvas)">－</button>
+    <button class="tb-btn" id="btn-zin" title="Zoom in (or pinch out / ⌘-scroll over the canvas)">＋</button>
+    <button class="tb-btn" id="btn-zout" title="Zoom out (or pinch in / ⌘-scroll over the canvas)">－</button>
     <span class="tb-sep"></span>
     <button class="tb-btn" id="btn-demo" title="Load the sample timeline (founding → first report)">Demo</button>
     <span class="tb-sep"></span>
@@ -218,7 +218,7 @@ textarea.prop-input{resize:vertical;min-height:44px;font-family:inherit}
     <div id="canvas-wrap">
       <svg id="svg"></svg>
       <div id="toast"></div>
-      <div id="hint">drag background = pan · scroll = zoom · double-click = new · Del = remove · P = pin · Ctrl-Z = undo</div>
+      <div id="hint">drag background = pan · swipe ↕ = scroll rows · swipe ↔ = move in time · pinch or ⌘-scroll = zoom · double-click = new · Del = remove · P = pin · Ctrl-Z = undo</div>
     </div>
     <div id="panel">
       <div id="panel-header">Properties</div>
@@ -404,22 +404,15 @@ function calTicks(W){
 }
 
 function render(){
-  var W=Math.max(svgW(), PAD_L+40), H=Math.max(wrap.clientHeight, ROW_TOP+M.intervals.length*ROW_H+40);
+  var W=Math.max(svgW(), PAD_L+40), H=Math.max(wrap.clientHeight, ROW_TOP+(M.intervals.reduce(function(m,v){return Math.max(m,v.row);},-1)+1)*ROW_H+40);
   svg.setAttribute("width",W); svg.setAttribute("height",H);
   while(svg.firstChild)svg.removeChild(svg.firstChild);
   var defs=el("defs",{}); svg.appendChild(defs);
 
   // axis (adaptive calendar ticks)
-  var axis=el("line",{x1:0,y1:AXIS_Y,x2:W,y2:AXIS_Y,stroke:"#e2e8f0","stroke-width":1});
-  svg.appendChild(axis);
   var tks=calTicks(W);
-  for(var ti=0;ti<tks.length;ti++){
-    var x=tks[ti].x;
-    svg.appendChild(el("line",{x1:x,y1:AXIS_Y,x2:x,y2:H,"class":"axis-tick"}));
-    var tk=el("text",{x:x+3,y:AXIS_Y-6,"class":"axis-text"});
-    tk.textContent=tks[ti].label;
-    svg.appendChild(tk);
-  }
+  for(var ti=0;ti<tks.length;ti++)
+    svg.appendChild(el("line",{x1:tks[ti].x,y1:AXIS_Y,x2:tks[ti].x,y2:H,"class":"axis-tick"}));
 
   // links (drawn under bars' handles, over bars body)
   for(var i=0;i<M.links.length;i++)renderLink(M.links[i],defs);
@@ -432,9 +425,19 @@ function render(){
     if(a){var g=el("line",{x1:tx(a.e),y1:rowY(a.row),x2:lastMouse.x,y2:lastMouse.y,
       stroke:"#94a3b8","stroke-width":1.5,"stroke-dasharray":"4 3"});svg.appendChild(g);}
   }
+  // date axis last, on a white band, so it stays readable over the rows when scrolled
+  var ax=el("g",{id:"axis-band"});
+  ax.appendChild(el("rect",{x:0,y:0,width:W,height:AXIS_Y+1,fill:"#fff"}));
+  ax.appendChild(el("line",{x1:0,y1:AXIS_Y,x2:W,y2:AXIS_Y,stroke:"#e2e8f0","stroke-width":1}));
+  for(var tj=0;tj<tks.length;tj++){
+    var tk=el("text",{x:tks[tj].x+3,y:AXIS_Y-6,"class":"axis-text"});
+    tk.textContent=tks[tj].label; ax.appendChild(tk);
+  }
+  svg.appendChild(ax); stickAxis();
   document.getElementById("issues").className=issues.length?"show":"";
   renderIssues();
 }
+function stickAxis(){var ax=document.getElementById("axis-band");if(ax)ax.setAttribute("transform","translate(0,"+wrap.scrollTop+")");}
 
 function renderLink(L,defs){
   var A=ivById(L.from),B=ivById(L.to);if(!A||!B)return;
@@ -658,14 +661,26 @@ window.addEventListener("mouseup",function(){
   drag=null;
 });
 
+/* Wheel, read the way a MacBook trackpad means it: pinch (arrives as ctrl+wheel)
+   or ⌘/Ctrl+wheel zooms; a sideways swipe (or Shift+wheel) pans through time;
+   a plain up/down swipe scrolls the rows like any page. */
 wrap.addEventListener("wheel",function(e){
-  e.preventDefault();
-  var p=svgPt(e), tAt=xt(p.x);
-  var f=e.deltaY<0?1.12:1/1.12;
-  view.pxPerUnit=Math.max(2,Math.min(4000,view.pxPerUnit*f));
-  view.t0=tAt-(p.x-PAD_L)/view.pxPerUnit; // keep cursor time fixed
-  render();
+  if(e.ctrlKey||e.metaKey){
+    e.preventDefault();
+    var p=svgPt(e), tAt=xt(p.x);
+    var f=Math.exp(-Math.max(-50,Math.min(50,e.deltaY))*0.01);
+    view.pxPerUnit=Math.max(2,Math.min(4000,view.pxPerUnit*f));
+    view.t0=tAt-(p.x-PAD_L)/view.pxPerUnit; // keep cursor time fixed
+    render(); return;
+  }
+  var dx=e.shiftKey&&!e.deltaX?e.deltaY:e.deltaX;
+  if(Math.abs(dx)>Math.abs(e.deltaY)||e.shiftKey){
+    e.preventDefault();
+    view.t0+=dx/view.pxPerUnit; render(); return;
+  }
+  // vertical: let the browser scroll the rows
 },{passive:false});
+wrap.addEventListener("scroll",stickAxis);
 
 window.addEventListener("keydown",function(e){
   if(/INPUT|TEXTAREA/.test((e.target.tagName||"")))return;
