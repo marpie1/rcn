@@ -2419,12 +2419,15 @@ async function toggleIssue(key, opts = {}) {
     (data.parcels || []).forEach(p => {
       const t = types[p.type];
       const c = (t && t.color) || STANCE_COLOR[p.stance] || STANCE_COLOR.unknown;
-      L.circleMarker(p.latLng, {
+      const dot = L.circleMarker(p.latLng, {
         radius: 7, fillColor: c, color: 'white', weight: 1.5, fillOpacity: 0.9
       }).bindPopup(
         `<b>${p.label}</b><br>` + (t ? t.label : `Stance: ${p.stance}`) +
+        contactHTML(p.contact, true) +
         (p.notes ? `<br><span style="font-size:11px;color:#666">${p.notes}</span>` : '')
       , popupPad).addTo(issueLayerGroup);
+      if (p.contact) dot.bindTooltip(`<b>${p.label}</b>` + contactHTML(p.contact, false),
+                                     { direction: 'top', offset: [0, -6] });
     });
     if (data.types || data.linkKinds) {
       issueLegend = L.control({ position: 'topleft' });
@@ -2512,6 +2515,27 @@ function tintHex(hex, t) {
   return '#' + ch(16) + ch(8) + ch(0);
 }
 
+// A parcel's optional `contact` block — {website, phone, email, address, people[],
+// checked, source, caveat}. Hover shows the short form (site, phone, first
+// person); the popup shows all of it, with when and where it was checked.
+function contactHTML(c, full) {
+  if (!c) return '';
+  const esc = v => String(v).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  const site = c.website ? `<a href="${esc(c.website)}" target="_blank" rel="noopener">${esc(c.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''))}</a>` : '';
+  const ppl = c.people || [];
+  if (!full) return '<div style="font-size:11px;margin-top:2px">' +
+    [site && esc(c.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')), c.phone && esc(c.phone), ppl[0] && esc(ppl[0])]
+      .filter(Boolean).join('<br>') + (c.caveat ? '<br><i style="color:#b45309">⚠ ' + esc(c.caveat) + '</i>' : '') + '</div>';
+  const rows = [
+    site && `🌐 ${site}`, c.phone && `☎ ${esc(c.phone)}`,
+    c.email && `✉ <a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`, c.address && `📍 ${esc(c.address)}`,
+    ppl.length && `👤 ${ppl.map(esc).join('<br>&nbsp;&nbsp;&nbsp;&nbsp;')}`,
+    c.caveat && `<i style="color:#b45309">⚠ ${esc(c.caveat)}</i>`,
+    (c.checked || c.source) && `<span style="color:#888">Checked ${esc(c.checked || '')}${c.source ? ' · ' + esc(c.source) : ''}</span>`
+  ].filter(Boolean);
+  return `<div style="font-size:11.5px;margin:4px 0 2px;line-height:1.45">${rows.join('<br>')}</div>`;
+}
+
 function issueToGraph(key, data) {
   const W = 150, H = 56, GAP = 24;          // node box and the air kept between boxes
   const parcels   = data.parcels || [];
@@ -2590,6 +2614,10 @@ function issueToGraph(key, data) {
         { lat: String(p.latLng[0]), lng: String(p.latLng[1]) },
         t ? { kind: t.label } : { stance: p.stance || 'unknown' },
         p.id ? { mapId: p.id } : {},
+        p.contact ? Object.fromEntries([['website', p.contact.website], ['phone', p.contact.phone],
+          ['email', p.contact.email], ['address', p.contact.address],
+          ['people', (p.contact.people || []).join('; ')], ['contactChecked', p.contact.checked]]
+          .filter(kv => kv[1])) : {},
         { _onMap: `${here}?lat=${p.latLng[0]}&lng=${p.latLng[1]}&zoom=16&openissue=${encodeURIComponent(key)}` },
         p.inFrame === false ? { _placement: 'Far off the map frame — drawn at the edge, on the side it lies' } : {}
       )

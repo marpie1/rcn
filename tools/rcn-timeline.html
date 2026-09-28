@@ -512,7 +512,13 @@ function renderIv(iv,defs){
   }
 
   // label
-  var lb=el("text",{x:ivLabelX(iv,xs),y:y+4,"class":"iv-label"});lb.textContent=iv.label;g.appendChild(lb);
+  // A later interval on the same row (a firm, then the co-op it became) owns the
+  // space from its own start: this label stops short of it with an ellipsis, and
+  // is left off when too little fits — the tooltip and panel still name it.
+  var lx=ivLabelX(iv,xs), txt=iv.label, nextS=Infinity;
+  M.intervals.forEach(function(o){ if(o!==iv&&o.row===iv.row&&o.s>iv.s&&o.s<nextS)nextS=o.s; });
+  if(nextS<Infinity){ var room=tx(nextS)-lx-6; if(labelWidth(txt)>room)txt=fitLabel(txt,room); }
+  if(txt){var lb=el("text",{x:lx,y:y+4,"class":"iv-label"});lb.textContent=txt;g.appendChild(lb);}
 
   // events
   g.addEventListener("mousedown",function(e){onIvDown(e,iv);});
@@ -938,8 +944,18 @@ function fit(){
 // Where a label starts: 6px into its bar, unless that would run it off the right
 // edge — then it slides left just far enough to end on screen (never past x=4).
 function ivLabelX(iv,xs){
+  // Keep the label on screen at both edges: a bar that runs in from the left
+  // edge still names itself, as long as some of the bar is visible.
   var x=xs+6, maxX=svgW()-labelWidth(iv.label)-8;
+  if(x<6&&tx(iv.e)>40)x=6;
   return x>maxX?Math.max(4,maxX):x;
+}
+// Longest prefix of s (plus "…") that fits in w px; "" when under ~3 characters fit.
+function fitLabel(s,w){
+  if(w<labelWidth(s.slice(0,3)+"…"))return "";
+  var lo=3,hi=s.length;
+  while(lo<hi){var m=Math.ceil((lo+hi)/2); if(labelWidth(s.slice(0,m).trimEnd()+"…")<=w)lo=m; else hi=m-1;}
+  return s.slice(0,lo).trimEnd()+"…";
 }
 // Width of an interval label as .iv-label draws it (600 12px, 3px halo).
 var _lblCtx=null;
