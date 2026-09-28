@@ -509,7 +509,7 @@ function renderIv(iv,defs){
   }
 
   // label
-  var lb=el("text",{x:xs+6,y:y+4,"class":"iv-label"});lb.textContent=iv.label;g.appendChild(lb);
+  var lb=el("text",{x:ivLabelX(iv,xs),y:y+4,"class":"iv-label"});lb.textContent=iv.label;g.appendChild(lb);
 
   // events
   g.addEventListener("mousedown",function(e){onIvDown(e,iv);});
@@ -904,10 +904,34 @@ function fit(){
   var lo=Infinity,hi=-Infinity;
   M.intervals.forEach(function(v){lo=Math.min(lo,v.s-v.sf);hi=Math.max(hi,v.e+v.ef);});
   if(lo===hi){lo-=1;hi+=1;}
-  var span=hi-lo, w=svgW()-PAD_L*2-40;
-  view.pxPerUnit=Math.max(2,w/span);
-  view.t0=lo-span*0.05;
+  // Fit the text as well as the bars. A label starts 6px after its bar and runs
+  // right, so a short, recent interval with a long name ran off the canvas when
+  // only bar ends were fitted. Each label caps the zoom at the scale where it
+  // still ends inside the right edge; the tightest cap wins. One very long label
+  // must not squeeze the whole timeline into a corner, so the bars keep at least
+  // 60% of the width; a label still too long is slid left at draw time (ivLabelX).
+  var LEFT=20, RIGHT=svgW()-24, avail=RIGHT-PAD_L-LEFT;
+  var barFit=avail/(hi-lo), ppu=barFit;
+  M.intervals.forEach(function(v){
+    var need=6+labelWidth(v.label)+4, dt=v.s-lo;
+    if(dt>0&&avail-need>0)ppu=Math.min(ppu,(avail-need)/dt);
+  });
+  view.pxPerUnit=Math.max(2,ppu,barFit*0.6);
+  view.t0=lo-LEFT/view.pxPerUnit;
   render();
+}
+// Where a label starts: 6px into its bar, unless that would run it off the right
+// edge — then it slides left just far enough to end on screen (never past x=4).
+function ivLabelX(iv,xs){
+  var x=xs+6, maxX=svgW()-labelWidth(iv.label)-8;
+  return x>maxX?Math.max(4,maxX):x;
+}
+// Width of an interval label as .iv-label draws it (600 12px, 3px halo).
+var _lblCtx=null;
+function labelWidth(s){
+  if(!_lblCtx){_lblCtx=document.createElement("canvas").getContext("2d");
+    _lblCtx.font="600 12px "+getComputedStyle(document.body).fontFamily;}
+  return _lblCtx.measureText(s||"").width+3;
 }
 
 /* ── JSON out ────────────────────────────────────────────── */
