@@ -22,6 +22,11 @@
     background: #378ADD; color: white; border: none; border-radius: 6px;
     cursor: pointer; font-size: 13px;
   }
+  .issue-legend { background: rgba(255,255,255,0.92); padding: 8px 10px; border-radius: 6px;
+    font-size: 11px; line-height: 1.6; box-shadow: 0 1px 4px rgba(0,0,0,0.25); max-width: 220px; }
+  .issue-graph-btns { margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;
+    display: flex; align-items: center; gap: 8px; }
+  .issue-graph-btns a { color: #2563eb; text-decoration: none; font-size: 11px; }
   #legend { margin-top: 10px; border-top: 1px solid #eee; padding-top: 8px; }
   .legend-group { margin-bottom: 8px; }
   .legend-group-header {
@@ -1435,7 +1440,11 @@ function ndcPopupHTML(name, address) {
 }
 
 // ── showOverview ──────────────────────────────────────────────────────
-async function showOverview() {
+// inPlace: a legend/data rebuild (regions arriving, layer edits) — redraw the
+// overview but keep the user's view and any open issue, so a background
+// refresh can't yank the map back out to the whole continent.
+// fit: false — draw the overview without zooming to it (a deep link will place the map).
+async function showOverview(opts = {}) {
   clearLayers();
   // Collapse any open NDC
   if (expandedNDCKey) {
@@ -1444,7 +1453,7 @@ async function showOverview() {
     document.getElementById('ndc-header-' + expandedNDCKey).classList.remove('expanded');
     expandedNDCKey = null;
   }
-  clearIssueLayer();
+  if (!opts.inPlace) clearIssueLayer();
   document.getElementById('sidebar-desc').textContent = 'All NDCs — expand one for its layers';
 
   const placesData = RCN_PLACES;
@@ -1526,7 +1535,7 @@ async function showOverview() {
     const c = corrections[f.properties.name];
     return c || [f.geometry.coordinates[1], f.geometry.coordinates[0]];
   });
-  if (ndcLatLngs.length) map.fitBounds(ndcLatLngs, {padding:[80,80]});
+  if (ndcLatLngs.length && !opts.inPlace && opts.fit !== false) map.fitBounds(ndcLatLngs, {padding:[80,80]});
 }
 
 // ── ndcFeatures: replicate /ndc/{name} locally ────────────────────────
@@ -1806,6 +1815,8 @@ async function loadIssueIndex() {
 }
 
 let issueLayerGroup = null;
+let issueLegend     = null;   // L.control for issues that carry types/linkKinds
+let activeIssueData = null;  // the open issue's data — for sending it to the Graph Tool
 let activeIssueKey  = null;
 let expandedNDCKey  = null;
 
@@ -2337,7 +2348,7 @@ function toggleIssuesList(k) {
   arrow.textContent  = open ? '▶' : '▼';
 }
 
-async function toggleIssue(key) {
+async function toggleIssue(key, opts = {}) {
   if (activeIssueKey === key) { clearIssueLayer(); return; }
   clearIssueLayer();
 
@@ -2359,6 +2370,7 @@ async function toggleIssue(key) {
   try {
     issueLayerGroup = L.layerGroup().addTo(map);
     activeIssueKey  = key;
+    activeIssueData = data;
 
     if (data.boundaries) {
       if (data.boundaries.county) {
@@ -2378,16 +2390,76 @@ async function toggleIssue(key) {
       }).bindPopup(`<b>${data.meta.title}</b><br>${data.meta.community}` +
         `<br><button class="popup-btn" onclick="copyLink(issueLink('${key}'))">🔗 Copy link</button>`).addTo(issueLayerGroup);
     }
+    // Optional "types" and "links": for issues whose points aren't for or against
+    // anything (a directory of co-ops, say). A parcel's "type" keys into
+    // data.types for its colour; each link joins two parcel ids and keys into
+    // data.linkKinds for its line style. Links go down first so dots sit on top.
+    // The legend (top left) and the sidebar (right) float above the popup pane,
+    // so a popup opening under either is half hidden. Pan it clear of both.
+    const sbEl     = document.getElementById('sidebar');
+    const popupPad = {
+      autoPanPaddingTopLeft:     L.point((data.types || data.linkKinds) ? 260 : 20, 20),
+      autoPanPaddingBottomRight: L.point((sbEl ? sbEl.offsetWidth : 0) + 30, 20)
+    };
+    const types = data.types || {}, linkKinds = data.linkKinds || {};
+    const byId  = {};
+    (data.parcels || []).forEach(p => { if (p.id) byId[p.id] = p; });
+    (data.links || []).forEach(l => {
+      const a = byId[l.from], b = byId[l.to];
+      if (!a || !b) { console.warn('Issue link skipped — unknown parcel id:', l.from, l.to); return; }
+      const k = linkKinds[l.kind] || {};
+      L.polyline([a.latLng, b.latLng], {
+        color: k.color || '#555', weight: k.weight || 2.5, opacity: 0.8, dashArray: k.dash || null
+      }).bindPopup(
+        `<b>${a.label}</b> ${l.twoWay ? '↔' : '→'} <b>${b.label}</b>` +
+        `<br>${l.label || k.label || l.kind || ''}` +
+        (l.notes ? `<br><span style="font-size:11px;color:#666">${l.notes}</span>` : '')
+      , popupPad).addTo(issueLayerGroup);
+    });
     (data.parcels || []).forEach(p => {
-      const c = STANCE_COLOR[p.stance] || STANCE_COLOR.unknown;
+      const t = types[p.type];
+      const c = (t && t.color) || STANCE_COLOR[p.stance] || STANCE_COLOR.unknown;
       L.circleMarker(p.latLng, {
         radius: 7, fillColor: c, color: 'white', weight: 1.5, fillOpacity: 0.9
       }).bindPopup(
-        `<b>${p.label}</b><br>Stance: ${p.stance}` +
+        `<b>${p.label}</b><br>` + (t ? t.label : `Stance: ${p.stance}`) +
         (p.notes ? `<br><span style="font-size:11px;color:#666">${p.notes}</span>` : '')
-      ).addTo(issueLayerGroup);
+      , popupPad).addTo(issueLayerGroup);
     });
-    if (data.issue && data.issue.polygon) {
+    if (data.types || data.linkKinds) {
+      issueLegend = L.control({ position: 'topleft' });
+      issueLegend.onAdd = () => {
+        const div = L.DomUtil.create('div', 'issue-legend');
+        div.innerHTML = `<b>${data.meta.title}</b>` +
+          Object.values(types).map(t =>
+            `<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${t.color};margin-right:6px"></span>${t.label}</div>`).join('') +
+          Object.values(linkKinds).map(k =>
+            `<div><svg width="22" height="10" style="margin-right:4px;vertical-align:middle"><line x1="0" y1="5" x2="22" y2="5" stroke="${k.color}" stroke-width="${k.weight || 2.5}" stroke-dasharray="${k.dash || ''}"/></svg>${k.label}</div>`).join('') +
+          (data.links && data.links.length
+            ? `<div class="issue-graph-btns">` +
+              `<button class="popup-btn" onclick="openIssueInGraphTool()" title="Open these points and links as an editable diagram in the RCN Graph Tool — same colours, same legend, laid out like the map.">🕸 Open in Graph Tool</button>` +
+              `<a href="#" onclick="downloadIssueGraph(); return false;" title="Save the same diagram as a Graph Tool JSON file (import it later, or drop it into FedWiki).">⬇ graph JSON</a></div>`
+            : '');
+        L.DomEvent.disableClickPropagation(div);
+        L.DomEvent.disableScrollPropagation(div);
+        return div;
+      };
+      issueLegend.addTo(map);
+    }
+    // A network issue (one with links) frames its dots, not its area, and
+    // leaves room for the legend and the sidebar that sit over the map —
+    // otherwise short links shrink under the dots. "inFrame": false keeps a
+    // far-off parcel (drawn, linked) from dragging the frame out to reach it.
+    if (opts.keepView) {
+      // a deep link asked for a specific view — leave it alone
+    } else if (data.links && data.links.length) {
+      const pts = (data.parcels || []).filter(p => p.inFrame !== false).map(p => p.latLng);
+      const sb  = document.getElementById('sidebar');
+      if (pts.length) map.fitBounds(L.latLngBounds(pts), {
+        paddingTopLeft:     [issueLegend ? 260 : 48, 48],
+        paddingBottomRight: [(sb ? sb.offsetWidth : 0) + 48, 48]
+      });
+    } else if (data.issue && data.issue.polygon) {
       map.fitBounds(L.latLngBounds(data.issue.polygon), { padding: [48, 48] });
     }
   } catch(err) {
@@ -2398,8 +2470,184 @@ async function toggleIssue(key) {
 
 function clearIssueLayer() {
   if (issueLayerGroup) { map.removeLayer(issueLayerGroup); issueLayerGroup = null; }
-  activeIssueKey = null;
+  if (issueLegend)     { map.removeControl(issueLegend);   issueLegend = null; }
+  activeIssueKey  = null;
+  activeIssueData = null;
   updateIssueButtons();
+}
+
+// ── Issue → RCN Graph Tool ───────────────────────────────────────────
+// A networked issue (parcels + links) is already a graph: parcels are nodes,
+// links are edges, data.types / data.linkKinds are its legend. This hands it to
+// the Graph Tool, which is where a network gets argued over, re-laid-out and
+// exported. The map stays the source; the graph is a copy you work on.
+//
+// Where the Graph Tool lives, in priority order:
+//   1. ?graphtool=<URL>        — explicit override
+//   2. localhost / 127.0.0.1   — sofi-proxy serves tools/ beside maps/
+//   3. a standalone handout    — the Wiki Café asset folder (DOCS_BASE)
+//   4. any deployed host       — a sibling graph-tool-v22.html in the same flat
+//      asset folder. Upload tools/dist/graph-tool-v22.html (the self-contained
+//      build), never the raw tool — its sidecars 404 there and icons vanish.
+function graphToolURL() {
+  const q = new URLSearchParams(location.search).get('graphtool');
+  if (q) return q;
+  if (/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) return '/tools/graph-tool-v22.html';
+  if (DOCS_BASE) return (DOCS_BASE.endsWith('/') ? DOCS_BASE : DOCS_BASE + '/') + 'graph-tool-v22.html';
+  return 'graph-tool-v22.html';
+}
+
+// Map "3 5"-style Leaflet dash arrays onto the Graph Tool's three dash words.
+function graphDash(d) {
+  if (!d) return 'solid';
+  return (parseFloat(String(d)) || 0) <= 3 ? 'dotted' : 'dashed';
+}
+
+// Lighten a #rrggbb toward white — node fill, so the border carries the kind.
+function tintHex(hex, t) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return '#ffffff';
+  const n = parseInt(m[1], 16);
+  const ch = s => Math.round(((n >> s) & 255) + (255 - ((n >> s) & 255)) * t).toString(16).padStart(2, '0');
+  return '#' + ch(16) + ch(8) + ch(0);
+}
+
+function issueToGraph(key, data) {
+  const W = 150, H = 56, GAP = 24;          // node box and the air kept between boxes
+  const parcels   = data.parcels || [];
+  const types     = data.types || {};
+  const linkKinds = data.linkKinds || {};
+
+  // Layout: Web Mercator, so the diagram opens looking like the map. Parcels
+  // marked inFrame:false (far off, as on the map) are pulled in to just outside
+  // the frame, on the side they lie, instead of stretching the whole drawing.
+  const merc = ll => {
+    const s = Math.sin(ll[0] * Math.PI / 180);
+    return [ll[1] / 360, -Math.log((1 + s) / (1 - s)) / (4 * Math.PI)];
+  };
+  const inF  = parcels.filter(p => p.inFrame !== false);
+  const base = (inF.length ? inF : parcels).map(p => merc(p.latLng));
+  const minX = Math.min(...base.map(b => b[0])), maxX = Math.max(...base.map(b => b[0]));
+  const minY = Math.min(...base.map(b => b[1])), maxY = Math.max(...base.map(b => b[1]));
+  const span = Math.max(maxX - minX, maxY - minY) || 1e-6;
+  const S    = 1400 / span;                   // the in-frame spread fills ~1400px
+  const pos  = parcels.map(p => {
+    let [mx, my] = merc(p.latLng);
+    if (p.inFrame === false) {
+      const pad = 0.12 * span;
+      mx = Math.min(Math.max(mx, minX - pad), maxX + pad);
+      my = Math.min(Math.max(my, minY - pad), maxY + pad);
+    }
+    return { x: 100 + (mx - minX) * S, y: 100 + (my - minY) * S };
+  });
+
+  // Points a few hundred metres apart would stack; push overlapping boxes apart
+  // along the line between them until none overlap. Geography stays readable.
+  for (let it = 0; it < 400; it++) {
+    let moved = false;
+    for (let i = 0; i < pos.length; i++) for (let j = i + 1; j < pos.length; j++) {
+      const a = pos[i], b = pos[j];
+      let dx = b.x - a.x, dy = b.y - a.y;
+      const ox = W + GAP - Math.abs(dx), oy = H + GAP - Math.abs(dy);
+      if (ox <= 0 || oy <= 0) continue;
+      moved = true;
+      if (!dx && !dy) { dx = (j % 2 ? 1 : -1); dy = (i % 2 ? 1 : -1); }
+      // resolve along the cheaper axis — boxes are wider than tall
+      if (ox / (W + GAP) < oy / (H + GAP)) { const s = Math.sign(dx) * ox / 2; a.x -= s; b.x += s; }
+      else                                 { const s = Math.sign(dy) * oy / 2; a.y -= s; b.y += s; }
+    }
+    if (!moved) break;
+  }
+
+  const rowId = k => 'lg_' + String(k).replace(/[^\w]/g, '_');
+  const legendEntries = [
+    ...Object.entries(types).map(([k, t]) => ({
+      id: rowId('t_' + k), kind: 'node', label: t.label,
+      color: tintHex(t.color, 0.82), borderColor: t.color, borderWidth: 3,
+      ...(t.icon ? { icon: t.icon } : {})
+    })),
+    ...Object.entries(linkKinds).map(([k, lk]) => ({
+      id: rowId('l_' + k), kind: 'edge', label: lk.label,
+      color: lk.color || '#555555', width: lk.weight || 2.5, dash: graphDash(lk.dash)
+    }))
+  ];
+
+  const nodeId = {};
+  const here   = location.href.split('?')[0].split('#')[0];
+  const nodes = parcels.map((p, i) => {
+    const id = 'n' + (i + 1);
+    if (p.id) nodeId[p.id] = id;
+    const t = types[p.type];
+    const fill = t ? tintHex(t.color, 0.82) : '#ffffff';
+    const line = t ? t.color : (STANCE_COLOR[p.stance] || STANCE_COLOR.unknown);
+    return {
+      id, label: p.label, x: Math.round(pos[i].x), y: Math.round(pos[i].y), w: W, h: H,
+      shape: 'rounded', ...(t ? { type: rowId('t_' + p.type) } : {}),
+      // stamped too, so the JSON describes itself to anything that ignores legends
+      color: fill, borderColor: line, borderWidth: 3, borderDash: 'solid',
+      fontColor: '#0f172a', fontSize: 12, note: p.notes || '', extraLabels: [],
+      props: Object.assign(
+        { lat: String(p.latLng[0]), lng: String(p.latLng[1]) },
+        t ? { kind: t.label } : { stance: p.stance || 'unknown' },
+        p.id ? { mapId: p.id } : {},
+        { _onMap: `${here}?lat=${p.latLng[0]}&lng=${p.latLng[1]}&zoom=16&openissue=${encodeURIComponent(key)}` },
+        p.inFrame === false ? { _placement: 'Far off the map frame — drawn at the edge, on the side it lies' } : {}
+      )
+    };
+  });
+
+  // Edge text: the first clause of the link's label, asides dropped ("Farm Fund
+  // grant — …" → "Farm Fund grant", "help (USDA grant)" → "help"); the whole sentence and the source go to the note.
+  // Membership edges stay unlabelled — the legend says it once for all of them.
+  const shortLabel = l => {
+    if (l.kind === 'member') return '';
+    const s = String(l.label || '').split(/\s+—\s+|;\s+|\s+\(/)[0];
+    return s.length > 44 ? s.slice(0, 42).trim() + '…' : s;
+  };
+  const edges = (data.links || []).filter(l => nodeId[l.from] && nodeId[l.to]).map((l, i) => {
+    const lk = linkKinds[l.kind] || {};
+    return {
+      id: 'e' + (i + 1), src: nodeId[l.from], tgt: nodeId[l.to],
+      label: shortLabel(l), polarity: 'none', curved: true,
+      ...(linkKinds[l.kind] ? { type: rowId('l_' + l.kind) } : {}),
+      color: lk.color || '#555555', width: lk.weight || 2.5, dash: graphDash(lk.dash),
+      fontSize: 10, fontColor: lk.color || '#555555',
+      ...(l.twoWay ? { arrowDir: 'none' } : {}),
+      note: [l.label, l.notes].filter(Boolean).join(' — '),
+      props: Object.assign({ kind: lk.label || l.kind || '' }, l.twoWay ? { direction: 'two-way' } : {})
+    };
+  });
+
+  const today = new Date().toISOString().slice(0, 10);
+  return {
+    version: '1.0',
+    modelName: data.meta && data.meta.title || key,
+    modelNote: ((data.meta && data.meta.description) || '') +
+      ` — From the RCN Map issue "${key}", sent to the Graph Tool ${today}. ` +
+      'Positions follow the map, nudged apart where points overlapped. Each node\'s _onMap link opens it on the map.',
+    legendVisible: true,
+    legendEntries, nodes, edges
+  };
+}
+
+function openIssueInGraphTool() {
+  if (!activeIssueKey || !activeIssueData) return;
+  const state = issueToGraph(activeIssueKey, activeIssueData);
+  // The Graph Tool decodes #graph= with decodeURIComponent(escape(atob(…))) —
+  // encode the mirror image or non-ASCII (—, é, ñ) arrives corrupted.
+  const payload = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+  window.open(`${graphToolURL()}#graph=${payload}`, '_blank', 'noopener');
+}
+
+function downloadIssueGraph() {
+  if (!activeIssueKey || !activeIssueData) return;
+  const state = issueToGraph(activeIssueKey, activeIssueData);
+  const blob  = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = activeIssueKey + '.rcn.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
 function updateIssueButtons() {
@@ -3836,7 +4084,7 @@ function rebuildLegendInPlace() {
     const entry = NDC_LIST.find(n => ndcKey(n.name) === expandedNDCKey);
     if (entry) showNDC(entry.name, entry.state, expandedNDCKey);
   } else {
-    showOverview();
+    showOverview({ inPlace: true });
   }
 }
 
@@ -4316,8 +4564,6 @@ document.getElementById('add-loc-name-input').addEventListener('keydown', functi
   renderBuildStamp();       // show the build date — standalone builds only
   absolutizeDocLinks();     // point Intro/Manual/Slides at Wiki Café — standalone builds only
   buildNDCList();
-  showOverview();
-  loadRegions();   // fetch + merge federated regional bundles (non-blocking, graceful)
 
   // ── Deep-link handling ───────────────────────────────────────────
   const dlp       = new URLSearchParams(location.search);
@@ -4326,6 +4572,13 @@ document.getElementById('add-loc-name-input').addEventListener('keydown', functi
   const dlLng     = parseFloat(dlp.get('lng'));
   const dlZoom    = parseInt(dlp.get('zoom'), 10);
   const openIssue = dlp.get('openissue');
+  const deepLink  = !!(hlId || openIssue || (!isNaN(dlLat) && !isNaN(dlLng)));
+
+  // A deep link places the map itself, so the overview must not also fit to
+  // every NDC: that fit animates, and Leaflet drops a second fit issued while
+  // one is in flight — the page then opened on the whole continent, at random.
+  showOverview({ fit: !deepLink });
+  loadRegions();   // fetch + merge federated regional bundles (non-blocking, graceful)
 
   if (hlId) {
     highlightById(hlId, {});
@@ -4333,7 +4586,7 @@ document.getElementById('add-loc-name-input').addEventListener('keydown', functi
     map.setView([dlLat, dlLng], isNaN(dlZoom) ? 12 : dlZoom);
   }
   if (openIssue) {
-    await toggleIssue(openIssue);
+    await toggleIssue(openIssue, { keepView: !hlId && !isNaN(dlLat) && !isNaN(dlLng) });
   }
 })();
 

@@ -310,6 +310,26 @@ graph-tool-v22.html#graph=<base64 of the state object>
 
 `loadFromURL()` decodes with `JSON.parse(decodeURIComponent(escape(atob(raw))))`, so anything writing that hash must encode the mirror image — `btoa(unescape(encodeURIComponent(json)))` — or non-ASCII labels corrupt.
 
+**Since 2026-09-28 the hash goes through `loadGraphJSON()`**, the same loader as Import JSON and `?url=`. Before that, `loadFromURL()` was a hand-rolled copy that read only `nodes`, `edges`, `modelName`, `modelNote` and a few graph attributes — `legendEntries`, `legendVisible`, `mode` and layers were silently dropped, so a sender's legend vanished on arrival and typed nodes lost their row. Anything a file can carry, a hash can now carry. Verified with a Composer-shaped state (no legend, non-ASCII labels) and with the RCN Map's issue handoff.
+
+One inherited behaviour of `loadGraphJSON()`: a state with **no** `legendEntries` leaves the current legend in place rather than clearing it. On a fresh tab there is nothing to keep, so a handoff is unaffected; it only shows when re-loading into a tab that already held a legend.
+
+## Receiving a graph from the RCN Map
+
+`maps/rcn_map.html` sends a **network issue** — an issue file with `links` — through the same `#graph=` door (legend button **🕸 Open in Graph Tool**; **⬇ graph JSON** saves the same state as a file). `issueToGraph()` in the map does the conversion:
+
+| Issue file | Graph |
+|---|---|
+| `parcels[]` | nodes `n1…`, `rounded` 150×56, label = parcel `label`, `note` = parcel `notes` |
+| `latLng` | Web Mercator `x`/`y`, in-frame spread scaled to ~1400px, then overlapping boxes pushed apart; `props.lat`/`props.lng` keep the truth |
+| `inFrame: false` | clamped to just outside the frame on its own side; `props._placement` says so |
+| `types{}` | node legend rows `lg_t_<key>`: tinted fill, type colour as a 3px border |
+| `linkKinds{}` | edge legend rows `lg_l_<key>`: colour, width, dash (`"3 5"`→`dotted`, longer→`dashed`) |
+| `links[]` | edges `e1…`, `src`/`tgt` from parcel ids, `curved:true`, label = first clause of the link label (membership edges unlabelled), `note` = full label + notes/source |
+| `twoWay: true` | `arrowDir:"none"` |
+
+Every node also gets `props._onMap`, a deep link back to that point on the map (`?lat&lng&zoom=16&openissue=`). Styles are stamped as bare fields as well as through `type`, per the export convention above. The output passes `tools/validate-rcn-graph.js` with 0 warnings (22 nodes, 21 edges for the Whatcom co-ops).
+
 The conversion worth copying if you ever write another one: **coordinates come out of the rendered Graphviz SVG**, not from the data. Ward's format has no geometry, and `autoSize()` here only grows `w`/`h` rather than initialising them, so a node without a width paints as a bare label. Reading `getBBox()` off each `g.node` gives the layout the user is already looking at. Graphviz SVG user space is already screen-oriented (y grows downward), so positions only need shifting into positive space — no axis flip.
 
 ## Pre-flight
