@@ -208,7 +208,8 @@ textarea.prop-input{resize:vertical;min-height:44px;font-family:inherit}
     <button class="tb-btn" id="btn-export" title="Download this timeline as a .json file">JSON</button>
     <button class="tb-btn" id="btn-svg" title="Download the timeline as an SVG vector image">SVG</button>
     <button class="tb-btn" id="btn-png" title="Download the timeline as a PNG image">PNG</button>
-    <button class="tb-btn" id="btn-link" title="Copy a shareable link that reopens this exact timeline (and highlights the selected object)">🔗 Link</button>
+    <button class="tb-btn" id="btn-copylink" title="Copy a shareable link that reopens this exact timeline (and highlights the selected object)">🔗 Link</button>
+    <button class="tb-btn" id="btn-savewiki" style="display:none" title="Save this timeline back into the wiki page it was opened from">↩ Save to wiki</button>
     <span class="tb-sep"></span>
     <a class="tb-btn help" href="rcn-timeline-intro.html" target="_blank" rel="noopener" title="Open the Introduction — what RCN Timeline is and why (new tab)">Intro</a>
     <a class="tb-btn help" href="rcn-timeline-manual.html" target="_blank" rel="noopener" title="Open the User Manual — every control and gesture (new tab)">Manual</a>
@@ -1182,7 +1183,28 @@ function applyHash(){
 }
 document.getElementById("btn-svg").onclick=exportSVG;
 document.getElementById("btn-png").onclick=exportPNG;
-document.getElementById("btn-link").onclick=function(){copyLink(sel.type?sel.id:null);};
+// Its own id: it shared "btn-link" with the "+ link ▾" menu button, so this
+// handler landed on that button (which then also copied a link) and 🔗 Link
+// itself did nothing.
+document.getElementById("btn-copylink").onclick=function(){copyLink(sel.type?sel.id:null);};
+
+/* ── save back to the wiki page that opened this ─────────────
+   A wiki's "Open in RCN Timeline ↗" opens this window from a page; while that
+   page is still open, "Save to wiki" posts the edited timeline back and the
+   rcntimeline plugin saves it into the item as an ordinary FedWiki edit. The
+   item's fields this tool does not use (a bar's page, its co-ops) come back
+   unchanged, carried in extra. */
+function wikiOpener(){ try{ return (window.opener&&!window.opener.closed)?window.opener:null; }catch(e){ return null; } }
+if(wikiOpener()) document.getElementById("btn-savewiki").style.display="";
+document.getElementById("btn-savewiki").onclick=function(){
+  var w=wikiOpener(); if(!w){ toast("the wiki page that opened this is gone"); return; }
+  w.postMessage({toolType:"rcn-timeline",action:"saveTimeline",timeline:exportModel()},"*");
+  toast("sending to the wiki page…");
+};
+window.addEventListener("message",function(ev){
+  if(ev.data&&ev.data.toolType==="rcn-timeline"&&ev.data.action==="saved")
+    toast("saved to “"+(ev.data.page||"the wiki page")+"”");
+});
 
 /* ── demo seed (history + plan; drag Scale-up right into Report to see red) ── */
 function loadDemo(){

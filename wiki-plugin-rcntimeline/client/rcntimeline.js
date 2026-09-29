@@ -64,18 +64,71 @@
 
   function caption (item) { return String(item.text || '').split('\n')[0] }
 
-  // The intervals and links to draw, with dates as fractional years.
-  function model (item) {
-    let ivs = [], links = []
+  // The item's own intervals and links, as stored (or read from its text).
+  function rawOf (item) {
     if (item.timeline && Array.isArray(item.timeline.intervals)) {
-      ivs = item.timeline.intervals
-      links = item.timeline.links || []
-    } else {
-      String(item.text || '').split('\n').forEach((line, i) => {
-        const m = /^(.+?)\s*=\s*(.+?)\s*\.\.\s*(.+)$/.exec(line.trim())
-        if (m) ivs.push({ id: 't' + i, label: m[1], start: m[2], end: m[3] })
-      })
+      return { intervals: item.timeline.intervals, links: item.timeline.links || [] }
     }
+    const ivs = []
+    String(item.text || '').split('\n').forEach((line, i) => {
+      const m = /^(.+?)\s*=\s*(.+?)\s*\.\.\s*(.+)$/.exec(line.trim())
+      if (m) ivs.push({ id: 't' + i, label: m[1], start: m[2], end: m[3] })
+    })
+    return { intervals: ivs, links: [] }
+  }
+
+  const lineupOn = item => /^LINEUP\s*$/m.test(String(item.text || ''))
+
+  // Merge timelines from several sources — this item's own, its frozen
+  // collection, the pages to its left. An interval is the same interval when
+  // its id is the same (the co-op timeline's ids are global), so the first copy
+  // wins. Lanes are kept per source: a source's row N stays one lane, placed
+  // after the lanes already taken, so a firm and the co-op it became stay side
+  // by side. Links merge on from + to + relation.
+  function merge (parts) {
+    const seen = new Set(), lanes = new Map(), intervals = [], links = [], seenL = new Set()
+    parts.forEach((part, pi) => {
+      (part.intervals || []).forEach(v => {
+        if (seen.has(v.id)) return
+        seen.add(v.id)
+        const key = pi + ':' + (v.row == null ? v.id : v.row)
+        if (!lanes.has(key)) lanes.set(key, lanes.size)
+        intervals.push(Object.assign({}, v, { row: lanes.get(key) }))
+      })
+      ;(part.links || []).forEach(l => {
+        const k = l.from + '|' + l.to + '|' + JSON.stringify(l.rel || 'before')
+        if (!seenL.has(k)) { seenL.add(k); links.push(l) }
+      })
+    })
+    return { intervals, links }
+  }
+
+  // What this item draws: its own, then (frozen ? the frozen collection :
+  // LINEUP ? what the pages to its left offer now : nothing).
+  function effective ($item, item) {
+    const parts = [rawOf(item)]
+    if (item.frozen) parts.push(item.frozen)
+    else if (lineupOn(item) && $item) parts.push(...collect($item))
+    return parts.length === 1 ? parts[0] : merge(parts)
+  }
+
+  // Every timeline to the left of this item in the lineup — earlier pages, and
+  // earlier items on this page — the way the native Map plugin's LINEUP reads
+  // marker sources. Browser-side only: pages open in this window, nothing fetched.
+  function collect ($item) {
+    const all = $('.item'), here = all.index($item)
+    const out = []
+    all.slice(0, here).filter('.rcntimeline-source').each(function () {
+      if (this.timelineData) out.push(this.timelineData())
+    })
+    return out
+  }
+
+  function model (item, $item) { return normalize(effective($item, item)) }
+
+  // Dates as fractional years, lanes packed top to bottom.
+  function normalize (raw) {
+    const ivs = raw.intervals, links = raw.links
     const out = []
     ivs.forEach((v, i) => {
       const s = toYear(v.start != null ? v.start : v.s)
@@ -196,37 +249,102 @@
 
   function emit ($item, item) {
     $item.empty()
-    const m = model(item)
+    // Offer this item's timeline (its own, plus anything frozen into it) to any
+    // LINEUP timeline to its right. Set before drawing, so a timeline further
+    // right that renders first still finds it.
+    $item.addClass('rcntimeline-source')
+    const slug = $item.parents('.page:first').attr('id') || ''
+    $item.get(0).timelineData = () => {
+      const own = item.frozen ? merge([rawOf(item), item.frozen]) : rawOf(item)
+      return { intervals: own.intervals, links: own.links, source: slug }
+    }
+    const m = model(item, $item)
     const cap = wiki.resolveLinks ? wiki.resolveLinks(esc(caption(item))) : esc(caption(item))
+    const lineup = lineupOn(item)
+    const controls = lineup
+      ? `<button class="rcnt-freeze" title="${item.frozen ? 'Frozen: shift-click to unfreeze' : 'Freeze what the lineup shows into this page'}" style="cursor:pointer;${item.frozen ? 'color:#2563eb;' : ''}">❄︎</button>
+         <button class="rcnt-refresh" title="Collect again from the pages to the left" style="cursor:pointer;"${item.frozen ? ' disabled' : ''}>↻</button> `
+      : ''
     if (!m.intervals.length) {
-      $item.append(`<div style="background:#f5f5f5;padding:12px;color:#64748b">No intervals yet. Double-click and add lines of the form <code>Label = Jan 2020 .. Jun 2021</code>.</div>`)
+      $item.append(`<div style="background:#f5f5f5;padding:12px;color:#64748b">`
+        + (lineup ? `Nothing to collect yet. Open co-op pages to the left of this one, then press ↻. ${controls}`
+          : `No intervals yet. Double-click and add lines of the form <code>Label = Jan 2020 .. Jun 2021</code>.`)
+        + `</div>`)
       return
     }
+    const note = lineup ? `<p class="caption" style="margin:2px 0 0;color:#64748b">${item.frozen
+      ? 'Frozen: ' + m.intervals.length + ' intervals kept in this page.'
+      : 'Collected from ' + collect($item).length + ' timeline(s) to the left.'}</p>` : ''
     $item.append(`<div style="background:#f5f5f5;padding:8px;">
       <div class="rcnt-canvas" style="background:#fff;border:1px solid #ddd;overflow-x:auto"></div>
-      <p class="caption" style="margin:4px 0 0;">${cap}</p>
-      <div style="padding:6px 0 0;text-align:center;"><button class="rcnt-open" style="cursor:pointer;">Open in RCN Timeline ↗</button></div></div>`)
+      <p class="caption" style="margin:4px 0 0;">${cap}</p>${note}
+      <div style="padding:6px 0 0;text-align:center;">${controls}<button class="rcnt-open" style="cursor:pointer;">Open in RCN Timeline ↗</button></div></div>`)
     // Width is known only once the item is in the page.
     const paint = () => $item.find('.rcnt-canvas').html(draw($item, item, m))
     paint()
     setTimeout(paint, 0)
   }
 
-  // Open this item's timeline in the full tool, in its own window. Edits there
-  // do not come back to the page yet: save-back is the next step.
-  function openTool (item) {
-    const tl = item.timeline && Array.isArray(item.timeline.intervals)
-      ? item.timeline
-      : { intervals: model(item).intervals.map(v => ({ id: v.id, label: v.label, start: fmt(v.s), end: fmt(v.e) })), links: [] }
+  // Open this item's timeline (what it draws, lineup included) in the full
+  // tool, in its own window. The tool's "Save to wiki" posts the edited
+  // timeline back; it lands in the item opened last.
+  let pending = null      // {item, $item, win} — the item the tool will save into
+  function openTool ($item, item) {
+    const raw = effective($item, item)
+    const tl = item.timeline && !item.frozen && !lineupOn(item) ? raw : {
+      intervals: raw.intervals.map(v => Object.assign({}, v, v.start == null ? { start: fmt(toYear(v.s)), end: fmt(toYear(v.e)) } : {})),
+      links: raw.links
+    }
     const doc = Object.assign({ name: caption(item) || 'Timeline' }, tl)
     const url = (item.tool || TOOL_URL) + '#tl=' + b64(JSON.stringify(doc))
     const win = window.open(url, 'rcntimeline')
+    pending = { item, $item, win }
     if (win) win.focus()
   }
 
+  // The text an item carries beside its timeline: caption, then the intervals
+  // and links in words (search reads it; a wiki without the plugin shows it).
+  function words (item, tl) {
+    const byId = {}; tl.intervals.forEach(v => { byId[v.id] = v })
+    const keep = String(item.text || '').split('\n').filter(l => /^LINEUP\s*$/.test(l))
+    return [caption(item)].concat(keep,
+      tl.intervals.map(v => v.label + ': ' + v.start + ' – ' + v.end),
+      tl.links.filter(l => byId[l.from] && byId[l.to])
+        .map(l => byId[l.from].label + ' ' + relWords(l.rel) + ' ' + byId[l.to].label)).join('\n')
+  }
+
+  function save ($item, item) {
+    wiki.pageHandler.put($item.parents('.page:first'), { type: 'edit', id: item.id, item })
+    emit($item, item)
+  }
+
+  // Save-back from the full tool. Only the window this page opened is heard,
+  // and it saves into the item opened last.
+  function toolListener (event) {
+    if (!pending || !event.data || event.data.toolType !== 'rcn-timeline') return
+    if (pending.win && event.source !== pending.win) return
+    if (event.data.action !== 'saveTimeline' || !event.data.timeline) return
+    const { item, $item } = pending
+    const tl = event.data.timeline
+    item.timeline = { intervals: tl.intervals || [], links: tl.links || [] }
+    delete item.frozen   // what was frozen is now in the item's own timeline
+    item.text = words(item, item.timeline)
+    save($item, item)
+    try { event.source.postMessage({ toolType: 'rcn-timeline', action: 'saved', page: $item.parents('.page:first').data('data').title }, '*') } catch (e) {}
+  }
+
   function bind ($item, item) {
-    $item.dblclick(e => { if (!$(e.target).closest('.rcnt-open').length) wiki.textEditor($item, item) })
-    $item.on('click', '.rcnt-open', e => { e.stopPropagation(); openTool(item) })
+    $item.dblclick(e => { if (!$(e.target).closest('button').length) wiki.textEditor($item, item) })
+    $item.on('click', '.rcnt-open', e => { e.stopPropagation(); openTool($item, item) })
+    $item.on('click', '.rcnt-refresh', e => { e.stopPropagation(); emit($item, item) })
+    $item.on('click', '.rcnt-freeze', e => {
+      e.stopPropagation()
+      if (e.shiftKey) { if (item.frozen) { delete item.frozen; save($item, item) } return }
+      const got = merge(collect($item))
+      if (!got.intervals.length) return
+      item.frozen = item.frozen ? merge([item.frozen, got]) : got
+      save($item, item)
+    })
     $item.on('click', '.rcnt-bar', function (e) {
       const page = this.getAttribute('data-page')
       if (!page) return
@@ -237,9 +355,13 @@
 
   if (typeof window !== 'undefined') {
     window.plugins.rcntimeline = { emit, bind }
+    if (!window.rcnTimelineListener) {
+      window.rcnTimelineListener = toolListener
+      window.addEventListener('message', toolListener)
+    }
   }
   if (typeof module !== 'undefined') {
-    module.exports = { model, toYear, fmt, ticks, relWords, caption }
+    module.exports = { model, rawOf, merge, normalize, lineupOn, toYear, fmt, ticks, relWords, caption }
   }
 
 })()

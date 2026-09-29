@@ -51,6 +51,7 @@ P = {p['id']: p for p in issue['parcels']}
 # cannot drift apart. Each is already what sanitizeTitle() would produce.
 TITLE = {i: p.get('wikiTitle') or p['label'] for i, p in P.items()}
 INDEX = 'Co-ops of Whatcom County'
+LINEUP_PAGE = 'Co-op Lineup'
 TL = json.load(open(os.path.join(REPO, 'tools', 'whatcom-coops-timeline.json'), encoding='utf-8'))
 TL_IDS = {i: [v for v in TL['intervals'] if i in v.get('coops', [])] for i in P}
 
@@ -175,6 +176,7 @@ def index_md():
           'Marc Pierson’s layout: Cascade Cooperatives at the centre of its members, the Community Food Co-op at the centre of money and trade. WECU, REI, Darigold and CHS have no documented tie to the rest.',
           '## On the map', '@@MAP all',
           '## Over time', '@@TIMELINE all',
+          'To see a few co-ops together — their map with the ties between them, their histories side by side — open their pages, then open [[%s]] to their right.' % LINEUP_PAGE,
           'Every co-op’s history on one axis, from the Lynden dairymen of 1918 to the worker co-ops of 2023. Grey bars are what a co-op was before it became one; purple lines are ties in time. Click a bar for its co-op’s page.',
           '## The co-ops']
     by = {}
@@ -188,6 +190,17 @@ def index_md():
            '@@ASSETS rcn-table', '@@ASSETS rcn-table/whatcomcoops',
            'The records come from the RCN Map issue file tools/issue-data/whatcom-wa--cooperatives.json in the rcn repository, loaded into Neo4j by substrate/load_coops.py and exported by substrate/export.py. Contacts were checked in September 2026; each page says when and where.']
     return '\n\n'.join(md) + '\n'
+
+
+def lineup_md():
+    return '\n\n'.join([
+        '# ' + LINEUP_PAGE,
+        'A map and a timeline that collect from the pages to their left. Open two or more co-op pages, open this page to their right, and both show those co-ops together — on the map with the ties between them, on the timeline with their histories side by side. A tie whose ends come from different pages joins them.',
+        'Press ↻ to collect again after changing the lineup. Press ❄ to freeze what is showing into this page, so it stays when the lineup changes; shift-click ❄ to unfreeze.',
+        '## Together on the map', '@@LINEUPMAP',
+        '## Together over time', '@@LINEUPTL',
+        'This works the way FedWiki’s own Map plugin combines maps with its LINEUP line, and carries the ties as well as the points. It reads only pages open in this browser window, to the left of this one. Back to the %s.' % link_index(),
+    ]) + '\n'
 
 
 def rid():
@@ -282,6 +295,14 @@ def item_for(marker):
                 'timeline': {'intervals': [dict({k: v[k] for k in fields if k in v}, page=page_of(v),
                                                 row=order.index(v['row'])) for v in ivs],
                              'links': [{k: l[k] for k in ('from', 'to', 'rel', 'who', 'note') if k in l} for l in links]}}
+    if kind == '@@LINEUPMAP':
+        if MAPS == 'native':
+            return {'type': 'map', 'id': rid(), 'text': 'LINEUP\nThe co-ops on the pages to the left.'}
+        return {'type': 'rcnmap', 'id': rid(),
+                'text': 'The co-ops on the pages to the left, with the ties between them. Click a point for its page.\nLINEUP'}
+    if kind == '@@LINEUPTL':
+        return {'type': 'rcntimeline', 'id': rid(),
+                'text': 'The co-ops on the pages to the left, over time. Click a bar for its page.\nLINEUP'}
     if kind == '@@SITE':
         return {'type': 'frame', 'id': rid(),
                 'text': P[arg]['contact']['website'] + '\nHEIGHT 520\nThe co-op’s own website, live.'}
@@ -299,6 +320,7 @@ def main():
     for i in P:
         f = os.path.join(tmp, i + '.md'); open(f, 'w', encoding='utf-8').write(co_op_md(i)); mds.append(f)
     f = os.path.join(tmp, 'index.md'); open(f, 'w', encoding='utf-8').write(index_md()); mds.append(f)
+    f = os.path.join(tmp, 'lineup.md'); open(f, 'w', encoding='utf-8').write(lineup_md()); mds.append(f)
     subprocess.run(['node', os.path.join(SCRIPTS, 'md-to-fedwiki-page.js'), *mds, '--map', OUT], check=True)
 
     drop = json.load(open(OUT, encoding='utf-8'))
@@ -315,7 +337,7 @@ def main():
                 swapped += 1
     # sanitizeTitle() title-cases every word ("Co-ops Of …"); the slug is the
     # same either way, so restore the natural title on the page and its create.
-    for t in list(TITLE.values()) + [INDEX]:
+    for t in list(TITLE.values()) + [INDEX, LINEUP_PAGE]:
         page = drop.get(slug(t))
         if page:
             page['title'] = t
@@ -324,7 +346,7 @@ def main():
     json.dump(drop, open(OUT, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     subprocess.run(['node', os.path.join(SCRIPTS, 'fedwiki-attribution.js'), OUT,
                     '--model', 'Claude Opus 5.5', '--date', 'September 2026'], check=True)
-    missing = [t for t in list(TITLE.values()) + [INDEX] if slug(t) not in drop]
+    missing = [t for t in list(TITLE.values()) + [INDEX, LINEUP_PAGE] if slug(t) not in drop]
     print('%d pages, %d plugin items -> %s%s' % (len(drop), swapped, OUT,
           ('   MISSING: %s' % missing) if missing else ''))
 

@@ -2,7 +2,7 @@
 
 Marc Pierson and Claude Opus 5.5 · September 2026
 
-Status: PLAN, not started. Written after the Whatcom co-ops FedWiki pages (`docs/whatcom-coops-wiki/`) showed what the native Map plugin cannot do.
+Status: steps 1 and 2 BUILT (Sep 2026) — draw-only, then lineup merging with ties, ❄ and ↻; the same merging and a save-back from the full tool are in wiki-plugin-rcntimeline. Steps 3–5 open. Written after the Whatcom co-ops FedWiki pages (`docs/whatcom-coops-wiki/`) showed what the native Map plugin cannot do.
 
 ## Why
 

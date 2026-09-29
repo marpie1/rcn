@@ -36,7 +36,13 @@ and restart the wiki. The Factory then offers **RCN Timeline**.
 
 ## Status
 
-Version 0.1: draws intervals, fuzz, links and an axis; bars open their pages; Open in RCN Timeline opens the item in the full tool. Next: save-back from the tool into the item, and lineup merging (a timeline collecting the timelines of the pages to its left).
+Version 0.2: draws intervals, fuzz, links and an axis; bars open their pages; Open in RCN Timeline opens the item in the full tool, and the tool's **↩ Save to wiki** (shown only when a wiki opened it) saves the edited timeline back into the item — the item opened last — as an ordinary FedWiki edit.
+
+## Lineup merging
+
+- Every timeline offers its intervals and links to items to its right (class `rcntimeline-source`, `timelineData()`).
+- A timeline whose text has a `LINEUP` line collects from every timeline to its left and draws them together. Intervals merge by id (the first copy wins); each source's lanes stay together, so a firm and the co-op it became stay on one row; links merge on from + to + relation.
+- **❄** freezes the collection into the item (`item.frozen`); shift-click unfreezes. **↻** collects again.
 
 Part of the [RCN toolset](https://github.com/marpie1/rcn), MIT.
 

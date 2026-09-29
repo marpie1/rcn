@@ -308,8 +308,22 @@ shot_slide(0, 'FedWiki — Open in RCN Timeline', FW, 'One click from the page t
                '“Open in RCN Timeline ↗” under any timeline opens the full tool in its own tab, with that timeline loaded: the North Cascades Meat co-op’s 8 intervals here.',
                'Nothing is lost on the way: the bar’s page and co-op links ride along, so the tool can hand them back.',
                'Open a second timeline from another page and the same tab switches to it, as one undo step.',
-               'Edits made in the tool do not come back to the page yet — saving back is the next step.',
+               'Edit there, press ↩ Save to wiki, and the timeline goes back into the page it came from, as an ordinary FedWiki edit in the page’s history.',
            ], 'Screenshot · RCN Timeline, opened from the North Cascades Meat Producers Cooperative page')
+
+sl = slide()
+kicker(sl, 'FedWiki — Co-op Lineup', FW)
+heading(sl, 'Open a few co-op pages, and one page shows them together')
+h = shot(sl, '18-wiki-co-op-lineup.jpg', 0.6, 1.62, 6.0, maxh=5.1)
+txt(sl, 'WHAT YOU ARE SEEING', 6.7, 1.62, 6, 0.3, size=11, bold=True, color=FW)
+bullets(sl, [
+    'The Food Co-op and Bellingham Bay Builders are open to the left. The Co-op Lineup page to their right collects both: its map shows 7 co-ops and 9 ties, its timeline 14 bars — shared co-ops counted once.',
+    'A tie whose ends come from different pages joins them into one network, on the map and in time.',
+    '❄ freezes what is showing into the page, so it stays when the lineup changes; shift-click unfreezes. ↻ collects again.',
+    'It works the way FedWiki’s own Map plugin combines maps with its LINEUP line — and carries the ties as well as the points. RCN maps also offer their points the way FedWiki’s own Map reads them.',
+], 6.7, 1.98, 6.0, 4.9, size=14, gap=6)
+txt(sl, 'Screenshot · local wiki, Bellingham Bay Builders beside the Co-op Lineup page', 0.6, 1.62 + h + 0.1, 8, 0.3, size=10, italic=True, color=INK3)
+footer(sl)
 
 sl = slide()
 kicker(sl, 'FedWiki — table plugin', FW)
@@ -341,10 +355,10 @@ rect(sl, 6.85, 1.7, 5.9, 3.75, fill=AMB_LT, line=RGBColor(0xfd, 0xe0, 0x47))
 txt(sl, 'LIMITS', 7.1, 1.85, 5.4, 0.3, size=11, bold=True, color=AMB_TX)
 bullets(sl, [
     'The RCN Map and RCN Timeline plugins run on the local wiki. On Wiki Café they need an npm publish and an image rebuild first; until then, build pages with --map native.',
-    'Edits in the full Timeline tool do not save back to the page yet.',
+    'Combining maps and timelines sees only the pages open in this browser window, to the left — the same as FedWiki’s own Map.',
     'Half the co-op websites cannot be shown in a page — ICU, REI, North Coast CU, A1DesignBuild and the Food Hub refuse; Bellingham Bay Builders’ bot check never finishes. Those pages link out.',
 ], 7.1, 2.2, 5.4, 2.7, size=13, color=AMB_TX, gap=6)
-txt(sl, 'Checked in a real FedWiki (coops.localhost) with real clicks: a graph box, a map point and a timeline bar each open their page beside; Open in RCN Timeline loads the page’s timeline; the websites were tested in the frame plugin’s own sandbox or by their headers — 11 show.', 0.6, 5.7, 12.1, 0.8, size=15, italic=True, color=INK2)
+txt(sl, 'Checked in a real FedWiki (coops.localhost) with real clicks: a graph box, a map point and a timeline bar each open their page beside; Open in RCN Timeline loads the page’s timeline and Save to wiki brings an edit back; the Co-op Lineup combines and freezes; the websites were tested in the frame plugin’s own sandbox or by their headers — 11 show.', 0.6, 5.7, 12.1, 0.8, size=15, italic=True, color=INK2)
 footer(sl)
 
 # Contacts: what we found and what to watch ───────────────────────────
