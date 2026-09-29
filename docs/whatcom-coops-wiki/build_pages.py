@@ -15,6 +15,9 @@ lineup, click each slug, fork. Each co-op page carries
   - a map: an rcnmap item (wiki-plugin-rcnmap) drawing this co-op, its
     neighbours and the ties between them, each point opening its page; or with
     --map native, FedWiki's own Map plugin (points only, each a [[link]])
+  - an rcntimeline item (wiki-plugin-rcntimeline) with the co-op's history,
+    where it has a sequence (two or more intervals in
+    tools/whatcom-coops-timeline.json, joined through each interval's `coops`)
   - a frame item with the co-op's own website, when the site allows framing —
     the only thing framed
 
@@ -48,6 +51,13 @@ P = {p['id']: p for p in issue['parcels']}
 # cannot drift apart. Each is already what sanitizeTitle() would produce.
 TITLE = {i: p.get('wikiTitle') or p['label'] for i, p in P.items()}
 INDEX = 'Co-ops of Whatcom County'
+TL = json.load(open(os.path.join(REPO, 'tools', 'whatcom-coops-timeline.json'), encoding='utf-8'))
+TL_IDS = {i: [v for v in TL['intervals'] if i in v.get('coops', [])] for i in P}
+
+
+def has_timeline(i):
+    # A timeline earns its space where there is a sequence: two or more intervals.
+    return len(TL_IDS[i]) > 1
 FOUNDED = {'cc': '2014', 'c2c': '2003', 'a1': '2017', 'bbb': '2004', 'cma': '2023', 'col': '2009',
            'cmc': '2023', 'tyl': '2017', 'cab': '2023', 'cdn': '2016', 'cfc': '1970', 'icu': '1941',
            'nccu': '1939', 'wecu': '1936', 'wecu2': '1952', 'rei': '1938', 'ncm': '2016',
@@ -119,6 +129,13 @@ def co_op_md(i):
     md += ['## Nearest neighbours', '@@GRAPH ' + i,
            'This co-op and every co-op it has a documented tie to, cut from the whole Co-ops of Whatcom County graph. Click a name to open that page. Double-click the diagram to edit it in the RCN Graph Tool; hover a box for its contact details.']
     md += ['## On the map', '@@MAP ' + i]
+    md.append('## Over time')
+    if has_timeline(i):
+        md.append('@@TIMELINE ' + i)
+    else:
+        v = TL_IDS[i][0]
+        md.append('Began %s. Its one interval is on the whole timeline on the %s page.'
+                  % (v['start'].split()[-1], link_index()))
     md += ['## Website']
     if c.get('website') and i not in NO_FRAME:
         md.append('@@SITE ' + i)
@@ -141,7 +158,10 @@ def index_md():
           'Open Table shows every row: sort, filter, pick columns, select rows and put them on the map, or follow one row into its neighbourhood. Every name opens that co-op’s page beside the table.',
           '## The network', '@@GRAPH all',
           'Marc Pierson’s layout: Cascade Cooperatives at the centre of its members, the Community Food Co-op at the centre of money and trade. WECU, REI, Darigold and CHS have no documented tie to the rest.',
-          '## On the map', '@@MAP all', '## The co-ops']
+          '## On the map', '@@MAP all',
+          '## Over time', '@@TIMELINE all',
+          'Every co-op’s history on one axis, from the Lynden dairymen of 1918 to the worker co-ops of 2023. Grey bars are what a co-op was before it became one; purple lines are ties in time. Click a bar for its co-op’s page.',
+          '## The co-ops']
     by = {}
     for i, p in P.items(): by.setdefault(p['type'], []).append(i)
     for t in types:
@@ -214,6 +234,26 @@ def item_for(marker):
                         'linkKinds': {k: v for k, v in kinds.items() if k in used_k},
                         'parcels': parcels,
                         'links': [{k: l[k] for k in ('from', 'to', 'kind', 'label') if k in l} for l in links]}}
+    if kind == '@@TIMELINE':
+        if arg == 'all':
+            ivs = TL['intervals']
+            page_of = lambda v: TITLE[v['coops'][0]]
+            cap = 'Every co-op, from 1918 to today. Click a bar for its co-op’s page.'
+        else:
+            ivs = TL_IDS[arg]
+            # A shared bar opens the other co-op; this co-op's own bars open this page.
+            page_of = lambda v: TITLE[next((c for c in v['coops'] if c != arg), arg)]
+            cap = '%s over time. Click a shared bar for the other co-op’s page.' % TITLE[arg]
+        keep = {v['id'] for v in ivs}
+        links = [l for l in TL['links'] if l['from'] in keep and l['to'] in keep]
+        byid = {v['id']: v for v in ivs}
+        fields = ('id', 'label', 'start', 'end', 'startFuzz', 'endFuzz', 'color', 'row', 'who', 'conf', 'note', 'coops')
+        words = [cap] + ['%s: %s – %s' % (v['label'], v['start'], v['end']) for v in ivs] + \
+                ['%s %s %s' % (byid[l['from']]['label'], ', '.join(l['rel']) if isinstance(l['rel'], list) else l['rel'],
+                               byid[l['to']]['label']) for l in links]
+        return {'type': 'rcntimeline', 'id': rid(), 'text': '\n'.join(words),
+                'timeline': {'intervals': [dict({k: v[k] for k in fields if k in v}, page=page_of(v)) for v in ivs],
+                             'links': [{k: l[k] for k in ('from', 'to', 'rel', 'who', 'note') if k in l} for l in links]}}
     if kind == '@@SITE':
         return {'type': 'frame', 'id': rid(),
                 'text': P[arg]['contact']['website'] + '\nHEIGHT 520\nThe co-op’s own website, live.'}
