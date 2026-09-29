@@ -2,7 +2,7 @@
 
 A small RCN timeline on a Federated Wiki page: intervals as bars with their fuzzy edges, the links between them, and a date axis. Hover a bar for its dates, source, confidence and note; click it to open its page in the lineup.
 
-The full RCN Timeline (`tools/rcn-timeline.html` in the rcn repository) solves and edits. This plugin draws what the item holds — dates as stored, no solving.
+The full RCN Timeline (`tools/rcn-timeline.html` in the rcn repository) solves and edits. This plugin draws what the item holds — dates as stored, no solving — and its **Open in RCN Timeline ↗** button opens the item's timeline in the full tool, in its own tab. On a localhost wiki that is the working copy on port 8765; elsewhere the site's `/assets/rcn-timeline/rcn-timeline.html`; an item's `tool` field overrides both. A second Open reuses the same tab. Edits made there do not come back to the page yet.
 
 Install on a wiki server:
 
@@ -36,7 +36,7 @@ and restart the wiki. The Factory then offers **RCN Timeline**.
 
 ## Status
 
-Version 0.1: draws intervals, fuzz, links and an axis; bars open their pages. Next, following the RCN Map plugin: taking part in lineup merging (a timeline collecting the timelines of the pages to its left), and "Open in RCN Timeline" with save-back.
+Version 0.1: draws intervals, fuzz, links and an axis; bars open their pages; Open in RCN Timeline opens the item in the full tool. Next: save-back from the tool into the item, and lineup merging (a timeline collecting the timelines of the pages to its left).
 
 Part of the [RCN toolset](https://github.com/marpie1/rcn), MIT.
 

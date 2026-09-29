@@ -515,9 +515,12 @@ function renderIv(iv,defs){
   // A later interval on the same row (a firm, then the co-op it became) owns the
   // space from its own start: this label stops short of it with an ellipsis, and
   // is left off when too little fits — the tooltip and panel still name it.
-  var lx=ivLabelX(iv,xs), txt=iv.label, nextS=Infinity;
-  M.intervals.forEach(function(o){ if(o!==iv&&o.row===iv.row&&o.s>iv.s&&o.s<nextS)nextS=o.s; });
-  if(nextS<Infinity){ var room=tx(nextS)-lx-6; if(labelWidth(txt)>room)txt=fitLabel(txt,room); }
+  // …and short of the next interval's LABEL too: a late bar whose label is
+  // pulled left to stay on screen starts before its own bar, over this one's.
+  var lx=ivLabelX(iv,xs), txt=iv.label, nextS=Infinity, nxt=null;
+  M.intervals.forEach(function(o){ if(o!==iv&&o.row===iv.row&&o.s>iv.s&&o.s<nextS){nextS=o.s;nxt=o;} });
+  if(nxt){ var stop=Math.min(tx(nextS), ivLabelX(nxt,tx(nxt.s))), room=stop-lx-6;
+    if(labelWidth(txt)>room)txt=fitLabel(txt,room); }
   if(txt){var lb=el("text",{x:lx,y:y+4,"class":"iv-label"});lb.textContent=txt;g.appendChild(lb);}
 
   // events
@@ -1225,6 +1228,10 @@ document.getElementById("btn-redo").onclick=redo;
 /* ── boot ────────────────────────────────────────────────── */
 window.addEventListener("resize",render);
 if(!applyHash())loadDemo();
+// A wiki's "Open in RCN Timeline" reuses this window: a second timeline arrives
+// as a new #tl= on the same page, which the browser does not reload for. Load
+// it; it is one undo step, like an Import.
+window.addEventListener("hashchange",function(){ if(/[#&]tl=/.test(location.hash)){ beforeChange("open"); applyHash(); } });
 updateUndoBtns();
 </script>
 </body>

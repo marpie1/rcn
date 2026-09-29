@@ -24,6 +24,16 @@
   const LINK_COLOR = '#7c3aed'
   const NS = 'http://www.w3.org/2000/svg'
 
+  // The full RCN Timeline. A local wiki opens the working copy served on :8765;
+  // anywhere else the site's own copy in its assets. An item may name its own
+  // with a `tool` field. The tool opens any timeline passed as #tl=<base64 JSON>,
+  // so opening needs nothing from the tool but that.
+  const LOCAL = /(^|\.)localhost$/.test(window.location.hostname)
+  const TOOL_URL = LOCAL
+    ? 'http://localhost:8765/tools/rcn-timeline.html'
+    : window.location.origin + '/assets/rcn-timeline/rcn-timeline.html'
+  const b64 = str => btoa(unescape(encodeURIComponent(str)))
+
   const esc = s => String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
@@ -194,15 +204,29 @@
     }
     $item.append(`<div style="background:#f5f5f5;padding:8px;">
       <div class="rcnt-canvas" style="background:#fff;border:1px solid #ddd;overflow-x:auto"></div>
-      <p class="caption" style="margin:4px 0 0;">${cap}</p></div>`)
+      <p class="caption" style="margin:4px 0 0;">${cap}</p>
+      <div style="padding:6px 0 0;text-align:center;"><button class="rcnt-open" style="cursor:pointer;">Open in RCN Timeline ↗</button></div></div>`)
     // Width is known only once the item is in the page.
     const paint = () => $item.find('.rcnt-canvas').html(draw($item, item, m))
     paint()
     setTimeout(paint, 0)
   }
 
+  // Open this item's timeline in the full tool, in its own window. Edits there
+  // do not come back to the page yet: save-back is the next step.
+  function openTool (item) {
+    const tl = item.timeline && Array.isArray(item.timeline.intervals)
+      ? item.timeline
+      : { intervals: model(item).intervals.map(v => ({ id: v.id, label: v.label, start: fmt(v.s), end: fmt(v.e) })), links: [] }
+    const doc = Object.assign({ name: caption(item) || 'Timeline' }, tl)
+    const url = (item.tool || TOOL_URL) + '#tl=' + b64(JSON.stringify(doc))
+    const win = window.open(url, 'rcntimeline')
+    if (win) win.focus()
+  }
+
   function bind ($item, item) {
-    $item.dblclick(() => wiki.textEditor($item, item))
+    $item.dblclick(e => { if (!$(e.target).closest('.rcnt-open').length) wiki.textEditor($item, item) })
+    $item.on('click', '.rcnt-open', e => { e.stopPropagation(); openTool(item) })
     $item.on('click', '.rcnt-bar', function (e) {
       const page = this.getAttribute('data-page')
       if (!page) return

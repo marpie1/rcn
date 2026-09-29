@@ -180,7 +180,7 @@ bullets(sl, [
     'Graph Tool — the Map’s “Open in Graph Tool” button, then laid out by hand (the layout shown is Marc’s).',
     'Timeline — tools/whatcom-coops-timeline.json: when each co-op began, converted or merged.',
     'Table — Neo4j database whatcomcoops, loaded from the same issue file by substrate/load_coops.py.',
-    'FedWiki — one page per co-op: its record, its graph, a map, its website; the table plugin on the index page.',
+    'FedWiki — one page per co-op: its record, its graph, its map with ties, its timeline, its website; the table plugin on the index page.',
 ], 0.6, 5.15, 12.1, 1.8, size=13, gap=2)
 footer(sl, 2)
 
@@ -261,19 +261,41 @@ shot_slide(0, 'FedWiki — RCN Graph Tool', FW, 'Click a co-op in its graph and 
            ], 'Screenshot · click on Cascade Cooperatives in the Food Co-op’s graph')
 
 sl = slide()
-kicker(sl, 'FedWiki — Map and Frame plugins', FW)
-heading(sl, 'Its map and its own website, inside the page')
-h = shot(sl, '11-wiki-map-site.jpg', 0.6, 1.62, 3.2)
+kicker(sl, 'FedWiki — RCN Map and RCN Timeline plugins', FW)
+heading(sl, 'Its map, with the ties, and its history, with its neighbours')
+h = shot(sl, '13-wiki-map-timeline.jpg', 0.6, 1.62, 3.2)
 txt(sl, 'WHAT YOU ARE SEEING', 4.4, 1.62, 8, 0.3, size=11, bold=True, color=FW)
 bullets(sl, [
-    'A Map item — FedWiki’s own map plugin — shows this co-op and the co-ops it is tied to. Each point is a wiki link to that co-op’s page.',
-    'The map is plain text, one line per point, so anyone can edit it in the page. It works on any wiki with nothing uploaded.',
-    'It draws points, not ties; the graph just above carries the ties. The table’s Map button draws them on a map.',
-    'A Frame item — used only for this — shows the co-op’s own website, live, under the map.',
-    '11 of the 22 sites show inside the page. The other 11 refuse to be framed, put up a bot check, are down, or have no site; those pages link out and say why.',
+    'An RCN Map item draws this co-op and the co-ops it is tied to, with the ties in their colours and line styles. Click a point and its page opens beside this one.',
+    'An RCN Timeline item draws the co-op’s own history first, then the history of each co-op it is tied to: the same neighbours as the graph and the map, now in time.',
+    'Hover a bar for its dates, how uncertain they are, who says so and how sure. Click it and that co-op’s page opens.',
+    '“Open in RCN Timeline ↗” opens the full tool with this timeline in it.',
+    'A Frame item, used only for this, shows the co-op’s own website below: 11 of the 22 sites allow it; the rest link out and say why.',
 ], 4.4, 1.98, 8.3, 4.6, size=15)
-txt(sl, 'Screenshot · Community Food Co-op, scrolled to its map and website', 0.6, 1.62 + h + 0.1, 8, 0.3, size=10, italic=True, color=INK3)
+txt(sl, 'Screenshot · North Cascades Meat Producers Cooperative, scrolled to its map and timeline', 0.6, 1.62 + h + 0.1, 8, 0.3, size=10, italic=True, color=INK3)
 footer(sl)
+
+sl = slide()
+kicker(sl, 'FedWiki — RCN Timeline plugin', FW)
+heading(sl, 'A timeline on 19 co-op pages, and the whole history on the index')
+h1 = shot(sl, '14-wiki-timeline-coop.jpg', 0.6, 1.62, 5.4, maxh=3.15)
+txt(sl, 'Community Food Co-op: its own history, then the five co-ops it is tied to', 0.6, 1.62 + h1 + 0.08, 5.6, 0.3, size=10, italic=True, color=INK3)
+bullets(sl, [
+    'Each interval names the co-op it belongs to, so a page draws the co-op’s own bars and its neighbours’ without a second list to keep in step.',
+    'Grey bars are what a co-op was before: A-1 Builders before A1DesignBuild, the Co-op Education Project before Cascade Cooperatives.',
+    'Only WECU, REI and Darigold have a single bar and no ties; their pages point to the whole timeline instead.',
+], 0.6, 1.62 + h1 + 0.45, 6.4, 2.0, size=12, gap=3)
+h2 = shot(sl, '16-wiki-timeline-index.jpg', 7.6, 1.62, 5.1, maxh=5.3)
+txt(sl, 'The index page: 35 bars, 1918 to today', 7.6, 1.62 + h2 + 0.08, 5.1, 0.3, size=10, italic=True, color=INK3)
+footer(sl)
+
+shot_slide(0, 'FedWiki — Open in RCN Timeline', FW, 'One click from the page to the full Timeline tool',
+           '15-timeline-tool-opened.jpg', [
+               '“Open in RCN Timeline ↗” under any timeline opens the full tool in its own tab, with that timeline loaded: the North Cascades Meat co-op’s 8 intervals here.',
+               'Nothing is lost on the way: the bar’s page and co-op links ride along, so the tool can hand them back.',
+               'Open a second timeline from another page and the same tab switches to it, as one undo step.',
+               'Edits made in the tool do not come back to the page yet — saving back is the next step.',
+           ], 'Screenshot · RCN Timeline, opened from the North Cascades Meat Producers Cooperative page')
 
 sl = slide()
 kicker(sl, 'FedWiki — table plugin', FW)
@@ -293,20 +315,22 @@ footer(sl)
 sl = slide()
 kicker(sl, 'FedWiki — how it went', FW)
 heading(sl, 'Making it work: what broke, and what it cannot do')
-rect(sl, 0.6, 1.7, 6.0, 3.3, fill=WHITE, line=BORDER)
+rect(sl, 0.6, 1.7, 6.0, 3.75, fill=WHITE, line=BORDER)
 txt(sl, 'FIXED', 0.85, 1.85, 5.5, 0.3, size=11, bold=True, color=SUPPRT)
 bullets(sl, [
     'Clicking a two-line name in a graph did nothing, or reloaded the wiki. Each co-op box is now one link. The real fix belongs in the Graph Tool, for every diagram.',
-    'The maps first ran the RCN Map inside Frame items. That tied the pages to one wiki and needed files uploaded, so they now use FedWiki’s own Map plugin; Frame is kept for the websites only.',
-    'Along the way the table’s map learned to load on its own and to use the Esri basemap, so it also works when framed.',
+    'Maps first ran inside Frame items, which tied pages to one wiki. Two plugins of our own replaced them — RCN Map and RCN Timeline — and Frame is kept for websites only.',
+    'Timeline labels ran over each other in a narrow column. They now stop where the next begins, in the page and in the full tool.',
+    'The Timeline tool dropped fields it did not know, so a co-op link vanished on save; and a second “Open” left it on the first timeline. Both fixed.',
 ], 0.85, 2.2, 5.5, 2.7, size=13, gap=6)
-rect(sl, 6.85, 1.7, 5.9, 3.3, fill=AMB_LT, line=RGBColor(0xfd, 0xe0, 0x47))
+rect(sl, 6.85, 1.7, 5.9, 3.75, fill=AMB_LT, line=RGBColor(0xfd, 0xe0, 0x47))
 txt(sl, 'LIMITS', 7.1, 1.85, 5.4, 0.3, size=11, bold=True, color=AMB_TX)
 bullets(sl, [
-    'The per-page map shows points, not ties: we found no way in its text format to draw a line between two points. An RCN map plugin would.',
+    'The RCN Map and RCN Timeline plugins run on the local wiki. On Wiki Café they need an npm publish and an image rebuild first; until then, build pages with --map native.',
+    'Edits in the full Timeline tool do not save back to the page yet.',
     'Half the co-op websites cannot be shown in a page — ICU, REI, North Coast CU, A1DesignBuild and the Food Hub refuse; Bellingham Bay Builders’ bot check never finishes. Those pages link out.',
 ], 7.1, 2.2, 5.4, 2.7, size=13, color=AMB_TX, gap=6)
-txt(sl, 'Checked in a real FedWiki (coops.localhost): a graph click opens the page beside, the Food Co-op’s map shows its 6 co-ops, and the websites were tested in the frame plugin’s own sandbox or by their headers — 11 show.', 0.6, 5.3, 12.1, 0.8, size=15, italic=True, color=INK2)
+txt(sl, 'Checked in a real FedWiki (coops.localhost) with real clicks: a graph box, a map point and a timeline bar each open their page beside; Open in RCN Timeline loads the page’s timeline; the websites were tested in the frame plugin’s own sandbox or by their headers — 11 show.', 0.6, 5.7, 12.1, 0.8, size=15, italic=True, color=INK2)
 footer(sl)
 
 # Contacts: what we found and what to watch ───────────────────────────
@@ -342,7 +366,7 @@ bullets(sl, [
     'Graph: “Open in Graph Tool” from the map legend, or load tools/whatcom-coops-graph.json (Marc’s layout, with contacts).',
     'Timeline: import tools/whatcom-coops-timeline.json into the RCN Timeline.',
     'Table: rcn-table.html?db=whatcomcoops&kind=Coop, with substrate/api.py running.',
-    'FedWiki: drag docs/whatcom-coops-wiki/whatcom-coops-wiki.json onto any lineup; upload the rcn-table folder for the table.',
+    'FedWiki: drag docs/whatcom-coops-wiki/whatcom-coops-wiki.json onto a lineup on a wiki with the RCN Map and RCN Timeline plugins; “Open in RCN Timeline” opens any page’s timeline in the full tool.',
     'To change the data, edit the issue file, then re-run substrate/load_coops.py and build_pages.py so Neo4j and the wiki match.',
 ], 0.7, 1.9, 11.8, 3.6, size=16, color=RGBColor(0xcb, 0xd5, 0xe1), gap=8)
 txt(sl, 'A line means a public source was found. No line means no tie was found, not that none exists.',

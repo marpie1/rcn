@@ -55,9 +55,24 @@ TL = json.load(open(os.path.join(REPO, 'tools', 'whatcom-coops-timeline.json'), 
 TL_IDS = {i: [v for v in TL['intervals'] if i in v.get('coops', [])] for i in P}
 
 
+TL_MAIN = {v['id']: v for v in TL['intervals'] if v['id'] in P}
+
+
+def lane_of(c):
+    # A co-op's own history lane: its main interval and whatever shares its row
+    # (the firm or project it grew out of), not every event it took part in.
+    row = TL_MAIN[c]['row']
+    return [v for v in TL['intervals'] if v['row'] == row]
+
+
+def tl_neighbours(i):
+    return list(dict.fromkeys(o for _, o, _ in neighbours(i)))
+
+
 def has_timeline(i):
-    # A timeline earns its space where there is a sequence: two or more intervals.
-    return len(TL_IDS[i]) > 1
+    # A timeline earns its space where there is more than one bar: a history of
+    # its own, or co-ops it is tied to. A lone bar gets a sentence instead.
+    return len(TL_IDS[i]) > 1 or bool(tl_neighbours(i))
 FOUNDED = {'cc': '2014', 'c2c': '2003', 'a1': '2017', 'bbb': '2004', 'cma': '2023', 'col': '2009',
            'cmc': '2023', 'tyl': '2017', 'cab': '2023', 'cdn': '2016', 'cfc': '1970', 'icu': '1941',
            'nccu': '1939', 'wecu': '1936', 'wecu2': '1952', 'rei': '1938', 'ncm': '2016',
@@ -240,10 +255,21 @@ def item_for(marker):
             page_of = lambda v: TITLE[v['coops'][0]]
             cap = 'Every co-op, from 1918 to today. Click a bar for its co-op’s page.'
         else:
-            ivs = TL_IDS[arg]
-            # A shared bar opens the other co-op; this co-op's own bars open this page.
+            # This co-op's own intervals first, then the history lane of each co-op
+            # it is tied to — the same nearest neighbours as its graph and map.
+            own = TL_IDS[arg]
+            ivs = list(own)
+            seen = {v['id'] for v in ivs}
+            for o in tl_neighbours(arg):
+                for v in lane_of(o):
+                    if v['id'] not in seen:
+                        ivs.append(v); seen.add(v['id'])
+            # A shared bar opens the other co-op; a neighbour's bar opens its page.
             page_of = lambda v: TITLE[next((c for c in v['coops'] if c != arg), arg)]
-            cap = '%s over time. Click a shared bar for the other co-op’s page.' % TITLE[arg]
+            n = len(tl_neighbours(arg))
+            cap = ('%s over time, above %s it is tied to. Click a bar for its page.'
+                   % (TITLE[arg], 'the co-op' if n == 1 else 'the %d co-ops' % n)) if n else \
+                  '%s over time. Click a shared bar for the other co-op’s page.' % TITLE[arg]
         keep = {v['id'] for v in ivs}
         links = [l for l in TL['links'] if l['from'] in keep and l['to'] in keep]
         byid = {v['id']: v for v in ivs}
@@ -251,8 +277,10 @@ def item_for(marker):
         words = [cap] + ['%s: %s – %s' % (v['label'], v['start'], v['end']) for v in ivs] + \
                 ['%s %s %s' % (byid[l['from']]['label'], ', '.join(l['rel']) if isinstance(l['rel'], list) else l['rel'],
                                byid[l['to']]['label']) for l in links]
+        order = list(dict.fromkeys(v['row'] for v in ivs))
         return {'type': 'rcntimeline', 'id': rid(), 'text': '\n'.join(words),
-                'timeline': {'intervals': [dict({k: v[k] for k in fields if k in v}, page=page_of(v)) for v in ivs],
+                'timeline': {'intervals': [dict({k: v[k] for k in fields if k in v}, page=page_of(v),
+                                                row=order.index(v['row'])) for v in ivs],
                              'links': [{k: l[k] for k in ('from', 'to', 'rel', 'who', 'note') if k in l} for l in links]}}
     if kind == '@@SITE':
         return {'type': 'frame', 'id': rid(),
