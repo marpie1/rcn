@@ -8755,7 +8755,8 @@ function exportDOT(){
 function dotNodeId(n){return 'n'+String(n.id).replace(/\D/g,'');}
 function dotEsc(s){return String(s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');}
 function dotShape(sh){var map={rounded:'box',rect:'rectangle',ellipse:'ellipse',diamond:'diamond',hexagon:'hexagon',cylinder:'cylinder',barrel:'box'};return map[sh]||'box';}
-function buildExportSVG(){var W=svgEl.clientWidth||600,H=svgEl.clientHeight||400;var clone=svgEl.cloneNode(true);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');clone.setAttribute('width',String(W));clone.setAttribute('height',String(H));
+function buildExportSVG(){var W=svgEl.clientWidth||600,H=svgEl.clientHeight||400;var clone=svgEl.cloneNode(true);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');clone.setAttribute('width',String(W));clone.setAttribute('height',String(H));clone.setAttribute('font-family','system-ui,sans-serif');// node text takes its font from page CSS, which an exported SVG does not carry; without this every export falls back to a serif face
+
 // The clone is the LIVE canvas element, so it arrives carrying id="canvas" and the
 // tool's own inline handlers. Harmless in a lone file, but two exports embedded in one
 // page collide on that id, and the handlers reference functions that do not exist there.
