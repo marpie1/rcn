@@ -907,12 +907,27 @@ const esriCanvas = shade => L.layerGroup([
     maxNativeZoom: 16, maxZoom: 19, zIndex: 2
   })
 ]);
+// OSM's own tile server (tile.openstreetmap.org) answers "403 Access blocked"
+// to a map opened as a file (file:///…) — its tile usage policy wants every
+// browser request to say which site it comes from, and a file page names none.
+// Seen by Marc in Chrome, Sep 2026. Topo, CyclOSM, Transport and Esri do not
+// check, so only the street layer changes: opened as a file it is Esri's street
+// map (built partly from OSM data) under its own name, and its credit line says
+// how to get OSM's own tiles. Served over http(s), nothing changes.
+const OPENED_AS_FILE = location.protocol === 'file:';
+const streetLayer = OPENED_AS_FILE
+  ? ['Streets (Esri)', L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles © Esri — Esri, HERE, Garmin, © OpenStreetMap contributors · '
+        + 'OpenStreetMap’s own tiles need the map opened from a web address (http://…), not as a file',
+      maxNativeZoom: 19, maxZoom: 19
+    })]
+  : ['OpenStreetMap', L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    })];
 const baseLayers = {
   'Light': esriCanvas('Light'),
-  'OpenStreetMap': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 19
-  }),
+  [streetLayer[0]]: streetLayer[1],
   'Satellite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles © Esri — Source: Esri, USGS, NOAA',
     maxZoom: 19

@@ -525,11 +525,27 @@ let parcelNewCount = 0; // always-increasing counter so IDs are unique even afte
 const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
 const BASEMAPS = {
   light:  { url: ESRI + 'Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', labels: ESRI + 'Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', native: 16, attr: '© Esri' },
-  osm:    { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',                                              attr: '© OpenStreetMap contributors' },
+  osm:    location.protocol === 'file:'   // see the note below BASEMAPS
+            ? { url: ESRI + 'World_Street_Map/MapServer/tile/{z}/{y}/{x}', native: 19,
+                attr: 'Tiles © Esri — Esri, HERE, Garmin, © OpenStreetMap contributors · OpenStreetMap’s own tiles need this map opened from a web address (http://…), not as a file' }
+            : { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',                                        attr: '© OpenStreetMap contributors' },
   topo:   { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', native: 17,                                attr: '© OpenTopoMap © OpenStreetMap contributors' },
   sat:    { url: ESRI + 'World_Imagery/MapServer/tile/{z}/{y}/{x}',                                              attr: '© Esri' },
   dark:   { url: ESRI + 'Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',  labels: ESRI + 'Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',  native: 16, attr: '© Esri' }
 };
+
+// OSM's own tile server (tile.openstreetmap.org) answers "403 Access blocked"
+// to a map opened as a file (file:///…) — its tile usage policy wants every
+// browser request to say which site it comes from, and a file page names none.
+// Seen by Marc in Chrome, Sep 2026. Topo and Esri do not check, so only the
+// street layer changes: opened as a file it is Esri's street
+// map (built partly from OSM data) under its own name, and its credit line says
+// how to get OSM's own tiles. Served over http(s), nothing changes.
+
+if (location.protocol === 'file:') {
+  const btn = document.getElementById('bm-osm');
+  if (btn) { btn.textContent = 'Streets (Esri)'; btn.title = 'OpenStreetMap’s own tiles need this map opened from a web address (http://…), not as a file'; }
+}
 
 function setBasemap(key) {
   if (!map || !BASEMAPS[key]) return;
