@@ -33,6 +33,10 @@ Verified against `tools/rcn-timeline.html` at commit `5d1c70c`, 2026-07-25. Deri
 
 `importModel` accepts a short form too — `s`, `e`, `sf`, `ef` for `start`, `end`, `startFuzz`, `endFuzz`. `exportModel` always writes the long form. Write the long form.
 
+**Fields the tool does not use are kept** (since Sep 2026), on intervals, on links, and on the file itself (a top-level `note`, say). Import holds them aside and export writes them back unchanged, through edits and undo, so a bridge field survives opening and saving in the tool. Before this, import silently dropped them.
+
+**Bridge to the RCN Map: `coops`.** An interval may carry `coops`: an array of RCN Map parcel ids it belongs to, owner first — `["cfc", "icu"]` for the Farm Fund loan fund run with Industrial Credit Union. A co-op's main interval also uses that parcel id as its own `id` (the bridge rule: interval id = map parcel id); earlier phases and events get their own ids (`a1_pre`, `loanfund`) and reach the co-op through `coops`. Worked case: `tools/whatcom-coops-timeline.json` against `tools/issue-data/whatcom-wa--cooperatives.json`, where every parcel has a main interval and every `coops` id is a parcel.
+
 ## Links
 
 | Field | Type | Notes |

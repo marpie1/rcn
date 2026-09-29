@@ -1080,21 +1080,32 @@ window.addEventListener("drop",function(ev){
   var f=ev.dataTransfer.files[0];if(!f)return;
   openImport();readFile(f);
 });
+/* Fields this tool does not use still belong to the file — a bridge id such as
+   `coops` (the RCN Map ids an interval belongs to), a note on the whole
+   timeline, whatever a later tool adds. Import keeps them in `extra`, export
+   writes them back, so opening and saving a file never silently drops data.
+   Known fields always win over an extra of the same name. */
+function withExtra(extra,known){var o={},k;for(k in (extra||{}))o[k]=extra[k];for(k in known)o[k]=known[k];return o;}
+function extraOf(o,known){var x={},any=false;for(var k in o){if(known.indexOf(k)<0){x[k]=o[k];any=true;}}return any?x:null;}
+var IV_KNOWN=["id","label","start","end","s","e","startFuzz","endFuzz","sf","ef","pinned","color","row","who","note","conf"];
+var LK_KNOWN=["id","from","to","rel","who","note","conf"];
+var TOP_KNOWN=["name","intervals","links"];
 function exportModel(){
-  return {name:M.name,
-    intervals:M.intervals.map(function(v){return{id:v.id,label:v.label,start:fmtDate(v.s),end:fmtDate(v.e),startFuzz:r2(v.sf),endFuzz:r2(v.ef),pinned:v.pinned,color:v.color,row:v.row,who:v.who,note:v.note,conf:v.conf};}),
-    links:M.links.map(function(L){return{id:L.id,from:L.from,to:L.to,rel:L.rel,who:L.who,note:L.note,conf:L.conf};})};
+  return withExtra(M.extra,{name:M.name,
+    intervals:M.intervals.map(function(v){return withExtra(v.extra,{id:v.id,label:v.label,start:fmtDate(v.s),end:fmtDate(v.e),startFuzz:r2(v.sf),endFuzz:r2(v.ef),pinned:v.pinned,color:v.color,row:v.row,who:v.who,note:v.note,conf:v.conf});}),
+    links:M.links.map(function(L){return withExtra(L.extra,{id:L.id,from:L.from,to:L.to,rel:L.rel,who:L.who,note:L.note,conf:L.conf});})});
 }
 function importModel(o){
   M.name=o.name||"Untitled timeline";
+  M.extra=extraOf(o,TOP_KNOWN);
   M.intervals=(o.intervals||[]).map(function(v,i){
     var s=parseDate(v.start!=null?v.start:v.s); if(s==null)s=0;
     var e=(v.end!=null?parseDate(v.end):(v.e!=null?parseDate(v.e):null)); if(e==null)e=s+1;
     return{id:v.id||nid("iv"),label:v.label||("Event "+(i+1)),s:s,e:e,
       sf:+(v.startFuzz!=null?v.startFuzz:v.sf)||0,ef:+(v.endFuzz!=null?v.endFuzz:v.ef)||0,
       pinned:!!v.pinned,color:v.color||COLORS[i%COLORS.length],row:(v.row==null?i:v.row),
-      who:v.who||"",note:v.note||"",conf:(v.conf==null?0.8:v.conf)};});
-  M.links=(o.links||[]).map(function(L){return{id:L.id||nid("lk"),from:L.from,to:L.to,rel:L.rel||"before",who:L.who||"",note:L.note||"",conf:(L.conf==null?0.8:L.conf)};});
+      who:v.who||"",note:v.note||"",conf:(v.conf==null?0.8:v.conf),extra:extraOf(v,IV_KNOWN)};});
+  M.links=(o.links||[]).map(function(L){return{id:L.id||nid("lk"),from:L.from,to:L.to,rel:L.rel||"before",who:L.who||"",note:L.note||"",conf:(L.conf==null?0.8:L.conf),extra:extraOf(L,LK_KNOWN)};});
   document.getElementById("model-name").value=M.name;
   sel={type:null,id:null};solve();fit();renderPanel();
 }
@@ -1182,7 +1193,7 @@ function loadDemo(){
    900ms coalesces into ONE step. Drags and sentences pre-capture at the
    start and commit the pre-state with pushPrev() only if something changed. */
 var undoStack=[], redoStack=[], undoTag=null, undoAt=0, UNDO_MAX=80;
-function cloneModel(){return JSON.parse(JSON.stringify({name:M.name,intervals:M.intervals,links:M.links,uid:uid}));}
+function cloneModel(){return JSON.parse(JSON.stringify({name:M.name,extra:M.extra||null,intervals:M.intervals,links:M.links,uid:uid}));}
 function modelStr(){return JSON.stringify({name:M.name,intervals:M.intervals,links:M.links,uid:uid});}
 function beforeChange(tag){
   var now=Date.now();
@@ -1195,7 +1206,7 @@ function pushPrev(pre){ // pre is a snapshot already taken before the change
   redoStack.length=0; undoTag=null; undoAt=Date.now(); updateUndoBtns();
 }
 function applySnapshot(s){
-  M={name:s.name,intervals:s.intervals,links:s.links}; uid=s.uid||uid;
+  M={name:s.name,extra:s.extra||null,intervals:s.intervals,links:s.links}; uid=s.uid||uid;
   if(sel.type){var ok=sel.type==="iv"?ivById(sel.id):linkById(sel.id); if(!ok)sel={type:null,id:null};}
   document.getElementById("model-name").value=M.name;
   solve(); render(); renderPanel();
