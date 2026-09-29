@@ -403,6 +403,7 @@ function calTicks(W){
   return out;
 }
 
+var LABELS=null, HANDLES=null; // text and handle layers, rebuilt each render
 function render(){
   var W=Math.max(svgW(), PAD_L+40), H=Math.max(wrap.clientHeight, ROW_TOP+(M.intervals.reduce(function(m,v){return Math.max(m,v.row);},-1)+1)*ROW_H+40);
   svg.setAttribute("width",W); svg.setAttribute("height",H);
@@ -414,10 +415,16 @@ function render(){
   for(var ti=0;ti<tks.length;ti++)
     svg.appendChild(el("line",{x1:tks[ti].x,y1:AXIS_Y,x2:tks[ti].x,y2:H,"class":"axis-tick"}));
 
-  // links (drawn under bars' handles, over bars body)
+  // Drawn in layers, so text is always on top: links, then bars, then the
+  // selected bar's drag handles, then ALL text (bar labels and relation
+  // labels), then the date axis. Before this each bar drew its own label inside
+  // its own group, so a later bar or link could land on top of an earlier
+  // label. Text wins over the handles too (Marc's rule): a handle is still
+  // grabbable wherever no text covers it.
+  LABELS=el("g",{id:"label-layer"}); HANDLES=el("g",{id:"handle-layer"});
   for(var i=0;i<M.links.length;i++)renderLink(M.links[i],defs);
-  // bars
   for(var j=0;j<M.intervals.length;j++)renderIv(M.intervals[j],defs);
+  svg.appendChild(HANDLES); svg.appendChild(LABELS);
 
   // link-in-progress guide
   if(mode!=="select"&&linkStart){
@@ -474,8 +481,8 @@ function renderLink(L,defs){
   if(L.rel==="before"){var slack=B.s-A.e; if(slack>EPS)lbl="slack "+fmtDur(slack);}
   else if(L.rel!=="meets")lbl=L.rel;
   if(lbl){
-    var st=el("text",{x:mx,y:(y1+y2)/2-4,"class":"axis-text","text-anchor":"middle"});
-    st.textContent=lbl; svg.appendChild(st);
+    var st=el("text",{x:mx,y:(y1+y2)/2-4,"class":"axis-text rel-label","text-anchor":"middle"});
+    st.textContent=lbl; LABELS.appendChild(st);
   }
 }
 
@@ -521,13 +528,18 @@ function renderIv(iv,defs){
   M.intervals.forEach(function(o){ if(o!==iv&&o.row===iv.row&&o.s>iv.s&&o.s<nextS){nextS=o.s;nxt=o;} });
   if(nxt){ var stop=Math.min(tx(nextS), ivLabelX(nxt,tx(nxt.s))), room=stop-lx-6;
     if(labelWidth(txt)>room)txt=fitLabel(txt,room); }
-  if(txt){var lb=el("text",{x:lx,y:y+4,"class":"iv-label"});lb.textContent=txt;g.appendChild(lb);}
+  // The label lives in the label layer, above every bar and link, but still
+  // belongs to its bar: pressing it grabs the bar, hovering it shows the tip.
+  var lb=null;
+  if(txt){lb=el("text",{x:lx,y:y+4,"class":"iv-label","data-iv":iv.id,
+    cursor:(mode!=="select"?"crosshair":(iv.pinned?"default":"move"))});lb.textContent=txt;LABELS.appendChild(lb);}
 
   // events
-  g.addEventListener("mousedown",function(e){onIvDown(e,iv);});
-  g.addEventListener("mouseenter",function(e){showTip(e,ivTip(iv));});
-  g.addEventListener("mousemove",moveTip);
-  g.addEventListener("mouseleave",hideTip);
+  [g,lb].forEach(function(n){ if(!n)return;
+    n.addEventListener("mousedown",function(e){onIvDown(e,iv);});
+    n.addEventListener("mouseenter",function(e){showTip(e,ivTip(iv));});
+    n.addEventListener("mousemove",moveTip);
+    n.addEventListener("mouseleave",hideTip); });
   svg.appendChild(g);
 
   // handles when selected & select-mode
@@ -544,7 +556,7 @@ function mkHandle(iv,kind,x,y,fuzz){
   h.addEventListener("mousedown",function(e){e.stopPropagation();startHandle(e,iv,kind);});
   h.addEventListener("mouseenter",function(e){showTip(e,"<b>"+({sf:"start fuzz",s:"start (duration)",e:"end (duration)",ef:"end fuzz"})[kind]+"</b><br>drag ⇄");});
   h.addEventListener("mousemove",moveTip); h.addEventListener("mouseleave",hideTip);
-  svg.appendChild(h);
+  HANDLES.appendChild(h);
 }
 
 /* ── tooltips (frosted glass) ────────────────────────────── */

@@ -289,6 +289,20 @@ h2 = shot(sl, '16-wiki-timeline-index.jpg', 7.6, 1.62, 5.1, maxh=5.3)
 txt(sl, 'The index page: 35 bars, 1918 to today', 7.6, 1.62 + h2 + 0.08, 5.1, 0.3, size=10, italic=True, color=INK3)
 footer(sl)
 
+sl = slide()
+kicker(sl, 'FedWiki — pages with timelines', FW)
+heading(sl, 'Two co-op pages side by side, each with its map and its history')
+h = shot(sl, '17-wiki-lineup-timelines.jpg', 0.6, 1.62, 6.0, maxh=5.1)
+txt(sl, 'WHAT YOU ARE SEEING', 6.7, 1.62, 6, 0.3, size=11, bold=True, color=FW)
+bullets(sl, [
+    'Left: Cascade Cooperatives, the network. Its map fans out to its 13 members; its timeline puts the network’s own start (2014, renamed 2019) above each member’s history — the credit unions of the 1930s–50s, the worker co-ops of the 2000s and 2020s.',
+    'Right: Community to Community (C2C). Its map shows the Food Co-op’s grant and the farmworker co-op it incubated; its timeline shows the grant falling inside C2C’s years, and Tierra y Libertad starting in 2017.',
+    'Each page is an ordinary FedWiki page in a lineup: click any bar or point and that co-op’s page opens to the right.',
+    'Under each timeline, Open in RCN Timeline ↗ takes it into the full tool.',
+], 6.7, 1.98, 6.0, 4.9, size=14, gap=6)
+txt(sl, 'Screenshot · local wiki coops.localhost, Cascade Cooperatives and Community to Community C2C', 0.6, 1.62 + h + 0.1, 8, 0.3, size=10, italic=True, color=INK3)
+footer(sl)
+
 shot_slide(0, 'FedWiki — Open in RCN Timeline', FW, 'One click from the page to the full Timeline tool',
            '15-timeline-tool-opened.jpg', [
                '“Open in RCN Timeline ↗” under any timeline opens the full tool in its own tab, with that timeline loaded: the North Cascades Meat co-op’s 8 intervals here.',
