@@ -17,6 +17,7 @@ Retake the screenshots if the data changes; the captions quote the data.
 """
 
 import os
+from PIL import Image
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
@@ -114,14 +115,19 @@ def heading(sl, text):
     txt(sl, text, 0.6, 0.78, 12.2, 0.7, size=28, bold=True, color=INK)
 
 
-def footer(sl, n):
+def footer(sl, n=None):
+    """Numbered by position, so inserting a slide renumbers the rest."""
+    n = len(prs.slides._sldIdLst)
     txt(sl, 'Co-ops of Whatcom County · RCN', 0.6, 7.05, 6, 0.3, size=9, color=INK3)
     txt(sl, str(n), 12.3, 7.05, 0.4, 0.3, size=9, color=INK3, align=PP_ALIGN.RIGHT)
 
 
-def shot(sl, name, x, y, w):
-    """Screenshot with a hairline frame. Every shot is 1179×690 CSS px."""
-    h = w * 690 / 1179
+def shot(sl, name, x, y, w, maxh=5.05):
+    """Screenshot with a hairline frame, at its own aspect, no taller than maxh."""
+    iw, ih = Image.open(os.path.join(SHOTS, name)).size
+    h = w * ih / iw
+    if h > maxh:
+        h, w = maxh, maxh * iw / ih
     rect(sl, x - 0.03, y - 0.03, w + 0.06, h + 0.06, fill=BORDER)
     sl.shapes.add_picture(os.path.join(SHOTS, name), Inches(x), Inches(y), Inches(w), Inches(h))
     return h
@@ -147,8 +153,8 @@ rect(sl, 0, 0, 6.6, 7.5, fill=DARK)
 for i, c in enumerate([WORKER, CONSUM, PRODUC, SOCIAL, SUPPRT, NETWRK]):
     rect(sl, 0.7 + i * 0.42, 1.25, 0.32, 0.32, fill=c)
 txt(sl, 'Co-ops of\nWhatcom County', 0.7, 1.85, 5.6, 2.0, size=44, bold=True, color=WHITE, spacing=0.95)
-txt(sl, 'One dataset, four RCN lenses:\nMap · Graph · Timeline · Table', 0.7, 3.95, 5.6, 1.0, size=20, color=RGBColor(0xcb, 0xd5, 0xe1))
-txt(sl, '22 organisations · 21 sourced ties · contacts checked Sep 2026', 0.7, 5.15, 5.6, 0.4, size=13, color=INK3)
+txt(sl, 'One dataset, four RCN lenses —\nMap · Graph · Timeline · Table —\nand a FedWiki page for every co-op', 0.7, 3.95, 5.6, 1.0, size=20, color=RGBColor(0xcb, 0xd5, 0xe1))
+txt(sl, '22 organisations · 21 sourced ties · contacts checked Sep 2026', 0.7, 5.4, 5.6, 0.4, size=13, color=INK3)
 txt(sl, ATTRIB, 0.7, 6.6, 5.6, 0.4, size=12, color=RGBColor(0xcb, 0xd5, 0xe1))
 
 # 2 — What the data is ─────────────────────────────────────────────────────
@@ -174,7 +180,8 @@ bullets(sl, [
     'Graph Tool — the Map’s “Open in Graph Tool” button, then laid out by hand (the layout shown is Marc’s).',
     'Timeline — tools/whatcom-coops-timeline.json: when each co-op began, converted or merged.',
     'Table — Neo4j database whatcomcoops, loaded from the same issue file by substrate/load_coops.py.',
-], 0.6, 5.15, 12.1, 1.8, size=14, gap=4)
+    'FedWiki — one page per co-op: its record, its graph, a map, its website; the table plugin on the index page.',
+], 0.6, 5.15, 12.1, 1.8, size=13, gap=2)
 footer(sl, 2)
 
 # 3–5 — Map ────────────────────────────────────────────────────────────────
@@ -237,7 +244,72 @@ shot_slide(10, 'RCN Table — map', SUPPRT, 'The database draws its own map: 22 
                'This is the check that the load lost nothing: 22 located, 21 links.',
            ], 'Screenshot · rcn-table-map.html?db=whatcomcoops')
 
-# 11 — Contacts: what we found and what to watch ───────────────────────────
+# FedWiki ──────────────────────────────────────────────────────────────────
+FW = RGBColor(0xb4, 0x53, 0x09)
+shot_slide(0, 'FedWiki', FW, 'A FedWiki page for every co-op',
+           '09-wiki-lineup.jpg', [
+               '23 pages — an index and one per co-op — in one drop file. Drag it onto any lineup, click a page, fork it.',
+               'Each page holds the record, the contact block with when and where it was checked, and the ties as wiki links, each with its source.',
+               'The index sits on the left; clicking a co-op opens its page beside it, the ordinary FedWiki way.',
+           ], 'Screenshot · local wiki coops.localhost, index and Community Food Co-op')
+
+shot_slide(0, 'FedWiki — RCN Graph Tool', FW, 'Click a co-op in its graph and its page opens beside it',
+           '10-wiki-graph-click.jpg', [
+               'Every page carries an rcngraph item: the co-op and its nearest neighbours, cut from Marc’s layout.',
+               'Every box is a wiki link. Here Cascade Cooperatives was clicked in the Food Co-op’s graph and opened on the right.',
+               '“Edit in Graph Tool” reopens the model; hover a box for its contact details, which travel in the model.',
+           ], 'Screenshot · click on Cascade Cooperatives in the Food Co-op’s graph')
+
+sl = slide()
+kicker(sl, 'FedWiki — Map and Frame plugins', FW)
+heading(sl, 'Its map and its own website, inside the page')
+h = shot(sl, '11-wiki-map-site.jpg', 0.6, 1.62, 3.2)
+txt(sl, 'WHAT YOU ARE SEEING', 4.4, 1.62, 8, 0.3, size=11, bold=True, color=FW)
+bullets(sl, [
+    'A Map item — FedWiki’s own map plugin — shows this co-op and the co-ops it is tied to. Each point is a wiki link to that co-op’s page.',
+    'The map is plain text, one line per point, so anyone can edit it in the page. It works on any wiki with nothing uploaded.',
+    'It draws points, not ties; the graph just above carries the ties. The table’s Map button draws them on a map.',
+    'A Frame item — used only for this — shows the co-op’s own website, live, under the map.',
+    '11 of the 22 sites show inside the page. The other 11 refuse to be framed, put up a bot check, are down, or have no site; those pages link out and say why.',
+], 4.4, 1.98, 8.3, 4.6, size=15)
+txt(sl, 'Screenshot · Community Food Co-op, scrolled to its map and website', 0.6, 1.62 + h + 0.1, 8, 0.3, size=10, italic=True, color=INK3)
+footer(sl)
+
+sl = slide()
+kicker(sl, 'FedWiki — table plugin', FW)
+heading(sl, 'The FedWiki table plugin: all 22 co-ops on the index page')
+h1 = shot(sl, '12-wiki-table-item.jpg', 0.6, 1.62, 3.5)
+txt(sl, 'The rcntable item on the index page', 0.6, 1.62 + h1 + 0.08, 4.2, 0.3, size=10, italic=True, color=INK3)
+bullets(sl, [
+    'The item names the records: database whatcomcoops, kind Coop.',
+    'Open Table ↗ opens the RCN Table beside the wiki — the same table as slide 9.',
+    'At home it reads Neo4j live through substrate/api.py. On a hosted wiki it reads the exported folder in the site’s own assets, so each site is its own database.',
+    'Every name in the table opens that co-op’s page in the lineup.',
+], 0.6, 1.62 + h1 + 0.45, 4.3, 2.9, size=12, gap=3)
+h2 = shot(sl, '07-table.jpg', 5.2, 1.62, 7.5)
+txt(sl, 'What Open Table shows', 5.2, 1.62 + h2 + 0.08, 7.5, 0.3, size=10, italic=True, color=INK3)
+footer(sl)
+
+sl = slide()
+kicker(sl, 'FedWiki — how it went', FW)
+heading(sl, 'Making it work: what broke, and what it cannot do')
+rect(sl, 0.6, 1.7, 6.0, 3.3, fill=WHITE, line=BORDER)
+txt(sl, 'FIXED', 0.85, 1.85, 5.5, 0.3, size=11, bold=True, color=SUPPRT)
+bullets(sl, [
+    'Clicking a two-line name in a graph did nothing, or reloaded the wiki. Each co-op box is now one link. The real fix belongs in the Graph Tool, for every diagram.',
+    'The maps first ran the RCN Map inside Frame items. That tied the pages to one wiki and needed files uploaded, so they now use FedWiki’s own Map plugin; Frame is kept for the websites only.',
+    'Along the way the table’s map learned to load on its own and to use the Esri basemap, so it also works when framed.',
+], 0.85, 2.2, 5.5, 2.7, size=13, gap=6)
+rect(sl, 6.85, 1.7, 5.9, 3.3, fill=AMB_LT, line=RGBColor(0xfd, 0xe0, 0x47))
+txt(sl, 'LIMITS', 7.1, 1.85, 5.4, 0.3, size=11, bold=True, color=AMB_TX)
+bullets(sl, [
+    'The per-page map shows points, not ties: we found no way in its text format to draw a line between two points. An RCN map plugin would.',
+    'Half the co-op websites cannot be shown in a page — ICU, REI, North Coast CU, A1DesignBuild and the Food Hub refuse; Bellingham Bay Builders’ bot check never finishes. Those pages link out.',
+], 7.1, 2.2, 5.4, 2.7, size=13, color=AMB_TX, gap=6)
+txt(sl, 'Checked in a real FedWiki (coops.localhost): a graph click opens the page beside, the Food Co-op’s map shows its 6 co-ops, and the websites were tested in the frame plugin’s own sandbox or by their headers — 11 show.', 0.6, 5.3, 12.1, 0.8, size=15, italic=True, color=INK2)
+footer(sl)
+
+# Contacts: what we found and what to watch ───────────────────────────
 sl = slide()
 kicker(sl, 'Contacts', SOCIAL)
 heading(sl, 'What the contact check found — and what to verify before calling')
@@ -267,11 +339,12 @@ sl = slide(DARK)
 txt(sl, 'One dataset, four lenses', 0.7, 0.9, 12, 0.8, size=36, bold=True, color=WHITE)
 bullets(sl, [
     'Map: open the RCN Map and choose the “Co-ops of Whatcom County” issue — hover any dot for its contact.',
-    'Graph: “Open in Graph Tool” from the map legend, or load Co-ops-of-Whatcom-County (1).json.',
+    'Graph: “Open in Graph Tool” from the map legend, or load tools/whatcom-coops-graph.json (Marc’s layout, with contacts).',
     'Timeline: import tools/whatcom-coops-timeline.json into the RCN Timeline.',
     'Table: rcn-table.html?db=whatcomcoops&kind=Coop, with substrate/api.py running.',
-    'To change the data, edit the issue file, then re-run substrate/load_coops.py so Neo4j matches.',
-], 0.7, 2.0, 11.8, 3.6, size=17, color=RGBColor(0xcb, 0xd5, 0xe1), gap=10)
+    'FedWiki: drag docs/whatcom-coops-wiki/whatcom-coops-wiki.json onto any lineup; upload the rcn-table folder for the table.',
+    'To change the data, edit the issue file, then re-run substrate/load_coops.py and build_pages.py so Neo4j and the wiki match.',
+], 0.7, 1.9, 11.8, 3.6, size=16, color=RGBColor(0xcb, 0xd5, 0xe1), gap=8)
 txt(sl, 'A line means a public source was found. No line means no tie was found, not that none exists.',
     0.7, 5.5, 11.8, 0.5, size=14, italic=True, color=INK3)
 txt(sl, ATTRIB, 0.7, 6.6, 11, 0.4, size=12, color=RGBColor(0xcb, 0xd5, 0xe1))

@@ -104,8 +104,17 @@ function toast(m){ var t=$('toast'); t.textContent=m; t.style.display='block';
   clearTimeout(toast._t); toast._t=setTimeout(function(){t.style.display='none';},2600); }
 
 var map = L.map('map', {zoomControl:true}).setView([48.75, -122.48], 9);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19, attribution: '© OpenStreetMap contributors'
+// Esri's light-grey canvas, the RCN Map's "Light" basemap. Not OSM's own tiles:
+// tile.openstreetmap.org answers 403 "Access blocked" to a request with no
+// referrer, which is what a sandboxed FedWiki Frame sends — so a framed map drew
+// its points over a wall of error tiles. Esri needs no key and no referrer.
+var ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+L.tileLayer(ESRI + 'World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+  maxNativeZoom: 16, maxZoom: 19,
+  attribution: 'Tiles © Esri — Esri, HERE, Garmin, © OpenStreetMap contributors'
+}).addTo(map);
+L.tileLayer(ESRI + 'World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+  maxNativeZoom: 16, maxZoom: 19
 }).addTo(map);
 
 // Three panes, so a point is never buried under an area it sits inside and a
@@ -319,7 +328,11 @@ if(HOST){
   // and drives; the URL boot is for a map standing alone — a link someone was
   // sent. Doing both raced, and when the table had opened a spreadsheet in
   // memory the URL load had nowhere to fetch from and overwrote the good one.
-  if(HOST) return;
+  // That race is the table's, so only an opener suppresses the URL boot. A page
+  // framing the map (a FedWiki Frame item) never sends loadPoints, so a framed
+  // map with ?db= in its URL loads itself; a host that does drive still wins,
+  // because its loadPoints arrives later and replaces this load.
+  if(window.opener && !window.opener.closed) return;
   var p = new URLSearchParams(location.search);
   var db = p.get('db');
   if(!db) return;
