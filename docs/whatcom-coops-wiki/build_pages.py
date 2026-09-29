@@ -2,7 +2,7 @@
 """
 build_pages.py — one FedWiki page per Whatcom co-op, plus an index page.
 
-    python3 docs/whatcom-coops-wiki/build_pages.py
+    python3 docs/whatcom-coops-wiki/build_pages.py [--map rcnmap|native]
 
 Writes whatcom-coops-wiki.json, a flat {slug: page} drop file: drag it onto a
 lineup, click each slug, fork. Each co-op page carries
@@ -12,8 +12,9 @@ lineup, click each slug, fork. Each co-op page carries
   - its ties, as [[links]] to the other co-op pages, with sources
   - an rcngraph item: nearest neighbours, cut from Marc's layout, editable in
     the Graph Tool; node names in the picture open the co-op pages
-  - a map item (FedWiki's own Map plugin): this co-op and its neighbours as
-    points, each a [[link]] to its page
+  - a map: an rcnmap item (wiki-plugin-rcnmap) drawing this co-op, its
+    neighbours and the ties between them, each point opening its page; or with
+    --map native, FedWiki's own Map plugin (points only, each a [[link]])
   - a frame item with the co-op's own website, when the site allows framing —
     the only thing framed
 
@@ -32,6 +33,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 SCRIPTS = os.path.join(REPO, '.claude', 'skills', 'fedwiki-page', 'scripts')
 OUT = os.path.join(HERE, 'whatcom-coops-wiki.json')
+# Which plugin draws the maps: 'rcnmap' (points and ties; needs
+# wiki-plugin-rcnmap on the wiki) or 'native' (FedWiki's own Map plugin: points
+# only, but on every wiki).
+MAPS = sys.argv[sys.argv.index('--map') + 1] if '--map' in sys.argv else 'rcnmap'
+assert MAPS in ('rcnmap', 'native'), '--map rcnmap|native'
 
 issue = json.load(open(os.path.join(REPO, 'tools', 'issue-data', 'whatcom-wa--cooperatives.json'), encoding='utf-8'))
 types, kinds = issue['types'], issue['linkKinds']
@@ -186,7 +192,28 @@ def item_for(marker):
                 TITLE[arg], len(ids) - 1, '' if len(ids) == 2 else 's')
         else:
             cap = '%s — no documented ties, so it stands alone.' % TITLE[arg]
-        return {'type': 'map', 'id': rid(), 'text': '\n'.join(lines + [cap])}
+        if MAPS == 'native':
+            return {'type': 'map', 'id': rid(), 'text': '\n'.join(lines + [cap])}
+        # rcnmap: the subject in issue-file shape, ties included, and a text that
+        # reads on its own (caption, then the points and the ties in words).
+        ids = list(dict.fromkeys(ids))
+        keep = set(ids)
+        links = [l for l in issue['links'] if l['from'] in keep and l['to'] in keep]
+        parcels = [{'id': i, 'label': P[i]['label'], 'wikiTitle': TITLE[i], 'type': P[i]['type'],
+                    'latLng': P[i]['latLng'],
+                    'contact': {k: v for k, v in P[i]['contact'].items() if k in ('website', 'phone')}}
+                   for i in ids]
+        used_t = {p['type'] for p in parcels}; used_k = {l['kind'] for l in links}
+        cap = cap.replace('Click a point for its page; the ties are in the graph above.',
+                          'Click a point for its page.')
+        words = [cap] + ['%s — %s' % (TITLE[i], types[P[i]['type']]['label']) for i in ids] + \
+                ['%s → %s: %s' % (TITLE[l['from']], TITLE[l['to']], l.get('label') or kinds[l['kind']]['label'])
+                 for l in links]
+        return {'type': 'rcnmap', 'id': rid(), 'text': '\n'.join(words),
+                'map': {'types': {k: v for k, v in types.items() if k in used_t},
+                        'linkKinds': {k: v for k, v in kinds.items() if k in used_k},
+                        'parcels': parcels,
+                        'links': [{k: l[k] for k in ('from', 'to', 'kind', 'label') if k in l} for l in links]}}
     if kind == '@@SITE':
         return {'type': 'frame', 'id': rid(),
                 'text': P[arg]['contact']['website'] + '\nHEIGHT 520\nThe co-op’s own website, live.'}

@@ -9,7 +9,7 @@ Marc Pierson and Claude Opus 5.5 · September 2026
 - The record: kind, founding year, notes, and the contact block (website, phone, email, address, named people, caveat, when and where it was checked).
 - Ties, as `[[links]]` to the other co-op pages, each with its source.
 - An `rcngraph` item: the co-op and its nearest neighbours, cut from Marc's layout. Click a box to open that co-op's page; "Edit in Graph Tool" opens the model.
-- A `map` item (FedWiki's own Map plugin): the co-op and its neighbours as points, one `lat, lon [[Title]] — kind` line each, so every point links to its page and the map is editable in place. It draws points, not ties; the graph carries the ties.
+- A map of the co-op and its neighbours. By default an `rcnmap` item (`wiki-plugin-rcnmap`, in this repo) drawing the points and the ties, each point opening its page. `build_pages.py --map native` uses FedWiki's own Map plugin instead — points only, one `lat, lon [[Title]] — kind` line each — for a wiki that does not have the plugin yet.
 - A `frame` item with the co-op's own website — the only use of Frame — where the site allows framing. Five do not (ICU, REI, North Coast CU, A1DesignBuild, Puget Sound Food Hub refuse; Bellingham Bay Builders puts up a bot check), and four have no working site; those pages link out instead.
 
 The index page adds the `rcntable` item (all 22 rows; its Map button draws the ties on the RCN Map), the whole graph, a map of all 22, and two `assets` items.
