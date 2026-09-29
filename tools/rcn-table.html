@@ -419,8 +419,12 @@ function render(){
       var v = r[c]==null ? '' : String(r[c]);
       if(c === state.subject && v){
         // The row is a subject: its name is a slug is a page. This is the join.
-        html += '<td><a class="subject" data-title="'+esc(v)+'" href="/'
-              + esc(asSlug(v))+'.html">'+esc(v)+'</a></td>';
+        // A wikiTitle column overrides the join when the page is titled
+        // differently from the record ("Darigold — Lynden plant" lives on
+        // "Darigold Lynden Plant"); the name shown stays the record's own.
+        var t = r.wikiTitle ? String(r.wikiTitle) : v;
+        html += '<td><a class="subject" data-title="'+esc(t)+'" href="/'
+              + esc(asSlug(t))+'.html">'+esc(v)+'</a></td>';
       } else {
         html += '<td title="'+esc(v)+'">'+esc(v)+'</td>';
       }

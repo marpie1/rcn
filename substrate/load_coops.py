@@ -16,13 +16,15 @@ THE MODEL. Same Option-C vocabulary as load_rcn_geo.py and load_whatcom.py:
   - every tie is a structural `[:REL {label:…}]`; `label` is the link kind
     ("Member of the network"), `detail` the sentence, `notes` the source
   - `sources` is ['whatcom-coops-map'] so provenance works as elsewhere
+  - `wikiTitle`/`wikiSlug` name the co-op's FedWiki page; the RCN Table links
+    a row through wikiTitle when the page title differs from the name
 
 Its own database, `whatcomcoops`, so it never mixes with the 2017 survey in
 `whatcom`. The issue file is the source of truth: re-run this after editing it.
 
     python3 substrate/load_coops.py
 """
-import json, os
+import json, os, re
 from db import run, BASE
 
 DB = 'whatcomcoops'
@@ -38,6 +40,12 @@ FOUNDED = {'cc': '2014', 'c2c': '2003', 'a1': '2017', 'bbb': '2004', 'cma': '202
 
 def canon(name):
     return ' '.join(str(name).split())
+
+
+def slug(title):
+    # FedWiki's own rule (wiki-client asSlug): the join between a row and its
+    # page. A slug, not a URL: the same page lives on every wiki it is forked to.
+    return re.sub(r'[^A-Za-z0-9-]', '', re.sub(r'\s', '-', title)).lower()
 
 
 def ensure_db():
@@ -65,7 +73,8 @@ def build():
             '    c.type=$type, c.lat=$lat, c.long=$lng, c.mapId=$id, c.founded=$fd, '
             '    c.website=$web, c.phone=$ph, c.email=$em, c.address=$addr, '
             '    c.people=$ppl, c.contactCaveat=$cav, c.contactChecked=$chk, '
-            '    c.contactSource=$csrc, c.inWhatcom=$inw, c.notes=$notes',
+            '    c.contactSource=$csrc, c.inWhatcom=$inw, c.notes=$notes, '
+            '    c.wikiTitle=$wt, c.wikiSlug=$ws',
             {'k': key[p['id']], 'n': p['label'], 'id': p['id'],
              'type': (types.get(p.get('type')) or {}).get('label', ''),
              'lat': str(p['latLng'][0]), 'lng': str(p['latLng'][1]),
@@ -75,7 +84,9 @@ def build():
              'ppl': '; '.join(c.get('people', [])), 'cav': c.get('caveat', ''),
              'chk': c.get('checked', ''), 'csrc': c.get('source', ''),
              'inw': 'no' if p.get('inFrame') is False else 'yes',
-             'notes': p.get('notes', '')}, database=DB)
+             'notes': p.get('notes', ''),
+             'wt': p.get('wikiTitle') or p['label'],
+             'ws': slug(p.get('wikiTitle') or p['label'])}, database=DB)
 
     for l in data.get('links', []):
         run('MATCH (a:Concept {schemaLabel:$a}), (b:Concept {schemaLabel:$b}) '

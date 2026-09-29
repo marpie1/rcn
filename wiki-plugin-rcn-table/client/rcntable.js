@@ -122,9 +122,11 @@
     const samples = rows.slice(0, SAMPLE_ROWS).map(r => {
       const name = subject ? String(r[subject] || '') : ''
       if (!name) return ''
+      // A wikiTitle column names the page when it differs from the record's name.
+      const page = r.wikiTitle ? String(r.wikiTitle) : name
       // A plain internal link: FedWiki's own click handler takes it from here.
-      return `<div class="rcnt-row"><a class="internal" href="/${esc(asSlug(name))}.html"
-                data-page-name="${esc(name)}" title="${esc(name)}">${esc(name)}</a></div>`
+      return `<div class="rcnt-row"><a class="internal" href="/${esc(asSlug(page))}.html"
+                data-page-name="${esc(page)}" title="${esc(page)}">${esc(name)}</a></div>`
     }).join('')
 
     const more = total > shown

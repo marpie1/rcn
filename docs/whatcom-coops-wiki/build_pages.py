@@ -37,18 +37,10 @@ issue = json.load(open(os.path.join(REPO, 'tools', 'issue-data', 'whatcom-wa--co
 types, kinds = issue['types'], issue['linkKinds']
 P = {p['id']: p for p in issue['parcels']}
 
-# Page titles: short, and already what sanitizeTitle() would produce.
-TITLE = {
-    'cc': 'Cascade Cooperatives', 'c2c': 'Community to Community C2C',
-    'nwcdc': 'Northwest Cooperative Development Center', 'nabc': 'Northwest Agriculture Business Center',
-    'a1': 'A1DesignBuild', 'bbb': 'Bellingham Bay Builders', 'cma': 'Cascade Mountain Ascents',
-    'col': 'Circle of Life Caregiver Cooperative', 'cmc': 'Community Media Cooperative',
-    'tyl': 'Cooperativa Tierra y Libertad', 'cab': 'Yellow Cab Co-op', 'cdn': 'Cascadia Deaf Nation',
-    'cfc': 'Community Food Co-op', 'icu': 'Industrial Credit Union', 'nccu': 'North Coast Credit Union',
-    'wecu': 'WECU', 'wecu2': 'WestEdge Credit Union', 'rei': 'REI Bellingham',
-    'ncm': 'North Cascades Meat Producers Cooperative', 'dari': 'Darigold Lynden Plant',
-    'chs': 'CHS Northwest', 'psfh': 'Puget Sound Food Hub Cooperative',
-}
+# Page titles live in the issue file (parcel.wikiTitle), the one place both
+# these pages and the Neo4j load read them, so the table's links and the pages
+# cannot drift apart. Each is already what sanitizeTitle() would produce.
+TITLE = {i: p.get('wikiTitle') or p['label'] for i, p in P.items()}
 INDEX = 'Co-ops of Whatcom County'
 FOUNDED = {'cc': '2014', 'c2c': '2003', 'a1': '2017', 'bbb': '2004', 'cma': '2023', 'col': '2009',
            'cmc': '2023', 'tyl': '2017', 'cab': '2023', 'cdn': '2016', 'cfc': '1970', 'icu': '1941',
