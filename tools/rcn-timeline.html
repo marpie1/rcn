@@ -112,6 +112,7 @@ a.tb-btn.help:hover{background:#dbeafe}
 #sentence{font-size:12px;padding:4px 9px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#1e293b;flex:0 1 228px;min-width:120px}
 #sentence:focus{outline:none;border-color:#93c5fd}
 #main{display:flex;flex:1;overflow:hidden}
+#canvas-box{flex:1;position:relative;display:flex;min-width:0;min-height:0}
 #canvas-wrap{flex:1;position:relative;overflow-x:hidden;overflow-y:auto;background:#fff;touch-action:none}
 #svg{display:block}
 #panel{width:248px;border-left:1px solid #e2e8f0;background:#fff;display:flex;flex-direction:column;overflow-y:auto;font-size:12px;flex-shrink:0}
@@ -216,8 +217,13 @@ textarea.prop-input{resize:vertical;min-height:44px;font-family:inherit}
     <a class="tb-btn help" href="rcn-timeline-intro.pptx" target="_blank" rel="noopener" title="Download the intro slide deck (PowerPoint)">Deck ↓</a>
   </div>
   <div id="main">
+    <!-- canvas-box does not scroll; canvas-wrap inside it does. The hint and the
+         toast are pinned to the box, so they stay put while the rows scroll —
+         inside the scrolling wrap they were carried up with the rows. -->
+    <div id="canvas-box">
     <div id="canvas-wrap">
       <svg id="svg"></svg>
+    </div>
       <div id="toast"></div>
       <div id="hint">drag background = pan · swipe ↕ = scroll rows · swipe ↔ = move in time · pinch or ⌘-scroll = zoom · double-click = new · Del = remove · P = pin · Ctrl-Z = undo</div>
     </div>
