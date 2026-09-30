@@ -46,6 +46,7 @@
     .log .err { color: #8b1a1a; font-weight: 700; }
     .log .dim { color: #888; }
     .hint { font-size: 11px; color: #888; margin: 2px 0 0; font-family: 'SF Mono', 'Fira Mono', monospace; }
+    .undo-box { margin: 10px 0 4px; padding: 10px 12px; border: 2px solid #c98b8b; background: #fbeeee; border-radius: 6px; }
     .hint-box { margin: 4px 0 12px; padding: 10px 12px; background: #fdf6e3; border: 1px solid #e6d29a; border-radius: 6px; font-size: 12px; }
     .contract-id { font-family: 'SF Mono', monospace; font-size: 12px; color: #444; background: #fff; border: 1px solid #ddd; padding: 4px 8px; display: inline-block; }
     .sep { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
@@ -732,10 +733,155 @@ function renderAttemptHistory() {
     el('attempt-history-display').innerHTML = '<span style="color:#888;">No attempts recorded yet.</span>'
     return
   }
+  // Only the latest attempt can be undone: attempt numbers are written into the
+  // portfolios, so taking back an earlier one would leave a gap in the count.
   el('attempt-history-display').innerHTML = attempts.map((a, i) => {
     const mark = a.outcome === 'complete' ? '✓' : '○'
-    return `<strong>Attempt ${i+1}</strong> · ${a.date} · Mentor: ${a.mentor?.name || '?'} · Outcome: ${mark} ${a.outcome}`
-  }).join('<br>')
+    const undo = i === attempts.length - 1
+      ? ` <button type="button" class="small secondary" onclick="askUndoAttempt()" title="Take back this attempt from the wiki">Undo…</button>` : ''
+    return `<strong>Attempt ${i+1}</strong> · ${a.date} · Mentor: ${a.mentor?.name || '?'} · Outcome: ${mark} ${a.outcome}${undo}`
+  }).join('<br>') + `<div id="undo-box" class="undo-box" hidden></div>`
+}
+
+// ─── Undo the latest attempt ──────────────────────────────────────────────────
+// A fenced, inline confirm that lists what will be taken back, because this
+// removes things from other people's pages. Nothing is removed from a badge:
+// once an attempt is signed into a credential, the fix is a corrected badge.
+
+function askUndoAttempt() {
+  const c = getContract()
+  const attempts = c.gates[activeGate].attempts
+  const n = attempts.length, a = attempts[n - 1]
+  const learner = personBySlug(active.learnerSlug)
+  const mentorName = a.mentor?.name || 'the mentor'
+  const box = el('undo-box')
+  box.innerHTML = `<div style="font-weight:700;color:#8b1a1a;margin-bottom:6px;">Undo ${GATE_LABELS[activeGate]} attempt ${n}?</div>`
+    + `<div style="font-size:12px;margin-bottom:8px;">This takes it back from the wiki:<ul style="margin:4px 0 0 18px;padding:0;">`
+    + `<li>the entry on ${escHtml(learner.name)}'s portfolio</li>`
+    + `<li>the row in ${escHtml(mentorName)}'s Mentoring Log</li>`
+    + `<li>the narrative page <i>${escHtml(a.narrative)}</i>, only if nobody has written in it</li>`
+    + (a.student ? `<li>the entry on ${escHtml(a.student.name)}'s portfolio</li>` : '')
+    + `</ul>The page history keeps a record that it was there. It is not taken out of a signed badge.</div>`
+    + `<button type="button" class="small danger" onclick="undoLastAttempt()">Undo attempt ${n}</button> `
+    + `<button type="button" class="small secondary" onclick="el('undo-box').hidden = true">Cancel</button>`
+  box.hidden = false
+}
+
+// Find the item this attempt wrote: by the id it recorded, or — for attempts
+// recorded before ids were kept — by its label and narrative link.
+function findAttemptItem(story, itemId, ...markers) {
+  if (itemId) { const hit = story.find(i => i.id === itemId); if (hit) return hit }
+  return [...story].reverse().find(i => i.type === 'html' && markers.every(m => (i.text || '').includes(m)))
+}
+
+async function undoLastAttempt() {
+  el('undo-box').hidden = true
+  const logEl = el('gate-log'); logEl.style.display = 'block'; logEl.innerHTML = ''
+  const c = getContract()
+  const gate = activeGate
+  const attempts = c.gates[gate].attempts
+  const n = attempts.length, a = attempts[n - 1]
+  if (!a) return
+  const learner = personBySlug(active.learnerSlug)
+  const skill   = skillBySlug(active.skillSlug)
+  const label   = `${skill.name} — ${GATE_LABELS[gate]} (attempt ${n})`
+  const w = a.writes || {}
+  const warnings = []
+  logTo('gate-log','dim',`Undoing ${label}…`)
+
+  // 1. Learner portfolio — look where it was written, then where the person
+  //    lives now, then the shared site (people moved there by Provision).
+  const sites = [...new Set([w.learner?.site, learner.site, WIKI_SITE].filter(Boolean))]
+  let found = null
+  for (const site of sites) {
+    let page
+    try { page = await wikiRead(site, learner.portfolioSlug) }
+    catch (e) { logTo('gate-log','err',`  Couldn't read ${learner.portfolioSlug} on ${site}: ${e.message}. Nothing undone.`); return }
+    if (!page) continue
+    // A signed badge for this contract already carries a completed gate.
+    const badge = (page.story || []).find(i => i.type === 'sodoto-badge' && i.credential?.contractId === c.contractId)
+    if (badge && a.outcome === 'complete' && badge.credential?.gates?.[gate]?.completedAt) {
+      logTo('gate-log','err',`  This attempt is part of a signed badge on ${learner.name}'s portfolio. Nothing undone — issue a corrected badge instead.`)
+      return
+    }
+    const item = findAttemptItem(page.story || [], w.learner?.itemId, label, a.narrative)
+    if (item) { found = { site, item }; break }
+  }
+  if (found) {
+    try {
+      await wikiPost('/api/wiki-remove-item', { site: found.site, slug: learner.portfolioSlug, itemId: found.item.id })
+      logTo('gate-log','ok',`  Removed from ${learner.name}'s portfolio (${found.site}).`)
+    } catch (e) {
+      logTo('gate-log','err',`  Couldn't remove it from ${learner.name}'s portfolio: ${e.message}. Nothing else undone.`); return
+    }
+  } else {
+    logTo('gate-log','dim',`  Not on ${learner.name}'s portfolio — already removed by hand?`)
+  }
+
+  // 2. Mentor's Mentoring Log row
+  const mentor = people.find(p => p.portfolioSlug === (w.mentor?.slug || a.mentor?.portfolio))
+  const mSite = w.mentor?.site || mentor?.site
+  const mSlug = w.mentor?.slug || a.mentor?.portfolio
+  try {
+    const page = mSite && mSlug ? await wikiRead(mSite, mSlug) : null
+    const table = page && (page.story || []).find(i => (i.text || '').includes('<table') && (i.text || '').includes(label))
+    if (table) {
+      const rows = table.text.match(/<tr[\s\S]*?<\/tr>/g) || []
+      const row = [...rows].reverse().find(r => r.includes(label) && (r.includes(learner.portfolioSlug) || r.includes(learner.name)))
+      if (row) {
+        await wikiPost('/api/wiki-update-item', { site: mSite, slug: mSlug, itemId: table.id, text: table.text.replace(row, '') })
+        logTo('gate-log','ok',`  Removed from ${a.mentor?.name || mSlug}'s Mentoring Log.`)
+      } else logTo('gate-log','dim',`  Not in the Mentoring Log.`)
+    } else logTo('gate-log','dim',`  Not in the Mentoring Log.`)
+  } catch (e) {
+    warnings.push(`Mentoring Log (${mSlug}): ${e.message}`)
+    logTo('gate-log','err',`  Mentoring Log: ${e.message}`)
+  }
+
+  // 3. Narrative stub — only if this attempt made it, or can't say (older record)
+  if (w.stub || !a.writes) {
+    try {
+      const r = await wikiPost('/api/wiki-recycle-untouched-page', { site: w.stub?.site || WIKI_SITE, slug: a.narrative })
+      if (r.result === 'recycled') logTo('gate-log','ok',`  Narrative page ${a.narrative} set aside (it was empty).`)
+      else if (r.result === 'kept') logTo('gate-log','dim',`  Narrative page ${a.narrative} kept — someone has written in it.`)
+    } catch (e) {
+      warnings.push(`narrative page (${a.narrative}): ${e.message}`)
+      logTo('gate-log','err',`  Narrative page: ${e.message}`)
+    }
+  }
+
+  // 4. Student portfolio (Teach One)
+  if (a.student) {
+    const st = people.find(p => p.portfolioSlug === (w.student?.slug || a.student.portfolio))
+    const sSite = w.student?.site || st?.site
+    try {
+      const page = sSite ? await wikiRead(sSite, w.student?.slug || a.student.portfolio) : null
+      const item = page && findAttemptItem(page.story || [], w.student?.itemId, a.narrative, skill.name)
+      if (item) {
+        await wikiPost('/api/wiki-remove-item', { site: sSite, slug: w.student?.slug || a.student.portfolio, itemId: item.id })
+        logTo('gate-log','ok',`  Removed from ${a.student.name}'s portfolio.`)
+      } else logTo('gate-log','dim',`  Not on ${a.student.name}'s portfolio.`)
+    } catch (e) {
+      warnings.push(`student portfolio: ${e.message}`)
+      logTo('gate-log','err',`  Student portfolio: ${e.message}`)
+    }
+  }
+
+  // The learner's entry is gone, so the attempt is gone from the contract too.
+  attempts.pop()
+  const g = c.gates[gate]
+  const lastDone = [...attempts].reverse().find(x => x.outcome === 'complete')
+  if (lastDone) {
+    g.completedAt = lastDone.date
+    g.mentor = lastDone.mentor
+    if (gate === 'TeachOne') { if (lastDone.student) g.student = lastDone.student; else delete g.student }
+  } else { delete g.completedAt; delete g.mentor; delete g.student }
+  saveState()
+
+  logTo('gate-log', warnings.length ? 'err' : 'ok', warnings.length
+    ? `\nAttempt ${n} undone, but ${warnings.length} part${warnings.length > 1 ? 's' : ''} could not be taken back — see above.`
+    : `\nAttempt ${n} undone.`)
+  renderGateTabs(); renderAttemptHistory(); renderGateStatusChips(); renderSignPanel(); updateNarrativeSuggestion()
 }
 
 function clearAttemptForm() {
@@ -826,6 +972,8 @@ async function submitGateAttempt() {
   // catch that merely logged — so a batch that failed end to end still left
   // the UI reporting "Attempt N recorded" with nothing on the wiki at all.
   const warnings = []
+  // What this attempt wrote, and where — so Undo can take back exactly that.
+  const writes = {}
 
   // 1. Learner portfolio — the load-bearing write. Without it there is no
   //    attempt to speak of, so a failure here aborts before anything is saved.
@@ -837,6 +985,7 @@ async function submitGateAttempt() {
       items: [{ type: 'html', id: learnerItemId, text: buildGateHTML({ gate, attemptN, date, mentor, mentorAssertion, learnerAssertion, outcome: outcomeVal, skillName: skill.name, narrativeSlug }) }]
     })
     logTo('gate-log','ok',`  Learner portfolio: ${learnerItemId}`)
+    writes.learner = { site: learner.site, slug: learner.portfolioSlug, itemId: learnerItemId }
   } catch (e) {
     logTo('gate-log','err',`  Learner portfolio error: ${e.message}`)
     logTo('gate-log','err',`\nNothing recorded. ${learner.name}'s portfolio on ${learner.site} could not be written, so the attempt was not saved. Fix the write and record it again.`)
@@ -849,6 +998,7 @@ async function submitGateAttempt() {
   try {
     await updateMentoringLogSection(mentor.site, mentor.portfolioSlug, {
       learner, skillName: skill.name, gate, attemptN, date, outcome: outcomeVal, narrativeSlug })
+    writes.mentor = { site: mentor.site, slug: mentor.portfolioSlug }
   } catch (e) {
     warnings.push(`mentor portfolio (${mentor.portfolioSlug} on ${mentor.site}): ${e.message}`)
     logTo('gate-log','err',`  Mentor portfolio error: ${e.message}`)
@@ -872,6 +1022,7 @@ async function submitGateAttempt() {
         }
       })
       logTo('gate-log','ok',`  Narrative stub created: ${narrativeSlug}`)
+      writes.stub = { site: WIKI_SITE, slug: narrativeSlug }
     } else {
       logTo('gate-log','dim',`  Narrative page exists — skipped`)
     }
@@ -890,6 +1041,7 @@ async function submitGateAttempt() {
         items: [{ type: 'html', id: studentItemId, text: buildStudentHTML({ date, teacherName: learner.name, teacherPortfolioSlug: learner.portfolioSlug, skillName: skill.name, attemptN, narrativeSlug }) }]
       })
       logTo('gate-log','ok',`  Student portfolio: ${studentItemId}`)
+      writes.student = { site: studentData.site, slug: studentData.portfolioSlug, itemId: studentItemId }
     } catch (e) {
       warnings.push(`student portfolio (${studentData.portfolioSlug} on ${studentData.site}): ${e.message}`)
       logTo('gate-log','err',`  Student portfolio error: ${e.message}`)
@@ -897,6 +1049,7 @@ async function submitGateAttempt() {
   }
 
   // Persist to contract state — the learner's portfolio has the attempt now.
+  attempt.writes = writes
   c.gates[gate].attempts.push(attempt)
   if (outcomeVal === 'complete') {
     c.gates[gate].completedAt = date
@@ -1517,7 +1670,7 @@ async function provisionPersonSite(slug) {
   logTo('registry-log','ok',`  ${p.name} → ${p.site}`)
   logTo('registry-log','dim',`  portfolio: ${res.portfolioSlug} · owner file: ${res.owner}`)
   if (res.needsRestart) {
-    logTo('registry-log','err',`  FedWiki must be restarted before ${p.site} will answer. Send the message below after the restart.`)
+    logTo('registry-log','err',`  This one time, the wiki must be restarted before ${p.site} will answer (its settings were updated). Send the message below after the restart.`)
   }
   showWelcome(p.slug)
 }
@@ -1533,6 +1686,8 @@ function welcomeMessage(p) {
 
 Your SODOTO portfolio is ready. This is your own site; only you can edit it:
 ${url}
+
+A brand-new site can take up to an hour before the link opens. If it says it can't connect, try again a little later.
 
 To sign in the first time:
 1. Open the link above.

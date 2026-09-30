@@ -124,4 +124,25 @@ function signIn (sec, identity, session) {
   ok(typeof okSite.isAuthorized === 'function', "owner_scope 'site' is accepted")
 }
 
+// --- the owner file changes under a running wiki: no restart needed ---
+{
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'did-'))
+  const idFile = path.join(dir, 'status', 'owner.json')
+  // Site started before it was provisioned: no owner file at all.
+  const sec = makeModule(noop, noop, { id: idFile })
+  sec.retrieveOwner()
+  ok(signIn(sec, alice, {}).vr.code === 403, 'before provisioning, nobody can claim (403)')
+  // Provisioning writes an unclaimed owner bound to Alice — the running module sees it.
+  fs.mkdirSync(path.dirname(idFile), { recursive: true })
+  fs.writeFileSync(idFile, JSON.stringify({ name: 'Alice', expectDid: alice.did }))
+  ok(sec.getOwner() === 'Alice', 'a newly written owner file is read without a restart')
+  ok(signIn(sec, bob, {}).vr.code === 403, 'after provisioning, a stranger still cannot claim')
+  const a = signIn(sec, alice, {})
+  ok(a.vr.body.ok && a.vr.body.owner, 'after provisioning, the expected holder claims without a restart')
+  // A re-minted key: the owner file is rewritten on disk; the new DID wins.
+  fs.writeFileSync(idFile, JSON.stringify({ name: 'Alice', did: bob.did }))
+  ok(sec.isAuthorized({ session: { did: bob.did } }) && !sec.isAuthorized({ session: { did: alice.did } }),
+     'an owner DID changed on disk takes effect without a restart')
+}
+
 console.log(`\n${passed} checks passed.`)

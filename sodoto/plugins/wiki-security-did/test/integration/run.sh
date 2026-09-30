@@ -29,7 +29,7 @@ docker rm -f didtest-wiki >/dev/null 2>&1 || true
 docker run -d --name didtest-wiki -p "$PORT:3000" -v "$DATA:/root/.wiki" \
   rcn-sodoto-wiki:ditest sh -c "wiki --farm --port 3000 --security_type did" >/dev/null
 for i in $(seq 1 60); do
-  curl -s -H "Host: alice.localhost" "localhost:$PORT/auth/challenge" 2>/dev/null | grep -q nonce && break
+  curl -s -m 3 -H "Host: alice.localhost" "localhost:$PORT/auth/challenge" 2>/dev/null | grep -q nonce && break
   sleep 0.5
 done
 

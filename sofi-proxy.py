@@ -46,6 +46,8 @@ ADMIN_PATHS = {
     '/api/wiki-write-badge',
     '/api/wiki-update-item',
     '/api/wiki-add-items',
+    '/api/wiki-remove-item',
+    '/api/wiki-recycle-untouched-page',
 }
 eVSM_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -56,6 +58,22 @@ eVSM_DIR = os.path.dirname(os.path.abspath(__file__))
 # a directory FedWiki never serves, and the write "succeeded" into a void.
 WIKI_SITE = os.environ.get('WIKI_SITE', 'localhost')
 WIKI_PAGES_DIR = os.path.expanduser(f'~/.wiki/{WIKI_SITE}/pages')
+
+
+def _site_owner_path(site):
+    """Where this site's wiki reads its owner. Sites provisioned before Oct 2026
+    have their own wikiDomains entry naming owner.json at the site root; every
+    newer site has no entry and uses FedWiki's default, status/owner.json —
+    which is what lets a new site work without restarting the wiki."""
+    wiki_root = os.path.expanduser('~/.wiki')
+    try:
+        with open(os.path.join(wiki_root, 'config.json'), encoding='utf-8') as f:
+            entry = (json.load(f).get('wikiDomains') or {}).get(site) or {}
+        if entry.get('id'):
+            return entry['id']
+    except (FileNotFoundError, ValueError):
+        pass
+    return os.path.join(wiki_root, site, 'status', 'owner.json')
 PEOPLE_REGISTRY_FILE = os.path.expanduser('~/.sodoto/people-registry.json')
 
 # ─── People registry: one person per write, one DID per person ───────────────
@@ -275,6 +293,11 @@ class Handler(BaseHTTPRequestHandler):
                     os.environ.get('SODOTO_WIKI_DOMAIN', ''),
                 ] if d)
                 if domain in base:
+                    allowed = True
+                elif re.fullmatch(r'[a-z0-9.-]+', domain) and '..' not in domain and \
+                        any(domain.endswith('.' + b) for b in base) and \
+                        os.path.exists(_site_owner_path(domain)):
+                    # a provisioned per-person site (it has an owner file)
                     allowed = True
                 else:
                     try:
@@ -809,7 +832,8 @@ MERGE (pe)-[:PERFORMER_IN]->(c)
                 # badge-sets-owner stamps the did when the first badge lands. expectDid
                 # (if the caller knows the holder's DID) only lets them claim before
                 # their first badge; it is a fallback, not the source of truth.
-                owner_path = os.path.join(site_dir, 'owner.json')
+                owner_path = _site_owner_path(site)
+                os.makedirs(os.path.dirname(owner_path), exist_ok=True)
                 if not os.path.exists(owner_path):
                     owner_obj = {'name': name, 'email': slug + '@localhost', 'color': '#204630'}
                     if expect_did:
@@ -860,7 +884,18 @@ MERGE (pe)-[:PERFORMER_IN]->(c)
                     with open(portfolio_path, 'w', encoding='utf-8') as f:
                         json.dump(page, f, ensure_ascii=False, indent=2)
 
-                # config.json — farm wikiDomains entry, points the security module at owner.json
+                # config.json. A new site needs NO entry of its own: the farm already
+                # serves every subdomain of the base host (wikiDomains matches by
+                # suffix) and starts each site's server on its first visit, reading
+                # status/owner.json by default. Adding a per-site entry is what used
+                # to force a wiki restart, since the farm reads config.json once.
+                #
+                # The base host's entry must NOT name an owner file ('id'): every
+                # subdomain inherits the base entry, so an 'id' there would hand each
+                # new site the base site's owner ("SODOTO Admin"). Its default is the
+                # same file anyway. wikiDomains is also an ALLOWLIST — without the
+                # base entry the main wiki answers "Requested Wiki Does Not Exist"
+                # (Aug 2026) — so always assert it.
                 config_path = os.path.join(wiki_root, 'config.json')
                 needs_restart = False
                 try:
@@ -870,23 +905,19 @@ MERGE (pe)-[:PERFORMER_IN]->(c)
                     cfg = {}
                 cfg.setdefault('wikiDomains', {})
                 dirty = False
-
-                # wikiDomains is an ALLOWLIST, not a set of extras: once it exists,
-                # FedWiki farm serves only the hosts named in it. Provisioning the
-                # first person site therefore evicted the main wiki, which answered
-                # "Requested Wiki Does Not Exist" until Christian added it back by
-                # hand (Aug 2026). Always assert the base host so no future rewrite
-                # can knock it out again. Its owner file is status/owner.json — where
-                # plain FedWiki keeps it, and where the seeder writes it — unlike the
-                # per-person sites, whose owner.json sits at the site root.
-                if WIKI_SITE and WIKI_SITE not in cfg['wikiDomains']:
-                    cfg['wikiDomains'][WIKI_SITE] = {
-                        'id': os.path.join(wiki_root, WIKI_SITE, 'status', 'owner.json')
-                    }
-                    dirty = True
-                    print(f"  WIKIDOMAINS base host restored: {WIKI_SITE}")
-
-                if site not in cfg['wikiDomains']:
+                if WIKI_SITE:
+                    base_entry = cfg['wikiDomains'].get(WIKI_SITE)
+                    if base_entry is None:
+                        cfg['wikiDomains'][WIKI_SITE] = {}
+                        dirty = True
+                        print(f"  WIKIDOMAINS base host restored: {WIKI_SITE}")
+                    elif 'id' in base_entry:
+                        base_entry.pop('id')
+                        dirty = True
+                        print(f"  WIKIDOMAINS base host no longer names an owner file: {WIKI_SITE}")
+                # A site outside the base host's domain still needs its own entry.
+                if WIKI_SITE and site != WIKI_SITE and not site.endswith('.' + WIKI_SITE) \
+                        and site not in cfg['wikiDomains']:
                     cfg['wikiDomains'][site] = {'id': owner_path}
                     dirty = True
 
@@ -973,7 +1004,7 @@ MERGE (pe)-[:PERFORMER_IN]->(c)
                     try:
                         holder_did = (badge_item.get('credential') or {}).get('holderDid')
                         if holder_did:
-                            owner_path = os.path.expanduser(f'~/.wiki/{site}/owner.json')
+                            owner_path = _site_owner_path(site)
                             try:
                                 with open(owner_path, encoding='utf-8') as f:
                                     owner_obj = json.load(f)
@@ -1074,6 +1105,70 @@ MERGE (pe)-[:PERFORMER_IN]->(c)
                 self.send_response(200); self._cors()
                 self.send_header('Content-Type', 'application/json'); self.end_headers()
                 self.wfile.write(json.dumps({'ok': True, 'added': len(items)}).encode())
+            except Exception as e:
+                self.send_response(500); self._cors(); self.end_headers()
+                self.wfile.write(str(e).encode())
+            return
+
+        # Undo of a gate attempt, item by item. Removal is a journal 'remove'
+        # action, as FedWiki itself records it, so the page history still shows
+        # the item was there and when it went.
+        if self.path == '/api/wiki-remove-item':
+            length = int(self.headers.get('Content-Length', 0))
+            try:
+                import time
+                payload = json.loads(self.rfile.read(length))
+                site = os.path.basename(payload['site'])
+                slug = os.path.basename(payload['slug'])
+                item_id = payload['itemId']
+                page_path = os.path.expanduser(f'~/.wiki/{site}/pages/{slug}')
+                with open(page_path, 'r', encoding='utf-8') as f:
+                    page = json.load(f)
+                before = len(page.get('story', []))
+                page['story'] = [i for i in page.get('story', []) if i.get('id') != item_id]
+                removed = before - len(page['story'])
+                if removed:
+                    page.setdefault('journal', []).append(
+                        {'type': 'remove', 'id': item_id, 'date': int(time.time() * 1000)})
+                    with open(page_path, 'w', encoding='utf-8') as f:
+                        json.dump(page, f, ensure_ascii=False, indent=2)
+                print(f"  REMOVE ITEM {site}/{slug} {item_id} ({'removed' if removed else 'not found'})")
+                self.send_response(200); self._cors()
+                self.send_header('Content-Type', 'application/json'); self.end_headers()
+                self.wfile.write(json.dumps({'ok': True, 'removed': removed}).encode())
+            except FileNotFoundError:
+                self.send_response(404); self._cors(); self.end_headers()
+                self.wfile.write(b'Page not found')
+            except Exception as e:
+                self.send_response(500); self._cors(); self.end_headers()
+                self.wfile.write(str(e).encode())
+            return
+
+        # A narrative stub made by a gate attempt goes with the undo — but only
+        # while nobody has written in it (its journal is still just the create).
+        # It moves to the site's recycle folder, as FedWiki's own delete does.
+        if self.path == '/api/wiki-recycle-untouched-page':
+            length = int(self.headers.get('Content-Length', 0))
+            try:
+                payload = json.loads(self.rfile.read(length))
+                site = os.path.basename(payload['site'])
+                slug = os.path.basename(payload['slug'])
+                site_dir = os.path.expanduser(f'~/.wiki/{site}')
+                page_path = os.path.join(site_dir, 'pages', slug)
+                result = 'missing'
+                if os.path.exists(page_path):
+                    with open(page_path, 'r', encoding='utf-8') as f:
+                        page = json.load(f)
+                    if len(page.get('journal', [])) <= 1:
+                        os.makedirs(os.path.join(site_dir, 'recycle'), exist_ok=True)
+                        os.replace(page_path, os.path.join(site_dir, 'recycle', slug))
+                        result = 'recycled'
+                    else:
+                        result = 'kept'   # someone has written in it
+                print(f"  RECYCLE    {site}/{slug} ({result})")
+                self.send_response(200); self._cors()
+                self.send_header('Content-Type', 'application/json'); self.end_headers()
+                self.wfile.write(json.dumps({'ok': True, 'result': result}).encode())
             except Exception as e:
                 self.send_response(500); self._cors(); self.end_headers()
                 self.wfile.write(str(e).encode())

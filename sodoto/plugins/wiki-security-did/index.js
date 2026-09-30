@@ -42,21 +42,43 @@ module.exports = function (log, loga, argv) {
       try { return A.holderDidFromPage(JSON.parse(fs.readFileSync(argv.portfolioPath, 'utf8'))) || '' }
       catch (e) { return '' }
     }
-    return owner.expectDid || ''
+    return freshOwner().expectDid || ''
   }
 
-  function retrieveOwner (cb) {
-    if (!idFile) { if (cb) cb(); return }
-    fs.readFile(idFile, (err, data) => {
-      if (!err) { try { owner = JSON.parse(data) } catch (e) { owner = {} } }
-      if (cb) cb()
-    })
+  // The owner file changes underneath a running wiki: the proxy stamps the DID
+  // when the first badge lands, or refreshes expectDid after a re-minted key.
+  // Reading it once at startup meant each of those needed a wiki restart, so
+  // re-read it whenever its mtime moves. A stat per check is cheap; a missing
+  // file reads as unclaimed, and a half-written one keeps the last good copy.
+  let ownerMtime = null
+  function freshOwner () {
+    if (!idFile) return owner
+    let m
+    try { const st = fs.statSync(idFile); m = st.mtimeMs + ':' + st.size } catch (e) { m = 0 }
+    if (m === ownerMtime) return owner
+    if (!m) { owner = {}; ownerMtime = 0; return owner }
+    try { owner = JSON.parse(fs.readFileSync(idFile, 'utf8')); ownerMtime = m } catch (e) {}
+    return owner
   }
-  function getOwner () { return owner.name || '' }
-  function ownerDid () { return owner.did || '' }
+
+  // The callback must run on a later tick, as the old async readFile did: the
+  // farm registers its 'owner-set' listener after this returns, and a
+  // synchronous callback fires before anyone listens — the site then hangs.
+  function retrieveOwner (cb) {
+    freshOwner()
+    if (cb) setImmediate(cb)
+  }
+  function getOwner () { return freshOwner().name || '' }
+  function ownerDid () { return freshOwner().did || '' }
   function setOwner (id, cb) {                 // id = { name, did[, expectDid] }
-    owner = Object.assign({}, owner, id)
-    if (idFile) { try { fs.writeFileSync(idFile, JSON.stringify(owner, null, 2)) } catch (e) {} }
+    owner = Object.assign({}, freshOwner(), id)
+    if (idFile) {
+      try {
+        fs.mkdirSync(path.dirname(idFile), { recursive: true })
+        fs.writeFileSync(idFile, JSON.stringify(owner, null, 2))
+        const st = fs.statSync(idFile); ownerMtime = st.mtimeMs + ':' + st.size
+      } catch (e) {}
+    }
     if (cb) cb()
   }
   function getUser (req) { return (req && req.session && req.session.did) || undefined }
