@@ -111,6 +111,12 @@
     <p style="margin:10px 0 0">Your identity is saved on this device. <span class="js-from">Marc Pierson</span> can now register your public name. When you finish a gate, come back and sign it.</p>
   </div>
   <div class="mono" id="did-final" style="margin-top:4px"></div>
+  <div class="card hidden" id="portfolio-card">
+    <h2>Your portfolio</h2>
+    <p style="font-size:14px">It will be at this address once <span class="js-from">Marc Pierson</span> finishes signing you up. They'll send you a message when it's ready.</p>
+    <div class="mono" id="portfolio-url"></div>
+    <p style="font-size:14px;margin-top:8px">The first time you sign in there, it will ask for your <b>recovery file</b> and <b>passphrase</b>. Keep both handy.</p>
+  </div>
   <button class="big-btn secondary" id="btn-review" style="margin-top:14px">Review my recovery file</button>
 </div>
 
@@ -189,6 +195,12 @@ function loadExisting() {
 function paintDone() {
   $('did-out').textContent = identity.did;
   $('did-final').textContent = identity.did;
+  // The address the issuer will provision. A dotted site is a real domain.
+  const site = identity.site || ctx.site, slug = identity.slug || ctx.slug;
+  if (site && slug && site.includes('.')) {
+    $('portfolio-url').textContent = `https://${site}/view/${slug}`;
+    $('portfolio-card').classList.remove('hidden');
+  }
 }
 
 // ---- actions ----

@@ -46,6 +46,7 @@
     .log .err { color: #8b1a1a; font-weight: 700; }
     .log .dim { color: #888; }
     .hint { font-size: 11px; color: #888; margin: 2px 0 0; font-family: 'SF Mono', 'Fira Mono', monospace; }
+    .hint-box { margin: 4px 0 12px; padding: 10px 12px; background: #fdf6e3; border: 1px solid #e6d29a; border-radius: 6px; font-size: 12px; }
     .contract-id { font-family: 'SF Mono', monospace; font-size: 12px; color: #444; background: #fff; border: 1px solid #ddd; padding: 4px 8px; display: inline-block; }
     .sep { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
     #sign-preview { background: #fff; border: 1px solid #ccc; padding: 12px; font-family: 'SF Mono', monospace; font-size: 11px; max-height: 300px; overflow-y: auto; white-space: pre; word-break: break-all; margin-bottom: 12px; }
@@ -150,6 +151,11 @@
     </div>
   </div>
   <div id="registry-log" class="log" style="display:none"></div>
+  <div id="welcome-out" class="hint-box" hidden>
+    <div style="margin-bottom:6px;"><b>Send this to <span id="welcome-name"></span></b> — their portfolio address and how to sign in the first time.</div>
+    <textarea id="welcome-text" readonly rows="12" style="width:100%;font-size:12px;"></textarea>
+    <button class="secondary" type="button" onclick="copyWelcome()" style="font-size:11px;margin-top:5px;">Copy message</button>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════ CONTRACT PANEL -->
@@ -179,6 +185,7 @@
       <button onclick="openContract()" class="secondary" style="width:100%">Open / Resume Contract</button>
     </div>
   </div>
+  <div id="learner-site-hint" class="hint-box" hidden></div>
 
   <div id="contract-detail" style="display:none">
     <hr class="sep">
@@ -579,6 +586,11 @@ async function addPerson() {
   rebuildPeopleSelects()
   el('add-name').value = ''; el('add-slug').value = ''; el('add-did').value = ''; el('add-portfolio').value = ''
   logTo('registry-log','ok',`Added: ${name} (${slug})`)
+  // Everyone but the demo cast needs a site of their own, and nothing here needs
+  // a decision — so do it now rather than leave a button to forget. If it fails,
+  // the row keeps its Provision button as the retry.
+  if (res.ok && !slug.startsWith('demo-')) await provisionPersonSite(slug)
+  else if (!slug.startsWith('demo-')) logTo('registry-log','dim',`  Their own site wasn't created (server unreachable). Click Provision in ${name}'s row once it's back.`)
 }
 
 // Build a one-time onboarding link for a new learner. They open it on their own
@@ -587,7 +599,7 @@ async function addPerson() {
 function makeOnboardLink() {
   const name  = el('add-name').value.trim()
   const slug  = el('add-slug').value.trim() || slugify(name)
-  const site  = el('add-site').value.trim() || 'localhost'
+  const site  = slug && !slug.startsWith('demo-') ? personalSite(slug) : (el('add-site').value.trim() || 'localhost')
   const pSlug = el('add-portfolio').value.trim() || (slug ? `${slug}-sodoto-portfolio` : '')
   el('registry-log').style.display = 'block'
   if (!name) { logTo('registry-log','err','Enter the learner\'s name first.'); return }
@@ -668,6 +680,18 @@ async function openContract() {
 
 function onContractChange() {
   el('contract-detail').style.display = 'none'
+  renderLearnerSiteHint()
+}
+
+// Gates recorded before Provision land on the shared site, which the learner
+// can't sign in to and Provision doesn't move — so say so while there's time.
+function renderLearnerSiteHint() {
+  const box = el('learner-site-hint')
+  const p = personBySlug(el('sel-learner').value)
+  if (!p || p.site === personalSite(p.slug) || p.slug.startsWith('demo-')) { box.hidden = true; return }
+  box.innerHTML = `<b>${escHtml(p.name)} doesn't have their own site yet.</b> Provision it before recording gates. Otherwise the record goes to the shared site, which ${escHtml(p.name)} can't sign in to, and it stays there after you provision. `
+    + `<button class="small" type="button" onclick="provisionPersonSite('${p.slug}').then(renderLearnerSiteHint)">Provision now</button>`
+  box.hidden = false
 }
 
 // ─── Gate form ────────────────────────────────────────────────────────────────
@@ -1493,8 +1517,46 @@ async function provisionPersonSite(slug) {
   logTo('registry-log','ok',`  ${p.name} → ${p.site}`)
   logTo('registry-log','dim',`  portfolio: ${res.portfolioSlug} · owner file: ${res.owner}`)
   if (res.needsRestart) {
-    logTo('registry-log','err',`  FedWiki must be restarted before ${p.site} will answer.`)
+    logTo('registry-log','err',`  FedWiki must be restarted before ${p.site} will answer. Send the message below after the restart.`)
   }
+  showWelcome(p.slug)
+}
+
+// What the person needs once their site exists: its address, and how the first
+// sign-in goes. The key they made at onboarding is stored on the tools site, and
+// a browser won't hand it to their wiki site — so the first sign-in always asks
+// for the recovery file. Saying so up front stops that looking like a failure.
+function welcomeMessage(p) {
+  const url = wikiPageUrl(p.site, p.portfolioSlug)
+  const first = p.name.split(/\s+/)[0]
+  return `Hi ${first},
+
+Your SODOTO portfolio is ready. This is your own site; only you can edit it:
+${url}
+
+To sign in the first time:
+1. Open the link above.
+2. Press "Sign in with my SODOTO key".
+3. It will say there's no key on this device. That's expected. Choose the recovery file you downloaded when you made your key, type your passphrase, and press "Restore & sign in".
+4. You'll see "✓ Signed in — you can edit this page."
+
+After that, on the same browser, step 2 is all you need. On a new phone, computer or browser, do step 3 again.`
+}
+
+function showWelcome(slug) {
+  const p = personBySlug(slug)
+  if (!p) return
+  el('welcome-name').textContent = p.name
+  el('welcome-text').value = welcomeMessage(p)
+  el('welcome-out').hidden = false
+  el('welcome-out').scrollIntoView({ block: 'nearest' })
+}
+
+function copyWelcome() {
+  const t = el('welcome-text'); t.select()
+  navigator.clipboard.writeText(t.value)
+    .then(() => logTo('registry-log','ok','Message copied.'))
+    .catch(() => logTo('registry-log','err','Copy failed — select the message and copy it manually.'))
 }
 
 // Which site holds this page? Each person's portfolio now lives on their own
@@ -1605,7 +1667,7 @@ function renderPeople() {
     // Shape A: each person gets their own site, so they own it and can write
     // their own account of the journey. Already-provisioned people just say so.
     const ownCell = p.site === personalSite(p.slug)
-      ? `<span style="font-size:11px;color:#2a5c3f;" title="${escHtml(p.site)}">✓ own site</span>`
+      ? `<span style="font-size:11px;color:#2a5c3f;" title="${escHtml(p.site)}">✓ own site</span> <button class="small secondary" onclick="showWelcome('${p.slug}')" title="The portfolio address and first sign-in steps, ready to send">Welcome msg</button>`
       : `<button class="small" onclick="provisionPersonSite('${p.slug}')" title="Create ${personalSite(p.slug)} — a site this person owns">Provision</button>`
     const shared = didCount[normalizeDid(p.did)] > 1
     const tr = document.createElement('tr')
