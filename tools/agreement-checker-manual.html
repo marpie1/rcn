@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<!-- Agreement Checker — User Manual
+     Companion to tools/agreement-checker.html and agreement-checker-intro.html.
+     Screenshots in agreement-checker-shots/ are headless-Chrome captures of the
+     checker running its two built-in garden examples. Retake them if the page
+     layout changes. Every question listed in section 9 is quoted from check()
+     in the checker; keep the two in step. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Agreement Checker — User Manual</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#fbfaf6;color:#000;line-height:1.65}
+a{color:#1d4ed8;text-decoration:none}
+a:hover{text-decoration:underline}
+.page{max-width:860px;margin:0 auto;padding:40px 16px 80px}
+.doc-header{border-bottom:2px solid #d4d4d4;padding-bottom:24px;margin-bottom:32px}
+.doc-tag{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.doc-title{font-size:34px;font-weight:800;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:17px;line-height:1.5}
+.doc-meta{margin-top:14px;font-size:14px;font-weight:600}
+.doc-nav{display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap}
+.doc-nav a{font-size:14px;padding:5px 14px;border:1.5px solid #000;border-radius:20px;color:#000;background:#fff}
+.doc-nav a:hover{background:#f1efe8;text-decoration:none}
+.doc-nav a.current{background:#000;color:#fff}
+.toc{background:#fff;border:2px solid #d4d4d4;border-radius:10px;padding:14px 20px;margin-bottom:10px;columns:2;column-gap:28px;font-size:15.5px}
+.toc a{display:block;color:#000;padding:2px 0;break-inside:avoid}
+@media(max-width:620px){.toc{columns:1}}
+h2{font-size:23px;font-weight:800;margin:48px 0 14px;padding-top:10px;border-top:1px solid #d4d4d4;scroll-margin-top:12px}
+h3{font-size:18px;font-weight:700;margin:24px 0 8px}
+p{margin-bottom:14px;font-size:17px}
+ul,ol{margin:0 0 14px 24px;font-size:17px} li{margin:4px 0}
+b.q{color:#1d4ed8;letter-spacing:.02em}
+kbd{font-family:inherit;font-size:15px;border:1.5px solid #000;border-radius:6px;padding:0 7px;background:#fff;white-space:nowrap}
+figure{margin:18px 0 26px}
+figure img{width:100%;height:auto;border:1.5px solid #d4d4d4;border-radius:8px;background:#fff}
+figcaption{font-size:14.5px;margin-top:6px}
+table.t{width:100%;border-collapse:collapse;font-size:15.5px;margin:12px 0 24px;background:#fff}
+table.t th{text-align:left;padding:8px 10px;font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-bottom:2px solid #000}
+table.t td{padding:8px 10px;border-bottom:1px solid #d4d4d4;vertical-align:top}
+table.t td:first-child{font-weight:700}
+.swatch{display:inline-block;width:46px;height:18px;border-radius:4px;vertical-align:middle;margin-right:6px}
+.tip{background:#fff;border:2px solid #1d4ed8;border-radius:10px;padding:12px 16px;margin:14px 0 22px}
+.tip p{font-size:16px;margin:0}
+.doc-footer{margin-top:60px;padding-top:18px;border-top:2px solid #d4d4d4;font-size:15px}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="doc-header">
+    <div class="doc-tag">RCN Tools · User Manual</div>
+    <h1 class="doc-title">Agreement Checker — User Manual</h1>
+    <p class="doc-sub">How to check an agreement, sentence by sentence, and what every part of the screen means.</p>
+    <p class="doc-meta">Marc Pierson and Claude Opus 5.5 · September 2026</p>
+  </header>
+
+  <nav class="doc-nav">
+    <a href="agreement-checker-intro.html">Introduction</a>
+    <a class="current" href="agreement-checker-manual.html">User Manual</a>
+    <a href="agreement-checker.html">Open the checker</a>
+  </nav>
+
+  <div class="toc">
+    <a href="#open">1 · Opening the checker</a>
+    <a href="#write">2 · Writing your agreement</a>
+    <a href="#settle">3 · Questions to settle</a>
+    <a href="#cards">4 · Sentence cards</a>
+    <a href="#seven">5 · The seven questions</a>
+    <a href="#orelse">6 · Who carries out the OR ELSE</a>
+    <a href="#create">7 · Creating agreements</a>
+    <a href="#labels">8 · The four labels</a>
+    <a href="#asks">9 · Every question the checker asks</a>
+    <a href="#rewrite">10 · The rewritten agreement</a>
+    <a href="#drawing">11 · The drawing</a>
+    <a href="#share">12 · Saving and sharing</a>
+    <a href="#ostrom">13 · Ostrom's coding</a>
+    <a href="#session">14 · Running a session with a group</a>
+    <a href="#limits">15 · What the checker does not do</a>
+  </div>
+
+  <h2 id="open">1 · Opening the checker</h2>
+  <p>Open <code>agreement-checker.html</code> in any web browser. There is nothing to install and no account. It works without an internet connection. Keep the file <code>rcn-icons.js</code> in the same folder; without it the questions lose their pictures but everything else still works.</p>
+  <p>The first time you open it, the garden bylaw example is already loaded, so you can see the checker at work before typing anything.</p>
+
+  <h2 id="write">2 · Writing your agreement</h2>
+  <p>Type or paste your agreement into the big box at the top, then press <kbd>Check this agreement</kbd>.</p>
+  <ul>
+    <li>Write it the way you would say it. The checker does the splitting.</li>
+    <li>Numbered or bulleted lists are fine; the numbers are ignored.</li>
+    <li>Putting each rule on its own line helps the checker's guesses.</li>
+    <li>Two examples are built in: <kbd>Example: the garden bylaw</kbd> shows the problems, and <kbd>Example: the garden bylaw, fixed</kbd> shows the same bylaw after a group has answered every question.</li>
+  </ul>
+  <div class="tip"><p>Pressing <b>Check this agreement</b> again starts over from the text in the box. Changes you made in the sentence cards below are replaced by fresh guesses.</p></div>
+
+  <h2 id="settle">3 · Questions to settle</h2>
+  <figure>
+    <img src="agreement-checker-shots/01-check-and-questions.png" alt="The top of the checker: the agreement box, the Check button and two example buttons, and four questions to settle, each with a sentence number and a Leave as is button.">
+    <figcaption>The garden bylaw as written. One note (blue) and three questions (orange).</figcaption>
+  </figure>
+  <p>This list is the heart of the checker. Each item names a sentence and asks one question in plain words.</p>
+  <ul>
+    <li><b>Orange</b> items are questions the group should settle.</li>
+    <li><b>Blue</b> items are notes: something the checker did (like splitting a sentence) or something that may be fine as it is.</li>
+    <li>Click the <b>sentence number</b> to jump to that sentence's card.</li>
+    <li>Press <kbd>Leave as is</kbd> when the group has talked it over and is content. The question disappears. A line at the bottom counts how many you set aside, with <kbd>Show them again</kbd> to bring them back.</li>
+  </ul>
+  <p>When every question is settled, the list says so and invites the group to read the rewritten agreement out loud together.</p>
+
+  <h2 id="cards">4 · Sentence cards</h2>
+  <figure>
+    <img src="agreement-checker-shots/02-split-sentence-card.png" alt="Sentence 1 card: a SHARED EXPECTATION label, the sentence in italics, and a row for each question with the checker's guess in a box. WHEN? and TO WHAT? are grey dashed and empty; the rest are green.">
+    <figcaption>Sentence 1 of the garden bylaw, split from the original. The questions about this sentence are repeated under its boxes.</figcaption>
+  </figure>
+  <p>Every sentence gets a card. At the top: its number, its label (see section 8), and whether it was split from one of your sentences. Below that, your sentence in italics, and then one box per question holding the checker's best guess.</p>
+  <table class="t">
+    <tr><th>Box looks like</th><th>It means</th></tr>
+    <tr><td><span class="swatch" style="border:2px solid #15803d;background:#fff"></span>Green</td><td>Answered.</td></tr>
+    <tr><td><span class="swatch" style="border:2px dashed #b45309;background:#fffbeb"></span>Yellow, dashed</td><td>Needs an answer. Nobody has given one yet.</td></tr>
+    <tr><td><span class="swatch" style="border:2px dashed #9ca3af;background:#fff"></span>Grey, dashed</td><td>Optional. Leave it blank if it doesn't apply. The grey hint inside says when blank is fine.</td></tr>
+  </table>
+  <p><b>Every box can be changed.</b> The checker's guesses come from word patterns, and they will sometimes be wrong. Type over any guess. The questions at the top, the label, and the rewritten agreement all update as you type.</p>
+  <figure>
+    <img src="agreement-checker-shots/03-agreed-rule-card.png" alt="Sentence 1 of the fixed bylaw: an AGREED RULE label, WHEN? says unless hand-watering seedlings, MUST NOT, water, on days not assigned to them, and OR ELSE? says carried by sentence 4.">
+    <figcaption>The same sentence after the group answered. It is now an agreed rule, carried by sentence 4.</figcaption>
+  </figure>
+
+  <h2 id="seven">5 · The seven questions</h2>
+  <table class="t">
+    <tr><th>Question</th><th>What to put there</th><th>Needed?</th></tr>
+    <tr><td><b class="q">WHEN?</b></td><td>What switches this on: "when the tank is below half", "after paying dues". Exceptions go here too: "unless hand-watering seedlings".</td><td>Optional</td></tr>
+    <tr><td><b class="q">WHO?</b></td><td>The people or the role: "gardeners", "the treasurer". Avoid "they".</td><td>Yes</td></tr>
+    <tr><td><b class="q">MUST, MAY, OR MUST NOT?</b></td><td>Pick one. If a sentence needs two, it is two sentences.</td><td>Yes</td></tr>
+    <tr><td><b class="q">DO WHAT?</b></td><td>The action: "water", "pay", "report".</td><td>Yes</td></tr>
+    <tr><td><b class="q">TO WHAT?</b></td><td>The thing acted on: "their plots", "dues".</td><td>Optional</td></tr>
+    <tr><td><b class="q">HOW?</b></td><td>Limits on how, where, how much, or by when: "with sprinklers", "by March 1".</td><td>Optional</td></tr>
+    <tr><td><b class="q">OR ELSE?</b></td><td>What happens if it is broken. Needed for a MUST or MUST NOT to be an agreed rule. A permission has none, because a permission can't be broken.</td><td>For MUST and MUST NOT</td></tr>
+  </table>
+  <p>WHEN? and HOW? together are what Ostrom called Conditions. WHEN? is the trigger; HOW? is the limit.</p>
+
+  <h2 id="orelse">6 · Who carries out the OR ELSE</h2>
+  <p>An OR ELSE only counts if someone is named to carry it out. The last row of each card, <b class="q">WHO CARRIES OUT THE OR ELSE?</b>, links this sentence to the sentence that names that person.</p>
+  <p>The checker fills this in when it finds a sentence about rule breakers, such as "The water keeper must suspend watering for one week for any gardener who breaks these rules." It links that sentence to every MUST and MUST NOT sentence before it. If it guesses wrong, pick the right sentence from the list, or pick <b>nobody named</b>.</p>
+  <figure>
+    <img src="agreement-checker-shots/04-keepers-duty-card.png" alt="Sentence 4, the keeper's duty: a SHARED EXPECTATION with OR ELSE blank in grey and the note: if the water keeper doesn't do this, nothing happens.">
+    <figcaption>The keeper's duty has no OR ELSE of its own. The checker notes it and leaves the choice to the group.</figcaption>
+  </figure>
+  <p>The sentence that carries out a consequence is itself a duty, and it can have its own OR ELSE. Usually it doesn't: at some point a group trusts someone. The checker points this out once, as a note, and lets it be.</p>
+
+  <h2 id="create">7 · Creating agreements</h2>
+  <figure>
+    <img src="agreement-checker-shots/05-creating-card.png" alt="Sentence 5, a CREATING AGREEMENT: WHEN? Each spring; WHAT ARE WE CREATING? a water keeper; MUST OR MAY? MUST; HOW DOES IT COME TO BE? be chosen; OUT OF WHAT? from the garden members.">
+    <figcaption>A creating agreement asks four questions of its own.</figcaption>
+  </figure>
+  <p>When a sentence sets something up (a role, a council, a membership) the checker recognises words like "be chosen", "be elected", "consists of", or "there shall be", and asks different questions:</p>
+  <ul>
+    <li><b class="q">WHAT ARE WE CREATING?</b> The role, group, or thing.</li>
+    <li><b class="q">MUST OR MAY?</b> Whether it has to exist, or is allowed to.</li>
+    <li><b class="q">HOW DOES IT COME TO BE?</b> Chosen, elected, formed, made up of.</li>
+    <li><b class="q">OUT OF WHAT?</b> Who it is chosen from, or what it is made of.</li>
+  </ul>
+  <p>The checker uses these to answer one more question: when a rule names someone to carry out a consequence, does any sentence create that role? If not, it asks for one.</p>
+
+  <h2 id="labels">8 · The four labels</h2>
+  <table class="t">
+    <tr><th>Label</th><th>When the checker uses it</th></tr>
+    <tr><td style="color:#15803d">AGREED RULE</td><td>MUST or MUST NOT, backed by a sentence that names who carries out the consequence.</td></tr>
+    <tr><td style="color:#b45309">SHARED EXPECTATION</td><td>MUST, MAY, or MUST NOT, with nothing named to back it. Every permission is one.</td></tr>
+    <tr><td style="color:#6b7280">SHARED HABIT</td><td>No MUST, MAY, or MUST NOT: a description of what people do.</td></tr>
+    <tr><td style="color:#7c3aed">CREATING AGREEMENT</td><td>Sets up a role, group, or thing.</td></tr>
+    <tr><td style="color:#b91c1c">LOOSE CONSEQUENCE</td><td>A penalty sentence with no one named to carry it out, like "Violators lose watering for a week." Turn it into a duty that names someone.</td></tr>
+  </table>
+
+  <h2 id="asks">9 · Every question the checker asks</h2>
+  <table class="t">
+    <tr><th>When it asks</th><th>What to do</th></tr>
+    <tr><td>A sentence held more than one MUST, MAY, or MUST NOT</td><td>It has already split them. Check each new sentence still says what you meant.</td></tr>
+    <tr><td>"must … only …"</td><td>Usually a MUST NOT in disguise. Change MUST to MUST NOT and say what is off limits, or <b>Leave as is</b>.</td></tr>
+    <tr><td>One sentence limits an action another allows</td><td>If one is an exception, add "unless …" to WHEN? on the limiting sentence.</td></tr>
+    <tr><td>A penalty with no one named</td><td>Rewrite it as a duty: "The ___ must see that rule breakers …". Then say how that person is chosen.</td></tr>
+    <tr><td>There is no OR ELSE</td><td>Add an agreed consequence, or leave it as a shared expectation on purpose.</td></tr>
+    <tr><td>The OR ELSE says what happens, but not who makes it happen</td><td>Add a sentence naming who, and link it in WHO CARRIES OUT THE OR ELSE?.</td></tr>
+    <tr><td>A permission with an OR ELSE</td><td>A permission can't be broken. Remove the OR ELSE, or change MAY to MUST or MUST NOT.</td></tr>
+    <tr><td>Nothing says who the enforcer is or how they are chosen</td><td>Add a creating agreement for the role.</td></tr>
+    <tr><td>If the enforcer doesn't do this, nothing happens</td><td>A note. Fine to leave; or give the duty an OR ELSE of its own.</td></tr>
+    <tr><td>No MUST, MAY, or MUST NOT</td><td>A note: it reads as a shared habit. Add one if people are expected to do it.</td></tr>
+    <tr><td>"should"</td><td>Softer than MUST. Decide which you mean.</td></tr>
+    <tr><td>Who does this apply to? / "They": who exactly?</td><td>Name the people or the role.</td></tr>
+    <tr><td>Says what must be done but not who must do it</td><td>"Fees must be paid" needs a WHO: "Members must pay fees".</td></tr>
+    <tr><td>What is the action?</td><td>Fill in DO WHAT?.</td></tr>
+    <tr><td>A word people read differently ("promptly", "reasonable", "as needed" …)</td><td>Say how much, how often, or by when.</td></tr>
+    <tr><td>Creating agreement missing a part</td><td>Fill in what is created, how it comes to be, or what it is made from.</td></tr>
+  </table>
+
+  <h2 id="rewrite">10 · The rewritten agreement</h2>
+  <figure>
+    <img src="agreement-checker-shots/06-rewrite-and-buttons.png" alt="The rewritten agreement as a numbered list of five sentences, and four buttons: Copy the rewritten agreement, Open as a drawing in the Graph Tool, Save the drawing as a file, Copy a link to this agreement.">
+    <figcaption>The agreement rebuilt from the boxes, one MUST per sentence.</figcaption>
+  </figure>
+  <p>At the bottom, the checker rebuilds your agreement from the answers in the boxes, one sentence per rule. Where a sentence is backed by another, it says so: "(backed by sentence 4)". This is the text to read aloud to the group before anyone agrees to it. <kbd>Copy the rewritten agreement</kbd> puts it on your clipboard.</p>
+
+  <h2 id="drawing">11 · The drawing</h2>
+  <figure>
+    <img src="agreement-checker-shots/07-graph-export.png" alt="The fixed bylaw in the RCN Graph Tool: each sentence a black box on the left with its answers in green boxes to the right, and red dashed backed-by arrows between sentences.">
+    <figcaption>The fixed garden bylaw, opened in the RCN Graph Tool.</figcaption>
+  </figure>
+  <p><kbd>Open as a drawing in the Graph Tool</kbd> opens the agreement in the RCN Graph Tool, which must sit in the same folder. Each sentence is a black box; its answers sit in a row to its right. An answer that is still needed is drawn in yellow. Red dashed arrows show what backs what: a rule to the duty that enforces it, and that duty to the agreement that creates the role. Hover over any box to read the full sentence.</p>
+  <p><kbd>Save the drawing as a file</kbd> saves the same drawing as <code>agreement.rcn.json</code>, which you can import into the Graph Tool later or send to someone.</p>
+
+  <h2 id="share">12 · Saving and sharing</h2>
+  <ul>
+    <li>Your work is kept in this browser on this computer. Close the page and open it again, and your agreement and answers are still there.</li>
+    <li><kbd>Copy a link to this agreement</kbd> copies a link with the agreement's text in it. Anyone who opens the link sees the checker run on that text. The link carries the text, not your edits to the boxes.</li>
+    <li>To keep your edited answers, copy the rewritten agreement or save the drawing.</li>
+  </ul>
+
+  <h2 id="ostrom">13 · Ostrom's coding</h2>
+  <p>Under each card, <b>Show Ostrom's coding</b> opens the same sentence in the terms of Ostrom's Institutional Grammar (IG 2.0), for researchers and anyone who wants to check the translation.</p>
+  <table class="t">
+    <tr><th>Plain question</th><th>IG 2.0 component</th></tr>
+    <tr><td>WHEN?</td><td>Activation Condition (Cac)</td></tr>
+    <tr><td>WHO?</td><td>Attributes (A)</td></tr>
+    <tr><td>MUST, MAY, OR MUST NOT?</td><td>Deontic (D)</td></tr>
+    <tr><td>DO WHAT?</td><td>Aim (I)</td></tr>
+    <tr><td>TO WHAT?</td><td>Object (B)</td></tr>
+    <tr><td>HOW?</td><td>Execution Constraint (Cex)</td></tr>
+    <tr><td>OR ELSE?</td><td>Or else (O); a linked sentence is a nested statement</td></tr>
+    <tr><td>WHAT ARE WE CREATING?</td><td>Constituted Entity (E)</td></tr>
+    <tr><td>MUST OR MAY? (creating)</td><td>Modal (M)</td></tr>
+    <tr><td>HOW DOES IT COME TO BE?</td><td>Constitutive Function (F)</td></tr>
+    <tr><td>OUT OF WHAT?</td><td>Constituting Properties (P)</td></tr>
+  </table>
+  <p>The labels map too: an agreed rule is Ostrom's <i>rule</i>, a shared expectation is a <i>norm</i>, and a shared habit is a <i>shared strategy</i>. The drawing carries the same terms in each box's properties.</p>
+
+  <h2 id="session">14 · Running a session with a group</h2>
+  <ol>
+    <li>Put the checker on a screen everyone can see. One person types.</li>
+    <li>Paste the agreement as it stands today, warts and all.</li>
+    <li>Work down <b>Questions to settle</b> one at a time. Read each question out loud.</li>
+    <li>When the group disagrees, that is the point. The question has found something the agreement never settled.</li>
+    <li>Answer in the boxes. Use <b>Leave as is</b> only after the group has talked it over.</li>
+    <li>Read the rewritten agreement aloud, sentence by sentence, before anyone agrees to it.</li>
+    <li>Save the drawing or copy the text, and put it where the group keeps its records.</li>
+  </ol>
+
+  <h2 id="limits">15 · What the checker does not do</h2>
+  <ul>
+    <li>It does not understand meaning. It reads English word patterns, so check every guess.</li>
+    <li>It does not know about rules outside the text you give it: older bylaws, leases, state law.</li>
+    <li>It does not judge whether an agreement is fair or wise. That is the group's conversation.</li>
+    <li>It does not rewrite your agreement for you. The rewritten text is built only from your own answers.</li>
+    <li>It handles one level of backing (a rule, its enforcer, the enforcer's role). Deeper nesting of rules inside rules is not yet drawn.</li>
+  </ul>
+
+  <footer class="doc-footer">
+    <p><strong>Marc Pierson and Claude Opus 5.5 · September 2026</strong></p>
+    <p><a href="agreement-checker-intro.html">Introduction</a> · <a href="agreement-checker.html">Open the checker</a></p>
+  </footer>
+</div>
+</body>
+</html>

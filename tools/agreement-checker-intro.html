@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<!-- Agreement Checker — Introduction
+     Companion to tools/agreement-checker.html, agreement-checker-manual.html and
+     rcn-agreement-checker-intro.pptx (built by docs/make_agreement_checker_pptx.py).
+     Every example on this page is real output of the checker on the two garden
+     examples built into it. If the checker's wording changes, update the quotes. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Agreement Checker — Introduction</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#fbfaf6;color:#000;line-height:1.65}
+a{color:#1d4ed8;text-decoration:none}
+a:hover{text-decoration:underline}
+.page{max-width:840px;margin:0 auto;padding:40px 16px 80px}
+.doc-header{border-bottom:2px solid #d4d4d4;padding-bottom:24px;margin-bottom:32px}
+.doc-tag{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.doc-title{font-size:34px;font-weight:800;line-height:1.2;margin-bottom:10px}
+.doc-sub{font-size:17px;line-height:1.5}
+.doc-meta{margin-top:14px;font-size:14px;font-weight:600}
+.doc-nav{display:flex;gap:10px;margin-bottom:36px;flex-wrap:wrap}
+.doc-nav a{font-size:14px;padding:5px 14px;border:1.5px solid #000;border-radius:20px;color:#000;background:#fff}
+.doc-nav a:hover{background:#f1efe8;text-decoration:none}
+.doc-nav a.current{background:#000;color:#fff}
+h2{font-size:23px;font-weight:800;margin:48px 0 14px;padding-top:10px;border-top:1px solid #d4d4d4}
+h3{font-size:18px;font-weight:700;margin:26px 0 8px}
+p{margin-bottom:14px;font-size:17px}
+ul{margin:0 0 14px 24px;font-size:17px} li{margin:4px 0}
+.lead{font-size:19px;line-height:1.6;margin-bottom:28px;padding:20px 24px;background:#fff;border:2px solid #000;border-radius:10px}
+.pull{font-size:20px;line-height:1.5;font-weight:700;margin:28px 0;padding:4px 0 4px 20px;border-left:5px solid #1d4ed8}
+.pull cite{display:block;font-size:15px;font-weight:500;font-style:normal;margin-top:6px}
+table.q{width:100%;border-collapse:collapse;font-size:15.5px;margin:14px 0 24px;background:#fff}
+table.q th{text-align:left;padding:8px 10px;font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-bottom:2px solid #000}
+table.q td{padding:8px 10px;border-bottom:1px solid #d4d4d4;vertical-align:top}
+table.q td:first-child{font-weight:800;color:#1d4ed8;white-space:nowrap}
+table.q td.ig{font-size:14px;white-space:nowrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin:18px 0 26px}
+.card{background:#fff;border:2px solid #b45309;border-radius:10px;padding:14px 16px}
+.card h4{font-size:16px;font-weight:800;margin-bottom:6px}
+.card p{font-size:15px;margin:0;line-height:1.55}
+.ladder{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin:18px 0 26px}
+.rung{background:#fff;border:3px solid;border-radius:10px;padding:12px 14px}
+.rung b{display:block;font-size:15px;letter-spacing:.03em;margin-bottom:4px}
+.rung p{font-size:14.5px;margin:0;line-height:1.5}
+.rung.rule{border-color:#15803d}.rung.exp{border-color:#b45309}.rung.hab{border-color:#6b7280}.rung.cre{border-color:#7c3aed}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0 26px}
+@media(max-width:680px){.two{grid-template-columns:1fr}}
+.half{background:#fff;border:2px solid #d4d4d4;border-radius:10px;padding:14px 16px}
+.half h4{font-size:14px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
+.half p,.half li{font-size:15px}
+.half ol{margin:0 0 0 20px}
+figure{margin:20px 0 26px}
+figure img{width:100%;height:auto;border:1.5px solid #d4d4d4;border-radius:8px;background:#fff}
+figcaption{font-size:14.5px;margin-top:6px}
+table.q.gaps td:first-child{color:#000;white-space:normal}
+.doc-footer{margin-top:60px;padding-top:18px;border-top:2px solid #d4d4d4;font-size:15px}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="doc-header">
+    <div class="doc-tag">RCN Tools · Introduction</div>
+    <h1 class="doc-title">Agreement Checker</h1>
+    <p class="doc-sub">Elinor Ostrom's grammar of rules, turned into plain questions a group can ask of any agreement it writes.</p>
+    <p class="doc-meta">Marc Pierson and Claude Opus 5.5 · September 2026</p>
+  </header>
+
+  <nav class="doc-nav">
+    <a class="current" href="agreement-checker-intro.html">Introduction</a>
+    <a href="agreement-checker-manual.html">User Manual</a>
+    <a href="agreement-checker.html">Open the checker</a>
+  </nav>
+
+  <p class="lead">Groups write agreements all the time: garden bylaws, co-op rules, house agreements, council charters. Most of them fail in the same few ways. Two rules get packed into one sentence. A permission quietly contradicts a duty. A penalty is written down, but nobody is named to carry it out. The Agreement Checker finds these problems and asks about each one in plain words, so the group can settle it together.</p>
+
+  <h2>Why it exists</h2>
+  <p>Elinor Ostrom won the Nobel Prize for showing how communities govern shared resources without a boss or a market. With Sue Crawford she wrote a grammar for the rules those communities make. Every rule, they found, answers the same small set of questions: who it is for, whether it is a duty, a permission, or a prohibition, what action it covers, when it applies, how it is carried out, and what happens if it is broken.</p>
+  <p>That grammar is powerful, and almost nobody outside a university uses it. It arrived wrapped in symbols (ADICO, Deontic, Aim, XOR) and in diagrams that are sparse, use arcane words, and carry no examples. The people who most need it, the ones writing their own agreements, never meet it.</p>
+  <p class="pull">"I have never thought that math, logic, or programming has to be for the initiated only. It would just be much more verbose and illustrated, but then democratic."<cite>Marc Pierson</cite></p>
+  <p>The checker takes Marc at his word. It keeps all of Ostrom's logic and shows none of her symbols unless you ask for them. The questions are in plain English, every part has an example, and the group decides every answer.</p>
+
+  <h2>The questions every agreement answers</h2>
+  <p>Each sentence of an agreement should say one thing that people must do, may do, or must not do. For that sentence, the checker asks seven questions:</p>
+  <table class="q">
+    <tr><th>Question</th><th>What it asks</th><th>Garden example</th><th>Ostrom's term</th></tr>
+    <tr><td>WHEN?</td><td>What has to be true for this to switch on</td><td>when the tank is below half</td><td class="ig">Activation Condition</td></tr>
+    <tr><td>WHO?</td><td>The people this is about</td><td>gardeners</td><td class="ig">Attributes</td></tr>
+    <tr><td>MUST, MAY, OR MUST NOT?</td><td>A duty, a permission, or a prohibition. Exactly one per sentence.</td><td>must not</td><td class="ig">Deontic</td></tr>
+    <tr><td>DO WHAT?</td><td>The action</td><td>water</td><td class="ig">Aim</td></tr>
+    <tr><td>TO WHAT?</td><td>The thing the action is done to</td><td>their plots</td><td class="ig">Object</td></tr>
+    <tr><td>HOW?</td><td>Limits on how, where, or how much</td><td>with sprinklers</td><td class="ig">Execution Constraint</td></tr>
+    <tr><td>OR ELSE?</td><td>What the group agreed will happen if it is broken, and who makes it happen</td><td>the water keeper suspends watering for a week</td><td class="ig">Or else</td></tr>
+  </table>
+  <p>WHO?, MUST, MAY, OR MUST NOT?, and DO WHAT? always need an answer. WHEN?, TO WHAT?, and HOW? are often blank, and that is fine: a rule that always applies has no WHEN.</p>
+  <p>Some agreements create something instead of telling people what to do: a role, a council, a membership. For those the checker asks four different questions: WHAT ARE WE CREATING?, MUST OR MAY?, HOW DOES IT COME TO BE?, and OUT OF WHAT? For example: "Each spring, a water keeper must be chosen from the garden members."</p>
+
+  <h2>What the checker catches</h2>
+  <div class="grid">
+    <div class="card"><h4>Two rules in one sentence</h4><p>It splits them apart, one MUST, MAY, or MUST NOT each, so each can be argued about and changed by itself.</p></div>
+    <div class="card"><h4>A MUST NOT in disguise</h4><p>"Must water only on assigned days" really means "must not water on other days." It asks which you mean.</p></div>
+    <div class="card"><h4>A clash</h4><p>One sentence limits watering, another allows hand-watering any day. It asks whether the second is an exception, and suggests adding "unless …".</p></div>
+    <div class="card"><h4>A penalty nobody carries out</h4><p>"Violators lose watering for a week" says what happens but not who makes it happen. It suggests a duty that names someone.</p></div>
+    <div class="card"><h4>No OR ELSE</h4><p>A duty with no agreed consequence holds only as long as goodwill holds. It asks whether the group wants one.</p></div>
+    <div class="card"><h4>A role nobody created</h4><p>The water keeper enforces the rules, but no sentence says how the keeper is chosen. It asks for one.</p></div>
+    <div class="card"><h4>Words people read differently</h4><p>"Promptly", "reasonable", "as needed". It asks for how much, how often, or by when.</p></div>
+    <div class="card"><h4>Soft words and missing people</h4><p>"Should" is softer than MUST. "Fees must be paid" doesn't say who pays. "They" doesn't say who they are.</p></div>
+  </div>
+
+  <h2>How strong is each sentence?</h2>
+  <p>The checker labels every sentence by what it has answered. These labels match the companion drawing.</p>
+  <div class="ladder">
+    <div class="rung rule"><b>AGREED RULE</b><p>MUST or MUST NOT, with an OR ELSE, and someone named to carry it out.</p></div>
+    <div class="rung exp"><b>SHARED EXPECTATION</b><p>MUST, MAY, or MUST NOT, but nothing backs it. It holds as long as goodwill does.</p></div>
+    <div class="rung hab"><b>SHARED HABIT</b><p>No MUST, MAY, or MUST NOT at all. Just who does what, and when.</p></div>
+    <div class="rung cre"><b>CREATING AGREEMENT</b><p>Brings a role, group, or thing into being.</p></div>
+  </div>
+  <p>None of these is wrong. Plenty of good agreements are shared expectations. The label shows the group what it has actually agreed to, so nobody is surprised later.</p>
+
+  <h2>One bylaw, before and after</h2>
+  <div class="two">
+    <div class="half">
+      <h4>As written</h4>
+      <p>"Gardeners must water only on assigned days and must not use sprinklers, but may hand-water seedlings any day. Violators lose watering privileges for a week."</p>
+      <p>The checker splits this into four sentences and asks three questions: is "must water only" a MUST NOT in disguise; is hand-watering seedlings an exception; and who takes away the watering privileges?</p>
+    </div>
+    <div class="half">
+      <h4>After the group answers</h4>
+      <ol>
+        <li>Gardeners must not water on days not assigned to them, unless hand-watering seedlings.</li>
+        <li>When the tank is below half, gardeners must not water their plots with sprinklers.</li>
+        <li>Gardeners may hand-water seedlings on any day.</li>
+        <li>The water keeper must suspend watering for one week for any gardener who breaks these rules.</li>
+        <li>Each spring, a water keeper must be chosen from the garden members.</li>
+      </ol>
+    </div>
+  </div>
+  <p>Sentences 1 and 2 are now agreed rules, backed by sentence 4, whose keeper is created by sentence 5. The checker asks one last thing: if the water keeper doesn't do their duty, nothing happens. That may be fine. The group decides.</p>
+  <figure>
+    <img src="agreement-checker-shots/07-graph-export.png" alt="The fixed garden bylaw drawn in the RCN Graph Tool: five sentences, each with its answers in a row, and red backed-by arrows running from the rules to the keeper's duty and from the keeper's duty to the creating agreement.">
+    <figcaption>The same five sentences, opened as a drawing in the RCN Graph Tool. Red arrows show what backs what.</figcaption>
+  </figure>
+
+  <h2>Who it is for</h2>
+  <ul>
+    <li>Community gardens, co-ops, tenant groups, and neighborhood councils writing or revising their rules.</li>
+    <li>NDC councils and the RCN Constitution work, where creating agreements set up the positions, councils, and memberships everything else depends on.</li>
+    <li>Facilitators who want a group to read its own agreement closely, one sentence at a time, without a lawyer in the room.</li>
+    <li>Researchers who code rules with Ostrom's grammar: the full coding is one click away on every sentence.</li>
+  </ul>
+
+  <h2>How it differs</h2>
+  <table class="q gaps">
+    <tr><th>Alternative</th><th>What it gives</th><th>What the checker adds</th></tr>
+    <tr><td>Reading it over at a meeting</td><td>Everyone nods at a paragraph</td><td>One sentence at a time, the same questions every time, and the gaps written down</td></tr>
+    <tr><td>Asking a lawyer</td><td>Expert wording, at a price</td><td>The group does the work itself and understands every word it agreed to</td></tr>
+    <tr><td>Research coding with Ostrom's grammar</td><td>Spreadsheets of A, D, I, B, C, O columns</td><td>The same coding, in plain questions, with the symbols kept underneath</td></tr>
+    <tr><td>Asking an AI to "improve" the agreement</td><td>A tidier text nobody chose</td><td>Questions, not rewrites. Every answer comes from the group.</td></tr>
+  </table>
+
+  <h2>Honest gaps</h2>
+  <ul>
+    <li>It reads English word patterns and does not understand meaning. Its guesses will sometimes be wrong. Every guess is an editable box, and every question can be set aside with <b>Leave as is</b>.</li>
+    <li>It reads one agreement at a time. It won't notice a clash with an older bylaw or a state law it hasn't seen.</li>
+    <li>It checks whether an agreement is complete and clear, not whether it is fair. Fairness is the group's conversation.</li>
+    <li>It works one sentence at a time and does not yet handle rules that nest inside other rules beyond OR ELSE.</li>
+    <li>The plain names for Ostrom's "Conditions" (here WHEN? and HOW?) and for the four creating questions are still being settled.</li>
+    <li>Your work stays in your own browser. To share it, copy the link, or save the drawing file.</li>
+  </ul>
+
+  <footer class="doc-footer">
+    <p><strong>Marc Pierson and Claude Opus 5.5 · September 2026</strong></p>
+    <p>Built on Crawford and Ostrom, "A Grammar of Institutions" (1995), and Frantz and Siddiki, <i>Institutional Grammar 2.0</i> (2021). <a href="agreement-checker-manual.html">User Manual</a> · <a href="agreement-checker.html">Open the checker</a></p>
+  </footer>
+</div>
+</body>
+</html>

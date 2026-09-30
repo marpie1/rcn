@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agreement Checker</title>
+<!--
+  Agreement Checker — Ostrom's Institutional Grammar (IG 2.0 Core) as plain
+  questions. A group writes its agreement in ordinary sentences; the checker
+  splits it one MUST per sentence, guesses the answer to each question, and
+  asks in plain words about anything blank, hidden, clashing, or unbacked.
+  Ostrom's terms appear only under "Show Ostrom's coding". The checker asks;
+  the people decide — every guess is an editable field.
+  Companion drawing: institutional-grammar.rcn.json.
+  Marc Pierson and Claude Opus 5.5, September 2026.
+-->
+<script src="rcn-icons.js"></script>
+<style>
+  :root {
+    --bg: #fbfaf6; --card: #ffffff; --ink: #000000; --line: #cfcfcf;
+    --blue: #1d4ed8; --green: #15803d; --red: #b91c1c; --orange: #c2410c; --amber: #b45309;
+    --soft: #f3f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 60px; }
+  h1 { font-size: 30px; margin: 0 0 4px; }
+  h2 { font-size: 21px; margin: 34px 0 10px; }
+  .lede { margin: 0 0 18px; max-width: 760px; }
+  textarea { width: 100%; min-height: 140px; font-size: 17px; line-height: 1.5; font-family: inherit; color: var(--ink); background: #fff; border: 2px solid var(--line); border-radius: 8px; padding: 12px; }
+  textarea:focus, input:focus, select:focus { outline: 3px solid #93c5fd; outline-offset: 1px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; align-items: center; }
+  button { font: inherit; font-size: 16px; color: var(--ink); background: #fff; border: 2px solid #000; border-radius: 8px; padding: 6px 14px; cursor: pointer; }
+  button.primary { background: #000; color: #fff; }
+  button.small { font-size: 14px; padding: 2px 10px; border-width: 1.5px; }
+  button:hover { background: var(--soft); } button.primary:hover { background: #333; }
+  .muted { color: #000; opacity: .72; font-size: 15px; }
+
+  .findings { list-style: none; padding: 0; margin: 0; }
+  .finding { display: flex; gap: 12px; align-items: flex-start; background: #fff; border: 2px solid var(--amber); border-left-width: 8px; border-radius: 8px; padding: 10px 12px; margin: 0 0 10px; }
+  .finding.info { border-color: var(--blue); }
+  .finding .ref { flex: none; font-weight: 700; white-space: nowrap; cursor: pointer; text-decoration: underline; }
+  .finding .txt { flex: 1; }
+  .finding button { flex: none; }
+  .allclear { background: #fff; border: 2px solid var(--green); border-radius: 8px; padding: 10px 12px; }
+
+  .card { background: var(--card); border: 2px solid #000; border-radius: 10px; padding: 14px 16px; margin: 0 0 16px; scroll-margin-top: 20px; }
+  .card.flash { outline: 4px solid #93c5fd; }
+  .card-head { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; margin-bottom: 6px; }
+  .card-head .num { font-weight: 800; font-size: 19px; }
+  .badge { font-weight: 700; font-size: 14px; letter-spacing: .03em; border: 2px solid; border-radius: 999px; padding: 1px 10px; }
+  .badge.rule { border-color: var(--green); } .badge.expect { border-color: var(--amber); }
+  .badge.habit { border-color: #6b7280; } .badge.create { border-color: #7c3aed; } .badge.loose { border-color: var(--red); }
+  .orig { font-style: italic; margin: 0 0 10px; }
+  .qgrid { display: grid; grid-template-columns: 230px 1fr; gap: 6px 12px; align-items: center; }
+  .q { display: flex; gap: 8px; align-items: center; font-weight: 700; color: var(--blue); font-size: 15px; letter-spacing: .02em; }
+  .q svg { flex: none; }
+  .qgrid input, .qgrid select { width: 100%; font: inherit; font-size: 16px; color: var(--ink); background: #fff; border: 2px solid var(--green); border-radius: 6px; padding: 5px 8px; }
+  .qgrid input.blank, .qgrid select.blank { border: 2px dashed var(--amber); background: #fffbeb; }
+  .qgrid input.optional, .qgrid select.optional { border: 2px dashed #9ca3af; background: #fff; }
+  .card .mine { margin-top: 10px; }
+  .card .mine li { margin: 4px 0; }
+  details.ig { margin-top: 10px; }
+  details.ig summary { cursor: pointer; font-size: 15px; }
+  details.ig table { border-collapse: collapse; margin-top: 6px; font-size: 15px; }
+  details.ig td { border: 1px solid var(--line); padding: 3px 8px; vertical-align: top; }
+  details.ig td:first-child { font-family: ui-monospace, Menlo, monospace; white-space: nowrap; }
+
+  .rewrite { background: #fff; border: 2px solid #000; border-radius: 10px; padding: 12px 16px; }
+  .rewrite ol { margin: 0; padding-left: 28px; } .rewrite li { margin: 4px 0; }
+  footer { margin-top: 40px; font-size: 15px; }
+
+  @media (max-width: 640px) {
+    .qgrid { grid-template-columns: 1fr; gap: 2px; }
+    .qgrid input, .qgrid select { margin-bottom: 8px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Agreement Checker</h1>
+  <p class="lede">Write your agreement in plain words. The checker splits it into sentences with one MUST, MAY, or MUST NOT each. It fills in its best guess for every question an agreement should answer, then asks about anything blank, hidden, clashing, or not backed by anyone. Every guess is yours to correct.</p>
+
+  <textarea id="text" aria-label="Your agreement" placeholder="Type or paste your agreement here."></textarea>
+  <div class="bar">
+    <button class="primary" id="btn-check">Check this agreement</button>
+    <button id="btn-ex1">Example: the garden bylaw</button>
+    <button id="btn-ex2">Example: the garden bylaw, fixed</button>
+    <span class="muted" id="status"></span>
+  </div>
+
+  <h2>Questions to settle</h2>
+  <div id="findings"></div>
+
+  <h2>Sentence by sentence</h2>
+  <p class="muted">Yellow boxes are questions that still need an answer. Grey dashed boxes are optional: leave them blank when they don't apply. Change any box and the questions above update.</p>
+  <div id="cards"></div>
+
+  <h2>Your agreement, one MUST per sentence</h2>
+  <div class="rewrite" id="rewrite"></div>
+  <div class="bar">
+    <button id="btn-copy">Copy the rewritten agreement</button>
+    <button id="btn-graph">Open as a drawing in the Graph Tool</button>
+    <button id="btn-json">Save the drawing as a file</button>
+    <button id="btn-link">Copy a link to this agreement</button>
+  </div>
+
+  <footer>
+    <p><a href="agreement-checker-intro.html">Introduction</a> · <a href="agreement-checker-manual.html">User Manual</a></p>
+    <p>Built on Elinor Ostrom's Institutional Grammar (Crawford and Ostrom 1995; Frantz and Siddiki, IG 2.0, 2021), in plain words. The companion drawing is <code>institutional-grammar.rcn.json</code>.</p>
+    <p><strong>Marc Pierson and Claude Opus 5.5 · September 2026</strong></p>
+  </footer>
+</main>
+
+<script>
+// ==PARSE== — pure functions, no DOM. Exercised by a node harness as well.
+var DEONTIC_RE = /\b(should not|shouldn't|ought not to|must not|mustn't|shall not|shan't|may not|cannot|can't|can not|(?:are|is) not (?:allowed|permitted) to|(?:are|is) forbidden to|(?:are|is) prohibited from|do not|don't|never|must|shall|(?:are|is) required to|has to|have to|(?:are|is) expected to|needs to|need to|(?:are|is) obligated to|should|ought to|may|can|(?:are|is) (?:allowed|permitted|free) to)\b/gi;
+var TRIGGER_RE = /\b(when|whenever|if|unless|once|after|in case|as long as|provided that|except when|except while|except for|except)\b/i;
+var LEAD_TRIGGER_RE = /^((?:when|whenever|if|unless|once|after|in case|as long as|provided that)\b[^,]*),\s*/i;
+var LEAD_TIME_RE = /^((?:each|every|during|before|by|on|in|at|from now on|starting)\b[^,]*),\s*/i;
+var TIME_RE = /\b((?:each|every|once a|twice a|once every)\s+(?:spring|summer|fall|autumn|winter|year|month|week|day|season|quarter|meeting))\b/i;
+var CREATE_AFTER_RE = /^\s*be\s+(chosen|appointed|elected|named|formed|established|created|made up of|composed of|selected|hired|designated|recognized|recognised|defined as|considered|treated as|counted as)\b/i;
+var CREATE_ANY_RE = /\b(consists? of|(?:is|are) (?:hereby )?(?:established|created|formed|defined as)|there (?:shall|must|will|may) be)\b/i;
+var BREAKER_RE = /\b(violators?|offenders?|rule[- ]breakers?|anyone who (?:breaks|violates|ignores)|any \w+ who (?:breaks|violates|ignores)|those who (?:break|violate|ignore)|whoever (?:breaks|violates)|if (?:anyone|someone|a \w+) (?:breaks|violates)|breaking (?:this|these|that)|for (?:each|every|any) (?:violation|breach))\b/i;
+var PENALTY_RE = /\b(lose|loses|fined|fine of|pay a fine|suspend|suspended|suspends|removed|expelled|banned|forfeit|forfeits|penalty|penalties)\b/i;
+var ORELSE_RE = /,?\s*\b(or else|otherwise|or they will|or face|on pain of)\b\s*/i;
+var HOW_RE = /\b(with|using|by|only|no more than|at most|at least|more than|less than|within|on|in|at|during|before|until|between|for|any|every|each|from|through|without|per|up to|daily|weekly|monthly|yearly|annually|nightly)\b/i;
+var PARTICIPLE_RE = /^(\w+ed|\w+en|paid|made|kept|done|sent|held|set|put|brought|bought|told|left|met|run|built|sold|spent|cut|read|shut|swept|fed|led|lent|lost|won)$/i;
+var PRONOUN_RE = /^(they|he|she|it|them|those|people|someone|somebody|one|you)$/i;
+var VAGUE = ['reasonable', 'reasonably', 'appropriate', 'appropriately', 'as needed', 'as necessary', 'promptly', 'regularly',
+  'timely', 'in a timely manner', 'adequate', 'adequately', 'sufficient', 'properly', 'etc', 'and so on', 'as soon as possible',
+  'from time to time', 'frequently', 'occasionally', 'excessive', 'excessively', 'too much', 'too many', 'significant', 'soon'];
+
+var Q_REG = [
+  ['when', 'WHEN?', 'rcn_time', 'Cac', 'Activation Condition'],
+  ['who', 'WHO?', 'rcn_person', 'A', 'Attributes'],
+  ['deontic', 'MUST, MAY, OR MUST NOT?', 'rcn_decision', 'D', 'Deontic'],
+  ['do', 'DO WHAT?', 'rcn_action', 'I', 'Aim'],
+  ['towhat', 'TO WHAT?', 'rcn_garden', 'B', 'Object'],
+  ['how', 'HOW?', 'rcn_boundary', 'Cex', 'Execution Constraint'],
+  ['orelse', 'OR ELSE?', 'rcn_conflict', 'O', 'Or else']
+];
+var Q_CRE = [
+  ['when', 'WHEN?', 'rcn_time', 'Cac', 'Activation Condition'],
+  ['what', 'WHAT ARE WE CREATING?', 'rcn_civic', 'E', 'Constituted Entity'],
+  ['modal', 'MUST OR MAY?', 'rcn_decision', 'M', 'Modal'],
+  ['how', 'HOW DOES IT COME TO BE?', 'rcn_gathering', 'F', 'Constitutive Function'],
+  ['from', 'OUT OF WHAT?', 'rcn_group', 'P', 'Constituting Properties']
+];
+
+function clean(s) { return (s || '').replace(/\s+/g, ' ').replace(/^[\s,;:]+|[\s,;:.!?]+$/g, ''); }
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+function lowerFirst(s) { return s && !/^[A-Z]{2}/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s; }
+
+function kindOf(word) {
+  var w = word.toLowerCase();
+  if (/not|n't|never|cannot|forbidden|prohibited/.test(w)) return 'MUST NOT';
+  if (/^(may|can)$|allowed|permitted|free/.test(w)) return 'MAY';
+  return 'MUST';
+}
+
+function findDeontics(s) {
+  var out = [], m; DEONTIC_RE.lastIndex = 0;
+  while ((m = DEONTIC_RE.exec(s))) {
+    if (/^may$/i.test(m[1]) && /^\s*\d/.test(s.slice(m.index + m[0].length))) continue; // "by May 1"
+    out.push({ index: m.index, end: m.index + m[0].length, word: m[1], kind: kindOf(m[1]) });
+  }
+  return out;
+}
+
+function splitSentences(text) {
+  var out = [];
+  (text || '').replace(/\r/g, '').split(/\n+/).forEach(function (line) {
+    line = line.replace(/^\s*(?:[-*•]|\(?\d+[.)]|\(?[a-z][.)])\s+/i, '');
+    line.split(/(?<=[.!?;])\s+/).forEach(function (s) { s = clean(s); if (s) out.push(s); });
+  });
+  return out;
+}
+
+// Split one sentence that carries several MUST/MAY/MUST NOT words into one each.
+function splitDeontics(s) {
+  var lead = '', m = LEAD_TRIGGER_RE.exec(s);
+  if (m) { lead = m[1]; s = s.slice(m[0].length); }
+  var d = findDeontics(s);
+  if (d.length < 2) return null;
+  var subject = clean(s.slice(0, d[0].index));
+  if (!subject) return null;
+  var parts = [];
+  for (var i = 0; i < d.length; i++) {
+    var seg = s.slice(d[i].index, i + 1 < d.length ? d[i + 1].index : s.length);
+    seg = seg.replace(/[\s,;]*(?:\b(?:and|but|or|while|yet|although|though|however)\b)?[\s,;]*$/i, '');
+    parts.push(clean((lead ? lead + ', ' : '') + subject + ' ' + seg));
+  }
+  return parts;
+}
+
+function blankReg() { return { when: '', who: '', deontic: '', do: '', towhat: '', how: '', orelse: '' }; }
+function blankCre() { return { when: '', what: '', modal: '', how: '', from: '' }; }
+
+function addTo(a, b) { return clean(a ? a + ', ' + b : b); }
+
+function analyse(text) {
+  var st = { text: text, type: 'rule', f: blankReg(), backedBy: '', backing: false, splitFrom: 0 };
+  var s = text, m;
+  var breaker = BREAKER_RE.test(text);
+
+  m = ORELSE_RE.exec(s);
+  var orelse = '';
+  if (m && m.index > 0) { orelse = clean(s.slice(m.index + m[0].length)); s = s.slice(0, m.index); }
+
+  var lead = '', leadTime = '';
+  m = LEAD_TRIGGER_RE.exec(s); if (m) { lead = m[1]; s = s.slice(m[0].length); }
+  m = LEAD_TIME_RE.exec(s); if (m) { leadTime = m[1]; s = s.slice(m[0].length); }
+
+  var d = findDeontics(s);
+
+  // A creating agreement: it brings a role, group, or thing into being.
+  if (d.length && (CREATE_AFTER_RE.test(s.slice(d[0].end)) || CREATE_ANY_RE.test(s))) {
+    st.type = 'create'; st.f = blankCre();
+    var f = st.f, subj = clean(s.slice(0, d[0].index)), rest = s.slice(d[0].end);
+    var there = /^there$/i.test(subj) || /^there\b/i.test(subj);
+    f.modal = d[0].kind === 'MAY' ? 'MAY' : 'MUST';
+    var tm = TIME_RE.exec(rest); if (tm) { f.when = tm[1]; rest = rest.replace(tm[0], ''); }
+    f.when = clean([lead, leadTime, f.when].filter(Boolean).join(', '));
+    var cm = CREATE_AFTER_RE.exec(rest);
+    if (there) {
+      var tb = /^\s*be\s+(.*)$/i.exec(rest) || [null, rest];
+      var tr = tb[1], fm = /\b(from|of|among|out of|by|made up of|composed of|with)\b/i.exec(tr);
+      f.what = clean(fm ? tr.slice(0, fm.index) : tr); f.how = 'be'; f.from = fm ? clean(tr.slice(fm.index)) : '';
+    } else if (cm) {
+      f.what = subj; f.how = clean(cm[0]); f.from = clean(rest.slice(cm[0].length));
+    } else {
+      f.what = subj; var parts = clean(rest).split(' ');
+      f.how = parts.slice(0, 2).join(' '); f.from = parts.slice(2).join(' ');
+    }
+    return st;
+  }
+
+  if (!d.length) {
+    if (breaker || (PENALTY_RE.test(text) && /\b(lose|fined|suspended|removed|expelled|banned|forfeit)\b/i.test(text) && !/\b(when|if)\b/i.test(text.slice(0, 5)))) {
+      st.type = 'loose'; st.f.orelse = clean(text); return st;
+    }
+    st.type = 'habit';
+    var w = clean(s).split(' '), n = /^(the|a|an|all|each|every|our|any|some)$/i.test(w[0]) ? 2 : 1;
+    st.f.who = w.slice(0, n).join(' ');
+    st.f.do = w[n] || '';
+    var hrest = w.slice(n + 1).join(' ');
+    var hm = HOW_RE.exec(hrest);
+    st.f.towhat = hm ? clean(hrest.slice(0, hm.index)) : clean(hrest);
+    st.f.how = hm ? clean(hrest.slice(hm.index)) : '';
+    st.f.when = clean(lead);
+    if (leadTime) st.f.how = addTo(st.f.how, leadTime);
+    return st;
+  }
+
+  var f = st.f;
+  f.who = clean(s.slice(0, d[0].index));
+  f.deontic = d[0].kind;
+  st.soft = /should|ought/i.test(d[0].word) ? d[0].word.toLowerCase() : '';
+  var rest = s.slice(d[0].end);
+  var tr = TRIGGER_RE.exec(rest);
+  var when = lead;
+  if (tr) { when = addTo(when, rest.slice(tr.index)); rest = rest.slice(0, tr.index); }
+  f.when = clean(when);
+  var words = clean(rest).split(' ').filter(Boolean);
+  var v = 1;
+  if (/^(be|not)$/i.test(words[0] || '') && words.length > 1) v = 2;
+  f.do = words.slice(0, v).join(' ');
+  var after = words.slice(v).join(' ');
+  var hm2 = HOW_RE.exec(after);
+  if (hm2) { f.towhat = clean(after.slice(0, hm2.index)); f.how = clean(after.slice(hm2.index)); }
+  else f.towhat = clean(after);
+  if (leadTime) f.how = addTo(f.how, leadTime);
+  f.orelse = orelse;
+  st.breaker = breaker;
+  return st;
+}
+
+// Whole text → sentences, with splits and OR ELSE links worked out.
+function parseAgreement(text) {
+  var raw = splitSentences(text), list = [], notes = [];
+  raw.forEach(function (s, i) {
+    var parts = splitDeontics(s);
+    var isCreate = CREATE_ANY_RE.test(s);
+    if (parts && !isCreate) {
+      var ids = [];
+      parts.forEach(function (p) { var a = analyse(p); a.splitFrom = i + 1; a.original = s; list.push(a); ids.push(list.length); });
+      notes.push({ from: i + 1, to: ids, original: s });
+    } else list.push(analyse(s));
+  });
+  list.forEach(function (a, i) { a.id = 'S' + (i + 1); a.n = i + 1; });
+
+  // OR ELSE links: a consequence sentence, or a duty about rule breakers,
+  // backs the MUST / MUST NOT sentences that came before it.
+  var pending = [];
+  list.forEach(function (a) {
+    var isBacking = a.type === 'loose' || (a.type === 'rule' && a.breaker && a.f.deontic === 'MUST');
+    if (isBacking) {
+      if (a.type === 'rule') a.backing = true;
+      var targets = pending.length ? pending : list.filter(function (b) { return b.n < a.n && b.type === 'rule' && !b.backing && b.f.deontic !== 'MAY'; });
+      targets.forEach(function (t) { if (!t.backedBy) t.backedBy = a.id; });
+      pending = [];
+    } else if ((a.type === 'rule' || a.type === 'habit') && a.f.deontic !== 'MAY') pending.push(a);
+  });
+  return { sentences: list, splits: notes };
+}
+
+function byId(list, id) { for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i]; return null; }
+function headNoun(s) { var w = clean(s).toLowerCase().split(' ').filter(function (x) { return !/^(the|a|an|our|each|every|any)$/.test(x); }); var h = w[w.length - 1] || ''; return h.replace(/s$/, ''); }
+function stem(v) { return (v || '').toLowerCase().replace(/^hand-/, '').replace(/(ing|ed|es|s)$/, ''); }
+
+function carrierOf(list, a) {
+  var b = a.backedBy && byId(list, a.backedBy);
+  if (!b || b.type !== 'rule') return null;
+  return b.f.who || null;
+}
+function creatorOf(list, who) {
+  var h = headNoun(who); if (!h) return null;
+  for (var i = 0; i < list.length; i++) {
+    var c = list[i];
+    if (c.type === 'create' && headNoun(c.f.what) === h) return c;
+    if (c.type === 'create' && clean(c.f.what).toLowerCase().indexOf(h) >= 0) return c;
+  }
+  return null;
+}
+
+function strength(list, a) {
+  if (a.type === 'create') return ['CREATING AGREEMENT', 'create'];
+  if (a.type === 'loose') return ['LOOSE CONSEQUENCE', 'loose'];
+  if (!a.f.deontic) return ['SHARED HABIT', 'habit'];
+  if (a.f.deontic === 'MAY') return ['SHARED EXPECTATION', 'expect'];
+  if (carrierOf(list, a)) return ['AGREED RULE', 'rule'];
+  return ['SHARED EXPECTATION', 'expect'];
+}
+
+function vagueIn(s) {
+  var low = ' ' + (s || '').toLowerCase() + ' ';
+  return VAGUE.filter(function (w) { return new RegExp('[^a-z]' + w.replace(/ /g, '\\s+') + '[^a-z]').test(low); });
+}
+
+// Every check, in plain words. Each finding: {sid, key, text, info}
+function check(state) {
+  var list = state.sentences, out = [];
+  function add(a, key, text, info) { out.push({ sid: a ? a.id : '', n: a ? a.n : 0, key: key + '|' + (a ? a.text : ''), text: text, info: !!info }); }
+
+  state.splits.forEach(function (sp) {
+    out.push({ sid: 'S' + sp.to[0], n: sp.to[0], key: 'split|' + sp.original, info: true,
+      text: 'Your sentence "' + sp.original + '" held ' + sp.to.length + ' MUST, MAY, or MUST NOT words. It is now sentences ' + sp.to.join(', ') + ', one each, so each can be read, argued about, and changed by itself. Check that each new sentence still says what you meant.' });
+  });
+
+  list.forEach(function (a) {
+    var f = a.f;
+    vagueIn(a.text).forEach(function (w) {
+      add(a, 'vague:' + w, '"' + w + '" can mean different things to different people. Can you say exactly how much, how often, or by when?');
+    });
+
+    if (a.type === 'create') {
+      if (!clean(f.what)) add(a, 'c-what', 'What are we creating? Name the role, group, or thing.');
+      if (!clean(f.how)) add(a, 'c-how', 'How does it come to be? For example: is chosen, is elected, is formed.');
+      if (!clean(f.from)) add(a, 'c-from', 'Out of what, or by whom? Say who it is chosen from, or what it is made of.');
+      return;
+    }
+    if (a.type === 'loose') {
+      var cons = clean(f.orelse), vm = /^(violators|offenders|rule[- ]breakers)\s+(.*)$/i.exec(cons);
+      var ex = vm ? '"The ___ must see that rule breakers ' + vm[2] + '."' : '"The ___ must carry this out: ' + cons + '."';
+      add(a, 'loose', 'This says what happens to people who break the agreement, but no one is named to make it happen. Rewrite it as a duty that names who does, such as: ' + ex + ' Then say how that person is chosen.');
+      return;
+    }
+
+    if (!clean(f.who)) add(a, 'who', 'Who does this apply to? No one is named.');
+    else if (PRONOUN_RE.test(clean(f.who))) add(a, 'pronoun', '"' + clean(f.who) + '": who exactly? Name the people or the role.');
+    if (a.type === 'rule' && /^be$/i.test(clean(f.do).split(' ')[0]) && PARTICIPLE_RE.test(clean(f.do).split(' ')[1] || '')) {
+      add(a, 'passive', 'This says what must be done but not who must do it. Who has to do it? Name the people or the role.');
+    }
+    if (!f.deontic) {
+      add(a, 'habit', 'There is no MUST, MAY, or MUST NOT here, so this describes a shared habit. If people are expected to do it, add one.', true);
+    }
+    if (a.soft) add(a, 'soft', '"' + a.soft + '" is softer than MUST. Do you mean MUST, or is this a hope people are free to ignore?');
+    if (!clean(f.do)) add(a, 'do', 'What is the action? DO WHAT? is blank.');
+
+    if (f.deontic === 'MUST' && /\bonly\b/i.test(f.how + ' ' + f.towhat)) {
+      add(a, 'only', '"must ' + clean(f.do) + ' … only …" is usually a MUST NOT in disguise. "Must water only on assigned days" means "must not water on other days". Is that what you mean? If so, change MUST to MUST NOT and say what is off limits.');
+    }
+
+    if (f.deontic === 'MAY' && (clean(f.orelse) || a.backedBy)) {
+      add(a, 'perm-orelse', 'A permission can\'t be broken, so this OR ELSE has nothing to back. Remove it, or change MAY to MUST or MUST NOT.');
+    }
+
+    if ((f.deontic === 'MUST' || f.deontic === 'MUST NOT') && !a.backing) {
+      var b = a.backedBy && byId(list, a.backedBy);
+      if (!clean(f.orelse) && !b) {
+        add(a, 'no-orelse', 'There is no OR ELSE. This holds only as long as people\'s goodwill holds. Is there an agreed consequence for breaking it?');
+      } else if (!b) {
+        add(a, 'no-carrier', 'The OR ELSE says what happens, but not who makes it happen. Add an agreement that names who carries it out, such as: "The ___ must ___ when someone breaks this."');
+      }
+    }
+
+    if (a.backing) {
+      var who = clean(f.who) || 'this person';
+      if (!clean(f.orelse) && !a.backedBy) {
+        add(a, 'unbacked-duty', 'If ' + lowerFirst(who) + ' doesn\'t do this, nothing happens. That may be fine. If not, give this sentence an OR ELSE of its own.', true);
+      }
+      if (clean(f.who) && !creatorOf(list, f.who)) {
+        add(a, 'not-created', 'Nothing here says who "' + lowerFirst(who) + '" is or how they are chosen. Add an agreement that creates the role, such as: "Each year, ' + lowerFirst(who) + ' must be chosen from the members."');
+      }
+    }
+  });
+
+  // Clashes: a MAY on the same action that a MUST / MUST NOT limits, with no "unless".
+  list.forEach(function (b) {
+    if (b.type !== 'rule' || b.f.deontic !== 'MAY') return;
+    list.forEach(function (a) {
+      if (a === b || a.type !== 'rule' || !a.f.deontic || a.f.deontic === 'MAY') return;
+      var sa = stem(a.f.do), sb = stem(b.f.do);
+      if (sa.length < 3 || sb.length < 3) return;
+      if (!(sa === sb || sa.indexOf(sb) >= 0 || sb.indexOf(sa) >= 0)) return;
+      if (/\b(unless|except)\b/i.test(a.f.when + ' ' + a.f.how)) return;
+      var broad = /\bonly\b/i.test(a.f.how + ' ' + a.f.towhat) || !clean(a.f.towhat);
+      var ta = clean(a.f.towhat).toLowerCase().split(' ').map(stem), tb = clean(b.f.towhat).toLowerCase().split(' ').map(stem);
+      var overlap = ta.some(function (w) { return w.length > 3 && tb.indexOf(w) >= 0; });
+      if (!broad && !overlap) return;
+      add(a, 'clash:' + b.text, 'Sentence ' + a.n + ' limits "' + clean(a.f.do) + '", and sentence ' + b.n + ' allows "' + clean(b.f.do) + '". Does sentence ' + b.n + ' make an exception to sentence ' + a.n + '? If so, add "unless …" to sentence ' + a.n + '.');
+    });
+  });
+
+  return out.filter(function (x) { return !(state.dismissed || {})[x.key]; });
+}
+
+function deonticWord(k) { return k === 'MUST NOT' ? 'must not' : k === 'MAY' ? 'may' : k === 'MUST' ? 'must' : ''; }
+
+function rewrite(list, a) {
+  var f = a.f, when = clean(f.when);
+  if (a.type === 'loose') return cap(clean(f.orelse));
+  if (a.type === 'create') {
+    var body = [clean(f.what), deonticWord(f.modal), clean(f.how), clean(f.from)].filter(Boolean).join(' ');
+    return cap((when ? when + ', ' : '') + lowerFirst(body)) + '.';
+  }
+  var trailWhen = /^(unless|except)/i.test(when);
+  var core = [clean(f.who), deonticWord(f.deontic), clean(f.do), clean(f.towhat), clean(f.how)].filter(Boolean).join(' ');
+  var s = (when && !trailWhen ? when + ', ' + lowerFirst(core) : core) + (when && trailWhen ? ', ' + when : '');
+  if (clean(f.orelse)) s += ', or else ' + clean(f.orelse);
+  else if (a.backedBy && byId(list, a.backedBy)) s += ' (backed by sentence ' + byId(list, a.backedBy).n + ')';
+  return cap(s) + '.';
+}
+
+function igCoding(list, a) {
+  var rows = [];
+  if (a.type === 'create') {
+    Q_CRE.forEach(function (q) { rows.push([q[3] + ' · ' + q[4], a.f[q[0]] || '—']); });
+    rows.unshift(['type', 'constitutive statement']);
+    return rows;
+  }
+  Q_REG.forEach(function (q) {
+    var v = a.f[q[0]] || '';
+    if (q[0] === 'orelse' && a.backedBy) v = (v ? v + ' ' : '') + '→ nested ' + a.backedBy;
+    rows.push([q[3] + ' · ' + q[4], v || '—']);
+  });
+  var t = a.type === 'loose' ? 'fragment (an Or else with no statement of its own)'
+    : !a.f.deontic ? 'shared strategy (no Deontic, no Or else)'
+    : (clean(a.f.orelse) || a.backedBy) ? 'rule (Deontic and Or else)' : 'norm (Deontic, no Or else)';
+  rows.unshift(['type', 'regulative statement: ' + t]);
+  return rows;
+}
+
+// Graph Tool JSON, in the same visual language as institutional-grammar.rcn.json.
+function toGraph(state) {
+  var list = state.sentences, nodes = [], edges = [], en = 0;
+  var legend = [
+    { id: 'lg_s', kind: 'node', label: 'A whole agreement', icon: '', color: '#ffffff', borderColor: '#000000', borderWidth: 3 },
+    { id: 'lg_a', kind: 'node', label: 'An answer to one question', icon: '', color: '#ffffff', borderColor: '#15803d', borderWidth: 2 },
+    { id: 'lg_blank', kind: 'node', label: 'A question left blank', icon: '', color: '#fffbeb', borderColor: '#b45309', borderWidth: 2 },
+    { id: 'lg_e_made', kind: 'edge', label: 'made of', color: '#000000', width: 1.5, dash: 'solid' },
+    { id: 'lg_e_back', kind: 'edge', label: 'backed by', color: '#b91c1c', width: 3, dash: 'dashed' }
+  ];
+  function st(row) { for (var i = 0; i < legend.length; i++) if (legend[i].id === row) return legend[i]; }
+  function node(id, row, label, x, y, w, h, extra) {
+    var r = st(row), icon = r.icon || '';
+    nodes.push(Object.assign({ id: id, type: row, label: label, x: x, y: y, w: w, h: h, shape: icon ? 'rect' : 'rounded',
+      color: r.color, fontColor: '#000000', borderColor: r.borderColor, borderWidth: r.borderWidth, borderDash: 'solid',
+      fontSize: 12, icon: icon, note: '', props: {} }, extra || {}));
+  }
+  function edge(row, s, t, label, note) {
+    var r = st(row);
+    edges.push({ id: 'e' + (++en), type: row, src: s, tgt: t, label: label || '', polarity: 'none', color: r.color, width: r.width,
+      dash: r.dash, fontSize: 11, fontColor: '#000000', curved: true, note: note || '', props: {} });
+  }
+  list.forEach(function (a, i) {
+    var y0 = 80 + i * 230, sid = a.id;
+    var label = a.type === 'create' ? clean(a.f.what) : a.type === 'loose' ? 'CONSEQUENCE' : [clean(a.f.who), deonticWord(a.f.deontic), clean(a.f.do)].filter(Boolean).join(' ');
+    label = ('S' + a.n + ' · ' + label).toUpperCase(); if (label.length > 60) label = label.slice(0, 58) + '…';
+    var sg = strength(list, a);
+    node(sid, 'lg_s', label, 140, y0, 240, 76, { shape: 'rect', schemaLabel: 'Statement', note: rewrite(list, a) + ' — ' + sg[0],
+      props: { text: rewrite(list, a), strength: sg[0], igType: a.type === 'create' ? 'constitutive' : 'regulative' } });
+    var qs = a.type === 'create' ? Q_CRE : Q_REG, x = 400;
+    qs.forEach(function (q) {
+      var v = clean(a.f[q[0]]);
+      if (a.type === 'loose' && q[0] !== 'orelse') return;
+      if (!v && fieldNeeded(a, q[0]) !== 'yes') return; // optional, or carried by a red edge
+      var ans = q[0] === 'deontic' || q[0] === 'modal' ? v : v;
+      var nid = sid + '_' + q[0];
+      node(nid, v ? 'lg_a' : 'lg_blank', q[1] + ' ' + (v ? ans.toUpperCase() : '(blank)'), x, y0 + 120, 210, 64,
+        { schemaLabel: q[4], note: 'Answers ' + q[1] + (v ? '' : ' Nobody has answered this yet.'), props: { question: q[1], answer: v, igTerm: q[4], igSymbol: q[3] } });
+      edge('lg_e_made', sid, nid);
+      x += 235;
+    });
+  });
+  list.forEach(function (a) {
+    if (a.backedBy && byId(list, a.backedBy)) edge('lg_e_back', a.id, a.backedBy, 'backed by');
+    if (a.backing && a.f.who) { var c = creatorOf(list, a.f.who); if (c) edge('lg_e_back', a.id, c.id, 'backed by', 'The role that carries out the consequence is created here.'); }
+  });
+  return {
+    version: '1.0', mode: 'select', modelName: 'Our agreement, checked',
+    modelNote: 'Made by the Agreement Checker from the text: "' + state.text.replace(/\s+/g, ' ') + '". One MUST per sentence; questions that still need an answer are drawn in yellow. Marc Pierson and Claude Opus 5.5, September 2026.',
+    canvasBg: '#ffffff', legendVisible: true, nodes: nodes, edges: edges,
+    legendEntries: legend.filter(function (r) { return nodes.some(function (n) { return n.type === r.id; }) || edges.some(function (e) { return e.type === r.id; }); })
+  };
+}
+// 'yes' = must be answered; 'optional' = fine blank; 'no' = answered elsewhere
+function fieldNeeded(a, k) {
+  if (a.type === 'create') return (k === 'when') ? 'optional' : 'yes';
+  if (a.type === 'loose') return 'yes';
+  if (k === 'when' || k === 'towhat' || k === 'how') return 'optional';
+  if (k === 'orelse') {
+    if (a.f.deontic === 'MAY' || !a.f.deontic || a.backing) return 'optional';
+    return a.backedBy ? 'no' : 'yes';
+  }
+  if (k === 'deontic') return 'yes';
+  return 'yes';
+}
+
+// ==END PARSE==
+</script>
+
+<script>
+var EX1 = 'Gardeners must water only on assigned days and must not use sprinklers, but may hand-water seedlings any day. Violators lose watering privileges for a week.';
+var EX2 = 'Gardeners must not water on days not assigned to them, unless hand-watering seedlings.\nWhen the tank is below half, gardeners must not water their plots with sprinklers.\nGardeners may hand-water seedlings on any day.\nThe water keeper must suspend watering for one week for any gardener who breaks these rules.\nEach spring, a water keeper must be chosen from the garden members.';
+var STORE = 'rcn-agreement-checker-v1';
+var state = null;
+
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function iconSVG(key, size) {
+  var ic = (typeof rcnIcon === 'function') ? rcnIcon(key) : null;
+  if (!ic) return '';
+  return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + ic.svg + '</g></svg>';
+}
+function save() { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} }
+function status(msg) { $('status').textContent = msg; if (msg) setTimeout(function () { if ($('status').textContent === msg) $('status').textContent = ''; }, 3500); }
+
+function run(text) {
+  var p = parseAgreement(text);
+  state = { text: text, sentences: p.sentences, splits: p.splits, dismissed: {} };
+  renderCards(); updateDerived(); save();
+}
+
+function renderCards() {
+  var list = state.sentences, html = '';
+  if (!list.length) { $('cards').innerHTML = '<p class="muted">Nothing to check yet.</p>'; return; }
+  list.forEach(function (a, i) {
+    var qs = a.type === 'create' ? Q_CRE : Q_REG;
+    html += '<section class="card" id="card-' + a.id + '"><div class="card-head"><span class="num">Sentence ' + a.n + '</span><span class="badge" data-badge="' + i + '"></span>'
+      + (a.splitFrom ? '<span class="muted">split from your sentence ' + a.splitFrom + '</span>' : '') + '</div>'
+      + '<p class="orig">' + esc(a.text) + '</p><div class="qgrid">';
+    qs.forEach(function (q) {
+      if (a.type === 'loose' && q[0] !== 'orelse') return;
+      html += '<label class="q" for="f-' + i + '-' + q[0] + '">' + iconSVG(q[2], 22) + '<span>' + q[1] + '</span></label>';
+      if (q[0] === 'deontic' || q[0] === 'modal') {
+        var opts = q[0] === 'deontic' ? ['', 'MUST', 'MAY', 'MUST NOT'] : ['', 'MUST', 'MAY'];
+        html += '<select id="f-' + i + '-' + q[0] + '" data-i="' + i + '" data-k="' + q[0] + '">' + opts.map(function (o) {
+          return '<option value="' + o + '"' + (a.f[q[0]] === o ? ' selected' : '') + '>' + (o || '— none —') + '</option>'; }).join('') + '</select>';
+      } else {
+        html += '<input id="f-' + i + '-' + q[0] + '" data-i="' + i + '" data-k="' + q[0] + '" value="' + esc(a.f[q[0]]) + '" placeholder="blank">';
+      }
+    });
+    if (a.type === 'rule' || a.type === 'habit') {
+      html += '<label class="q" for="f-' + i + '-backed">' + iconSVG('rcn_person', 22) + '<span>WHO CARRIES OUT THE OR ELSE?</span></label>'
+        + '<select id="f-' + i + '-backed" data-i="' + i + '" data-k="__backed"></select>';
+    }
+    html += '</div><ul class="mine" data-mine="' + i + '"></ul><details class="ig"><summary>Show Ostrom\'s coding</summary><table data-ig="' + i + '"></table></details></section>';
+  });
+  $('cards').innerHTML = html;
+}
+
+var OPTIONAL_HINT = { when: 'blank: fine if it always applies', towhat: 'blank: fine if nothing is acted on',
+  how: 'blank: fine if there is nothing to limit', orelse: 'blank: a permission needs none', from: 'blank' };
+function updateDerived() {
+  var list = state.sentences;
+  list.forEach(function (a, i) {
+    var b = document.querySelector('[data-badge="' + i + '"]'); if (!b) return;
+    var sg = strength(list, a); b.textContent = sg[0]; b.className = 'badge ' + sg[1];
+    document.querySelectorAll('[data-i="' + i + '"]').forEach(function (el) {
+      if (el.dataset.k === '__backed') {
+        var opts = '<option value="">— nobody named —</option>';
+        list.forEach(function (c) { if (c !== a) opts += '<option value="' + c.id + '"' + (a.backedBy === c.id ? ' selected' : '') + '>Sentence ' + c.n + ': ' + esc(rewrite(list, c)).slice(0, 70) + '</option>'; });
+        el.innerHTML = opts;
+        var needB = !a.backedBy && (a.f.deontic === 'MUST' || a.f.deontic === 'MUST NOT') && !a.backing;
+        el.classList.toggle('blank', needB); el.classList.toggle('optional', !a.backedBy && !needB);
+      } else {
+        var k = el.dataset.k, empty = !clean(el.value), need = fieldNeeded(a, k);
+        el.classList.toggle('blank', empty && need === 'yes');
+        el.classList.toggle('optional', empty && need === 'optional');
+        if (k === 'orelse' && a.backedBy && byId(list, a.backedBy)) el.placeholder = 'carried by sentence ' + byId(list, a.backedBy).n;
+        else if (empty) el.placeholder = k === 'orelse' && a.backing ? 'blank: fine if you trust them to do it'
+          : k === 'orelse' && !a.f.deontic ? 'blank: a habit has none'
+          : OPTIONAL_HINT[k] && need === 'optional' ? OPTIONAL_HINT[k] : 'blank';
+      }
+    });
+    var t = document.querySelector('[data-ig="' + i + '"]');
+    t.innerHTML = igCoding(list, a).map(function (r) { return '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td></tr>'; }).join('');
+  });
+
+  var fs = check(state);
+  var mine = {};
+  fs.forEach(function (f) { (mine[f.sid] = mine[f.sid] || []).push(f); });
+  list.forEach(function (a, i) {
+    var ul = document.querySelector('[data-mine="' + i + '"]');
+    ul.innerHTML = (mine[a.id] || []).map(function (f) { return '<li>' + esc(f.text) + '</li>'; }).join('');
+  });
+  var dcount = Object.keys(state.dismissed || {}).length;
+  if (!list.length) $('findings').innerHTML = '<p class="muted">Write an agreement above and press Check.</p>';
+  else if (!fs.length) $('findings').innerHTML = '<div class="allclear">Every question has an answer, and nothing clashes. Read the rewritten agreement below out loud together to be sure it says what you mean.</div>';
+  else $('findings').innerHTML = '<ul class="findings">' + fs.map(function (f, k) {
+    return '<li class="finding' + (f.info ? ' info' : '') + '"><span class="ref" data-go="' + f.sid + '">Sentence ' + f.n + '</span><span class="txt">' + esc(f.text) + '</span><button class="small" data-dismiss="' + k + '">Leave as is</button></li>';
+  }).join('') + '</ul>';
+  if (dcount) $('findings').insertAdjacentHTML('beforeend', '<p class="muted">' + dcount + ' question' + (dcount > 1 ? 's' : '') + ' left as is. <button class="small" id="btn-undismiss">Show them again</button></p>');
+  $('findings')._list = fs;
+
+  $('rewrite').innerHTML = list.length ? '<ol>' + list.map(function (a) { return '<li>' + esc(rewrite(list, a)) + '</li>'; }).join('') + '</ol>' : '<p class="muted">Nothing yet.</p>';
+  save();
+}
+
+document.addEventListener('input', function (e) {
+  var el = e.target; if (!el.dataset || el.dataset.i === undefined) return;
+  var a = state.sentences[+el.dataset.i];
+  if (el.dataset.k === '__backed') a.backedBy = el.value;
+  else a.f[el.dataset.k] = el.value;
+  updateDerived();
+});
+document.addEventListener('change', function (e) { if (e.target.tagName === 'SELECT') e.target.dispatchEvent(new Event('input', { bubbles: true })); });
+document.addEventListener('click', function (e) {
+  var t = e.target;
+  if (t.dataset && t.dataset.dismiss !== undefined) { var f = $('findings')._list[+t.dataset.dismiss]; state.dismissed[f.key] = 1; updateDerived(); }
+  if (t.dataset && t.dataset.go) { var c = $('card-' + t.dataset.go); if (c) { c.scrollIntoView({ behavior: 'smooth' }); c.classList.add('flash'); setTimeout(function () { c.classList.remove('flash'); }, 1400); } }
+  if (t.id === 'btn-undismiss') { state.dismissed = {}; updateDerived(); }
+});
+
+$('btn-check').onclick = function () { run($('text').value); status('Checked.'); };
+$('btn-ex1').onclick = function () { $('text').value = EX1; run(EX1); };
+$('btn-ex2').onclick = function () { $('text').value = EX2; run(EX2); };
+$('btn-copy').onclick = function () {
+  var txt = state.sentences.map(function (a) { return rewrite(state.sentences, a); }).join('\n');
+  navigator.clipboard.writeText(txt).then(function () { status('Copied.'); }, function () { status('Could not copy. Select the text and copy it by hand.'); });
+};
+function graphJSON() { return JSON.stringify(toGraph(state), null, 2); }
+$('btn-graph').onclick = function () {
+  window.open('graph-tool-v22.html#graph=' + btoa(unescape(encodeURIComponent(graphJSON()))), '_blank');
+};
+$('btn-json').onclick = function () {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([graphJSON()], { type: 'application/json' }));
+  a.download = 'agreement.rcn.json'; a.click();
+};
+$('btn-link').onclick = function () {
+  var url = location.href.split('#')[0] + '#text=' + encodeURIComponent(state.text);
+  navigator.clipboard.writeText(url).then(function () { status('Link copied.'); }, function () { status('Could not copy the link.'); });
+};
+
+(function start() {
+  var h = location.hash, text = null;
+  if (h.indexOf('#text=') === 0) { try { text = decodeURIComponent(h.slice(6)); } catch (e) {} }
+  if (text != null) { $('text').value = text; run(text); return; }
+  try { var s = JSON.parse(localStorage.getItem(STORE) || 'null'); if (s && s.sentences) { state = s; $('text').value = s.text; renderCards(); updateDerived(); return; } } catch (e) {}
+  $('text').value = EX1; run(EX1);
+})();
+</script>
+</body>
+</html>
