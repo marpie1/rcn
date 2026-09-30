@@ -124,8 +124,16 @@ var CREATE_ANY_RE = /\b(consists? of|(?:is|are) (?:hereby )?(?:established|creat
 var BREAKER_RE = /\b(violators?|offenders?|rule[- ]breakers?|anyone who (?:breaks|violates|ignores)|any \w+ who (?:breaks|violates|ignores)|those who (?:break|violate|ignore)|whoever (?:breaks|violates)|if (?:anyone|someone|a \w+) (?:breaks|violates)|breaking (?:this|these|that)|for (?:each|every|any) (?:violation|breach))\b/i;
 var PENALTY_RE = /\b(lose|loses|fined|fine of|pay a fine|suspend|suspended|suspends|removed|expelled|banned|forfeit|forfeits|penalty|penalties)\b/i;
 var ORELSE_RE = /,?\s*\b(or else|otherwise|or they will|or face|on pain of)\b\s*/i;
-var HOW_RE = /\b(with|using|by|only|no more than|at most|at least|more than|less than|within|on|in|at|during|before|until|between|for|any|every|each|from|through|without|per|up to|daily|weekly|monthly|yearly|annually|nightly)\b/i;
+var HOW_RE = /\b(with|using|by|to|only|no more than|at most|at least|more than|less than|within|on|in|at|during|before|until|between|for|any|every|each|from|through|without|per|up to|daily|weekly|monthly|yearly|annually|nightly)\b/i;
 var PARTICIPLE_RE = /^(\w+ed|\w+en|paid|made|kept|done|sent|held|set|put|brought|bought|told|left|met|run|built|sold|spent|cut|read|shut|swept|fed|led|lent|lost|won)$/i;
+// "Anyone who holds a plot counts as a gardener": a creating agreement with no MUST.
+var COUNTS_RE = /^(.*?)\s+(counts? as|(?:is|are) considered|qualif(?:y|ies) as|(?:is|are) treated as)\s+(.+)$/i;
+// WHO words that name everybody, so there is nothing to create.
+var EXEMPT_WHO_RE = /^(anyone|everyone|everybody|anybody|no one|nobody|someone|somebody|whoever|all|any|each|every)\b/i;
+// Words that say someone already made the thing: "assigned days" needs someone who assigns.
+var MADE_VERBS = { assigned: 'assign', designated: 'designate', approved: 'approve', authorized: 'authorize', authorised: 'authorise',
+  registered: 'register', allotted: 'allot', allocated: 'allocate', scheduled: 'schedule', elected: 'elect', appointed: 'appoint', certified: 'certify' };
+var MADE_KEYS = Object.keys(MADE_VERBS).join('|');
 var PRONOUN_RE = /^(they|he|she|it|them|those|people|someone|somebody|one|you)$/i;
 var VAGUE = ['reasonable', 'reasonably', 'appropriate', 'appropriately', 'as needed', 'as necessary', 'promptly', 'regularly',
   'timely', 'in a timely manner', 'adequate', 'adequately', 'sufficient', 'properly', 'etc', 'and so on', 'as soon as possible',
@@ -237,6 +245,13 @@ function analyse(text) {
   }
 
   if (!d.length) {
+    var ca = COUNTS_RE.exec(clean(s));
+    if (ca && !breaker) {
+      st.type = 'create'; st.countsAs = true; st.f = blankCre();
+      st.f.from = clean(ca[1]); st.f.how = clean(ca[2]).toLowerCase(); st.f.what = clean(ca[3]);
+      st.f.when = clean([lead, leadTime].filter(Boolean).join(', '));
+      return st;
+    }
     if (breaker || (PENALTY_RE.test(text) && /\b(lose|fined|suspended|removed|expelled|banned|forfeit)\b/i.test(text) && !/\b(when|if)\b/i.test(text.slice(0, 5)))) {
       st.type = 'loose'; st.f.orelse = clean(text); return st;
     }
@@ -270,7 +285,7 @@ function analyse(text) {
   var hm2 = HOW_RE.exec(after);
   if (hm2) { f.towhat = clean(after.slice(0, hm2.index)); f.how = clean(after.slice(hm2.index)); }
   else f.towhat = clean(after);
-  if (leadTime) f.how = addTo(f.how, leadTime);
+  if (leadTime) f.how = addTo(f.how, lowerFirst(leadTime));
   f.orelse = orelse;
   st.breaker = breaker;
   return st;
@@ -313,6 +328,30 @@ function carrierOf(list, a) {
   var b = a.backedBy && byId(list, a.backedBy);
   if (!b || b.type !== 'rule') return null;
   return b.f.who || null;
+}
+function singular(who) {
+  var w = clean(who).toLowerCase().replace(/^(the|a|an|all|our)\s+/, '').split(' ');
+  w[w.length - 1] = w[w.length - 1].replace(/ies$/, 'y').replace(/([^s])s$/, '$1');
+  var p = w.join(' ');
+  return (/^[aeiou]/.test(p) ? 'an ' : 'a ') + p;
+}
+function madeThings(a) {
+  var t = [a.f.who, a.f.towhat, a.f.how, a.f.when].join(' ').toLowerCase(), out = [], m;
+  var re1 = new RegExp('\\b(' + MADE_KEYS + ')\\s+([a-z]+)', 'g');                        // "assigned days"
+  while ((m = re1.exec(t))) {
+    if (/^(to|by|for|from|on|in|at|them|it|him|her|with|and|or|as)$/.test(m[2])) continue;
+    out.push({ part: m[1], noun: m[2], base: MADE_VERBS[m[1]], key: m[1] + ' ' + stem(m[2]) });
+  }
+  var re2 = new RegExp('\\b([a-z]+)\\s+(?:not\\s+)?(' + MADE_KEYS + ')\\s+(?:to|by|for)\\b', 'g'); // "days not assigned to them"
+  while ((m = re2.exec(t))) {
+    if (/^(are|is|be|been|was|were|not|the|a|an)$/.test(m[1])) continue;
+    out.push({ part: m[2], noun: m[1], base: MADE_VERBS[m[2]], key: m[2] + ' ' + stem(m[1]) });
+  }
+  return out;
+}
+function madeBySomeone(list, base) {
+  var re = new RegExp('\\b' + base + 's?\\b', 'i');
+  return list.some(function (c) { return re.test(c.text) || (c.f.do && stem(c.f.do) === stem(base)); });
 }
 function creatorOf(list, who) {
   var h = headNoun(who); if (!h) return null;
@@ -388,7 +427,9 @@ function check(state) {
 
     if ((f.deontic === 'MUST' || f.deontic === 'MUST NOT') && !a.backing) {
       var b = a.backedBy && byId(list, a.backedBy);
-      if (!clean(f.orelse) && !b) {
+      if (!clean(f.orelse) && !b && clean(f.who) && creatorOf(list, f.who)) {
+        add(a, 'role-duty', 'If ' + lowerFirst(clean(f.who)) + ' doesn\'t do this, nothing happens, except that the group can choose someone else. That may be fine. If not, give this sentence an OR ELSE of its own.', true);
+      } else if (!clean(f.orelse) && !b) {
         add(a, 'no-orelse', 'There is no OR ELSE. This holds only as long as people\'s goodwill holds. Is there an agreed consequence for breaking it?');
       } else if (!b) {
         add(a, 'no-carrier', 'The OR ELSE says what happens, but not who makes it happen. Add an agreement that names who carries it out, such as: "The ___ must ___ when someone breaks this."');
@@ -398,12 +439,34 @@ function check(state) {
     if (a.backing) {
       var who = clean(f.who) || 'this person';
       if (!clean(f.orelse) && !a.backedBy) {
-        add(a, 'unbacked-duty', 'If ' + lowerFirst(who) + ' doesn\'t do this, nothing happens. That may be fine. If not, give this sentence an OR ELSE of its own.', true);
+        add(a, 'unbacked-duty', 'If ' + lowerFirst(who) + ' doesn\'t do this, nothing happens' + (creatorOf(list, f.who) ? ', except that the group can choose someone else' : '') + '. That may be fine. If not, give this sentence an OR ELSE of its own.', true);
       }
       if (clean(f.who) && !creatorOf(list, f.who)) {
         add(a, 'not-created', 'Nothing here says who "' + lowerFirst(who) + '" is or how they are chosen. Add an agreement that creates the role, such as: "Each year, ' + lowerFirst(who) + ' must be chosen from the members."');
       }
     }
+  });
+
+  // What does each rule assume already exists? Once per word, never for the enforcer
+  // (asked above), and never when a sentence already creates or makes the thing.
+  var seenWho = {}, seenMade = {}, carriers = {};
+  list.forEach(function (a) { if (a.backing && a.f.who) carriers[headNoun(a.f.who)] = 1; });
+  list.forEach(function (a) {
+    if (a.type !== 'rule' && a.type !== 'habit') return;
+    var who = clean(a.f.who), h = headNoun(who), passive = /^be$/i.test(clean(a.f.do).split(' ')[0]);
+    if (who && h.length > 2 && !EXEMPT_WHO_RE.test(who) && !PRONOUN_RE.test(who) && !passive
+        && !carriers[h] && !seenWho[h] && !creatorOf(list, who)) {
+      seenWho[h] = 1;
+      var one = singular(who);
+      add(a, 'assumes-who:' + h, 'This assumes everyone knows who counts as ' + one + '. Nothing here says. If the group needs to be sure, add a creating agreement, such as: "Anyone who ___ counts as ' + one + '."', true);
+    }
+    madeThings(a).forEach(function (m) {
+      if (seenMade[m.key] || madeBySomeone(list, m.base)) return;
+      seenMade[m.key] = 1;
+      var many = /s$/.test(m.noun);
+      add(a, 'assumes-made:' + m.key, (many ? cap(m.noun) + ' that are ' + m.part + ' need' : 'A ' + m.noun + ' that is ' + m.part + ' needs')
+        + ' someone to ' + m.base + (many ? ' them' : ' it') + '. Who does, and how? Nothing here says.');
+    });
   });
 
   // Clashes: a MAY on the same action that a MUST / MUST NOT limits, with no "unless".
@@ -432,7 +495,8 @@ function rewrite(list, a) {
   var f = a.f, when = clean(f.when);
   if (a.type === 'loose') return cap(clean(f.orelse));
   if (a.type === 'create') {
-    var body = [clean(f.what), deonticWord(f.modal), clean(f.how), clean(f.from)].filter(Boolean).join(' ');
+    var body = a.countsAs ? [clean(f.from), clean(f.how), clean(f.what)].filter(Boolean).join(' ')
+      : [clean(f.what), deonticWord(f.modal), clean(f.how), clean(f.from)].filter(Boolean).join(' ');
     return cap((when ? when + ', ' : '') + lowerFirst(body)) + '.';
   }
   var trailWhen = /^(unless|except)/i.test(when);
@@ -495,7 +559,7 @@ function toGraph(state) {
     qs.forEach(function (q) {
       var v = clean(a.f[q[0]]);
       if (a.type === 'loose' && q[0] !== 'orelse') return;
-      if (!v && fieldNeeded(a, q[0]) !== 'yes') return; // optional, or carried by a red edge
+      if (!v && fieldNeeded(a, q[0], list) !== 'yes') return; // optional, or carried by a red edge
       var ans = q[0] === 'deontic' || q[0] === 'modal' ? v : v;
       var nid = sid + '_' + q[0];
       node(nid, v ? 'lg_a' : 'lg_blank', q[1] + ' ' + (v ? ans.toUpperCase() : '(blank)'), x, y0 + 120, 210, 64,
@@ -516,12 +580,14 @@ function toGraph(state) {
   };
 }
 // 'yes' = must be answered; 'optional' = fine blank; 'no' = answered elsewhere
-function fieldNeeded(a, k) {
-  if (a.type === 'create') return (k === 'when') ? 'optional' : 'yes';
+// A duty of a role the group created (the keeper's) needs no OR ELSE: the group can choose someone else.
+function roleDuty(a, list) { return !!(list && clean(a.f.who) && creatorOf(list, a.f.who)); }
+function fieldNeeded(a, k, list) {
+  if (a.type === 'create') return (k === 'when' || (k === 'modal' && a.countsAs)) ? 'optional' : 'yes';
   if (a.type === 'loose') return 'yes';
   if (k === 'when' || k === 'towhat' || k === 'how') return 'optional';
   if (k === 'orelse') {
-    if (a.f.deontic === 'MAY' || !a.f.deontic || a.backing) return 'optional';
+    if (a.f.deontic === 'MAY' || !a.f.deontic || a.backing || roleDuty(a, list)) return 'optional';
     return a.backedBy ? 'no' : 'yes';
   }
   if (k === 'deontic') return 'yes';
@@ -533,7 +599,7 @@ function fieldNeeded(a, k) {
 
 <script>
 var EX1 = 'Gardeners must water only on assigned days and must not use sprinklers, but may hand-water seedlings any day. Violators lose watering privileges for a week.';
-var EX2 = 'Gardeners must not water on days not assigned to them, unless hand-watering seedlings.\nWhen the tank is below half, gardeners must not water their plots with sprinklers.\nGardeners may hand-water seedlings on any day.\nThe water keeper must suspend watering for one week for any gardener who breaks these rules.\nEach spring, a water keeper must be chosen from the garden members.';
+var EX2 = 'Gardeners must not water on days not assigned to them, unless hand-watering seedlings.\nWhen the tank is below half, gardeners must not water their plots with sprinklers.\nGardeners may hand-water seedlings on any day.\nThe water keeper must suspend watering for one week for any gardener who breaks these rules.\nEach spring, a water keeper must be chosen from the garden members.\nAnyone who holds a plot counts as a gardener.\nEach spring, the water keeper must assign watering days to every gardener.';
 var STORE = 'rcn-agreement-checker-v1';
 var state = null;
 
@@ -593,14 +659,14 @@ function updateDerived() {
         var opts = '<option value="">— nobody named —</option>';
         list.forEach(function (c) { if (c !== a) opts += '<option value="' + c.id + '"' + (a.backedBy === c.id ? ' selected' : '') + '>Sentence ' + c.n + ': ' + esc(rewrite(list, c)).slice(0, 70) + '</option>'; });
         el.innerHTML = opts;
-        var needB = !a.backedBy && (a.f.deontic === 'MUST' || a.f.deontic === 'MUST NOT') && !a.backing;
+        var needB = !a.backedBy && (a.f.deontic === 'MUST' || a.f.deontic === 'MUST NOT') && !a.backing && !roleDuty(a, list);
         el.classList.toggle('blank', needB); el.classList.toggle('optional', !a.backedBy && !needB);
       } else {
-        var k = el.dataset.k, empty = !clean(el.value), need = fieldNeeded(a, k);
+        var k = el.dataset.k, empty = !clean(el.value), need = fieldNeeded(a, k, list);
         el.classList.toggle('blank', empty && need === 'yes');
         el.classList.toggle('optional', empty && need === 'optional');
         if (k === 'orelse' && a.backedBy && byId(list, a.backedBy)) el.placeholder = 'carried by sentence ' + byId(list, a.backedBy).n;
-        else if (empty) el.placeholder = k === 'orelse' && a.backing ? 'blank: fine if you trust them to do it'
+        else if (empty) el.placeholder = k === 'orelse' && (a.backing || roleDuty(a, list)) ? 'blank: fine if you trust them to do it'
           : k === 'orelse' && !a.f.deontic ? 'blank: a habit has none'
           : OPTIONAL_HINT[k] && need === 'optional' ? OPTIONAL_HINT[k] : 'blank';
       }

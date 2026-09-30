@@ -282,8 +282,8 @@ items = [
     ('No OR ELSE', 'It holds only as long as goodwill holds. Is there an agreed consequence?'),
     ('A role nobody created', 'The keeper enforces the rules, but nothing says how the keeper is chosen.'),
     ('Words people read differently', '"Promptly", "reasonable", "as needed". How much, how often, by when?'),
-    ('Soft words', '"Should" is softer than MUST. Which do you mean?'),
-    ('Missing people', '"Fees must be paid": who pays? "They": who are they?'),
+    ('What a rule takes for granted', 'Who counts as a gardener? Who assigns the "assigned days"?'),
+    ('Soft words, missing people', '"Should" is softer than MUST. "Fees must be paid": who pays?'),
 ]
 for i, (h, b) in enumerate(items):
     c, r = i % 4, i // 4
