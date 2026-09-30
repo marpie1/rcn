@@ -444,6 +444,15 @@ async function loadState() {
     for (const sp of SEED_PEOPLE) {
       if (!serverPeople.find(x => x.slug === sp.slug)) serverPeople.push(sp)
     }
+    // Someone added here while the server couldn't be reached exists only in
+    // this browser. Replacing the list with the server's used to drop them on
+    // the next load without a word. Keep them, and mark them so it shows.
+    let local = []
+    try { local = JSON.parse(localStorage.getItem(LS_PEOPLE)) || [] } catch (_) {}
+    for (const lp of local) {
+      const onServer = serverPeople.find(x => x.slug === lp.slug || normalizeDid(x.did) === normalizeDid(lp.did))
+      if (!onServer) serverPeople.push({ ...lp, unsynced: true })
+    }
     people = serverPeople
   } else {
     const raw = localStorage.getItem(LS_PEOPLE)
@@ -573,7 +582,8 @@ async function addPerson() {
     return
   }
   if (res.status === 0) {
-    logTo('registry-log','err',`Couldn't reach the server — ${name} is saved in this browser only, and other issuers won't see them yet.`)
+    person.unsynced = true
+    logTo('registry-log','err',`Couldn't reach the server — ${name} is saved in this browser only, and other issuers won't see them yet. Their row is marked "not on server" until you send them.`)
   } else if (!res.ok) {
     logTo('registry-log','err',`Server refused: ${res.data.error || 'HTTP ' + res.status}. Nothing added.`)
     return
@@ -618,6 +628,27 @@ function copyOnboardLink() {
   navigator.clipboard.writeText(inp.value)
     .then(() => logTo('registry-log','ok','Link copied.'))
     .catch(() => logTo('registry-log','err','Copy failed — select the link and copy manually.'))
+}
+
+// Retry the add that never reached the server.
+async function sendPersonToServer(slug) {
+  const p = personBySlug(slug)
+  el('registry-log').style.display = 'block'
+  if (!p) return
+  const { unsynced, ...person } = p
+  const res = await registryOp('add', { person })
+  if (res.ok) {
+    delete p.unsynced
+    logTo('registry-log','ok',`${p.name} is on the server now — every issuer can see them.`)
+  } else if (res.status === 409) {
+    const ex = res.data.existing
+    logTo('registry-log','err',`The server already has this ${res.data.field === 'did' ? 'DID' : 'slug'}: ${ex ? describePerson(ex) : '?'}. If that is the same person, remove this row and use theirs.`)
+  } else if (res.status === 0) {
+    logTo('registry-log','err',`Still can't reach the server. ${p.name} stays marked until it's back.`)
+  } else {
+    logTo('registry-log','err',`Server refused: ${res.data.error || 'HTTP ' + res.status}.`)
+  }
+  saveState(); renderPeople(); rebuildPeopleSelects()
 }
 
 async function removePerson(slug) {
@@ -1741,6 +1772,7 @@ const REG_PAGE = 50
 const regState = { view: 'attention', q: '', page: 0, reason: '' }
 
 const NEEDS = {
+  notOnServer: { label: 'not on server', bad: true, title: "Only in this browser — other issuers can't see this person. Click \u201cSend to server\u201d." },
   sharedDid: { label: 'shared DID',  bad: true,  title: 'Another entry has the same DID — probably the same person twice. Keep one.' },
   badDid:    { label: 'bad DID',     bad: true,  title: 'Not a complete did:key — cut off when copied, or mistyped.' },
   noPortfolio: { label: 'no portfolio', bad: true, title: 'No portfolio page slug — badges have nowhere to go.' },
@@ -1751,6 +1783,7 @@ const NEEDS = {
 function personNeeds(p, didCount) {
   const out = []
   const d = normalizeDid(p.did)
+  if (p.unsynced) out.push('notOnServer')
   if (didCount[d] > 1) out.push('sharedDid')
   if (!/^did:key:z[1-9A-HJ-NP-Za-km-z]{40,}$/.test(d)) out.push('badDid')
   if (!p.portfolioSlug) out.push('noPortfolio')
@@ -1817,8 +1850,10 @@ function renderPeople() {
   for (const p of pageRows) {
     const canRemove = !SEED_PEOPLE.find(s => s.slug === p.slug)
     const tags = needs.get(p).map(n => `<span class="need${NEEDS[n].bad ? ' bad' : ''}" title="${NEEDS[n].title}">${NEEDS[n].label}</span>`).join('')
+    const sendBtn = p.unsynced
+      ? `<br><button class="small" onclick="sendPersonToServer('${p.slug}')" title="Add this person to the shared registry, so every issuer sees them">Send to server</button>` : ''
     const nameCell = `<a href="${wikiPageUrl(p.site, p.portfolioSlug)}" target="_blank" rel="noopener" style="color:#2a6b5a;text-decoration:underline;">${escHtml(p.name)}</a>`
-      + (tags ? `<br>${tags}` : '')
+      + (tags ? `<br>${tags}` : '') + sendBtn
     // Shape A: each person gets their own site, so they own it and can write
     // their own account of the journey. Already-provisioned people just say so.
     const ownCell = p.site === personalSite(p.slug)
@@ -1921,7 +1956,7 @@ function initPicker(id, onPick) {
           : (!all.length ? `<div class="picker-more">${people.length ? `No one matches “${escHtml(q.value)}”.` : 'No one registered yet — add people on the Registry tab.'}</div>` : ''))
       + shown.map((p, i) =>
       `<div class="picker-item${i === hi ? ' hi' : ''}" data-i="${i}">${escHtml(p.name)}`
-      + `<div class="sub">${escHtml(p.site)} · …${escHtml((p.did || '').slice(-12))}</div></div>`).join('')
+      + `<div class="sub">${p.unsynced ? '<span style="color:#8b1a1a;font-weight:700;">⚠ not on server</span> · ' : ''}${escHtml(p.site)} · …${escHtml((p.did || '').slice(-12))}</div></div>`).join('')
     list.hidden = false
   }
   const choose = p => {
