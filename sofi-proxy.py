@@ -398,8 +398,14 @@ class Handler(BaseHTTPRequestHandler):
                 data = f.read()
             self.send_response(200)
             self.send_header('Content-Type', ctype)
+            # Pages are never stored. Their scripts, styles and data may be kept,
+            # but must be re-checked on every load (no-cache): without any header
+            # a browser guesses how long to reuse them, and an updated page could
+            # run against a stale sodoto-crypto.js.
             if ext == 'html':
                 self.send_header('Cache-Control', 'no-store')
+            elif ext in ('js', 'css', 'json'):
+                self.send_header('Cache-Control', 'no-cache')
             self._cors()
             self.end_headers()
             self.wfile.write(data)
