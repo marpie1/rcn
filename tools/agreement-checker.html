@@ -534,7 +534,8 @@ function toGraph(state) {
     { id: 'lg_a', kind: 'node', label: 'An answer to one question', icon: '', color: '#ffffff', borderColor: '#15803d', borderWidth: 2 },
     { id: 'lg_blank', kind: 'node', label: 'A question left blank', icon: '', color: '#fffbeb', borderColor: '#b45309', borderWidth: 2 },
     { id: 'lg_e_made', kind: 'edge', label: 'made of', color: '#000000', width: 1.5, dash: 'solid' },
-    { id: 'lg_e_back', kind: 'edge', label: 'backed by', color: '#b91c1c', width: 3, dash: 'dashed' }
+    { id: 'lg_e_back', kind: 'edge', label: 'backed by', color: '#b91c1c', width: 3, dash: 'dashed' },
+    { id: 'lg_e_def', kind: 'edge', label: 'who it means, defined by', color: '#7c3aed', width: 2.5, dash: 'dotted' }
   ];
   function st(row) { for (var i = 0; i < legend.length; i++) if (legend[i].id === row) return legend[i]; }
   function node(id, row, label, x, y, w, h, extra) {
@@ -548,12 +549,18 @@ function toGraph(state) {
     edges.push({ id: 'e' + (++en), type: row, src: s, tgt: t, label: label || '', polarity: 'none', color: r.color, width: r.width,
       dash: r.dash, fontSize: 11, fontColor: '#000000', curved: true, note: note || '', props: {} });
   }
-  list.forEach(function (a, i) {
-    var y0 = 80 + i * 230, sid = a.id;
+  // Creating agreements first, as in the teaching drawing, and set a little to the
+  // left, so the lines up to them run clear of the rules' column.
+  var order = list.filter(function (a) { return a.type === 'create'; })
+    .concat(list.filter(function (a) { return a.type !== 'create'; }));
+  var nCreate = order.filter(function (a) { return a.type === 'create'; }).length;
+  order.forEach(function (a, i) {
+    // the higher a creating agreement sits, the further left, so lines to it pass beside the ones below
+    var y0 = 80 + i * 230, sid = a.id, sx = a.type === 'create' ? -120 - 380 * (nCreate - 1 - i) : 140;
     var label = a.type === 'create' ? clean(a.f.what) : a.type === 'loose' ? 'CONSEQUENCE' : [clean(a.f.who), deonticWord(a.f.deontic), clean(a.f.do)].filter(Boolean).join(' ');
     label = ('S' + a.n + ' · ' + label).toUpperCase(); if (label.length > 60) label = label.slice(0, 58) + '…';
     var sg = strength(list, a);
-    node(sid, 'lg_s', label, 140, y0, 240, 76, { shape: 'rect', schemaLabel: 'Statement', note: rewrite(list, a) + ' — ' + sg[0],
+    node(sid, 'lg_s', label, sx, y0, 240, 76, { shape: 'rect', schemaLabel: 'Statement', note: rewrite(list, a) + ' — ' + sg[0],
       props: { text: rewrite(list, a), strength: sg[0], igType: a.type === 'create' ? 'constitutive' : 'regulative' } });
     var qs = a.type === 'create' ? Q_CRE : Q_REG, x = 400;
     qs.forEach(function (q) {
@@ -562,7 +569,7 @@ function toGraph(state) {
       if (!v && fieldNeeded(a, q[0], list) !== 'yes') return; // optional, or carried by a red edge
       var ans = q[0] === 'deontic' || q[0] === 'modal' ? v : v;
       var nid = sid + '_' + q[0];
-      node(nid, v ? 'lg_a' : 'lg_blank', q[1] + ' ' + (v ? ans.toUpperCase() : '(blank)'), x, y0 + 120, 210, 64,
+      node(nid, v ? 'lg_a' : 'lg_blank', q[1] + ' ' + (v ? ans.toUpperCase() : '(blank)'), x, y0 + (a.type === 'create' ? 45 : 120), 210, 64,
         { schemaLabel: q[4], note: 'Answers ' + q[1] + (v ? '' : ' Nobody has answered this yet.'), props: { question: q[1], answer: v, igTerm: q[4], igSymbol: q[3] } });
       edge('lg_e_made', sid, nid);
       x += 235;
@@ -571,6 +578,11 @@ function toGraph(state) {
   list.forEach(function (a) {
     if (a.backedBy && byId(list, a.backedBy)) edge('lg_e_back', a.id, a.backedBy, 'backed by');
     if (a.backing && a.f.who) { var c = creatorOf(list, a.f.who); if (c) edge('lg_e_back', a.id, c.id, 'backed by', 'The role that carries out the consequence is created here.'); }
+    // Every other rule: a purple line to the creating agreement that says who its WHO is.
+    else if ((a.type === 'rule' || a.type === 'habit') && clean(a.f.who)) {
+      var d = creatorOf(list, a.f.who);
+      if (d && d !== a) edge('lg_e_def', a.id, d.id, 'defined by', 'Who "' + clean(a.f.who) + '" means is set by sentence ' + d.n + '.');
+    }
   });
   return {
     version: '1.0', mode: 'select', modelName: 'Our agreement, checked',

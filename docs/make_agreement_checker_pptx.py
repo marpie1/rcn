@@ -374,7 +374,7 @@ kicker(sl, 'Take it with you')
 title(sl, 'Rewritten, drawn, and shared')
 picture(sl, os.path.join(SHOTS, '07-graph-export.png'), 0.7, 1.85, 7.6, 4.9)
 out = [('Rewritten', 'The agreement rebuilt from your answers, one MUST per sentence, ready to read aloud.'),
-       ('Drawn', 'Opens in the RCN Graph Tool: each sentence with its answers, red arrows for what backs what.'),
+       ('Drawn', 'Opens in the RCN Graph Tool: red arrows for what backs what, purple for who a rule means.'),
        ('Shared', 'Copy a link that carries the text, or save the drawing as a file.'),
        ("Ostrom's coding", 'One click away on every sentence, for anyone who wants to check the translation.')]
 for i, (h, b) in enumerate(out):
