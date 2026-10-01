@@ -23,6 +23,8 @@ Ownership is not "first to sign in wins." The **badge on the portfolio is the so
 
 `owner.json` (at `argv.id`, the site's `status/owner.json`): `{ "name": "...", "did": "did:key:z..." }`.
 
+**No restart for owner changes.** The module re-reads the owner file whenever its modification time or size changes, so a newly provisioned site, a badge-set owner, or a refreshed `expectDid` takes effect on the running wiki. `retrieveOwner` calls back on a later tick, never synchronously: the farm registers its `owner-set` listener after the call returns, and a synchronous callback fires before anyone listens, which leaves the site hanging.
+
 ## Interface implemented
 
 Factory `(log, loga, argv)` → `{ retrieveOwner(cb), getOwner(), setOwner(id, cb), getUser(req), isAuthorized(req), isAdmin(req), login(updateOwner), logout(), reclaim(), defineRoutes(app, cors, updateOwner) }`. `defineRoutes` registers `GET /auth/challenge`, `POST /auth/verify`, `POST /login` (== verify), `GET /logout`. Config: `argv.id` = owner file path; `argv.admin` = admin DID or array; `argv.owner_scope` = `'site'` (default, and the only supported value — see below); `argv.portfolioPath` / `argv.expectedHolder` = where to read the badge holder for a constrained claim.
@@ -43,6 +45,7 @@ To turn on DID ownership elsewhere:
 
 ## Testing
 
-- `npm test` — 33 checks. `test/did-auth.test.js` covers the crypto core (did:key decode, Ed25519 verify, and every rejection path: wrong key, tampered nonce, replay, expiry, unknown nonce) plus `holderDidFromPage` (badge = the authority). `test/module.test.js` covers the FedWiki interface and the sign-in flow with mock req/res, including the constrained-claim `403`, the badge-sourced claim, the fail-closed "no badge yet → nobody claims" `403`, and the `owner_scope` guard.
+- `npm test` — 39 checks. `test/did-auth.test.js` covers the crypto core (did:key decode, Ed25519 verify, and every rejection path: wrong key, tampered nonce, replay, expiry, unknown nonce) plus `holderDidFromPage` (badge = the authority). `test/module.test.js` covers the FedWiki interface and the sign-in flow with mock req/res, including the constrained-claim `403`, the badge-sourced claim, the fail-closed "no badge yet → nobody claims" `403`, the `owner_scope` guard, and owner-file changes taking effect without a restart.
+- `test/integration/no-restart.sh` — the REAL proxy provisions new person sites while the REAL wiki farm runs, starting from a production-shaped config (base entry naming an owner file, one older site with its own entry). Proves the one-time migration, then that three new people (one who visited before being provisioned) claim and edit with no restart, strangers are refused, and older sites keep working. 36/36. Requires Docker.
 - `test/integration/run.sh` — **end-to-end against a REAL FedWiki 0.27** in `--farm --security_type did` (builds the wiki image, lays down two per-person sites, drives challenge→verify→PUT over HTTP). Proves what unit tests can't: the module loads under real FedWiki, the farm wires per-site owner via `wikiDomains[site].id`, `verify` sets a `client-sessions` cookie, and **FedWiki calls `isAuthorized` on a real `PUT /page/:slug/action`** — allowing the owner (200), rejecting anon and non-owner (403). 7/7. Requires Docker.
 - **Still validated only by hand:** the on-page "Sign in with my SODOTO key" affordance in the wiki UI (the widget itself is served — `/security/signin.js` natively, and `/auth/signin.js` — and unit-covered). The browser→server signature interop is standard RFC-8032 Ed25519.

@@ -68,6 +68,7 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
 <div class="doc-header">
   <div class="suite">SODOTO Documentation · ReLocalize Creativity Network</div>
   <h1>SODOTO — What It Is, How It Works, Where It Runs</h1>
+<p class="attribution" style="font-size:12px;color:#777;margin:4px 0 12px;">Marc Pierson and Claude Opus 5.5 · September 2026</p>
   <p class="lead">A federated apprenticeship credentialing system. A skill is witnessed, practiced, and taught — then cryptographically certified by a Neighborhood Development Center (NDC) and published to a portfolio anyone can verify in a browser, with no server call and no login.</p>
   <div class="updated">Technical reference · current as of August 2026 · supersedes all earlier SODOTO intro/context documents</div>
 </div>
@@ -192,9 +193,10 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
 <ol class="step-list">
   <li><strong>Open the tool</strong> at <code>sodoto.ndcgroup.relocalizecreativity.net/tools/sodoto-issuer.html</code>. On first use it prompts for the write passphrase, which is kept only in that browser's local storage.</li>
   <li><strong>Confirm the learner is registered.</strong> On the Registry tab, check they are listed. If not, click <em>Make onboarding link</em> and send it to them: they mint their own key, keep it, and send back only their public DID — you never hold it. Paste that DID and Add to Registry. New entries sync to the server registry.</li>
-  <li><strong>Give them a site of their own.</strong> In the Registry's <em>Own site</em> column, click <strong>Provision</strong>. That creates <code>&lt;their-slug&gt;.wiki-sodoto…</code>, an unclaimed owner file bound to their DID, a scaffolded portfolio with the sign-in button, and its certificate gate. FedWiki must be restarted before a newly provisioned site can be claimed — the farm reads its site list only at startup.</li>
+  <li><strong>They get a site of their own, automatically.</strong> Add to Registry also creates <code>&lt;their-slug&gt;.wiki-sodoto…</code>: an unclaimed owner file bound to their DID, and a portfolio carrying the sign-in button. No restart is needed. Allow up to an hour before the link opens in a browser, while its security certificate is issued. The <strong>Provision</strong> button in the <em>Own site</em> column is only a retry, for anyone the automatic step didn't reach. If the server couldn't be reached at all, the person's row is tagged red <em>not on server</em>; click <em>Send to server</em>.</li>
+  <li><strong>Send them the welcome message.</strong> The issuer writes it for you: their portfolio link and how the first sign-in goes (recovery file and passphrase, once). It is also under <em>Welcome msg</em> in their row.</li>
   <li><strong>Open the contract.</strong> On the Contract tab, pick the issuing NDC, the skill, and the learner, then Open / Resume. Gate state is tracked per issuer–skill–learner.</li>
-  <li><strong>Record each gate.</strong> For See One, Do One, Teach One, fill in date, mentor, both assertions, outcome, and narrative slug, then Record Attempt &amp; Write to FedWiki. The tool writes to the learner's and mentor's portfolios immediately.</li>
+  <li><strong>Record each gate.</strong> For See One, Do One, Teach One, fill in date, mentor, both assertions, outcome, and narrative slug, then Record Attempt &amp; Write to FedWiki. The tool writes to the learner's and mentor's portfolios immediately. A mistaken attempt can be taken back with <em>Undo…</em> on the latest attempt, until it is part of a signed badge.</li>
   <li><strong>Sign.</strong> On the Sign tab, review the preview, choose Full (all gates complete) or Partial, enter the NDC's 64-character hex key seed, and Sign &amp; Issue. The JWT (JSON Web Token) is signed in-browser with Web Crypto; the key is cleared right after and never sent anywhere.</li>
   <li><strong>Badge is published automatically</strong> to the learner's portfolio and the ledger.</li>
   <li><strong>Verify.</strong> Open the portfolio, click Verify on the new badge, and confirm ✓ Verified. A failure means the key seed did not match the issuing NDC's DID.</li>
@@ -268,5 +270,6 @@ pre { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0f
 <p style="margin-top:32px;font-size:13px;color:#888;">Companion documents: the <a href="sodoto-manual.html" style="color:#2d6a4f">User Manual</a> (for learners, mentors, and coordinators) and the <a href="../tools/sodoto-issuer-guide.html" style="color:#2d6a4f">Issuer Tool Guide</a> (per-tab help inside the tool).</p>
 
 </div>
+<p class="attribution" style="font-size:12px;color:#777;margin:24px 0 12px;">Marc Pierson and Claude Opus 5.5 · September 2026</p>
 </body>
 </html>

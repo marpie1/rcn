@@ -34,6 +34,7 @@
 <body>
 
 <h1>SODOTO Issuer — Guide</h1>
+<p class="attribution" style="font-size:12px;color:#777;margin:4px 0 12px;">Marc Pierson and Claude Opus 5.5 · September 2026</p>
 <p class="sub">How to issue a skill credential, and how the three tabs fit together. <span class="tab">See One · Do One · Teach One</span></p>
 
 <p>The SODOTO (See One, Do One, Teach One) Issuer records that a learner has <em>seen</em>, <em>done</em>, and <em>taught</em> a skill,
@@ -81,7 +82,8 @@ or student elsewhere in the tool comes from here.</p>
     (<code>their-slug.wiki-sodoto…</code>); only the demo cast shares the base site. Links elsewhere in
     the tool are built from this, so a wrong site here means links that point at pages which do not exist.</li>
   <li><strong>Portfolio slug</strong> — the page on that site where their badges and history live.</li>
-  <li><strong>Own site</strong> — either <em>✓ own site</em>, or a <strong>Provision</strong> button.</li>
+  <li><strong>Own site</strong> — either <em>✓ own site</em> with a <strong>Welcome msg</strong> button, or
+    a <strong>Provision</strong> button.</li>
 </ul>
 <h3>Needs attention, All, and search</h3>
 <p>The tab opens on <strong>Needs attention</strong>: only the people who need something done, with a
@@ -92,6 +94,9 @@ list to one reason. Red tags block issuing and are listed first:</p>
     registered twice; keep the right entry and remove the other.</li>
   <li><strong>bad DID</strong> — not a complete <code>did:key</code>, usually cut off when it was copied.</li>
   <li><strong>no portfolio</strong> — no portfolio page, so a badge has nowhere to go.</li>
+  <li><strong>not on server</strong> — this person exists only in this browser. They were added while
+    the server couldn't be reached, so no other issuer can see them. Click <strong>Send to server</strong>
+    in their row. Until you do, the person also shows <em>⚠ not on server</em> in the name pickers.</li>
 </ul>
 <p>The yellow <strong>no own site</strong> tag means the person is still on the shared site;
 <strong>Provision</strong> fixes it. The demo cast stays on the shared site on purpose and is never flagged.</p>
@@ -134,6 +139,15 @@ updated, which happens once. <strong>Allow up to an hour</strong> before a brand
 browser. Its security certificate is issued on an hourly schedule, and until then the browser says it
 can't connect. The site itself is fine.</div>
 
+<h3>Telling them where it is</h3>
+<p>Once their site exists, a box appears under the log with a message to send them: their portfolio
+link and how to sign in the first time. Copy it and send it however you normally reach them. You can get
+the same message again from the <strong>Welcome msg</strong> button in their row.</p>
+<p>The first sign-in always asks for their <strong>recovery file</strong> and <strong>passphrase</strong>.
+Their key was made on the tools site, and a browser won't hand it to a different site. The message tells
+them so, so the "No key on this device" notice doesn't look like a failure. After that, the same browser
+signs them in with one click. Sign-ins last 7 days; after that, they click <em>Sign in</em> again.</p>
+
 <h2 id="contract">Contract — what is being credentialed</h2>
 <p>A contract is the unit of credentialing: <strong>one issuer, one skill, one learner</strong>. Choosing
 those three sets up the record that the gates attach to.</p>
@@ -149,6 +163,21 @@ those three sets up the record that the gates attach to.</p>
 and a narrative slug (a wiki page for the story of that gate). A gate can take more than one attempt —
 each attempt is recorded. Recording a gate writes an entry to the learner's portfolio and, for the mentor,
 a row in their <strong>Mentoring Log</strong>.</p>
+<h3>Undoing an attempt</h3>
+<p>Recorded one by mistake? The latest attempt on each gate has an <strong>Undo…</strong> button. It opens
+a red box listing what will be taken back: the entry on the learner's portfolio, the row in the mentor's
+Mentoring Log, the narrative page (only if nobody has written in it), and for Teach One the student's
+entry. Click <strong>Undo attempt N</strong> to confirm. Only the latest attempt can be undone, because
+attempt numbers are written into the portfolios; to remove several, undo them from the newest down.</p>
+<p>The page history still shows the entry was there. Undo refuses once an attempt is part of a signed
+badge: then the fix is to issue a corrected badge.</p>
+<div class="note"><strong>Use the browser you recorded it in.</strong> Contracts are kept in the browser
+that recorded them. The wiki holds the entries; the contract that counts the attempts lives in that one
+browser.</div>
+<h3>When a tool has been updated</h3>
+<p>If the issuer is updated while you have it open, a bar appears at the top: <em>This tool was
+updated.</em> Finish or copy what you're typing, then click <strong>Reload</strong>. It never reloads by
+itself.</p>
 
 <h2 id="sign">Sign &amp; Issue — make it a credential</h2>
 <p>Once the gates are complete, this tab turns the contract into a signed badge.</p>
@@ -166,5 +195,7 @@ signature locally — proving the badge is genuine and unaltered, with no call b
 Nothing signed with real institutional keys should go on the pilot until it's secured — the demo prefix
 keeps demo badges from ever being confused with real ones.</div>
 
+<p class="attribution" style="font-size:12px;color:#777;margin:24px 0 12px;">Marc Pierson and Claude Opus 5.5 · September 2026</p>
+<script src="update-notice.js"></script>
 </body>
 </html>
