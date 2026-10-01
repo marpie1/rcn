@@ -16,6 +16,45 @@
     max-height: calc(100vh - 40px); overflow-y: auto;
   }
   #sidebar h2 { margin: 0 0 8px; font-size: 16px; }
+  /* Fold the menu to a small tab to free the map. The working panels
+     (draw, route, reach, the click-the-map banners) stay visible when folded. */
+  .fold-btn { float: right; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer;
+    font-size: 11px; line-height: 1; padding: 3px 6px; color: #378ADD; margin-left: 8px; }
+  .fold-btn:hover { background: #f0f7ff; border-color: #378ADD; }
+  #sidebar.folded { min-width: 0; padding: 8px 10px; }
+  #sidebar.folded h2 { margin: 0; font-size: 13px; cursor: pointer; }
+  #sidebar.folded > *:not(h2):not(#correction-banner):not(#add-location-banner):not(#draw-panel):not(#route-panel):not(#findroute-panel):not(#iso-panel) { display: none !important; }
+  .eip-legend.folded > *:not(.eip-title) { display: none !important; }
+  /* Presentation view — like the Graph Tool's: hide the working controls and give
+     the window to the map. Kept on purpose: the open views' legends, the Views
+     button (to switch views live), and zoom. */
+  body.presenting #sidebar, body.presenting #copy-view-btn, body.presenting #link-toast,
+  body.presenting .leaflet-control-layers, body.presenting .basemap-legend-ctl,
+  body.presenting .eip-legend .issue-graph-btns, body.presenting .eip-legend details { display: none !important; }
+  #present-exit { position: fixed; top: 10px; right: 10px; z-index: 3000; display: none; align-items: center; gap: 7px;
+    background: rgba(255,255,255,0.55); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+    border: 1px solid rgba(0,0,0,0.08); color: #475569; font-size: 11px; font-weight: 600; padding: 4px 10px;
+    border-radius: 20px; cursor: pointer; opacity: .35; transition: opacity .2s; font-family: sans-serif; }
+  #present-exit:hover { opacity: 1; }
+  #present-exit .pe-key { font-size: 10px; font-weight: 500; color: #64748b; border: 1px solid rgba(0,0,0,0.15); border-radius: 4px; padding: 0 4px; }
+  body.presenting #present-exit { display: flex; }
+  /* Views: every viewer the map has, pulled out one at a time (pins keep one). */
+  .views-ctl { background: rgba(255,255,255,0.96); border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    font-size: 12px; max-width: 260px; }
+  .views-ctl > button.views-toggle { border: 0; background: none; padding: 6px 10px; font-size: 12px; font-weight: 600;
+    cursor: pointer; color: #1a2a3a; width: 100%; text-align: left; }
+  .views-list { padding: 0 8px 8px; max-height: 50vh; overflow-y: auto; }
+  .views-list .grp { color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; margin: 6px 0 2px; }
+  .view-row { display: flex; align-items: flex-start; gap: 6px; padding: 3px 4px; border-radius: 4px; cursor: pointer; }
+  .view-row:hover { background: #f0f0f0; }
+  .view-row.on { background: #e8f4ff; }
+  .view-row .vname { flex: 1; line-height: 1.3; }
+  .view-row .vname small { display: block; color: #64748b; font-size: 10px; }
+  .view-row.on .vname b { color: #1d4ed8; }
+  .view-pin { border: 0; background: none; cursor: pointer; font-size: 12px; opacity: 0.25; padding: 0 2px; }
+  .view-pin.pinned { opacity: 1; }
+  .views-list .hint { color: #64748b; font-size: 10px; margin-top: 6px; }
+  .eip-legend.folded .eip-title { cursor: pointer; }
   #sidebar > p { margin: 4px 0; font-size: 13px; color: #444; }
   .overview-btn {
     display: block; width: 100%; margin: 8px 0 4px; padding: 8px;
@@ -31,6 +70,15 @@
   .eip-legend .sw { display:inline-block; width:14px; height:10px; margin-right:6px; vertical-align:middle; border-radius:2px; }
   .eip-legend .dot { display:inline-block; width:10px; height:10px; margin-right:6px; vertical-align:middle; border-radius:50%; border:1.5px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.25); }
   .eip-legend .hint { color:#64748b; font-size:10px; margin-top:4px; }
+  .eip-legend details { margin-top:6px; padding-top:4px; border-top:1px solid #e5e7eb; }
+  .eip-legend summary { cursor:pointer; font-weight:600; }
+  .eip-picks { max-height:42vh; overflow-y:auto; margin:4px 0; }
+  .eip-picks .grp { color:#64748b; font-size:10px; text-transform:uppercase; letter-spacing:.04em; margin-top:5px; }
+  .eip-pick { display:flex; align-items:center; padding:1px 4px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.35; }
+  .eip-pick:hover { background:#f0f0f0; }
+  .eip-pick.active { background:#e8f4ff; font-weight:600; }
+  .eip-pick.dimmed { opacity:0.4; }
+  .eip-pick .sw, .eip-pick .dot { flex:none; }
   .eip-pop h4 { margin:0 0 2px; font-size:13px; }
   .eip-pop .k { color:#64748b; font-size:11px; }
   .eip-pop ul { margin:4px 0 0 14px; padding:0; font-size:11px; max-height:160px; overflow:auto; }
@@ -421,6 +469,7 @@
 </head>
 <body>
 <div id="map"></div>
+<div id="present-exit" onclick="exitPresent()" title="Leave presentation view">Leave presentation <span class="pe-key">Esc</span></div>
 <button id="copy-view-btn" onclick="copyMapViewLink()">🔗 Copy view link</button>
 <div id="link-toast">Link copied!</div>
 
@@ -632,7 +681,7 @@
     </div>
   </div>
 
-  <h2 title="Interactive map of all RCN Neighborhood Development Centers, their geographic context, and community issues. Everything you add is saved in your browser.">RCN NDC Map</h2>
+  <h2 title="Interactive map of all RCN Neighborhood Development Centers, their geographic context, and community issues. Everything you add is saved in your browser."><button class="fold-btn" id="sidebar-fold" onclick="event.stopPropagation(); foldSidebar()" title="Fold this menu away to see more map">» hide</button><button class="fold-btn" onclick="event.stopPropagation(); togglePresent()" title="Presentation view — hide every control and give the whole window to the map (P · Esc to leave)">▶ Present</button>RCN NDC Map</h2>
   <p id="sidebar-desc">Neighborhood development centers</p>
   <div class="doc-links">
     <a href="rcn-map-intro.html" target="_blank" rel="noopener" title="Introduction — what the map is, who it's for, and how it differs from other tools">Intro</a>
@@ -2505,6 +2554,9 @@ async function toggleIssue(key, opts = {}) {
 const EIP_COL = { E: { line: '#15803d', fill: '#86efac' }, P: { line: '#1d4ed8', fill: '#93c5fd' } };
 let eipGroup = null, eipFocus = null, eipLegendCtl = null, eipData = null, eipSrc = null;
 let eipSelId = null, eipSketchAlive = false;
+// Pick what to show: empty = everything; otherwise only these ids (and ties
+// between them) stay on the map. Survives a redraw from the live sketch.
+const eipShown = new Set();
 const eipChan = ('BroadcastChannel' in window) ? new BroadcastChannel('rcn-eip') : null;
 
 async function startEIP(src, sel) {
@@ -2538,13 +2590,25 @@ const eipIsLaw = n => n && n.eipType === 'Law';
 const eipPt = n => n && n.props && isFinite(parseFloat(n.props.lat)) ? [parseFloat(n.props.lat), parseFloat(n.props.lng)] : null;
 const eipEsc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+// Put the EIP layer away entirely (the Views list does this when another view is pulled).
+function eipClose() {
+  if (eipChan) eipChan.onmessage = null;
+  if (eipGroup) map.removeLayer(eipGroup);
+  if (eipFocus) map.removeLayer(eipFocus);
+  if (eipLegendCtl) map.removeControl(eipLegendCtl);
+  eipGroup = eipFocus = eipLegendCtl = eipData = eipSrc = null;
+  eipSelId = null; eipShown.clear(); eipSketchAlive = false;
+  map.closePopup();
+  if (typeof renderViews === 'function') renderViews();
+}
+
 async function drawEIP(g, areasUrl, sel, keepView) {
   let areas = { features: [] };
   if (areasUrl) { try { areas = await (await fetch(areasUrl)).json(); } catch (e) { console.warn('EIP areas failed', e); } }
   if (eipGroup) map.removeLayer(eipGroup);
   if (eipFocus) map.removeLayer(eipFocus);
   if (eipLegendCtl) map.removeControl(eipLegendCtl);
-  eipData = { nodes: g.nodes || [], edges: g.edges || [], name: g.modelName || 'EIP Stage Sketch', areas: {}, layers: {} };
+  eipData = { nodes: g.nodes || [], edges: g.edges || [], name: g.modelName || 'EIP Stage Sketch', areas: {}, layers: {}, ties: [] };
   eipGroup = L.featureGroup().addTo(map);
   eipFocus = L.layerGroup().addTo(map);
   // Areas: biggest first, so the small ones sit on top and stay clickable.
@@ -2575,29 +2639,127 @@ async function drawEIP(g, areasUrl, sel, keepView) {
     const a = eipNodeById(e.src), b = eipNodeById(e.tgt);
     if (!a || !b || a.eipType !== 'Institution' || b.eipType !== 'Institution') return;
     const pa = eipPt(a), pb = eipPt(b); if (!pa || !pb) return;
-    L.polyline([pa, pb], { color: e.color || '#555', weight: Math.max(1.5, (e.width || 2) * 0.8), opacity: 0.75, dashArray: eipDash(e.dash) })
+    const pl = L.polyline([pa, pb], { color: e.color || '#555', weight: Math.max(1.5, (e.width || 2) * 0.8), opacity: 0.75, dashArray: eipDash(e.dash) })
       .bindTooltip(eipEsc(a.label + ' → ' + b.label + (e.label ? ': ' + e.label : '')), { sticky: true })
       .addTo(eipGroup);
+    eipData.ties.push({ a: a.id, b: b.id, layer: pl });
   });
   map.off('click', eipClearFocus); map.on('click', eipClearFocus);
   eipLegendCtl = L.control({ position: 'topleft' });
   eipLegendCtl.onAdd = () => {
     const d = L.DomUtil.create('div', 'eip-legend');
-    d.innerHTML = `<b>${eipEsc(eipData.name)}</b>` +
+    d.innerHTML = `<div class="eip-title" onclick="if(this.parentNode.classList.contains('folded'))foldEIPLegend()"><button class="fold-btn" onclick="event.stopPropagation(); foldEIPLegend()">${eipLegendFolded() ? '+ show' : '– hide'}</button><b>${eipEsc(eipData.name)}</b></div>` +
       `<div><span class="sw" style="background:${EIP_COL.E.fill};border:1.5px solid ${EIP_COL.E.line}"></span>E — ecological area</div>` +
       `<div><span class="sw" style="background:${EIP_COL.P.fill};border:1.5px dashed ${EIP_COL.P.line}"></span>P — jurisdiction</div>` +
       `<div><span class="sw" style="border:1.5px dashed ${EIP_COL.P.line}"></span>P — state / nation (outline)</div>` +
       `<div><span class="dot" style="background:#c0392b"></span>Co-op (colour = kind)</div>` +
       `<div><span class="dot" style="background:#93c5fd;box-shadow:0 0 0 1.5px #1d4ed8"></span>Institution that governs a P area</div>` +
       `<div class="hint">Lines between co-ops always show. Click anything for its other ties.</div>` +
-      `<div class="issue-graph-btns"><button class="popup-btn" onclick="eipOpenSketch()">◫ Show as EIP sketch</button><button class="popup-btn" onclick="eipFit()">Fit</button></div>`;
+      eipPickerHTML() +
+      `<div class="issue-graph-btns"><button class="popup-btn" onclick="eipOpenSketch()">◫ Show as EIP sketch</button><button class="popup-btn" onclick="eipShown.size ? eipFitShown() : eipFit()">Fit</button></div>`;
     L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
+    if (eipLegendFolded()) d.classList.add('folded');
     return d;
   };
   eipLegendCtl.addTo(map);
-  if (sel) eipSelect(sel, { pan: true, remote: true }); else if (!keepView) eipFit();
+  [...eipShown].forEach(id => { if (!eipData.layers[id]) eipShown.delete(id); });
+  eipApplyShown(false);
+  if (sel) eipSelect(sel, { pan: true, remote: true }); else if (!keepView) { if (eipShown.size) eipFitShown(); else eipFit(); }
+  if (typeof renderViews === 'function') renderViews();
 }
 
+// Folding the EIP legend to its title row; remembered in this browser.
+function eipLegendFolded() { try { return localStorage.getItem('rcnEipLegendFolded') === '1'; } catch (e) { return false; } }
+function foldEIPLegend() {
+  const d = document.querySelector('.eip-legend'); if (!d) return;
+  const f = d.classList.toggle('folded');
+  try { localStorage.setItem('rcnEipLegendFolded', f ? '1' : '0'); } catch (e) {}
+  const b = d.querySelector('.eip-title .fold-btn'); if (b) b.textContent = f ? '+ show' : '– hide';
+}
+
+// ── Pick what to show ── like the NDC legend: click = only this, Shift+click =
+// add or remove. Not-picked areas, points and ties leave the map until Show all.
+const EIP_GROUPS = [
+  ['E — ecological areas', n => n.eipType === 'EcoZone'],
+  ['P — jurisdictions', n => n.eipType === 'Jurisdiction'],
+  ['Institutions that govern', n => n.eipType === 'InstitutionP' || n.eipType === 'InstitutionE'],
+  ['Co-ops', n => n.eipType === 'Institution'],
+];
+function eipSwatch(id) {
+  const n = eipNodeById(id), f = eipData.areas[id];
+  if (f) { const c = EIP_COL[f.properties.eipCol] || EIP_COL.P;
+    return f.properties.outline ? `<span class="sw" style="border:1.5px dashed ${c.line}"></span>`
+      : `<span class="sw" style="background:${c.fill};border:1.5px ${f.properties.eipCol === 'P' ? 'dashed' : 'solid'} ${c.line}"></span>`; }
+  const fill = n.eipType === 'Institution' ? (n.borderColor || '#7c3aed') : (n.color || '#93c5fd');
+  return `<span class="dot" style="background:${fill}${n.eipType === 'Institution' ? '' : ';box-shadow:0 0 0 1.5px #1d4ed8'}"></span>`;
+}
+function eipPickerHTML() {
+  const rows = EIP_GROUPS.map(([title, test]) => {
+    const ns = eipData.nodes.filter(n => test(n) && eipData.layers[n.id]).sort((a, b) => a.label.localeCompare(b.label));
+    if (!ns.length) return '';
+    return `<div class="grp">${title}</div>` + ns.map(n =>
+      `<div class="eip-pick" data-id="${eipEsc(n.id)}" onclick="eipPick('${eipEsc(n.id)}', event)" title="${eipEsc(n.label)}">${eipSwatch(n.id)}${eipEsc(n.label)}</div>`).join('');
+  }).join('');
+  return `<details${eipShown.size ? ' open' : ''}><summary>Pick what to show</summary>` +
+    `<div class="hint" style="margin-top:2px">Click = only this · Shift+click = add or remove</div>` +
+    `<div class="eip-picks">${rows}</div>` +
+    `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="popup-btn" onclick="eipShowAll()">Show all</button>` +
+    `<button class="popup-btn" onclick="eipAddTied()" title="Also show everything tied to what is showing now">+ what they're tied to</button></div>` +
+    `</details>`;
+}
+function eipPick(id, evt) {
+  if (evt && evt.shiftKey) { if (eipShown.has(id)) eipShown.delete(id); else eipShown.add(id); }
+  else if (eipShown.size === 1 && eipShown.has(id)) eipShown.clear();
+  else { eipShown.clear(); eipShown.add(id); }
+  eipApplyShown(true);
+}
+function eipShowAll() { eipShown.clear(); eipApplyShown(false); eipFit(); }
+function eipAddTied() {
+  if (!eipData || !eipShown.size) return;
+  [...eipShown].forEach(id => eipTiesOf(id).forEach(t => { if (eipData.layers[t.b]) eipShown.add(t.b); }));
+  eipApplyShown(true);
+}
+const eipVisible = id => !eipShown.size || eipShown.has(id);
+function eipApplyShown(fit) {
+  if (!eipData) return;
+  Object.entries(eipData.layers).forEach(([id, l]) => {
+    const on = eipVisible(id);
+    if (on && !eipGroup.hasLayer(l)) eipGroup.addLayer(l); else if (!on && eipGroup.hasLayer(l)) eipGroup.removeLayer(l);
+  });
+  // Re-add in the drawing order so small areas stay on top of big ones and points on top of areas.
+  Object.keys(eipData.layers).forEach(id => { const l = eipData.layers[id]; if (eipGroup.hasLayer(l) && l.bringToFront) l.bringToFront(); });
+  eipData.ties.forEach(t => {
+    const on = eipVisible(t.a) && eipVisible(t.b);
+    if (on && !eipGroup.hasLayer(t.layer)) eipGroup.addLayer(t.layer); else if (!on && eipGroup.hasLayer(t.layer)) eipGroup.removeLayer(t.layer);
+  });
+  if (eipSelId && !eipVisible(eipSelId)) { eipClearFocus(); map.closePopup(); }
+  document.querySelectorAll('.eip-pick').forEach(el => {
+    const id = el.dataset.id;
+    el.classList.toggle('active', eipShown.has(id));
+    el.classList.toggle('dimmed', eipShown.size > 0 && !eipShown.has(id));
+  });
+  if (fit && eipShown.size) eipFitShown();
+}
+function eipFitShown() {
+  // Frame what is picked; a state or nation outline only counts when nothing else is.
+  const b = L.latLngBounds([]), outl = L.latLngBounds([]);
+  eipShown.forEach(id => {
+    const l = eipData.layers[id]; if (!l) return;
+    const f = eipData.areas[id], lb = l.getLatLng ? L.latLngBounds([l.getLatLng()]) : l.getBounds();
+    (f && f.properties.outline ? outl : b).extend(lb);
+  });
+  const t = b.isValid() ? b : outl; if (!t.isValid()) return;
+  map.fitBounds(t, { ...eipPad(), maxZoom: 13 });
+}
+
+// Fit padding: the EIP legend on the left, and the sidebar when it covers the map's right edge.
+function eipPad() {
+  const sb = document.getElementById('sidebar'), r = sb && sb.offsetParent ? sb.getBoundingClientRect() : null;
+  const right = r && r.left < map.getContainer().getBoundingClientRect().right - 10 ? r.width + 20 : 30;
+  const lg = document.querySelector('.eip-legend'), lr = lg ? lg.getBoundingClientRect() : null;
+  const left = lr && !lg.classList.contains('folded') ? lr.right + 20 : 30;
+  return { paddingTopLeft: [left, 30], paddingBottomRight: [right, 30] };
+}
 function eipDash(d) { return d === 'dotted' ? '2 5' : d === 'dashed' ? '8 5' : null; }
 function eipFit() {
   if (!eipData) return;
@@ -2606,7 +2768,7 @@ function eipFit() {
   const b = L.latLngBounds([]);
   Object.entries(eipData.areas).forEach(([id, f]) => { if (!f.properties.outline && f.properties.eipCol === 'P' && !/nf$|np$/.test(id)) b.extend(eipData.layers[id].getBounds()); });
   eipData.nodes.forEach(n => { const pt = eipPt(n); if (pt && n.eipType === 'Institution') b.extend(pt); });
-  if (b.isValid()) map.fitBounds(b, { paddingTopLeft: [260, 30], paddingBottomRight: [30, 30] });
+  if (b.isValid()) map.fitBounds(b, { ...eipPad() });
 }
 
 // Nearest boundary vertex of an area to a point — where a tie line meets it.
@@ -2652,12 +2814,14 @@ function eipClearFocus() {
 function eipSelect(id, opt = {}) {
   if (!eipData) { eipSelId = id; return; }
   const n = eipNodeById(id); if (!n) return;
+  if (!eipVisible(id) && eipData.layers[id]) { eipShown.add(id); eipApplyShown(false); }
   eipClearFocus(); eipSelId = id;
   const lyr = eipData.layers[id];
   if (lyr && lyr.setRadius) { lyr.setRadius(11); lyr.bringToFront(); }
   else if (lyr && lyr.setStyle) lyr.setStyle({ weight: 4 });
   const ties = eipTiesOf(id), lines = [];
   ties.forEach(t => {
+    if (!eipVisible(t.b)) return;   // hidden by Pick what to show; still listed in the popup
     const ends = eipEndpoints(t.a, t.b); if (!ends) return;
     const pl = L.polyline(ends, { color: t.e.color || '#334155', weight: 3, opacity: 0.9, dashArray: eipDash(t.e.dash) });
     const bn = eipNodeById(t.b);
@@ -2679,7 +2843,7 @@ function eipSelect(id, opt = {}) {
   if (pos) L.popup({ maxWidth: 320, autoPanPaddingTopLeft: L.point(260, 20) }).setLatLng(pos).setContent(html).openOn(map);
   if (opt.pan && lyr) {
     if (lyr.getLatLng) map.setView(lyr.getLatLng(), Math.max(map.getZoom(), 11));
-    else if (!(f && f.properties.outline)) map.fitBounds(lyr.getBounds(), { paddingTopLeft: [260, 30], paddingBottomRight: [30, 30], maxZoom: 13 });
+    else if (!(f && f.properties.outline)) map.fitBounds(lyr.getBounds(), { ...eipPad(), maxZoom: 13 });
   }
   if (!opt.remote && eipChan) eipChan.postMessage({ type: 'eip-select', id, src: 'map' });
 }
@@ -2691,6 +2855,76 @@ function eipOpenSketch(id) {
   if (!eipSrc || eipSrc === 'live') return;
   const w = window.open(graphToolURL() + '?url=' + encodeURIComponent(eipSrc) + (id ? '&sel=' + encodeURIComponent(id) : ''), 'rcn-eip-sketch');
   if (w) w.focus();
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// ── VIEWS ── every viewer the map has, in one collapsed list. Pulling a view
+// out puts the others away unless they are pinned. Today's kinds: EIP Stage
+// Sketches and issues. The map holds one issue at a time, so pins combine
+// different kinds (an EIP sketch under an issue), not two issues.
+const EIP_SKETCHES = [
+  { file: 'whatcom-coops-eip.json', label: 'Co-ops of Whatcom County — EIP Stage Sketch', ndc: 'East Whatcom RRC' },
+];
+const EIP_BASE = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) ? '/tools/' : '';
+const viewPins = new Set();
+let viewsCtl = null, viewsOpen = false;
+
+function viewList() {
+  const out = [];
+  const eipSrcs = EIP_SKETCHES.map(e => ({ ...e, src: EIP_BASE + e.file }));
+  if (eipSrc && !eipSrcs.find(e => sameEIPSrc(e.src, eipSrc)))
+    eipSrcs.push({ src: eipSrc, label: eipSrc === 'live' ? 'Live sketch (from the Graph Tool window)' : (eipData && eipData.name) || eipSrc, ndc: '' });
+  eipSrcs.forEach(e => out.push({ id: 'eip:' + e.src, kind: 'eip', group: 'EIP Stage Sketches', label: e.label, sub: e.ndc,
+    on: () => !!eipData && sameEIPSrc(eipSrc, e.src), open: () => startEIP(e.src), close: eipClose }));
+  ISSUE_INDEX.forEach(i => out.push({ id: 'issue:' + i.key, kind: 'issue', group: 'Issues', label: i.label, sub: i.ndc,
+    on: () => activeIssueKey === i.key, open: () => toggleIssue(i.key), close: clearIssueLayer }));
+  return out;
+}
+function sameEIPSrc(a, b) {
+  if (!a || !b) return false;
+  try { return new URL(a, location.href).href === new URL(b, location.href).href; } catch (e) { return a === b; }
+}
+async function pullView(id) {
+  const views = viewList(), v = views.find(x => x.id === id); if (!v) return;
+  if (v.on()) { viewPins.delete(id); v.close(); renderViews(); return; }   // click an open view = put it away
+  // Put away every other open view that isn't pinned — and, since the map holds
+  // one of each kind, any open view of the same kind even if pinned.
+  views.forEach(o => { if (o.id !== id && o.on() && (!viewPins.has(o.id) || o.kind === v.kind)) { viewPins.delete(o.id); o.close(); } });
+  await v.open();
+  renderViews();
+}
+function pinView(id, evt) {
+  if (evt) evt.stopPropagation();
+  const v = viewList().find(x => x.id === id); if (!v) return;
+  if (viewPins.has(id)) viewPins.delete(id);
+  else { viewPins.add(id); if (!v.on()) pullView(id); }
+  renderViews();
+}
+function toggleViewsList() { viewsOpen = !viewsOpen; try { localStorage.setItem('rcnViewsOpen', viewsOpen ? '1' : '0'); } catch (e) {} renderViews(); }
+function renderViews() {
+  if (!viewsCtl) return;
+  const d = viewsCtl.getContainer(), views = viewList(), nOn = views.filter(v => v.on()).length;
+  let html = `<button class="views-toggle" onclick="toggleViewsList()" title="Every view this map has. Pull one out at a time; 📌 keeps one on the map.">${viewsOpen ? '▾' : '☰'} Views <span style="font-weight:400;color:#64748b">(${nOn ? nOn + ' showing of ' : ''}${views.length})</span></button>`;
+  if (viewsOpen) {
+    let g = '';
+    html += '<div class="views-list">';
+    views.forEach(v => {
+      if (v.group !== g) { g = v.group; html += `<div class="grp">${eipEsc(g)}</div>`; }
+      const on = v.on(), pinned = viewPins.has(v.id);
+      html += `<div class="view-row${on ? ' on' : ''}" onclick="pullView('${eipEsc(v.id)}')" title="${on ? 'Showing — click to put it away' : 'Click to show this view'}">` +
+        `<span class="vname"><b>${eipEsc(v.label)}</b>${v.sub ? `<small>${eipEsc(v.sub)}</small>` : ''}</span>` +
+        `<button class="view-pin${pinned ? ' pinned' : ''}" onclick="pinView('${eipEsc(v.id)}', event)" title="${pinned ? 'Pinned: stays on the map when you pull another view. Click to unpin.' : 'Pin: keep this view on the map while you pull another'}">📌</button></div>`;
+    });
+    html += `<div class="hint">One view at a time. 📌 keeps a view on the map while you pull another (one issue at a time).</div></div>`;
+  }
+  d.innerHTML = html;
+}
+function addViewsControl() {
+  try { viewsOpen = localStorage.getItem('rcnViewsOpen') === '1'; } catch (e) {}
+  viewsCtl = L.control({ position: 'topleft' });
+  viewsCtl.onAdd = () => { const d = L.DomUtil.create('div', 'views-ctl'); L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d); return d; };
+  viewsCtl.addTo(map);
+  renderViews();
 }
 
 function clearIssueLayer() {
@@ -2901,6 +3135,7 @@ function downloadIssueGraph() {
 }
 
 function updateIssueButtons() {
+  if (typeof renderViews === 'function') renderViews();
   ISSUE_INDEX.forEach(issue => {
     const btn  = document.getElementById('issue-btn-'  + issue.key);
     const link = document.getElementById('issue-link-' + issue.key);
@@ -4836,6 +5071,7 @@ document.getElementById('add-loc-name-input').addEventListener('keydown', functi
   } else if (!isNaN(dlLat) && !isNaN(dlLng)) {
     map.setView([dlLat, dlLng], isNaN(dlZoom) ? 12 : dlZoom);
   }
+  addViewsControl();
   if (eipParam) startEIP(eipParam, dlp.get('sel'));
   if (openIssue) {
     await toggleIssue(openIssue, { keepView: !hlId && !isNaN(dlLat) && !isNaN(dlLng) });
@@ -4907,6 +5143,64 @@ function injectDefaultPolygons() {
   });
   saveUserPolygons(existing);
 }
+
+// Fold the right-hand menu to a small tab; remembered in this browser.
+function foldSidebar(force) {
+  const sb = document.getElementById('sidebar'); if (!sb) return;
+  const f = sb.classList.toggle('folded', force);
+  const b = document.getElementById('sidebar-fold'); if (b) b.textContent = f ? '« menu' : '» hide';
+  try { localStorage.setItem('rcnSidebarFolded', f ? '1' : '0'); } catch (e) {}
+}
+(function () {
+  const h = document.querySelector('#sidebar > h2');
+  if (h) h.addEventListener('click', () => { if (document.getElementById('sidebar').classList.contains('folded')) foldSidebar(false); });
+  let f = false; try { f = localStorage.getItem('rcnSidebarFolded') === '1'; } catch (e) {}
+  if (f) foldSidebar(true);
+})();
+
+// ── PRESENTATION VIEW ── the Graph Tool's Present, for the map. Hides the menu,
+// basemap picker and link buttons; keeps the open views' legends and the Views
+// button so a presenter can switch views live. Enter: ▶ Present or P. Leave: Esc,
+// the corner pill, P, or leaving fullscreen. The map view is put back on leaving.
+// Fullscreen needs a real click; from the keyboard or a script it may be refused,
+// and the hiding still applies.
+let presenting = false, presentSavedView = null;
+function togglePresent() { if (presenting) exitPresent(); else enterPresent(); }
+function presentRefit() {
+  map.invalidateSize();
+  if (eipData) { if (eipShown.size) eipFitShown(); else eipFit(); }
+}
+function enterPresent() {
+  if (presenting) return;
+  presenting = true;
+  presentSavedView = { c: map.getCenter(), z: map.getZoom() };
+  map.closePopup();
+  if (viewsOpen) { viewsOpen = false; renderViews(); }   // the button stays, to switch views live
+  document.body.classList.add('presenting');
+  const el = document.documentElement;
+  try { if (el.requestFullscreen) { const p = el.requestFullscreen(); if (p && p.catch) p.catch(() => {}); } else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); } catch (e) {}
+  requestAnimationFrame(() => requestAnimationFrame(presentRefit));
+  setTimeout(() => { if (presenting) presentRefit(); }, 420);   // fullscreen resizes a beat later
+}
+function exitPresent() {
+  if (!presenting) return;
+  presenting = false;
+  document.body.classList.remove('presenting');
+  try { if (document.fullscreenElement && document.exitFullscreen) { const p = document.exitFullscreen(); if (p && p.catch) p.catch(() => {}); } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen(); } catch (e) {}
+  const v = presentSavedView; presentSavedView = null;
+  const back = () => { map.invalidateSize(); if (v) map.setView(v.c, v.z, { animate: false }); };
+  requestAnimationFrame(() => requestAnimationFrame(back));
+  setTimeout(() => { if (!presenting) back(); }, 420);
+}
+function onPresentFsChange() { if (presenting && !document.fullscreenElement && !document.webkitFullscreenElement) exitPresent(); }
+document.addEventListener('fullscreenchange', onPresentFsChange);
+document.addEventListener('webkitfullscreenchange', onPresentFsChange);
+document.addEventListener('keydown', function (e) {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
+  if (e.key === 'Escape' && presenting) { e.preventDefault(); exitPresent(); return; }
+  if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); togglePresent(); }
+});
 </script>
 </body>
 </html>
