@@ -2496,8 +2496,10 @@ async function toggleIssue(key, opts = {}) {
       }).bindPopup(
         `<b>${p.label}</b><br>` + (t ? t.label : `Stance: ${p.stance}`) +
         contactHTML(p.contact, true) +
-        (p.notes ? `<br><span style="font-size:11px;color:#666">${p.notes}</span>` : '')
+        (p.notes ? `<br><span style="font-size:11px;color:#666">${p.notes}</span>` : '') +
+        (issueTimelineSrc() && p.id ? `<br><button class="popup-btn" style="margin-top:6px" onclick="openIssueInTimeline('${p.id}')" title="Open the Timeline on this one's history">⏳ On the Timeline</button>` : '')
       , popupPad).addTo(issueLayerGroup);
+      if (p.id) dot.on('click', () => { issueSelId = p.id; });
       if (p.contact) dot.bindTooltip(`<b>${p.label}</b>` + contactHTML(p.contact, false),
                                      { direction: 'top', offset: [0, -6] });
     });
@@ -2513,6 +2515,7 @@ async function toggleIssue(key, opts = {}) {
           (data.links && data.links.length
             ? `<div class="issue-graph-btns">` +
               `<button class="popup-btn" onclick="openIssueInGraphTool()" title="Open these points and links as an editable diagram in the RCN Graph Tool — same colours, same legend, laid out like the map.">🕸 Open in Graph Tool</button>` +
+              (issueTimelineSrc() ? `<button class="popup-btn" onclick="openIssueInTimeline()" title="Open this issue's history in the RCN Timeline — when each one began, changed and tied to the others. Click a point first to open the Timeline on it.">⏳ Open in Timeline</button>` : '') +
               `<a href="#" onclick="downloadIssueGraph(); return false;" title="Save the same diagram as a Graph Tool JSON file (import it later, or drop it into FedWiki).">⬇ graph JSON</a></div>`
             : '');
         L.DomEvent.disableClickPropagation(div);
@@ -2932,6 +2935,7 @@ function clearIssueLayer() {
   if (issueLegend)     { map.removeControl(issueLegend);   issueLegend = null; }
   activeIssueKey  = null;
   activeIssueData = null;
+  issueSelId      = null;
   updateIssueButtons();
 }
 
@@ -3121,6 +3125,50 @@ function openIssueInGraphTool() {
   // encode the mirror image or non-ASCII (—, é, ñ) arrives corrupted.
   const payload = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
   window.open(`${graphToolURL()}#graph=${payload}`, '_blank', 'noopener');
+}
+
+// ── To the Timeline ──────────────────────────────────────────────────
+// An issue whose index entry names a "timeline" (a Timeline JSON file — url
+// form as for "url") gets ⏳ buttons: on the legend for the whole history, and
+// in each point's popup for that one. The point's id is passed as &sel=, and
+// a Timeline interval with the same id (the co-ops share their ids across
+// map, graph and timeline) opens selected and centred. The Timeline opens any
+// timeline carried in #tl=, so nothing is stored anywhere.
+//
+// Where the Timeline lives: ?timelinetool=<URL>, else the same rules as the
+// Graph Tool — /tools/ on localhost, beside the map when deployed.
+var issueSelId = null;   // the last point clicked in the open issue
+function issueTimelineSrc() {
+  const e = ISSUE_INDEX.find(i => i.key === activeIssueKey);
+  return (e && e.timeline) || null;
+}
+function timelineToolURL() {
+  const q = new URLSearchParams(location.search).get('timelinetool');
+  if (q) return q;
+  if (/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) return '/tools/rcn-timeline.html';
+  if (DOCS_BASE) return (DOCS_BASE.endsWith('/') ? DOCS_BASE : DOCS_BASE + '/') + 'rcn-timeline.html';
+  return 'rcn-timeline.html';
+}
+async function openIssueInTimeline(selId) {
+  const src = issueTimelineSrc();
+  if (!src) return;
+  const sel = selId || issueSelId;
+  // Open the window inside the click, before the fetch — a window.open after
+  // an await is a popup the browser blocks.
+  const w = window.open('about:blank', '_blank');
+  try {
+    const res = await fetch(src);
+    if (!res.ok) throw new Error(res.status);
+    const tl = await res.json();
+    const payload = btoa(unescape(encodeURIComponent(JSON.stringify(tl))));
+    const url = `${timelineToolURL()}#tl=${payload}` + (sel ? '&sel=' + encodeURIComponent(sel) : '');
+    if (w) { w.opener = null; w.location.href = new URL(url, location.href).href; }
+    else window.open(url, '_blank', 'noopener');
+  } catch (e) {
+    if (w) w.close();
+    console.warn('Timeline not available:', src, e);
+    alert('Could not load this issue\'s timeline (' + src + ').');
+  }
 }
 
 function downloadIssueGraph() {

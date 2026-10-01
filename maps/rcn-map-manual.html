@@ -135,6 +135,9 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       <li><a href="#s18">18. Publishing &amp; federating regions</a></li>
       <li><a href="#s19">19. Routes — drawn and found</a></li>
       <li><a href="#s20">20. Reach areas (isochrones)</a></li>
+
+      <li class="sb-section-hd">Views &amp; presenting</li>
+      <li><a href="#s21">21. Views, pick what to show, Present</a></li>
     </ul>
     <div class="sb-links">
       <a href="rcn-map-intro.html">← Introduction</a>
@@ -152,7 +155,7 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       <p class="doc-sub">Complete reference for all features</p>
       <!-- UPDATE: date when tool changes significantly -->
       <div class="doc-meta">
-        Updated July 2026 &nbsp;·&nbsp;
+        Updated September 2026 &nbsp;·&nbsp; Marc Pierson with Claude Opus 5.5, Sep 2026 &nbsp;·&nbsp;
         <a href="rcn-map-intro.html">Introduction →</a>
       </div>
     </div>
@@ -837,7 +840,17 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
           Tool's Force or Untangle layout to rearrange by connection instead of geography.</li>
         <li><strong>⬇ graph JSON</strong> — saves the same diagram as a Graph Tool file, to import
           later or drop into FedWiki.</li>
+        <li><strong>⏳ Open in Timeline</strong> — opens the issue's history in the RCN Timeline, in
+          a new tab: when each one began, changed, merged and tied to the others. It appears only
+          for an issue whose entry in <code>issue-index.json</code> names a <code>timeline</code>
+          file. If you clicked a point first, the Timeline opens on that one.</li>
       </ul>
+      <p>
+        Each point's popup also has <strong>⏳ On the Timeline</strong>, which opens the Timeline
+        centred on that one's own bar. A point and its bar share the same id — the co-ops use the
+        same ids on the map, in the Graph Tool and on the Timeline — which is what lets you move
+        between them without losing your place.
+      </p>
       <p>
         The map stays the source. The diagram is a copy to work on; edits in the Graph Tool do not
         flow back to the issue file.
@@ -846,7 +859,9 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
         On a deployed site the button looks for <code>graph-tool-v22.html</code> in the same asset
         folder as the map. Upload <code>tools/graph-tool-v22.html</code>; it carries its icons inside it,
         so nothing else needs to go with it. Add <code>?graphtool=&lt;URL&gt;</code> to the
-        map's address to point it somewhere else.
+        map's address to point it somewhere else. The Timeline button works the same way: it looks for
+        <code>rcn-timeline.html</code> beside the map (upload <code>tools/rcn-timeline.html</code> and
+        the timeline JSON the index names), and <code>?timelinetool=&lt;URL&gt;</code> overrides it.
       </div>
 
       <div class="note">
@@ -1705,9 +1720,77 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       <p>Two reach areas from the same centre — walk versus drive — put the transport gap in a single picture better than any table. So does one reach area against the households it's supposed to serve.</p>
     </section>
 
+    <!-- §21: VIEWS, PICK WHAT TO SHOW, PRESENT -->
+    <section id="s21">
+      <div class="section-pill">Views &amp; presenting</div>
+      <h2>21. Views, pick what to show, Present</h2>
+      <p>
+        As more sketches and issues sit on the map, they compete for the same space. These tools keep
+        one thing in front of you at a time, and give the whole window to the map when you are
+        showing it to a room.
+      </p>
+
+      <h3>☰ Views — one at a time</h3>
+      <p>
+        The <strong>☰ Views</strong> button at the top left lists everything that can be laid over
+        the map: EIP Stage Sketches and issues. Its label says how many are showing
+        (<em>1 showing of 4</em>). Click one to pull it onto the map; the view you had is put away,
+        so the map never fills up by accident.
+      </p>
+      <ul>
+        <li><strong>📌 Pin</strong> a view to keep it while you pull another — a sketch with an issue
+          over it, for instance. The map holds one sketch and one issue at a time, so pulling a
+          second of the same kind replaces the first even if it is pinned.</li>
+        <li>Click a showing view again to put it away.</li>
+      </ul>
+
+      <h3>EIP Stage Sketches on the map</h3>
+      <p>
+        An EIP Stage Sketch from the Graph Tool draws on the map as its real areas — watershed,
+        farmland, counties, cities, forest, park — with its points and ties. In the Graph Tool,
+        <strong>🗺 Show on map</strong> opens it here and keeps the two windows linked: select a thing
+        in one and the other follows. Opened from the Views list instead, the sketch draws on its own.
+        Click an area or point for what it is and where its boundary came from; ties other than the
+        co-op ties show when you click one of their ends.
+      </p>
+
+      <h3>Pick what to show</h3>
+      <p>
+        The sketch's legend has a <strong>Pick what to show</strong> list: every area and point,
+        grouped as E areas, P jurisdictions, institutions that govern, and co-ops.
+      </p>
+      <ul>
+        <li><strong>Click</strong> an item to show only that one. Everything else is cleared from the
+          map for the moment, not deleted.</li>
+        <li><strong>Shift-click</strong> to add an item, or take it away again.</li>
+        <li><strong>+ what they're tied to</strong> adds everything tied to what you have picked.</li>
+        <li><strong>Show all</strong> brings everything back. Clicking the only picked item again does
+          the same.</li>
+      </ul>
+      <p>
+        The map zooms to what you picked, clear of the legend and the menu. A tie shows only when
+        both its ends are showing.
+      </p>
+
+      <h3>Fold the panels</h3>
+      <p>
+        <strong>» hide</strong> at the top of the right-hand menu folds it to a small tab;
+        <strong>« menu</strong> brings it back. The sketch legend folds the same way with
+        <strong>– hide</strong> and <strong>+ show</strong>. The map remembers both on this browser.
+      </p>
+
+      <h3>▶ Present</h3>
+      <p>
+        <strong>▶ Present</strong>, in the menu's title bar, works like the Graph Tool's: it goes full
+        screen, hides the menu and every control, closes the Views list, and fits the map to the
+        window. Press <strong>P</strong> to switch it on or off and <strong>Esc</strong> to leave;
+        leaving puts the view back where it was.
+      </p>
+    </section>
+
     <!-- Footer -->
     <div class="doc-footer">
-      <span>RCN NDC Map · Open source · Free by design</span>
+      <span>RCN NDC Map · Open source · Free by design · Marc Pierson with Claude Opus 5.5, Sep 2026</span>
       <span>
         <a href="rcn-map-intro.html">← Introduction</a>
         &nbsp;·&nbsp;
