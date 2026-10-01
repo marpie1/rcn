@@ -850,6 +850,20 @@ the E/P polygons, resolved against graphBaseURL. Stored mapURLs are
 relative (rcn_map.html?eip=sketch.json&sel=id — the flat asset folder
 form); resolveMapLink() turns them into /maps/... on localhost.
 zoomFit reserves 120px at the top in EIP mode for the statement banner.
+Bands (Sep 30 2026): the E/I/P backgrounds are NOT screen thirds any more.
+eipBands {b1,b2} are diagram x-coordinates of the two dividers, saved
+with the file; positionEIPOverlay() runs from applyT() on every pan/zoom
+and the dividers drag (mouseup re-renders untyped nodes). Missing bands
+are derived once from where E, I and P nodes sit, else from the current
+screen thirds. eipColForX() uses the bands when they exist.
+
+── DRIVER TREE SCROLL + ZOOM (Sep 30 2026) ───────────────────────────
+#tree-canvas used to get min-width/min-height = tree size, so it grew
+instead of scrolling. Now canvas (overflow:auto, min-height:0 in the flex
+column) > #tree-sizer (scaled size) > #tree-stage (true size, CSS
+scale(treeZoom)). buildTree draws into the stage and calls treeSetSize;
+exportTreeSVG reads treeSize. Zoom: toolbar − % + Fit 100%, Ctrl/⌘+wheel
+(pinch), keys + − 0 1; drag empty space pans. Opens fitted when large.
 
 ── DECISIONS LOG MAINTENANCE ────────────────────────────────────────
 
