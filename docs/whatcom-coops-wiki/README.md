@@ -21,7 +21,7 @@ The index page adds the `rcntable` item (all 22 rows; its Map button draws the t
 2. Render the SVGs in the Graph Tool (below). Skip it unless step 1 ran.
 3. `python3 build_pages.py` — writes `whatcom-coops-wiki.json`, a flat `{slug: page}` drop file, with the attribution stamped last. The pages work on any wiki.
 
-Only the table plugin needs files on the site: `/assets/rcn-table/` holding `rcn-table.html`, `rcn-table-map.html`, `graph-tool-v22.html` (the `tools/dist` build) and the `whatcomcoops/` folder written by `python3 -c "import export; export.export('whatcomcoops', '<dir>')"` in `substrate/`.
+Only the table plugin needs files on the site: `/assets/rcn-table/` holding `rcn-table.html`, `rcn-table-map.html`, `graph-tool-v22.html` (from `tools/`; it carries its icons inside it) and the `whatcomcoops/` folder written by `python3 -c "import export; export.export('whatcomcoops', '<dir>')"` in `substrate/`.
 
 ## Rendering the SVGs
 

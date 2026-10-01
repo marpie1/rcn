@@ -34,7 +34,7 @@ case. So kind "Entity" is table-entity.json, and a reader of index.json need
 never guess — `files` lists every path written.
 
 --bundle writes substrate/export/rcn-table/: the three tool files (the table,
-the map, and the self-contained graph tool from tools/dist) beside one exported
+the map, and the graph tool, which carries its icon lists inside it) beside one exported
 folder per database named. That folder, dropped whole into a FedWiki site's
 assets, is the deployment — wiki-plugin-rcntable's popup expects exactly this
 layout at /assets/rcn-table/. Run tools/build-deploy-tool.js first if the
@@ -125,7 +125,7 @@ def export(database, outdir=None):
 TOOLS = os.path.join(os.path.dirname(HERE), 'tools')
 BUNDLE_FILES = [('rcn-table.html', 'rcn-table.html'),
                 ('rcn-table-map.html', 'rcn-table-map.html'),
-                (os.path.join('dist', 'graph-tool-v22.html'), 'graph-tool-v22.html')]
+                ('graph-tool-v22.html', 'graph-tool-v22.html')]
 
 
 def bundle(databases):

@@ -15,6 +15,12 @@
             "command": "jq -r '.tool_input.file_path // .tool_response.filePath // empty' | { read -r f; case \"$f\" in *.json) cd \"${CLAUDE_PROJECT_DIR:-.}\" && { git check-ignore -q \"$f\" || { grep -q legendEntries \"$f\" 2>/dev/null && node tools/stamp-legend-style.js \"$f\" --write; }; } ;; esac; } 2>/dev/null || true",
             "timeout": 30,
             "statusMessage": "Stamping legend style onto graph JSON"
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath // empty' | { read -r f; case \"$f\" in */tools/graph-tool-v22.html|*/tools/rcn-icons.js|*/tools/edge-families.js) cd \"${CLAUDE_PROJECT_DIR:-.}\" && node tools/build-deploy-tool.js >/dev/null ;; esac; }",
+            "timeout": 30,
+            "statusMessage": "Pasting icon and relation lists into the Graph Tool"
           }
         ]
       }
