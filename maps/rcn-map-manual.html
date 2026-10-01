@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!-- RCN NDC Map — User Manual
      HOW TO UPDATE THIS FILE:
-     - Each major section is marked with a Section comment: <!-- §N: SECTION NAME -->
+     - Each major section is marked with a Section comment of the form  §N: SECTION NAME
+       (never write a comment-closing marker inside this header comment: it ends the comment early)
      - To add a new section: copy an existing <section> block, increment the id, add a <li> to the TOC
      - To update a section: find it by its § comment and edit the content inside
      - UPDATE: comments mark specific spots that change with new NDCs, issues, or features
@@ -155,7 +156,7 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
       <p class="doc-sub">Complete reference for all features</p>
       <!-- UPDATE: date when tool changes significantly -->
       <div class="doc-meta">
-        Updated September 2026 &nbsp;·&nbsp; Marc Pierson with Claude Opus 5.5, Sep 2026 &nbsp;·&nbsp;
+        Updated October 2026 &nbsp;·&nbsp; Marc Pierson with Claude Opus 5.5, Oct 2026 &nbsp;·&nbsp;
         <a href="rcn-map-intro.html">Introduction →</a>
       </div>
     </div>
@@ -837,7 +838,11 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
           Click one to show only that one; Shift-click to add or take away; <strong>+ what they're
           tied to</strong> brings back everything linked to what is showing; <strong>Show all</strong>
           puts everything back. A line shows only while both its ends are showing. It changes the
-          view, not the issue file. (The same picker as an EIP sketch's legend, below.)</li>
+          view, not the issue file. (The same picker as an EIP sketch's legend, below.)
+          Click a group's heading to show the whole group (Shift-click adds or takes it away). If
+          the issue file names a <code>facets</code> field — the Sustainable Connections directory
+          names <code>area</code> — <strong>Group by</strong> buttons switch the list between
+          <em>Kind</em> and that field, for example <em>Location</em>.</li>
         <li><strong>🕸 Open in Graph Tool</strong> — opens the same points and lines as an editable
           diagram in the RCN Graph Tool, in a new tab: same colours, same legend, laid out like the
           map with overlapping points nudged apart. Each node keeps its notes, its coordinates, and
@@ -867,6 +872,39 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
         map's address to point it somewhere else. The Timeline button works the same way: it looks for
         <code>rcn-timeline.html</code> beside the map (upload <code>tools/rcn-timeline.html</code> and
         the timeline JSON the index names), and <code>?timelinetool=&lt;URL&gt;</code> overrides it.
+      </div>
+
+      <h3>Directory issues — kinds and locations, no links</h3>
+      <p>
+        A directory is a network issue without the lines: many points, each coloured by kind.
+        <strong>📍 Sustainable Connections — local businesses</strong>, under East Whatcom RRC,
+        is every listing in Sustainable Connections' Local Business Directory (266 businesses,
+        282 points, because a business with several locations gets one point for each).
+        The map frames the points when the issue opens.
+      </p>
+      <ul>
+        <li><strong>Group by: Kind / Location</strong> — in <strong>Pick what to show</strong>,
+          switch the list between the directory's nine sections and where the points are. Inside
+          Bellingham, the location is the City of Bellingham neighbourhood the address falls in.
+          Elsewhere it is the directory's area name or the town.</li>
+        <li><strong>Click a group heading</strong> to show the whole group, for example every
+          business in Fairhaven. Shift-click another heading to add that group too.</li>
+        <li><strong>Each popup</strong> gives the address and where it came from: the directory,
+          or the business's own website when the directory gives none. A business that publishes no
+          address (27 home-based services) sits at the neighbourhood the directory gives it, and
+          its popup says so.</li>
+      </ul>
+      <p>
+        To refresh it from the live directory, run <code>python3 tools/sc-directory/build.py</code>.
+        A spreadsheet of every location, with coordinates and sources, is written beside the
+        script as <code>sc-directory.csv</code>.
+      </p>
+      <div class="note">
+        In an issue file, these are three optional fields. <code>facets</code> (for example
+        <code>{"area": {"label": "Location"}}</code>) names a field on each point that the list
+        can be grouped by. <code>meta.fitPoints: true</code> frames the points when there are no
+        links. <code>inFrame: false</code> on a point keeps a far-off one (here a Bellevue office
+        and a Whidbey Island farm) from widening the frame.
       </div>
 
       <div class="note">
@@ -1771,6 +1809,8 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
         <li><strong>+ what they're tied to</strong> adds everything tied to what you have picked.</li>
         <li><strong>Show all</strong> brings everything back. Clicking the only picked item again does
           the same.</li>
+        <li>In an issue's legend, <strong>click a group heading</strong> to pick the whole group, and
+          use <strong>Group by</strong> where the issue offers it (see §8, Directory issues).</li>
       </ul>
       <p>
         The map zooms to what you picked, clear of the legend and the menu. A tie shows only when
@@ -1802,7 +1842,7 @@ figcaption{padding:8px 14px;font-size:12px;color:#64748b;border-top:1px solid #e
 
     <!-- Footer -->
     <div class="doc-footer">
-      <span>RCN NDC Map · Open source · Free by design · Marc Pierson with Claude Opus 5.5, Sep 2026</span>
+      <span>RCN NDC Map · Open source · Free by design · Marc Pierson with Claude Opus 5.5, Oct 2026</span>
       <span>
         <a href="rcn-map-intro.html">← Introduction</a>
         &nbsp;·&nbsp;

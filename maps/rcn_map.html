@@ -91,7 +91,8 @@
   .eip-picks { max-height:42vh; overflow-y:auto; margin:4px 0; }
   .eip-picks .grp { color:#64748b; font-size:10px; text-transform:uppercase; letter-spacing:.04em; margin-top:5px; }
   .eip-pick { display:flex; align-items:center; padding:1px 4px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.35; }
-  .eip-pick:hover { background:#f0f0f0; }
+  .eip-pick:hover, .issue-grp:hover { background:#f0f0f0; }
+  .issue-grp { cursor:pointer; border-radius:4px; padding:0 4px; }
   .eip-pick.active { background:#e8f4ff; font-weight:600; }
   .eip-pick.dimmed { opacity:0.4; }
   .eip-pick .sw, .eip-pick .dot { flex:none; }
@@ -2669,7 +2670,8 @@ async function toggleIssue(key, opts = {}) {
     // far-off parcel (drawn, linked) from dragging the frame out to reach it.
     if (opts.keepView) {
       // a deep link asked for a specific view — leave it alone
-    } else if (data.links && data.links.length) {
+    } else if ((data.links && data.links.length) || (data.meta && data.meta.fitPoints)) {
+      // meta.fitPoints: a directory with no links and no area also frames its dots
       const pts = (data.parcels || []).filter(p => p.inFrame !== false).map(p => p.latLng);
       const sb  = document.getElementById('sidebar');
       if (pts.length) map.fitBounds(L.latLngBounds(pts), {
@@ -5291,21 +5293,41 @@ function issueFocus(id) {
 // The same rule as the EIP sketch's picker: click = only this, Shift+click = add
 // or remove, "+ what they're tied to" follows the issue's links. Display only —
 // the issue file is not changed.
-function issuePickerHTML(data) {
+// An issue may name extra "facets" ({ area: { label: 'Location' } }): each is a
+// parcel field the list can be grouped by instead of kind. A group heading is
+// clickable too — it picks the whole group, with the same Shift rule.
+let issueGroupBy = 'type';
+function issuePickGroups(data) {
   const ps = (data.parcels || []).filter(p => p.id);
+  const types = data.types || {}, facets = data.facets || {}, groups = {};
+  const by = facets[issueGroupBy] ? issueGroupBy : 'type';
+  const keyOf = p => by === 'type' ? (types[p.type] ? p.type : '') : (p[by] || '');
+  ps.forEach(p => { const k = keyOf(p); (groups[k] = groups[k] || []).push(p); });
+  const order = by === 'type'
+    ? Object.keys(types).filter(k => groups[k]).concat(groups[''] ? [''] : [])
+    : Object.keys(groups).filter(k => k).sort((a, b) => a.localeCompare(b)).concat(groups[''] ? [''] : []);
+  const name = k => by === 'type' ? (types[k] ? types[k].label : 'Other') : (k || 'Other');
+  return { ps, by, groups, order, name };
+}
+function issuePickerHTML(data) {
+  const { ps, by, groups, order, name } = issuePickGroups(data);
   if (ps.length < 2) return '';
-  const types = data.types || {}, groups = {};
-  ps.forEach(p => { const k = types[p.type] ? p.type : ''; (groups[k] = groups[k] || []).push(p); });
-  const order = Object.keys(types).filter(k => groups[k]).concat(groups[''] ? [''] : []);
-  const rows = order.map(k => {
-    const t = types[k];
-    return (order.length > 1 ? `<div class="grp">${eipEsc(t ? t.label : 'Other')}</div>` : '') +
-      groups[k].slice().sort((a, b) => a.label.localeCompare(b.label)).map(p =>
-        `<div class="eip-pick issue-pick" data-id="${eipEsc(p.id)}" onclick="issuePick('${eipEsc(p.id)}', event)" title="${eipEsc(p.label)}">` +
-        `<span class="dot" style="background:${(t && t.color) || STANCE_COLOR[p.stance] || STANCE_COLOR.unknown}"></span>${eipEsc(p.label)}</div>`).join('');
+  const types = data.types || {}, facets = data.facets || {};
+  const rows = order.map((k, gi) => {
+    return (order.length > 1 ? `<div class="grp issue-grp" onclick="issuePickGroup(${gi}, event)" title="Show only this group · Shift+click to add or remove it">${eipEsc(name(k))} <span style="opacity:.7">(${groups[k].length})</span></div>` : '') +
+      groups[k].slice().sort((a, b) => a.label.localeCompare(b.label)).map(p => {
+        const t = types[p.type];
+        return `<div class="eip-pick issue-pick" data-id="${eipEsc(p.id)}" onclick="issuePick('${eipEsc(p.id)}', event)" title="${eipEsc(p.label)}">` +
+          `<span class="dot" style="background:${(t && t.color) || STANCE_COLOR[p.stance] || STANCE_COLOR.unknown}"></span>${eipEsc(p.label)}</div>`;
+      }).join('');
   }).join('');
-  return `<details${issueShown.size ? ' open' : ''}><summary>Pick what to show</summary>` +
-    `<div class="hint">Click = only this · Shift+click = add or remove</div>` +
+  const groupBy = Object.keys(facets).length
+    ? `<div class="hint">Group by: ` + [['type', 'Kind'], ...Object.entries(facets).map(([f, v]) => [f, v.label || f])].map(([f, l]) =>
+        `<button class="popup-btn${by === f ? ' active' : ''}" style="padding:1px 7px;${by === f ? 'font-weight:600' : ''}" onclick="issueSetGroupBy('${eipEsc(f)}')">${eipEsc(l)}</button>`).join(' ') + `</div>`
+    : '';
+  return `<details${issueShown.size || issueGroupBy !== 'type' ? ' open' : ''}><summary>Pick what to show</summary>` +
+    groupBy +
+    `<div class="hint">Click = only this · Shift+click = add or remove · click a heading for the whole group</div>` +
     `<div class="eip-picks">${rows}</div>` +
     `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="popup-btn" onclick="issueShowAll()">Show all</button>` +
     (data.links && data.links.length ? `<button class="popup-btn" onclick="issueAddTied()" title="Also show everything tied to what is showing now">+ what they're tied to</button>` : '') +
@@ -5316,6 +5338,23 @@ function issuePick(id, evt) {
   else if (issueShown.size === 1 && issueShown.has(id)) issueShown.clear();
   else { issueShown.clear(); issueShown.add(id); }
   issueApplyShown(true);
+}
+function issuePickGroup(gi, evt) {
+  if (!activeIssueData) return;
+  const { groups, order } = issuePickGroups(activeIssueData);
+  const ids = (groups[order[gi]] || []).map(p => p.id);
+  const all = ids.length && ids.every(id => issueShown.has(id));
+  if (evt && evt.shiftKey) ids.forEach(id => all ? issueShown.delete(id) : issueShown.add(id));
+  else if (all && issueShown.size === ids.length) issueShown.clear();
+  else { issueShown.clear(); ids.forEach(id => issueShown.add(id)); }
+  issueApplyShown(true);
+}
+function issueSetGroupBy(f) {
+  issueGroupBy = f;
+  const det = document.querySelector('.issue-legend details');
+  if (!det || !activeIssueData) return;
+  det.outerHTML = issuePickerHTML(activeIssueData);
+  issueApplyShown(false);       // re-mark what is picked in the new list
 }
 function issueShowAll() { issueShown.clear(); issueApplyShown(false); }
 function issueAddTied() {
