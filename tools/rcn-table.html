@@ -288,9 +288,14 @@ var SUBSTRATE_BASE = (function(){
 // fetch is identical in both modes; api() is the only place that knows. The
 // opener can also hand a src over in loadTable, which is how the wiki plugin
 // points this popup at the site's own assets.
+// A SOURCE IS A FOLDER OR A FILE-NAME PREFIX. "…/whatcom/" reads
+// whatcom/index.json; "…/NDC/whatcom-coops-export-" reads whatcom-coops-export-index.json
+// beside it — how several datasets share one flat FedWiki asset folder
+// (export.py --prefix). The file names inside index.json are relative to it.
+function srcLocation(v){ v = String(v || ''); if(!v) return ''; return /-$/.test(v) ? v : v.replace(/\/+$/,'') + '/'; }
 var SRC = (function(){
   var q = new URLSearchParams(location.search).get('src');
-  return q ? q.replace(/\/+$/,'') + '/' : '';
+  return srcLocation(q);
 })();
 var srcIndex = null;   // index.json, fetched once per folder
 var srcGraph = null;   // graph.json, fetched the first time a neighbourhood is asked for
@@ -1123,7 +1128,7 @@ if(window.opener){
       window._pageKey = ev.data.pageKey || null;
       if(ev.data.database) state.db = ev.data.database;
       if(ev.data.kind) state.kind = ev.data.kind;
-      if(ev.data.src){ SRC = String(ev.data.src).replace(/\/+$/,'') + '/'; srcIndex = srcGraph = null; }
+      if(ev.data.src){ SRC = srcLocation(ev.data.src); srcIndex = srcGraph = null; }
       boot();
     }
   });
@@ -1156,7 +1161,7 @@ function boot(){
   mounted.then(function(set){
     var t = set && set.table;
     if(t && t.src && !new URLSearchParams(location.search).get('src')){
-      SRC = RCNSet.resolve(t.src).replace(/\/+$/,'') + '/'; srcIndex = srcGraph = null;
+      SRC = srcLocation(RCNSet.resolve(t.src)); srcIndex = srcGraph = null;
       if(t.kind) state.kind = t.kind;
     }
     return boot();

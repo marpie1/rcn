@@ -48,12 +48,15 @@ function didFromSeed (seedHex) {
   const raw = spki.subarray(spki.length - 32)
   return 'did:key:z' + b58encode(Buffer.concat([Buffer.from([0xed, 0x01]), raw]))
 }
+// A location is a folder or a file-name prefix ending in '-' (export.py --prefix):
+// "export/whatcomcoops/whatcom-coops-export-" names whatcom-coops-export-index.json there.
+function at (loc, name) { return /-$/.test(loc) ? loc + name : path.join(loc, name) }
 function sha256 (buf) { return 'sha256:' + crypto.createHash('sha256').update(buf).digest('hex') }
 
 function recordFiles (folder, index) {
   const names = Object.values((index.files && index.files.tables) || {})
     .concat([index.files && index.files.geo, index.files && index.files.graph].filter(Boolean))
-  return names.map(n => [n, path.join(folder, n)])
+  return names.map(n => [n, at(folder, n)])
 }
 
 function keygen (file) {
@@ -66,7 +69,7 @@ function keygen (file) {
 }
 
 function seal (folder, opts) {
-  const indexPath = path.join(folder, 'index.json')
+  const indexPath = at(folder, 'index.json')
   const index = JSON.parse(fs.readFileSync(indexPath, 'utf8'))
   const seed = fs.readFileSync(opts.seedFile, 'utf8').trim()
   if (!/^[0-9a-f]{64}$/i.test(seed)) die('seed file must hold 64 hex characters')
@@ -88,7 +91,7 @@ function seal (folder, opts) {
 }
 
 function verify (folder) {
-  const index = JSON.parse(fs.readFileSync(path.join(folder, 'index.json'), 'utf8'))
+  const index = JSON.parse(fs.readFileSync(at(folder, 'index.json'), 'utf8'))
   if (!index.seal) { console.log('unsealed'); return 1 }
   const { valid, payload, error } = verifyJWT(index.seal.jwt, index.seal.issuer)
   if (!valid) { console.log(`seal INVALID: signature (${error || 'bad'})`); return 2 }
@@ -99,7 +102,7 @@ function verify (folder) {
     const have = fs.existsSync(p) ? sha256(fs.readFileSync(p)) : 'missing'
     if (want !== have) { console.log(`  ${name}: CHANGED since sealing`); bad++ }
   }
-  for (const name of Object.keys(payload.files)) if (!fs.existsSync(path.join(folder, name))) { console.log(`  ${name}: missing`); bad++ }
+  for (const name of Object.keys(payload.files)) if (!fs.existsSync(at(folder, name))) { console.log(`  ${name}: missing`); bad++ }
   if (bad) { console.log(`seal INVALID: ${bad} file(s) differ`); return 2 }
   console.log(`sealed by "${payload.name}" ${index.seal.issuer} on ${index.seal.sealed} — verified, ${Object.keys(payload.files).length} files`)
   return 0

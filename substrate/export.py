@@ -6,6 +6,8 @@ export.py — dump a database's projections to a folder of static JSON.
     python3 substrate/export.py whatcom /some/folder    # -> there
     python3 substrate/export.py --all                   # every database api.py lists
     python3 substrate/export.py --bundle whatcom rcngeo # the whole assets folder, ready to upload
+    python3 substrate/export.py whatcomcoops --prefix whatcom-coops-export
+                                                        # whatcom-coops-export-index.json, … — for a flat folder
 
 WHY THIS EXISTS. A projection is a pure function of the source files (decision
 17: files are the truth, Neo4j is derived), so it does not have to be computed
@@ -89,34 +91,44 @@ def write(path, obj):
     return os.path.getsize(path)
 
 
-def export(database, outdir=None):
+# --prefix NAME puts NAME- in front of every file written, so several databases
+# can share one flat FedWiki asset folder (it cannot hold sub-folders) without
+# one's index.json overwriting another's. The names listed inside index.json
+# stay unprefixed: they are relative to the location, and the table reads a
+# location ending in '-' as a prefix ("…/NDC/whatcom-coops-export-"), so the same
+# index works either way. seal.js takes the same location.
+def export(database, outdir=None, prefix=''):
     outdir = outdir or os.path.join(HERE, 'export', database)
     os.makedirs(outdir, exist_ok=True)
     files, sizes = {}, {}
+    pre = (prefix.rstrip('-') + '-') if prefix else ''
+    out = lambda name: os.path.join(outdir, pre + name)
 
     kinds = api.table_kinds(database)['kinds']
     for k in kinds:
         name = 'table-%s.json' % as_slug(k['kind'])
-        sizes[name] = write(os.path.join(outdir, name),
+        sizes[name] = write(out(name),
                             api.table_projection(k['kind'], database))
         files[k['kind']] = name
 
-    sizes['geo.json'] = write(os.path.join(outdir, 'geo.json'),
+    sizes['geo.json'] = write(out('geo.json'),
                               api.geo_projection(database))
     graph = graph_projection(database)
-    sizes['graph.json'] = write(os.path.join(outdir, 'graph.json'), graph)
+    sizes['graph.json'] = write(out('graph.json'), graph)
 
     index = {'database': database,
              'exported': time.strftime('%Y-%m-%dT%H:%M:%S%z'),
              'kinds': kinds,
              'files': {'tables': files, 'geo': 'geo.json', 'graph': 'graph.json'},
              'counts': {'concepts': len(graph['nodes']), 'links': len(graph['edges'])}}
-    sizes['index.json'] = write(os.path.join(outdir, 'index.json'), index)
+    if pre:
+        index['prefix'] = pre
+    sizes['index.json'] = write(out('index.json'), index)
 
     total = sum(sizes.values())
-    print('%s -> %s' % (database, outdir))
+    print('%s -> %s' % (database, os.path.join(outdir, pre) if pre else outdir))
     for name in ['index.json'] + sorted(n for n in sizes if n != 'index.json'):
-        print('  %-28s %7.1f KB' % (name, sizes[name] / 1024))
+        print('  %-28s %7.1f KB' % (pre + name, sizes[name] / 1024))
     print('  %-28s %7.1f KB   %d concepts, %d links, %d kinds'
           % ('total', total / 1024, len(graph['nodes']), len(graph['edges']), len(kinds)))
     return outdir
@@ -159,7 +171,14 @@ def main(argv):
             sys.exit('--bundle needs at least one database name')
         bundle(argv[1:])
         return 0
-    export(argv[0], argv[1] if len(argv) > 1 else None)
+    prefix = ''
+    if '--prefix' in argv:
+        i = argv.index('--prefix')
+        if i + 1 >= len(argv):
+            sys.exit('--prefix needs a name, e.g. --prefix whatcom-coops')
+        prefix = argv[i + 1]
+        argv = argv[:i] + argv[i + 2:]
+    export(argv[0], argv[1] if len(argv) > 1 else None, prefix)
     return 0
 
 
