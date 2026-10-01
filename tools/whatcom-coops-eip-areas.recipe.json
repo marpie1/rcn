@@ -1,0 +1,82 @@
+{
+  "about": "Recipe for the E and P areas of the Whatcom co-ops EIP Stage Sketch. Run: python3 tools/fetch-eip-boundaries.py tools/whatcom-coops-eip-areas.recipe.json. Each area's id must equal its node id in the sketch. Marc Pierson with Claude Opus 5.5, Sep 2026.",
+  "sketch": "whatcom-coops-eip.json",
+  "output": "whatcom-coops-eip-areas.geojson",
+  "note": "E and P areas of the Whatcom co-ops EIP Stage Sketch. Each feature id equals its node id in whatcom-coops-eip.json. Simplified for the web. Marc Pierson with Claude Opus 5.5, Sep 2026.",
+  "areas": [
+    {
+      "id": "nooksack", "eipCol": "E",
+      "source": "WA Dept of Ecology — WRIA 1 (Nooksack) boundary",
+      "service": "https://services.arcgis.com/6lCKYNJLvwTXqrmp/arcgis/rest/services/ECY/FeatureServer/11",
+      "where": "WRIA_NR=1", "simplify": 0.002
+    },
+    {
+      "id": "ejido", "eipCol": "E",
+      "source": "Whatcom County tax parcel 390309442175 (61 acres), via WA DAHP county parcels. Matched by location: its south edge fronts 1240 Central Rd. Confirm with the Whatcom Assessor.",
+      "service": "https://wisaard.dahp.wa.gov/server/rest/services/County_Parcels/MapServer/34",
+      "where": "WCAGCODE='390309442175'", "simplify": 0
+    },
+    {
+      "id": "farmland", "eipCol": "E",
+      "source": "WSDA 2024 crop fields for Whatcom and Skagit, merged and smoothed (gaps under ~400 m closed, blocks under ~3 km² dropped)",
+      "service": "https://services3.arcgis.com/ikVUj9YUYY9keza1/arcgis/rest/services/WSDACrop_2024_PICounty_Dissolve/FeatureServer/4",
+      "where": "County IN ('Whatcom','Skagit')", "simplify": 0.0005, "allowMany": true,
+      "smooth": { "closeGaps": 0.004, "dropSmallerThan": 0.0004, "simplify": 0.0015 }
+    },
+    {
+      "id": "ncascades", "eipCol": "E",
+      "source": "US EPA Level III Ecoregion 77, North Cascades",
+      "service": "https://geodata.epa.gov/arcgis/rest/services/ORD/USEPA_Ecoregions_Level_III_and_IV/MapServer/11",
+      "where": "US_L3NAME='North Cascades'", "simplify": 0.004
+    },
+    {
+      "id": "wa", "eipCol": "P", "outline": true,
+      "source": "US Census TIGERweb — State of Washington",
+      "service": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/0",
+      "where": "STATE='53'", "simplify": 0.01
+    },
+    {
+      "id": "whatcom", "eipCol": "P",
+      "source": "US Census TIGERweb — Whatcom County",
+      "service": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/1",
+      "where": "STATE='53' AND NAME='Whatcom County'", "simplify": 0.002
+    },
+    {
+      "id": "skagit", "eipCol": "P",
+      "source": "US Census TIGERweb — Skagit County",
+      "service": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/1",
+      "where": "STATE='53' AND NAME='Skagit County'", "simplify": 0.002
+    },
+    {
+      "id": "bham", "eipCol": "P",
+      "source": "US Census TIGERweb — Bellingham city limits",
+      "service": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Places_CouSub_ConCity_SubMCD/MapServer/4",
+      "where": "STATE='53' AND BASENAME='Bellingham'", "simplify": 0.0003
+    },
+    {
+      "id": "lynden", "eipCol": "P",
+      "source": "US Census TIGERweb — Lynden city limits",
+      "service": "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Places_CouSub_ConCity_SubMCD/MapServer/4",
+      "where": "STATE='53' AND BASENAME='Lynden'", "simplify": 0.0003
+    },
+    {
+      "id": "mbsnf", "eipCol": "P",
+      "source": "USDA Forest Service — Mt. Baker-Snoqualmie National Forest administrative boundary",
+      "service": "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_ForestSystemBoundaries_01/MapServer/0",
+      "where": "FORESTNAME LIKE 'Mt. Baker%'", "simplify": 0.003
+    },
+    {
+      "id": "ncnp", "eipCol": "P",
+      "source": "National Park Service — North Cascades National Park boundary",
+      "service": "https://services1.arcgis.com/fBc8EJBxQRMcHlei/arcgis/rest/services/NPS_Land_Resources_Division_Boundary_and_Tract_Data_Service/FeatureServer/2",
+      "where": "UNIT_CODE='NOCA'", "simplify": 0.002
+    },
+    {
+      "id": "usa", "eipCol": "P", "outline": true,
+      "source": "Natural Earth 1:110m — United States",
+      "geojsonUrl": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson",
+      "sourceUrl": "https://www.naturalearthdata.com/",
+      "match": { "ADM0_A3": "USA" }
+    }
+  ]
+}
