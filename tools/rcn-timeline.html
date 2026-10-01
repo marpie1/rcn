@@ -104,6 +104,11 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9;color:#1e293b}
 .tb-drop-hint{font-size:10.5px;color:#94a3b8;white-space:normal;line-height:1.35}
 .tb-drop-swatch{width:9px;height:9px;border-radius:2px;flex-shrink:0;align-self:center}
 .tb-btn:disabled{opacity:.4;cursor:default}
+#show-drop{min-width:300px;max-height:62vh;overflow-y:auto}
+#show-drop .show-acts{display:flex;gap:6px;padding:4px 4px 6px;border-bottom:1px solid #f1f5f9;margin-bottom:4px;position:sticky;top:-4px;background:#fff}
+#show-drop .show-hint{font-size:10.5px;color:#94a3b8;padding:0 6px 6px}
+#show-drop .tb-drop-item.picked .tb-drop-name{color:#1d4ed8}
+#show-drop .show-tick{width:12px;flex-shrink:0;color:#1d4ed8;font-weight:700}
 .tb-btn:disabled:hover{background:#fff}
 a.tb-btn{text-decoration:none;display:inline-flex;align-items:center}
 a.tb-btn.help{color:#1d4ed8;border-color:#bfdbfe;background:#eff6ff}
@@ -320,6 +325,10 @@ textarea.prop-input{resize:vertical;min-height:44px;font-family:inherit}
     <span class="tb-sep"></span>
     <input id="sentence" title="Type an assertion and press Enter — e.g. &quot;Pilot before Grant&quot;, &quot;Report = Jan 2026 .. Jun 2026&quot;, &quot;Scale-up lasts 6 months&quot;, &quot;pin Report&quot;" placeholder='say it:  "Pilot before Grant"   ·   "Report = Jan 2026 .. Jun 2026"   ·   "pin Report"'>
     <span class="tb-sep"></span>
+    <span class="tb-menu" id="show-menu">
+      <button class="tb-btn" id="btn-show" title="Pick what to show: click a bar's name to show only that one, Shift-click to add or remove, + what they're tied to, Show all. Hidden bars are not deleted." aria-haspopup="true" aria-expanded="false">Show ▾</button>
+      <div class="tb-drop" id="show-drop" role="menu"></div>
+    </span>
     <button class="tb-btn" id="btn-fit" title="Zoom and pan to fit all intervals in view">Fit</button>
     <button class="tb-btn" id="btn-zin" title="Zoom in (or pinch out / ⌘-scroll over the canvas)">＋</button>
     <button class="tb-btn" id="btn-zout" title="Zoom out (or pinch in / ⌘-scroll over the canvas)">－</button>
@@ -384,6 +393,14 @@ var HANDLE_R=5;
 var M={name:"Untitled timeline",intervals:[],links:[]};
 var view={t0:0,pxPerUnit:60};     // t0 = time at x=PAD_L
 var sel={type:null,id:null};      // 'iv' | 'link'
+// PICK WHAT TO SHOW (the Map's picker, for time). shown = the ids picked in
+// "Show ▾", or null for everything. It hides bars, never deletes them: export,
+// Copy link and undo all see the whole timeline. While picking, the rows of the
+// hidden bars close up — VISROWS lists the real rows still in use, top to
+// bottom, and drawRow() turns a stored row into the row it is drawn on.
+var shown=null, VISROWS=null;
+function vis(iv){return !shown||shown.has(iv.id);}
+function drawRow(r){if(!VISROWS)return r;var i=VISROWS.indexOf(r);return i<0?r:i;}
 var mode="select";                // 'select' | 'before' | 'meets'
 var linkStart=null;
 var drag=null;
@@ -393,7 +410,7 @@ var uid=1; function nid(p){return p+(uid++);}
 /* ── time <-> x ──────────────────────────────────────────── */
 function tx(t){return PAD_L+(t-view.t0)*view.pxPerUnit;}
 function xt(x){return view.t0+(x-PAD_L)/view.pxPerUnit;}
-function rowY(r){return ROW_TOP+r*ROW_H+BAR_H/2;}
+function rowY(r){return ROW_TOP+drawRow(r)*ROW_H+BAR_H/2;}
 
 /* ── model helpers ───────────────────────────────────────── */
 function ivById(id){for(var i=0;i<M.intervals.length;i++)if(M.intervals[i].id===id)return M.intervals[i];return null;}
@@ -409,6 +426,7 @@ function newInterval(label,s,e){
     row:nextRow(),who:"",note:"",conf:0.8};
   iv.e=(e==null?iv.s+1:e);
   M.intervals.push(iv);
+  if(shown)shown.add(iv.id);
   return iv;
 }
 function addLink(fromId,toId,rel){
@@ -533,7 +551,12 @@ function calTicks(W){
 
 var LABELS=null, HANDLES=null; // text and handle layers, rebuilt each render
 function render(){
-  var W=Math.max(svgW(), PAD_L+40), H=Math.max(wrap.clientHeight, ROW_TOP+(M.intervals.reduce(function(m,v){return Math.max(m,v.row);},-1)+1)*ROW_H+40);
+  if(shown){var rs={};M.intervals.forEach(function(v){if(vis(v))rs[v.row]=1;});
+    VISROWS=Object.keys(rs).map(Number).sort(function(a,b){return a-b;});}
+  else VISROWS=null;
+  var nRows=VISROWS?VISROWS.length:(M.intervals.reduce(function(m,v){return Math.max(m,v.row);},-1)+1);
+  var W=Math.max(svgW(), PAD_L+40), H=Math.max(wrap.clientHeight, ROW_TOP+nRows*ROW_H+40);
+  syncShowBtn();
   svg.setAttribute("width",W); svg.setAttribute("height",H);
   while(svg.firstChild)svg.removeChild(svg.firstChild);
   var defs=el("defs",{}); svg.appendChild(defs);
@@ -550,8 +573,9 @@ function render(){
   // label. Text wins over the handles too (Marc's rule): a handle is still
   // grabbable wherever no text covers it.
   LABELS=el("g",{id:"label-layer"}); HANDLES=el("g",{id:"handle-layer"});
-  for(var i=0;i<M.links.length;i++)renderLink(M.links[i],defs);
-  for(var j=0;j<M.intervals.length;j++)renderIv(M.intervals[j],defs);
+  for(var i=0;i<M.links.length;i++){var Lk=M.links[i],La=ivById(Lk.from),Lb=ivById(Lk.to);
+    if(!shown||(La&&Lb&&vis(La)&&vis(Lb)))renderLink(Lk,defs);}
+  for(var j=0;j<M.intervals.length;j++)if(vis(M.intervals[j]))renderIv(M.intervals[j],defs);
   svg.appendChild(HANDLES); svg.appendChild(LABELS);
 
   // link-in-progress guide
@@ -653,7 +677,7 @@ function renderIv(iv,defs){
   // …and short of the next interval's LABEL too: a late bar whose label is
   // pulled left to stay on screen starts before its own bar, over this one's.
   var lx=ivLabelX(iv,xs), txt=iv.label, nextS=Infinity, nxt=null;
-  M.intervals.forEach(function(o){ if(o!==iv&&o.row===iv.row&&o.s>iv.s&&o.s<nextS){nextS=o.s;nxt=o;} });
+  M.intervals.forEach(function(o){ if(o!==iv&&vis(o)&&o.row===iv.row&&o.s>iv.s&&o.s<nextS){nextS=o.s;nxt=o;} });
   if(nxt){ var stop=Math.min(tx(nextS), ivLabelX(nxt,tx(nxt.s))), room=stop-lx-6;
     if(labelWidth(txt)>room)txt=fitLabel(txt,room); }
   // The label lives in the label layer, above every bar and link, but still
@@ -779,7 +803,8 @@ svg.addEventListener("dblclick",function(e){
   beforeChange("add-iv");
   var iv=newInterval(null, r2(xt(p.x)), r2(xt(p.x)+niceStep()));
   // drop it onto the row under the cursor if empty-ish
-  iv.row=Math.max(0,Math.round((p.y-ROW_TOP)/ROW_H));
+  var dr=Math.max(0,Math.round((p.y-ROW_TOP)/ROW_H));
+  iv.row=VISROWS?(dr<VISROWS.length?VISROWS[dr]:nextRow()):dr;
   if(iv.row>nextRow())iv.row=nextRow();
   selectIv(iv.id);solve();render();renderPanel();
 });
@@ -1053,10 +1078,66 @@ document.getElementById("btn-fit").onclick=fit;
 document.getElementById("model-name").addEventListener("input",function(e){M.name=e.target.value;});
 document.getElementById("btn-demo").onclick=function(){beforeChange("load");loadDemo();};
 document.getElementById("btn-newmodel").onclick=function(){newModel();};
+/* ── Show ▾ — pick what to show ─────────────────────────────────────────── */
+var showDropOpen=false;
+function syncShowBtn(){
+  var b=document.getElementById("btn-show"); if(!b)return;
+  var n=shown?M.intervals.filter(vis).length:0;
+  b.textContent=shown?("Show "+n+" of "+M.intervals.length+" ▾"):"Show ▾";
+  b.className="tb-btn"+(shown?" active":"");
+}
+function showOpen(open){
+  showDropOpen=open;
+  document.getElementById("show-drop").className="tb-drop"+(open?" open":"");
+  document.getElementById("btn-show").setAttribute("aria-expanded",open?"true":"false");
+  if(open)buildShowDrop();
+}
+// The co-op (or other owner) an interval belongs to, when the file says so:
+// the first entry of its coops list, else its own id.
+function ownersOf(v){var c=v&&((v.extra&&v.extra.coops)||v.coops);return (c&&c.length)?c:[v.id];}
+function buildShowDrop(){
+  var d=document.getElementById("show-drop"); d.innerHTML="";
+  var acts=document.createElement("div"); acts.className="show-acts";
+  function act(label,title,fn,disabled){var b=document.createElement("button");b.className="tb-btn";b.textContent=label;b.title=title;b.disabled=!!disabled;
+    b.addEventListener("click",function(ev){ev.stopPropagation();fn();});acts.appendChild(b);}
+  act("Show all","Bring every bar back",function(){shown=null;fit();buildShowDrop();},!shown);
+  act("+ what they're tied to","Add every bar linked to what is shown, and every bar that belongs to the same co-op",function(){showTied();},!shown);
+  d.appendChild(acts);
+  var hint=document.createElement("div"); hint.className="show-hint";
+  hint.textContent="Click = show only this · Shift-click = add or remove";
+  d.appendChild(hint);
+  M.intervals.slice().sort(function(a,b){return a.row-b.row||a.s-b.s;}).forEach(function(v){
+    var it=document.createElement("div"); var on=!!(shown&&shown.has(v.id));
+    it.className="tb-drop-item"+(on?" picked":"");
+    it.innerHTML='<span class="show-tick">'+(on?"✓":"")+'</span><span class="tb-drop-swatch" style="background:'+v.color+'"></span><span class="tb-drop-name">'+esc(v.label)+'</span>';
+    it.title=fmtDate(v.s)+" – "+fmtDate(v.e);
+    it.addEventListener("click",function(ev){ev.stopPropagation();pickShown(v.id,ev.shiftKey);});
+    d.appendChild(it);
+  });
+}
+function pickShown(id,add){
+  if(add){ if(!shown)shown=new Set([id]); else if(shown.has(id))shown.delete(id); else shown.add(id);
+           if(shown&&!shown.size)shown=null; }
+  else if(shown&&shown.size===1&&shown.has(id)) shown=null;   // click the only one again = everything
+  else { shown=new Set([id]); select("iv",id); }
+  fit(); buildShowDrop();
+}
+function showTied(){
+  if(!shown)return;
+  var owners={}; M.intervals.forEach(function(v){ if(vis(v)) ownersOf(v).slice(0,1).forEach(function(o){owners[o]=1;}); });
+  var add=[];
+  M.links.forEach(function(L){ if(shown.has(L.from))add.push(L.to); if(shown.has(L.to))add.push(L.from); });
+  M.intervals.forEach(function(v){ if(ownersOf(v).some(function(o){return owners[o];}))add.push(v.id); });
+  add.forEach(function(i){shown.add(i);});
+  fit(); buildShowDrop();
+}
+document.getElementById("btn-show").addEventListener("click",function(ev){ev.stopPropagation();showOpen(!showDropOpen);});
+document.addEventListener("click",function(ev){ if(showDropOpen&&!document.getElementById("show-menu").contains(ev.target))showOpen(false); });
+
 function newModel(){
   beforeChange("load");
   var y=new Date().getUTCFullYear();
-  M={name:"Untitled timeline",intervals:[],links:[]};uid=1;sel={type:null,id:null};mode="select";linkStart=null;issues=[];
+  M={name:"Untitled timeline",intervals:[],links:[]};uid=1;sel={type:null,id:null};mode="select";linkStart=null;issues=[];shown=null;
   view={t0:y-2,pxPerUnit:60};
   document.getElementById("model-name").value=M.name;
   if(location.hash)history.replaceState(null,"",location.pathname+location.search);
@@ -1064,9 +1145,10 @@ function newModel(){
 }
 
 function fit(){
-  if(!M.intervals.length){view.t0=0;view.pxPerUnit=60;render();return;}
+  var FV=M.intervals.filter(vis);
+  if(!FV.length){view.t0=0;view.pxPerUnit=60;render();return;}
   var lo=Infinity,hi=-Infinity;
-  M.intervals.forEach(function(v){lo=Math.min(lo,v.s-v.sf);hi=Math.max(hi,v.e+v.ef);});
+  FV.forEach(function(v){lo=Math.min(lo,v.s-v.sf);hi=Math.max(hi,v.e+v.ef);});
   if(lo===hi){lo-=1;hi+=1;}
   // Fit the text as well as the bars. A label starts 6px after its bar and runs
   // right, so a short, recent interval with a long name ran off the canvas when
@@ -1076,7 +1158,7 @@ function fit(){
   // 60% of the width; a label still too long is slid left at draw time (ivLabelX).
   var LEFT=20, RIGHT=svgW()-24, avail=RIGHT-PAD_L-LEFT;
   var barFit=avail/(hi-lo), ppu=barFit;
-  M.intervals.forEach(function(v){
+  FV.forEach(function(v){
     var need=6+labelWidth(v.label)+4, dt=v.s-lo;
     if(dt>0&&avail-need>0)ppu=Math.min(ppu,(avail-need)/dt);
   });
@@ -1239,6 +1321,7 @@ function exportModel(){
     links:M.links.map(function(L){return withExtra(L.extra,{id:L.id,from:L.from,to:L.to,rel:L.rel,who:L.who,note:L.note,conf:L.conf});})});
 }
 function importModel(o){
+  shown=null; showOpen(false);
   M.name=o.name||"Untitled timeline";
   M.extra=extraOf(o,TOP_KNOWN);
   M.intervals=(o.intervals||[]).map(function(v,i){
