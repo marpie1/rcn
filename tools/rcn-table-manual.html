@@ -80,6 +80,7 @@ pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
       <li><a href="#s13">13 · Where the rows come from</a></li>
       <li><a href="#s14">14 · When something looks wrong</a></li>
       <li><a href="#s15">15 · Making a folder for your site (stewards)</a></li>
+      <li><a href="#s16">16 · Moving between tools (⇄)</a></li>
     </ol>
   </div>
 
@@ -257,8 +258,17 @@ pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
     <li>Export: <code>python3 substrate/export.py --bundle whatcom rcngeo</code> (name the bodies of records you want to publish). This writes <code>substrate/export/rcn-table/</code>: the three tool files beside one folder per body of records.</li>
     <li>Put them on the site the same way: the tool files on an Assets item named <code>rcn-table</code>, each records folder's files on one named <code>rcn-table/whatcom</code>, <code>rcn-table/rcngeo</code>, and so on. Re-run and re-drop when the records change.</li>
   </ol>
+  <h3>Several bodies of records in one folder</h3>
+  <p>Where everything has to sit in one folder — the RCN Map’s NDC Assets, for instance — give each export a name in front: <code>python3 substrate/export.py whatcomcoops --prefix whatcom-coops-export</code> writes <code>whatcom-coops-export-index.json</code>, <code>whatcom-coops-export-table-coop.json</code> and so on, and the table is pointed at <code>…/whatcom-coops-export-</code> (a source ending in a dash is a name in front, not a folder). Pick a name nothing else in the folder starts with.</p>
   <p>The whole Whatcom survey is about half a megabyte. Copy the folder to a phone and the table still works.</p>
-  <div class="foot">RCN Toolset · open source, CC BY 4.0 · See the <a href="rcn-table-intro.html">Introduction</a> for why it works this way, and the <a href="graph-tool-manual.html">Graph Tool Manual</a> for the drawing it hands you to. The map is part of this tool and is covered in §12.</div>
+
+  <h2 id="s16">16 · Moving between tools (⇄)</h2>
+  <p>Open from a <em>set</em> link, every one of the four RCN views — the Graph Tool, the RCN Map, the Timeline and the Table — shows a small bar at the bottom of the window:</p>
+  <p style="text-align:center"><strong>⇄ Co-ops of Whatcom County · 🕸 Graph · 🗺 Map · ⏳ Timeline · ▦ Table</strong></p>
+  <p>Press one and the same dataset opens in that view, on whatever you have selected now. Pick a co-op in the graph, press ⏳ Timeline, and the timeline opens on that co-op’s history; press ▦ Table and its row is selected. Each view keeps one tab, so going back and forth reuses tabs instead of piling them up. The bar is hidden in Present mode.</p>
+  <p>A set link looks like <code>rcn-table.html?set=whatcom-coops.set.json&amp;sel=cfc</code>: the <em>set file</em> says where the dataset lives in each view, and <code>sel</code> is the thing to open on. The id is the one the map uses for its points; the graph, timeline and table carry the same id, which is what lets the selection travel. Without <code>?set=</code> there is no bar and the tool behaves exactly as before.</p>
+  <p>In the Table, the selection that travels is the one selected row; its id comes from the column the set names (<code>idColumn</code> — <code>mapId</code> for the co-ops). Arriving with <code>sel</code>, the table selects that row and scrolls to it. The set also names where the table’s files are (<code>table.src</code>) and which kind to open.</p>
+  <div class="foot">RCN Toolset · open source, CC BY 4.0 · Marc Pierson with Claude Opus 5.5, Oct 2026 · See the <a href="rcn-table-intro.html">Introduction</a> for why it works this way, and the <a href="graph-tool-manual.html">Graph Tool Manual</a> for the drawing it hands you to. The map is part of this tool and is covered in §12.</div>
 </div>
 </body>
 </html>

@@ -36,6 +36,10 @@ python3 seed.py --verify               # rebuild n=6 and print the eyeball check
 python3 db.py -q "MATCH (n) RETURN count(n)"
 
 python3 api.py                         # projections + the tools, port 8768
+
+python3 export.py whatcom              # static folder for a site's assets (Layer 1)
+python3 export.py whatcomcoops --prefix whatcom-coops-export
+                                       # same, as whatcom-coops-export-*.json for a flat folder
 ```
 
 Then: <http://localhost:8768/> lists the projections and the rendered views.

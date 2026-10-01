@@ -10,6 +10,7 @@ Chat-Claude has no live access to `~/rcn`. Its schema knowledge is *recall of pa
 | `tools/rcn-timeline.html` | [rcn-timeline.md](rcn-timeline.md) | timeline model JSON |
 | `tools/issue-polygon-map.html` | [issue-polygon-map.md](issue-polygon-map.md) | GeoJSON FeatureCollection |
 | `tools/graph-composer.html` | [graph-composer.md](graph-composer.md) — its own sidecars, detail levels, export loss | native graph JSON, plus `families.js` + `graph-sets.js` |
+| all four views, together | [rcn-set.md](rcn-set.md) — the set file that opens one dataset across Graph, Map, Timeline and Table, and the shared-id rule | set JSON |
 | `tools/rcn-spc.html` | [rcn-spc.md](rcn-spc.md) — CSV shape, why pooled ≠ averaged, designing demo data | **CSV** in, session JSON out |
 | the substrate projections | [../../substrate/ROUND-TRIP.md](../../substrate/ROUND-TRIP.md) | same native graph JSON, served over HTTP |
 | FedWiki itself | [fedwiki-import.md](fedwiki-import.md) — page JSON, item types, and the one file you drop on a site | flat `{slug: page}` map; worked set in [fedwiki-import-example.json](fedwiki-import-example.json) |
