@@ -93,6 +93,20 @@
   .eip-pick { display:flex; align-items:center; padding:1px 4px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.35; }
   .eip-pick:hover, .issue-grp:hover { background:#f0f0f0; }
   .issue-grp { cursor:pointer; border-radius:4px; padding:0 4px; }
+  .pick-focus { margin-left:auto; padding:0 4px; opacity:.3; cursor:pointer; flex:none; border-radius:3px; }
+  .eip-pick:hover .pick-focus { opacity:.85; }
+  .pick-focus:hover { opacity:1; background:#fde68a; }
+  /* Focus (F): a pulsing amber ring on its own pane, and a chip naming what is focused */
+  .rcn-focus-ring { animation: rcnFocusPulse 1.6s ease-in-out infinite; }
+  @keyframes rcnFocusPulse { 0%,100% { stroke-opacity:1; stroke-width:4px; } 50% { stroke-opacity:.45; stroke-width:9px; } }
+  @media (prefers-reduced-motion: reduce) { .rcn-focus-ring { animation:none; } }
+  #focus-chip { position:absolute; left:50%; bottom:30px; transform:translateX(-50%); z-index:1000; display:none;
+    align-items:center; gap:8px; background:rgba(255,255,255,.95); border:1.5px solid #f59e0b; border-radius:16px;
+    padding:4px 6px 4px 10px; font-size:12px; box-shadow:0 2px 8px rgba(0,0,0,.18); max-width:80%; }
+  #focus-chip a { color:#1e293b; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #focus-chip .fc-ring { width:12px; height:12px; border:3px solid #f59e0b; border-radius:50%; flex:none; }
+  #focus-chip .fc-note { color:#92400e; font-size:11px; white-space:nowrap; }
+  #focus-chip button { border:none; background:#f1f5f9; border-radius:50%; width:20px; height:20px; cursor:pointer; flex:none; }
   .eip-pick.active { background:#e8f4ff; font-weight:600; }
   .eip-pick.dimmed { opacity:0.4; }
   .eip-pick .sw, .eip-pick .dot { flex:none; }
@@ -2636,9 +2650,10 @@ async function toggleIssue(key, opts = {}) {
         `<b>${p.label}</b><br>` + (t ? t.label : `Stance: ${p.stance}`) +
         contactHTML(p.contact, true) +
         (p.notes ? `<br><span style="font-size:11px;color:#666">${p.notes}</span>` : '') +
-        (issueTimelineSrc() && p.id ? `<br><button class="popup-btn" style="margin-top:6px" onclick="openIssueInTimeline('${p.id}')" title="Open the Timeline on this one's history">⏳ On the Timeline</button>` : '')
+        (p.id ? `<br><button class="popup-btn" style="margin-top:6px" onclick="mapFocus('issue', '${p.id}')" title="Centre the map on this one and ring it. Nothing else is shown or hidden. (F)">⌖ Focus</button>` : '') +
+        (issueTimelineSrc() && p.id ? ` <button class="popup-btn" style="margin-top:6px" onclick="openIssueInTimeline('${p.id}')" title="Open the Timeline on this one's history">⏳ On the Timeline</button>` : '')
       , popupPad).addTo(issueLayerGroup);
-      if (p.id) { issueMarkers[p.id] = dot; dot.on('click', () => { issueSelId = p.id; }); }
+      if (p.id) { issueMarkers[p.id] = dot; dot.on('click', () => { issueSelId = p.id; lastSelKind = 'issue'; }); }
       if (p.contact) dot.bindTooltip(`<b>${p.label}</b>` + contactHTML(p.contact, false),
                                      { direction: 'top', offset: [0, -6] });
     });
@@ -2740,6 +2755,7 @@ function eipClose() {
   if (eipGroup) map.removeLayer(eipGroup);
   if (eipFocus) map.removeLayer(eipFocus);
   if (eipLegendCtl) map.removeControl(eipLegendCtl);
+  if (focusRef && focusRef.kind === 'eip') clearMapFocus();
   eipGroup = eipFocus = eipLegendCtl = eipData = eipSrc = null;
   eipSelId = null; eipShown.clear(); eipSketchAlive = false;
   map.closePopup();
@@ -2842,10 +2858,10 @@ function eipPickerHTML() {
     const ns = eipData.nodes.filter(n => test(n) && eipData.layers[n.id]).sort((a, b) => a.label.localeCompare(b.label));
     if (!ns.length) return '';
     return `<div class="grp">${title}</div>` + ns.map(n =>
-      `<div class="eip-pick" data-id="${eipEsc(n.id)}" onclick="eipPick('${eipEsc(n.id)}', event)" title="${eipEsc(n.label)}">${eipSwatch(n.id)}${eipEsc(n.label)}</div>`).join('');
+      `<div class="eip-pick" data-id="${eipEsc(n.id)}" onclick="eipPick('${eipEsc(n.id)}', event)" title="${eipEsc(n.label)}">${eipSwatch(n.id)}${eipEsc(n.label)}<span class="pick-focus" onclick="event.stopPropagation(); mapFocus('eip', '${eipEsc(n.id)}')" title="Centre on this one and ring it — nothing else is shown or hidden (F)">⌖</span></div>`).join('');
   }).join('');
   return `<details${eipShown.size ? ' open' : ''}><summary>Pick what to show</summary>` +
-    `<div class="hint" style="margin-top:2px">Click = only this · Shift+click = add or remove</div>` +
+    `<div class="hint" style="margin-top:2px">Click = only this · Shift+click = add or remove · ⌖ = centre on it, hide nothing</div>` +
     `<div class="eip-picks">${rows}</div>` +
     `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="popup-btn" onclick="eipShowAll()">Show all</button>` +
     `<button class="popup-btn" onclick="eipAddTied()" title="Also show everything tied to what is showing now">+ what they're tied to</button></div>` +
@@ -2877,6 +2893,7 @@ function eipApplyShown(fit) {
     if (on && !eipGroup.hasLayer(t.layer)) eipGroup.addLayer(t.layer); else if (!on && eipGroup.hasLayer(t.layer)) eipGroup.removeLayer(t.layer);
   });
   if (eipSelId && !eipVisible(eipSelId)) { eipClearFocus(); map.closePopup(); }
+  if (focusRef && focusRef.kind === 'eip') mapFocus('eip', focusRef.id, { stay: true });
   document.querySelectorAll('.eip-pick').forEach(el => {
     const id = el.dataset.id;
     el.classList.toggle('active', eipShown.has(id));
@@ -2959,7 +2976,7 @@ function eipSelect(id, opt = {}) {
   if (!eipData) { eipSelId = id; return; }
   const n = eipNodeById(id); if (!n) return;
   if (!eipVisible(id) && eipData.layers[id]) { eipShown.add(id); eipApplyShown(false); }
-  eipClearFocus(); eipSelId = id;
+  eipClearFocus(); eipSelId = id; lastSelKind = 'eip';
   const lyr = eipData.layers[id];
   if (lyr && lyr.setRadius) { lyr.setRadius(11); lyr.bringToFront(); }
   else if (lyr && lyr.setStyle) lyr.setStyle({ weight: 4 });
@@ -2983,7 +3000,8 @@ function eipSelect(id, opt = {}) {
     (f ? `<div class="k">Boundary: ${eipEsc(f.properties.source)}</div>` : '') +
     (made.length ? `<div style="margin-top:4px"><b>Rules it made</b><ul>${made.map(l => `<li>${eipEsc(l.label)}</li>`).join('')}</ul></div>` : '') +
     (ties.length ? `<div style="margin-top:4px"><b>Ties (${ties.length})</b><ul>${ties.map(t => { const b = eipNodeById(t.b); return `<li>${t.via ? eipEsc(t.via.label) + ' → ' : ''}${eipEsc(b ? b.label : t.b)}${t.label ? ' — <i>' + eipEsc(t.label) + '</i>' : ''}</li>`; }).join('')}</ul></div>` : '') +
-    `<div style="margin-top:6px"><button class="popup-btn" onclick="eipOpenSketch('${eipEsc(id)}')">◫ Show in sketch</button></div></div>`;
+    `<div style="margin-top:6px"><button class="popup-btn" onclick="eipOpenSketch('${eipEsc(id)}')">◫ Show in sketch</button> ` +
+    `<button class="popup-btn" onclick="mapFocus('eip', '${eipEsc(id)}')" title="Centre the map on this one and ring it. Nothing else is shown or hidden. (F)">⌖ Focus</button></div></div>`;
   if (pos) L.popup({ maxWidth: 320, autoPanPaddingTopLeft: L.point(260, 20) }).setLatLng(pos).setContent(html).openOn(map);
   if (opt.pan && lyr) {
     if (lyr.getLatLng) map.setView(lyr.getLatLng(), Math.max(map.getZoom(), 11));
@@ -3074,6 +3092,7 @@ function addViewsControl() {
 function clearIssueLayer() {
   if (issueLayerGroup) { map.removeLayer(issueLayerGroup); issueLayerGroup = null; }
   if (issueLegend)     { map.removeControl(issueLegend);   issueLegend = null; }
+  if (focusRef && focusRef.kind === 'issue') clearMapFocus();
   activeIssueKey  = null;
   activeIssueData = null;
   issueSelId      = null;
@@ -5289,6 +5308,126 @@ function issueFocus(id) {
   return true;
 }
 
+// ── Focus (F) ── centre on one point or area and ring it, and change nothing
+// else: what Pick what to show hides stays hidden, what it shows stays shown, no
+// ties are drawn and no popup opens. Works on an open issue's points and an EIP
+// sketch's points and areas. Press F for the last one clicked, or use ⌖ in a
+// popup or a Pick-what-to-show row. The ring stays until Esc, the chip's ✕, or
+// the next focus. A focused point that the picker hides gets a ring and a ghost
+// dot; the picker itself is not touched.
+let focusRing = null, focusRef = null, lastSelKind = null;
+// The part of the map nobody's panel covers: between the tall panels on the left
+// (an issue or EIP legend) and the menu on the right. Short ones (zoom buttons, a
+// folded menu) are ignored. Focus centres there, not on the whole map.
+function clearInsets() {
+  const mr = map.getContainer().getBoundingClientRect();
+  let left = 0, right = mr.width;
+  document.querySelectorAll('.issue-legend, .eip-legend, #sidebar').forEach(el => {
+    const r = el.getBoundingClientRect();
+    if (!r.width || r.height < mr.height * 0.3) return;
+    if (r.left - mr.left < mr.width / 2) left = Math.max(left, r.right - mr.left);
+    else right = Math.min(right, r.left - mr.left);
+  });
+  return right - left > 200 ? { left, right: mr.width - right } : { left: 0, right: 0 };
+}
+function setViewClear(latlng, z, opts) {
+  const ins = clearInsets(), dx = (ins.right - ins.left) / 2;   // shift the centre into the clear area
+  map.setView(map.unproject(map.project(latlng, z).add([dx, 0]), z), z, opts);
+}
+function focusTarget(kind, id) {
+  if (kind === 'issue' && activeIssueData && issueMarkers[id]) {
+    const m = issueMarkers[id], p = (activeIssueData.parcels || []).find(x => x.id === id);
+    const t = p && (activeIssueData.types || {})[p.type];
+    return { label: p ? p.label : id, latlng: m.getLatLng(), color: (t && t.color) || '#334155',
+             hidden: !issueLayerGroup.hasLayer(m), layer: m };
+  }
+  if (kind === 'eip' && eipData && eipData.layers[id]) {
+    const n = eipNodeById(id), l = eipData.layers[id];
+    const color = n && n.eipType === 'Institution' ? (n.borderColor || '#7c3aed') : ((n && n.color) || '#93c5fd');
+    return { label: n ? n.label : id, latlng: l.getLatLng ? l.getLatLng() : null,
+             feature: l.getLatLng ? null : eipData.areas[id], bounds: l.getLatLng ? null : l.getBounds(),
+             color, hidden: !eipGroup.hasLayer(l), layer: l };
+  }
+  return null;
+}
+function mapFocus(kind, id, opt = {}) {   // opt.stay: redraw the ring without moving the map
+  const t = focusTarget(kind, id);
+  if (!t) return false;
+  clearMapFocus();
+  if (!map.getPane('rcnFocus')) {
+    const pane = map.createPane('rcnFocus');
+    pane.style.zIndex = 650; pane.style.pointerEvents = 'none';   // above the dots, below popups
+  }
+  focusRing = L.layerGroup().addTo(map);
+  if (t.latlng) {
+    if (t.hidden) L.circleMarker(t.latlng, { pane: 'rcnFocus', radius: 7, color: 'white', weight: 1.5,
+      fillColor: t.color, fillOpacity: 0.45, dashArray: '2 2', interactive: false }).addTo(focusRing);
+    L.circleMarker(t.latlng, { pane: 'rcnFocus', radius: 15, color: '#f59e0b', weight: 4, fill: false,
+      className: 'rcn-focus-ring', interactive: false }).addTo(focusRing);
+    if (!t.hidden && t.layer.bringToFront) t.layer.bringToFront();
+    if (!opt.stay) setViewClear(t.latlng, Math.max(map.getZoom(), 14), { animate: !document.hidden });
+  } else {
+    L.geoJSON(t.feature, { pane: 'rcnFocus', interactive: false,
+      style: { color: '#f59e0b', weight: 5, fill: false, className: 'rcn-focus-ring' } }).addTo(focusRing);
+    // An area that fits the view is only centred; a bigger one is framed.
+    // (No animation in a background tab: the browser pauses its frames and the move would stall.)
+    if (!opt.stay) {
+      const v = map.getBounds(), anim = { animate: !document.hidden };
+      const fits = t.bounds.getNorth() - t.bounds.getSouth() < (v.getNorth() - v.getSouth()) * 0.8 &&
+                   t.bounds.getEast() - t.bounds.getWest() < (v.getEast() - v.getWest()) * 0.8;
+      const ins = clearInsets();
+      if (fits) setViewClear(t.bounds.getCenter(), map.getZoom(), anim);
+      else map.fitBounds(t.bounds, { paddingTopLeft: [ins.left + 40, 50], paddingBottomRight: [ins.right + 40, 50], ...anim });
+    }
+  }
+  if (kind === 'issue') issueSelId = id; else eipSelId = id;   // the ⇄ switcher and F follow it
+  lastSelKind = kind;
+  focusRef = { kind, id };
+  showFocusChip(t);
+  return true;
+}
+function focusSelected() {
+  const order = lastSelKind === 'eip' ? [['eip', eipSelId], ['issue', issueSelId]] : [['issue', issueSelId], ['eip', eipSelId]];
+  for (const [k, id] of order) if (id && mapFocus(k, id)) return true;
+  showFocusChip(null);
+  return false;
+}
+function clearMapFocus() {
+  if (focusRing) { map.removeLayer(focusRing); focusRing = null; }
+  focusRef = null;
+  const chip = document.getElementById('focus-chip');
+  if (chip) chip.style.display = 'none';
+}
+function showFocusChip(t) {
+  let chip = document.getElementById('focus-chip');
+  if (!chip) {
+    chip = document.createElement('div');
+    chip.id = 'focus-chip';
+    document.getElementById('map').appendChild(chip);
+    L.DomEvent.disableClickPropagation(chip);
+  }
+  clearTimeout(chip._t);
+  chip.style.display = 'flex';
+  if (!t) {   // F with nothing selected
+    chip.innerHTML = `<span>Click a point first, then press <b>F</b> to centre on it.</span>`;
+    chip._t = setTimeout(() => { if (!focusRef) chip.style.display = 'none'; }, 2600);
+    return;
+  }
+  chip.innerHTML =
+    `<span class="fc-ring"></span>` +
+    `<a href="#" onclick="if (focusRef) mapFocus(focusRef.kind, focusRef.id); return false;" title="Centre on it again">${eipEsc(t.label)}</a>` +
+    (t.hidden ? `<span class="fc-note">hidden by Pick what to show</span>` : '') +
+    `<button onclick="clearMapFocus()" title="Remove the ring (Esc)">✕</button>`;
+}
+document.addEventListener('keydown', function (e) {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (drawModeActive || routeModeActive || isoModeActive) return;
+  if (e.key === 'f' || e.key === 'F') { e.preventDefault(); focusSelected(); }
+  else if (e.key === 'Escape' && focusRef && !presenting) { e.preventDefault(); clearMapFocus(); }
+});
+
 // ── Pick what to show, for an issue with types (a directory of co-ops, say) ──
 // The same rule as the EIP sketch's picker: click = only this, Shift+click = add
 // or remove, "+ what they're tied to" follows the issue's links. Display only —
@@ -5318,7 +5457,7 @@ function issuePickerHTML(data) {
       groups[k].slice().sort((a, b) => a.label.localeCompare(b.label)).map(p => {
         const t = types[p.type];
         return `<div class="eip-pick issue-pick" data-id="${eipEsc(p.id)}" onclick="issuePick('${eipEsc(p.id)}', event)" title="${eipEsc(p.label)}">` +
-          `<span class="dot" style="background:${(t && t.color) || STANCE_COLOR[p.stance] || STANCE_COLOR.unknown}"></span>${eipEsc(p.label)}</div>`;
+          `<span class="dot" style="background:${(t && t.color) || STANCE_COLOR[p.stance] || STANCE_COLOR.unknown}"></span>${eipEsc(p.label)}<span class="pick-focus" onclick="event.stopPropagation(); mapFocus('issue', '${eipEsc(p.id)}')" title="Centre on this one and ring it — nothing else is shown or hidden (F)">⌖</span></div>`;
       }).join('');
   }).join('');
   const groupBy = Object.keys(facets).length
@@ -5327,7 +5466,7 @@ function issuePickerHTML(data) {
     : '';
   return `<details${issueShown.size || issueGroupBy !== 'type' ? ' open' : ''}><summary>Pick what to show</summary>` +
     groupBy +
-    `<div class="hint">Click = only this · Shift+click = add or remove · click a heading for the whole group</div>` +
+    `<div class="hint">Click = only this · Shift+click = add or remove · click a heading for the whole group · ⌖ = centre on it, hide nothing</div>` +
     `<div class="eip-picks">${rows}</div>` +
     `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="popup-btn" onclick="issueShowAll()">Show all</button>` +
     (data.links && data.links.length ? `<button class="popup-btn" onclick="issueAddTied()" title="Also show everything tied to what is showing now">+ what they're tied to</button>` : '') +
@@ -5373,6 +5512,7 @@ function issueApplyShown(fit) {
   issueLinks.forEach(t => put(t.layer, issueVisible(t.a) && issueVisible(t.b)));
   Object.entries(issueMarkers).forEach(([id, m]) => { put(m, issueVisible(id)); if (issueLayerGroup.hasLayer(m)) m.bringToFront(); });
   if (issueSelId && !issueVisible(issueSelId)) { issueSelId = null; map.closePopup(); }
+  if (focusRef && focusRef.kind === 'issue') mapFocus('issue', focusRef.id, { stay: true });   // keep the ring's note honest
   document.querySelectorAll('.issue-pick').forEach(el => {
     el.classList.toggle('active', issueShown.has(el.dataset.id));
     el.classList.toggle('dimmed', issueShown.size > 0 && !issueShown.has(el.dataset.id));
