@@ -1076,6 +1076,11 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
 .vs-badge-scale{transform-box:fill-box;transform-origin:0 0;transition:transform 0.13s ease;}
 g[data-vs-label]:hover .vs-badge-scale{transform:scale(3);}
 #prop-tooltip{position:fixed;z-index:200;background:rgba(255,255,255,0.55);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);border:1px solid rgba(0,0,0,0.08);color:#0f172a;font-size:12px;padding:8px 12px;border-radius:8px;max-width:300px;white-space:pre-wrap;display:none;line-height:1.6;box-shadow:0 2px 12px rgba(0,0,0,.15);pointer-events:auto;word-break:break-word}
+#prop-tooltip.has-img{max-width:440px}
+#prop-tooltip .tt-img{display:block;max-width:100%;max-height:300px;margin:6px 0 2px;border-radius:4px;border:1px solid rgba(0,0,0,0.12);background:#fff;cursor:zoom-in}
+#img-lightbox{position:fixed;inset:0;z-index:400;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(15,23,42,0.82);cursor:zoom-out;padding:16px}
+#img-lightbox img{max-width:94vw;max-height:88vh;border-radius:6px;background:#fff;box-shadow:0 8px 40px rgba(0,0,0,0.4)}
+#img-lightbox .img-lightbox-hint{color:#e2e8f0;font-size:12px}
 /* ── RIGHT SIDEBAR LAYOUT ─────────────────────────────── */
 #toolbar{display:none}
 #right-col{width:240px;flex-shrink:0;background:#fff;border-left:1px solid #e2e8f0;overflow-y:auto;display:flex;flex-direction:column}
@@ -2145,11 +2150,20 @@ var globalLabelWrap=false;
 function isURL(s){return typeof s==='string'&&/^https?:\/\//i.test(s.trim());}
 function openURL(s){window.open(s.trim(),'_blank','noopener');}
 var _ttHideTimer=null;
-function showObjTooltip(n,e,ev){if(!noteTooltipsEnabled){hideTooltip();return;}if(!_ttEl){_ttEl=document.getElementById('prop-tooltip');_ttEl.addEventListener('mouseenter',function(){clearTimeout(_ttHideTimer);});_ttEl.addEventListener('mouseleave',function(){_ttHideTimer=setTimeout(function(){if(_ttEl)_ttEl.style.display='none';},80);});}clearTimeout(_ttHideTimer);var lines=[];var obj=n||e;if(obj){var pK=Object.keys(obj.props||{});if(e&&e.opl&&e.opl.trim())lines.push({text:'OPL: '+e.opl.trim()});if(obj.note&&obj.note.trim())lines.push({text:'\uD83D\uDCCC '+obj.note.trim()});pK.forEach(function(k){var v=String(obj.props[k]);lines.push(isURL(v)?{url:v,key:k,disp:isDisplayKey(k)}:{text:k+': '+v,disp:isDisplayKey(k)});});}
+// Pictures in hover text. A props key _image, _image2, ... holds a screenshot or GIF:
+// an http(s) address, a data: URI, or a path relative to the diagram file (resolved
+// against where ?url= loaded it from, so pictures can sit beside the JSON). The
+// leading _ keeps it display-only, so a picture never reaches Neo4j.
+var graphBaseURL=null;
+function isImageKey(k){return /^_image\d*$/.test(String(k));}
+function imageSrc(v){v=String(v||'').trim();if(!v)return '';if(/^data:image\//i.test(v)||/^https?:\/\//i.test(v))return v;try{return new URL(v,graphBaseURL||location.href).href;}catch(_){return v;}}
+function escAttr(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function showImageLightbox(src){var bx=document.getElementById('img-lightbox');if(!bx){bx=document.createElement('div');bx.id='img-lightbox';bx.setAttribute('role','dialog');bx.setAttribute('aria-label','Picture, full size. Click or press Escape to close.');bx.addEventListener('click',function(){bx.style.display='none';});document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&bx.style.display!=='none')bx.style.display='none';});document.body.appendChild(bx);}bx.innerHTML='<img src="'+escAttr(src)+'" alt=""><div class="img-lightbox-hint">click or Esc to close</div>';bx.style.display='flex';if(_ttEl)_ttEl.style.display='none';}
+function showObjTooltip(n,e,ev){if(!noteTooltipsEnabled){hideTooltip();return;}if(!_ttEl){_ttEl=document.getElementById('prop-tooltip');_ttEl.addEventListener('mouseenter',function(){clearTimeout(_ttHideTimer);});_ttEl.addEventListener('mouseleave',function(){_ttHideTimer=setTimeout(function(){if(_ttEl)_ttEl.style.display='none';},80);});}clearTimeout(_ttHideTimer);var lines=[];var obj=n||e;if(obj){var pK=Object.keys(obj.props||{});if(e&&e.opl&&e.opl.trim())lines.push({text:'OPL: '+e.opl.trim()});if(obj.note&&obj.note.trim())lines.push({text:'\uD83D\uDCCC '+obj.note.trim()});if(n&&isMapLink(n.mapURL))lines.push({url:resolveMapLink(n.mapURL),key:'\uD83D\uDDFA Open polygon on the map'});pK.forEach(function(k){var v=String(obj.props[k]);if(isImageKey(k)){if(v.trim())lines.push({img:imageSrc(v)});return;}lines.push(isURL(v)?{url:v,key:k,disp:isDisplayKey(k)}:{text:k+': '+v,disp:isDisplayKey(k)});});}
 // An edge with a label and nothing else still has something to say: the sentence it draws. Small italic labels on thin lines are the hardest thing on a canvas to read; the popup says it in full, in reading order.
 if(!lines.length&&e){var _es=nodeById(e.src),_et=nodeById(e.tgt),_el=edgeDisplayText(e);if(_es&&_et&&_el)lines.push({text:String(_es.label||'').replace(/\n/g,' ')+' \u2014 '+_el.replace(/\n/g,' ')+' \u2192 '+String(_et.label||'').replace(/\n/g,' ')});}
-if(!lines.length){_ttEl.style.display='none';return;}_ttEl.innerHTML=lines.map(function(l){if(l.url)return'<a href="'+escH(l.url)+'" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:underline;display:block">&#128279; '+escH(l.key)+': '+escH(l.url)+'</a>';return'<span'+(l.disp?' style="font-style:italic;opacity:.75"':'')+'>'+escH(l.text)+'</span>';}).join('<br>');_ttEl.style.display='block';moveTooltip(ev);}
-function moveTooltip(ev){if(!_ttEl||_ttEl.style.display==='none')return;var x=ev.clientX+14,y=ev.clientY-10;if(x+270>window.innerWidth)x=ev.clientX-280;_ttEl.style.left=x+'px';_ttEl.style.top=y+'px';}
+if(!lines.length){_ttEl.style.display='none';return;}var _hasImg=lines.some(function(l){return l.img;});_ttEl.classList.toggle('has-img',_hasImg);_ttEl.innerHTML=lines.map(function(l){if(l.img)return'<img class="tt-img" src="'+escAttr(l.img)+'" alt="" title="Click to see it full size" onclick="showImageLightbox(this.src)">';if(l.url)return'<a href="'+escH(l.url)+'" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:underline;display:block">&#128279; '+escH(l.key)+': '+escH(l.url)+'</a>';return'<span'+(l.disp?' style="font-style:italic;opacity:.75"':'')+'>'+escH(l.text)+'</span>';}).join('<br>');_ttEl.style.display='block';moveTooltip(ev);}
+function moveTooltip(ev){if(!_ttEl||_ttEl.style.display==='none')return;var w=_ttEl.offsetWidth||280,h=_ttEl.offsetHeight||0;var x=ev.clientX+14,y=ev.clientY-10;if(x+w>window.innerWidth-8)x=Math.max(8,ev.clientX-w-14);if(y+h>window.innerHeight-8)y=Math.max(8,window.innerHeight-h-8);_ttEl.style.left=x+'px';_ttEl.style.top=y+'px';}
 function hideTooltip(){clearTimeout(_ttHideTimer);_ttHideTimer=setTimeout(function(){if(_ttEl)_ttEl.style.display='none';},150);}
 
 // ── DRIVER TREE ENGINE ────────────────────────────────────
@@ -2530,17 +2544,33 @@ var EIP_COLS={
   I:{label:'Institution',color:'#ede9fe', border:'#7c3aed', textColor:'#4c1d95', x1:0.33,x2:0.67},
   P:{label:'Politics',   color:'#dbeafe', border:'#1d4ed8', textColor:'#1e3a8a', x1:0.67,x2:1.0}
 };
+// Marc's rule (Sep 2026): E and P hold only names of polygons — areas a map can
+// draw. EcoZone and Jurisdiction are the only E/P types, and each carries a
+// mapURL to its polygon on the RCN Map. Everything that acts — councils, boards,
+// co-ops — is an Institution in I, at most a point. An institution tied to a P
+// polygon is blue, one that stewards an E polygon is green; their shade is the
+// author's (n.color), the family is the type. A law is a rule an institution
+// makes, so it lives in I too, not in P.
 var EIP_NODE_TYPES=[
-  {type:'EcoZone',       col:'E', color:'#bbf7d0', label:'EcoZone'},
+  {type:'EcoZone',       col:'E', color:'#bbf7d0', label:'EcoZone (polygon)', polygon:true},
   {type:'EssentialFunc', col:'I', color:'#ddd6fe', label:'Essential Function'},
   {type:'Institution',   col:'I', color:'#ede9fe', label:'Institution'},
-  {type:'Law',           col:'P', color:'#bfdbfe', label:'Law / Code'},
-  {type:'Jurisdiction',  col:'P', color:'#dbeafe', label:'Jurisdiction'},
+  {type:'InstitutionP',  col:'I', color:'#93c5fd', label:'Institution · governs a P area', shades:['#bfdbfe','#93c5fd','#60a5fa','#3b82f6']},
+  {type:'InstitutionE',  col:'I', color:'#86efac', label:'Institution · stewards an E area', shades:['#bbf7d0','#86efac','#4ade80','#22c55e']},
+  {type:'Law',           col:'I', color:'#f5f3ff', label:'Law / Rule (made by an institution)'},
+  {type:'Jurisdiction',  col:'P', color:'#dbeafe', label:'Jurisdiction (polygon)', polygon:true},
   {type:'Observation',   col:'I', color:'#fef9c3', label:'Observation'}
 ];
+function eipTypeDef(t){for(var i=0;i<EIP_NODE_TYPES.length;i++)if(EIP_NODE_TYPES[i].type===t)return EIP_NODE_TYPES[i];return null;}
+// Neo4j label for a type: the two institution colours are one kind of thing.
+function eipNeoLabel(t){return (t==='InstitutionP'||t==='InstitutionE')?'Institution':t;}
+function eipServes(t){return t==='InstitutionP'?'P':t==='InstitutionE'?'E':null;}
 var eipActiveType=null;  // currently selected palette type
+var eipGeo=null;  // {areas: GeoJSON of the E/P polygons, relative to the diagram file} — read by the RCN Map
 
 function enterEIP(){
+  // Diagrams from before Sep 2026 filed Law under P; a typed node's column is its type's.
+  nodes.forEach(function(n){var td=eipTypeDef(n.eipType);if(td)n.eipCol=td.col;});
   renderAll();
   positionEIPOverlay();
   document.getElementById('eip-overlay').style.display='block';
@@ -2596,9 +2626,10 @@ function eipColForX(svgX){
 function eipColorForNode(n){
   // if node has an eipType set, use palette color; else column heuristic
   if(n.eipType){
-    for(var i=0;i<EIP_NODE_TYPES.length;i++){
-      if(EIP_NODE_TYPES[i].type===n.eipType)return EIP_NODE_TYPES[i].color;
-    }
+    var td=eipTypeDef(n.eipType);
+    // A blue or green institution keeps the shade its author picked.
+    var _sc=sv(n,'color');if(td&&td.shades&&_sc)return _sc;
+    if(td)return td.color;
   }
   if(n.eipCol){
     if(n.eipCol==='E')return EIP_COLS.E.color;
@@ -2614,6 +2645,9 @@ function buildEIPPalette(){
   title.className='eip-palette-title';
   title.textContent='EIP Node Types';
   div.appendChild(title);
+  var mb=document.createElement('button');mb.className='tb-btn';mb.style.cssText='margin:2px 8px 8px;font-size:12px;padding:4px 10px';
+  mb.textContent='\uD83D\uDDFA Show on map';mb.title='Open the RCN Map in a second window, linked: a click in either selects the same thing in the other';
+  mb.onclick=openEIPMap;div.appendChild(mb);
   EIP_NODE_TYPES.forEach(function(t){
     var sw=document.createElement('div');
     sw.className='eip-swatch'+(eipActiveType===t.type?' active':'');
@@ -2634,6 +2668,70 @@ function buildEIPPalette(){
   div.appendChild(hint);
   return div;
 }
+// The selected node's EIP facts: its type (so an old "Law in P" or an untyped
+// node can be re-filed), its shade if it is a blue or green institution, and —
+// for an E or P polygon — the address of that polygon on the RCN Map.
+function buildEIPNodeSection(n){
+  var div=document.createElement('div');
+  div.style.cssText='border-bottom:1px solid #e2e8f0;padding-bottom:6px';
+  var td=eipTypeDef(n.eipType);
+  var h='<div class="section-hd">EIP</div>';
+  h+='<div class="prop-row"><div class="prop-label">Type</div><select class="prop-input" onchange="setEIPType(\''+n.id+'\',this.value)">'
+    +'<option value=""'+(td?'':' selected')+'>— none —</option>'
+    +EIP_NODE_TYPES.map(function(t){return'<option value="'+t.type+'"'+(td&&td.type===t.type?' selected':'')+'>'+t.col+' · '+escH(t.label)+'</option>';}).join('')
+    +'</select></div>';
+  if(td&&td.shades){
+    h+='<div class="prop-row"><div class="prop-label">Shade</div><div style="display:flex;gap:5px">'
+      +td.shades.map(function(c){var on=String(sv(n,'color')||'').toLowerCase()===c;return'<span title="'+c+'" onclick="setEIPShade(\''+n.id+'\',\''+c+'\')" style="width:22px;height:18px;border-radius:4px;cursor:pointer;background:'+c+';border:2px solid '+(on?'#0f172a':'rgba(0,0,0,.12)')+'"></span>';}).join('')
+      +'</div></div>';
+  }
+  if(td&&td.polygon){
+    var u=n.mapURL||'';
+    h+='<div class="prop-row"><div class="prop-label">Map polygon</div><input class="prop-input" value="'+escAttr(u)+'" placeholder="RCN Map link to this area" onchange="setEIPMapURL(\''+n.id+'\',this.value)"/></div>';
+    h+='<div style="padding:2px 12px 4px;font-size:10px;color:#94a3b8;line-height:1.5">'
+      +(isMapLink(u)?'<button class="tb-btn" style="font-size:11px;padding:3px 9px" onclick="openURL(resolveMapLink(nodeById(\''+n.id+'\').mapURL))">🗺 Open on map ↗</button>'
+               :'E and P hold only areas a map can draw. Paste the RCN Map link to this polygon.')
+      +'</div>';
+  }else if(n.mapURL){
+    h+='<div style="padding:2px 12px 4px;font-size:10px;color:#b45309">This node has a map polygon link, but only EcoZones and Jurisdictions are polygons.</div>';
+  }
+  div.innerHTML=h;
+  return div;
+}
+function setEIPType(id,t){
+  var n=nodeById(id);if(!n)return;
+  var td=eipTypeDef(t);
+  snap();
+  if(!td){delete n.eipType;delete n.eipCol;}
+  else{n.eipType=t;n.eipCol=td.col;
+    // Keep the author's shade only when it belongs to the new type's family.
+    if(!td.shades||td.shades.indexOf(String(sv(n,'color')||'').toLowerCase())<0)setStyled(n,'color',td.color);}
+  renderAll();buildPanel();
+}
+function setEIPShade(id,c){var n=nodeById(id);if(!n)return;snap();setStyled(n,'color',c);renderAll();buildPanel();}
+function setEIPMapURL(id,v){var n=nodeById(id);if(!n)return;snap();v=String(v||'').trim();if(v)n.mapURL=v;else delete n.mapURL;buildPanel();}
+// ── EIP ⇄ RCN Map link ───────────────────────────────────────────────────
+// The sketch and the map run in two windows on the same site and talk over a
+// BroadcastChannel. A click in one selects the same thing in the other (node
+// id = polygon id = point id), and the map asks the sketch for its live state,
+// so edits not yet saved still show on the map.
+var eipChan=('BroadcastChannel' in window)?new BroadcastChannel('rcn-eip'):null;
+var _eipRemote=false,_eipLastSent=null;
+// A stored map link may be relative (rcn_map.html?eip=sketch.json&sel=id), the form that
+// works in a flat asset folder. Resolve it for wherever the tool is running: the map's
+// own address from rcnMapURL(), and the sketch file against where the sketch came from.
+function isMapLink(u){return isURL(u)||/^rcn_map\.html/i.test(String(u||'').trim());}
+function resolveMapLink(u){u=String(u||'').trim();if(isURL(u)||!/^rcn_map\.html/i.test(u))return u;var q=new URL(u,'http://x/').searchParams;var e=q.get('eip');if(e&&e!=='live'&&!isURL(e)){try{q.set('eip',new URL(e,graphBaseURL||location.href).href);}catch(_){}}return rcnMapURL()+'?'+q.toString();}
+function rcnMapURL(){return /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)?'/maps/rcn_map.html':'rcn_map.html';}
+function eipStateForMap(){var s=buildState();if(eipGeo&&eipGeo.areas){try{s.eipGeo={areas:new URL(eipGeo.areas,graphBaseURL||location.href).href};}catch(_){}}return s;}
+function openEIPMap(){var sel=selected.nodes.length===1?selected.nodes[0]:'';var w=window.open(rcnMapURL()+'?eip=live'+(sel?'&sel='+encodeURIComponent(sel):''),'rcn-eip-map');if(w)w.focus();}
+function eipBroadcastSelect(id){if(!eipChan||_eipRemote||mode!=='eip'||id===_eipLastSent)return;_eipLastSent=id;eipChan.postMessage({type:'eip-select',id:id,src:'sketch'});}
+function eipSelectNode(id){var n=nodeById(id);if(!n)return false;selected={nodes:[n.id],edges:[],lines:[],triples:[]};
+  var r=svgEl.getBoundingClientRect();pan.x=r.width/2-n.x*zoom;pan.y=r.height/2-n.y*zoom;applyT();renderAll();
+  _eipRemote=true;try{buildPanel();}finally{_eipRemote=false;}_eipLastSent=id;return true;}
+if(eipChan)eipChan.onmessage=function(ev){var m=ev.data||{};if(m.src==='sketch'||mode!=='eip')return;
+  if(m.type==='eip-hello')eipChan.postMessage({type:'eip-state',src:'sketch',state:eipStateForMap()});
+  else if(m.type==='eip-select')eipSelectNode(m.id);};
 function applyEIPToNewNode(n){
   if(!eipActiveType)return;
   for(var i=0;i<EIP_NODE_TYPES.length;i++){
@@ -2643,7 +2741,7 @@ function applyEIPToNewNode(n){
       n.color=EIP_NODE_TYPES[i].color;
       n.label=eipActiveType==='EcoZone'?'Eco Zone':
                eipActiveType==='EssentialFunc'?'Essential Function':
-               eipActiveType==='Institution'?'Institution':
+               eipActiveType==='Institution'||eipActiveType==='InstitutionP'||eipActiveType==='InstitutionE'?'Institution':
                eipActiveType==='Law'?'Law':
                eipActiveType==='Jurisdiction'?'Jurisdiction':'Observation';
       break;
@@ -2890,9 +2988,12 @@ function saveToSubstrate(){
 function exportEIPCypher(){
   var lines=['// EIP Graph — Neo4j Cypher','// Generated '+new Date().toISOString().slice(0,10),''];
   nodes.forEach(function(n){
-    var label=n.eipType||'Node';
+    var label=n.eipType?eipNeoLabel(n.eipType):'Node';
     var props={name:n.label};
-    if(n.eipCol)props.eip_domain=n.eipCol==='E'?'Ecology':n.eipCol==='I'?'Institutions':'Politics';
+    var _td=eipTypeDef(n.eipType),_dc=_td?_td.col:n.eipCol;
+    if(_dc)props.eip_domain=_dc==='E'?'Ecology':_dc==='I'?'Institutions':'Politics';
+    if(eipServes(n.eipType))props.serves=eipServes(n.eipType)==='E'?'Ecology':'Politics';
+    if(n.mapURL)props.map_url=n.mapURL;
     if(n.extraLabels&&n.extraLabels.length)props.labels=n.extraLabels.join(';');
     if(n.note&&n.note.trim())props.note=n.note.trim();
     var propsStr=Object.keys(props).map(function(k){return k+': '+JSON.stringify(props[k]);}).join(', ');
@@ -7738,13 +7839,15 @@ if(!b){pan={x:0,y:0};zoom=1;applyT();return;}
 // The on-canvas symbol chart occupies the bottom-left, so fitting into the full
 // width would tuck part of the diagram underneath it. Reserve its column.
 var inset=(opmChartOn&&mode==='opm')?300:0;W=W-inset;
+// EIP mode's sentence banner sits across the top of the canvas; keep the fit below it.
+var topInset=(mode==='eip')?120:0;H=H-topInset;
 // The margin is reserved in SCREEN pixels, not graph units. Padding the content
 // box in graph units and then scaling it made the margin shrink exactly when it
 // was needed most: 40 graph units renders as 19px at zoom 0.47, so the bigger
 // the drawing the tighter its export sat against the frame.
 var padPx=40,cw=(b.x2-b.x1)||1,ch=(b.y2-b.y1)||1;
 zoom=Math.min((W-2*padPx)/cw,(H-2*padPx)/ch,2.4);
-pan.x=inset+W/2-((b.x1+b.x2)/2)*zoom;pan.y=H/2-((b.y1+b.y2)/2)*zoom;applyT();}requestAnimationFrame(function(){requestAnimationFrame(doFit);});}
+pan.x=inset+W/2-((b.x1+b.x2)/2)*zoom;pan.y=topInset+H/2-((b.y1+b.y2)/2)*zoom;applyT();}requestAnimationFrame(function(){requestAnimationFrame(doFit);});}
 // ── PRESENTATION VIEW ────────────────────────────────────────────────
 // Hides every control (topbar, right column, hints, mode banners) so the
 // window is nothing but the graph. Legend, EIP columns, loop labels and the
@@ -8041,6 +8144,7 @@ if(mode==='eip'){
     pc.appendChild(hint);
     return;
   }
+  if(sN.length===1&&!sE.length){pc.appendChild(buildEIPNodeSection(sN[0]));eipBroadcastSelect(sN[0].id);}
   // fall through to build normal selection panel below palette
   var extraPC=document.createElement('div');
   // rebuild rest of panel into extraPC then append
@@ -8366,7 +8470,7 @@ function setLineLabel(id,val){snap();var l=lineById(id);if(l){l.label=val;render
 // `mode` is persisted because Wardley/RBA files are unreadable in the wrong
 // mode — the grid vanishes and the rent bands go with it. Every other mode
 // tolerated being forgotten; this one does not.
-function buildState(){return{version:'1.0',mode:mode,modelName:modelName(),modelNote:(document.getElementById('model-note').value||'').trim(),canvasBg:canvasBg,graphAttrs:graphAttrs,cldLoopNames:cldLoopNames,legendEntries:legendEntries.map(function(e){return Object.assign({},e);}),legendVisible:legendVisible,lopBands:lopBandsOn,vsmLanes:vsmLanesOn,vsmTrueScale:vsmTrueScale,legendCollapsed:legendCollapsed,customSymbols:customSymbols.map(function(s){return Object.assign({},s);}),nodes:nodes.map(function(n){return stampStyle(Object.assign({},n,{props:Object.assign({},n.props)}),n,STAMP_NODE_FIELDS);}),edges:edges.map(function(e){return stampStyle(Object.assign({},e,{props:Object.assign({},e.props)}),e,STAMP_EDGE_FIELDS);}),lines:lines.map(function(l){return Object.assign({},l);}),metaEdges:metaEdges.map(function(me){return Object.assign({},me);})};}
+function buildState(){return{version:'1.0',mode:mode,modelName:modelName(),modelNote:(document.getElementById('model-note').value||'').trim(),canvasBg:canvasBg,graphAttrs:graphAttrs,cldLoopNames:cldLoopNames,legendEntries:legendEntries.map(function(e){return Object.assign({},e);}),legendVisible:legendVisible,eipGeo:eipGeo||undefined,lopBands:lopBandsOn,vsmLanes:vsmLanesOn,vsmTrueScale:vsmTrueScale,legendCollapsed:legendCollapsed,customSymbols:customSymbols.map(function(s){return Object.assign({},s);}),nodes:nodes.map(function(n){return stampStyle(Object.assign({},n,{props:Object.assign({},n.props)}),n,STAMP_NODE_FIELDS);}),edges:edges.map(function(e){return stampStyle(Object.assign({},e,{props:Object.assign({},e.props)}),e,STAMP_EDGE_FIELDS);}),lines:lines.map(function(l){return Object.assign({},l);}),metaEdges:metaEdges.map(function(me){return Object.assign({},me);})};}
 function cleanXmileLabel(raw){return(raw||'').replace(/^"+|"+$/g,'').replace(/^\\+|\\+$/g,'').replace(/_/g,' ').trim();}
 function xmileKey(raw){return(raw||'').replace(/^"+|"+$/g,'').replace(/^\\+|\\+$/g,'').trim().toLowerCase();}
 function toXmileName(label){return label.replace(/\s+/g,'_');}
@@ -8682,7 +8786,7 @@ return out;});if(raw.modelName)document.getElementById('model-name').value=raw.m
 // silently. Default them the same way makeNode() does.
 nodes.forEach(function(n){if(!isFinite(n.w)||n.w<=0)n.w=108;if(!isFinite(n.h)||n.h<=0)n.h=46;});
 nodes.forEach(autoSize);toast('Loaded '+nodes.length+' nodes');}lines=(raw.lines||[]).map(function(l){return Object.assign({color:'#000000',width:1.5,dash:'solid',arrowhead:'none',label:''},l);});var ids=nodes.map(function(n){return+String(n.id).replace(/\D/g,'')||0;}).concat(edges.map(function(e){return+String(e.id).replace(/\D/g,'')||0;})).concat(lines.map(function(l){return+String(l.id).replace(/\D/g,'')||0;}));nextId=(ids.length?Math.max.apply(null,ids):0)+1;selected={nodes:[],edges:[],lines:[],triples:[]};edges.forEach(function(e){if(e.color)getMarkerId(e.color);if(e.opmMarker&&e.color)getOPMMarkerId(e.opmMarker,e.color);});metaEdges=(raw.metaEdges||[]).map(function(me){return Object.assign({},me);});if(raw.cldLoopNames)cldLoopNames=raw.cldLoopNames;requestAnimationFrame(function(){renderLegendSVG();});
-if(raw.legendEntries){legendEntries=raw.legendEntries;legendVisible=!!raw.legendVisible;legendCollapsed=!!raw.legendCollapsed;normaliseLegend();legendEntries.forEach(function(r){if((r.kind||'node')==='edge'&&r.color)getMarkerId(r.color);});buildLegendSection();renderLegendOverlay();}if(raw.lopBands!==undefined)lopBandsOn=!!raw.lopBands;if(raw.vsmLanes!==undefined)vsmLanesOn=!!raw.vsmLanes;if(raw.vsmTrueScale!==undefined)vsmTrueScale=!!raw.vsmTrueScale;var _mn=document.getElementById('model-note');_mn.value=raw.modelNote||'';renderModelNote();// update nextTripleNum based on loaded triples
+eipGeo=raw.eipGeo||null;if(raw.legendEntries){legendEntries=raw.legendEntries;legendVisible=!!raw.legendVisible;legendCollapsed=!!raw.legendCollapsed;normaliseLegend();legendEntries.forEach(function(r){if((r.kind||'node')==='edge'&&r.color)getMarkerId(r.color);});buildLegendSection();renderLegendOverlay();}if(raw.lopBands!==undefined)lopBandsOn=!!raw.lopBands;if(raw.vsmLanes!==undefined)vsmLanesOn=!!raw.vsmLanes;if(raw.vsmTrueScale!==undefined)vsmTrueScale=!!raw.vsmTrueScale;var _mn=document.getElementById('model-note');_mn.value=raw.modelNote||'';renderModelNote();// update nextTripleNum based on loaded triples
 var tNums=edges.filter(function(e){return e.tripleId;}).map(function(e){return parseInt(e.tripleId.slice(1))||0;});nextTripleNum=(tNums.length?Math.max.apply(null,tNums):0)+1;
 customSymbols=(raw.customSymbols||[]).map(function(s){return Object.assign({},s);});_vsAddMode=false;
 // Mode restore. `meta.mode` is honoured too: files written before buildState
@@ -9172,7 +9276,9 @@ function exportDOT(){
     var dotLabel=labelLines(n).map(dotEsc).join('\\n');
     var attrs=[['label','"'+dotLabel+'"'],['fillcolor','"'+fill+'"'],['fontcolor','"'+fc+'"'],['shape',sh]];
     if(n.eipType)attrs.push(['eip_type','"'+n.eipType+'"']);
-    if(n.eipCol)attrs.push(['eip_domain','"'+(n.eipCol==='E'?'Ecology':n.eipCol==='I'?'Institutions':'Politics')+'"']);
+    var _dtd=eipTypeDef(n.eipType),_ddc=_dtd?_dtd.col:n.eipCol;
+    if(_ddc)attrs.push(['eip_domain','"'+(_ddc==='E'?'Ecology':_ddc==='I'?'Institutions':'Politics')+'"']);
+    if(n.mapURL)attrs.push(['map_url','"'+dotEsc(n.mapURL)+'"']);
     if(n.extraLabels&&n.extraLabels.length)attrs.push(['neo4j_labels','"'+n.extraLabels.join(':')+'"']);
     if(n.note&&n.note.trim())attrs.push(['note','"'+dotEsc(n.note.trim())+'"']);
     Object.keys(n.props||{}).forEach(function(k){if(k)attrs.push([k,'"'+dotEsc(String(n.props[k]))+'"']);});
@@ -9214,7 +9320,8 @@ function exportDOT(){
 function dotNodeId(n){return 'n'+String(n.id).replace(/\D/g,'');}
 function dotEsc(s){return String(s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');}
 function dotShape(sh){var map={rounded:'box',rect:'rectangle',ellipse:'ellipse',diamond:'diamond',hexagon:'hexagon',cylinder:'cylinder',barrel:'box'};return map[sh]||'box';}
-function buildExportSVG(){var W=svgEl.clientWidth||600,H=svgEl.clientHeight||400;var clone=svgEl.cloneNode(true);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');clone.setAttribute('width',String(W));clone.setAttribute('height',String(H));
+function buildExportSVG(){var W=svgEl.clientWidth||600,H=svgEl.clientHeight||400;var clone=svgEl.cloneNode(true);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');clone.setAttribute('width',String(W));clone.setAttribute('height',String(H));clone.setAttribute('font-family','system-ui,sans-serif');// node text takes its font from page CSS, which an exported SVG does not carry; without this every export falls back to a serif face
+
 // The clone is the LIVE canvas element, so it arrives carrying id="canvas" and the
 // tool's own inline handlers. Harmless in a lone file, but two exports embedded in one
 // page collide on that id, and the handlers reference functions that do not exist there.
@@ -9224,8 +9331,8 @@ clone.removeAttribute('id');
 clone.setAttribute('viewBox','0 0 '+W+' '+H);
 var bg=document.createElementNS('http://www.w3.org/2000/svg','rect');bg.setAttribute('width',String(W));bg.setAttribute('height',String(H));bg.setAttribute('fill',canvasBg);clone.insertBefore(bg,clone.firstChild);var rl=clone.querySelector('#rubber-layer');if(rl)rl.parentNode.removeChild(rl);Array.prototype.forEach.call(clone.querySelectorAll('path[stroke="transparent"]'),function(el){el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('rect'),function(el){if((el.style.cursor||'').indexOf('resize')>=0)el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('ellipse[stroke-dasharray]'),function(el){el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('circle[stroke="#3b82f6"]'),function(el){el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('line'),function(el){if((el.getAttribute('stroke')||'').indexOf('rgba(59,130,246')===0)el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('rect[fill="transparent"][stroke="none"]'),function(el){el.parentNode.removeChild(el);});Array.prototype.forEach.call(clone.querySelectorAll('circle[fill="transparent"]'),function(el){el.parentNode.removeChild(el);});
 // inject <title> elements so browsers show note+props on hover
-nodes.forEach(function(n){var g=clone.querySelector('#node-'+n.id);if(!g)return;var parts=[];if(n.note&&n.note.trim())parts.push('📌 '+n.note.trim());Object.keys(n.props||{}).forEach(function(k){if(k)parts.push(k+': '+n.props[k]);});if(!parts.length)return;var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=parts.join('\n');g.insertBefore(t,g.firstChild);});
-edges.forEach(function(e){var g=clone.querySelector('#edge-'+e.id);if(!g)return;var parts=[];if(e.opl&&e.opl.trim())parts.push('OPL: '+e.opl.trim());if(e.note&&e.note.trim())parts.push('📌 '+e.note.trim());Object.keys(e.props||{}).forEach(function(k){if(k)parts.push(k+': '+e.props[k]);});if(!parts.length)return;var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=parts.join('\n');g.insertBefore(t,g.firstChild);});
+nodes.forEach(function(n){var g=clone.querySelector('#node-'+n.id);if(!g)return;var parts=[];if(n.note&&n.note.trim())parts.push('📌 '+n.note.trim());Object.keys(n.props||{}).forEach(function(k){if(k&&!isImageKey(k))parts.push(k+': '+n.props[k]);});if(Object.keys(n.props||{}).some(isImageKey))parts.push('(has a picture — open the diagram in the Graph Tool to see it)');if(!parts.length)return;var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=parts.join('\n');g.insertBefore(t,g.firstChild);});
+edges.forEach(function(e){var g=clone.querySelector('#edge-'+e.id);if(!g)return;var parts=[];if(e.opl&&e.opl.trim())parts.push('OPL: '+e.opl.trim());if(e.note&&e.note.trim())parts.push('📌 '+e.note.trim());Object.keys(e.props||{}).forEach(function(k){if(k&&!isImageKey(k))parts.push(k+': '+e.props[k]);});if(Object.keys(e.props||{}).some(isImageKey))parts.push('(has a picture — open the diagram in the Graph Tool to see it)');if(!parts.length)return;var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent=parts.join('\n');g.insertBefore(t,g.firstChild);});
 // A <title> is only reachable if something under the pointer can be hit. Two things
 // above conspire against that for edges: the transparent hit band is stripped as
 // clutter, and the visible 1.5px line carries pointer-events="none" so it never steals
@@ -9319,12 +9426,15 @@ function copySelection(){if(!selected.nodes.length){toast('Select nodes first');
 function download(fname,mime,content){var blob=new Blob([content],{type:mime});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=fname;a.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);}
 var toastT;
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},2400);}
-function loadFromURL(){var h=location.hash;if(h.indexOf('#graph=')<0)return;try{var raw=h.split('#graph=')[1];var st=JSON.parse(decodeURIComponent(escape(atob(raw))));nodes=st.nodes||[];edges=st.edges||[];if(st.modelName)document.getElementById('model-name').value=st.modelName;if(st.canvasBg)setBgColor(st.canvasBg);if(st.graphAttrs)graphAttrs=st.graphAttrs;if(st.cldLoopNames)cldLoopNames=st.cldLoopNames;var _mn2=document.getElementById('model-note');_mn2.value=st.modelNote||'';renderModelNote();edges.forEach(function(e){e.polarity=e.polarity||'none';e.delay=!!e.delay;e.dash=e.dash||'solid';if(!e.note)e.note='';if(e.color)getMarkerId(e.color);if(e.opmMarker&&e.color)getOPMMarkerId(e.opmMarker,e.color);});nodes.forEach(function(n){if(!n.fontSize)n.fontSize=DEF_NFS;if(!n.fontColor)n.fontColor='auto';if(!n.borderColor)n.borderColor='';if(!n.borderWidth)n.borderWidth=1.5;if(!n.borderDash)n.borderDash='solid';if(!n.note)n.note='';if(!n.extraLabels)n.extraLabels=[];autoSize(n);});var ids=nodes.map(function(n){return+String(n.id).replace(/\D/g,'')||0;}).concat(edges.map(function(e){return+String(e.id).replace(/\D/g,'')||0;}));nextId=(ids.length?Math.max.apply(null,ids):0)+1;renderAll();zoomFit();syncCC();toast('Loaded: '+nodes.length+' nodes, '+edges.length+' edges');}catch(err){console.warn('URL load failed',err);setTimeout(function(){toast('\u26a0\ufe0f URL load failed \u2014 link may be truncated. Use JSON export for large diagrams.');},400);}}
+// #graph= goes through the same loader as Import JSON, so a handoff keeps what a
+// file keeps — legend rows, mode, layers. The old hand-rolled copy read only nodes,
+// edges and the title, so a sender's legend silently vanished on arrival.
+function loadFromURL(){var h=location.hash;if(h.indexOf('#graph=')<0)return;try{var raw=h.split('#graph=')[1];var text=decodeURIComponent(escape(atob(raw)));JSON.parse(text);loadGraphJSON(text);zoomFit();}catch(err){console.warn('URL load failed',err);setTimeout(function(){toast('\u26a0\ufe0f URL load failed \u2014 link may be truncated. Use JSON export for large diagrams.');},400);}}
 function loadFromQueryParam(){var params=new URLSearchParams(window.location.search);var url=params.get('url');if(url&&/\/projection\/subgraph\//.test(url)){var _tail=url.split('/projection/subgraph/')[1];substrateSubgraph=decodeURIComponent(_tail.split('?')[0]);var _qi=_tail.indexOf('?');substrateDb=_qi<0?null:(new URLSearchParams(_tail.slice(_qi+1)).get('db')||null);}
   // Any projection names its database, not just a subgraph — a neighbourhood
   // arrives as /projection/neighbours/<name>?db=whatcom, and expanding a node
   // in it has to know which database to ask.
-  else if(url&&/\/projection\//.test(url)){var _q2=url.indexOf('?');if(_q2>=0)substrateDb=new URLSearchParams(url.slice(_q2+1)).get('db')||null;}if(!url)return;fetch(url.charAt(0)==='/'?SUBSTRATE_BASE+url:url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(text){loadGraphJSON(text);zoomFit();}).catch(function(err){console.warn('?url= load failed',err);setTimeout(function(){toast('\u26a0\ufe0f Could not load model \u2014 check URL and CORS headers');},400);});}
+  else if(url&&/\/projection\//.test(url)){var _q2=url.indexOf('?');if(_q2>=0)substrateDb=new URLSearchParams(url.slice(_q2+1)).get('db')||null;}if(!url)return;fetch(url.charAt(0)==='/'?SUBSTRATE_BASE+url:url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(text){try{graphBaseURL=new URL(url.charAt(0)==='/'?SUBSTRATE_BASE+url:url,location.href).href;}catch(_){graphBaseURL=null;}loadGraphJSON(text);zoomFit();var _sel=new URLSearchParams(location.search).get('sel');if(_sel)setTimeout(function(){eipSelectNode(_sel);},150);}).catch(function(err){console.warn('?url= load failed',err);setTimeout(function(){toast('\u26a0\ufe0f Could not load model \u2014 check URL and CORS headers');},400);});}
 function sendToWikiItem(){
   if(!window.opener){toast('Not running as wiki popup — use → Wiki for ghost page');return;}
   // Refuse to overwrite a good diagram with an icon-less rendering of itself.

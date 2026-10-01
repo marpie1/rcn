@@ -26,6 +26,14 @@
     font-size: 11px; line-height: 1.6; box-shadow: 0 1px 4px rgba(0,0,0,0.25); max-width: 220px; }
   .issue-graph-btns { margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;
     display: flex; align-items: center; gap: 8px; }
+  .eip-legend { background: rgba(255,255,255,0.94); padding: 8px 10px; border-radius: 6px;
+    font-size: 11px; line-height: 1.6; box-shadow: 0 1px 4px rgba(0,0,0,0.25); max-width: 240px; }
+  .eip-legend .sw { display:inline-block; width:14px; height:10px; margin-right:6px; vertical-align:middle; border-radius:2px; }
+  .eip-legend .dot { display:inline-block; width:10px; height:10px; margin-right:6px; vertical-align:middle; border-radius:50%; border:1.5px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.25); }
+  .eip-legend .hint { color:#64748b; font-size:10px; margin-top:4px; }
+  .eip-pop h4 { margin:0 0 2px; font-size:13px; }
+  .eip-pop .k { color:#64748b; font-size:11px; }
+  .eip-pop ul { margin:4px 0 0 14px; padding:0; font-size:11px; max-height:160px; overflow:auto; }
   .issue-graph-btns a { color: #2563eb; text-decoration: none; font-size: 11px; }
   #legend { margin-top: 10px; border-top: 1px solid #eee; padding-top: 8px; }
   .legend-group { margin-bottom: 8px; }
@@ -2486,6 +2494,205 @@ async function toggleIssue(key, opts = {}) {
   updateIssueButtons();
 }
 
+// ── EIP Stage Sketch layer ───────────────────────────────────────────────
+// The map face of an EIP Stage Sketch (Graph Tool, EIP mode). E and P areas
+// are polygons from the sketch's areas file; institutions with a location are
+// points; laws have no place, so they show in the popup of the body that made
+// them. Ids are shared: node id = polygon id = point id. The sketch and the map
+// run in two windows and talk over a BroadcastChannel — a click in either
+// selects the same thing in the other. ?eip=<sketch JSON url> loads a file;
+// ?eip=live waits for the open sketch to send its current state.
+const EIP_COL = { E: { line: '#15803d', fill: '#86efac' }, P: { line: '#1d4ed8', fill: '#93c5fd' } };
+let eipGroup = null, eipFocus = null, eipLegendCtl = null, eipData = null, eipSrc = null;
+let eipSelId = null, eipSketchAlive = false;
+const eipChan = ('BroadcastChannel' in window) ? new BroadcastChannel('rcn-eip') : null;
+
+async function startEIP(src, sel) {
+  eipSrc = src;
+  if (eipChan) {
+    eipChan.onmessage = ev => {
+      const m = ev.data || {};
+      if (m.src === 'map') return;
+      if (m.type === 'eip-state' || m.type === 'eip-select') eipSketchAlive = true;
+      if (m.type === 'eip-state' && m.state) {
+        const first = !eipData, want = eipSelId;
+        drawEIP(m.state, m.state.eipGeo && m.state.eipGeo.areas, null, !first || !!want).then(() => { if (want) eipSelect(want, { pan: first, remote: true }); });
+      } else if (m.type === 'eip-select') eipSelect(m.id, { pan: true, remote: true });
+    };
+  }
+  if (src !== 'live') {
+    try {
+      const g = await (await fetch(src)).json();
+      const areas = g.eipGeo && g.eipGeo.areas ? new URL(g.eipGeo.areas, new URL(src, location.href)).href : null;
+      await drawEIP(g, areas, sel);
+    } catch (err) { console.error('EIP sketch load failed:', err); }
+  }
+  // Ask an open sketch for its live state; it replaces the file's if one answers.
+  if (eipChan) eipChan.postMessage({ type: 'eip-hello', src: 'map' });
+  if (src === 'live' && sel) eipSelId = sel;
+}
+
+const eipNodeById = id => eipData && eipData.nodes.find(n => n.id === id);
+const eipIsArea = n => n && (n.eipType === 'EcoZone' || n.eipType === 'Jurisdiction');
+const eipIsLaw = n => n && n.eipType === 'Law';
+const eipPt = n => n && n.props && isFinite(parseFloat(n.props.lat)) ? [parseFloat(n.props.lat), parseFloat(n.props.lng)] : null;
+const eipEsc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+async function drawEIP(g, areasUrl, sel, keepView) {
+  let areas = { features: [] };
+  if (areasUrl) { try { areas = await (await fetch(areasUrl)).json(); } catch (e) { console.warn('EIP areas failed', e); } }
+  if (eipGroup) map.removeLayer(eipGroup);
+  if (eipFocus) map.removeLayer(eipFocus);
+  if (eipLegendCtl) map.removeControl(eipLegendCtl);
+  eipData = { nodes: g.nodes || [], edges: g.edges || [], name: g.modelName || 'EIP Stage Sketch', areas: {}, layers: {} };
+  eipGroup = L.featureGroup().addTo(map);
+  eipFocus = L.layerGroup().addTo(map);
+  // Areas: biggest first, so the small ones sit on top and stay clickable.
+  const feats = (areas.features || []).filter(f => eipNodeById(f.id || f.properties.id));
+  feats.forEach(f => { const b = L.geoJSON(f).getBounds(); f._size = (b.getNorth() - b.getSouth()) * (b.getEast() - b.getWest()); });
+  feats.sort((a, b) => b._size - a._size).forEach(f => {
+    const id = f.id || f.properties.id, n = eipNodeById(id), c = EIP_COL[f.properties.eipCol] || EIP_COL.P;
+    const outline = !!f.properties.outline;
+    const lyr = L.geoJSON(f, { style: () => outline
+      ? { color: c.line, weight: 1.5, dashArray: '6 5', fill: false }
+      : { color: c.line, weight: 2, fillColor: c.fill, fillOpacity: 0.14, dashArray: f.properties.eipCol === 'P' ? '7 4' : null } });
+    lyr.bindTooltip(eipEsc(n.label), { sticky: true });
+    lyr.on('click', e => { L.DomEvent.stopPropagation(e); eipSelect(id, { at: e.latlng }); });
+    lyr.addTo(eipGroup);
+    eipData.areas[id] = f; eipData.layers[id] = lyr;
+  });
+  // Institutions with a place.
+  eipData.nodes.forEach(n => {
+    const pt = eipPt(n); if (!pt || eipIsArea(n)) return;
+    const fill = n.eipType === 'Institution' ? (n.borderColor || '#7c3aed') : (n.color || '#93c5fd');
+    const m = L.circleMarker(pt, { radius: 7, fillColor: fill, color: n.eipType === 'Institution' ? '#fff' : '#1d4ed8', weight: 1.8, fillOpacity: 0.95 });
+    m.bindTooltip(eipEsc(n.label), { direction: 'top', offset: [0, -6] });
+    m.on('click', e => { L.DomEvent.stopPropagation(e); eipSelect(n.id); });
+    m.addTo(eipGroup); eipData.layers[n.id] = m;
+  });
+  // Ties between co-ops (plain institutions) are always drawn.
+  eipData.edges.forEach(e => {
+    const a = eipNodeById(e.src), b = eipNodeById(e.tgt);
+    if (!a || !b || a.eipType !== 'Institution' || b.eipType !== 'Institution') return;
+    const pa = eipPt(a), pb = eipPt(b); if (!pa || !pb) return;
+    L.polyline([pa, pb], { color: e.color || '#555', weight: Math.max(1.5, (e.width || 2) * 0.8), opacity: 0.75, dashArray: eipDash(e.dash) })
+      .bindTooltip(eipEsc(a.label + ' → ' + b.label + (e.label ? ': ' + e.label : '')), { sticky: true })
+      .addTo(eipGroup);
+  });
+  map.off('click', eipClearFocus); map.on('click', eipClearFocus);
+  eipLegendCtl = L.control({ position: 'topleft' });
+  eipLegendCtl.onAdd = () => {
+    const d = L.DomUtil.create('div', 'eip-legend');
+    d.innerHTML = `<b>${eipEsc(eipData.name)}</b>` +
+      `<div><span class="sw" style="background:${EIP_COL.E.fill};border:1.5px solid ${EIP_COL.E.line}"></span>E — ecological area</div>` +
+      `<div><span class="sw" style="background:${EIP_COL.P.fill};border:1.5px dashed ${EIP_COL.P.line}"></span>P — jurisdiction</div>` +
+      `<div><span class="sw" style="border:1.5px dashed ${EIP_COL.P.line}"></span>P — state / nation (outline)</div>` +
+      `<div><span class="dot" style="background:#c0392b"></span>Co-op (colour = kind)</div>` +
+      `<div><span class="dot" style="background:#93c5fd;box-shadow:0 0 0 1.5px #1d4ed8"></span>Institution that governs a P area</div>` +
+      `<div class="hint">Lines between co-ops always show. Click anything for its other ties.</div>` +
+      `<div class="issue-graph-btns"><button class="popup-btn" onclick="eipOpenSketch()">◫ Show as EIP sketch</button><button class="popup-btn" onclick="eipFit()">Fit</button></div>`;
+    L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
+    return d;
+  };
+  eipLegendCtl.addTo(map);
+  if (sel) eipSelect(sel, { pan: true, remote: true }); else if (!keepView) eipFit();
+}
+
+function eipDash(d) { return d === 'dotted' ? '2 5' : d === 'dashed' ? '8 5' : null; }
+function eipFit() {
+  if (!eipData) return;
+  // Frame the home ground: the regional areas (not the state and nation
+  // outlines) and the co-ops — not the far-off agency offices.
+  const b = L.latLngBounds([]);
+  Object.entries(eipData.areas).forEach(([id, f]) => { if (!f.properties.outline && f.properties.eipCol === 'P' && !/nf$|np$/.test(id)) b.extend(eipData.layers[id].getBounds()); });
+  eipData.nodes.forEach(n => { const pt = eipPt(n); if (pt && n.eipType === 'Institution') b.extend(pt); });
+  if (b.isValid()) map.fitBounds(b, { paddingTopLeft: [260, 30], paddingBottomRight: [30, 30] });
+}
+
+// Nearest boundary vertex of an area to a point — where a tie line meets it.
+function eipNearestOnArea(f, to) {
+  let best = null, bd = Infinity; const k = Math.cos(to[0] * Math.PI / 180);
+  const walk = c => { if (typeof c[0] === 'number') { const dy = c[1] - to[0], dx = (c[0] - to[1]) * k, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = [c[1], c[0]]; } } else c.forEach(walk); };
+  walk(f.geometry.coordinates); return best;
+}
+function eipAreaCenter(id) { return eipData.layers[id].getBounds().getCenter(); }
+function eipEndpoints(aId, bId) {
+  const a = eipNodeById(aId), b = eipNodeById(bId);
+  const pa = eipPt(a), pb = eipPt(b);
+  if (pa && pb) return [pa, pb];
+  if (pa && eipIsArea(b) && eipData.areas[bId]) return [pa, eipNearestOnArea(eipData.areas[bId], pa)];
+  if (pb && eipIsArea(a) && eipData.areas[aId]) return [eipNearestOnArea(eipData.areas[aId], pb), pb];
+  if (eipIsArea(a) && eipIsArea(b) && eipData.areas[aId] && eipData.areas[bId]) { const c = eipAreaCenter(aId); return [[c.lat, c.lng], eipNearestOnArea(eipData.areas[bId], [c.lat, c.lng])]; }
+  return null;
+}
+// A rule has no place; a tie through one (maker → rule → target) is drawn maker → target.
+function eipTiesOf(id) {
+  const out = [];
+  eipData.edges.forEach(e => {
+    if (e.src !== id && e.tgt !== id) return;
+    const other = e.src === id ? e.tgt : e.src, on = eipNodeById(other);
+    if (eipIsLaw(on)) {
+      eipData.edges.forEach(e2 => {
+        if (e2 === e || (e2.src !== other && e2.tgt !== other)) return;
+        const far = e2.src === other ? e2.tgt : e2.src; if (far === id) return;
+        out.push({ e: e2, a: id, b: far, via: on, label: (e2.label || e.label || '') });
+      });
+    } else out.push({ e, a: id, b: other, label: e.label || '' });
+  });
+  return out;
+}
+function eipClearFocus() {
+  if (!eipFocus) return; eipFocus.clearLayers();
+  Object.entries(eipData ? eipData.layers : {}).forEach(([id, l]) => {
+    if (l.setRadius) l.setRadius(7);
+    else if (l.setStyle) l.setStyle({ weight: eipData.areas[id].properties.outline ? 1.5 : 2 });
+  });
+  eipSelId = null;
+}
+function eipSelect(id, opt = {}) {
+  if (!eipData) { eipSelId = id; return; }
+  const n = eipNodeById(id); if (!n) return;
+  eipClearFocus(); eipSelId = id;
+  const lyr = eipData.layers[id];
+  if (lyr && lyr.setRadius) { lyr.setRadius(11); lyr.bringToFront(); }
+  else if (lyr && lyr.setStyle) lyr.setStyle({ weight: 4 });
+  const ties = eipTiesOf(id), lines = [];
+  ties.forEach(t => {
+    const ends = eipEndpoints(t.a, t.b); if (!ends) return;
+    const pl = L.polyline(ends, { color: t.e.color || '#334155', weight: 3, opacity: 0.9, dashArray: eipDash(t.e.dash) });
+    const bn = eipNodeById(t.b);
+    pl.bindTooltip(eipEsc((t.via ? t.via.label + ' — ' : '') + (t.label ? t.label + ' — ' : '') + (bn ? bn.label : t.b)), { sticky: true });
+    pl.addTo(eipFocus); lines.push(pl);
+    const bl = eipData.layers[t.b]; if (bl && bl.setStyle && !bl.setRadius) bl.setStyle({ weight: 3.5 });
+  });
+  // Popup: what it is, where, the rules it made, and its ties.
+  const made = eipData.edges.filter(e => e.src === id && eipIsLaw(eipNodeById(e.tgt))).map(e => eipNodeById(e.tgt));
+  const pos = opt.at || (lyr && (lyr.getLatLng ? lyr.getLatLng() : lyr.getBounds().getCenter()));
+  const f = eipData.areas[id];
+  const html = `<div class="eip-pop"><h4>${eipEsc(n.label)}</h4>` +
+    `<div class="k">${eipEsc({ EcoZone: 'E — ecological area', Jurisdiction: 'P — jurisdiction', InstitutionP: 'Institution that governs a P area', InstitutionE: 'Institution that stewards an E area' }[n.eipType] || (n.props && n.props.kind) || 'Institution')}</div>` +
+    (n.props && n.props.located ? `<div class="k">📍 ${eipEsc(n.props.located)}</div>` : '') +
+    (f ? `<div class="k">Boundary: ${eipEsc(f.properties.source)}</div>` : '') +
+    (made.length ? `<div style="margin-top:4px"><b>Rules it made</b><ul>${made.map(l => `<li>${eipEsc(l.label)}</li>`).join('')}</ul></div>` : '') +
+    (ties.length ? `<div style="margin-top:4px"><b>Ties (${ties.length})</b><ul>${ties.map(t => { const b = eipNodeById(t.b); return `<li>${t.via ? eipEsc(t.via.label) + ' → ' : ''}${eipEsc(b ? b.label : t.b)}${t.label ? ' — <i>' + eipEsc(t.label) + '</i>' : ''}</li>`; }).join('')}</ul></div>` : '') +
+    `<div style="margin-top:6px"><button class="popup-btn" onclick="eipOpenSketch('${eipEsc(id)}')">◫ Show in sketch</button></div></div>`;
+  if (pos) L.popup({ maxWidth: 320, autoPanPaddingTopLeft: L.point(260, 20) }).setLatLng(pos).setContent(html).openOn(map);
+  if (opt.pan && lyr) {
+    if (lyr.getLatLng) map.setView(lyr.getLatLng(), Math.max(map.getZoom(), 11));
+    else if (!(f && f.properties.outline)) map.fitBounds(lyr.getBounds(), { paddingTopLeft: [260, 30], paddingBottomRight: [30, 30], maxZoom: 13 });
+  }
+  if (!opt.remote && eipChan) eipChan.postMessage({ type: 'eip-select', id, src: 'map' });
+}
+// If a linked sketch is open, select there (never reload it — that would lose
+// unsaved edits). Otherwise open the sketch file in its own window.
+function eipOpenSketch(id) {
+  id = id || eipSelId;
+  if (eipSketchAlive) { if (eipChan && id) eipChan.postMessage({ type: 'eip-select', id, src: 'map' }); return; }
+  if (!eipSrc || eipSrc === 'live') return;
+  const w = window.open(graphToolURL() + '?url=' + encodeURIComponent(eipSrc) + (id ? '&sel=' + encodeURIComponent(id) : ''), 'rcn-eip-sketch');
+  if (w) w.focus();
+}
+
 function clearIssueLayer() {
   if (issueLayerGroup) { map.removeLayer(issueLayerGroup); issueLayerGroup = null; }
   if (issueLegend)     { map.removeControl(issueLegend);   issueLegend = null; }
@@ -4615,7 +4822,8 @@ document.getElementById('add-loc-name-input').addEventListener('keydown', functi
   const dlLng     = parseFloat(dlp.get('lng'));
   const dlZoom    = parseInt(dlp.get('zoom'), 10);
   const openIssue = dlp.get('openissue');
-  const deepLink  = !!(hlId || openIssue || (!isNaN(dlLat) && !isNaN(dlLng)));
+  const eipParam  = dlp.get('eip');
+  const deepLink  = !!(hlId || openIssue || eipParam || (!isNaN(dlLat) && !isNaN(dlLng)));
 
   // A deep link places the map itself, so the overview must not also fit to
   // every NDC: that fit animates, and Leaflet drops a second fit issued while
@@ -4628,6 +4836,7 @@ document.getElementById('add-loc-name-input').addEventListener('keydown', functi
   } else if (!isNaN(dlLat) && !isNaN(dlLng)) {
     map.setView([dlLat, dlLng], isNaN(dlZoom) ? 12 : dlZoom);
   }
+  if (eipParam) startEIP(eipParam, dlp.get('sel'));
   if (openIssue) {
     await toggleIssue(openIssue, { keepView: !hlId && !isNaN(dlLat) && !isNaN(dlLng) });
   }
