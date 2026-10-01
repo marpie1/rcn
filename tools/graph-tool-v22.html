@@ -958,7 +958,13 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
 #tree-view{position:fixed;inset:0;background:#f9f9f7;z-index:300;display:none;flex-direction:column}
 #tree-toolbar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-shrink:0;flex-wrap:wrap}
 #tree-toolbar .tree-title{font-size:13px;font-weight:600;color:#1e293b;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#tree-canvas{flex:1;overflow:auto;padding:32px 24px;position:relative}
+#tree-canvas{flex:1;min-height:0;overflow:auto;position:relative;cursor:grab}
+#tree-canvas.panning{cursor:grabbing}
+#tree-sizer{position:relative;margin:32px 24px}
+#tree-stage{position:absolute;top:0;left:0;transform-origin:0 0}
+.tree-zoom{display:flex;align-items:center;gap:3px;flex-shrink:0}
+.tree-zoom .tb-btn{padding:2px 8px;font-size:12px}
+#tree-zoom-pct{font-size:11px;color:#475569;min-width:38px;text-align:center}
 .tree-node{position:absolute;background:#fff;border:1.5px solid #cbd5e1;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:500;color:#1e293b;cursor:default;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:box-shadow .15s;word-wrap:break-word;line-height:1.4}
 .tree-node.tree-root{background:#dbeafe;border-color:#3b82f6;font-weight:700;color:#1d4ed8}
 .tree-node.tree-repeat{background:#fef9c3;border-color:#fde047;color:#854d0e;cursor:pointer}
@@ -1028,6 +1034,9 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9}
 /* EIP Mode */
 #eip-overlay{position:absolute;inset:0;pointer-events:none;overflow:hidden;display:none;z-index:2}
 .eip-col{position:absolute;top:0;bottom:0;opacity:.13;transition:opacity .2s}
+.eip-divider{position:absolute;top:0;bottom:0;width:12px;margin-left:-6px;cursor:col-resize;pointer-events:auto}
+.eip-divider::after{content:'';position:absolute;top:0;bottom:0;left:5px;width:2px;background:rgba(71,85,105,.18)}
+.eip-divider:hover::after,.eip-divider.dragging::after{background:rgba(71,85,105,.55)}
 .eip-col-label{position:absolute;top:10px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;pointer-events:none}
 #eip-banner{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;font-size:11px;font-weight:500;padding:4px 14px;border-radius:20px;pointer-events:none;display:none;z-index:15;white-space:nowrap}
 .eip-palette{padding:8px 12px;border-bottom:1px solid #f1f5f9}
@@ -1272,6 +1281,8 @@ body.presenting #present-exit{display:flex}
       <div class="eip-col" id="eip-col-e" style="background:#16a34a"></div>
       <div class="eip-col" id="eip-col-i" style="background:#a855f7"></div>
       <div class="eip-col" id="eip-col-p" style="background:#2563eb"></div>
+      <div class="eip-divider" id="eip-div-1" title="Drag to move the line between Ecology and Institutions"></div>
+      <div class="eip-divider" id="eip-div-2" title="Drag to move the line between Institutions and Politics"></div>
       <div class="eip-col-label" id="eip-lbl-e" style="color:#15803d">Ecology</div>
       <div class="eip-col-label" id="eip-lbl-i" style="color:#7c3aed">Institutions</div>
       <div class="eip-col-label" id="eip-lbl-p" style="color:#1d4ed8">Politics</div>
@@ -1494,10 +1505,17 @@ body.presenting #present-exit{display:flex}
     <span style="font-size:11px;color:#64748b;margin-left:8px;flex-shrink:0">
       <span style="color:#854d0e;background:#fef9c3;border:1px solid #fde047;border-radius:4px;padding:1px 5px">[bracketed]</span> = appears elsewhere — click to highlight
     </span>
-    <button class="tb-btn" onclick="exportTreeSVG()" style="flex-shrink:0;margin-left:auto" title="Download this tree as an SVG file">Export SVG</button>
+    <span class="tree-zoom" style="margin-left:auto" title="Zoom the tree only. Ctrl/⌘ + scroll wheel or a trackpad pinch also zooms; drag empty space to move around.">
+      <button class="tb-btn" onclick="treeZoomBy(1/1.25)" aria-label="Zoom out">−</button>
+      <span id="tree-zoom-pct">100%</span>
+      <button class="tb-btn" onclick="treeZoomBy(1.25)" aria-label="Zoom in">+</button>
+      <button class="tb-btn" onclick="treeFit()" title="Fit the whole tree in the window">Fit</button>
+      <button class="tb-btn" onclick="treeZoomTo(1)" title="Actual size">100%</button>
+    </span>
+    <button class="tb-btn" onclick="exportTreeSVG()" style="flex-shrink:0" title="Download this tree as an SVG file">Export SVG</button>
   </div>
   <div id="tree-canvas">
-    <svg id="tree-svg"></svg>
+    <div id="tree-sizer"><div id="tree-stage"><svg id="tree-svg"></svg></div></div>
   </div>
 </div>
 <textarea id="inplace-editor" rows="1" spellcheck="true"></textarea>
@@ -2206,13 +2224,82 @@ function openTreeView(mode,nodeId){
   treeMode=mode;treeRootId=nodeId;treeHighlightLabel=null;
   document.getElementById('tree-depth').value='3';
   document.getElementById('tree-view').style.display='flex';
+  treeZoom=1;
   buildTree();
+  // A tree bigger than the window opens fitted, so you see all of it first.
+  var c=document.getElementById('tree-canvas');
+  if(treeSize.w>c.clientWidth-48||treeSize.h>c.clientHeight-64)treeFit();
 }
 function closeTreeView(){
   document.getElementById('tree-view').style.display='none';
   treeMode=null;treeRootId=null;treeHighlightLabel=null;
 }
 function rebuildTree(){treeHighlightLabel=null;buildTree();}
+// ── Tree zoom and scroll (Sep 30 2026) ────────────────────────
+// The tree lives on a stage scaled with a CSS transform; the sizer around it
+// takes the scaled size, so #tree-canvas has real overflow and scrolls. Before
+// this the canvas itself was stretched to the tree's size and nothing scrolled.
+var treeZoom=1,treeSize={w:0,h:0};
+function treeSetSize(w,h){
+  treeSize={w:w,h:h};
+  var st=document.getElementById('tree-stage');
+  st.style.width=w+'px';st.style.height=h+'px';
+  treeApplyZoom();
+}
+function treeApplyZoom(){
+  var st=document.getElementById('tree-stage'),sz=document.getElementById('tree-sizer');
+  st.style.transform='scale('+treeZoom+')';
+  sz.style.width=Math.ceil(treeSize.w*treeZoom)+'px';sz.style.height=Math.ceil(treeSize.h*treeZoom)+'px';
+  document.getElementById('tree-zoom-pct').textContent=Math.round(treeZoom*100)+'%';
+}
+// Zoom keeping the point under (cx,cy) — window coordinates — where it is.
+function treeZoomTo(z,cx,cy){
+  var c=document.getElementById('tree-canvas'),r=c.getBoundingClientRect();
+  if(cx==null){cx=r.left+c.clientWidth/2;cy=r.top+c.clientHeight/2;}
+  var sz=document.getElementById('tree-sizer');
+  var ox=sz.offsetLeft,oy=sz.offsetTop;
+  var px=(c.scrollLeft+cx-r.left-ox)/treeZoom,py=(c.scrollTop+cy-r.top-oy)/treeZoom;
+  treeZoom=Math.max(0.1,Math.min(4,z));
+  treeApplyZoom();
+  c.scrollLeft=px*treeZoom+ox-(cx-r.left);c.scrollTop=py*treeZoom+oy-(cy-r.top);
+}
+function treeZoomBy(f,cx,cy){treeZoomTo(treeZoom*f,cx,cy);}
+function treeFit(){
+  var c=document.getElementById('tree-canvas');
+  if(!treeSize.w||!treeSize.h)return;
+  var z=Math.min((c.clientWidth-48)/treeSize.w,(c.clientHeight-64)/treeSize.h);
+  treeZoom=Math.max(0.1,Math.min(1,z));treeApplyZoom();c.scrollLeft=0;c.scrollTop=0;
+}
+(function(){
+  function wire(){
+    var c=document.getElementById('tree-canvas');if(!c)return;
+    // Ctrl/⌘ + wheel, and trackpad pinch (which arrives as ctrl+wheel), zoom the tree only.
+    c.addEventListener('wheel',function(ev){
+      if(!ev.ctrlKey&&!ev.metaKey)return;
+      ev.preventDefault();
+      treeZoomBy(Math.exp(-ev.deltaY*0.0025),ev.clientX,ev.clientY);
+    },{passive:false});
+    // Drag empty space to move around.
+    var pan=null;
+    c.addEventListener('mousedown',function(ev){
+      if(ev.button!==0||ev.target.closest('.tree-node'))return;
+      pan={x:ev.clientX,y:ev.clientY,l:c.scrollLeft,t:c.scrollTop};c.classList.add('panning');ev.preventDefault();
+    });
+    window.addEventListener('mousemove',function(ev){if(!pan)return;c.scrollLeft=pan.l-(ev.clientX-pan.x);c.scrollTop=pan.t-(ev.clientY-pan.y);});
+    window.addEventListener('mouseup',function(){if(pan){pan=null;c.classList.remove('panning');}});
+    // Keys while the tree is open: + − 0 (fit) 1 (100%).
+    document.addEventListener('keydown',function(ev){
+      if(document.getElementById('tree-view').style.display!=='flex')return;
+      if(ev.target&&/INPUT|SELECT|TEXTAREA/.test(ev.target.tagName))return;
+      if(ev.metaKey||ev.ctrlKey||ev.altKey)return;
+      if(ev.key==='+'||ev.key==='='){treeZoomBy(1.25);ev.preventDefault();}
+      else if(ev.key==='-'||ev.key==='_'){treeZoomBy(1/1.25);ev.preventDefault();}
+      else if(ev.key==='0'){treeFit();ev.preventDefault();}
+      else if(ev.key==='1'){treeZoomTo(1);ev.preventDefault();}
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();
+})();
 
 function buildTree(){
   var root=nodeById(treeRootId);
@@ -2273,7 +2360,7 @@ function buildTree(){
   }
 
   // ── Canvas & svg setup ────────────────────────────────────
-  var canvas=document.getElementById('tree-canvas');
+  var canvas=document.getElementById('tree-stage');
   var svg=document.getElementById('tree-svg');
   canvas.querySelectorAll('.tree-node,.tree-edge-label').forEach(function(el){el.remove();});
   svg.innerHTML='';
@@ -2392,7 +2479,7 @@ function buildTree(){
     assignRight(tree,PAD,canvasH-PAD,0);
     var b={maxX:0,maxY:0,minX:PAD};collectBounds(tree,b);
     svg.setAttribute('width',b.maxX);svg.setAttribute('height',b.maxY);
-    canvas.style.minWidth=b.maxX+'px';canvas.style.minHeight=b.maxY+'px';
+    treeSetSize(b.maxX,b.maxY);
     renderNode(tree,true);
 
   }else if(isCauses){
@@ -2403,7 +2490,7 @@ function buildTree(){
     assignLeft(tree,PAD,canvasH-PAD,md);
     var b={maxX:0,maxY:0,minX:PAD};collectBounds(tree,b);
     svg.setAttribute('width',b.maxX);svg.setAttribute('height',b.maxY);
-    canvas.style.minWidth=b.maxX+'px';canvas.style.minHeight=b.maxY+'px';
+    treeSetSize(b.maxX,b.maxY);
     // arrows point from child (cause, on left) → parent (effect, on right) = NOT toChild
     renderNode(tree,false);
 
@@ -2441,7 +2528,7 @@ function buildTree(){
     var b={maxX:0,maxY:0,minX:Infinity};
     collectBounds(causesTree,b);collectBounds(effectsTree,b);
     svg.setAttribute('width',b.maxX);svg.setAttribute('height',b.maxY);
-    canvas.style.minWidth=b.maxX+'px';canvas.style.minHeight=b.maxY+'px';
+    treeSetSize(b.maxX,b.maxY);
 
     // render causes (arrows point right toward root/effect)
     // for causes children: arrow NOT to child (cause → effect = child → parent)
@@ -2480,8 +2567,8 @@ function exportTreeSVG(){
   if(!canvas||!treeSvg){toast('Nothing to export');return;}
 
   // Canvas logical dimensions come from the minWidth/minHeight set during buildTree
-  var W=parseFloat(canvas.style.minWidth)||800;
-  var H=parseFloat(canvas.style.minHeight)||600;
+  var W=treeSize.w||800;
+  var H=treeSize.h||600;
   var MARGIN=32;
   var svgW=W+MARGIN*2;
   var svgH=H+MARGIN*2;
@@ -2628,32 +2715,83 @@ function exitEIP(){
   renderAll();
   buildPanel();
 }
+// The three bands are part of the diagram, not of the screen (Sep 30 2026).
+// eipBands holds the two dividers in diagram coordinates — b1 between Ecology
+// and Institutions, b2 between Institutions and Politics — so the bands pan and
+// zoom with the nodes and a node never changes column because the view moved.
+// Saved with the diagram. A diagram without them gets them once, from where its
+// E, I and P nodes already sit (or from the current screen thirds), and keeps them.
+var eipBands=null;
+function eipEnsureBands(){
+  if(eipBands&&isFinite(eipBands.b1)&&isFinite(eipBands.b2))return eipBands;
+  var xs={E:[],I:[],P:[]};
+  nodes.forEach(function(n){var c=n.eipCol||(eipTypeDef(n.eipType)||{}).col;if(xs[c])xs[c].push(n.x);});
+  function mx(a){return Math.max.apply(null,a);}function mn(a){return Math.min.apply(null,a);}
+  var W=document.getElementById('canvas-wrap').clientWidth||900;
+  function screenToWorld(f){return (f*W-pan.x)/zoom;}
+  var b1=(xs.E.length&&xs.I.length&&mx(xs.E)<mn(xs.I))?(mx(xs.E)+mn(xs.I))/2:screenToWorld(0.33);
+  var b2=(xs.I.length&&xs.P.length&&mx(xs.I)<mn(xs.P))?(mx(xs.I)+mn(xs.P))/2:screenToWorld(0.67);
+  if(!(b2>b1))b2=b1+Math.max(200,(screenToWorld(0.67)-screenToWorld(0.33)));
+  eipBands={b1:Math.round(b1),b2:Math.round(b2)};
+  return eipBands;
+}
 function positionEIPOverlay(){
   var wrap=document.getElementById('canvas-wrap');
   var W=wrap.clientWidth;
-  var cols={E:{el:'eip-col-e',lbl:'eip-lbl-e'},I:{el:'eip-col-i',lbl:'eip-lbl-i'},P:{el:'eip-col-p',lbl:'eip-lbl-p'}};
-  Object.keys(EIP_COLS).forEach(function(k){
-    var def=EIP_COLS[k];
-    var colEl=document.getElementById(cols[k].el);
-    var lblEl=document.getElementById(cols[k].lbl);
-    var left=Math.round(def.x1*W);
-    var right=Math.round(def.x2*W);
-    colEl.style.left=left+'px';
-    colEl.style.width=(right-left)+'px';
-    lblEl.style.left=(left+(right-left)/2)+'px';
-    lblEl.style.transform='translateX(-50%)';
+  var b=eipEnsureBands();
+  var x1=b.b1*zoom+pan.x, x2=b.b2*zoom+pan.x;
+  var spans={E:[-1e5,x1],I:[x1,x2],P:[x2,1e5]};
+  var ids={E:['eip-col-e','eip-lbl-e'],I:['eip-col-i','eip-lbl-i'],P:['eip-col-p','eip-lbl-p']};
+  Object.keys(spans).forEach(function(k){
+    var l=spans[k][0],r=spans[k][1];
+    var col=document.getElementById(ids[k][0]),lbl=document.getElementById(ids[k][1]);
+    var cl=Math.max(l,-20),cr=Math.min(r,W+20);
+    col.style.display=cr>cl?'block':'none';
+    col.style.left=Math.round(cl)+'px';col.style.width=Math.max(0,Math.round(cr-cl))+'px';
+    // The label sits over the visible part of its band, so it stays readable when zoomed in.
+    var vl=Math.max(l,0),vr=Math.min(r,W);
+    lbl.style.display=(vr-vl)>70?'block':'none';
+    lbl.style.left=Math.round((vl+vr)/2)+'px';
+    lbl.style.transform='translateX(-50%)';
   });
+  var d1=document.getElementById('eip-div-1'),d2=document.getElementById('eip-div-2');
+  d1.style.left=Math.round(x1)+'px';d2.style.left=Math.round(x2)+'px';
+  d1.style.display=(x1>=0&&x1<=W)?'block':'none';d2.style.display=(x2>=0&&x2<=W)?'block':'none';
 }
 function eipColForX(svgX){
-  // map SVG canvas x-coordinate to EIP column (E/I/P)
-  var wrap=document.getElementById('canvas-wrap');
-  var W=wrap.clientWidth;
-  var screenX=svgX*zoom+pan.x;
-  var frac=screenX/W;
-  if(frac<0.33)return'E';
-  if(frac<0.67)return'I';
-  return'P';
+  // A node's column from its diagram x. Before EIP has been entered there are no
+  // bands yet, so fall back to the screen thirds as before.
+  if(eipBands)return svgX<eipBands.b1?'E':svgX<eipBands.b2?'I':'P';
+  var W=document.getElementById('canvas-wrap').clientWidth;
+  var frac=(svgX*zoom+pan.x)/W;
+  return frac<0.33?'E':frac<0.67?'I':'P';
 }
+// Drag a divider to widen or narrow a band. Columns of typed nodes come from
+// their type and do not move; untyped nodes recolour on release.
+(function(){
+  var drag=null;
+  function down(which){return function(ev){
+    if(ev.button!==0)return;ev.preventDefault();ev.stopPropagation();
+    drag={which:which,el:ev.currentTarget};drag.el.classList.add('dragging');
+  };}
+  function move(ev){
+    if(!drag)return;
+    var r=document.getElementById('canvas-wrap').getBoundingClientRect();
+    var wx=Math.round((ev.clientX-r.left-pan.x)/zoom);
+    var gap=40/zoom;
+    if(drag.which===1)eipBands.b1=Math.min(wx,eipBands.b2-gap);
+    else eipBands.b2=Math.max(wx,eipBands.b1+gap);
+    positionEIPOverlay();
+  }
+  function up(){if(!drag)return;drag.el.classList.remove('dragging');drag=null;renderAll();}
+  function wire(){
+    var d1=document.getElementById('eip-div-1'),d2=document.getElementById('eip-div-2');
+    if(!d1||!d2)return;
+    d1.addEventListener('mousedown',down(1));d2.addEventListener('mousedown',down(2));
+    window.addEventListener('mousemove',move);window.addEventListener('mouseup',up);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();
+})();
 function eipColorForNode(n){
   // if node has an eipType set, use palette color; else column heuristic
   if(n.eipType){
@@ -6965,7 +7103,7 @@ function setAllStraight(on){if(on){document.getElementById('chk-curved').checked
 function syncCC(){if(!edges.length)return;document.getElementById('chk-curved').checked=edges.every(function(e){return e.curved;});document.getElementById('chk-straight').checked=edges.every(function(e){return !e.curved;});}
 function svgPt(cx,cy){var r=svgEl.getBoundingClientRect();return{x:(cx-r.left-pan.x)/zoom,y:(cy-r.top-pan.y)/zoom};}
 function toScreen(sx,sy){return{x:sx*zoom+pan.x,y:sy*zoom+pan.y};}
-function applyT(){var t='translate('+pan.x+','+pan.y+') scale('+zoom+')';nodesLayer.setAttribute('transform',t);edgesLayer.setAttribute('transform',t);linesLayer.setAttribute('transform',t);wardleyLayer.setAttribute('transform',t);lopLayer.setAttribute('transform',t);vsmLayer.setAttribute('transform',t);triplesLayer.setAttribute('transform',t);renderCLDOverlay();}function setMode(m){var prev=mode;mode=m;if(m!=='edge')stickyEdge=false;if(m!=='node')stickyNode=false;['select','node','edge','freeline','arrow','cld','eip','nrm','opm','sfd','lop','vsm','trace','wardley'].forEach(function(k){var b=document.getElementById('btn-'+k);if(b)b.classList.toggle('active',k===m);});var bb=document.getElementById('btn-basic');if(bb)bb.classList.toggle('active',m==='select'||m==='node'||m==='edge');svgEl.style.cursor=(m==='node'||m==='freeline'||m==='arrow')?'crosshair':'default';document.getElementById('edge-hint').style.display=m==='edge'?'block':'none';if(m!=='edge')clearEdgeDrag();if(m!=='freeline'&&m!=='arrow'){freeDraw=null;while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);}if(m==='edge'&&prev==='opm')prevGraphMode='opm';else if(m==='edge'&&prev==='sfd')prevGraphMode='sfd';else if(m==='edge'&&prev==='lop')prevGraphMode='lop';else if(m==='edge'&&prev==='vsm')prevGraphMode='vsm';else if(m!=='edge')prevGraphMode=null;if(m==='cld'){document.getElementById('cld-banner').style.display='block';document.getElementById('cld-mode-opts').style.display='block';enterCLD();}else{document.getElementById('cld-banner').style.display='none';document.getElementById('cld-mode-opts').style.display='none';if(prev==='cld')exitCLD();}if(m==='eip'){enterEIP();}else if(prev==='eip'){exitEIP();}if(m==='nrm'){enterNRM();}else if(prev==='nrm'){exitNRM();}
+function applyT(){var t='translate('+pan.x+','+pan.y+') scale('+zoom+')';nodesLayer.setAttribute('transform',t);edgesLayer.setAttribute('transform',t);linesLayer.setAttribute('transform',t);wardleyLayer.setAttribute('transform',t);lopLayer.setAttribute('transform',t);vsmLayer.setAttribute('transform',t);triplesLayer.setAttribute('transform',t);renderCLDOverlay();if(mode==='eip')positionEIPOverlay();}function setMode(m){var prev=mode;mode=m;if(m!=='edge')stickyEdge=false;if(m!=='node')stickyNode=false;['select','node','edge','freeline','arrow','cld','eip','nrm','opm','sfd','lop','vsm','trace','wardley'].forEach(function(k){var b=document.getElementById('btn-'+k);if(b)b.classList.toggle('active',k===m);});var bb=document.getElementById('btn-basic');if(bb)bb.classList.toggle('active',m==='select'||m==='node'||m==='edge');svgEl.style.cursor=(m==='node'||m==='freeline'||m==='arrow')?'crosshair':'default';document.getElementById('edge-hint').style.display=m==='edge'?'block':'none';if(m!=='edge')clearEdgeDrag();if(m!=='freeline'&&m!=='arrow'){freeDraw=null;while(dragLayer.firstChild)dragLayer.removeChild(dragLayer.firstChild);}if(m==='edge'&&prev==='opm')prevGraphMode='opm';else if(m==='edge'&&prev==='sfd')prevGraphMode='sfd';else if(m==='edge'&&prev==='lop')prevGraphMode='lop';else if(m==='edge'&&prev==='vsm')prevGraphMode='vsm';else if(m!=='edge')prevGraphMode=null;if(m==='cld'){document.getElementById('cld-banner').style.display='block';document.getElementById('cld-mode-opts').style.display='block';enterCLD();}else{document.getElementById('cld-banner').style.display='none';document.getElementById('cld-mode-opts').style.display='none';if(prev==='cld')exitCLD();}if(m==='eip'){enterEIP();}else if(prev==='eip'){exitEIP();}if(m==='nrm'){enterNRM();}else if(prev==='nrm'){exitNRM();}
 if(m==='opm'){enterOPM();}else if(prev==='opm'){exitOPM();}
 if(m==='sfd'){document.getElementById('sfd-banner').style.display='block';enterSFD();}else{document.getElementById('sfd-banner').style.display='none';if(prev==='sfd')exitSFD();}
 if(m==='lop'){enterLOP();}else if(prev==='lop'){exitLOP();}if(m==='vsm'){enterVSM();}else if(prev==='vsm'){exitVSM();}
@@ -8503,7 +8641,7 @@ function setLineLabel(id,val){snap();var l=lineById(id);if(l){l.label=val;render
 // `mode` is persisted because Wardley/RBA files are unreadable in the wrong
 // mode — the grid vanishes and the rent bands go with it. Every other mode
 // tolerated being forgotten; this one does not.
-function buildState(){return{version:'1.0',mode:mode,modelName:modelName(),modelNote:(document.getElementById('model-note').value||'').trim(),canvasBg:canvasBg,graphAttrs:graphAttrs,cldLoopNames:cldLoopNames,legendEntries:legendEntries.map(function(e){return Object.assign({},e);}),legendVisible:legendVisible,eipGeo:eipGeo||undefined,lopBands:lopBandsOn,vsmLanes:vsmLanesOn,vsmTrueScale:vsmTrueScale,legendCollapsed:legendCollapsed,customSymbols:customSymbols.map(function(s){return Object.assign({},s);}),nodes:nodes.map(function(n){return stampStyle(Object.assign({},n,{props:Object.assign({},n.props)}),n,STAMP_NODE_FIELDS);}),edges:edges.map(function(e){return stampStyle(Object.assign({},e,{props:Object.assign({},e.props)}),e,STAMP_EDGE_FIELDS);}),lines:lines.map(function(l){return Object.assign({},l);}),metaEdges:metaEdges.map(function(me){return Object.assign({},me);})};}
+function buildState(){return{version:'1.0',mode:mode,modelName:modelName(),modelNote:(document.getElementById('model-note').value||'').trim(),canvasBg:canvasBg,graphAttrs:graphAttrs,cldLoopNames:cldLoopNames,legendEntries:legendEntries.map(function(e){return Object.assign({},e);}),legendVisible:legendVisible,eipGeo:eipGeo||undefined,eipBands:eipBands||undefined,lopBands:lopBandsOn,vsmLanes:vsmLanesOn,vsmTrueScale:vsmTrueScale,legendCollapsed:legendCollapsed,customSymbols:customSymbols.map(function(s){return Object.assign({},s);}),nodes:nodes.map(function(n){return stampStyle(Object.assign({},n,{props:Object.assign({},n.props)}),n,STAMP_NODE_FIELDS);}),edges:edges.map(function(e){return stampStyle(Object.assign({},e,{props:Object.assign({},e.props)}),e,STAMP_EDGE_FIELDS);}),lines:lines.map(function(l){return Object.assign({},l);}),metaEdges:metaEdges.map(function(me){return Object.assign({},me);})};}
 function cleanXmileLabel(raw){return(raw||'').replace(/^"+|"+$/g,'').replace(/^\\+|\\+$/g,'').replace(/_/g,' ').trim();}
 function xmileKey(raw){return(raw||'').replace(/^"+|"+$/g,'').replace(/^\\+|\\+$/g,'').trim().toLowerCase();}
 function toXmileName(label){return label.replace(/\s+/g,'_');}
@@ -8819,7 +8957,7 @@ return out;});if(raw.modelName)document.getElementById('model-name').value=raw.m
 // silently. Default them the same way makeNode() does.
 nodes.forEach(function(n){if(!isFinite(n.w)||n.w<=0)n.w=108;if(!isFinite(n.h)||n.h<=0)n.h=46;});
 nodes.forEach(autoSize);toast('Loaded '+nodes.length+' nodes');}lines=(raw.lines||[]).map(function(l){return Object.assign({color:'#000000',width:1.5,dash:'solid',arrowhead:'none',label:''},l);});var ids=nodes.map(function(n){return+String(n.id).replace(/\D/g,'')||0;}).concat(edges.map(function(e){return+String(e.id).replace(/\D/g,'')||0;})).concat(lines.map(function(l){return+String(l.id).replace(/\D/g,'')||0;}));nextId=(ids.length?Math.max.apply(null,ids):0)+1;selected={nodes:[],edges:[],lines:[],triples:[]};edges.forEach(function(e){if(e.color)getMarkerId(e.color);if(e.opmMarker&&e.color)getOPMMarkerId(e.opmMarker,e.color);});metaEdges=(raw.metaEdges||[]).map(function(me){return Object.assign({},me);});if(raw.cldLoopNames)cldLoopNames=raw.cldLoopNames;requestAnimationFrame(function(){renderLegendSVG();});
-eipGeo=raw.eipGeo||null;if(raw.legendEntries){legendEntries=raw.legendEntries;legendVisible=!!raw.legendVisible;legendCollapsed=!!raw.legendCollapsed;normaliseLegend();legendEntries.forEach(function(r){if((r.kind||'node')==='edge'&&r.color)getMarkerId(r.color);});buildLegendSection();renderLegendOverlay();}if(raw.lopBands!==undefined)lopBandsOn=!!raw.lopBands;if(raw.vsmLanes!==undefined)vsmLanesOn=!!raw.vsmLanes;if(raw.vsmTrueScale!==undefined)vsmTrueScale=!!raw.vsmTrueScale;var _mn=document.getElementById('model-note');_mn.value=raw.modelNote||'';renderModelNote();// update nextTripleNum based on loaded triples
+eipGeo=raw.eipGeo||null;eipBands=(raw.eipBands&&isFinite(raw.eipBands.b1)&&isFinite(raw.eipBands.b2))?{b1:+raw.eipBands.b1,b2:+raw.eipBands.b2}:null;if(raw.legendEntries){legendEntries=raw.legendEntries;legendVisible=!!raw.legendVisible;legendCollapsed=!!raw.legendCollapsed;normaliseLegend();legendEntries.forEach(function(r){if((r.kind||'node')==='edge'&&r.color)getMarkerId(r.color);});buildLegendSection();renderLegendOverlay();}if(raw.lopBands!==undefined)lopBandsOn=!!raw.lopBands;if(raw.vsmLanes!==undefined)vsmLanesOn=!!raw.vsmLanes;if(raw.vsmTrueScale!==undefined)vsmTrueScale=!!raw.vsmTrueScale;var _mn=document.getElementById('model-note');_mn.value=raw.modelNote||'';renderModelNote();// update nextTripleNum based on loaded triples
 var tNums=edges.filter(function(e){return e.tripleId;}).map(function(e){return parseInt(e.tripleId.slice(1))||0;});nextTripleNum=(tNums.length?Math.max.apply(null,tNums):0)+1;
 customSymbols=(raw.customSymbols||[]).map(function(s){return Object.assign({},s);});_vsAddMode=false;
 // Mode restore. `meta.mode` is honoured too: files written before buildState
