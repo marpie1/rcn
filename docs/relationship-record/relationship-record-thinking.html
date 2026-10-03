@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Relationship Record — Thinking Together</title>
+<style>
+  @page { size: letter; margin: 0.8in 0.85in 0.8in 0.85in; }
+  :root { --ink:#1d2327; --soft:#5a6670; --rule:#d8dde1; --accent:#9a4a1c; --band:#f6f1ec; }
+  * { box-sizing:border-box; }
+  body { font-family: "Charter", "Iowan Old Style", Georgia, serif; color:var(--ink); font-size:11pt; line-height:1.5; margin:0; background:#fff; }
+  h1,h2,h3 { font-family: "Avenir Next", "Helvetica Neue", system-ui, sans-serif; line-height:1.2; }
+  h1 { font-size:28pt; margin:0 0 6pt; font-weight:700; letter-spacing:-0.01em; }
+  h2 { font-size:15pt; margin:22pt 0 6pt; color:var(--accent); font-weight:600; break-after:avoid; }
+  h3 { font-size:11.5pt; margin:14pt 0 4pt; font-weight:600; break-after:avoid; }
+  p { margin:0 0 8pt; }
+  ul, ol { margin:0 0 8pt; padding-left:18pt; }
+  li { margin:0 0 3pt; }
+  table { border-collapse:collapse; width:100%; margin:6pt 0 10pt; font-size:10pt; break-inside:avoid; }
+  th, td { text-align:left; vertical-align:top; padding:5pt 7pt; border-bottom:1px solid var(--rule); }
+  th { font-family: "Avenir Next", "Helvetica Neue", system-ui, sans-serif; font-weight:600; font-size:9pt; text-transform:uppercase; letter-spacing:0.04em; color:var(--soft); border-bottom:1.5px solid var(--ink); }
+  .cover { height:9.2in; display:flex; flex-direction:column; justify-content:space-between; break-after:page; }
+  .kicker { font-family:"Avenir Next","Helvetica Neue",sans-serif; text-transform:uppercase; letter-spacing:0.14em; font-size:9pt; color:var(--accent); font-weight:600; margin-bottom:14pt; }
+  .sub { font-size:14pt; color:var(--soft); margin:0 0 24pt; }
+  .status { background:var(--band); border-left:3px solid var(--accent); padding:10pt 14pt; font-size:10.5pt; }
+  .attrib { font-family:"Avenir Next","Helvetica Neue",sans-serif; font-size:10pt; color:var(--soft); border-top:1px solid var(--rule); padding-top:10pt; }
+  .attrib strong { color:var(--ink); }
+  .callout { background:var(--band); padding:10pt 14pt; margin:8pt 0 12pt; break-inside:avoid; }
+  .callout p:last-child { margin-bottom:0; }
+  .q { font-style:italic; }
+  .src { font-size:9pt; color:var(--soft); }
+  .src li { margin-bottom:2pt; word-break:break-all; }
+  .closing { margin-top:28pt; break-inside:avoid; }
+  a { color:inherit; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div>
+    <div class="kicker">RegenSonora · Superior, Arizona · Discussion paper</div>
+    <h1>Relationship Record</h1>
+    <p class="sub">Thinking together about “CRM-like” work for a Neighborhood Development Center, built on what RCN already has</p>
+    <div class="status">
+      <p><strong>Status: thinking, not building.</strong> Nothing described here has been coded. We agreed not to start until all of us explicitly decide to.</p>
+      <p style="margin:0"><strong>Name:</strong> “Relationship Record” is a placeholder. We’re asking RegenSonora to choose the real name, ideally in English and Spanish.</p>
+    </div>
+  </div>
+  <div class="attrib">
+    Prepared for <strong>Chris Casillas</strong> and <strong>Mary Martha</strong><br>
+    By <strong>Marc Pierson</strong> and <strong>Claude (Opus 5.5)</strong> · October 2026
+  </div>
+</section>
+
+<h2>1. What this is about</h2>
+<p>An NDC keeps track of a lot of people and organisations: who we’ve met, what they care about, what we promised them, what they offered, and who we need to call back. Businesses use a “CRM” (Customer Relationship Management) system for this kind of work. RegenSonora will be the first group to use whatever we build, and you’ll help shape it as we go.</p>
+<p>One constraint matters more than any feature: <strong>this must not become a separate product.</strong> It sits on the same Neo4j graph that RCN’s tools already read. The people, organisations and conversations it records should show up in the Table, the Map, the Timeline and the Graph, the same way everything else in RCN does.</p>
+
+<h2>2. What we’ve agreed so far</h2>
+<ul>
+  <li><strong>No code yet.</strong> We talk until we agree on the design.</li>
+  <li><strong>It works with every RCN tool.</strong> No fork.</li>
+  <li><strong>Nothing about me without me.</strong> The person a record is about can see it.</li>
+  <li><strong>People don’t cross NDCs.</strong> Superior’s record is Superior’s. It isn’t shared with other NDCs.</li>
+  <li><strong>A relationship is a claim, not a fact.</strong> We don’t record “Dave knows Gil.” We record “Marc says Dave knows Gil, October 2026.” A claim says who said it and when, which is less ambiguous and tells you more.</li>
+</ul>
+
+<h2>3. Changing the job: record, not manage</h2>
+<p>A normal CRM is a company watching its customers. It tracks a sales pipeline, scores leads, and keeps notes the customer never sees. An NDC works differently. Its relationships run both ways, and many of them are between neighbours rather than with the NDC. So we’re treating this as a <strong>record of relationships</strong>: who knows whom, who asked for what, who promised what, who’s waiting on whom, and what happened last time. The person a record is about can see it, because it’s about them.</p>
+
+<h2>4. How it fits what RCN already has</h2>
+<p>RCN already holds two kinds of things in one graph. <em>Concepts</em> are the vocabulary: kinds of people, organisations and roles. <em>Instances</em> are things that actually happened, at a time and often at a place. Most of a Relationship Record already fits that shape:</p>
+<ul>
+  <li><strong>People and organisations</strong> are concepts. Many are already loaded: Whatcom co-ops, 266 local businesses, the roles in value-network drawings.</li>
+  <li><strong>Conversations and visits</strong> are instances. They happened, at a time and often at a place.</li>
+  <li><strong>Commitments</strong> (“Dana will bring the soil test results by Friday”) have the same shape as the agreements in the Agreement Checker: who, must or may, what, and under what condition. A follow-up is a commitment with a status.</li>
+  <li><strong>Skills</strong> come from SODOTO badges, so “who here can teach grafting?” is answered from earned credentials rather than a field someone filled in.</li>
+  <li><strong>Needs and offers</strong> connect to the three-currency work and open the door to matching people later.</li>
+</ul>
+<p>Each RCN tool then gives you one view of the record, with no new tool to learn:</p>
+<table>
+  <tr><th style="width:22%">RCN tool</th><th>What it shows in the Relationship Record</th></tr>
+  <tr><td>Table</td><td>The contact list, open commitments, overdue follow-ups</td></tr>
+  <tr><td>Timeline</td><td>The history with one person or organisation</td></tr>
+  <tr><td>Map</td><td>Where people, organisations and visits are, and where there are gaps</td></tr>
+  <tr><td>Graph</td><td>The network: who can introduce us to someone, who the bridges are, where we depend on a single person</td></tr>
+  <tr><td>⇄ switcher</td><td>One person, seen through all four of the above</td></tr>
+  <tr><td>SPC charts</td><td>Contacts per week and time to close a follow-up, read as signals about the system, not scores for individuals</td></tr>
+  <tr><td>Rasch tool</td><td>Possibly an engagement ladder, but only if participation really behaves like a ladder. That has to be tested, not assumed.</td></tr>
+</table>
+
+<h2>5. The hard parts aren’t technical</h2>
+<ol>
+  <li><strong>Privacy.</strong> Today, some RCN data goes onto public websites as files anyone can read. Relationship data can’t. This will be the first RCN feature that needs a server with logins and permissions. It isn’t medical data, but it’s private. It probably needs its own database, the same shape as the rest, with its own rules.</li>
+  <li><strong>The line between relationship and health.</strong> A community health worker’s note saying “Visited Maria, we talked about her meds” is health information. One clean way to split it: the Relationship Record holds <em>that</em> a contact happened, when, where and with whom, and the <em>content</em> goes in the person’s Shared Care Plan. The system itself should enforce that split, rather than relying on everyone remembering it.</li>
+  <li><strong>Self-ownership.</strong> In RCN, each person owns their own identity on their own device. The NDC holds its side of the relationship. The person can see what’s held, and their own site is where they describe themselves.</li>
+  <li><strong>Speed in the field.</strong> If logging a conversation on a phone in Superior takes more than about 20 seconds, nobody will do it and the record will die.</li>
+  <li><strong>Scope creep.</strong> Email campaigns, donor management and grant tracking each pull toward rebuilding Salesforce. A small vocabulary is better: Person, Organisation, Relationship, Contact, Commitment, Need/Offer. We stop there until RegenSonora asks for more.</li>
+</ol>
+
+<h2>6. Research: what CRMs look like</h2>
+<p>Almost every CRM, from Salesforce and HubSpot to the nonprofit and organising tools, is built from the same six screens:</p>
+<ol>
+  <li><strong>List view.</strong> A spreadsheet-like table with filters and saved views (“my contacts in Superior”, “no contact in 90 days”). People spend most of their time here.</li>
+  <li><strong>Record page.</strong> One person or organisation, usually in three columns: the facts on the left, an <em>activity timeline</em> of every call, visit and note in the middle, and related things (organisation, household, open tasks) on the right.</li>
+  <li><strong>Pipeline board.</strong> Cards in columns by stage, moved from left to right. In sales the stages run from lead to won. In organising they run from first contact to engaged to leader.</li>
+  <li><strong>Tasks and follow-ups.</strong> “Call Rosa back Thursday.” Personal CRMs such as Monica add a keep-in-touch interval for each person and remind you when it lapses.</li>
+  <li><strong>Quick log.</strong> The fastest screen in the product: “I just talked to X, here’s a note.” Field apps are built around this screen.</li>
+  <li><strong>Dashboard.</strong> Tiles with counts, trends and charts.</li>
+</ol>
+<p>Three kinds of CRM are much closer to an NDC than the sales products are:</p>
+<ul>
+  <li><strong>Relational organising CRMs</strong> (Solidarity Tech, CallHub) track one-to-one relational meetings and the <em>two-way relationships between members</em> (neighbour, cousin, coworker). They draw these as a network so organisers can spot emerging leaders.</li>
+  <li><strong>Community partner CRMs</strong> (Visible Network Labs’ PARTNER) put a network map next to the contact list. Partners rate each other for <em>trust</em> (shared mission, openness, reliability) and <em>value</em> (resources, influence, commitment). Their stated aim is to “manage a system, not just a list.”</li>
+  <li><strong>Closed-loop referral platforms</strong> (Unite Us, findhelp), used by community health worker programmes, follow a referral from screening to sent to accepted to resolved. Findhelp lets the person being referred see the status too, which is a small version of “nothing about me without me.”</li>
+</ul>
+
+<h2>7. Questions people ask a CRM</h2>
+<h3>About one person</h3>
+<ul>
+  <li>Who is this, and how do we know them?</li>
+  <li>What happened the last time anyone here talked with them?</li>
+  <li>What did we promise them, and what did they promise us? Is anything overdue?</li>
+  <li>What do they care about, what can they offer, and what do they need?</li>
+</ul>
+<h3>About the work</h3>
+<ul>
+  <li>Who haven’t we been in touch with for 60 or 90 days?</li>
+  <li>What follow-ups are due this week, and whose are they?</li>
+  <li>Where is each referral or request stuck?</li>
+  <li>Who came to the last three events but has never had a one-to-one conversation?</li>
+</ul>
+<h3>About the network (sales CRMs answer these poorly; a graph answers them well)</h3>
+<ul>
+  <li>Who can introduce us to X? What’s the shortest path through people who trust each other?</li>
+  <li>Who are the bridges between groups, and what happens if one of them leaves?</li>
+  <li>Which parts of town, or which groups, does nobody in our network reach?</li>
+  <li>Who is connected to many people but has never been asked to lead?</li>
+</ul>
+<h3>About place</h3>
+<ul>
+  <li>Who lives or works near this site? Where have our visits been, and where haven’t they?</li>
+</ul>
+
+<h2>8. Typical analytics</h2>
+<table>
+  <tr><th style="width:20%">Kind</th><th>Typical measures</th></tr>
+  <tr><td>Activity</td><td>Contacts logged per week, by type and by staff member</td></tr>
+  <tr><td>Retention</td><td>Percentage of people active last year who are active this year; new vs. returning</td></tr>
+  <tr><td>Pipeline or ladder</td><td>How many people are at each stage, how long they stay, where they drop out</td></tr>
+  <tr><td>Follow-through</td><td>Overdue tasks; time to close a referral or request; closed vs. open</td></tr>
+  <tr><td>Coverage</td><td>Gaps by place or by group; how many people are reached</td></tr>
+  <tr><td>Network</td><td>Central people, bridges, clusters, people who are isolated; trust and value between partners</td></tr>
+  <tr><td>Value</td><td>Sales: deal size and lifetime value. Nonprofits: gifts and volunteer hours.</td></tr>
+</table>
+
+<h2>9. What this means for us</h2>
+<h3>We already have most of it</h3>
+<p>The list view is the Table, the record timeline is the Timeline, the network view is the Graph, and the coverage view is the Map. The ⇄ switcher is what makes them one system: you open a person in the Table, then jump to their Timeline, their place on the Map and their part of the network. A typical CRM adds a network view as an extra. We would start with four views.</p>
+<h3>What’s missing</h3>
+<ul>
+  <li><strong>Quick log.</strong> Fast, and usable on a phone.</li>
+  <li><strong>Commitments with reminders.</strong> Built in the same shape as the Agreement Checker’s agreements.</li>
+  <li><strong>The ladder or board view.</strong> A new view over existing data, not new data.</li>
+</ul>
+<h3>Where a standard CRM conflicts with what we’ve agreed</h3>
+<ul>
+  <li><strong>Lead scores, “owner” fields and private notes</strong> treat the person as an object. Under “nothing about me without me”, every note is something its subject can read. That changes how notes get written, and it should.</li>
+  <li><strong>Trust and value ratings</strong> fit naturally as claims (“RegenSonora rates the Library as highly reliable, October 2026”). They’re powerful, but showing people how they’ve been rated needs care.</li>
+  <li><strong>Activity counts</strong> tend to turn into staff league tables. Read through SPC, they become questions about the system instead: is follow-up steady, and what changed in week 34?</li>
+  <li><strong>An engagement ladder</strong> is something to test, not assume: do people really climb the rungs in a fixed order?</li>
+</ul>
+
+<h2>10. About the name</h2>
+<p><strong>Relationship Record</strong> is the placeholder. It’s plain and describes what the thing is, it drops “Management”, and “record” fits claims well: something said, by someone, at a time, that the person it’s about can see.</p>
+<p>Other names we considered:</p>
+<ul>
+  <li><strong>Relationship Ledger.</strong> Dropped, because “ledger” already means three other things in RCN (badges, currencies, signed records) and it sounds like accounting.</li>
+  <li><strong>Who Knows Whom.</strong> Very plain and easy to picture, but it leaves out commitments and follow-ups.</li>
+  <li><strong>Neighbor Network.</strong> Warm, but it leaves out partner organisations.</li>
+  <li><strong>Red de Confianza</strong> (“network of trust”). Strong, and it names what the claims are really about. The risk is sounding aspirational, and it shouldn’t be used unless the people being recorded choose it.</li>
+</ul>
+<div class="callout">
+  <p><strong>One overlap to settle.</strong> RCN’s personal health tools already include <em>My Support Network</em>. A person’s own view of the Relationship Record will look a lot like it. Should they be the same view? We lean towards yes: the NDC holds the record, and the person sees it as part of their own “My …” set.</p>
+</div>
+
+<h2>11. Questions for Chris and Mary Martha</h2>
+<ol>
+  <li><strong>Which three questions from section 7 would you most want answered on day one?</strong> Your answer decides the first screens and the smallest data model, and it keeps this from turning into a generic CRM.</li>
+  <li>What would <em>you</em> call it, in English and in Spanish?</li>
+  <li>Who will log conversations, where, and on what device?</li>
+  <li>Where do you draw the line between “we talked” and “what we talked about”?</li>
+  <li>How would people in Superior feel about seeing everything recorded about them? What would make that feel safe rather than strange?</li>
+  <li>Should the person’s own view be the same as <em>My Support Network</em>, or separate?</li>
+  <li>Do trust or value ratings between partners belong here at all?</li>
+</ol>
+
+<h2>Sources</h2>
+<ul class="src">
+  <li>Solidarity Tech, relational organizing tools: https://www.solidarity.tech/solutions/relational-organizing-tools</li>
+  <li>CallHub, relational organizing guide: https://callhub.io/blog/community-organizing/relational-organizing/</li>
+  <li>Emory, how to run a relational meeting: https://scholarblogs.emory.edu/candlerdigitallearning/files/2021/10/Skill-Training-Template-Example.pdf</li>
+  <li>Visible Network Labs, Understanding CPRM: https://visiblenetworklabs.com/2024/07/02/understanding-cprm-a-strategic-tool-for-enhancing-community-collaboration/</li>
+  <li>PARTNER CPRM features: https://visiblenetworklabs.com/partner-cprm/features/</li>
+  <li>PARTNER trust and value metrics: https://visiblenetworklabs.com/2021/03/30/partner-trust-and-value-metrics-a-brief/</li>
+  <li>Unite Us, closed-loop referrals: https://uniteus.com/products/closed-loop-referral-system/</li>
+  <li>Findhelp platform: https://company.findhelp.com/products/platform/</li>
+  <li>SocialRoots, closed-loop referral software comparison: https://www.socialroots.ai/blog/closed-loop/closed-loop-referral-software-comparison</li>
+  <li>Monica personal CRM: https://www.monicahq.com/</li>
+  <li>Design Studio, CRM UX best practices: https://www.designstudiouiux.com/blog/crm-ux-design-best-practices/</li>
+  <li>Zoho CRM, module views: https://help.zoho.com/portal/en/kb/crm/customize-crm-account/managing-module-views/articles/module-views</li>
+  <li>NetSuite, nonprofit dashboards: https://www.netsuite.com/portal/resource/articles/accounting/nonprofit-dashboards.shtml</li>
+  <li>Bloomerang, nonprofit CRM: https://bloomerang.com/blog/nonprofit-crm</li>
+</ul>
+
+<div class="closing attrib">
+  <strong>Relationship Record — Thinking Together</strong> · Discussion paper for RegenSonora, Superior AZ<br>
+  By <strong>Marc Pierson</strong> and <strong>Claude (Opus 5.5)</strong> · October 2026 · Draft for discussion; nothing built yet
+</div>
+
+</body>
+</html>
