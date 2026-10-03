@@ -34,7 +34,7 @@ The coding is only as good as the coder. The Agreement Checker's guesses are heu
 
 ## What it would take
 
-One coding schema shared by every RCN tool: the Graph Tool, the database behind it, FedWiki pages, and the Agreement Checker. Then any agreement written anywhere carries its coding with it.
+One coding schema shared by every RCN tool: the Graph Tool, the database behind it, FedWiki pages, and the Agreement Checker. Then any agreement written anywhere carries its coding with it. A proposal is on [[Shared Shape For Coded Agreements]].
 
 A viability lens that reads that coding and writes the profile in plain words, for example: "Nobody affected can change these rules."
 
