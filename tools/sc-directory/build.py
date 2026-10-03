@@ -31,6 +31,25 @@ OUT   = os.path.join(ROOT, 'tools', 'issue-data', 'whatcom-wa--sustainable-conne
 CSV   = os.path.join(HERE, 'sc-directory.csv')
 CACHE = os.path.join(HERE, 'geocache.json')
 MANUAL = json.load(open(os.path.join(HERE, 'addresses.json')))
+# When each business began: hand-researched, one entry per listing name, each with its source.
+STARTED = {k: v for k, v in json.load(open(os.path.join(HERE, 'started.json'))).items() if not k.startswith('_')}
+TIMELINE = os.path.join(ROOT, 'tools', 'sc-directory-timeline.json')
+MONTHS = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split()
+
+def start_of(name):
+    """The start date in the Timeline's form, with fuzz, confidence and a display text."""
+    s = STARTED.get(name)
+    if not s: return None
+    raw, pr = str(s['start']), s['precision']
+    full = re.match(r'([A-Z][a-z]{2}) (\d{1,2}) (\d{4})$', raw)
+    year = int(full.group(3) if full else raw)
+    date_ = raw if full else f'Jul 1 {year}'          # year-only dates sit at mid-year
+    fuzz  = {'day': 0, 'month': 0.08, 'year': 0.5, 'decade': 5, 'approx': 1}[pr]
+    shown = {'day': raw, 'month': f'{full.group(1)} {year}' if full else str(year), 'year': str(year),
+             'decade': f'{year // 10 * 10}s', 'approx': f'about {year}'}[pr]
+    conf = s.get('conf') or (0.5 if pr == 'approx' else 0.7 if 'license' in s['who'] or 'filing' in s['who'] else 0.85)
+    return {'date': date_, 'year': year, 'fuzz': fuzz, 'shown': shown, 'conf': conf,
+            'precision': pr, 'who': s['who'], 'note': s.get('note', '')}
 API   = 'https://sustainableconnections.org/wp-json/wp/v2/'
 UA    = {'User-Agent': 'RCN-map-research/1.0 (Marc Pierson, Bellingham WA)'}
 
@@ -286,6 +305,8 @@ def main():
             far  = not (48.35 < lat < 49.1 and -123.1 < lng < -121.4)
             label = r['name'] + (f' ({i + 1} of {len(located)})' if len(located) > 1 else '')
             notes = [', '.join(r['sub'])]
+            st = start_of(r['name'])
+            notes.append(f"🕓 Started {st['shown']} — {st['who']}" if st else '🕓 Start date not found')
             if precision == 'area':
                 notes.append('📍 No street address published — placed at ' +
                              (r['hood'] if r['hood'] and r['hood'] != 'No Storefront' else 'Bellingham') +
@@ -318,6 +339,9 @@ def main():
                 'address_source': src, 'geocoder': g[3],
                 'phone': r['phone'], 'email': r['email'], 'website': r['web'],
                 'ownership': r['own'], 'sustaining_member': 'yes' if r['sustaining'] else '', 'sustainable_practices': r['practices'], 'sales_methods': r['sales'],
+                'started': st['shown'] if st else '', 'started_year': st['year'] if st else '',
+                'started_precision': st['precision'] if st else '', 'started_source': st['who'] if st else '',
+                'started_note': st['note'] if st else '',
                 'directory_url': r['link'], 'listing_updated': r['modified'],
             })
     json.dump(cache, open(CACHE, 'w'), indent=1, sort_keys=True)
@@ -356,6 +380,37 @@ def main():
         w = csv.DictWriter(f, fieldnames=list(table[0].keys()))
         w.writeheader(); w.writerows(table)
         f.write(f'# Sustainable Connections Local Business Directory, read {today}. Compiled Oct 2026 by Marc Pierson with Claude Opus 5.5.\n')
+    # ── Timeline: one bar per business, from its start to today. The bar's id is the
+    # business's first map point (the switcher's shared id); `coops` lists every point,
+    # the bridge field the Timeline and the ⇄ switcher already read.
+    first, allpts = {}, {}
+    for t in table:
+        first.setdefault(t['name'], t['id']); allpts.setdefault(t['name'], []).append(t['id'])
+    byname = {r['name']: r for r in rows}
+    dated = sorted((n for n in first if start_of(n)), key=lambda n: (start_of(n)['year'], n.lower()))
+    end = date.today().strftime('%b %-d %Y')
+    intervals = []
+    for i, n in enumerate(dated):
+        st, r = start_of(n), byname[n]
+        intervals.append({
+            'id': first[n], 'label': n, 'start': st['date'], 'end': end,
+            'startFuzz': st['fuzz'], 'endFuzz': 0, 'pinned': False,
+            'color': TYPES[r['type']][1], 'row': i, 'who': st['who'], 'conf': st['conf'],
+            'note': f"{TYPES[r['type']][0]} — {', '.join(r['sub'])}. Started {st['shown']}. {st['note']}".strip(),
+            'coops': allpts[n], 'kind': TYPES[r['type']][0]})
+    undated = sorted(n for n in first if not start_of(n))
+    json.dump({
+        'name': 'Sustainable Connections — local businesses — when',
+        'note': (f"Timeline companion to the RCN Map issue whatcom-wa--sustainable-connections-directory. One bar per business "
+                 f"({len(dated)} of {len(first)}) from when it began to today, coloured by the directory's nine sections, oldest at the top. "
+                 "Year-only dates sit at mid-year with half a year of fuzz; 'about' dates carry a year of fuzz and lower confidence; "
+                 "contractor license dates are marked as such and are not necessarily the day the business began. Every bar names its source in 'who'. "
+                 "Each bar's id is the business's first point on the map, and 'coops' lists all its points (the shared bridge field). "
+                 f"No start date was found for {len(undated)}: " + '; '.join(undated) + ". "
+                 "Built by tools/sc-directory/build.py from tools/sc-directory/started.json. Researched Oct 2026 by Marc Pierson with Claude Opus 5.5."),
+        'intervals': intervals, 'links': []}, open(TIMELINE, 'w'), indent=1, ensure_ascii=False)
+    print(f'timeline: {len(dated)} dated, {len(undated)} without a start date')
+
     print(f'{n_list} listings → {len(parcels)} points ({n_street} at street, {n_area} at neighbourhood); unplaced: {unplaced}')
     print('wrote', os.path.relpath(OUT, ROOT), 'and', os.path.relpath(CSV, ROOT))
 

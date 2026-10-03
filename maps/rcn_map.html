@@ -2672,7 +2672,9 @@ async function toggleIssue(key, opts = {}) {
               `<button class="popup-btn" onclick="openIssueInGraphTool()" title="Open these points and links as an editable diagram in the RCN Graph Tool — same colours, same legend, laid out like the map.">🕸 Open in Graph Tool</button>` +
               (issueTimelineSrc() ? `<button class="popup-btn" onclick="openIssueInTimeline()" title="Open this issue's history in the RCN Timeline — when each one began, changed and tied to the others. Click a point first to open the Timeline on it.">⏳ Open in Timeline</button>` : '') +
               `<a href="#" onclick="downloadIssueGraph(); return false;" title="Save the same diagram as a Graph Tool JSON file (import it later, or drop it into FedWiki).">⬇ graph JSON</a></div>`
-            : '');
+            : issueTimelineSrc()   // a directory has no ties to draw, but may still have a timeline
+              ? `<div class="issue-graph-btns"><button class="popup-btn" onclick="openIssueInTimeline()" title="Open this issue's timeline in the RCN Timeline — when each one began. Click a point first to open the Timeline on it.">⏳ Open in Timeline</button></div>`
+              : '');
         L.DomEvent.disableClickPropagation(div);
         L.DomEvent.disableScrollPropagation(div);
         return div;
