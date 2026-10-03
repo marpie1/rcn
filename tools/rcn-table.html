@@ -110,7 +110,9 @@ footer{padding:5px 12px;background:var(--panel);border-top:1px solid var(--line)
   <a class="doclink" href="rcn-table-manual.html" target="_blank" title="How to use it">User Manual</a>
   <select id="db"></select>
   <select id="kind"></select>
-  <input id="search" placeholder="Filter rows…">
+  <!-- autocomplete off here and new-password on the seed: the hidden password box makes Chrome treat this page
+       as a sign-in form and fill the filter with a saved username ("admin"), which then filters the table on the first click. -->
+  <input id="search" type="search" autocomplete="off" placeholder="Filter rows…">
   <span class="count" id="count"></span>
   <span class="seal" id="seal" hidden></span>
   <span style="flex:1"></span>
@@ -120,8 +122,8 @@ footer{padding:5px 12px;background:var(--panel);border-top:1px solid var(--line)
   <button id="toWiki">→ Wiki item</button>
   <button id="csv">CSV</button>
   <button id="openfile" title="Open a CSV or Excel file — one sheet per kind of thing, an optional Links sheet (From, Relation, To)">Open spreadsheet…</button>
-  <input id="sealname" hidden placeholder="Seal as (name)" title="Optional: who vouches for these records. Shown to readers with a ✓ once verified." style="width:130px">
-  <input id="sealseed" hidden type="password" placeholder="seed (64 hex)" title="Optional: your Ed25519 seed, the 64-character one SODOTO keys use. Never stored, never sent." style="width:120px">
+  <input id="sealname" hidden autocomplete="off" placeholder="Seal as (name)" title="Optional: who vouches for these records. Shown to readers with a ✓ once verified." style="width:130px">
+  <input id="sealseed" hidden type="password" autocomplete="new-password" placeholder="seed (64 hex)" title="Optional: your Ed25519 seed, the 64-character one SODOTO keys use. Never stored, never sent." style="width:120px">
   <button id="publish" hidden title="Download the record files for your site's assets item named rcn-table/<name>">Publish records ↓</button>
   <button id="tools" hidden title="Download the three tool files, once per site, for an assets item named rcn-table">Tool files ↓</button>
   <input id="filepick" type="file" accept=".csv,.tsv,.xlsx,.xls,.ods" multiple hidden>
