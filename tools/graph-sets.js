@@ -13,6 +13,20 @@ window.GRAPH_SETS_DATA =
   "_comment": "Named sets of subgraphs the Composer can load in one click. Nothing here is special to any one schema -- add a set by adding an entry. 'dir' is relative to the folder holding graph-composer.html. HTTP cannot list a directory, so the filenames have to be written down; this is the one place to register a new subgraph.",
   "sets": [
     {
+      "name": "Ostrom Nobel lecture figures",
+      "dir": "../docs/ostrom-nobel",
+      "note": "Figures 1 to 6 of Ostrom's 2009 Nobel lecture (AER 2010), in her order, with Marc's margin questions on Figure 4 and an added Levels of action panel after it. Hover any element for Ostrom's text and our reading; Micro situational variables in Figure 5 carries her six conditions and their design-principle pairs. Each file opens on its own in the Graph Tool; the Composer will merge same-named nodes such as Action Situation across figures.",
+      "files": [
+        "fig1-four-types-of-goods.json",
+        "fig2-iad-framework.json",
+        "fig3-action-situation.json",
+        "fig4-rules-acting-on-the-situation.json",
+        "levels-of-action.json",
+        "fig5-trust-and-cooperation.json",
+        "fig6-social-ecological-system.json"
+      ]
+    },
+    {
       "name": "EIP aspects \u2014 from the substrate",
       "dir": "/projection/subgraph",
       "note": "The same 16 drawings, read live from Neo4j instead of from files. A subgraph is not stored there \u2014 it is a filter on provenance (WHERE 'org' IN c.sources), so the drawings and their union are the same rows read two ways. Needs substrate/api.py on 8768; unavailable over file://, which is why the file sets stay.",
