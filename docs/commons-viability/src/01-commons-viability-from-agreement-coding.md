@@ -16,7 +16,7 @@ Seven of the eleven design principles leave a clear trace in an agreement's text
 
 The coding can also sort every sentence by Ostrom's levels of action. Operational rules are about doing the work: water, pay, harvest. Collective-choice rules are about making and changing those rules: amend, vote, decide. Constitutional rules are about how the rule-makers are chosen and how they decide. A commons with operational rules and nothing above them can follow its rules but cannot change them, and that shows plainly in the coding.
 
-A second sort uses Ostrom's seven rule types: boundary, position, choice, aggregation, information, payoff, and scope. Each rule's action says which type it is. The NDC School page [[Seven Questions]] puts these types in plain words.
+A second sort uses Ostrom's seven rule types: boundary, position, choice, aggregation, information, payoff, and scope. Each rule's action says which type it is. The NDC School page [[Seven Questions]] puts these types in plain words. How the grammar, the rule types, the levels, and the design principles fit together is on [[How The Ostrom Frames Fit Together]].
 
 ## What the coding cannot show
 
