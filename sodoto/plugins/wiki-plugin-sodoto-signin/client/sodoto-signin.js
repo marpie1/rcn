@@ -90,6 +90,15 @@
 
   function setStatus (el, kind, msg) { el.className = 'sodoto-signin-status ' + kind; el.textContent = msg }
 
+  // Ed25519 in WebCrypto needs Chrome/Edge 137, Safari 17, Firefox 129. Older
+  // browsers say "Algorithm: Unrecognized name" — mirrors tools/sodoto-crypto.js.
+  function friendly (e) {
+    const msg = (e && (e.message || e.name)) || String(e)
+    if (!/unrecognized name|not supported|NotSupportedError/i.test(msg)) return msg
+    return 'This browser is too old to use a SODOTO key. Update it (in Chrome: ⋮ menu → Help → About Google Chrome → Relaunch), then reload this page. ' +
+      'Chrome or Edge 137+, Safari 17+, or Firefox 129+ all work.'
+  }
+
   async function doSignIn (ui) {
     setStatus(ui.status, '', ''); ui.btn.disabled = true
     try {
@@ -103,7 +112,7 @@
       if (/no SODOTO identity/i.test(e.message)) {
         ui.restore.style.display = 'block'
         setStatus(ui.status, 'warn', 'No key on this device — restore it below to sign in.')
-      } else setStatus(ui.status, 'err', e.message)
+      } else setStatus(ui.status, 'err', friendly(e))
     } finally { ui.btn.disabled = false }
   }
 

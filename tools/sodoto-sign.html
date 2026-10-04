@@ -209,7 +209,7 @@ async function onRestore(){
     location.reload();                                         // re-enter the sign flow with the identity present
   } catch (e) {
     btn.disabled = false; btn.textContent = 'Unlock & continue';
-    $('restore-err').innerHTML = '<div class="err">' + esc(e.message || String(e)) + '</div>';
+    $('restore-err').innerHTML = '<div class="err">' + esc(SodotoCrypto.isTooOldError(e) ? SodotoCrypto.tooOldMessage() : (e.message || String(e))) + '</div>';
   }
 }
 
@@ -233,7 +233,7 @@ async function onSign(){
     show('stage-signed');
   } catch(e) {
     btn.disabled = false; btn.textContent = 'Yes — this is true. Sign it.';
-    $('sign-err').innerHTML = `<div class="err">Couldn't sign (${esc(e.message||String(e))}). Needs Ed25519 over https on a modern browser.</div>`;
+    $('sign-err').innerHTML = `<div class="err">${SodotoCrypto.isTooOldError(e) ? esc(SodotoCrypto.tooOldMessage()) : `Couldn't sign (${esc(e.message||String(e))}). Needs Ed25519 over https on a modern browser.`}</div>`;
   }
 }
 
@@ -264,6 +264,11 @@ function init(){
   $('claim-desc').textContent = claimDesc();
   renderDetails();
   $('btn-sign').addEventListener('click', onSign);
+  SodotoCrypto.ed25519Supported().then(ok => {
+    if (ok) return;
+    $('btn-sign').disabled = true;
+    $('sign-err').innerHTML = '<div class="err">' + esc(SodotoCrypto.tooOldMessage()) + '</div>';
+  });
   $('copy-jwt').addEventListener('click', e => copy(signedJWT, e.target));
   $('download-jwt').addEventListener('click', downloadJWT);
   show('stage-review');

@@ -76,6 +76,14 @@
     .reg-empty { padding: 14px 10px; font-size: 12px; color: #555; background: #fff; border: 1px solid #ddd; border-top: none; }
     .need { display: inline-block; font-family: system-ui, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.03em; padding: 1px 6px; margin: 3px 4px 0 0; border: 1px solid #d4a017; background: #fdf3dc; color: #6b4f00; }
     .need.bad { border-color: #8b1a1a; background: #fbe9e9; color: #8b1a1a; }
+    .site-state { font-size: 11px; }
+    .site-state.ready { color: #2a5c3f; }
+    .site-state.waiting { color: #6b4f00; font-weight: 700; }
+    .site-state.checking { color: #8a8170; }
+    #welcome-status { margin-bottom: 6px; padding: 6px 8px; font-size: 12px; }
+    #welcome-status.ready { background: #e8f3ec; color: #2a5c3f; }
+    #welcome-status.waiting { background: #fdf3dc; color: #6b4f00; border: 1px solid #d4a017; }
+    #welcome-status.checking { color: #8a8170; }
     .radio-group label.inline { font-size: 12px; font-weight: 400; text-transform: none; letter-spacing: 0; color: #1a1208; cursor: pointer; }
   </style>
 </head>
@@ -154,6 +162,7 @@
   <div id="registry-log" class="log" style="display:none"></div>
   <div id="welcome-out" class="hint-box" hidden>
     <div style="margin-bottom:6px;"><b>Send this to <span id="welcome-name"></span></b> — their portfolio address and how to sign in the first time.</div>
+    <div id="welcome-status"></div>
     <textarea id="welcome-text" readonly rows="12" style="width:100%;font-size:12px;"></textarea>
     <button class="secondary" type="button" onclick="copyWelcome()" style="font-size:11px;margin-top:5px;">Copy message</button>
   </div>
@@ -1712,14 +1721,15 @@ async function provisionPersonSite(slug) {
 // for the recovery file. Saying so up front stops that looking like a failure.
 function welcomeMessage(p) {
   const url = wikiPageUrl(p.site, p.portfolioSlug)
+  const wait = siteState[p.site] === 'ready' ? '' : `
+A brand-new site can take an hour or more before the link opens. If it says it can't connect, try again a little later.
+`
   const first = p.name.split(/\s+/)[0]
   return `Hi ${first},
 
 Your SODOTO portfolio is ready. This is your own site; only you can edit it:
 ${url}
-
-A brand-new site can take up to an hour before the link opens. If it says it can't connect, try again a little later.
-
+${wait}
 To sign in the first time:
 1. Open the link above.
 2. Press "Sign in with my SODOTO key".
@@ -1729,13 +1739,62 @@ To sign in the first time:
 After that, on the same browser, step 2 is all you need. On a new phone, computer or browser, do step 3 again.`
 }
 
-function showWelcome(slug) {
+async function showWelcome(slug) {
   const p = personBySlug(slug)
   if (!p) return
   el('welcome-name').textContent = p.name
   el('welcome-text').value = welcomeMessage(p)
   el('welcome-out').hidden = false
   el('welcome-out').scrollIntoView({ block: 'nearest' })
+  paintWelcomeStatus(p, 'checking')
+  const state = await checkSite(p.site)
+  if (el('welcome-name').textContent !== p.name) return   // another person's message opened meanwhile
+  el('welcome-text').value = welcomeMessage(p)
+  paintWelcomeStatus(p, state)
+}
+
+// Can a browser open this person's site yet? A new site exists on the server at
+// once, but browsers refuse it until Christian's ingress issues its certificate
+// (hourly, sometimes much longer). Until then the welcome link fails with "can't
+// provide a secure connection" — so check from this browser, the same way the
+// person's browser will, before the message goes out. no-cors: we only need to
+// know the TLS handshake and request succeeded; a cert failure rejects the fetch.
+const siteState = {}   // site -> 'ready' | 'waiting' | 'checking'
+const siteChecks = {}  // site -> in-flight promise, so one site is never probed twice at once
+function checkSite(site) {
+  if (siteState[site] === 'ready') return Promise.resolve('ready')
+  if (siteChecks[site]) return siteChecks[site]
+  siteState[site] = 'checking'
+  const origin = new URL(wikiPageUrl(site, 'x')).origin
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 10000)
+  siteChecks[site] = fetch(origin + '/favicon.png?ready=' + Date.now(), { mode: 'no-cors', cache: 'no-store', signal: ctl.signal })
+    .then(() => 'ready', () => 'waiting')
+    .then(state => { clearTimeout(timer); delete siteChecks[site]; siteState[site] = state; paintSiteStates(site); return state })
+  return siteChecks[site]
+}
+
+function paintWelcomeStatus(p, state) {
+  const box = el('welcome-status')
+  box.className = state
+  box.innerHTML = state === 'ready'
+    ? `✓ Site ready — ${escHtml(p.site)} opens. Safe to send.`
+    : state === 'checking'
+      ? `Checking whether ${escHtml(p.site)} opens yet…`
+      : `<b>⚠ Site not ready yet.</b> ${escHtml(p.site)} exists, but its security certificate hasn't been issued, so the link will show "can't provide a secure connection". It can take an hour or more — wait before sending. `
+        + `<button class="small" type="button" onclick="showWelcome('${p.slug}')">Check again</button>`
+}
+
+// Registry rows carry a small ready/not-ready mark for each own-site person.
+function siteStateHtml(site) {
+  const st = siteState[site] || 'checking'
+  const label = st === 'ready' ? '✓ site ready' : st === 'waiting' ? '⚠ site not ready' : 'checking site…'
+  const title = st === 'waiting' ? 'No security certificate yet — the portfolio link will fail. Click to check again.' : site
+  return `<span class="site-state ${st}" data-site="${escHtml(site)}" title="${title}"${st === 'waiting' ? ` style="cursor:pointer" onclick="checkSite('${escHtml(site)}')"` : ''}>${label}</span>`
+}
+function paintSiteStates(site) {
+  document.querySelectorAll('.site-state[data-site]').forEach(n => {
+    if (n.dataset.site === site) n.outerHTML = siteStateHtml(site)
+  })
 }
 
 function copyWelcome() {
@@ -1857,7 +1916,7 @@ function renderPeople() {
     // Shape A: each person gets their own site, so they own it and can write
     // their own account of the journey. Already-provisioned people just say so.
     const ownCell = p.site === personalSite(p.slug)
-      ? `<span style="font-size:11px;color:#2a5c3f;" title="${escHtml(p.site)}">✓ own site</span> <button class="small secondary" onclick="showWelcome('${p.slug}')" title="The portfolio address and first sign-in steps, ready to send">Welcome msg</button>`
+      ? `<span style="font-size:11px;color:#2a5c3f;" title="${escHtml(p.site)}">✓ own site</span> ${siteStateHtml(p.site)} <button class="small secondary" onclick="showWelcome('${p.slug}')" title="The portfolio address and first sign-in steps, ready to send">Welcome msg</button>`
       : `<button class="small" onclick="provisionPersonSite('${p.slug}')" title="Create ${personalSite(p.slug)} — a site this person owns">Provision</button>`
     const shared = didCount[normalizeDid(p.did)] > 1
     const tr = document.createElement('tr')
@@ -1870,6 +1929,8 @@ function renderPeople() {
       + `<td>${canRemove ? `<button class="small danger" onclick="removePerson('${p.slug}')">×</button>` : ''}</td>`
     tbody.appendChild(tr)
   }
+  // Only this page's own-site people get probed — never the whole registry.
+  for (const p of pageRows) if (p.site === personalSite(p.slug) && siteState[p.site] !== 'ready') checkSite(p.site)
 
   // Empty states say why, so an empty table never looks like a lost registry
   const empty = el('reg-empty')

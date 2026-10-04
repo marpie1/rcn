@@ -223,8 +223,8 @@ async function onCreate() {
     paintDone(); show('stage-done');
   } catch (e) {
     btn.disabled = false; btn.textContent = 'Create my identity';
-    $('intro-err').innerHTML = '<div class="err">Couldn\'t create a key here (' + escapeHtml(e.message || String(e)) +
-      '). This needs Ed25519 support over https — try an up-to-date Safari or Chrome.</div>';
+    $('intro-err').innerHTML = '<div class="err">' + (SodotoCrypto.isTooOldError(e) ? escapeHtml(SodotoCrypto.tooOldMessage())
+      : 'Couldn\'t create a key here (' + escapeHtml(e.message || String(e)) + '). This needs Ed25519 support over https — try an up-to-date Safari or Chrome.') + '</div>';
   }
 }
 
@@ -257,6 +257,12 @@ function init() {
   if (identity) { paintDone(); show('stage-finish'); }   // already has an identity on this device
 
   $('btn-create').addEventListener('click', onCreate);
+  // Say it now, not after they've chosen and typed a passphrase twice.
+  if (!identity) SodotoCrypto.ed25519Supported().then(ok => {
+    if (ok) return;
+    $('btn-create').disabled = true;
+    $('intro-err').innerHTML = '<div class="err">' + escapeHtml(SodotoCrypto.tooOldMessage()) + '</div>';
+  });
   $('copy-did').addEventListener('click', e => copy(identity.did, e.target));
   $('download-seed').addEventListener('click', downloadRecovery);
   $('show-did-again').addEventListener('click', () => { alert(identity.did); });

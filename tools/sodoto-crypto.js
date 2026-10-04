@@ -58,5 +58,41 @@
     return { ok: pw.length >= 12, score, label: score < 3 ? 'weak' : score < 5 ? 'fair' : 'strong' }
   }
 
-  return { encryptSeed, decryptSeed, passphraseStrength }
+  // Ed25519 in WebCrypto arrived late: Chrome/Edge 137, Safari 17, Firefox 129.
+  // An older browser fails with "Algorithm: Unrecognized name", which tells a
+  // learner nothing. Probe once, so a page can say so before they type anything.
+  let ed25519Probe = null
+  function ed25519Supported () {
+    if (!ed25519Probe) {
+      ed25519Probe = subtle
+        ? subtle.generateKey({ name: 'Ed25519' }, false, ['sign', 'verify']).then(() => true, () => false)
+        : Promise.resolve(false)
+    }
+    return ed25519Probe
+  }
+
+  // "Chrome 126", "Safari 16.4", … or '' — named in the message so the person
+  // can see the problem is the version, not them.
+  function browserName () {
+    const ua = (globalThis.navigator && navigator.userAgent) || ''
+    let m
+    if ((m = ua.match(/Edg\/(\d+)/))) return 'Edge ' + m[1]
+    if ((m = ua.match(/Firefox\/(\d+)/))) return 'Firefox ' + m[1]
+    if ((m = ua.match(/Chrome\/(\d+)/))) return 'Chrome ' + m[1]
+    if ((m = ua.match(/Version\/([\d.]+).*Safari/))) return 'Safari ' + m[1]
+    return ''
+  }
+
+  function isTooOldError (e) {
+    return /unrecognized name|not supported|NotSupportedError/i.test((e && (e.message || e.name)) || String(e))
+  }
+
+  function tooOldMessage () {
+    const b = browserName()
+    return 'This browser is too old to make or use a SODOTO key' + (b ? ' (it is ' + b + ')' : '') + '. ' +
+      'Update it, then open this link again. In Chrome: click the ⋮ menu (or the "New Chrome available" button) → Help → About Google Chrome → Relaunch. ' +
+      'Any of these work: Chrome or Edge 137 or later, Safari 17 or later, Firefox 129 or later.'
+  }
+
+  return { encryptSeed, decryptSeed, passphraseStrength, ed25519Supported, isTooOldError, tooOldMessage }
 })
