@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mech Blocks</title>
+<!--
+  Mech Blocks — a drag-and-drop block view of Ward Cunningham's Mech scripts
+  (github.com/WardCunningham/wiki-plugin-mech, handbook mech.fed.wiki).
+
+  The Mech text is what is stored. Blocks are a second view of that same text:
+  every drag rewrites lines and indentation, and nothing else, so the text that
+  comes out is ordinary Mech that Ward's interpreter, journal, fork and search
+  all keep working on. Untouched text comes back byte for byte.
+
+  Three borrowings, from the programs that inspired Mech:
+    Scratch — C-shaped blocks with a mouth; a CLICK with nothing inside shows it.
+    Snap!   — each block says what state it needs and makes; a drop where the
+              need is missing is flagged while you drag, not after you run.
+    Etoys   — drop a wiki page link on the script to get FROM site/slug.
+
+  It does not run Mech. The checks are Ward's own trouble messages, read from
+  the source, applied before running. The block catalog below is the
+  machine-readable list that the design note proposes adding to blocks.js.
+
+  Tests: node tools/test-mech-blocks.js (every mech item on mech.fed.wiki).
+  Marc Pierson and Claude Opus 5.5, October 2026.
+-->
+<style>
+  :root {
+    --bg: #fbfaf6; --card: #ffffff; --ink: #000000; --line: #cfcfcf; --soft: #f3f1ea;
+    --red: #b91c1c; --amber: #b45309; --green: #15803d; --blue: #1d4ed8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 18px 16px 6px; max-width: 1400px; margin: 0 auto; }
+  h1 { font-size: 28px; margin: 0 0 2px; }
+  .byline { font-weight: 700; font-size: 14px; margin: 0 0 8px; }
+  .lede { margin: 0; max-width: 820px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; max-width: 1400px; margin: 0 auto; }
+  button, select { font: inherit; font-size: 15px; color: var(--ink); background: #fff; border: 2px solid #000; border-radius: 8px; padding: 4px 12px; cursor: pointer; }
+  button:hover { background: var(--soft); }
+  select { max-width: 340px; }
+  .flash-msg { font-size: 14px; color: var(--green); font-weight: 700; }
+
+  main { display: grid; grid-template-columns: 230px minmax(0, 1fr) 340px; gap: 14px; padding: 0 16px 30px; max-width: 1400px; margin: 0 auto; align-items: start; }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 2px solid #000; border-radius: 10px; padding: 10px 12px; }
+  .panel h2 { font-size: 16px; margin: 0 0 6px; }
+  .hint { font-size: 13px; opacity: .75; margin: 0 0 8px; }
+
+  /* palette */
+  #palette { position: sticky; top: 8px; max-height: calc(100vh - 16px); overflow: auto; }
+  #palette.trash-hot { outline: 4px solid var(--red); }
+  .pgroup { margin: 8px 0 2px; font-size: 13px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: var(--g); }
+  .ptile { display: block; margin: 3px 0; padding: 3px 8px; background: #fff; border: 2px solid var(--g); border-left-width: 7px; border-radius: 7px; cursor: grab; user-select: none; touch-action: none; font-size: 14px; }
+  .ptile b { letter-spacing: .02em; }
+  .ptile span { opacity: .65; }
+
+  /* script canvas */
+  #canvas { position: relative; min-height: 360px; padding-bottom: 40px; }
+  .tile { position: relative; margin: 4px 0; background: #fff; border: 2px solid var(--g); border-left-width: 8px; border-radius: 8px; }
+  .tile.hat { border-top-left-radius: 20px; }
+  .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 5px 10px; cursor: grab; user-select: none; touch-action: none; min-height: 34px; }
+  .head .op { font-weight: 800; letter-spacing: .03em; color: var(--g); }
+  .head .args { padding: 0 4px; border-radius: 4px; border: 1px dashed transparent; cursor: text; min-width: 1em; }
+  .head .args:hover { border-color: #999; }
+  .head .args.empty { font-style: italic; opacity: .5; }
+  .head input.edit { font: inherit; font-size: 15px; border: 2px solid var(--blue); border-radius: 5px; padding: 0 5px; min-width: 12em; }
+  .chip { font-size: 12px; border-radius: 999px; padding: 0 8px; border: 1.5px solid; white-space: nowrap; }
+  .chip.make { border-color: #6b7280; color: #374151; }
+  .chip.need { border-color: var(--green); color: var(--green); }
+  .chip.need.missing { border-color: var(--amber); color: #fff; background: var(--amber); }
+  .chip.need.maybe { border-style: dashed; border-color: var(--amber); color: var(--amber); }
+  .trouble { font-size: 13px; padding: 0 6px; border: 1.5px solid var(--red); color: var(--red); border-radius: 5px; background: #fff; line-height: 1.4; }
+  .trouble.warn { border-color: var(--amber); color: var(--amber); }
+  .msg { flex-basis: 100%; font-size: 14px; color: var(--red); }
+  .msg.warn { color: var(--amber); }
+  .mouth { margin: 0 0 0 16px; padding: 2px 8px 4px 0; min-height: 10px; }
+  .mouth-empty { margin: 2px 0; padding: 6px 10px; border: 2px dashed var(--g); border-radius: 7px; font-size: 13px; opacity: .7; }
+  .mouth-empty.required { opacity: 1; background: #fffbeb; }
+  .foot { height: 12px; border-top: 2px solid var(--g); background: color-mix(in srgb, var(--g) 14%, white); border-radius: 0 0 6px 6px; }
+  .tile.data { border-style: dashed; border-left-width: 2px; }
+  .tile.data .head { font-style: italic; }
+  .tile.blank .head { opacity: .5; font-size: 13px; min-height: 24px; padding: 2px 10px; }
+  .tile.unknown { --g: var(--red); }
+  .tile.unused { opacity: .45; border-style: dashed; }
+  .group-orphan { border: 2px dashed var(--red); border-radius: 8px; padding: 4px 6px; margin: 4px 0; }
+  .group-orphan > .label { font-size: 13px; color: var(--red); }
+  .tile.dragging { opacity: .25; }
+  .tile.flash { outline: 4px solid #93c5fd; }
+  .ghost { position: fixed; pointer-events: none; z-index: 20; opacity: .9; max-width: 420px; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+  #dropbar { position: absolute; height: 5px; border-radius: 3px; background: var(--green); pointer-events: none; display: none; z-index: 10; }
+  #dropbar.warn { background: var(--amber); }
+  #drophint { position: fixed; z-index: 21; pointer-events: none; display: none; font-size: 13px; background: var(--amber); color: #fff; border-radius: 6px; padding: 2px 8px; max-width: 360px; }
+  .endslot { margin-top: 8px; padding: 8px; border: 2px dashed var(--line); border-radius: 8px; font-size: 13px; opacity: .65; }
+  #canvas.urlhot .endslot { border-color: var(--blue); opacity: 1; }
+
+  /* text and checks */
+  #side { position: sticky; top: 8px; }
+  textarea { width: 100%; min-height: 260px; font: 15px/1.45 ui-monospace, Menlo, monospace; color: var(--ink); background: #fff; border: 2px solid var(--line); border-radius: 8px; padding: 8px; white-space: pre; overflow-wrap: normal; overflow-x: auto; }
+  textarea:focus { outline: 3px solid #93c5fd; }
+  #checks { list-style: none; padding: 0; margin: 6px 0 0; font-size: 14px; }
+  #checks li { padding: 4px 6px; border-left: 5px solid var(--red); margin: 0 0 5px; background: #fff; cursor: pointer; }
+  #checks li.warn { border-color: var(--amber); }
+  #checks li.ok { border-color: var(--green); cursor: default; }
+  footer { max-width: 1400px; margin: 0 auto; padding: 4px 16px 40px; font-size: 14px; }
+  footer p { max-width: 900px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Mech Blocks</h1>
+  <p class="byline">Marc Pierson and Claude Opus 5.5 · October 2026</p>
+  <p class="lede">Build a Mech script by dragging blocks. The text on the right is what FedWiki stores, and it is rewritten on every drag. Type in the text and the blocks follow. Each block shows what it <b>needs</b> and what it <b>makes</b>; a drop where a need is missing turns the bar amber before you let go.</p>
+</header>
+<div class="bar">
+  <label>Handbook script <select id="examples"></select></label>
+  <button id="undo" title="Undo the last block change (Cmd/Ctrl-Z)">Undo</button>
+  <button id="copyText">Copy Mech text</button>
+  <button id="copyCatalog" title="The machine-readable block list proposed for Mech's blocks.js">Copy block catalog</button>
+  <span class="flash-msg" id="flash"></span>
+</div>
+<main>
+  <section class="panel" id="palette" aria-label="Blocks">
+    <h2>Blocks</h2>
+    <p class="hint">Drag onto the script. Drag a block back here to remove it.</p>
+    <div id="ptiles"></div>
+  </section>
+  <section class="panel" aria-label="Script">
+    <h2>Script</h2>
+    <p class="hint">Drag by the block's name. Click the words after the name to edit them. Drop a wiki page link here to get a FROM block.</p>
+    <div id="canvas"></div>
+  </section>
+  <section id="side">
+    <div class="panel">
+      <h2>Mech text</h2>
+      <textarea id="text" spellcheck="false" aria-label="Mech text"></textarea>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <h2>Before you run it</h2>
+      <ul id="checks"></ul>
+    </div>
+  </section>
+</main>
+<footer>
+  <p>This prototype does not run Mech. The checks use the trouble messages from Ward's own blocks, applied before the script runs instead of after. The state each block needs and makes comes from reading <code>blocks.js</code>; it lives below as a catalog that could move into Mech itself.</p>
+  <p>Ward Cunningham wrote Mech and its handbook at mech.fed.wiki. Mech Blocks: Marc Pierson and Claude Opus 5.5, October 2026.</p>
+</footer>
+<div id="drophint"></div>
+
+<script id="corpus" type="application/json">[{"site":"mech.fed.wiki","slug":"about-block-template","title":"About Block Template","text":"HELLO"},{"site":"mech.fed.wiki","slug":"about-mech-plugin","title":"About Mech Plugin","text":"HELLO"},{"site":"mech.fed.wiki","slug":"about-mech-plugin","title":"About Mech Plugin","text":"HELLO world"},{"site":"mech.fed.wiki","slug":"about-mech-plugin","title":"About Mech Plugin","text":"CLICK\n  HELLO\n  HELLO world"},{"site":"mech.fed.wiki","slug":"about-mech-plugin","title":"About Mech Plugin","text":"CLICK\nHELLO"},{"site":"mech.fed.wiki","slug":"catalog-of-mech-blocks","title":"Catalog of Mech Blocks","text":"CODE"},{"site":"mech.fed.wiki","slug":"catalog-of-variables","title":"Catalog of Variables","text":"CLICK\n FROM mech.fed.wiki/catalog-of-mech-blocks\n  CODE blocks\n  CODE variables\n CLICK\n  PREVIEW synopsis items\n CLICK\n  SOLO\n CLICK\n  POPUP state\n"},{"site":"mech.fed.wiki","slug":"click","title":"CLICK","text":"CLICK\n HELLO"},{"site":"mech.fed.wiki","slug":"commons","title":"COMMONS","text":"GET\n COMMONS"},{"site":"mech.fed.wiki","slug":"file","title":"FILE","text":"FILE .txt"},{"site":"mech.fed.wiki","slug":"forward","title":"FORWARD","text":"TICK 5\n FORWARD 20"},{"site":"mech.fed.wiki","slug":"from","title":"FROM","text":"FROM fed.wiki/welcome-visitors\n HELLO"},{"site":"mech.fed.wiki","slug":"get","title":"GET","text":"GET\n UPTIME"},{"site":"mech.fed.wiki","slug":"hello","title":"HELLO","text":"HELLO world"},{"site":"mech.fed.wiki","slug":"how-blocks-cooperate","title":"How Blocks Cooperate","text":"CLICK\n NEIGHBORS fed.wiki\n WALK 10 steps\n PREVIEW graph"},{"site":"mech.fed.wiki","slug":"lineup","title":"LINEUP","text":"LINEUP"},{"site":"mech.fed.wiki","slug":"listen","title":"LISTEN","text":"LISTEN hello"},{"site":"mech.fed.wiki","slug":"message","title":"MESSAGE","text":"CLICK\n MESSAGE hello"},{"site":"mech.fed.wiki","slug":"neighbors","title":"NEIGHBORS","text":"NEIGHBORS fed.wiki\n Journal Fork Survey"},{"site":"mech.fed.wiki","slug":"plugin","title":"PLUGIN","text":"PLUGIN coauthor\n HELLO"},{"site":"mech.fed.wiki","slug":"popup","title":"POPUP","text":"CLICK\n GET\n  COMMONS\n POPUP images"},{"site":"mech.fed.wiki","slug":"print","title":"PRINT","text":"PRINT outline"},{"site":"mech.fed.wiki","slug":"random","title":"RANDOM","text":"NEIGHBORS\nRANDOM"},{"site":"mech.fed.wiki","slug":"roster","title":"ROSTER","text":"NEIGHBORS\nROSTER"},{"site":"mech.fed.wiki","slug":"sensor","title":"SENSOR","text":"FROM found.ward.fed.wiki/esp8266-datalog\n SENSOR garage\n  REPORT"},{"site":"mech.fed.wiki","slug":"show","title":"SHOW","text":"CLICK\n SHOW about-paragraph-plugin"},{"site":"mech.fed.wiki","slug":"sleep","title":"SLEEP","text":"CLICK\n SLEEP 5\n HELLO"},{"site":"mech.fed.wiki","slug":"solo","title":"SOLO","text":"SOURCE aspect\nSOLO"},{"site":"mech.fed.wiki","slug":"testing-lineup-freeze-mech","title":"Testing Lineup Freeze Mech","text":"CLICK\n NEIGHBORS wiki\n ROSTER\n PREVIEW synopsis items"},{"site":"mech.fed.wiki","slug":"testing-lineup-freeze-mech","title":"Testing Lineup Freeze Mech","text":"CLICK\n LINEUP\n PREVIEW synopsis items"},{"site":"mech.fed.wiki","slug":"testing-mech-plugin","title":"Testing Mech Plugin","text":"HELLO\nHELLO world"},{"site":"mech.fed.wiki","slug":"testing-mech-plugin","title":"Testing Mech Plugin","text":"CLICK\n  HELLO world"},{"site":"mech.fed.wiki","slug":"testing-mech-plugin","title":"Testing Mech Plugin","text":"TICK 5\n HELLO"},{"site":"mech.fed.wiki","slug":"testing-mech-plugin","title":"Testing Mech Plugin","text":"CLICK\n  HELLO\n  CLICK\n    HELLO\n    HELLO world"},{"site":"mech.fed.wiki","slug":"testing-mech-plugin","title":"Testing Mech Plugin","text":"CLICK\n  HELLO\nCLICK\n  HELLO world"},{"site":"mech.fed.wiki","slug":"testing-mech-plugin","title":"Testing Mech Plugin","text":"CLICK\nCLICK\n  CLICK"},{"site":"mech.fed.wiki","slug":"testing-mech-plugin","title":"Testing Mech Plugin","text":"CLACK\n  HELLO\nClunk\n  HELLO"},{"site":"mech.fed.wiki","slug":"testing-mech-plugin","title":"Testing Mech Plugin","text":"   \n    "},{"site":"mech.fed.wiki","slug":"testing-mech-plugin","title":"Testing Mech Plugin","text":"https://www.google.com/search?q=history+of+jquery&oq=history+of+jquery&gs_lcrp=EgZjaHJvbWUyCQgAEEUYORiABNIBCDQxMzhqMGo3qAIIsAIB&sourceid=chrome&ie=UTF-8"},{"site":"mech.fed.wiki","slug":"testing-mech-plugin","title":"Testing Mech Plugin","text":"NOW IS THE TIME FOR ALL GOOD MEN TO COME TO THE AID OF THEIR COUNTRY"},{"site":"mech.fed.wiki","slug":"testing-neighbor-mech","title":"Testing Neighbor Mech","text":"CLICK\n NEIGHBORS\n WALK 10 steps\n CLICK\n  SOLO\n CLICK\n  POPUP state"},{"site":"mech.fed.wiki","slug":"testing-neighbor-mech","title":"Testing Neighbor Mech","text":"CLICK\n NEIGHBORS genius\n WALK 24 weeks\n NEIGHBORS thompson\n WALK 20 hubs\n CLICK\n  SOLO\n CLICK\n  PREVIEW graph"},{"site":"mech.fed.wiki","slug":"testing-neighbor-mech","title":"Testing Neighbor Mech","text":"CLICK\n NEIGHBORS fed.wiki\n TICK 10\n  WALK\n  PREVIEW graph\n  SLEEP 3"},{"site":"mech.fed.wiki","slug":"testing-sensor-mech","title":"Testing Sensor Mech","text":"FROM found.ward.fed.wiki/esp8266-datalog\n SENSOR garage\n  REPORT"},{"site":"mech.fed.wiki","slug":"testing-sensor-mech","title":"Testing Sensor Mech","text":"FROM found.ward.fed.wiki/esp8266-datalog\n CLICK\n  SENSOR garage\n   REPORT\n  SENSOR office\n   REPORT"},{"site":"mech.fed.wiki","slug":"testing-sensor-mech","title":"Testing Sensor Mech","text":"REPORT "},{"site":"mech.fed.wiki","slug":"testing-sensor-mech","title":"Testing Sensor Mech","text":"SENSOR office\n REPORT"},{"site":"mech.fed.wiki","slug":"testing-sensor-mech","title":"Testing Sensor Mech","text":"FROM found.ward.fed.wiki/check-the-weather\n SENSOR office\n  REPORT"},{"site":"mech.fed.wiki","slug":"testing-sensor-mech","title":"Testing Sensor Mech","text":"FROM found.ward.fed.wiki/esp8266-datalog\n SENSOR\n  REPORT"},{"site":"mech.fed.wiki","slug":"testing-sensor-mech","title":"Testing Sensor Mech","text":"FROM found.ward.fed.wiki/esp8266-datalog\n SENSOR porch\n  REPORT"},{"site":"mech.fed.wiki","slug":"testing-sensor-mech","title":"Testing Sensor Mech","text":"FROM found.ward.fed.wiki/esp8266-datalog\n SENSOR garage\n  REPORT"},{"site":"mech.fed.wiki","slug":"tick","title":"TICK","text":"TICK 5\n HELLO"},{"site":"mech.fed.wiki","slug":"together","title":"TOGETHER","text":"CLICK\n TOGETHER\n  SLEEP 4\n  SLEEP 3\n  HELLO\n HELLO world"},{"site":"mech.fed.wiki","slug":"turn","title":"TURN","text":"TICK 5\n FORWARD 150\n TURN 144\n"},{"site":"mech.fed.wiki","slug":"turtle-code-walkthrough","title":"Turtle Code Walkthrough","text":"TICK 9\n  FORWARD 60\n  TURN 140\n  FORWARD 60\n  TURN -100"},{"site":"mech.fed.wiki","slug":"until","title":"UNTIL","text":"TICK 10\n UNTIL word"},{"site":"mech.fed.wiki","slug":"uptime","title":"UPTIME","text":"GET\n UPTIME"},{"site":"mech.fed.wiki","slug":"walk","title":"WALK","text":"NEIGHBORS\nWALK"},{"site":"mech.fed.wiki","slug":"ward-cunningham","title":"Ward Cunningham","text":"NEIGHBORS mech"},{"site":"mech.fed.wiki","slug":"whats-new-in-wiki","title":"What's New in Wiki","text":"CLICK\n HELLO"},{"site":"mech.fed.wiki","slug":"whats-new-in-wiki","title":"What's New in Wiki","text":"CLICK\n NEIGHBORS fed.wiki\n CODE popular 15\n CLICK\n  PREVIEW items"}]</script>
+<script>
+/* ── model ── pure functions, no DOM. test-mech-blocks.js evals from here to "end model". */
+
+const GROUPS = {
+  control: { label: 'Control', color: '#b45309' },
+  web:     { label: 'Pages and neighbors', color: '#1d4ed8' },
+  data:    { label: 'Data', color: '#0f766e' },
+  show:    { label: 'Show results', color: '#15803d' },
+  server:  { label: 'Server', color: '#7c3aed' },
+  talk:    { label: 'Messages', color: '#be185d' },
+  draw:    { label: 'Turtle drawing', color: '#4b5563' },
+};
+
+// body: 'none' | 'optional' | 'required' | 'data' | 'server' | 'plugin'
+// reads/writes: state keys. readsByArg/writesByArg: keyed by an argument word.
+// readsArg: reads the key named by the first argument (default given).
+// writesArg: writes the key named by the first argument.
+// bodyWrites: keys only the indented blocks see. bodyWritesSuffix: FILE's argument,
+// exactly as written (FILE .tsv stores the text under ".tsv", not "tsv").
+const CATALOG = {
+  CLICK:    { group: 'control', hat: true, body: 'required', doc: 'Offer to proceed once user clicks.', example: 'CLICK' },
+  TICK:     { group: 'control', hat: true, body: 'required', args: 'count 1–99', count: true, bodyWrites: ['tick'], doc: 'Proceed repeatedly once user clicks.', example: 'TICK 5' },
+  UNTIL:    { group: 'control', body: 'optional', args: 'word', argRequired: true, reads: ['tick', 'aspect'], doc: 'Stop TICKing once a word turns up.', example: 'UNTIL word' },
+  SLEEP:    { group: 'control', body: 'optional', args: 'seconds 1–99', count: true, doc: 'Suspend a sequence of blocks.', example: 'SLEEP 3' },
+  TOGETHER: { group: 'control', body: 'required', doc: 'Start all blocks at once.', example: 'TOGETHER' },
+  FROM:     { group: 'web', body: 'required', args: 'site/slug', argRequired: true, writes: ['page'], doc: 'Fetch a page for the blocks indented below.', example: 'FROM fed.wiki/welcome-visitors' },
+  NEIGHBORS:{ group: 'web', body: 'data', bodyLabel: 'Site Survey titles', args: 'site filters', writes: ['neighborhood'], doc: 'Retrieve available neighborhood sitemaps.', example: 'NEIGHBORS' },
+  WALK:     { group: 'web', body: 'none', args: 'count and way, like 10 steps', choices: ['10 steps', '24 weeks', '20 hubs', '3 clicks', 'lineup', 'references', 'topics', 'days', 'months'], walk: true, reads: ['neighborhood'], writes: ['aspect'], doc: 'Explore the neighborhood link graph.', example: 'WALK 10 steps' },
+  RANDOM:   { group: 'web', body: 'none', reads: ['neighborhood'], writes: ['info'], doc: 'Select a random page from the neighbors.', example: 'RANDOM' },
+  ROSTER:   { group: 'web', body: 'none', reads: ['neighborhood'], writes: ['items'], doc: 'Make a Roster for the current neighborhood.', example: 'ROSTER' },
+  LINEUP:   { group: 'web', body: 'none', writes: ['items'], doc: 'Make a page from the current lineup.', example: 'LINEUP' },
+  SHOW:     { group: 'web', body: 'none', args: 'slug or site/slug', readsNoArg: ['info'], doc: 'Add an existing page to the lineup.', example: 'SHOW welcome-visitors' },
+  DELTA:    { group: 'web', body: 'none', args: 'have|apply', choices: ['have', 'apply'], oneOf: ['have', 'apply'], readsByArg: { apply: ['actions'] }, writesByArg: { have: ['recent'], apply: ['page'] }, doc: 'Apply recent remote site changes.', example: 'DELTA have' },
+  SOURCE:   { group: 'data', body: 'optional', args: 'topic', choices: ['marker', 'aspect', 'assets'], argRequired: true, writesArg: true, doc: 'Read a data source from the lineup.', example: 'SOURCE marker' },
+  FILE:     { group: 'data', body: 'required', args: 'suffix', choices: ['tsv', 'txt', 'csv', 'json'], argRequired: true, reads: ['assets'], bodyWritesSuffix: true, doc: 'User selects one of the available files.', example: 'FILE tsv' },
+  KWIC:     { group: 'data', body: 'data', bodyLabel: 'link template with $K or $W', args: 'prefix', reads: ['tsv'], writes: ['items'], doc: 'Construct a Keyword-In-Context index.', example: 'KWIC' },
+  SENSOR:   { group: 'data', body: 'optional', args: 'sensor name', argRequired: true, reads: ['page'], writes: ['temperature'], doc: 'Read sensor data from a named endpoint.', example: 'SENSOR garage' },
+  CODE:     { group: 'data', body: 'data', bodyLabel: 'lines the function reads with api.body()', args: 'function args…', wild: true, doc: 'Run JavaScript from a Code item on this page.', example: 'CODE' },
+  HELLO:    { group: 'show', body: 'none', args: 'world', choices: ['world'], doc: 'Add a happy face each time run.', example: 'HELLO world' },
+  REPORT:   { group: 'show', body: 'none', args: 'state key', readsArg: 'temperature', doc: 'Report a measurement in place in the item.', example: 'REPORT' },
+  PREVIEW:  { group: 'show', body: 'none', args: 'map graph items page synopsis', choices: ['graph', 'map', 'items', 'page', 'synopsis items'], kinds: ['map', 'graph', 'items', 'page', 'synopsis'], readsByArg: { map: ['marker'], graph: ['aspect'], items: ['items'], page: ['page'] }, doc: 'Display computed state as a ghost page.', example: 'PREVIEW graph' },
+  POPUP:    { group: 'show', body: 'none', args: 'state|images', choices: ['state', 'images', 'images all'], oneOf: ['state', 'images'], readsByArg: { images: ['commons'] }, doc: 'Open a pop-up window with various contents.', example: 'POPUP state' },
+  SOLO:     { group: 'show', body: 'none', reads: ['aspect'], doc: 'Launch the Solo plugin pop-up viewer.', example: 'SOLO' },
+  PRINT:    { group: 'show', body: 'none', args: 'outline|draft', choices: ['outline', 'draft'], oneOf: ['outline', 'draft'], reads: ['aspect', 'neighborhood'], writes: ['items'], doc: 'Compose a printable story and garden.', example: 'PRINT outline' },
+  DOWNLOAD: { group: 'show', body: 'none', args: 'file.txt|html|csv|tsv|json', argRequired: true, readsSuffix: true, doc: 'Download state as a file.', example: 'DOWNLOAD items.json' },
+  GET:      { group: 'server', body: 'server', args: 'state keys to share, or site', writes: ['result'], requiredBody: true, doc: 'Await a result from the server.', example: 'GET' },
+  PLUGIN:   { group: 'server', body: 'plugin', args: 'plugin name', argRequired: true, writes: ['result'], requiredBody: true, doc: 'Await a result from an installed plugin.', example: 'PLUGIN coauthor' },
+  LISTEN:   { group: 'talk', body: 'none', args: 'topic', argRequired: true, doc: 'Wait for a specific message.', example: 'LISTEN hello' },
+  MESSAGE:  { group: 'talk', body: 'none', args: 'topic', argRequired: true, doc: 'Send a specific message.', example: 'MESSAGE hello' },
+  FORWARD:  { group: 'draw', body: 'none', args: 'steps', argRequired: true, writes: ['turtle'], doc: 'Move the drawing "turtle" forward.', example: 'FORWARD 60' },
+  TURN:     { group: 'draw', body: 'none', args: 'degrees', argRequired: true, writes: ['turtle'], doc: 'Turn the drawing "turtle".', example: 'TURN 144' },
+};
+
+// Blocks that run on the wiki server, inside GET.
+const SERVER = {
+  HELLO:   { group: 'server', body: 'none', doc: 'Add a happy face each time run.', example: 'HELLO' },
+  UPTIME:  { group: 'server', body: 'none', doc: 'Report time the server has run.', example: 'UPTIME' },
+  SLEEP:   { group: 'server', body: 'optional', args: 'seconds 1–99', count: true, doc: 'Suspend a sequence of blocks.', example: 'SLEEP 3' },
+  COMMONS: { group: 'server', body: 'none', writes: ['commons'], doc: 'Report image files and byte count.', example: 'COMMONS' },
+  DELTA:   { group: 'server', body: 'none', reads: ['recent'], writes: ['actions'], doc: 'Retrieve recent site changes.', example: 'DELTA' },
+};
+
+const WAYS = /\b(\d+)? *(steps|days|weeks|months|hubs|lineup|references|topics|clicks)\b/;
+
+// One record per line: leading spaces, and everything after them, untouched.
+function parse(text) {
+  return text.split(/\n/).map(raw => {
+    const ind = raw.match(/^ */)[0].length;
+    return { ind, cmd: raw.slice(ind) };
+  });
+}
+
+function serialize(lines) {
+  return lines.map(l => ' '.repeat(l.ind) + l.cmd).join('\n');
+}
+
+// Ward's tree() from interpreter.js, line for line, but leaves hold the line
+// index instead of the text, so the view and the checks see exactly his nesting.
+function nest(lines) {
+  let k = 0;
+  function tree(here, indent) {
+    while (k < lines.length) {
+      const spaces = lines[k].ind;
+      if (spaces == indent) { here.push({ i: k }); k++; }
+      else if (spaces > indent) { const more = []; here.push(more); tree(more, spaces); }
+      else return here;
+    }
+    return here;
+  }
+  return tree([], 0);
+}
+
+function words(cmd) { const [op, ...args] = cmd.split(/ +/); return { op, args }; }
+
+// Last line of the block at i together with everything indented under it.
+function subtreeEnd(lines, i) {
+  let j = i;
+  while (j + 1 < lines.length && lines[j + 1].ind > lines[i].ind) j++;
+  return j;
+}
+
+// The step used for a new body: the smallest parent-to-child step in the text.
+function indentUnit(lines) {
+  let best = 0;
+  for (let i = 1; i < lines.length; i++) {
+    const d = lines[i].ind - lines[i - 1].ind;
+    if (d > 0 && (!best || d < best)) best = d;
+  }
+  return best || 1;
+}
+
+// Where a drop lands, as a line index and an indentation.
+function placeOf(lines, target) {
+  const { kind, i } = target;
+  if (kind == 'end') return { at: lines.length, ind: 0 };
+  if (kind == 'before') return { at: i, ind: lines[i].ind };
+  if (kind == 'after') return { at: subtreeEnd(lines, i) + 1, ind: lines[i].ind };
+  if (kind == 'into') {
+    const next = lines[i + 1];
+    return { at: i + 1, ind: next && next.ind > lines[i].ind ? next.ind : lines[i].ind + indentUnit(lines) };
+  }
+  throw new Error('unknown drop ' + kind);
+}
+
+// Insert chunk lines (relative indents kept) so the first sits at place.ind.
+function insertChunk(lines, chunk, place) {
+  const delta = place.ind - chunk[0].ind;
+  const moved = chunk.map(l => ({ ind: l.ind + delta, cmd: l.cmd }));
+  return [...lines.slice(0, place.at), ...moved, ...lines.slice(place.at)];
+}
+
+// Move the block at i (with its indented lines) to target. Returns null if the
+// target is inside the block being moved.
+function moveBlock(lines, i, target) {
+  const end = subtreeEnd(lines, i);
+  if (target.kind != 'end' && target.i >= i && target.i <= end) return null;
+  const place = placeOf(lines, target);
+  const chunk = lines.slice(i, end + 1);
+  const rest = [...lines.slice(0, i), ...lines.slice(end + 1)];
+  const at = place.at > end ? place.at - chunk.length : place.at;
+  return insertChunk(rest, chunk, { at, ind: place.ind });
+}
+
+function removeBlock(lines, i) {
+  const end = subtreeEnd(lines, i);
+  return [...lines.slice(0, i), ...lines.slice(end + 1)];
+}
+
+function insertNew(lines, cmd, target) {
+  return insertChunk(lines, [{ ind: 0, cmd }], placeOf(lines, target));
+}
+
+function readsOf(cat, args) {
+  const out = [...(cat.reads || [])];
+  if (cat.readsArg) out.push(args[0] || cat.readsArg);
+  if (cat.readsNoArg && !args[0]) out.push(...cat.readsNoArg);
+  if (cat.readsByArg) for (const a of args) out.push(...(cat.readsByArg[a] || []));
+  if (cat.readsSuffix) { const m = (args[0] || '').match(/\.(txt|html|csv|tsv|json)$/); if (m) out.push(m[1]); }
+  return [...new Set(out)];
+}
+
+function writesOf(cat, args) {
+  const out = [...(cat.writes || [])];
+  if (cat.writesArg && args[0]) out.push(args[0]);
+  if (cat.writesByArg) for (const a of args) out.push(...(cat.writesByArg[a] || []));
+  return [...new Set(out)];
+}
+
+// Which blocks make a key, for "like from ..." in the messages.
+function producers(key) {
+  const out = [];
+  for (const [op, c] of Object.entries(CATALOG)) {
+    if ((c.writes || []).includes(key) || (c.bodyWrites || []).includes(key)) out.push(op);
+    if (c.writesByArg) for (const [a, ks] of Object.entries(c.writesByArg)) if (ks.includes(key)) out.push(`${op} ${a}`);
+  }
+  for (const [op, c] of Object.entries(SERVER)) if ((c.writes || []).includes(key)) out.push(`GET with ${op}`);
+  if (CATALOG.SOURCE.choices.includes(key)) out.push(`SOURCE ${key}`);
+  if (['tsv', 'txt', 'csv', 'html', 'json'].includes(key)) out.push(`FILE ${key}`, 'CODE');
+  return out.length ? out.slice(0, 3).join(' or ') : 'a block above';
+}
+
+// Walk the script the way Ward's run() does, keeping track of which state
+// keys exist, and say what would go wrong before anything runs.
+// Returns one record per line: { role, op, group, notes:[{level,msg}], needs:[{key,status}], makes:[] }
+// roles: block | server | plugin | data | blank | unknown | unused | orphan
+function analyze(lines) {
+  const info = lines.map(() => ({ role: 'block', notes: [], needs: [], makes: [] }));
+  const note = (i, level, msg) => info[i].notes.push({ level, msg });
+  const linesIn = arr => arr.flatMap(el => Array.isArray(el) ? linesIn(el) : [el.i]);
+  const mark = (arr, role) => { for (const i of linesIn(arr)) info[i].role = role; };
+
+  function walk(scope, env, mode, plugin) {
+    for (let k = 0; k < scope.length; k++) {
+      const el = scope[k];
+      if (Array.isArray(el)) {
+        mark(el, 'orphan');
+        note(linesIn(el)[0], 'warn', 'These indented lines are not under any block, so they never run.');
+        continue;
+      }
+      const body = Array.isArray(scope[k + 1]) ? scope[++k] : null;
+      line(el.i, body, env, mode, plugin);
+    }
+  }
+
+  function line(i, body, env, mode, plugin) {
+    const cmd = lines[i].cmd;
+    const { op, args } = words(cmd);
+    const r = info[i];
+    if (!/\S/.test(cmd)) {
+      r.role = 'blank';
+      if (body) { mark(body, 'unused'); note(linesIn(body)[0], 'warn', 'Indented under a blank line, so it never runs.'); }
+      return;
+    }
+    if (mode == 'plugin') {
+      r.role = 'plugin'; r.op = op; r.group = 'server';
+      if (body) walk(body, env, 'plugin', plugin);
+      return;
+    }
+    const cat = (mode == 'server' ? SERVER : CATALOG)[op];
+    if (!cat) {
+      r.role = 'unknown';
+      if (/^[A-Z]+$/.test(op)) note(i, 'trouble', mode == 'server' ? `${op} isn't a server block we know.` : `${op} doesn't name a block we know.`);
+      else note(i, 'trouble', 'Expected line to begin with all-caps keyword.');
+      if (body) mark(body, 'unused');
+      return;
+    }
+    r.role = mode == 'server' ? 'server' : 'block';
+    r.op = op; r.group = cat.group;
+
+    // arguments, in Ward's words
+    if (cat.argRequired && !args[0]) note(i, 'trouble', `${op} expects an argument: ${cat.args}.`);
+    if (cat.count && !(args[0] || '1').match(/^[1-9][0-9]?$/)) note(i, 'trouble', `${op} expects a count from 1 to 99.`);
+    if (cat.oneOf && !cat.oneOf.includes(args[0])) note(i, 'trouble', `${op} expects ${cat.oneOf.join(' or ')}.`);
+    if (cat.walk && !cmd.match(WAYS) && cmd != 'WALK') note(i, 'trouble', `WALK can't understand rest of this block.`);
+    if (cat.kinds) for (const a of args) if (a && !cat.kinds.includes(a)) note(i, 'trouble', `"${a}" doesn't name an item we can preview.`);
+    if (op == 'DOWNLOAD' && args[0] && !args[0].match(/^.+\.(txt|html|csv|tsv|json)$/)) note(i, 'trouble', 'DOWNLOAD expects a familiar suffix, one of txt, html, csv, tsv, or json.');
+
+    for (const key of readsOf(cat, args)) {
+      if (env.keys.has(key)) r.needs.push({ key, status: 'ok' });
+      else if (env.wild) r.needs.push({ key, status: 'maybe' });
+      else { r.needs.push({ key, status: 'missing' }); note(i, 'need', `${op} expects "${key}", like from ${producers(key)}.`); }
+    }
+
+    let shared = null;
+    if (op == 'GET' && mode == 'client') {
+      shared = new Set();
+      for (const a of args) {
+        if (env.keys.has(a)) shared.add(a);
+        else if (a.match(/\./)) continue;
+        else if (env.wild) continue;
+        else note(i, 'trouble', `GET expected "${a}" to name state or site.`);
+      }
+    }
+
+    const makes = writesOf(cat, args);
+    r.makes = makes.slice();
+    if (cat.bodyWrites) r.makes.push(...cat.bodyWrites);
+    if (cat.bodyWritesSuffix && args[0]) r.makes.push(args[0]);
+    if (!cat.requiredBody) for (const k of makes) env.keys.add(k);
+    if (cat.wild) env.wild = true;
+
+    const needsBody = cat.body == 'required' || cat.requiredBody;
+    if (!body) {
+      if (needsBody) note(i, 'trouble', `${op} expects indented blocks to follow.`);
+      if (cat.requiredBody) for (const k of makes) env.keys.add(k);
+      return;
+    }
+    if (cat.body == 'none') {
+      mark(body, 'unused');
+      note(i, 'warn', `${op} doesn't use indented lines, so they never run.`);
+      return;
+    }
+    if (cat.body == 'data') {
+      mark(body, 'data');
+      body.forEach((el, n) => {
+        if (Array.isArray(el)) { mark(el, 'unused'); return; }
+        const t = lines[el.i].cmd;
+        if (op == 'NEIGHBORS' && !t.endsWith(' Survey')) note(el.i, 'trouble', 'NEIGHBORS expects a Site Survey title, like Pattern Link Survey');
+        if (op == 'KWIC' && n == 0 && !t.match(/\$[KW]/)) note(el.i, 'trouble', 'KWIC expects $K or $W in link prototype.');
+      });
+      return;
+    }
+    if (cat.body == 'plugin') {
+      walk(body, { keys: new Set(), wild: true }, 'plugin', args[0]);
+      for (const k of makes) env.keys.add(k);
+      return;
+    }
+    if (cat.body == 'server') {
+      const senv = { keys: shared || new Set(), wild: false };
+      walk(body, senv, 'server');
+      for (const k of senv.keys) env.keys.add(k);
+      for (const k of makes) env.keys.add(k);
+      return;
+    }
+    // optional or required: the body shares state, plus any keys only it sees
+    if (cat.bodyWrites || cat.bodyWritesSuffix) {
+      const inner = { keys: new Set(env.keys), wild: env.wild };
+      for (const k of cat.bodyWrites || []) inner.keys.add(k);
+      if (cat.bodyWritesSuffix && args[0]) inner.keys.add(args[0]);
+      walk(body, inner, mode);
+      // FILE runs its body on a copy of state (Object.assign(prop, state)), so nothing comes back out
+      if (cat.bodyWritesSuffix) return;
+      for (const k of inner.keys) if (!(cat.bodyWrites || []).includes(k)) env.keys.add(k);
+      env.wild = env.wild || inner.wild;
+    } else {
+      walk(body, env, mode);
+    }
+  }
+
+  walk(nest(lines), { keys: new Set(), wild: false }, 'client');
+  return info;
+}
+
+// The catalog as plain data: what the design note proposes for blocks.js.
+function catalogJSON() {
+  const strip = c => Object.fromEntries(Object.entries(c).filter(([k]) => !['example'].includes(k)));
+  return JSON.stringify({ client: Object.fromEntries(Object.entries(CATALOG).map(([k, c]) => [k, strip(c)])),
+                          server: Object.fromEntries(Object.entries(SERVER).map(([k, c]) => [k, strip(c)])) }, null, 2);
+}
+
+/* ── end model ── */
+
+/* ── view ── */
+const $ = sel => document.querySelector(sel);
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const corpus = JSON.parse(document.getElementById('corpus').textContent);
+let model = parse('');
+let facts = [];
+const undoStack = [];
+
+function setText(text, { fromTextarea = false } = {}) {
+  model = parse(text);
+  if (!fromTextarea) $('#text').value = text;
+  render();
+}
+
+function change(next) {
+  if (!next) return;
+  undoStack.push(serialize(model));
+  if (undoStack.length > 200) undoStack.shift();
+  setText(serialize(next));
+}
+
+function flash(msg) {
+  $('#flash').textContent = msg;
+  clearTimeout(flash.t);
+  flash.t = setTimeout(() => ($('#flash').textContent = ''), 2200);
+}
+
+// palette
+function buildPalette() {
+  const byGroup = {};
+  for (const [op, c] of Object.entries(CATALOG)) (byGroup[c.group] ||= []).push([op, c, false]);
+  for (const [op, c] of Object.entries(SERVER)) byGroup.server.push([op, c, true]);
+  const html = [];
+  for (const [g, list] of Object.entries(byGroup)) {
+    html.push(`<div style="--g:${GROUPS[g].color}"><div class="pgroup">${GROUPS[g].label}</div>`);
+    for (const [op, c, srv] of list) {
+      const rest = c.example.slice(op.length);
+      html.push(`<div class="ptile" data-new="${esc(c.example)}" title="${esc(c.doc + (srv ? ' Runs on the server, inside GET.' : ''))}"><b>${op}</b><span>${esc(rest)}</span>${srv ? ' <span>· in GET</span>' : ''}</div>`);
+    }
+    html.push('</div>');
+  }
+  $('#ptiles').innerHTML = html.join('');
+}
+
+// script
+function render() {
+  facts = analyze(model);
+  const canvas = $('#canvas');
+  const tree = nest(model);
+  canvas.innerHTML = scopeHTML(tree) + '<div class="endslot" data-end="1">Drop here to add at the end</div><div id="dropbar"></div>';
+  renderChecks();
+}
+
+function scopeHTML(scope) {
+  const out = [];
+  for (let k = 0; k < scope.length; k++) {
+    const el = scope[k];
+    if (Array.isArray(el)) {
+      const first = firstLine(el);
+      out.push(facts[first].role == 'orphan'
+        ? `<div class="group-orphan"><div class="label">Indented under nothing — never runs</div>${scopeHTML(el)}</div>`
+        : scopeHTML(el));
+      continue;
+    }
+    const body = Array.isArray(scope[k + 1]) ? scope[++k] : null;
+    out.push(tileHTML(el.i, body));
+  }
+  return out.join('');
+}
+const firstLine = arr => Array.isArray(arr[0]) ? firstLine(arr[0]) : arr[0].i;
+
+function tileHTML(i, body) {
+  const f = facts[i];
+  const cmd = model[i].cmd;
+  const cat = f.role == 'server' ? SERVER[f.op] : f.role == 'block' ? CATALOG[f.op] : null;
+  const color = f.group ? GROUPS[f.group].color : '#6b7280';
+  const cls = ['tile', f.role];
+  if (cat?.hat) cls.push('hat');
+  let head;
+  if (cat || f.role == 'plugin') {
+    const rest = cmd.slice(f.op.length).replace(/^ +/, '');
+    const ph = cat?.args || '';
+    head = `<span class="op">${esc(f.op)}</span><span class="args${rest ? '' : ' empty'}" data-edit="args">${rest ? esc(rest) : ph ? esc(ph) : ''}</span>`;
+  } else if (!/\S/.test(cmd)) {
+    head = `<span class="args" data-edit="all">${cmd.length ? 'blank line (spaces)' : 'blank line'}</span>`;
+  } else {
+    head = `<span class="args" data-edit="all">${esc(cmd)}</span>`;
+  }
+  for (const n of f.needs) head += `<span class="chip need ${n.status == 'ok' ? '' : n.status}" title="${n.status == 'maybe' ? 'may come from CODE above' : ''}">needs ${esc(n.key)}</span>`;
+  for (const m of f.makes) head += `<span class="chip make">makes ${esc(m)}</span>`;
+  for (const n of f.notes) head += `<button class="trouble ${n.level == 'trouble' ? '' : 'warn'}" data-msg="${esc(n.msg)}" title="${esc(n.msg)}">✖︎</button>`;
+  const title = cat ? cat.doc : f.role == 'plugin' ? 'Runs inside the plugin on the server.' : f.role == 'data' ? 'A line of data for the block above.' : '';
+  const accepts = cat && cat.body != 'none';
+  let mouth = '';
+  if (body) mouth = `<div class="mouth" data-into="${i}">${scopeHTML(body)}</div><div class="foot" data-after="${i}"></div>`;
+  else if (accepts) {
+    const req = cat.body == 'required' || cat.requiredBody;
+    const what = cat.body == 'data' ? cat.bodyLabel : cat.body == 'server' ? 'server blocks' : cat.body == 'plugin' ? "the plugin's blocks" : 'blocks to run';
+    mouth = `<div class="mouth"><div class="mouth-empty${req ? ' required' : ''}" data-into="${i}">${req ? 'Needs' : 'Optional:'} ${what} — drop here</div></div><div class="foot" data-after="${i}"></div>`;
+  }
+  return `<div class="${cls.join(' ')}" data-i="${i}" style="--g:${color}" ${title ? `title="${esc(title)}"` : ''}><div class="head" data-head="${i}">${head}</div>${mouth}</div>`;
+}
+
+function renderChecks() {
+  const items = [];
+  facts.forEach((f, i) => f.notes.forEach(n => items.push(`<li class="${n.level == 'trouble' ? '' : 'warn'}" data-line="${i}"><b>Line ${i + 1}</b> ${esc(n.msg)}</li>`)));
+  $('#checks').innerHTML = items.length ? items.join('') : '<li class="ok">Nothing to fix that can be seen before running.</li>';
+}
+
+$('#checks').addEventListener('click', e => {
+  const li = e.target.closest('li[data-line]');
+  if (!li) return;
+  const tile = document.querySelector(`.tile[data-i="${li.dataset.line}"]`);
+  if (!tile) return;
+  tile.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  tile.classList.add('flash');
+  setTimeout(() => tile.classList.remove('flash'), 1200);
+});
+
+// trouble buttons open their message, as in Mech
+$('#canvas').addEventListener('click', e => {
+  const b = e.target.closest('button.trouble');
+  if (!b) return;
+  const head = b.closest('.head');
+  const open = head.querySelector('.msg');
+  if (open) open.remove();
+  else head.insertAdjacentHTML('beforeend', `<div class="msg ${b.classList.contains('warn') ? 'warn' : ''}">${b.dataset.msg}</div>`);
+});
+
+// editing the words of a line
+function startEdit(span) {
+  const i = +span.closest('[data-head]').dataset.head;
+  const f = facts[i];
+  const cmd = model[i].cmd;
+  const whole = span.dataset.edit == 'all';
+  const shown = whole ? cmd : cmd.slice(f.op.length).replace(/^ +/, '');
+  const input = document.createElement('input');
+  input.className = 'edit';
+  input.value = shown;
+  const cat = f.role == 'block' ? CATALOG[f.op] : f.role == 'server' ? SERVER[f.op] : null;
+  if (cat?.choices) {
+    const id = 'dl-' + f.op;
+    if (!document.getElementById(id)) document.body.insertAdjacentHTML('beforeend', `<datalist id="${id}">${cat.choices.map(c => `<option value="${esc(c)}">`).join('')}</datalist>`);
+    input.setAttribute('list', id);
+  }
+  span.replaceWith(input);
+  input.focus(); input.select();
+  let done = false;
+  const finish = keep => {
+    if (done) return; done = true;
+    const v = input.value;
+    if (!keep || v === shown) return render();
+    const next = model.map(l => ({ ...l }));
+    next[i].cmd = whole ? v : f.op + (v.trim() ? ' ' + v.trim() : '');
+    change(next);
+  };
+  input.addEventListener('keydown', e => {
+    if (e.key == 'Enter') finish(true);
+    if (e.key == 'Escape') finish(false);
+  });
+  input.addEventListener('blur', () => finish(true));
+}
+
+// dragging, with pointer events so it works with a mouse, a pen or a finger
+let drag = null;
+
+document.addEventListener('pointerdown', e => {
+  if (e.button !== 0) return;
+  if (e.target.closest('input, button, select, textarea')) return;
+  const ptile = e.target.closest('.ptile');
+  const head = e.target.closest('.head');
+  if (!ptile && !head) return;
+  drag = { x: e.clientX, y: e.clientY, started: false, source: ptile ? { cmd: ptile.dataset.new, el: ptile } : { i: +head.dataset.head, el: head.closest('.tile') }, editSpan: e.target.closest('.args') };
+});
+
+document.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (!drag.started) {
+    if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5) return;
+    drag.started = true;
+    const g = drag.source.el.cloneNode(true);
+    g.classList.add('ghost');
+    g.style.width = Math.min(drag.source.el.offsetWidth, 420) + 'px';
+    document.body.appendChild(g);
+    drag.ghost = g;
+    if ('i' in drag.source) drag.source.el.classList.add('dragging');
+    document.body.style.cursor = 'grabbing';
+  }
+  e.preventDefault();
+  drag.ghost.style.left = e.clientX + 12 + 'px';
+  drag.ghost.style.top = e.clientY + 8 + 'px';
+  drag.target = targetAt(e.clientX, e.clientY);
+  showTarget(drag.target, e.clientX, e.clientY);
+});
+
+document.addEventListener('pointerup', e => {
+  if (!drag) return;
+  const d = drag; drag = null;
+  if (!d.started) {
+    if (d.editSpan) startEdit(d.editSpan);
+    return;
+  }
+  d.ghost.remove();
+  document.body.style.cursor = '';
+  $('#palette').classList.remove('trash-hot');
+  $('#drophint').style.display = 'none';
+  const t = d.target;
+  if (!t) return render();
+  if (t.kind == 'trash') {
+    if ('i' in d.source) { change(removeBlock(model, d.source.i)); flash('Removed'); }
+    return render();
+  }
+  const next = result(d, t);
+  if (next) change(next); else render();
+});
+
+document.addEventListener('pointercancel', () => { if (drag?.ghost) drag.ghost.remove(); drag = null; render(); });
+
+function result(d, t) {
+  return 'i' in d.source ? moveBlock(model, d.source.i, t) : insertNew(model, d.source.cmd, t);
+}
+
+function targetAt(x, y) {
+  const el = document.elementFromPoint(x, y);
+  if (!el) return null;
+  if (el.closest('#palette')) return 'i' in drag.source ? { kind: 'trash' } : null;
+  if (!el.closest('#canvas')) return null;
+  if (el.closest('.endslot')) return { kind: 'end' };
+  const empty = el.closest('.mouth-empty');
+  if (empty) return { kind: 'into', i: +empty.dataset.into };
+  const foot = el.closest('.foot');
+  if (foot) return { kind: 'after', i: +foot.dataset.after };
+  const head = el.closest('.head');
+  if (head) {
+    const i = +head.dataset.head;
+    const r = head.getBoundingClientRect();
+    if (y < r.top + r.height / 2) return { kind: 'before', i };
+    const tile = head.closest('.tile');
+    return tile.querySelector(':scope > .mouth') ? { kind: 'into', i } : { kind: 'after', i };
+  }
+  const mouth = el.closest('.mouth[data-into]');
+  if (mouth) {
+    const kids = [...mouth.querySelectorAll(':scope > .tile, :scope > .group-orphan > .tile')];
+    let last = null;
+    for (const k of kids) if (k.getBoundingClientRect().top < y) last = k;
+    return last ? { kind: 'after', i: +last.dataset.i } : { kind: 'into', i: +mouth.dataset.into };
+  }
+  // empty canvas space: after the nearest top-level block above the pointer
+  const tops = [...document.querySelectorAll('#canvas > .tile')];
+  let last = null;
+  for (const k of tops) if (k.getBoundingClientRect().top < y) last = k;
+  return last ? { kind: 'after', i: +last.dataset.i } : tops.length ? { kind: 'before', i: +tops[0].dataset.i } : { kind: 'end' };
+}
+
+function showTarget(t, x, y) {
+  const bar = $('#dropbar'), hint = $('#drophint');
+  $('#palette').classList.toggle('trash-hot', t?.kind == 'trash');
+  bar.style.display = 'none'; hint.style.display = 'none';
+  if (!t || t.kind == 'trash') return;
+  const next = result(drag, t);
+  if (!next) return;
+  const canvas = $('#canvas').getBoundingClientRect();
+  let rect, at = 'top', indent = 0;
+  if (t.kind == 'end') rect = document.querySelector('.endslot').getBoundingClientRect();
+  else if (t.kind == 'before') rect = document.querySelector(`[data-head="${t.i}"]`).closest('.tile').getBoundingClientRect();
+  else if (t.kind == 'after') { rect = document.querySelector(`.tile[data-i="${t.i}"]`).getBoundingClientRect(); at = 'bottom'; }
+  else { rect = document.querySelector(`[data-head="${t.i}"]`).getBoundingClientRect(); at = 'bottom'; indent = 18; }
+  bar.style.display = 'block';
+  bar.style.left = rect.left - canvas.left + indent + 'px';
+  bar.style.width = Math.max(60, rect.width - indent) + 'px';
+  bar.style.top = (at == 'top' ? rect.top : rect.bottom) - canvas.top - 3 + 'px';
+  // would the moved block be short of what it needs there?
+  const place = placeOf(model, t);
+  let head = place.at;
+  if ('i' in drag.source && place.at > subtreeEnd(model, drag.source.i)) head -= subtreeEnd(model, drag.source.i) - drag.source.i + 1;
+  const after = analyze(next)[head];
+  const needs = after ? after.notes.filter(n => n.level == 'need').map(n => n.msg) : [];
+  bar.classList.toggle('warn', needs.length > 0);
+  if (needs.length) {
+    hint.textContent = needs.join(' ');
+    hint.style.display = 'block';
+    hint.style.left = x + 14 + 'px';
+    hint.style.top = y + 30 + 'px';
+  }
+}
+
+// Etoys: drop a wiki page link to get FROM site/slug
+const canvasEl = $('#canvas');
+canvasEl.addEventListener('dragover', e => {
+  const types = [...e.dataTransfer.types];
+  if (types.includes('text/uri-list') || types.includes('text/plain')) { e.preventDefault(); canvasEl.classList.add('urlhot'); }
+});
+canvasEl.addEventListener('dragleave', () => canvasEl.classList.remove('urlhot'));
+canvasEl.addEventListener('drop', e => {
+  e.preventDefault();
+  canvasEl.classList.remove('urlhot');
+  const raw = (e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain') || '').split(/\s/)[0];
+  const where = pageFromURL(raw);
+  if (!where) return flash('That drop was not a wiki page link');
+  change(insertNew(model, 'FROM ' + where, { kind: 'end' }));
+  flash('Added FROM ' + where);
+});
+
+function pageFromURL(raw) {
+  let u;
+  try { u = new URL(raw); } catch { return null; }
+  const parts = u.pathname.split('/').filter(Boolean);
+  let slug = null;
+  const v = parts.lastIndexOf('view');
+  if (v >= 0 && parts[v + 1]) slug = parts[v + 1];
+  else if (parts.length) slug = parts[parts.length - 1].replace(/\.(json|html)$/, '');
+  return slug ? `${u.host}/${slug}` : null;
+}
+
+// text side
+let typing;
+$('#text').addEventListener('input', () => {
+  clearTimeout(typing);
+  typing = setTimeout(() => setText($('#text').value, { fromTextarea: true }), 150);
+});
+$('#text').addEventListener('focus', () => undoStack.push(serialize(model)));
+
+$('#undo').addEventListener('click', undo);
+function undo() {
+  if (!undoStack.length) return flash('Nothing to undo');
+  setText(undoStack.pop());
+}
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key == 'z' && !e.target.closest('textarea, input')) { e.preventDefault(); undo(); }
+});
+
+async function copy(text, what) {
+  try { await navigator.clipboard.writeText(text); flash(what + ' copied'); }
+  catch { flash('Copy failed — select the text and copy by hand'); }
+}
+$('#copyText').addEventListener('click', () => copy(serialize(model), 'Mech text'));
+$('#copyCatalog').addEventListener('click', () => copy(catalogJSON(), 'Block catalog'));
+
+// handbook examples
+const sel = $('#examples');
+sel.innerHTML = '<option value="">Choose a script…</option>' + corpus.map((c, n) =>
+  `<option value="${n}">${esc(c.title)} — ${esc(c.text.split('\n').slice(0, 2).join(' / ').slice(0, 50))}</option>`).join('');
+sel.addEventListener('change', () => {
+  if (sel.value === '') return;
+  undoStack.push(serialize(model));
+  setText(corpus[+sel.value].text);
+});
+
+buildPalette();
+const start = corpus.findIndex(c => c.slug == 'testing-neighbor-mech');
+sel.value = String(start >= 0 ? start : 0);
+setText(corpus[+sel.value].text);
+</script>
+</body>
+</html>

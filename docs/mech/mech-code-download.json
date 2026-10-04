@@ -1,0 +1,676 @@
+{
+  "code": {
+    "title": "CODE",
+    "story": [
+      {
+        "type": "markdown",
+        "text": "CODE runs a JavaScript function that you write in a Code item on the same page. It is the way to try out a new block before it is built into Mech.",
+        "id": "d6ce0b7a06279339"
+      },
+      {
+        "type": "markdown",
+        "id": "d3ea0a17aac1d9ff",
+        "text": "*Marc Pierson and Claude Opus 5.5 · October 2026*",
+        "attribution": true
+      },
+      {
+        "type": "markdown",
+        "text": "The ways CODE can work:",
+        "id": "6193361534855477"
+      },
+      {
+        "type": "markdown",
+        "text": "- `CODE` calls the function exported as default.\n- `CODE name` calls the function exported as name.\n- `CODE name 15 more` also hands the words after the name to the function, as strings.",
+        "id": "5746d8d1324c3773"
+      },
+      {
+        "type": "markdown",
+        "text": "Click ▶ to run this one. It needs the Code item below it.",
+        "id": "8fe80c2545f101eb"
+      },
+      {
+        "type": "mech",
+        "text": "CLICK\n CODE greet world\n REPORT greeting",
+        "id": "699dca7beff93c30"
+      },
+      {
+        "type": "code",
+        "text": "export function greet(who) {\n  this.greeting = `Hello ${who}`\n  return this.greeting\n}",
+        "id": "0624e969e9c7e72c"
+      },
+      {
+        "type": "markdown",
+        "text": "## Where the code comes from",
+        "id": "a0866bfa1f3555e5"
+      },
+      {
+        "type": "markdown",
+        "text": "Every Code item on the page is joined together, top to bottom, and loaded as one JavaScript module. Helper functions can sit in Code items of their own. Only functions marked `export` can be named by CODE. A Code item can `import` from a full web address, as [[Catalog of Variables]] does to borrow Ward's Graph class.",
+        "id": "c4b8c8d56ef2b6d4"
+      },
+      {
+        "type": "markdown",
+        "text": "## What the function can reach",
+        "id": "f9a5e54b0bcbb152"
+      },
+      {
+        "type": "markdown",
+        "text": "Inside the function, `this` is the Mech state. Reading `this.neighborhood` reads what NEIGHBORS left there. Setting `this.items` hands items to a PREVIEW further down. Shift-click ▶ to see each state the function reads.",
+        "id": "adc4480b8e311302"
+      },
+      {
+        "type": "markdown",
+        "text": "`this.context` describes where the Mech is running: the page and its title, site and slug, the Mech item itself, and `this.context.blocks`, the names of every block this copy of Mech knows.",
+        "id": "5d844f8bb5a7afd4"
+      },
+      {
+        "type": "markdown",
+        "text": "`this.api` lets the function speak through the block the way built-in blocks do:",
+        "id": "58116a0ae5a159f3"
+      },
+      {
+        "type": "markdown",
+        "text": "- `trouble(message)` shows the red ✖︎ with your message.\n- `status(text)` shows text after the block, like ⇒ 12 pages.\n- `response(text)` adds text after the block.\n- `report(html)` replaces what follows the block with your html.\n- `graph(nodes, rels)` returns a new Graph, ready to be an aspect for SOLO or PREVIEW graph.\n- `body()` returns the lines indented under CODE. Mech does not run them; the function can read them as its own little language.",
+        "id": "95e0c377e6af3bd1"
+      },
+      {
+        "type": "markdown",
+        "text": "Whatever the function returns is shown after the block. A function can be `async`, and Mech waits for it.",
+        "id": "efec6041c853fa01"
+      },
+      {
+        "type": "markdown",
+        "text": "## Here and there",
+        "id": "1bff1c698b14b81f"
+      },
+      {
+        "type": "markdown",
+        "text": "[[Catalog of Mech Blocks]] uses CODE to check its own completeness. It calls the blocks in the running code `here` and the blocks documented on the page `there`, and reports the difference.",
+        "id": "f4bca1a8b4e84632"
+      },
+      {
+        "type": "code",
+        "text": "export default function() {\n const docs = this.context.page.story\n  .map(item=>item.text.match(/\\[\\[(.*?)\\]\\]/))\n  .filter(m => m)\n  .map(m => m[1])\n const there = new Set(docs)\n const here = new Set(this.context.blocks)\n const need = here.difference(there)\n return `Need ${[...need]}`\n}",
+        "id": "01940beaa924deb1"
+      },
+      {
+        "type": "markdown",
+        "text": "In October 2026 this reports Need CODE,DOWNLOAD. This page and [[DOWNLOAD]] are written to close that gap.",
+        "id": "d97ee9b0b80679fe"
+      },
+      {
+        "type": "markdown",
+        "text": "## When it goes wrong",
+        "id": "8bbf540bf813175e"
+      },
+      {
+        "type": "markdown",
+        "text": "- No export by that name: CODE says Expected export of function \"name\". A page with no Code item at all gives the same message for \"default\".\n- An error inside the function: CODE shows the message, the line it happened on, and a red ✖︎ at the spot when the browser reports one.\n- Curly quotes, dashes, emoji and other characters beyond plain Latin letters stop the code from loading at all, because Mech packs the code with the browser's btoa. Use straight quotes, or write such characters as `—` escapes.",
+        "id": "7afe6bc7ef6a3b8b"
+      },
+      {
+        "type": "markdown",
+        "text": "## Who can run it",
+        "id": "fb67fb72c3c176af"
+      },
+      {
+        "type": "markdown",
+        "text": "CODE runs when a person starts it, with CLICK or TICK directly above it, or when the page is your own page on your own site and you are logged in. Otherwise it says This CODE must be run by CLICK or TICK or owned by the logged in user.",
+        "id": "88cf5d5cfb33e73f"
+      },
+      {
+        "type": "markdown",
+        "text": "The reason is that code travels with forked pages. Reading someone's page should not run their code until you choose to.",
+        "id": "9ea85c476364da36"
+      },
+      {
+        "type": "markdown",
+        "text": "The permission from CLICK reaches only the blocks directly inside it. A CODE inside FROM inside CLICK, as in [[Catalog of Variables]], counts as not started by a person, so it runs only for the page's owner. That reading comes from the source, not from Ward; it may be intended.",
+        "id": "df45b7dd89f6027f"
+      },
+      {
+        "type": "markdown",
+        "text": "CODE gives its function all of the state as this, so it can read state.context and anything earlier blocks wrote, and whatever it sets on this becomes state for later blocks. Which keys depends on the function.",
+        "id": "c30952a37d05097a"
+      }
+    ],
+    "journal": [
+      {
+        "type": "create",
+        "item": {
+          "title": "CODE",
+          "story": []
+        },
+        "date": 1791138525580,
+        "author": "Marc Pierson with Claude Opus 5.5"
+      },
+      {
+        "type": "add",
+        "id": "d6ce0b7a06279339",
+        "item": {
+          "type": "markdown",
+          "id": "d6ce0b7a06279339",
+          "text": "CODE runs a JavaScript function that you write in a Code item on the same page. It is the way to try out a new block before it is built into Mech."
+        },
+        "date": 1791138525581
+      },
+      {
+        "type": "add",
+        "id": "6193361534855477",
+        "item": {
+          "type": "markdown",
+          "id": "6193361534855477",
+          "text": "The ways CODE can work:"
+        },
+        "date": 1791138525582,
+        "after": "d6ce0b7a06279339"
+      },
+      {
+        "type": "add",
+        "id": "5746d8d1324c3773",
+        "item": {
+          "type": "markdown",
+          "id": "5746d8d1324c3773",
+          "text": "- `CODE` calls the function exported as default.\n- `CODE name` calls the function exported as name.\n- `CODE name 15 more` also hands the words after the name to the function, as strings."
+        },
+        "date": 1791138525583,
+        "after": "6193361534855477"
+      },
+      {
+        "type": "add",
+        "id": "8fe80c2545f101eb",
+        "item": {
+          "type": "markdown",
+          "id": "8fe80c2545f101eb",
+          "text": "Click ▶ to run this one. It needs the Code item below it."
+        },
+        "date": 1791138525584,
+        "after": "5746d8d1324c3773"
+      },
+      {
+        "type": "add",
+        "id": "699dca7beff93c30",
+        "item": {
+          "type": "mech",
+          "id": "699dca7beff93c30",
+          "text": "CLICK\n CODE greet world\n REPORT greeting"
+        },
+        "date": 1791138525585,
+        "after": "8fe80c2545f101eb"
+      },
+      {
+        "type": "add",
+        "id": "0624e969e9c7e72c",
+        "item": {
+          "type": "code",
+          "id": "0624e969e9c7e72c",
+          "text": "export function greet(who) {\n  this.greeting = `Hello ${who}`\n  return this.greeting\n}"
+        },
+        "date": 1791138525586,
+        "after": "699dca7beff93c30"
+      },
+      {
+        "type": "add",
+        "id": "a0866bfa1f3555e5",
+        "item": {
+          "type": "markdown",
+          "id": "a0866bfa1f3555e5",
+          "text": "## Where the code comes from"
+        },
+        "date": 1791138525587,
+        "after": "0624e969e9c7e72c"
+      },
+      {
+        "type": "add",
+        "id": "c4b8c8d56ef2b6d4",
+        "item": {
+          "type": "markdown",
+          "id": "c4b8c8d56ef2b6d4",
+          "text": "Every Code item on the page is joined together, top to bottom, and loaded as one JavaScript module. Helper functions can sit in Code items of their own. Only functions marked `export` can be named by CODE. A Code item can `import` from a full web address, as [[Catalog of Variables]] does to borrow Ward's Graph class."
+        },
+        "date": 1791138525588,
+        "after": "a0866bfa1f3555e5"
+      },
+      {
+        "type": "add",
+        "id": "f9a5e54b0bcbb152",
+        "item": {
+          "type": "markdown",
+          "id": "f9a5e54b0bcbb152",
+          "text": "## What the function can reach"
+        },
+        "date": 1791138525589,
+        "after": "c4b8c8d56ef2b6d4"
+      },
+      {
+        "type": "add",
+        "id": "adc4480b8e311302",
+        "item": {
+          "type": "markdown",
+          "id": "adc4480b8e311302",
+          "text": "Inside the function, `this` is the Mech state. Reading `this.neighborhood` reads what NEIGHBORS left there. Setting `this.items` hands items to a PREVIEW further down. Shift-click ▶ to see each state the function reads."
+        },
+        "date": 1791138525590,
+        "after": "f9a5e54b0bcbb152"
+      },
+      {
+        "type": "add",
+        "id": "5d844f8bb5a7afd4",
+        "item": {
+          "type": "markdown",
+          "id": "5d844f8bb5a7afd4",
+          "text": "`this.context` describes where the Mech is running: the page and its title, site and slug, the Mech item itself, and `this.context.blocks`, the names of every block this copy of Mech knows."
+        },
+        "date": 1791138525591,
+        "after": "adc4480b8e311302"
+      },
+      {
+        "type": "add",
+        "id": "58116a0ae5a159f3",
+        "item": {
+          "type": "markdown",
+          "id": "58116a0ae5a159f3",
+          "text": "`this.api` lets the function speak through the block the way built-in blocks do:"
+        },
+        "date": 1791138525592,
+        "after": "5d844f8bb5a7afd4"
+      },
+      {
+        "type": "add",
+        "id": "95e0c377e6af3bd1",
+        "item": {
+          "type": "markdown",
+          "id": "95e0c377e6af3bd1",
+          "text": "- `trouble(message)` shows the red ✖︎ with your message.\n- `status(text)` shows text after the block, like ⇒ 12 pages.\n- `response(text)` adds text after the block.\n- `report(html)` replaces what follows the block with your html.\n- `graph(nodes, rels)` returns a new Graph, ready to be an aspect for SOLO or PREVIEW graph.\n- `body()` returns the lines indented under CODE. Mech does not run them; the function can read them as its own little language."
+        },
+        "date": 1791138525593,
+        "after": "58116a0ae5a159f3"
+      },
+      {
+        "type": "add",
+        "id": "efec6041c853fa01",
+        "item": {
+          "type": "markdown",
+          "id": "efec6041c853fa01",
+          "text": "Whatever the function returns is shown after the block. A function can be `async`, and Mech waits for it."
+        },
+        "date": 1791138525594,
+        "after": "95e0c377e6af3bd1"
+      },
+      {
+        "type": "add",
+        "id": "1bff1c698b14b81f",
+        "item": {
+          "type": "markdown",
+          "id": "1bff1c698b14b81f",
+          "text": "## Here and there"
+        },
+        "date": 1791138525595,
+        "after": "efec6041c853fa01"
+      },
+      {
+        "type": "add",
+        "id": "f4bca1a8b4e84632",
+        "item": {
+          "type": "markdown",
+          "id": "f4bca1a8b4e84632",
+          "text": "[[Catalog of Mech Blocks]] uses CODE to check its own completeness. It calls the blocks in the running code `here` and the blocks documented on the page `there`, and reports the difference."
+        },
+        "date": 1791138525596,
+        "after": "1bff1c698b14b81f"
+      },
+      {
+        "type": "add",
+        "id": "01940beaa924deb1",
+        "item": {
+          "type": "code",
+          "id": "01940beaa924deb1",
+          "text": "export default function() {\n const docs = this.context.page.story\n  .map(item=>item.text.match(/\\[\\[(.*?)\\]\\]/))\n  .filter(m => m)\n  .map(m => m[1])\n const there = new Set(docs)\n const here = new Set(this.context.blocks)\n const need = here.difference(there)\n return `Need ${[...need]}`\n}"
+        },
+        "date": 1791138525597,
+        "after": "f4bca1a8b4e84632"
+      },
+      {
+        "type": "add",
+        "id": "d97ee9b0b80679fe",
+        "item": {
+          "type": "markdown",
+          "id": "d97ee9b0b80679fe",
+          "text": "In October 2026 this reports Need CODE,DOWNLOAD. This page and [[DOWNLOAD]] are written to close that gap."
+        },
+        "date": 1791138525598,
+        "after": "01940beaa924deb1"
+      },
+      {
+        "type": "add",
+        "id": "8bbf540bf813175e",
+        "item": {
+          "type": "markdown",
+          "id": "8bbf540bf813175e",
+          "text": "## When it goes wrong"
+        },
+        "date": 1791138525599,
+        "after": "d97ee9b0b80679fe"
+      },
+      {
+        "type": "add",
+        "id": "7afe6bc7ef6a3b8b",
+        "item": {
+          "type": "markdown",
+          "id": "7afe6bc7ef6a3b8b",
+          "text": "- No export by that name: CODE says Expected export of function \"name\". A page with no Code item at all gives the same message for \"default\".\n- An error inside the function: CODE shows the message, the line it happened on, and a red ✖︎ at the spot when the browser reports one.\n- Curly quotes, dashes, emoji and other characters beyond plain Latin letters stop the code from loading at all, because Mech packs the code with the browser's btoa. Use straight quotes, or write such characters as `—` escapes."
+        },
+        "date": 1791138525600,
+        "after": "8bbf540bf813175e"
+      },
+      {
+        "type": "add",
+        "id": "fb67fb72c3c176af",
+        "item": {
+          "type": "markdown",
+          "id": "fb67fb72c3c176af",
+          "text": "## Who can run it"
+        },
+        "date": 1791138525601,
+        "after": "7afe6bc7ef6a3b8b"
+      },
+      {
+        "type": "add",
+        "id": "88cf5d5cfb33e73f",
+        "item": {
+          "type": "markdown",
+          "id": "88cf5d5cfb33e73f",
+          "text": "CODE runs when a person starts it, with CLICK or TICK directly above it, or when the page is your own page on your own site and you are logged in. Otherwise it says This CODE must be run by CLICK or TICK or owned by the logged in user."
+        },
+        "date": 1791138525602,
+        "after": "fb67fb72c3c176af"
+      },
+      {
+        "type": "add",
+        "id": "9ea85c476364da36",
+        "item": {
+          "type": "markdown",
+          "id": "9ea85c476364da36",
+          "text": "The reason is that code travels with forked pages. Reading someone's page should not run their code until you choose to."
+        },
+        "date": 1791138525603,
+        "after": "88cf5d5cfb33e73f"
+      },
+      {
+        "type": "add",
+        "id": "df45b7dd89f6027f",
+        "item": {
+          "type": "markdown",
+          "id": "df45b7dd89f6027f",
+          "text": "The permission from CLICK reaches only the blocks directly inside it. A CODE inside FROM inside CLICK, as in [[Catalog of Variables]], counts as not started by a person, so it runs only for the page's owner. That reading comes from the source, not from Ward; it may be intended."
+        },
+        "date": 1791138525604,
+        "after": "9ea85c476364da36"
+      },
+      {
+        "type": "add",
+        "id": "c30952a37d05097a",
+        "item": {
+          "type": "markdown",
+          "id": "c30952a37d05097a",
+          "text": "CODE gives its function all of the state as this, so it can read state.context and anything earlier blocks wrote, and whatever it sets on this becomes state for later blocks. Which keys depends on the function."
+        },
+        "date": 1791138525605,
+        "after": "df45b7dd89f6027f"
+      },
+      {
+        "type": "add",
+        "id": "d3ea0a17aac1d9ff",
+        "item": {
+          "type": "markdown",
+          "id": "d3ea0a17aac1d9ff",
+          "text": "*Marc Pierson and Claude Opus 5.5 · October 2026*",
+          "attribution": true
+        },
+        "date": 1791138525625,
+        "after": "d6ce0b7a06279339"
+      }
+    ]
+  },
+  "download": {
+    "title": "DOWNLOAD",
+    "story": [
+      {
+        "type": "markdown",
+        "text": "DOWNLOAD saves something a Mech has made as a file on your own computer.",
+        "id": "78ca82b57e253d6c"
+      },
+      {
+        "type": "markdown",
+        "id": "192157de7237a292",
+        "text": "*Marc Pierson and Claude Opus 5.5 · October 2026*",
+        "attribution": true
+      },
+      {
+        "type": "markdown",
+        "text": "The file name you give chooses what is saved. Its ending picks which state is written, and how:",
+        "id": "d1d9aacc8dc35c18"
+      },
+      {
+        "type": "markdown",
+        "text": "- `DOWNLOAD notes.txt` saves state.txt as plain text.\n- `DOWNLOAD page.html` saves state.html as a web page.\n- `DOWNLOAD table.csv` saves state.csv as comma-separated values.\n- `DOWNLOAD table.tsv` saves state.tsv as tab-separated values.\n- `DOWNLOAD data.json` saves state.json, turned into JSON text first.",
+        "id": "da6303e98cfe3365"
+      },
+      {
+        "type": "markdown",
+        "text": "The file gets the name exactly as written. After saving, the block shows the size, like ⇒ 2048 bytes.",
+        "id": "055db80f64af08c3"
+      },
+      {
+        "type": "markdown",
+        "text": "Click ▶ to save the titles of every page in the neighborhood as a text file. CODE makes the text and DOWNLOAD saves it.",
+        "id": "23e908d6028592ae"
+      },
+      {
+        "type": "mech",
+        "text": "CLICK\n NEIGHBORS\n CODE titles\n DOWNLOAD titles.txt",
+        "id": "9662e4004126315e"
+      },
+      {
+        "type": "code",
+        "text": "export function titles() {\n  const infos = this.neighborhood\n  this.txt = infos.map(info => info.title).join('\\n')\n  return `${infos.length} titles`\n}",
+        "id": "18ebb4aa1788fe02"
+      },
+      {
+        "type": "markdown",
+        "text": "## Where the text comes from",
+        "id": "aceaf5d728fb3c4b"
+      },
+      {
+        "type": "markdown",
+        "text": "No built-in block writes state.html, state.csv or state.json, so DOWNLOAD is mostly a partner for [[CODE]]. A function sets `this.csv` or `this.json`, and DOWNLOAD saves it.",
+        "id": "6498f07ae6d29d13"
+      },
+      {
+        "type": "markdown",
+        "text": "[[FILE]] is the other source. FILE stores the chosen file's text under its argument exactly as written, so `FILE tsv` writes state.tsv and DOWNLOAD can save it again. `FILE .tsv` stores it under the name \".tsv\", which DOWNLOAD and [[KWIC]] will not find.",
+        "id": "7cb169850b9bee47"
+      },
+      {
+        "type": "markdown",
+        "text": "## When it goes wrong",
+        "id": "9e05b444d3cfd661"
+      },
+      {
+        "type": "markdown",
+        "text": "- No file name: DOWNLOAD expects an argument, a file name to use when downloaded.\n- An ending other than txt, html, csv, tsv or json: DOWNLOAD expects a familiar suffix.\n- Nothing in that state yet: DOWNLOAD expects to find \"csv\" in state, naming the one it looked for.\n- Only json is converted. For the other four, the state must already be text; a number or a list will not save as you expect.\n- Some browsers ask where to save each file, and some block a page that downloads many files in a row, as a TICK might.",
+        "id": "1aa51d908f7672cb"
+      },
+      {
+        "type": "markdown",
+        "text": "DOWNLOAD reads state.txt, or reads state.html, reads state.csv, reads state.tsv or reads state.json, whichever the file name's ending names. It writes no state.",
+        "id": "e6a7e12492f500f0"
+      }
+    ],
+    "journal": [
+      {
+        "type": "create",
+        "item": {
+          "title": "DOWNLOAD",
+          "story": []
+        },
+        "date": 1791138525581,
+        "author": "Marc Pierson with Claude Opus 5.5"
+      },
+      {
+        "type": "add",
+        "id": "78ca82b57e253d6c",
+        "item": {
+          "type": "markdown",
+          "id": "78ca82b57e253d6c",
+          "text": "DOWNLOAD saves something a Mech has made as a file on your own computer."
+        },
+        "date": 1791138525582
+      },
+      {
+        "type": "add",
+        "id": "d1d9aacc8dc35c18",
+        "item": {
+          "type": "markdown",
+          "id": "d1d9aacc8dc35c18",
+          "text": "The file name you give chooses what is saved. Its ending picks which state is written, and how:"
+        },
+        "date": 1791138525583,
+        "after": "78ca82b57e253d6c"
+      },
+      {
+        "type": "add",
+        "id": "da6303e98cfe3365",
+        "item": {
+          "type": "markdown",
+          "id": "da6303e98cfe3365",
+          "text": "- `DOWNLOAD notes.txt` saves state.txt as plain text.\n- `DOWNLOAD page.html` saves state.html as a web page.\n- `DOWNLOAD table.csv` saves state.csv as comma-separated values.\n- `DOWNLOAD table.tsv` saves state.tsv as tab-separated values.\n- `DOWNLOAD data.json` saves state.json, turned into JSON text first."
+        },
+        "date": 1791138525584,
+        "after": "d1d9aacc8dc35c18"
+      },
+      {
+        "type": "add",
+        "id": "055db80f64af08c3",
+        "item": {
+          "type": "markdown",
+          "id": "055db80f64af08c3",
+          "text": "The file gets the name exactly as written. After saving, the block shows the size, like ⇒ 2048 bytes."
+        },
+        "date": 1791138525585,
+        "after": "da6303e98cfe3365"
+      },
+      {
+        "type": "add",
+        "id": "23e908d6028592ae",
+        "item": {
+          "type": "markdown",
+          "id": "23e908d6028592ae",
+          "text": "Click ▶ to save the titles of every page in the neighborhood as a text file. CODE makes the text and DOWNLOAD saves it."
+        },
+        "date": 1791138525586,
+        "after": "055db80f64af08c3"
+      },
+      {
+        "type": "add",
+        "id": "9662e4004126315e",
+        "item": {
+          "type": "mech",
+          "id": "9662e4004126315e",
+          "text": "CLICK\n NEIGHBORS\n CODE titles\n DOWNLOAD titles.txt"
+        },
+        "date": 1791138525587,
+        "after": "23e908d6028592ae"
+      },
+      {
+        "type": "add",
+        "id": "18ebb4aa1788fe02",
+        "item": {
+          "type": "code",
+          "id": "18ebb4aa1788fe02",
+          "text": "export function titles() {\n  const infos = this.neighborhood\n  this.txt = infos.map(info => info.title).join('\\n')\n  return `${infos.length} titles`\n}"
+        },
+        "date": 1791138525588,
+        "after": "9662e4004126315e"
+      },
+      {
+        "type": "add",
+        "id": "aceaf5d728fb3c4b",
+        "item": {
+          "type": "markdown",
+          "id": "aceaf5d728fb3c4b",
+          "text": "## Where the text comes from"
+        },
+        "date": 1791138525589,
+        "after": "18ebb4aa1788fe02"
+      },
+      {
+        "type": "add",
+        "id": "6498f07ae6d29d13",
+        "item": {
+          "type": "markdown",
+          "id": "6498f07ae6d29d13",
+          "text": "No built-in block writes state.html, state.csv or state.json, so DOWNLOAD is mostly a partner for [[CODE]]. A function sets `this.csv` or `this.json`, and DOWNLOAD saves it."
+        },
+        "date": 1791138525590,
+        "after": "aceaf5d728fb3c4b"
+      },
+      {
+        "type": "add",
+        "id": "7cb169850b9bee47",
+        "item": {
+          "type": "markdown",
+          "id": "7cb169850b9bee47",
+          "text": "[[FILE]] is the other source. FILE stores the chosen file's text under its argument exactly as written, so `FILE tsv` writes state.tsv and DOWNLOAD can save it again. `FILE .tsv` stores it under the name \".tsv\", which DOWNLOAD and [[KWIC]] will not find."
+        },
+        "date": 1791138525591,
+        "after": "6498f07ae6d29d13"
+      },
+      {
+        "type": "add",
+        "id": "9e05b444d3cfd661",
+        "item": {
+          "type": "markdown",
+          "id": "9e05b444d3cfd661",
+          "text": "## When it goes wrong"
+        },
+        "date": 1791138525592,
+        "after": "7cb169850b9bee47"
+      },
+      {
+        "type": "add",
+        "id": "1aa51d908f7672cb",
+        "item": {
+          "type": "markdown",
+          "id": "1aa51d908f7672cb",
+          "text": "- No file name: DOWNLOAD expects an argument, a file name to use when downloaded.\n- An ending other than txt, html, csv, tsv or json: DOWNLOAD expects a familiar suffix.\n- Nothing in that state yet: DOWNLOAD expects to find \"csv\" in state, naming the one it looked for.\n- Only json is converted. For the other four, the state must already be text; a number or a list will not save as you expect.\n- Some browsers ask where to save each file, and some block a page that downloads many files in a row, as a TICK might."
+        },
+        "date": 1791138525593,
+        "after": "9e05b444d3cfd661"
+      },
+      {
+        "type": "add",
+        "id": "e6a7e12492f500f0",
+        "item": {
+          "type": "markdown",
+          "id": "e6a7e12492f500f0",
+          "text": "DOWNLOAD reads state.txt, or reads state.html, reads state.csv, reads state.tsv or reads state.json, whichever the file name's ending names. It writes no state."
+        },
+        "date": 1791138525594,
+        "after": "1aa51d908f7672cb"
+      },
+      {
+        "type": "add",
+        "id": "192157de7237a292",
+        "item": {
+          "type": "markdown",
+          "id": "192157de7237a292",
+          "text": "*Marc Pierson and Claude Opus 5.5 · October 2026*",
+          "attribution": true
+        },
+        "date": 1791138525625,
+        "after": "78ca82b57e253d6c"
+      }
+    ]
+  }
+}
