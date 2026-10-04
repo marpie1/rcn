@@ -42,6 +42,8 @@
   button:hover { background: var(--soft); }
   select { max-width: 340px; }
   .flash-msg { font-size: 14px; color: var(--green); font-weight: 700; }
+  #saveWiki { background: #000; color: #fff; }
+  #saveWiki:hover { background: #333; }
 
   main { display: grid; grid-template-columns: 230px minmax(0, 1fr) 340px; gap: 14px; padding: 0 16px 30px; max-width: 1400px; margin: 0 auto; align-items: start; }
   @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
@@ -145,6 +147,7 @@
   <button id="undo" title="Undo the last block change (Cmd/Ctrl-Z)">Undo</button>
   <button id="copyText">Copy Mech text</button>
   <button id="copyCatalog" title="The machine-readable block list proposed for Mech's blocks.js">Copy block catalog</button>
+  <button id="saveWiki" hidden title="Write this script back into the Mech item on the wiki page">Save to wiki</button>
   <span class="flash-msg" id="flash"></span>
 </div>
 <main>
@@ -225,7 +228,7 @@ const CATALOG = {
   PRINT:    { shows: true, group: 'show', body: 'none', args: 'outline|draft', choices: ['outline', 'draft'], oneOf: ['outline', 'draft'], reads: ['aspect', 'neighborhood'], writes: ['items'], doc: 'Compose a printable story and garden.', example: 'PRINT outline' },
   DOWNLOAD: { shows: true, group: 'show', body: 'none', args: 'file.txt|html|csv|tsv|json', argRequired: true, readsSuffix: true, doc: 'Download state as a file.', example: 'DOWNLOAD items.json' },
   GET:      { group: 'server', body: 'server', args: 'state keys to share, or site', writes: ['result'], requiredBody: true, doc: 'Await a result from the server.', example: 'GET' },
-  PLUGIN:   { group: 'server', body: 'plugin', args: 'plugin name', argRequired: true, writes: ['result'], requiredBody: true, doc: 'Await a result from an installed plugin.', example: 'PLUGIN coauthor' },
+  PLUGIN:   { group: 'server', body: 'plugin', args: 'plugin name', argRequired: true, writes: ['result'], requiredBody: true, doc: 'Await a result from an installed plugin.', example: 'PLUGIN rcn' },
   LISTEN:   { group: 'talk', body: 'none', args: 'topic', argRequired: true, doc: 'Wait for a specific message.', example: 'LISTEN hello' },
   MESSAGE:  { group: 'talk', body: 'none', args: 'topic', argRequired: true, doc: 'Send a specific message.', example: 'MESSAGE hello' },
   FORWARD:  { group: 'draw', body: 'none', args: 'steps', argRequired: true, writes: ['turtle'], doc: 'Move the drawing "turtle" forward.', example: 'FORWARD 60' },
@@ -239,6 +242,18 @@ const SERVER = {
   SLEEP:   { group: 'server', body: 'optional', args: 'seconds 1–99', count: true, doc: 'Suspend a sequence of blocks.', example: 'SLEEP 3' },
   COMMONS: { group: 'server', body: 'none', writes: ['commons'], doc: 'Report image files and byte count.', example: 'COMMONS' },
   DELTA:   { group: 'server', body: 'none', reads: ['recent'], writes: ['actions'], doc: 'Retrieve recent site changes.', example: 'DELTA' },
+};
+
+// Blocks that installed plugins answer through PLUGIN <name>. Only plugins listed
+// here are checked; for any other, what comes back is unknown, so later needs are
+// softened to "may come from the plugin" rather than flagged.
+const PLUGINS = {
+  rcn: {
+    HELLO:       { group: 'server', body: 'none', doc: 'Proves the rcn plugin answers.', example: 'HELLO' },
+    PROJECTIONS: { group: 'server', body: 'none', writes: ['items'], doc: 'List the Layer 1 folders on this site.', example: 'PROJECTIONS' },
+    PROJECTION:  { group: 'server', body: 'none', args: 'folder, then kinds to keep', argRequired: true, writes: ['aspect'], doc: "A Layer 1 folder's graph, as an aspect.", example: 'PROJECTION whatcom' },
+    BADGES:      { group: 'server', body: 'none', args: 'words in the skill', writes: ['aspect', 'items'], doc: "SODOTO badges on this site's pages: people and the skills they hold.", example: 'BADGES' },
+  },
 };
 
 const WAYS = /\b(\d+)? *(steps|days|weeks|months|hubs|lineup|references|topics|clicks)\b/;
@@ -409,6 +424,19 @@ function analyze(lines) {
     }
     if (mode == 'plugin') {
       r.role = 'plugin'; r.op = op; r.group = 'server';
+      const known = PLUGINS[plugin];
+      const pc = known && known[op];
+      if (known && !pc) {
+        if (/^[A-Z]+$/.test(op)) note(i, 'trouble', `${op} isn't a ${plugin} block. Try ${Object.keys(known).join(', ')}.`);
+        else note(i, 'trouble', 'Expected line to begin with all-caps keyword.');
+      }
+      if (pc) {
+        if (pc.argRequired && !args[0]) note(i, 'trouble', `${op} expects an argument: ${pc.args}.`);
+        r.makes = writesOf(pc, args);
+        for (const k of r.makes) env.keys.add(k);
+        if (body) { mark(body, 'unused'); note(i, 'warn', `${op} doesn't use indented lines, so they never run.`); }
+        return;
+      }
       if (body) walk(body, env, 'plugin', plugin);
       return;
     }
@@ -479,8 +507,11 @@ function analyze(lines) {
       return;
     }
     if (cat.body == 'plugin') {
-      walk(body, { keys: new Set(), wild: true }, 'plugin', args[0]);
+      const penv = { keys: new Set(args.slice(1).filter(a => env.keys.has(a))), wild: !PLUGINS[args[0]] };
+      walk(body, penv, 'plugin', args[0]);
       for (const k of makes) env.keys.add(k);
+      if (PLUGINS[args[0]]) for (const k of penv.keys) env.keys.add(k);
+      else env.wild = true;
       return;
     }
     if (cat.body == 'server') {
@@ -640,13 +671,16 @@ function flash(msg) {
 function buildPalette() {
   const byGroup = {};
   for (const [op, c] of Object.entries(CATALOG)) (byGroup[c.group] ||= []).push([op, c, false]);
-  for (const [op, c] of Object.entries(SERVER)) byGroup.server.push([op, c, true]);
+  for (const [op, c] of Object.entries(SERVER)) byGroup.server.push([op, c, 'server']);
+  for (const [op, c] of Object.entries(PLUGINS.rcn)) (byGroup.rcn ||= []).push([op, c, 'plugin:rcn']);
   const html = [];
   for (const [g, list] of Object.entries(byGroup)) {
-    html.push(`<div style="--g:${GROUPS[g].color}"><div class="pgroup">${GROUPS[g].label}</div>`);
+    const head = g == 'rcn' ? { color: GROUPS.server.color, label: 'Inside PLUGIN rcn' } : GROUPS[g];
+    html.push(`<div style="--g:${head.color}"><div class="pgroup">${head.label}</div>`);
     for (const [op, c, srv] of list) {
       const rest = c.example.slice(op.length);
-      html.push(`<div class="ptile" data-op="${op}"${srv ? ' data-server="1"' : ''} data-new="${esc(c.example)}" title="${esc(c.doc + (srv ? ' Runs on the server, inside GET.' : ''))}"><b>${op}</b><span>${esc(rest)}</span>${srv ? ' <span>· in GET</span>' : ''}</div>`);
+      const where = srv == 'server' ? 'GET' : srv ? 'PLUGIN rcn' : '';
+      html.push(`<div class="ptile" data-op="${op}"${srv ? ` data-inside="${srv}"` : ''} data-new="${esc(c.example)}" title="${esc(c.doc + (where ? ` Runs on the server, inside ${where}.` : ''))}"><b>${op}</b><span>${esc(rest)}</span>${where ? ` <span>· in ${where}</span>` : ''}</div>`);
     }
     html.push('</div>');
   }
@@ -683,7 +717,7 @@ function renderLegend() {
 function renderPaletteFit() {
   for (const t of document.querySelectorAll('.ptile')) {
     if (!beginner) { t.classList.remove('nofit'); continue; }
-    const fit = paletteFit(t.dataset.new, !!t.dataset.server);
+    const fit = paletteFit(t.dataset.new, t.dataset.inside);
     t.classList.toggle('nofit', !fit.ok);
     t.dataset.why = fit.why;
   }
@@ -703,16 +737,21 @@ function placeBar(bar, t) {
   bar.style.top = (at == 'top' ? rect.top : rect.bottom) - canvas.top - 3 + 'px';
 }
 
-// A server tile only fits where it lands inside GET; otherwise it is the ordinary block.
-function paletteFit(cmd, server) {
+// A server tile only fits where it lands inside GET, and an rcn tile inside
+// PLUGIN rcn; elsewhere the same words would be an ordinary block, or none.
+function paletteFit(cmd, inside) {
   const next = insertNew(model, cmd, cursor);
-  if (server && analyze(next)[landedAt(model, { cmd }, cursor)].role != 'server') return { ok: false, why: 'Server blocks go inside GET.' };
+  if (inside) {
+    const role = analyze(next)[landedAt(model, { cmd }, cursor)].role;
+    if (inside == 'server' && role != 'server') return { ok: false, why: 'Server blocks go inside GET.' };
+    if (inside == 'plugin:rcn' && role != 'plugin') return { ok: false, why: 'These blocks go inside PLUGIN rcn.' };
+  }
   return fitCheck(model, facts, next);
 }
 
-function insertAtCursor(cmd, server) {
+function insertAtCursor(cmd, inside) {
   const next = insertNew(model, cmd, cursor);
-  const fit = paletteFit(cmd, server);
+  const fit = paletteFit(cmd, inside);
   if (beginner && !fit.ok) return flash("Doesn't fit at the blue line: " + fit.why);
   change(next, landedAt(model, { cmd }, cursor));
 }
@@ -839,7 +878,7 @@ document.addEventListener('pointerdown', e => {
   const ptile = e.target.closest('.ptile');
   const head = e.target.closest('.head');
   if (!ptile && !head) return;
-  drag = { x: e.clientX, y: e.clientY, started: false, source: ptile ? { cmd: ptile.dataset.new, server: !!ptile.dataset.server, el: ptile } : { i: +head.dataset.head, el: head.closest('.tile') }, editSpan: e.target.closest('.args') };
+  drag = { x: e.clientX, y: e.clientY, started: false, source: ptile ? { cmd: ptile.dataset.new, inside: ptile.dataset.inside, el: ptile } : { i: +head.dataset.head, el: head.closest('.tile') }, editSpan: e.target.closest('.args') };
 });
 
 document.addEventListener('pointermove', e => {
@@ -867,7 +906,7 @@ document.addEventListener('pointerup', e => {
   const d = drag; drag = null;
   if (!d.started) {
     if (d.editSpan) return startEdit(d.editSpan);
-    if (!('i' in d.source)) return insertAtCursor(d.source.cmd, d.source.server);   // tap a palette block
+    if (!('i' in d.source)) return insertAtCursor(d.source.cmd, d.source.inside);   // tap a palette block
     selected = selected === d.source.i ? null : d.source.i;      // tap a block: blue line after it
     return render();
   }
@@ -1017,11 +1056,37 @@ sel.addEventListener('change', () => {
   setText(corpus[+sel.value].text);
 });
 
+// Opened by the Mech Blocks wiki plugin: load that Mech item, and Save writes it back.
+if (window.opener) {
+  window.opener.postMessage({ toolType: 'mech-blocks', action: 'mechBlocksReady' }, '*');
+  window.addEventListener('message', ev => {
+    if (ev.source !== window.opener) return;
+    const d = ev.data || {};
+    if (d.toolType != 'mech-blocks') return;
+    if (d.action == 'loadMech') {
+      undoStack.push(serialize(model));
+      setText(d.text || '');
+      sel.value = '';
+      document.title = 'Mech Blocks · ' + (d.title || 'wiki');
+      $('#saveWiki').hidden = false;
+      $('#saveWiki').textContent = d.isNew ? 'Add to wiki page' : 'Save to wiki';
+      flash(d.isNew ? 'New Mech item for ' + d.title : 'Editing a Mech item on ' + d.title);
+      fromWiki = true;
+    }
+    if (d.action == 'saved') { flash('Saved to the wiki page'); $('#saveWiki').textContent = 'Save to wiki'; }
+  });
+}
+let fromWiki = false;
+$('#saveWiki').addEventListener('click', () => {
+  if (!window.opener || window.opener.closed) return flash('The wiki page is closed, so there is nowhere to save. Copy Mech text instead.');
+  window.opener.postMessage({ toolType: 'mech-blocks', action: 'saveMech', text: serialize(model) }, '*');
+});
+
 buildPalette();
 renderLegend();
 const start = corpus.findIndex(c => c.slug == 'testing-neighbor-mech');
 sel.value = String(start >= 0 ? start : 0);
-setText(corpus[+sel.value].text);
+if (!fromWiki) setText(corpus[+sel.value].text);
 </script>
 </body>
 </html>

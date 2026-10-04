@@ -151,6 +151,19 @@ expectNote('CODE', /^1:start:/);
 expectNote('CLICK\n FROM a.b/c\n  CODE blocks', /^3:start:/);
 expectClean('TICK 3\n CODE');
 
+// PLUGIN rcn: its blocks are known, so what they make flows on to later blocks
+expectClean('CLICK\n PLUGIN rcn\n  PROJECTION whatcom\n PREVIEW graph');
+expectClean('CLICK\n PLUGIN rcn\n  BADGES diagram\n SOLO\n PREVIEW items');
+expectNote('PLUGIN rcn\n WALK', /WALK isn't a rcn block/);
+expectNote('PLUGIN rcn\n PROJECTION', /PROJECTION expects an argument/);
+expectNote('PLUGIN rcn\n PROJECTION whatcom\n  HELLO', /doesn't use indented lines/);
+// an unknown plugin may make anything, so later needs are softened, not flagged
+expectClean('PLUGIN coauthor\n RESOLVE\nPREVIEW items');
+{
+  const l = parse('PLUGIN coauthor\n RESOLVE\nPREVIEW items'), f = analyze(l);
+  ok(f[2].needs[0].status === 'maybe', 'after an unknown plugin, a need is "maybe"');
+}
+
 // 4b. Fitting together: a change may not add a problem that was not there.
 function fits(text, cmd, target) {
   const lines = parse(text);
@@ -162,6 +175,7 @@ ok(/neighborhood/.test(fits('CLICK', 'WALK', { kind: 'into', i: 0 }).why), 'and 
 ok(fits('CLICK\n NEIGHBORS', 'WALK 10 steps', { kind: 'after', i: 1 }).ok, 'WALK fits after NEIGHBORS');
 ok(!fits('NEIGHBORS', 'UPTIME', { kind: 'end' }).ok, 'a server block does not fit outside GET');
 ok(fits('GET', 'UPTIME', { kind: 'into', i: 0 }).ok, 'a server block fits inside GET');
+ok(fits('PLUGIN rcn', 'PROJECTION whatcom', { kind: 'into', i: 0 }).ok, 'an rcn block fits inside PLUGIN rcn');
 ok(fits('', 'CLICK', { kind: 'end' }).ok, 'CLICK fits in an empty script though its mouth is empty');
 ok(serialize(insertNew(parse(''), 'CLICK', { kind: 'end' })) === 'CLICK', 'inserting into an empty script leaves no blank line');
 ok(fits('NEIGHBORS fed.wiki\n Bad Title', 'HELLO', { kind: 'end' }).ok, 'an old problem elsewhere does not block a good drop');
@@ -187,6 +201,7 @@ ok(lamp('CLICK') === '010', 'empty mouth: fits off');
 ok(lamp('CLICK\n FROM a.b/c\n  CODE x\n  REPORT') === '101', 'CODE under FROM: ready off');
 ok(lamp('SOLO') === '010', 'SOLO without an aspect: fits off, result off');
 ok(lamp('') === '000', 'empty script: all off');
+ok(lamp('CLICK\n PLUGIN rcn\n  PROJECTION whatcom\n PREVIEW graph') === '111', 'PLUGIN rcn then PREVIEW graph: all three on');
 ok(lamp('CLICK\n WALK 10 steps\n NEIGHBORS\n PREVIEW graph') === '010', 'a block missing its need makes nothing, so nothing downstream shows');
 
 // 5. Every handbook script: the checks run without throwing, and every line gets a role.
