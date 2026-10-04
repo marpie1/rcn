@@ -42,8 +42,10 @@ class G:
         return id
 
     def box(self, id, x, y, w, h, color, dash='solid', bw=1.5, border='#000000', note=''):
-        # a container: see-through fill so arrows inside it stay visible, label carried by a header node
-        return self.node(id, '', x, y, w, h, color=color, shape='rect', border=border, bw=bw, dash=dash, note=note)
+        # a container: drawn behind the arrows (backdrop), label carried by a header node
+        self.node(id, '', x, y, w, h, color=color, shape='rect', border=border, bw=bw, dash=dash, note=note)
+        self.nodes[-1]['backdrop'] = True  # drawn under the arrows, so a solid fill never tints them
+        return id
 
     def text(self, id, label, x, y, w, h=34, fs=17, fc='#000000', note='', bold_type=None):
         return self.node(id, label, x, y, w, h, color=CLEAR, shape='rect', border=CLEAR, bw=0, fs=fs, fc=fc,
@@ -119,7 +121,7 @@ g = G('Ostrom Figure 2 · A framework for institutional analysis',
 g.marc('marc_title', 'Building Trust in One Another\nDeveloping Institutional rules matched to the ecological system', 560, -40, 760, 64, fs=19,
        note="The two halves of the lecture: trust is Figure 5; rules matched to the ecological system are Figures 4 and 6.")
 g.text('title', 'Figure 2 · A framework for institutional analysis', 560, 40, 760, 36, fs=20)
-g.box('ext', 140, 250, 220, 300, GREY + '66',
+g.box('ext', 140, 250, 220, 300, GREY,
       note="Ostrom: the broadest categories of external factors affecting an action situation at a particular time. Some of them can be self-consciously revised over time. That revision is the dashed feedback, and it is where the levels of action live (see the Levels of action drawing).")
 g.text('ext_h', 'External variables', 140, 125, 200, 28, fs=14)
 g.node('bio', 'Biophysical Conditions', 140, 180, 170, 60, color=LIME,
@@ -154,11 +156,11 @@ g.save('fig2-iad-framework.json')
 g = G('Ostrom Figure 3 · The internal structure of an action situation',
       "Figure 3 of Ostrom's Nobel lecture (adapted from Ostrom 2005: 33). The seven working parts of an action situation. Ostrom built them, with Reinhard Selten, to match the parts of a formal game, so that game models and field coding share one vocabulary. In her figure, Information and Control point at the link between actions and outcomes; a graph cannot point at an arrow, so that link is drawn here as a small 'linked to' node.")
 g.text('title', 'Figure 3 · The internal structure of an action situation', 470, -40, 800, 36, fs=20)
-g.box('ext', 470, 270, 860, 560, GREY + '55')
-g.text('ext_h', 'External Variables', 470, 20, 300, 34, fs=20)
-g.box('asb', 470, 300, 760, 440, GREEN + '55',
+g.box('ext', 470, 390, 860, 800, GREY)
+g.text('ext_h', 'External Variables', 470, 25, 300, 34, fs=20)
+g.box('asb', 470, 400, 760, 640, GREEN,
       note="Ostrom 2005, p. 188: participants are assigned to positions, and in those positions choose among actions in light of their information, the control they have over action-outcome links, and the benefits and costs assigned to actions and outcomes. That sentence names all seven parts.")
-g.text('as_h', 'Action Situation', 470, 105, 300, 34, fs=20)
+g.text('as_h', 'Action Situation', 470, 115, 300, 34, fs=20)
 NOTE3 = {
     'actors': "Ostrom's game element (i): the characteristics of the actors involved, including the model of human choice adopted.\n\nSet by boundary rules: who may enter or leave. Plain question: who is in, who is out, how do you get in and out?",
     'pos': "Game element (ii): the positions they hold (first mover, row player; in the field, irrigator, monitor, chair).\n\nSet by position rules. Plain question: what roles exist here? Roles outlive the people in them.",
@@ -169,14 +171,14 @@ NOTE3 = {
     'ncb': "Game element (vii): the benefits and costs assigned to the link between actions chosen and outcomes obtained.\n\nSet by payoff rules. Plain question: who bears the cost, who gets the benefit, and what happens if you break the rule?",
 }
 g.node('actors', 'Actors', 200, 180, 160, 44, note=NOTE3['actors'])
-g.node('pos', 'Positions', 200, 300, 160, 44, note=NOTE3['pos'])
-g.node('acts', 'Actions', 200, 420, 160, 44, note=NOTE3['acts'])
-g.node('info', 'INFORMATION\nabout', 430, 200, 160, 60, note=NOTE3['info'])
-g.node('ctrl', 'CONTROL\nover', 640, 200, 160, 60, note=NOTE3['ctrl'])
-g.node('link', 'linked to', 520, 420, 110, 36, shape='ellipse', fs=14,
+g.node('pos', 'Positions', 200, 330, 160, 44, note=NOTE3['pos'])
+g.node('acts', 'Actions', 200, 480, 160, 44, note=NOTE3['acts'])
+g.node('info', 'INFORMATION\nabout', 430, 250, 160, 60, note=NOTE3['info'])
+g.node('ctrl', 'CONTROL\nover', 640, 250, 160, 60, note=NOTE3['ctrl'])
+g.node('link', 'linked to', 520, 480, 110, 36, shape='ellipse', fs=14,
        note="In Ostrom's figure this is the arrow 'linked to' from Actions to Potential Outcomes, with Information and Control pointing at it. Drawn as a node here because an arrow cannot point at an arrow.")
-g.node('pot', 'POTENTIAL\nOUTCOMES', 740, 420, 160, 60, note=NOTE3['pot'])
-g.node('ncb', 'NET COSTS AND\nBENEFITS', 740, 500, 160, 56, note=NOTE3['ncb'])
+g.node('pot', 'POTENTIAL\nOUTCOMES', 740, 480, 160, 60, note=NOTE3['pot'])
+g.node('ncb', 'NET COSTS AND\nBENEFITS', 740, 650, 160, 56, note=NOTE3['ncb'])
 g.edge('actors', 'pos', 'assigned to', type='lg_link')
 g.edge('pos', 'acts', 'assigned to', type='lg_link')
 g.edge('acts', 'link', type='lg_link')
@@ -184,7 +186,7 @@ g.edge('link', 'pot', type='lg_link')
 g.edge('info', 'link', type='lg_link')
 g.edge('ctrl', 'link', type='lg_link')
 g.edge('ncb', 'pot', 'assigned to', type='lg_link')
-g.footer(470, 600, 'Ostrom 2010, Figure 3, adapted from Ostrom 2005: 33')
+g.footer(470, 860, 'Ostrom 2010, Figure 3, adapted from Ostrom 2005: 33')
 g.save('fig3-action-situation.json')
 
 
@@ -192,24 +194,24 @@ g.save('fig3-action-situation.json')
 g = G("Ostrom Figure 4 · Rules acting on the action situation, with Marc's questions",
       "Figure 4 of Ostrom's Nobel lecture (adapted from Ostrom 2005: 189): rules as exogenous variables directly affecting the elements of an action situation. Each of the seven rule types acts on one of the seven working parts. Marc's redrawing adds the context arrows from Biophysical Conditions and Attributes of Community, the outcome loop from Figure 2, and his own margin questions (green, dotted): WHO? WHAT? HOW? WHY?, For whom, By whom, Am I allowed?, Data & Information, Knowledge & Understanding, parameterizes, models, Judges, and Is it worth the effort and risk?\n\nNote on vocabulary: Marc's HOW? (payoff) and WHY? (scope) use the same words as the Agreement Checker's plain questions, where HOW? means the manner of an action. One vocabulary should be settled across this drawing, Seven Questions and the checker.")
 g.text('title', 'Figure 4 · Rules as exogenous variables directly affecting the elements of an action situation', 640, -60, 1100, 36, fs=19)
-g.box('ext', 640, 450, 1160, 960, GREY + '55')
+g.box('ext', 640, 505, 1160, 1070, GREY)
 g.text('ext_h', 'External Variables', 640, 10, 300, 34, fs=22)
 g.node('bio', 'Biophysical\nConditions', 260, 70, 150, 64, color=LIME,
        note="Sets context for the action situation: what the resource is and how it behaves. Figure 6 unpacks it.")
 g.node('com', 'Attributes of\nCommunity', 1050, 70, 150, 64, color=ORANGE,
        note="Sets context for the action situation: history, heterogeneity, knowledge, social capital. Figure 5 is about how these become trust.")
-g.box('rules', 640, 525, 900, 710, BLUE + '55',
+g.box('rules', 640, 580, 900, 820, BLUE,
       note="Rules-in-use: the seven rule types, each acting on one working part of the situation. Ostrom found many variants of each; 27 different boundary rules in common-pool resource cases alone (Ostrom 1999: 510). The design principles describe patterns across these rules.")
 g.text('rules_h', 'Rules-In-Use', 330, 200, 220, 34, fs=22)
-g.box('asb', 680, 540, 700, 480, GREEN + '55')
-g.text('as_h', 'Action Situation', 680, 750, 300, 34, fs=22)
+g.box('asb', 680, 600, 700, 600, GREEN)
+g.text('as_h', 'Action Situation', 540, 860, 300, 34, fs=22)
 g.node('actors', 'Actors', 450, 340, 150, 40, note=NOTE3['actors'])
 g.node('pos', 'Positions', 450, 470, 150, 40, note=NOTE3['pos'])
 g.node('acts', 'Actions', 650, 640, 150, 40, note=NOTE3['acts'])
 g.node('info', 'INFORMATION\nabout', 650, 360, 150, 56, note=NOTE3['info'])
 g.node('ctrl', 'CONTROL\nover', 850, 360, 150, 56, note=NOTE3['ctrl'])
 g.node('pot', 'POTENTIAL\nOUTCOMES', 880, 640, 150, 56, note=NOTE3['pot'])
-g.node('ncb', 'NET COSTS AND\nBENEFITS', 880, 720, 150, 56, note=NOTE3['ncb'])
+g.node('ncb', 'NET COSTS AND\nBENEFITS', 880, 830, 150, 56, note=NOTE3['ncb'])
 g.edge('actors', 'pos', 'assigned to', type='lg_link')
 g.edge('pos', 'acts', 'assigned to', type='lg_link')
 g.edge('acts', 'pot', 'linked to', type='lg_link')
@@ -230,7 +232,7 @@ RULE = {
               "Ostrom: how the decisions of actors are mapped to intermediate or final outcomes. Majority, unanimity, and so on.\n\nThe rule type no design principle names. Principles 3 and 6 assume decisions get made without saying how choices combine. Ask: who has to agree for this to count?\n\nIn the grammar: DO WHAT? is vote, decide, approve, consent."),
     'r_scope': ("Scope\nRules", 1050, 640, 'pot',
                 "Ostrom: the outcomes that could be affected.\n\nDesign principles: 1B resource boundaries (what the shared thing is); 7 recognition of rights (scope set by an outside body).\n\nIn the grammar: TO WHAT? points at a defined resource, or a rule limits what may be changed."),
-    'r_pay': ("Payoff\nRules", 880, 815, 'ncb',
+    'r_pay': ("Payoff\nRules", 880, 945, 'ncb',
               "Ostrom: how benefits and costs are distributed to actors in positions.\n\nDesign principles: 2B costs in proportion to benefits; 5 graduated sanctions (the OR ELSE).\n\nIn the grammar: the OR ELSE, and sentences giving a benefit or a duty to pay.\n\nMicrosituational conditions it shapes: each contribution visibly matters; sanctions the group agreed to (Figure 5)."),
 }
 for rid, (lab, x, y, tgt, note) in RULE.items():
@@ -244,7 +246,7 @@ g.marc('m_who_b', 'WHO?', 260, 300, 70, fs=15)
 g.marc('m_who_i', 'WHO?', 560, 230, 70, fs=15)
 g.marc('m_who_a', 'WHO?', 960, 230, 70, fs=15)
 g.marc('m_what', 'WHAT?', 260, 690, 80, fs=15)
-g.marc('m_how', 'HOW?', 790, 815, 70, fs=15, note="Marc's HOW? marks payoff rules. The Agreement Checker's HOW? means the manner of an action; settle one vocabulary.")
+g.marc('m_how', 'HOW?', 790, 945, 70, fs=15, note="Marc's HOW? marks payoff rules. The Agreement Checker's HOW? means the manner of an action; settle one vocabulary.")
 g.marc('m_why', 'WHY?', 1050, 690, 70, fs=15, note="Marc's WHY? marks scope rules: what outcomes are we here for.")
 g.marc('m_data', 'Data &\nInformation', 650, 175, 150, 50, fs=15)
 g.marc('m_know', 'Knowledge &\nUnderstanding', 850, 175, 160, 50, fs=15)
@@ -264,7 +266,7 @@ g.edge('int', 'rules', type='lg_feedback', curved=True, width=3)
 g.edge('out', 'rules', type='lg_feedback', curved=True, width=3)
 g.marc('m_judge', 'Judgement\nIs it worth the effort and risk?', 1460, 760, 300, 54, fs=15,
        note="The question each person answers before cooperating. Figure 5 says where the answer comes from: trust that the others will reciprocate.")
-g.footer(640, 975, 'Ostrom 2010, Figure 4, adapted from Ostrom 2005: 189')
+g.footer(640, 1090, 'Ostrom 2010, Figure 4, adapted from Ostrom 2005: 189')
 g.save('fig4-rules-acting-on-the-situation.json')
 
 
@@ -285,7 +287,7 @@ LV = [
 y = 60
 prev = None
 for i, (k, name, sub, note) in enumerate(LV):
-    g.added(k, name, 260, y + 50, 300, 64, note=note, color=GREEN + '55', fs=17)
+    g.added(k, name, 260, y + 50, 300, 64, note=note, color=GREEN, fs=17)
     g.text(k + '_s', sub, 900, y + 50, 520, 50, fs=15, note=note)
     if prev:
         rid = prev + '_out'
