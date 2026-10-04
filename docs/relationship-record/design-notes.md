@@ -29,6 +29,26 @@ Shared with RegenSonora: `relationship-record-thinking.pdf` (built from the `.ht
 - Skills come from SODOTO badges. Needs and offers connect to the three-currency work.
 - Trust and value ratings (in the style of PARTNER CPRM) would be claims too, if RegenSonora wants them at all.
 
+## Three stories (Ganz) — agreed Oct 3 2026
+
+Marshall Ganz's public narrative (story of me, story of we, story of now) is how the record draws out what people care about. Every story has the same three parts: challenge, choice, outcome. **The story of now is a story whose outcome is still blank**, so it is a Commitment, and each yes, no or "not yet" is a claim.
+
+- **Me: told in pairs.** The teller tells one specific moment. The listener reflects it back ("what I heard you value was…"). That reflection is a claim ("Mary heard Chris value X"), and the teller accepts, fixes or rejects it. Nothing about me without me is the step itself.
+- **We: the group tells it.** The graph can show values that several people named, but that overlap is a prompt for a kitchen-table conversation, not the story of we.
+- **Now: one specific ask** with a date and a place, recorded as a commitment.
+
+Decided:
+
+- **The full Me story lives on the teller's own site.** The NDC record holds a link plus the values the teller agreed to share.
+- **Values are free words in the teller's own language.** The group merges them in the We conversation, and the merging is the story of us. No starter list.
+- **Health line:** a Me story's challenge is often an illness or a loss. The record holds that a story exists and the values it names, and nothing more.
+
+Encoding (proposed): Story (kind me/we/now, teller, text or audio, challenge/choice/outcome, a moment with a fuzzy date and a place); Value (a concept, in the teller's words); Person → Value "holds" edges as claims. The edge style tells "teller said it" (solid) apart from "a listener heard it, not confirmed yet" (dotted).
+
+Cave drawings: Me is a card (face, pin, year, two or three value words). We is a **campfire**: people in a ring, shared values inside the fire, values only one person named at the edge. Now is a thick arrow from the fire to one dated ask, and people who said yes get a green border. The Timeline can put all three on one line: Me moments in the past, the fire in the present, the ask on a future date.
+
+Sample: `tools/three-stories-campfire.rcn.json` (six made-up Superior neighbors; hover a person for their Me story). It ends with a question for the group: are WATER and EL AGUA the same thing, and who decides?
+
 ## Tool views
 
 | Tool | View |
@@ -63,3 +83,4 @@ Missing today: a quick-log screen (phone, under about 20 seconds), commitments w
 ## Changelog
 
 - Oct 2 2026: first conversation. Research on CRM screens, questions and analytics. Discussion PDF sent to RegenSonora.
+- Oct 3 2026: Ganz's three stories adopted as the way to draw out what people care about. Me stories live on the teller's own site; values are free words that the group merges. Sample campfire built in the Graph tool.
