@@ -95,6 +95,31 @@
   #drophint { position: fixed; z-index: 21; pointer-events: none; display: none; font-size: 13px; background: var(--amber); color: #fff; border-radius: 6px; padding: 2px 8px; max-width: 360px; }
   .endslot { margin-top: 8px; padding: 8px; border: 2px dashed var(--line); border-radius: 8px; font-size: 13px; opacity: .65; }
   #canvas.urlhot .endslot { border-color: var(--blue); opacity: 1; }
+  #dropbar.no { background: var(--red); }
+  #drophint.no { background: var(--red); }
+  #cursorbar { position: absolute; height: 0; border-top: 3px dashed var(--blue); pointer-events: none; display: none; z-index: 9; }
+  #cursorbar span { position: absolute; right: 0; top: 1px; font-size: 11px; color: var(--blue); background: var(--card); padding: 0 4px; }
+  .tile.selected > .head { outline: 3px solid #93c5fd; outline-offset: -2px; border-radius: 6px; }
+
+  /* what passes between blocks: icon + word, family colour */
+  .chip.need, .chip.make { border-color: var(--f); color: var(--f); }
+  .chip.make { background: var(--f); color: #fff; }
+  .chip.need.missing { border-color: var(--amber); color: #fff; background: var(--amber); }
+  .chip.need.maybe { border-style: dashed; }
+  .chip.make.stuck { background: #fff; color: #9ca3af; border-color: #d1d5db; border-style: dashed; text-decoration: line-through; }
+  .chip.shows { border-color: var(--green); color: var(--green); font-weight: 700; }
+
+  /* the three lamps */
+  .lamps { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 4px; }
+  .lamp { font-size: 14px; border: 2px solid #9ca3af; border-radius: 999px; padding: 1px 10px; color: #4b5563; background: #fff; }
+  .lamp b { color: #9ca3af; }
+  .lamp.on { border-color: var(--green); color: var(--ink); }
+  .lamp.on b { color: var(--green); }
+  #lampwhy { font-size: 13px; color: var(--amber); min-height: 18px; margin: 0 0 6px; }
+  .legend { font-size: 12px; opacity: .8; margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+  .ptile.nofit { opacity: .3; filter: grayscale(1); }
+  .mode { display: inline-flex; align-items: center; gap: 6px; border: 2px solid #000; border-radius: 8px; padding: 3px 10px; background: #fff; cursor: pointer; font-size: 15px; }
+  .mode input { width: 18px; height: 18px; margin: 0; }
 
   /* text and checks */
   #side { position: sticky; top: 8px; }
@@ -112,10 +137,11 @@
 <header>
   <h1>Mech Blocks</h1>
   <p class="byline">Marc Pierson and Claude Opus 5.5 · October 2026</p>
-  <p class="lede">Build a Mech script by dragging blocks. The text on the right is what FedWiki stores, and it is rewritten on every drag. Type in the text and the blocks follow. Each block shows what it <b>needs</b> and what it <b>makes</b>; a drop where a need is missing turns the bar amber before you let go.</p>
+  <p class="lede">Build a Mech script by dragging blocks. The text on the right is what FedWiki stores, and it is rewritten on every drag. Type in the text and the blocks follow. Each block shows what it <b>needs</b> and what it <b>makes</b>, as an icon and a word. Three lamps say whether the script fits together, whether it can be started, and whether it ends in a result. In <b>beginner mode</b> a block that would not fit cannot be dropped.</p>
 </header>
 <div class="bar">
   <label>Handbook script <select id="examples"></select></label>
+  <label class="mode" title="Blocks that would not fit cannot be dropped, and the palette greys out what cannot go at the blue line"><input type="checkbox" id="beginner"> Beginner mode</label>
   <button id="undo" title="Undo the last block change (Cmd/Ctrl-Z)">Undo</button>
   <button id="copyText">Copy Mech text</button>
   <button id="copyCatalog" title="The machine-readable block list proposed for Mech's blocks.js">Copy block catalog</button>
@@ -124,12 +150,15 @@
 <main>
   <section class="panel" id="palette" aria-label="Blocks">
     <h2>Blocks</h2>
-    <p class="hint">Drag onto the script. Drag a block back here to remove it.</p>
+    <p class="hint">Drag onto the script, or tap to add at the blue line. Drag a block back here to remove it.</p>
     <div id="ptiles"></div>
   </section>
   <section class="panel" aria-label="Script">
     <h2>Script</h2>
-    <p class="hint">Drag by the block's name. Click the words after the name to edit them. Drop a wiki page link here to get a FROM block.</p>
+    <div class="lamps" id="lamps"></div>
+    <div id="lampwhy"></div>
+    <div class="legend" id="legend"></div>
+    <p class="hint">Drag by the block's name; tap a name to put the blue line after it. Click the words after the name to edit them. Drop a wiki page link here to get a FROM block.</p>
     <div id="canvas"></div>
   </section>
   <section id="side">
@@ -181,20 +210,20 @@ const CATALOG = {
   RANDOM:   { group: 'web', body: 'none', reads: ['neighborhood'], writes: ['info'], doc: 'Select a random page from the neighbors.', example: 'RANDOM' },
   ROSTER:   { group: 'web', body: 'none', reads: ['neighborhood'], writes: ['items'], doc: 'Make a Roster for the current neighborhood.', example: 'ROSTER' },
   LINEUP:   { group: 'web', body: 'none', writes: ['items'], doc: 'Make a page from the current lineup.', example: 'LINEUP' },
-  SHOW:     { group: 'web', body: 'none', args: 'slug or site/slug', readsNoArg: ['info'], doc: 'Add an existing page to the lineup.', example: 'SHOW welcome-visitors' },
+  SHOW:     { shows: true, group: 'web', body: 'none', args: 'slug or site/slug', readsNoArg: ['info'], doc: 'Add an existing page to the lineup.', example: 'SHOW welcome-visitors' },
   DELTA:    { group: 'web', body: 'none', args: 'have|apply', choices: ['have', 'apply'], oneOf: ['have', 'apply'], readsByArg: { apply: ['actions'] }, writesByArg: { have: ['recent'], apply: ['page'] }, doc: 'Apply recent remote site changes.', example: 'DELTA have' },
   SOURCE:   { group: 'data', body: 'optional', args: 'topic', choices: ['marker', 'aspect', 'assets'], argRequired: true, writesArg: true, doc: 'Read a data source from the lineup.', example: 'SOURCE marker' },
   FILE:     { group: 'data', body: 'required', args: 'suffix', choices: ['tsv', 'txt', 'csv', 'json'], argRequired: true, reads: ['assets'], bodyWritesSuffix: true, doc: 'User selects one of the available files.', example: 'FILE tsv' },
   KWIC:     { group: 'data', body: 'data', bodyLabel: 'link template with $K or $W', args: 'prefix', reads: ['tsv'], writes: ['items'], doc: 'Construct a Keyword-In-Context index.', example: 'KWIC' },
   SENSOR:   { group: 'data', body: 'optional', args: 'sensor name', argRequired: true, reads: ['page'], writes: ['temperature'], doc: 'Read sensor data from a named endpoint.', example: 'SENSOR garage' },
   CODE:     { group: 'data', body: 'data', bodyLabel: 'lines the function reads with api.body()', args: 'function args…', wild: true, doc: 'Run JavaScript from a Code item on this page.', example: 'CODE' },
-  HELLO:    { group: 'show', body: 'none', args: 'world', choices: ['world'], doc: 'Add a happy face each time run.', example: 'HELLO world' },
-  REPORT:   { group: 'show', body: 'none', args: 'state key', readsArg: 'temperature', doc: 'Report a measurement in place in the item.', example: 'REPORT' },
-  PREVIEW:  { group: 'show', body: 'none', args: 'map graph items page synopsis', choices: ['graph', 'map', 'items', 'page', 'synopsis items'], kinds: ['map', 'graph', 'items', 'page', 'synopsis'], readsByArg: { map: ['marker'], graph: ['aspect'], items: ['items'], page: ['page'] }, doc: 'Display computed state as a ghost page.', example: 'PREVIEW graph' },
-  POPUP:    { group: 'show', body: 'none', args: 'state|images', choices: ['state', 'images', 'images all'], oneOf: ['state', 'images'], readsByArg: { images: ['commons'] }, doc: 'Open a pop-up window with various contents.', example: 'POPUP state' },
-  SOLO:     { group: 'show', body: 'none', reads: ['aspect'], doc: 'Launch the Solo plugin pop-up viewer.', example: 'SOLO' },
-  PRINT:    { group: 'show', body: 'none', args: 'outline|draft', choices: ['outline', 'draft'], oneOf: ['outline', 'draft'], reads: ['aspect', 'neighborhood'], writes: ['items'], doc: 'Compose a printable story and garden.', example: 'PRINT outline' },
-  DOWNLOAD: { group: 'show', body: 'none', args: 'file.txt|html|csv|tsv|json', argRequired: true, readsSuffix: true, doc: 'Download state as a file.', example: 'DOWNLOAD items.json' },
+  HELLO:    { shows: true, group: 'show', body: 'none', args: 'world', choices: ['world'], doc: 'Add a happy face each time run.', example: 'HELLO world' },
+  REPORT:   { shows: true, group: 'show', body: 'none', args: 'state key', readsArg: 'temperature', doc: 'Report a measurement in place in the item.', example: 'REPORT' },
+  PREVIEW:  { shows: true, group: 'show', body: 'none', args: 'map graph items page synopsis', choices: ['graph', 'map', 'items', 'page', 'synopsis items'], kinds: ['map', 'graph', 'items', 'page', 'synopsis'], readsByArg: { map: ['marker'], graph: ['aspect'], items: ['items'], page: ['page'] }, doc: 'Display computed state as a ghost page.', example: 'PREVIEW graph' },
+  POPUP:    { shows: true, group: 'show', body: 'none', args: 'state|images', choices: ['state', 'images', 'images all'], oneOf: ['state', 'images'], readsByArg: { images: ['commons'] }, doc: 'Open a pop-up window with various contents.', example: 'POPUP state' },
+  SOLO:     { shows: true, group: 'show', body: 'none', reads: ['aspect'], doc: 'Launch the Solo plugin pop-up viewer.', example: 'SOLO' },
+  PRINT:    { shows: true, group: 'show', body: 'none', args: 'outline|draft', choices: ['outline', 'draft'], oneOf: ['outline', 'draft'], reads: ['aspect', 'neighborhood'], writes: ['items'], doc: 'Compose a printable story and garden.', example: 'PRINT outline' },
+  DOWNLOAD: { shows: true, group: 'show', body: 'none', args: 'file.txt|html|csv|tsv|json', argRequired: true, readsSuffix: true, doc: 'Download state as a file.', example: 'DOWNLOAD items.json' },
   GET:      { group: 'server', body: 'server', args: 'state keys to share, or site', writes: ['result'], requiredBody: true, doc: 'Await a result from the server.', example: 'GET' },
   PLUGIN:   { group: 'server', body: 'plugin', args: 'plugin name', argRequired: true, writes: ['result'], requiredBody: true, doc: 'Await a result from an installed plugin.', example: 'PLUGIN coauthor' },
   LISTEN:   { group: 'talk', body: 'none', args: 'topic', argRequired: true, doc: 'Wait for a specific message.', example: 'LISTEN hello' },
@@ -298,8 +327,21 @@ function removeBlock(lines, i) {
   return [...lines.slice(0, i), ...lines.slice(end + 1)];
 }
 
+// An empty text area parses as one blank line; treat that as no lines at all.
+const isEmpty = lines => lines.length == 1 && lines[0].ind == 0 && lines[0].cmd == '';
+
 function insertNew(lines, cmd, target) {
+  if (isEmpty(lines)) return [{ ind: 0, cmd }];
   return insertChunk(lines, [{ ind: 0, cmd }], placeOf(lines, target));
+}
+
+// Where the dragged or new block's own first line ends up after a drop.
+function landedAt(lines, source, target) {
+  if (!('i' in source) && isEmpty(lines)) return 0;
+  const place = placeOf(lines, target);
+  if (!('i' in source)) return place.at;
+  const end = subtreeEnd(lines, source.i);
+  return place.at > end ? place.at - (end - source.i + 1) : place.at;
 }
 
 function readsOf(cat, args) {
@@ -341,7 +383,9 @@ function analyze(lines) {
   const linesIn = arr => arr.flatMap(el => Array.isArray(el) ? linesIn(el) : [el.i]);
   const mark = (arr, role) => { for (const i of linesIn(arr)) info[i].role = role; };
 
-  function walk(scope, env, mode, plugin) {
+  // started: this scope sits directly inside CLICK or TICK, so a person began it.
+  // Ward passes that "initiator" one level down only (run(body, state, 'click')).
+  function walk(scope, env, mode, plugin, started) {
     for (let k = 0; k < scope.length; k++) {
       const el = scope[k];
       if (Array.isArray(el)) {
@@ -350,11 +394,11 @@ function analyze(lines) {
         continue;
       }
       const body = Array.isArray(scope[k + 1]) ? scope[++k] : null;
-      line(el.i, body, env, mode, plugin);
+      line(el.i, body, env, mode, plugin, started);
     }
   }
 
-  function line(i, body, env, mode, plugin) {
+  function line(i, body, env, mode, plugin, started) {
     const cmd = lines[i].cmd;
     const { op, args } = words(cmd);
     const r = info[i];
@@ -386,6 +430,7 @@ function analyze(lines) {
     if (cat.walk && !cmd.match(WAYS) && cmd != 'WALK') note(i, 'trouble', `WALK can't understand rest of this block.`);
     if (cat.kinds) for (const a of args) if (a && !cat.kinds.includes(a)) note(i, 'trouble', `"${a}" doesn't name an item we can preview.`);
     if (op == 'DOWNLOAD' && args[0] && !args[0].match(/^.+\.(txt|html|csv|tsv|json)$/)) note(i, 'trouble', 'DOWNLOAD expects a familiar suffix, one of txt, html, csv, tsv, or json.');
+    if (op == 'CODE' && mode == 'client' && !started) note(i, 'start', 'CODE here runs only for the page owner. Put it directly inside CLICK or TICK so anyone can run it.');
 
     for (const key of readsOf(cat, args)) {
       if (env.keys.has(key)) r.needs.push({ key, status: 'ok' });
@@ -404,8 +449,9 @@ function analyze(lines) {
       }
     }
 
-    const makes = writesOf(cat, args);
-    r.makes = makes.slice();
+    // A block short of what it needs stops early, as Ward's blocks do, and makes nothing.
+    const makes = r.needs.some(n => n.status == 'missing') ? [] : writesOf(cat, args);
+    r.makes = writesOf(cat, args);
     if (cat.bodyWrites) r.makes.push(...cat.bodyWrites);
     if (cat.bodyWritesSuffix && args[0]) r.makes.push(args[0]);
     if (!cat.requiredBody) for (const k of makes) env.keys.add(k);
@@ -413,7 +459,7 @@ function analyze(lines) {
 
     const needsBody = cat.body == 'required' || cat.requiredBody;
     if (!body) {
-      if (needsBody) note(i, 'trouble', `${op} expects indented blocks to follow.`);
+      if (needsBody) note(i, 'empty', `${op} expects indented blocks to follow.`);
       if (cat.requiredBody) for (const k of makes) env.keys.add(k);
       return;
     }
@@ -449,17 +495,17 @@ function analyze(lines) {
       const inner = { keys: new Set(env.keys), wild: env.wild };
       for (const k of cat.bodyWrites || []) inner.keys.add(k);
       if (cat.bodyWritesSuffix && args[0]) inner.keys.add(args[0]);
-      walk(body, inner, mode);
+      walk(body, inner, mode, plugin, !!cat.hat);
       // FILE runs its body on a copy of state (Object.assign(prop, state)), so nothing comes back out
       if (cat.bodyWritesSuffix) return;
       for (const k of inner.keys) if (!(cat.bodyWrites || []).includes(k)) env.keys.add(k);
       env.wild = env.wild || inner.wild;
     } else {
-      walk(body, env, mode);
+      walk(body, env, mode, plugin, !!cat.hat);
     }
   }
 
-  walk(nest(lines), { keys: new Set(), wild: false }, 'client');
+  walk(nest(lines), { keys: new Set(), wild: false }, 'client', null, false);
   return info;
 }
 
@@ -470,6 +516,85 @@ function catalogJSON() {
                           server: Object.fromEntries(Object.entries(SERVER).map(([k, c]) => [k, strip(c)])) }, null, 2);
 }
 
+// What passes between blocks, in a few families, each with one icon.
+const FAMILIES = {
+  sites:   { icon: '🏘', label: 'sites and pages', color: '#1d4ed8', keys: ['neighborhood', 'page', 'info'] },
+  graph:   { icon: '🔗', label: 'graphs', color: '#15803d', keys: ['aspect', 'marker'] },
+  list:    { icon: '☰', label: 'lists of items', color: '#c2410c', keys: ['items'] },
+  file:    { icon: '📄', label: 'files and text', color: '#0f766e', keys: ['assets', 'tsv', 'txt', 'csv', 'html', 'json'] },
+  reading: { icon: '🌡', label: 'readings and counts', color: '#b45309', keys: ['temperature', 'tick'] },
+  server:  { icon: '🖥', label: 'from the server', color: '#7c3aed', keys: ['result', 'commons', 'recent', 'actions'] },
+  drawing: { icon: '✏️', label: 'the turtle drawing', color: '#4b5563', keys: ['turtle'] },
+  other:   { icon: '◆', label: 'made by CODE', color: '#6b7280', keys: [] },
+};
+function familyOf(key) {
+  for (const [name, f] of Object.entries(FAMILIES)) if (f.keys.includes(key)) return name;
+  return key.startsWith('.') ? 'file' : 'other';
+}
+
+// Problems that stop blocks fitting together. "empty" (a mouth not yet filled)
+// and "start" (CODE only runs for the owner) are shown but never refuse a drop.
+const BLOCKING = new Set(['trouble', 'need', 'warn']);
+
+function problems(lines, info) {
+  const m = new Map();
+  info.forEach((f, i) => f.notes.forEach(n => {
+    if (!BLOCKING.has(n.level)) return;
+    const k = lines[i].cmd + '\u0000' + n.msg;
+    m.set(k, (m.get(k) || 0) + 1);
+  }));
+  return m;
+}
+
+// Does a change add any problem that was not there before? Lines are compared
+// by their text, so a block that moves keeps its own old problems.
+function fitCheck(lines, info, next) {
+  if (!next) return { ok: false, why: 'A block cannot go inside itself.' };
+  const before = problems(lines, info), after = problems(next, analyze(next));
+  for (const [k, n] of after) if (n > (before.get(k) || 0)) return { ok: false, why: k.split('\u0000')[1] };
+  return { ok: true, why: '' };
+}
+
+// Where the next block goes when nothing is being dragged: after the chosen
+// block, or into its mouth when the mouth is empty and wants filling.
+function cursorTarget(lines, info, selected) {
+  if (isEmpty(lines)) return { kind: 'end' };
+  let i = selected;
+  if (i == null || i >= lines.length) {
+    i = lines.length - 1;
+    while (i > 0 && !/\S/.test(lines[i].cmd)) i--;
+  }
+  const f = info[i];
+  const cat = f.role == 'block' ? CATALOG[f.op] : f.role == 'server' ? SERVER[f.op] : null;
+  const hasBody = i + 1 < lines.length && lines[i + 1].ind > lines[i].ind;
+  if (cat && !hasBody && (cat.body == 'required' || cat.requiredBody)) return { kind: 'into', i };
+  return { kind: 'after', i };
+}
+
+// The three lamps: put together right, can be started, and ends in a result.
+function lamps(lines, info) {
+  if (isEmpty(lines)) {
+    const off = { on: false, why: 'The script is empty.' };
+    return { fits: off, ready: off, result: off };
+  }
+  const first = levels => {
+    for (const f of info) for (const n of f.notes) if (levels.includes(n.level)) return n.msg;
+    return '';
+  };
+  const bad = first(['trouble', 'need', 'warn', 'empty']);
+  const start = first(['start']);
+  const shown = info.filter((f, i) => f.role == 'block' && CATALOG[f.op]?.shows);
+  const working = shown.filter(f => !f.notes.some(n => BLOCKING.has(n.level)));
+  let why = '';
+  if (!shown.length) why = 'Nothing shows a result yet. End with PREVIEW, REPORT, SOLO, POPUP, PRINT, DOWNLOAD, SHOW or HELLO.';
+  else if (!working.length) why = shown[0].notes.find(n => BLOCKING.has(n.level)).msg;
+  return {
+    fits: { on: !bad, why: bad },
+    ready: { on: !start, why: start },
+    result: { on: !!working.length, why },
+  };
+}
+
 /* ── end model ── */
 
 /* ── view ── */
@@ -478,19 +603,31 @@ const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&
 const corpus = JSON.parse(document.getElementById('corpus').textContent);
 let model = parse('');
 let facts = [];
+let selected = null;   // line index the blue line follows, or null for the end
+let cursor = { kind: 'end' };
 const undoStack = [];
+let beginner = true;
+try { beginner = localStorage.getItem('mechBlocks.beginner') !== 'off'; } catch {}
+$('#beginner').checked = beginner;
+$('#beginner').addEventListener('change', e => {
+  beginner = e.target.checked;
+  try { localStorage.setItem('mechBlocks.beginner', beginner ? 'on' : 'off'); } catch {}
+  render();
+});
 
-function setText(text, { fromTextarea = false } = {}) {
+function setText(text, { fromTextarea = false, keepSelection = false } = {}) {
   model = parse(text);
+  if (!keepSelection || (selected != null && selected >= model.length)) selected = null;
   if (!fromTextarea) $('#text').value = text;
   render();
 }
 
-function change(next) {
+function change(next, select) {
   if (!next) return;
   undoStack.push(serialize(model));
   if (undoStack.length > 200) undoStack.shift();
-  setText(serialize(next));
+  selected = select ?? null;
+  setText(serialize(next), { keepSelection: true });
 }
 
 function flash(msg) {
@@ -509,7 +646,7 @@ function buildPalette() {
     html.push(`<div style="--g:${GROUPS[g].color}"><div class="pgroup">${GROUPS[g].label}</div>`);
     for (const [op, c, srv] of list) {
       const rest = c.example.slice(op.length);
-      html.push(`<div class="ptile" data-new="${esc(c.example)}" title="${esc(c.doc + (srv ? ' Runs on the server, inside GET.' : ''))}"><b>${op}</b><span>${esc(rest)}</span>${srv ? ' <span>· in GET</span>' : ''}</div>`);
+      html.push(`<div class="ptile" data-op="${op}"${srv ? ' data-server="1"' : ''} data-new="${esc(c.example)}" title="${esc(c.doc + (srv ? ' Runs on the server, inside GET.' : ''))}"><b>${op}</b><span>${esc(rest)}</span>${srv ? ' <span>· in GET</span>' : ''}</div>`);
     }
     html.push('</div>');
   }
@@ -521,8 +658,63 @@ function render() {
   facts = analyze(model);
   const canvas = $('#canvas');
   const tree = nest(model);
-  canvas.innerHTML = scopeHTML(tree) + '<div class="endslot" data-end="1">Drop here to add at the end</div><div id="dropbar"></div>';
+  canvas.innerHTML = (isEmpty(model) ? '' : scopeHTML(tree)) +
+    '<div class="endslot" data-end="1">Drop here to add at the end</div><div id="dropbar"></div><div id="cursorbar"><span>next block goes here</span></div>';
+  if (selected != null) document.querySelector(`.tile[data-i="${selected}"]`)?.classList.add('selected');
+  cursor = cursorTarget(model, facts, selected);
+  placeBar($('#cursorbar'), cursor);
+  renderLamps();
+  renderPaletteFit();
   renderChecks();
+}
+
+function renderLamps() {
+  const L = lamps(model, facts);
+  const one = (k, label) => `<span class="lamp ${L[k].on ? 'on' : ''}" title="${esc(L[k].why)}"><b>●</b> ${label}</span>`;
+  $('#lamps').innerHTML = one('fits', 'Fits together') + one('ready', 'Ready to start') + one('result', 'Ends in a result');
+  $('#lampwhy').textContent = L.fits.why || L.ready.why || L.result.why;
+}
+
+function renderLegend() {
+  $('#legend').innerHTML = Object.values(FAMILIES).map(f => `<span style="color:${f.color}">${f.icon} ${f.label}</span>`).join('');
+}
+
+// Beginner mode: grey out every palette block that would not fit at the blue line.
+function renderPaletteFit() {
+  for (const t of document.querySelectorAll('.ptile')) {
+    if (!beginner) { t.classList.remove('nofit'); continue; }
+    const fit = paletteFit(t.dataset.new, !!t.dataset.server);
+    t.classList.toggle('nofit', !fit.ok);
+    t.dataset.why = fit.why;
+  }
+}
+
+// Put a bar at a drop place: above, below, or just inside a block.
+function placeBar(bar, t) {
+  const canvas = $('#canvas').getBoundingClientRect();
+  let rect, at = 'top', indent = 0;
+  if (t.kind == 'end') rect = document.querySelector('.endslot').getBoundingClientRect();
+  else if (t.kind == 'before') rect = document.querySelector(`[data-head="${t.i}"]`).closest('.tile').getBoundingClientRect();
+  else if (t.kind == 'after') { rect = document.querySelector(`.tile[data-i="${t.i}"]`).getBoundingClientRect(); at = 'bottom'; }
+  else { rect = document.querySelector(`[data-head="${t.i}"]`).getBoundingClientRect(); at = 'bottom'; indent = 18; }
+  bar.style.display = 'block';
+  bar.style.left = rect.left - canvas.left + indent + 'px';
+  bar.style.width = Math.max(60, rect.width - indent) + 'px';
+  bar.style.top = (at == 'top' ? rect.top : rect.bottom) - canvas.top - 3 + 'px';
+}
+
+// A server tile only fits where it lands inside GET; otherwise it is the ordinary block.
+function paletteFit(cmd, server) {
+  const next = insertNew(model, cmd, cursor);
+  if (server && analyze(next)[landedAt(model, { cmd }, cursor)].role != 'server') return { ok: false, why: 'Server blocks go inside GET.' };
+  return fitCheck(model, facts, next);
+}
+
+function insertAtCursor(cmd, server) {
+  const next = insertNew(model, cmd, cursor);
+  const fit = paletteFit(cmd, server);
+  if (beginner && !fit.ok) return flash("Doesn't fit at the blue line: " + fit.why);
+  change(next, landedAt(model, { cmd }, cursor));
 }
 
 function scopeHTML(scope) {
@@ -560,8 +752,11 @@ function tileHTML(i, body) {
   } else {
     head = `<span class="args" data-edit="all">${esc(cmd)}</span>`;
   }
-  for (const n of f.needs) head += `<span class="chip need ${n.status == 'ok' ? '' : n.status}" title="${n.status == 'maybe' ? 'may come from CODE above' : ''}">needs ${esc(n.key)}</span>`;
-  for (const m of f.makes) head += `<span class="chip make">makes ${esc(m)}</span>`;
+  const fam = k => FAMILIES[familyOf(k)];
+  for (const n of f.needs) head += `<span class="chip need ${n.status == 'ok' ? '' : n.status}" style="--f:${fam(n.key).color}" title="${n.status == 'maybe' ? 'may come from CODE above' : n.status == 'missing' ? 'nothing above makes this' : 'made by a block above'}">needs ${fam(n.key).icon} ${esc(n.key)}</span>`;
+  const stuck = f.needs.some(n => n.status == 'missing');
+  for (const m of f.makes) head += `<span class="chip make${stuck ? ' stuck' : ''}" style="--f:${fam(m).color}" title="${stuck ? 'Not made here: this block is missing what it needs' : ''}">makes ${fam(m).icon} ${esc(m)}</span>`;
+  if (cat?.shows && f.role == 'block' && !f.notes.some(n => BLOCKING.has(n.level))) head += `<span class="chip shows">⇒ shows a result</span>`;
   for (const n of f.notes) head += `<button class="trouble ${n.level == 'trouble' ? '' : 'warn'}" data-msg="${esc(n.msg)}" title="${esc(n.msg)}">✖︎</button>`;
   const title = cat ? cat.doc : f.role == 'plugin' ? 'Runs inside the plugin on the server.' : f.role == 'data' ? 'A line of data for the block above.' : '';
   const accepts = cat && cat.body != 'none';
@@ -644,7 +839,7 @@ document.addEventListener('pointerdown', e => {
   const ptile = e.target.closest('.ptile');
   const head = e.target.closest('.head');
   if (!ptile && !head) return;
-  drag = { x: e.clientX, y: e.clientY, started: false, source: ptile ? { cmd: ptile.dataset.new, el: ptile } : { i: +head.dataset.head, el: head.closest('.tile') }, editSpan: e.target.closest('.args') };
+  drag = { x: e.clientX, y: e.clientY, started: false, source: ptile ? { cmd: ptile.dataset.new, server: !!ptile.dataset.server, el: ptile } : { i: +head.dataset.head, el: head.closest('.tile') }, editSpan: e.target.closest('.args') };
 });
 
 document.addEventListener('pointermove', e => {
@@ -671,8 +866,10 @@ document.addEventListener('pointerup', e => {
   if (!drag) return;
   const d = drag; drag = null;
   if (!d.started) {
-    if (d.editSpan) startEdit(d.editSpan);
-    return;
+    if (d.editSpan) return startEdit(d.editSpan);
+    if (!('i' in d.source)) return insertAtCursor(d.source.cmd, d.source.server);   // tap a palette block
+    selected = selected === d.source.i ? null : d.source.i;      // tap a block: blue line after it
+    return render();
   }
   d.ghost.remove();
   document.body.style.cursor = '';
@@ -685,7 +882,18 @@ document.addEventListener('pointerup', e => {
     return render();
   }
   const next = result(d, t);
-  if (next) change(next); else render();
+  if (!next) return render();
+  const fit = fitCheck(model, facts, next);
+  if (beginner && !fit.ok) { flash("Didn't fit there: " + fit.why); return render(); }
+  change(next, landedAt(model, d.source, t));
+});
+
+// tap empty script space: the blue line goes back to the end
+$('#canvas').addEventListener('click', e => {
+  if (e.target.closest('.tile, button')) return;
+  if (selected == null) return;
+  selected = null;
+  render();
 });
 
 document.addEventListener('pointercancel', () => { if (drag?.ghost) drag.ghost.remove(); drag = null; render(); });
@@ -726,6 +934,8 @@ function targetAt(x, y) {
   return last ? { kind: 'after', i: +last.dataset.i } : tops.length ? { kind: 'before', i: +tops[0].dataset.i } : { kind: 'end' };
 }
 
+// Green bar: fits. Amber (normal mode) or red (beginner mode): it would add a
+// problem, and the hint says which. In beginner mode a red drop is refused.
 function showTarget(t, x, y) {
   const bar = $('#dropbar'), hint = $('#drophint');
   $('#palette').classList.toggle('trash-hot', t?.kind == 'trash');
@@ -733,25 +943,13 @@ function showTarget(t, x, y) {
   if (!t || t.kind == 'trash') return;
   const next = result(drag, t);
   if (!next) return;
-  const canvas = $('#canvas').getBoundingClientRect();
-  let rect, at = 'top', indent = 0;
-  if (t.kind == 'end') rect = document.querySelector('.endslot').getBoundingClientRect();
-  else if (t.kind == 'before') rect = document.querySelector(`[data-head="${t.i}"]`).closest('.tile').getBoundingClientRect();
-  else if (t.kind == 'after') { rect = document.querySelector(`.tile[data-i="${t.i}"]`).getBoundingClientRect(); at = 'bottom'; }
-  else { rect = document.querySelector(`[data-head="${t.i}"]`).getBoundingClientRect(); at = 'bottom'; indent = 18; }
-  bar.style.display = 'block';
-  bar.style.left = rect.left - canvas.left + indent + 'px';
-  bar.style.width = Math.max(60, rect.width - indent) + 'px';
-  bar.style.top = (at == 'top' ? rect.top : rect.bottom) - canvas.top - 3 + 'px';
-  // would the moved block be short of what it needs there?
-  const place = placeOf(model, t);
-  let head = place.at;
-  if ('i' in drag.source && place.at > subtreeEnd(model, drag.source.i)) head -= subtreeEnd(model, drag.source.i) - drag.source.i + 1;
-  const after = analyze(next)[head];
-  const needs = after ? after.notes.filter(n => n.level == 'need').map(n => n.msg) : [];
-  bar.classList.toggle('warn', needs.length > 0);
-  if (needs.length) {
-    hint.textContent = needs.join(' ');
+  placeBar(bar, t);
+  const fit = fitCheck(model, facts, next);
+  bar.classList.toggle('warn', !fit.ok && !beginner);
+  bar.classList.toggle('no', !fit.ok && beginner);
+  hint.classList.toggle('no', beginner);
+  if (!fit.ok) {
+    hint.textContent = (beginner ? "Won't fit here: " : '') + fit.why;
     hint.style.display = 'block';
     hint.style.left = x + 14 + 'px';
     hint.style.top = y + 30 + 'px';
@@ -771,8 +969,7 @@ canvasEl.addEventListener('drop', e => {
   const raw = (e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain') || '').split(/\s/)[0];
   const where = pageFromURL(raw);
   if (!where) return flash('That drop was not a wiki page link');
-  change(insertNew(model, 'FROM ' + where, { kind: 'end' }));
-  flash('Added FROM ' + where);
+  insertAtCursor('FROM ' + where);
 });
 
 function pageFromURL(raw) {
@@ -821,6 +1018,7 @@ sel.addEventListener('change', () => {
 });
 
 buildPalette();
+renderLegend();
 const start = corpus.findIndex(c => c.slug == 'testing-neighbor-mech');
 sel.value = String(start >= 0 ? start : 0);
 setText(corpus[+sel.value].text);

@@ -130,7 +130,7 @@ expectNote('GET nothere\n UPTIME', /GET expected "nothere" to name state or site
 // state shared into GET reaches server blocks
 expectClean('DELTA have\nGET recent\n DELTA');
 // CODE may write anything: needs after it are softened, not flagged
-expectClean('CODE\nWALK');
+expectClean('CLICK\n CODE\n WALK');
 // FILE's text is only for the blocks under it
 expectClean('SOURCE assets\nFILE tsv\n KWIC\n  [[$K]]');
 expectNote('SOURCE assets\nFILE tsv\n HELLO\nKWIC', /KWIC expects "tsv"/);
@@ -142,15 +142,60 @@ expectNote('SHOW', /SHOW expects "info"/);
 expectClean('SHOW welcome-visitors');
 // CODE may carry indented lines for its function to read
 expectClean('CLICK\n CODE greet world\n REPORT greeting');
-expectClean('CODE\n some words for api.body()');
+expectClean('CLICK\n CODE\n  some words for api.body()');
 // the two new handbook pages' scripts
 expectClean('CLICK\n NEIGHBORS\n CODE titles\n DOWNLOAD titles.txt');
+
+// CODE that a person did not start runs only for the owner (Ward passes "initiator" one level down)
+expectNote('CODE', /^1:start:/);
+expectNote('CLICK\n FROM a.b/c\n  CODE blocks', /^3:start:/);
+expectClean('TICK 3\n CODE');
+
+// 4b. Fitting together: a change may not add a problem that was not there.
+function fits(text, cmd, target) {
+  const lines = parse(text);
+  return fitCheck(lines, analyze(lines), insertNew(lines, cmd, target));
+}
+ok(fits('CLICK', 'NEIGHBORS', { kind: 'into', i: 0 }).ok, 'NEIGHBORS fits in an empty CLICK');
+ok(!fits('CLICK', 'WALK', { kind: 'into', i: 0 }).ok, 'WALK does not fit without a neighborhood');
+ok(/neighborhood/.test(fits('CLICK', 'WALK', { kind: 'into', i: 0 }).why), 'and it says why');
+ok(fits('CLICK\n NEIGHBORS', 'WALK 10 steps', { kind: 'after', i: 1 }).ok, 'WALK fits after NEIGHBORS');
+ok(!fits('NEIGHBORS', 'UPTIME', { kind: 'end' }).ok, 'a server block does not fit outside GET');
+ok(fits('GET', 'UPTIME', { kind: 'into', i: 0 }).ok, 'a server block fits inside GET');
+ok(fits('', 'CLICK', { kind: 'end' }).ok, 'CLICK fits in an empty script though its mouth is empty');
+ok(serialize(insertNew(parse(''), 'CLICK', { kind: 'end' })) === 'CLICK', 'inserting into an empty script leaves no blank line');
+ok(fits('NEIGHBORS fed.wiki\n Bad Title', 'HELLO', { kind: 'end' }).ok, 'an old problem elsewhere does not block a good drop');
+{
+  const lines = parse('NEIGHBORS\nWALK');
+  ok(!fitCheck(lines, analyze(lines), moveBlock(lines, 0, { kind: 'after', i: 1 })).ok, 'moving NEIGHBORS below WALK breaks WALK');
+  ok(fitCheck(lines, analyze(lines), moveBlock(lines, 1, { kind: 'after', i: 0 })).ok, 'a move that changes nothing fits');
+}
+
+// 4c. Where the next block goes.
+function cur(text, sel) { const l = parse(text); return JSON.stringify(cursorTarget(l, analyze(l), sel)); }
+ok(cur('') === '{"kind":"end"}', 'empty script: at the end');
+ok(cur('CLICK') === '{"kind":"into","i":0}', 'an empty CLICK: into its mouth');
+ok(cur('CLICK\n NEIGHBORS') === '{"kind":"after","i":1}', 'otherwise after the last line');
+ok(cur('CLICK\n NEIGHBORS\nHELLO', 0) === '{"kind":"after","i":0}', 'after a chosen block');
+ok(cur('HELLO\n') === '{"kind":"after","i":0}', 'skips a trailing blank line');
+
+// 4d. The three lamps.
+function lamp(text) { const l = parse(text), x = lamps(l, analyze(l)); return [x.fits.on, x.ready.on, x.result.on].map(b => b ? 1 : 0).join(''); }
+ok(lamp('CLICK\n NEIGHBORS fed.wiki\n WALK 10 steps\n PREVIEW graph') === '111', 'all three on for a complete script');
+ok(lamp('NEIGHBORS\nWALK') === '110', 'no result block: result off');
+ok(lamp('CLICK') === '010', 'empty mouth: fits off');
+ok(lamp('CLICK\n FROM a.b/c\n  CODE x\n  REPORT') === '101', 'CODE under FROM: ready off');
+ok(lamp('SOLO') === '010', 'SOLO without an aspect: fits off, result off');
+ok(lamp('') === '000', 'empty script: all off');
+ok(lamp('CLICK\n WALK 10 steps\n NEIGHBORS\n PREVIEW graph') === '010', 'a block missing its need makes nothing, so nothing downstream shows');
 
 // 5. Every handbook script: the checks run without throwing, and every line gets a role.
 for (const c of corpus) {
   let f;
   try { f = analyze(parse(c.text)); } catch (e) { ok(false, `analyze ${c.slug}`, e.stack); continue; }
   ok(f.every(r => r.role), `roles ${c.slug}`);
+  const L = lamps(parse(c.text), f);
+  ok(['fits', 'ready', 'result'].every(k => typeof L[k].on == 'boolean'), `lamps ${c.slug}`);
 }
 
 // 6. The catalog covers every block Ward ships (blocks.js and server.js, a028b4b).

@@ -1,0 +1,1797 @@
+{
+  "mech-blocks-introduction": {
+    "title": "Mech Blocks Introduction",
+    "story": [
+      {
+        "type": "markdown",
+        "text": "Mech Blocks lets you build a small wiki program by snapping blocks together, the way children build programs in Scratch. It sits on top of Mech, which Ward Cunningham wrote so that a FedWiki page can carry a little program that runs when you read it.",
+        "id": "6df9ca50b17f32a9"
+      },
+      {
+        "type": "markdown",
+        "id": "d98609a20ab407f6",
+        "text": "*Marc Pierson and Claude Opus 5.5 · October 2026*",
+        "attribution": true
+      },
+      {
+        "type": "markdown",
+        "text": "This is an exploration. It changes nothing in Mech, nothing on any wiki, and nothing in the RCN tools people use now. It is one web page, `tools/mech-blocks.html`, that you open in a browser.",
+        "id": "44409e8a4eb540f0"
+      },
+      {
+        "type": "markdown",
+        "text": "## What Mech does",
+        "id": "9a4db0510d44247d"
+      },
+      {
+        "type": "markdown",
+        "text": "A Mech program is a few lines of capital words. Each line is a block that does one thing. A line indented under another line belongs to it. Ward's handbook at mech.fed.wiki has about sixty of them.",
+        "id": "90820061512cbcb2"
+      },
+      {
+        "type": "code",
+        "text": "CLICK\n NEIGHBORS fed.wiki\n WALK 10 steps\n PREVIEW graph",
+        "id": "2e4a38c2f4045c96"
+      },
+      {
+        "type": "markdown",
+        "text": "Read it top to bottom. CLICK puts a ▶ button on the page and waits. NEIGHBORS gathers the list of every page on the nearby wiki sites. WALK follows links through those pages ten steps at a time and keeps what it finds as small graphs. PREVIEW graph opens those graphs as a page you can look at.",
+        "id": "44c0f6432ccb8049"
+      },
+      {
+        "type": "markdown",
+        "text": "The blocks pass things to each other through a shared notebook that Mech calls \"state\". NEIGHBORS writes the neighborhood into it. WALK reads the neighborhood and writes graphs. PREVIEW reads the graphs. Put WALK before NEIGHBORS and WALK finds nothing to read.",
+        "id": "94fd976100fa0b31"
+      },
+      {
+        "type": "markdown",
+        "text": "## Why blocks",
+        "id": "07796bbe509d585a"
+      },
+      {
+        "type": "markdown",
+        "text": "Typing these lines is easy for Ward and hard for nearly everyone else. Spaces matter, the capital words have to be spelled exactly, and a mistake only shows up after you click ▶.",
+        "id": "8e08d72ac0484161"
+      },
+      {
+        "type": "markdown",
+        "text": "Mech Blocks keeps Ward's text exactly as it is and puts a second view beside it. You drag blocks instead of typing, and the text rewrites itself as you go. The text is still what FedWiki stores, so a script built from blocks runs anywhere Mech runs.",
+        "id": "0188fdb358b2d68d"
+      },
+      {
+        "type": "markdown",
+        "text": "## What you see",
+        "id": "bfe522941b49a57b"
+      },
+      {
+        "type": "markdown",
+        "text": "Every block says what it **needs** and what it **makes**, with a small picture and a word. WALK says \"needs 🏘 neighborhood\" and \"makes 🔗 aspect\". When the picture you need is made by a block above you, the block fits.",
+        "id": "4b08eb0e7f75614b"
+      },
+      {
+        "type": "markdown",
+        "text": "Three lamps above the script answer three plain questions:",
+        "id": "df6c13be38081b5b"
+      },
+      {
+        "type": "markdown",
+        "text": "- **Fits together**: does every block have what it needs?\n- **Ready to start**: can anyone start it, not just the page owner?\n- **Ends in a result**: will something show at the end?",
+        "id": "5ac5c148ad05a673"
+      },
+      {
+        "type": "markdown",
+        "text": "In **beginner mode**, blocks that cannot go at the blue \"next block goes here\" line are greyed out, and a block that would not fit cannot be dropped. The tool says why: \"WALK expects neighborhood, like from NEIGHBORS.\"",
+        "id": "cf2514a67c8adb85"
+      },
+      {
+        "type": "markdown",
+        "text": "## Try it in three minutes",
+        "id": "9cbc5de788dcccb9"
+      },
+      {
+        "type": "markdown",
+        "text": "1. Open `tools/mech-blocks.html`. Clear the text box on the right.\n2. Tap CLICK, then NEIGHBORS, then WALK, then PREVIEW in the block list on the left. Each one lands at the blue line.\n3. Watch the three lamps turn green, and the text on the right become the script above.\n4. Now drag WALK above NEIGHBORS. Beginner mode refuses and tells you why.\n5. Turn beginner mode off and try again. This time the drop goes through, the bar turns amber, and the lamps go out with the reason.",
+        "id": "21284ae05fc62bfb"
+      },
+      {
+        "type": "markdown",
+        "text": "## What it cannot promise",
+        "id": "a931b120ce5df2c4"
+      },
+      {
+        "type": "markdown",
+        "text": "Green lamps mean the script is put together right. They cannot promise a result, because some things only show up when it runs: a wiki site that does not answer, an empty neighborhood, a sensor that is off. Mech's own ✖︎ messages cover those.",
+        "id": "c875e3aebaf75dd2"
+      },
+      {
+        "type": "markdown",
+        "text": "Mech Blocks does not run Mech. To run a script, copy the text into a Mech item on a wiki page.",
+        "id": "b0e32db555eda428"
+      },
+      {
+        "type": "markdown",
+        "text": "## Where it came from",
+        "id": "6b0b2e2e73dab32a"
+      },
+      {
+        "type": "markdown",
+        "text": "Ward named three inspirations: Scratch, where blocks only fit where they belong; Snap!, where blocks pass data to each other; and Etoys, where you pull pieces from the things on the screen. Mech Blocks borrows one idea from each, and its checks use the trouble messages from Ward's own code, applied before running instead of after.",
+        "id": "8d44fbbea30606c4"
+      },
+      {
+        "type": "markdown",
+        "text": "The [[Mech Blocks Manual]] explains every part of the screen. The [[Mech Blocks Reference]] lists every block with what it needs and makes.",
+        "id": "6dc8ec132998ad62"
+      }
+    ],
+    "journal": [
+      {
+        "type": "create",
+        "item": {
+          "title": "Mech Blocks Introduction",
+          "story": []
+        },
+        "date": 1791140209185,
+        "author": "Marc Pierson with Claude Opus 5.5"
+      },
+      {
+        "type": "add",
+        "id": "6df9ca50b17f32a9",
+        "item": {
+          "type": "markdown",
+          "id": "6df9ca50b17f32a9",
+          "text": "Mech Blocks lets you build a small wiki program by snapping blocks together, the way children build programs in Scratch. It sits on top of Mech, which Ward Cunningham wrote so that a FedWiki page can carry a little program that runs when you read it."
+        },
+        "date": 1791140209186
+      },
+      {
+        "type": "add",
+        "id": "44409e8a4eb540f0",
+        "item": {
+          "type": "markdown",
+          "id": "44409e8a4eb540f0",
+          "text": "This is an exploration. It changes nothing in Mech, nothing on any wiki, and nothing in the RCN tools people use now. It is one web page, `tools/mech-blocks.html`, that you open in a browser."
+        },
+        "date": 1791140209187,
+        "after": "6df9ca50b17f32a9"
+      },
+      {
+        "type": "add",
+        "id": "9a4db0510d44247d",
+        "item": {
+          "type": "markdown",
+          "id": "9a4db0510d44247d",
+          "text": "## What Mech does"
+        },
+        "date": 1791140209188,
+        "after": "44409e8a4eb540f0"
+      },
+      {
+        "type": "add",
+        "id": "90820061512cbcb2",
+        "item": {
+          "type": "markdown",
+          "id": "90820061512cbcb2",
+          "text": "A Mech program is a few lines of capital words. Each line is a block that does one thing. A line indented under another line belongs to it. Ward's handbook at mech.fed.wiki has about sixty of them."
+        },
+        "date": 1791140209189,
+        "after": "9a4db0510d44247d"
+      },
+      {
+        "type": "add",
+        "id": "2e4a38c2f4045c96",
+        "item": {
+          "type": "code",
+          "id": "2e4a38c2f4045c96",
+          "text": "CLICK\n NEIGHBORS fed.wiki\n WALK 10 steps\n PREVIEW graph"
+        },
+        "date": 1791140209190,
+        "after": "90820061512cbcb2"
+      },
+      {
+        "type": "add",
+        "id": "44c0f6432ccb8049",
+        "item": {
+          "type": "markdown",
+          "id": "44c0f6432ccb8049",
+          "text": "Read it top to bottom. CLICK puts a ▶ button on the page and waits. NEIGHBORS gathers the list of every page on the nearby wiki sites. WALK follows links through those pages ten steps at a time and keeps what it finds as small graphs. PREVIEW graph opens those graphs as a page you can look at."
+        },
+        "date": 1791140209191,
+        "after": "2e4a38c2f4045c96"
+      },
+      {
+        "type": "add",
+        "id": "94fd976100fa0b31",
+        "item": {
+          "type": "markdown",
+          "id": "94fd976100fa0b31",
+          "text": "The blocks pass things to each other through a shared notebook that Mech calls \"state\". NEIGHBORS writes the neighborhood into it. WALK reads the neighborhood and writes graphs. PREVIEW reads the graphs. Put WALK before NEIGHBORS and WALK finds nothing to read."
+        },
+        "date": 1791140209192,
+        "after": "44c0f6432ccb8049"
+      },
+      {
+        "type": "add",
+        "id": "07796bbe509d585a",
+        "item": {
+          "type": "markdown",
+          "id": "07796bbe509d585a",
+          "text": "## Why blocks"
+        },
+        "date": 1791140209193,
+        "after": "94fd976100fa0b31"
+      },
+      {
+        "type": "add",
+        "id": "8e08d72ac0484161",
+        "item": {
+          "type": "markdown",
+          "id": "8e08d72ac0484161",
+          "text": "Typing these lines is easy for Ward and hard for nearly everyone else. Spaces matter, the capital words have to be spelled exactly, and a mistake only shows up after you click ▶."
+        },
+        "date": 1791140209194,
+        "after": "07796bbe509d585a"
+      },
+      {
+        "type": "add",
+        "id": "0188fdb358b2d68d",
+        "item": {
+          "type": "markdown",
+          "id": "0188fdb358b2d68d",
+          "text": "Mech Blocks keeps Ward's text exactly as it is and puts a second view beside it. You drag blocks instead of typing, and the text rewrites itself as you go. The text is still what FedWiki stores, so a script built from blocks runs anywhere Mech runs."
+        },
+        "date": 1791140209195,
+        "after": "8e08d72ac0484161"
+      },
+      {
+        "type": "add",
+        "id": "bfe522941b49a57b",
+        "item": {
+          "type": "markdown",
+          "id": "bfe522941b49a57b",
+          "text": "## What you see"
+        },
+        "date": 1791140209196,
+        "after": "0188fdb358b2d68d"
+      },
+      {
+        "type": "add",
+        "id": "4b08eb0e7f75614b",
+        "item": {
+          "type": "markdown",
+          "id": "4b08eb0e7f75614b",
+          "text": "Every block says what it **needs** and what it **makes**, with a small picture and a word. WALK says \"needs 🏘 neighborhood\" and \"makes 🔗 aspect\". When the picture you need is made by a block above you, the block fits."
+        },
+        "date": 1791140209197,
+        "after": "bfe522941b49a57b"
+      },
+      {
+        "type": "add",
+        "id": "df6c13be38081b5b",
+        "item": {
+          "type": "markdown",
+          "id": "df6c13be38081b5b",
+          "text": "Three lamps above the script answer three plain questions:"
+        },
+        "date": 1791140209198,
+        "after": "4b08eb0e7f75614b"
+      },
+      {
+        "type": "add",
+        "id": "5ac5c148ad05a673",
+        "item": {
+          "type": "markdown",
+          "id": "5ac5c148ad05a673",
+          "text": "- **Fits together**: does every block have what it needs?\n- **Ready to start**: can anyone start it, not just the page owner?\n- **Ends in a result**: will something show at the end?"
+        },
+        "date": 1791140209199,
+        "after": "df6c13be38081b5b"
+      },
+      {
+        "type": "add",
+        "id": "cf2514a67c8adb85",
+        "item": {
+          "type": "markdown",
+          "id": "cf2514a67c8adb85",
+          "text": "In **beginner mode**, blocks that cannot go at the blue \"next block goes here\" line are greyed out, and a block that would not fit cannot be dropped. The tool says why: \"WALK expects neighborhood, like from NEIGHBORS.\""
+        },
+        "date": 1791140209200,
+        "after": "5ac5c148ad05a673"
+      },
+      {
+        "type": "add",
+        "id": "9cbc5de788dcccb9",
+        "item": {
+          "type": "markdown",
+          "id": "9cbc5de788dcccb9",
+          "text": "## Try it in three minutes"
+        },
+        "date": 1791140209201,
+        "after": "cf2514a67c8adb85"
+      },
+      {
+        "type": "add",
+        "id": "21284ae05fc62bfb",
+        "item": {
+          "type": "markdown",
+          "id": "21284ae05fc62bfb",
+          "text": "1. Open `tools/mech-blocks.html`. Clear the text box on the right.\n2. Tap CLICK, then NEIGHBORS, then WALK, then PREVIEW in the block list on the left. Each one lands at the blue line.\n3. Watch the three lamps turn green, and the text on the right become the script above.\n4. Now drag WALK above NEIGHBORS. Beginner mode refuses and tells you why.\n5. Turn beginner mode off and try again. This time the drop goes through, the bar turns amber, and the lamps go out with the reason."
+        },
+        "date": 1791140209202,
+        "after": "9cbc5de788dcccb9"
+      },
+      {
+        "type": "add",
+        "id": "a931b120ce5df2c4",
+        "item": {
+          "type": "markdown",
+          "id": "a931b120ce5df2c4",
+          "text": "## What it cannot promise"
+        },
+        "date": 1791140209203,
+        "after": "21284ae05fc62bfb"
+      },
+      {
+        "type": "add",
+        "id": "c875e3aebaf75dd2",
+        "item": {
+          "type": "markdown",
+          "id": "c875e3aebaf75dd2",
+          "text": "Green lamps mean the script is put together right. They cannot promise a result, because some things only show up when it runs: a wiki site that does not answer, an empty neighborhood, a sensor that is off. Mech's own ✖︎ messages cover those."
+        },
+        "date": 1791140209204,
+        "after": "a931b120ce5df2c4"
+      },
+      {
+        "type": "add",
+        "id": "b0e32db555eda428",
+        "item": {
+          "type": "markdown",
+          "id": "b0e32db555eda428",
+          "text": "Mech Blocks does not run Mech. To run a script, copy the text into a Mech item on a wiki page."
+        },
+        "date": 1791140209205,
+        "after": "c875e3aebaf75dd2"
+      },
+      {
+        "type": "add",
+        "id": "6b0b2e2e73dab32a",
+        "item": {
+          "type": "markdown",
+          "id": "6b0b2e2e73dab32a",
+          "text": "## Where it came from"
+        },
+        "date": 1791140209206,
+        "after": "b0e32db555eda428"
+      },
+      {
+        "type": "add",
+        "id": "8d44fbbea30606c4",
+        "item": {
+          "type": "markdown",
+          "id": "8d44fbbea30606c4",
+          "text": "Ward named three inspirations: Scratch, where blocks only fit where they belong; Snap!, where blocks pass data to each other; and Etoys, where you pull pieces from the things on the screen. Mech Blocks borrows one idea from each, and its checks use the trouble messages from Ward's own code, applied before running instead of after."
+        },
+        "date": 1791140209207,
+        "after": "6b0b2e2e73dab32a"
+      },
+      {
+        "type": "add",
+        "id": "6dc8ec132998ad62",
+        "item": {
+          "type": "markdown",
+          "id": "6dc8ec132998ad62",
+          "text": "The [[Mech Blocks Manual]] explains every part of the screen. The [[Mech Blocks Reference]] lists every block with what it needs and makes."
+        },
+        "date": 1791140209208,
+        "after": "8d44fbbea30606c4"
+      },
+      {
+        "type": "add",
+        "id": "d98609a20ab407f6",
+        "item": {
+          "type": "markdown",
+          "id": "d98609a20ab407f6",
+          "text": "*Marc Pierson and Claude Opus 5.5 · October 2026*",
+          "attribution": true
+        },
+        "date": 1791140209244,
+        "after": "6df9ca50b17f32a9"
+      }
+    ]
+  },
+  "mech-blocks-manual": {
+    "title": "Mech Blocks Manual",
+    "story": [
+      {
+        "type": "markdown",
+        "text": "This manual covers every part of Mech Blocks. For what it is and why, read the [[Mech Blocks Introduction]] first. For every block and what it needs and makes, see the [[Mech Blocks Reference]].",
+        "id": "73fa86bd761f9322"
+      },
+      {
+        "type": "markdown",
+        "id": "18c44a58078b8a67",
+        "text": "*Marc Pierson and Claude Opus 5.5 · October 2026*",
+        "attribution": true
+      },
+      {
+        "type": "markdown",
+        "text": "## Opening it",
+        "id": "a2ccb43587d27f0f"
+      },
+      {
+        "type": "markdown",
+        "text": "Mech Blocks is one file, `tools/mech-blocks.html`. Open it in a web browser. It needs no server and no internet connection, and nothing you do in it reaches any wiki.",
+        "id": "c7cdb4e4dc2b0f24"
+      },
+      {
+        "type": "markdown",
+        "text": "It opens with one of Ward's handbook scripts already loaded, so there is something to look at.",
+        "id": "2fad753a1671728a"
+      },
+      {
+        "type": "markdown",
+        "text": "## The four parts of the screen",
+        "id": "34a9310a7a2a56fc"
+      },
+      {
+        "type": "markdown",
+        "text": "- **The bar along the top**: a menu of Ward's handbook scripts, the beginner mode switch, Undo, Copy Mech text, and Copy block catalog.\n- **Blocks**, on the left: every block, grouped by colour. Control is brown, Pages and neighbors blue, Data teal, Show results green, Server purple, Messages pink, Turtle drawing grey.\n- **Script**, in the middle: your program as blocks, with the three lamps above it.\n- **Mech text and Before you run it**, on the right: the same program as Ward's text, and a list of everything that can be seen to be wrong before it runs.",
+        "id": "598753506d6c84bc"
+      },
+      {
+        "type": "markdown",
+        "text": "On a narrow screen, such as a phone, the parts stack one above the other.",
+        "id": "bb98aba807e7f69e"
+      },
+      {
+        "type": "markdown",
+        "text": "## Building a script by tapping",
+        "id": "9a1f89a3551c8b1e"
+      },
+      {
+        "type": "markdown",
+        "text": "The dashed blue line in the script is labelled \"next block goes here\". Tap any block in the list on the left and it lands at that line.",
+        "id": "fad77f49200e8c24"
+      },
+      {
+        "type": "markdown",
+        "text": "The blue line follows the block you last added, so tapping CLICK, NEIGHBORS, WALK and PREVIEW in turn builds a four-line script. When a block has an empty space that must be filled, such as CLICK, the blue line goes inside it.",
+        "id": "87d70fa7d0cc3a56"
+      },
+      {
+        "type": "markdown",
+        "text": "To add somewhere else, tap a block's name in the script. The blue line moves to just after that block, and the block is outlined. Tap the name again, or tap empty space in the script, to send the blue line back to the end.",
+        "id": "a9afe4f81d462cca"
+      },
+      {
+        "type": "markdown",
+        "text": "## Building a script by dragging",
+        "id": "d9d8490be061ab0c"
+      },
+      {
+        "type": "markdown",
+        "text": "Drag a block from the list into the script. While you drag, a bar shows where it will land:",
+        "id": "1acc378ff40fe29c"
+      },
+      {
+        "type": "markdown",
+        "text": "- over the top half of a block, it lands above that block;\n- over the bottom half of a block's name, it lands below it, or inside it if the block has a space for other blocks;\n- over a dashed \"drop here\" space, it lands inside;\n- over the strip at the bottom of a block that holds others, it lands after the whole block;\n- over \"Drop here to add at the end\", it lands at the end.",
+        "id": "edcba1a50267b0b4"
+      },
+      {
+        "type": "markdown",
+        "text": "The bar is **green** when the block fits there. It is **amber** when it would add a problem, and the note beside your pointer says what. In beginner mode it is **red** instead, and letting go does nothing.",
+        "id": "0bc6a6c47386ba5a"
+      },
+      {
+        "type": "markdown",
+        "text": "To move a block already in the script, drag it by its name. Everything indented under it moves with it. A block cannot be dropped inside itself.",
+        "id": "a270301529d602d3"
+      },
+      {
+        "type": "markdown",
+        "text": "Dragging works with a mouse, a pen or a finger.",
+        "id": "820b1b065d440659"
+      },
+      {
+        "type": "markdown",
+        "text": "## Blocks that hold other blocks",
+        "id": "cc2db42df1b917fe"
+      },
+      {
+        "type": "markdown",
+        "text": "Some blocks are drawn as a C, with a space inside. CLICK, TICK, FROM, FILE, TOGETHER, GET and PLUGIN must have something inside, and an empty one shows a yellow \"Needs … drop here\" space. Others, such as SOURCE, SENSOR, UNTIL and SLEEP, may have something inside, and show a faint \"Optional\" space.",
+        "id": "119cda6b902731d1"
+      },
+      {
+        "type": "markdown",
+        "text": "A few blocks hold lines of data rather than blocks:",
+        "id": "58f3cd917bc92661"
+      },
+      {
+        "type": "markdown",
+        "text": "- NEIGHBORS can hold the titles of Site Survey pages, like Pattern Link Survey.\n- KWIC holds a link pattern containing $K or $W.\n- CODE can hold lines its function reads for itself.",
+        "id": "8c25e8314a7fcbc7"
+      },
+      {
+        "type": "markdown",
+        "text": "These lines are drawn with a dashed border.",
+        "id": "3f2bdcdbd132301a"
+      },
+      {
+        "type": "markdown",
+        "text": "GET holds blocks that run on the wiki server. The server blocks are at the bottom of the list, marked \"in GET\", and only fit inside GET. PLUGIN holds blocks that another plugin runs; Mech Blocks cannot check those.",
+        "id": "6482cfcd7e2654b4"
+      },
+      {
+        "type": "markdown",
+        "text": "## Changing the words after a block",
+        "id": "6204224e7bec49e5"
+      },
+      {
+        "type": "markdown",
+        "text": "Click the words after a block's name to change them, such as \"10 steps\" after WALK. Type, then press Enter to keep the change or Escape to cancel. Clicking elsewhere also keeps it.",
+        "id": "a0dae686560b65d0"
+      },
+      {
+        "type": "markdown",
+        "text": "When the words are grey and slanted, they are a hint about what belongs there. WALK, PREVIEW, POPUP, PRINT, DELTA, SOURCE, FILE and HELLO offer a list of choices as you type.",
+        "id": "22f31eab91423e73"
+      },
+      {
+        "type": "markdown",
+        "text": "A line that is not a block, such as a survey title, is edited as a whole line.",
+        "id": "bba430b6f45b1108"
+      },
+      {
+        "type": "markdown",
+        "text": "## Removing and undoing",
+        "id": "d8087edadeea2344"
+      },
+      {
+        "type": "markdown",
+        "text": "To remove a block, drag it back onto the list on the left. The list is outlined in red while a drop there would remove. Everything indented under the block goes with it.",
+        "id": "f8665ada31cc2a6a"
+      },
+      {
+        "type": "markdown",
+        "text": "Undo, or Cmd-Z (Ctrl-Z on Windows), steps back through the last 200 changes made with blocks. Changes typed into the text box have the text box's own undo.",
+        "id": "3e90533746fd0e91"
+      },
+      {
+        "type": "markdown",
+        "text": "## The Mech text",
+        "id": "b6db044f7c46bb77"
+      },
+      {
+        "type": "markdown",
+        "text": "The text box on the right is the program as Mech stores it. It changes with every drag and tap. You can also type into it; the blocks follow a moment after you stop.",
+        "id": "17a8e0e01e86af95"
+      },
+      {
+        "type": "markdown",
+        "text": "Nothing is lost going between the two. Text you did not change comes back exactly as it was, spaces and all, and the blocks are arranged exactly as Mech itself reads the indentation.",
+        "id": "ba93010aeda2f8e2"
+      },
+      {
+        "type": "markdown",
+        "text": "**Copy Mech text** puts the text on your clipboard.",
+        "id": "d4b6b0d8b254734e"
+      },
+      {
+        "type": "markdown",
+        "text": "## Needs and makes",
+        "id": "69e72e6592859a23"
+      },
+      {
+        "type": "markdown",
+        "text": "Each block carries small labels for what it needs and what it makes, each with a picture:",
+        "id": "ccd34cd1120661eb"
+      },
+      {
+        "type": "markdown",
+        "text": "**Picture:** 🏘 — **Family:** sites and pages — **What it covers:** neighborhood, page, info",
+        "id": "c9b54b5a406f8f8c"
+      },
+      {
+        "type": "markdown",
+        "text": "**Picture:** 🔗 — **Family:** graphs — **What it covers:** aspect, marker",
+        "id": "7b1bc321bc3814d8"
+      },
+      {
+        "type": "markdown",
+        "text": "**Picture:** ☰ — **Family:** lists of items — **What it covers:** items",
+        "id": "b36b436508235368"
+      },
+      {
+        "type": "markdown",
+        "text": "**Picture:** 📄 — **Family:** files and text — **What it covers:** assets, tsv, txt, csv, html, json",
+        "id": "c68baed782164afa"
+      },
+      {
+        "type": "markdown",
+        "text": "**Picture:** 🌡 — **Family:** readings and counts — **What it covers:** temperature, tick",
+        "id": "23933adea2f79b1d"
+      },
+      {
+        "type": "markdown",
+        "text": "**Picture:** 🖥 — **Family:** from the server — **What it covers:** result, commons, recent, actions",
+        "id": "8b324fcfd81f6f2a"
+      },
+      {
+        "type": "markdown",
+        "text": "**Picture:** ✏️ — **Family:** the turtle drawing — **What it covers:** turtle",
+        "id": "103bd43c125d5b3c"
+      },
+      {
+        "type": "markdown",
+        "text": "**Picture:** ◆ — **Family:** made by CODE — **What it covers:** anything else",
+        "id": "7bc6e206725a26e9"
+      },
+      {
+        "type": "markdown",
+        "text": "The labels change with their situation:",
+        "id": "d9756db7d5449d5a"
+      },
+      {
+        "type": "markdown",
+        "text": "- A **needs** label with a coloured outline means a block above makes it.\n- A **needs** label filled in amber means nothing above makes it. The block will stop with an error when it runs.\n- A **needs** label with a dashed outline means a CODE block above might make it. Mech Blocks cannot tell what someone's code does.\n- A **makes** label is filled with its family's colour. It is crossed out and grey when the block is missing something it needs, because a block that stops early makes nothing.\n- **⇒ shows a result** marks a block that will put something on the screen.",
+        "id": "670857fe94823712"
+      },
+      {
+        "type": "markdown",
+        "text": "## The three lamps",
+        "id": "3e77963d0f4d93dc"
+      },
+      {
+        "type": "markdown",
+        "text": "Above the script are three lamps. A lamp is green when its answer is yes. When one is grey, the reason is written under the lamps.",
+        "id": "5d9fa5d052c9d250"
+      },
+      {
+        "type": "markdown",
+        "text": "- **Fits together**: every block has what it needs, every space that must be filled is filled, the words after each block make sense, and no lines are left where they can never run.\n- **Ready to start**: anyone reading the page can start it. The one thing that turns this off is a CODE block that is not directly inside CLICK or TICK. Such a CODE runs only for the page's owner, because code travels with copied pages and Mech will not run a stranger's code until a person asks it to.\n- **Ends in a result**: the script reaches a block that shows something (PREVIEW, REPORT, SOLO, POPUP, PRINT, DOWNLOAD, SHOW or HELLO), and that block has what it needs.",
+        "id": "db0032b906e67a31"
+      },
+      {
+        "type": "markdown",
+        "text": "All three green means the script is put together right. It does not promise a result when it runs: a site may not answer, a neighborhood may be empty, a sensor may be off. Mech reports those itself, with its ✖︎.",
+        "id": "ebea9a15030dcfd5"
+      },
+      {
+        "type": "markdown",
+        "text": "## Beginner mode",
+        "id": "f2f61bc91798660c"
+      },
+      {
+        "type": "markdown",
+        "text": "Beginner mode is the switch in the top bar. It starts on, and the browser remembers your choice.",
+        "id": "63f5d98613337a00"
+      },
+      {
+        "type": "markdown",
+        "text": "In beginner mode:",
+        "id": "198bcd19987bd74e"
+      },
+      {
+        "type": "markdown",
+        "text": "- Blocks in the list that cannot go at the blue line are greyed out. Server blocks are greyed everywhere except inside GET.\n- Tapping a greyed block does nothing, and the top bar says why.\n- A drop that would add any problem is refused, with the reason. This counts problems for every block, not only the one you move: moving NEIGHBORS below WALK is refused because it leaves WALK without a neighborhood.\n- Problems that were already there do not block other drops. You can keep building while an old mistake waits to be fixed.\n- An empty space that still needs filling does not block a drop, so you can place CLICK and then fill it.",
+        "id": "aa595359f12179e2"
+      },
+      {
+        "type": "markdown",
+        "text": "With beginner mode off, every drop goes through. The bar turns amber, the lamps go out, and the reasons are listed, but nothing is refused. This suits someone who knows Mech and wants to rearrange freely.",
+        "id": "abc2d23f9541e827"
+      },
+      {
+        "type": "markdown",
+        "text": "## Before you run it",
+        "id": "6fa5a246be0a041c"
+      },
+      {
+        "type": "markdown",
+        "text": "The list on the right shows every problem that can be seen before running, by line number, in the words Ward's own blocks use. Click a line in the list to scroll to its block, which flashes.",
+        "id": "a7197c995176de98"
+      },
+      {
+        "type": "markdown",
+        "text": "Each block with a problem also has a small ✖︎ button. Click it to read the message under the block, as in Mech itself. Red is something wrong. Amber is something missing or something that will never run.",
+        "id": "50e1580438e5c27b"
+      },
+      {
+        "type": "markdown",
+        "text": "## Lines that are not blocks",
+        "id": "a9019fe79892077b"
+      },
+      {
+        "type": "markdown",
+        "text": "- A **blank line** is drawn as a faint \"blank line\" tile. Mech ignores it, but lines indented under it never run.\n- A line that starts with a capital word Mech does not know is drawn red: \"CLACK doesn't name a block we know.\"\n- A line that does not start with a capital word is drawn red: \"Expected line to begin with all-caps keyword.\"\n- Lines indented under nothing are drawn inside a red dashed box marked \"never runs\".\n- Lines indented under a block that does not use them are drawn faded.",
+        "id": "0aba7e6f6fd1e072"
+      },
+      {
+        "type": "markdown",
+        "text": "These match what Mech does with the same text.",
+        "id": "a8e7d91d4e4637a0"
+      },
+      {
+        "type": "markdown",
+        "text": "## Ward's handbook scripts",
+        "id": "635323500ab6c5fe"
+      },
+      {
+        "type": "markdown",
+        "text": "The **Handbook script** menu holds all 61 Mech scripts from mech.fed.wiki, as they were in October 2026. Choosing one replaces the script; Undo brings yours back. Several are Ward's tests and are meant to show errors.",
+        "id": "cd66225cb9974df1"
+      },
+      {
+        "type": "markdown",
+        "text": "## Dropping a wiki page link",
+        "id": "c4e85a943fe11e43"
+      },
+      {
+        "type": "markdown",
+        "text": "Drop a link to a wiki page onto the script, for example from a browser's address bar. Mech Blocks adds `FROM site/slug` at the blue line, ready to hold the blocks that use that page. This has not yet been tried with links dragged from a FedWiki page itself.",
+        "id": "aebbe2556b74433b"
+      },
+      {
+        "type": "markdown",
+        "text": "## Copy block catalog",
+        "id": "56356c700bd34a38"
+      },
+      {
+        "type": "markdown",
+        "text": "**Copy block catalog** copies the list Mech Blocks uses: every block, what it needs, what it makes and what it may hold, as JSON. It was built by reading Ward's code. It is offered to Ward as a list Mech could carry itself, so that tools like this one would not have to work it out.",
+        "id": "4c0c3e84636c5a72"
+      },
+      {
+        "type": "markdown",
+        "text": "## Running a script",
+        "id": "5c5938b60dae9818"
+      },
+      {
+        "type": "markdown",
+        "text": "Mech Blocks does not run scripts. To run one:",
+        "id": "18fb920e7db1bb3e"
+      },
+      {
+        "type": "markdown",
+        "text": "1. Click **Copy Mech text**.\n2. On a FedWiki page, on a site where the Mech plugin is installed, add a Mech item, or double-click an existing one.\n3. Paste the text and click outside the item to save.\n4. Click ▶ on the page.",
+        "id": "7ad74ac8d4de51ed"
+      },
+      {
+        "type": "markdown",
+        "text": "## What it does not do",
+        "id": "2795401f9718fd79"
+      },
+      {
+        "type": "markdown",
+        "text": "- It does not run Mech, so it shows no live results.\n- It cannot check what CODE functions or PLUGIN blocks do.\n- It cannot know whether a site answers, a page exists or a neighborhood has pages, until the script runs.\n- It is not yet a FedWiki plugin. It is a standalone page for exploring the idea.",
+        "id": "c98807f371f94190"
+      },
+      {
+        "type": "markdown",
+        "text": "## For developers",
+        "id": "89d9e58061e0de77"
+      },
+      {
+        "type": "markdown",
+        "text": "The checks and the text conversion are plain functions inside the page. `node tools/test-mech-blocks.js` runs more than 5,500 checks against them. They cover every handbook script coming back byte for byte, nesting exactly as Ward's interpreter does, over 1,400 block moves, the fit rule, the blue line and the lamps.",
+        "id": "e437c7a138611f5d"
+      }
+    ],
+    "journal": [
+      {
+        "type": "create",
+        "item": {
+          "title": "Mech Blocks Manual",
+          "story": []
+        },
+        "date": 1791140209186,
+        "author": "Marc Pierson with Claude Opus 5.5"
+      },
+      {
+        "type": "add",
+        "id": "73fa86bd761f9322",
+        "item": {
+          "type": "markdown",
+          "id": "73fa86bd761f9322",
+          "text": "This manual covers every part of Mech Blocks. For what it is and why, read the [[Mech Blocks Introduction]] first. For every block and what it needs and makes, see the [[Mech Blocks Reference]]."
+        },
+        "date": 1791140209187
+      },
+      {
+        "type": "add",
+        "id": "a2ccb43587d27f0f",
+        "item": {
+          "type": "markdown",
+          "id": "a2ccb43587d27f0f",
+          "text": "## Opening it"
+        },
+        "date": 1791140209188,
+        "after": "73fa86bd761f9322"
+      },
+      {
+        "type": "add",
+        "id": "c7cdb4e4dc2b0f24",
+        "item": {
+          "type": "markdown",
+          "id": "c7cdb4e4dc2b0f24",
+          "text": "Mech Blocks is one file, `tools/mech-blocks.html`. Open it in a web browser. It needs no server and no internet connection, and nothing you do in it reaches any wiki."
+        },
+        "date": 1791140209189,
+        "after": "a2ccb43587d27f0f"
+      },
+      {
+        "type": "add",
+        "id": "2fad753a1671728a",
+        "item": {
+          "type": "markdown",
+          "id": "2fad753a1671728a",
+          "text": "It opens with one of Ward's handbook scripts already loaded, so there is something to look at."
+        },
+        "date": 1791140209190,
+        "after": "c7cdb4e4dc2b0f24"
+      },
+      {
+        "type": "add",
+        "id": "34a9310a7a2a56fc",
+        "item": {
+          "type": "markdown",
+          "id": "34a9310a7a2a56fc",
+          "text": "## The four parts of the screen"
+        },
+        "date": 1791140209191,
+        "after": "2fad753a1671728a"
+      },
+      {
+        "type": "add",
+        "id": "598753506d6c84bc",
+        "item": {
+          "type": "markdown",
+          "id": "598753506d6c84bc",
+          "text": "- **The bar along the top**: a menu of Ward's handbook scripts, the beginner mode switch, Undo, Copy Mech text, and Copy block catalog.\n- **Blocks**, on the left: every block, grouped by colour. Control is brown, Pages and neighbors blue, Data teal, Show results green, Server purple, Messages pink, Turtle drawing grey.\n- **Script**, in the middle: your program as blocks, with the three lamps above it.\n- **Mech text and Before you run it**, on the right: the same program as Ward's text, and a list of everything that can be seen to be wrong before it runs."
+        },
+        "date": 1791140209192,
+        "after": "34a9310a7a2a56fc"
+      },
+      {
+        "type": "add",
+        "id": "bb98aba807e7f69e",
+        "item": {
+          "type": "markdown",
+          "id": "bb98aba807e7f69e",
+          "text": "On a narrow screen, such as a phone, the parts stack one above the other."
+        },
+        "date": 1791140209193,
+        "after": "598753506d6c84bc"
+      },
+      {
+        "type": "add",
+        "id": "9a1f89a3551c8b1e",
+        "item": {
+          "type": "markdown",
+          "id": "9a1f89a3551c8b1e",
+          "text": "## Building a script by tapping"
+        },
+        "date": 1791140209194,
+        "after": "bb98aba807e7f69e"
+      },
+      {
+        "type": "add",
+        "id": "fad77f49200e8c24",
+        "item": {
+          "type": "markdown",
+          "id": "fad77f49200e8c24",
+          "text": "The dashed blue line in the script is labelled \"next block goes here\". Tap any block in the list on the left and it lands at that line."
+        },
+        "date": 1791140209195,
+        "after": "9a1f89a3551c8b1e"
+      },
+      {
+        "type": "add",
+        "id": "87d70fa7d0cc3a56",
+        "item": {
+          "type": "markdown",
+          "id": "87d70fa7d0cc3a56",
+          "text": "The blue line follows the block you last added, so tapping CLICK, NEIGHBORS, WALK and PREVIEW in turn builds a four-line script. When a block has an empty space that must be filled, such as CLICK, the blue line goes inside it."
+        },
+        "date": 1791140209196,
+        "after": "fad77f49200e8c24"
+      },
+      {
+        "type": "add",
+        "id": "a9afe4f81d462cca",
+        "item": {
+          "type": "markdown",
+          "id": "a9afe4f81d462cca",
+          "text": "To add somewhere else, tap a block's name in the script. The blue line moves to just after that block, and the block is outlined. Tap the name again, or tap empty space in the script, to send the blue line back to the end."
+        },
+        "date": 1791140209197,
+        "after": "87d70fa7d0cc3a56"
+      },
+      {
+        "type": "add",
+        "id": "d9d8490be061ab0c",
+        "item": {
+          "type": "markdown",
+          "id": "d9d8490be061ab0c",
+          "text": "## Building a script by dragging"
+        },
+        "date": 1791140209198,
+        "after": "a9afe4f81d462cca"
+      },
+      {
+        "type": "add",
+        "id": "1acc378ff40fe29c",
+        "item": {
+          "type": "markdown",
+          "id": "1acc378ff40fe29c",
+          "text": "Drag a block from the list into the script. While you drag, a bar shows where it will land:"
+        },
+        "date": 1791140209199,
+        "after": "d9d8490be061ab0c"
+      },
+      {
+        "type": "add",
+        "id": "edcba1a50267b0b4",
+        "item": {
+          "type": "markdown",
+          "id": "edcba1a50267b0b4",
+          "text": "- over the top half of a block, it lands above that block;\n- over the bottom half of a block's name, it lands below it, or inside it if the block has a space for other blocks;\n- over a dashed \"drop here\" space, it lands inside;\n- over the strip at the bottom of a block that holds others, it lands after the whole block;\n- over \"Drop here to add at the end\", it lands at the end."
+        },
+        "date": 1791140209200,
+        "after": "1acc378ff40fe29c"
+      },
+      {
+        "type": "add",
+        "id": "0bc6a6c47386ba5a",
+        "item": {
+          "type": "markdown",
+          "id": "0bc6a6c47386ba5a",
+          "text": "The bar is **green** when the block fits there. It is **amber** when it would add a problem, and the note beside your pointer says what. In beginner mode it is **red** instead, and letting go does nothing."
+        },
+        "date": 1791140209201,
+        "after": "edcba1a50267b0b4"
+      },
+      {
+        "type": "add",
+        "id": "a270301529d602d3",
+        "item": {
+          "type": "markdown",
+          "id": "a270301529d602d3",
+          "text": "To move a block already in the script, drag it by its name. Everything indented under it moves with it. A block cannot be dropped inside itself."
+        },
+        "date": 1791140209202,
+        "after": "0bc6a6c47386ba5a"
+      },
+      {
+        "type": "add",
+        "id": "820b1b065d440659",
+        "item": {
+          "type": "markdown",
+          "id": "820b1b065d440659",
+          "text": "Dragging works with a mouse, a pen or a finger."
+        },
+        "date": 1791140209203,
+        "after": "a270301529d602d3"
+      },
+      {
+        "type": "add",
+        "id": "cc2db42df1b917fe",
+        "item": {
+          "type": "markdown",
+          "id": "cc2db42df1b917fe",
+          "text": "## Blocks that hold other blocks"
+        },
+        "date": 1791140209204,
+        "after": "820b1b065d440659"
+      },
+      {
+        "type": "add",
+        "id": "119cda6b902731d1",
+        "item": {
+          "type": "markdown",
+          "id": "119cda6b902731d1",
+          "text": "Some blocks are drawn as a C, with a space inside. CLICK, TICK, FROM, FILE, TOGETHER, GET and PLUGIN must have something inside, and an empty one shows a yellow \"Needs … drop here\" space. Others, such as SOURCE, SENSOR, UNTIL and SLEEP, may have something inside, and show a faint \"Optional\" space."
+        },
+        "date": 1791140209205,
+        "after": "cc2db42df1b917fe"
+      },
+      {
+        "type": "add",
+        "id": "58f3cd917bc92661",
+        "item": {
+          "type": "markdown",
+          "id": "58f3cd917bc92661",
+          "text": "A few blocks hold lines of data rather than blocks:"
+        },
+        "date": 1791140209206,
+        "after": "119cda6b902731d1"
+      },
+      {
+        "type": "add",
+        "id": "8c25e8314a7fcbc7",
+        "item": {
+          "type": "markdown",
+          "id": "8c25e8314a7fcbc7",
+          "text": "- NEIGHBORS can hold the titles of Site Survey pages, like Pattern Link Survey.\n- KWIC holds a link pattern containing $K or $W.\n- CODE can hold lines its function reads for itself."
+        },
+        "date": 1791140209207,
+        "after": "58f3cd917bc92661"
+      },
+      {
+        "type": "add",
+        "id": "3f2bdcdbd132301a",
+        "item": {
+          "type": "markdown",
+          "id": "3f2bdcdbd132301a",
+          "text": "These lines are drawn with a dashed border."
+        },
+        "date": 1791140209208,
+        "after": "8c25e8314a7fcbc7"
+      },
+      {
+        "type": "add",
+        "id": "6482cfcd7e2654b4",
+        "item": {
+          "type": "markdown",
+          "id": "6482cfcd7e2654b4",
+          "text": "GET holds blocks that run on the wiki server. The server blocks are at the bottom of the list, marked \"in GET\", and only fit inside GET. PLUGIN holds blocks that another plugin runs; Mech Blocks cannot check those."
+        },
+        "date": 1791140209209,
+        "after": "3f2bdcdbd132301a"
+      },
+      {
+        "type": "add",
+        "id": "6204224e7bec49e5",
+        "item": {
+          "type": "markdown",
+          "id": "6204224e7bec49e5",
+          "text": "## Changing the words after a block"
+        },
+        "date": 1791140209210,
+        "after": "6482cfcd7e2654b4"
+      },
+      {
+        "type": "add",
+        "id": "a0dae686560b65d0",
+        "item": {
+          "type": "markdown",
+          "id": "a0dae686560b65d0",
+          "text": "Click the words after a block's name to change them, such as \"10 steps\" after WALK. Type, then press Enter to keep the change or Escape to cancel. Clicking elsewhere also keeps it."
+        },
+        "date": 1791140209211,
+        "after": "6204224e7bec49e5"
+      },
+      {
+        "type": "add",
+        "id": "22f31eab91423e73",
+        "item": {
+          "type": "markdown",
+          "id": "22f31eab91423e73",
+          "text": "When the words are grey and slanted, they are a hint about what belongs there. WALK, PREVIEW, POPUP, PRINT, DELTA, SOURCE, FILE and HELLO offer a list of choices as you type."
+        },
+        "date": 1791140209212,
+        "after": "a0dae686560b65d0"
+      },
+      {
+        "type": "add",
+        "id": "bba430b6f45b1108",
+        "item": {
+          "type": "markdown",
+          "id": "bba430b6f45b1108",
+          "text": "A line that is not a block, such as a survey title, is edited as a whole line."
+        },
+        "date": 1791140209213,
+        "after": "22f31eab91423e73"
+      },
+      {
+        "type": "add",
+        "id": "d8087edadeea2344",
+        "item": {
+          "type": "markdown",
+          "id": "d8087edadeea2344",
+          "text": "## Removing and undoing"
+        },
+        "date": 1791140209214,
+        "after": "bba430b6f45b1108"
+      },
+      {
+        "type": "add",
+        "id": "f8665ada31cc2a6a",
+        "item": {
+          "type": "markdown",
+          "id": "f8665ada31cc2a6a",
+          "text": "To remove a block, drag it back onto the list on the left. The list is outlined in red while a drop there would remove. Everything indented under the block goes with it."
+        },
+        "date": 1791140209215,
+        "after": "d8087edadeea2344"
+      },
+      {
+        "type": "add",
+        "id": "3e90533746fd0e91",
+        "item": {
+          "type": "markdown",
+          "id": "3e90533746fd0e91",
+          "text": "Undo, or Cmd-Z (Ctrl-Z on Windows), steps back through the last 200 changes made with blocks. Changes typed into the text box have the text box's own undo."
+        },
+        "date": 1791140209216,
+        "after": "f8665ada31cc2a6a"
+      },
+      {
+        "type": "add",
+        "id": "b6db044f7c46bb77",
+        "item": {
+          "type": "markdown",
+          "id": "b6db044f7c46bb77",
+          "text": "## The Mech text"
+        },
+        "date": 1791140209217,
+        "after": "3e90533746fd0e91"
+      },
+      {
+        "type": "add",
+        "id": "17a8e0e01e86af95",
+        "item": {
+          "type": "markdown",
+          "id": "17a8e0e01e86af95",
+          "text": "The text box on the right is the program as Mech stores it. It changes with every drag and tap. You can also type into it; the blocks follow a moment after you stop."
+        },
+        "date": 1791140209218,
+        "after": "b6db044f7c46bb77"
+      },
+      {
+        "type": "add",
+        "id": "ba93010aeda2f8e2",
+        "item": {
+          "type": "markdown",
+          "id": "ba93010aeda2f8e2",
+          "text": "Nothing is lost going between the two. Text you did not change comes back exactly as it was, spaces and all, and the blocks are arranged exactly as Mech itself reads the indentation."
+        },
+        "date": 1791140209219,
+        "after": "17a8e0e01e86af95"
+      },
+      {
+        "type": "add",
+        "id": "d4b6b0d8b254734e",
+        "item": {
+          "type": "markdown",
+          "id": "d4b6b0d8b254734e",
+          "text": "**Copy Mech text** puts the text on your clipboard."
+        },
+        "date": 1791140209220,
+        "after": "ba93010aeda2f8e2"
+      },
+      {
+        "type": "add",
+        "id": "69e72e6592859a23",
+        "item": {
+          "type": "markdown",
+          "id": "69e72e6592859a23",
+          "text": "## Needs and makes"
+        },
+        "date": 1791140209221,
+        "after": "d4b6b0d8b254734e"
+      },
+      {
+        "type": "add",
+        "id": "ccd34cd1120661eb",
+        "item": {
+          "type": "markdown",
+          "id": "ccd34cd1120661eb",
+          "text": "Each block carries small labels for what it needs and what it makes, each with a picture:"
+        },
+        "date": 1791140209222,
+        "after": "69e72e6592859a23"
+      },
+      {
+        "type": "add",
+        "id": "c9b54b5a406f8f8c",
+        "item": {
+          "type": "markdown",
+          "id": "c9b54b5a406f8f8c",
+          "text": "**Picture:** 🏘 — **Family:** sites and pages — **What it covers:** neighborhood, page, info"
+        },
+        "date": 1791140209223,
+        "after": "ccd34cd1120661eb"
+      },
+      {
+        "type": "add",
+        "id": "7b1bc321bc3814d8",
+        "item": {
+          "type": "markdown",
+          "id": "7b1bc321bc3814d8",
+          "text": "**Picture:** 🔗 — **Family:** graphs — **What it covers:** aspect, marker"
+        },
+        "date": 1791140209224,
+        "after": "c9b54b5a406f8f8c"
+      },
+      {
+        "type": "add",
+        "id": "b36b436508235368",
+        "item": {
+          "type": "markdown",
+          "id": "b36b436508235368",
+          "text": "**Picture:** ☰ — **Family:** lists of items — **What it covers:** items"
+        },
+        "date": 1791140209225,
+        "after": "7b1bc321bc3814d8"
+      },
+      {
+        "type": "add",
+        "id": "c68baed782164afa",
+        "item": {
+          "type": "markdown",
+          "id": "c68baed782164afa",
+          "text": "**Picture:** 📄 — **Family:** files and text — **What it covers:** assets, tsv, txt, csv, html, json"
+        },
+        "date": 1791140209226,
+        "after": "b36b436508235368"
+      },
+      {
+        "type": "add",
+        "id": "23933adea2f79b1d",
+        "item": {
+          "type": "markdown",
+          "id": "23933adea2f79b1d",
+          "text": "**Picture:** 🌡 — **Family:** readings and counts — **What it covers:** temperature, tick"
+        },
+        "date": 1791140209227,
+        "after": "c68baed782164afa"
+      },
+      {
+        "type": "add",
+        "id": "8b324fcfd81f6f2a",
+        "item": {
+          "type": "markdown",
+          "id": "8b324fcfd81f6f2a",
+          "text": "**Picture:** 🖥 — **Family:** from the server — **What it covers:** result, commons, recent, actions"
+        },
+        "date": 1791140209228,
+        "after": "23933adea2f79b1d"
+      },
+      {
+        "type": "add",
+        "id": "103bd43c125d5b3c",
+        "item": {
+          "type": "markdown",
+          "id": "103bd43c125d5b3c",
+          "text": "**Picture:** ✏️ — **Family:** the turtle drawing — **What it covers:** turtle"
+        },
+        "date": 1791140209229,
+        "after": "8b324fcfd81f6f2a"
+      },
+      {
+        "type": "add",
+        "id": "7bc6e206725a26e9",
+        "item": {
+          "type": "markdown",
+          "id": "7bc6e206725a26e9",
+          "text": "**Picture:** ◆ — **Family:** made by CODE — **What it covers:** anything else"
+        },
+        "date": 1791140209230,
+        "after": "103bd43c125d5b3c"
+      },
+      {
+        "type": "add",
+        "id": "d9756db7d5449d5a",
+        "item": {
+          "type": "markdown",
+          "id": "d9756db7d5449d5a",
+          "text": "The labels change with their situation:"
+        },
+        "date": 1791140209231,
+        "after": "7bc6e206725a26e9"
+      },
+      {
+        "type": "add",
+        "id": "670857fe94823712",
+        "item": {
+          "type": "markdown",
+          "id": "670857fe94823712",
+          "text": "- A **needs** label with a coloured outline means a block above makes it.\n- A **needs** label filled in amber means nothing above makes it. The block will stop with an error when it runs.\n- A **needs** label with a dashed outline means a CODE block above might make it. Mech Blocks cannot tell what someone's code does.\n- A **makes** label is filled with its family's colour. It is crossed out and grey when the block is missing something it needs, because a block that stops early makes nothing.\n- **⇒ shows a result** marks a block that will put something on the screen."
+        },
+        "date": 1791140209232,
+        "after": "d9756db7d5449d5a"
+      },
+      {
+        "type": "add",
+        "id": "3e77963d0f4d93dc",
+        "item": {
+          "type": "markdown",
+          "id": "3e77963d0f4d93dc",
+          "text": "## The three lamps"
+        },
+        "date": 1791140209233,
+        "after": "670857fe94823712"
+      },
+      {
+        "type": "add",
+        "id": "5d9fa5d052c9d250",
+        "item": {
+          "type": "markdown",
+          "id": "5d9fa5d052c9d250",
+          "text": "Above the script are three lamps. A lamp is green when its answer is yes. When one is grey, the reason is written under the lamps."
+        },
+        "date": 1791140209234,
+        "after": "3e77963d0f4d93dc"
+      },
+      {
+        "type": "add",
+        "id": "db0032b906e67a31",
+        "item": {
+          "type": "markdown",
+          "id": "db0032b906e67a31",
+          "text": "- **Fits together**: every block has what it needs, every space that must be filled is filled, the words after each block make sense, and no lines are left where they can never run.\n- **Ready to start**: anyone reading the page can start it. The one thing that turns this off is a CODE block that is not directly inside CLICK or TICK. Such a CODE runs only for the page's owner, because code travels with copied pages and Mech will not run a stranger's code until a person asks it to.\n- **Ends in a result**: the script reaches a block that shows something (PREVIEW, REPORT, SOLO, POPUP, PRINT, DOWNLOAD, SHOW or HELLO), and that block has what it needs."
+        },
+        "date": 1791140209235,
+        "after": "5d9fa5d052c9d250"
+      },
+      {
+        "type": "add",
+        "id": "ebea9a15030dcfd5",
+        "item": {
+          "type": "markdown",
+          "id": "ebea9a15030dcfd5",
+          "text": "All three green means the script is put together right. It does not promise a result when it runs: a site may not answer, a neighborhood may be empty, a sensor may be off. Mech reports those itself, with its ✖︎."
+        },
+        "date": 1791140209236,
+        "after": "db0032b906e67a31"
+      },
+      {
+        "type": "add",
+        "id": "f2f61bc91798660c",
+        "item": {
+          "type": "markdown",
+          "id": "f2f61bc91798660c",
+          "text": "## Beginner mode"
+        },
+        "date": 1791140209237,
+        "after": "ebea9a15030dcfd5"
+      },
+      {
+        "type": "add",
+        "id": "63f5d98613337a00",
+        "item": {
+          "type": "markdown",
+          "id": "63f5d98613337a00",
+          "text": "Beginner mode is the switch in the top bar. It starts on, and the browser remembers your choice."
+        },
+        "date": 1791140209238,
+        "after": "f2f61bc91798660c"
+      },
+      {
+        "type": "add",
+        "id": "198bcd19987bd74e",
+        "item": {
+          "type": "markdown",
+          "id": "198bcd19987bd74e",
+          "text": "In beginner mode:"
+        },
+        "date": 1791140209239,
+        "after": "63f5d98613337a00"
+      },
+      {
+        "type": "add",
+        "id": "aa595359f12179e2",
+        "item": {
+          "type": "markdown",
+          "id": "aa595359f12179e2",
+          "text": "- Blocks in the list that cannot go at the blue line are greyed out. Server blocks are greyed everywhere except inside GET.\n- Tapping a greyed block does nothing, and the top bar says why.\n- A drop that would add any problem is refused, with the reason. This counts problems for every block, not only the one you move: moving NEIGHBORS below WALK is refused because it leaves WALK without a neighborhood.\n- Problems that were already there do not block other drops. You can keep building while an old mistake waits to be fixed.\n- An empty space that still needs filling does not block a drop, so you can place CLICK and then fill it."
+        },
+        "date": 1791140209240,
+        "after": "198bcd19987bd74e"
+      },
+      {
+        "type": "add",
+        "id": "abc2d23f9541e827",
+        "item": {
+          "type": "markdown",
+          "id": "abc2d23f9541e827",
+          "text": "With beginner mode off, every drop goes through. The bar turns amber, the lamps go out, and the reasons are listed, but nothing is refused. This suits someone who knows Mech and wants to rearrange freely."
+        },
+        "date": 1791140209241,
+        "after": "aa595359f12179e2"
+      },
+      {
+        "type": "add",
+        "id": "6fa5a246be0a041c",
+        "item": {
+          "type": "markdown",
+          "id": "6fa5a246be0a041c",
+          "text": "## Before you run it"
+        },
+        "date": 1791140209242,
+        "after": "abc2d23f9541e827"
+      },
+      {
+        "type": "add",
+        "id": "a7197c995176de98",
+        "item": {
+          "type": "markdown",
+          "id": "a7197c995176de98",
+          "text": "The list on the right shows every problem that can be seen before running, by line number, in the words Ward's own blocks use. Click a line in the list to scroll to its block, which flashes."
+        },
+        "date": 1791140209243,
+        "after": "6fa5a246be0a041c"
+      },
+      {
+        "type": "add",
+        "id": "50e1580438e5c27b",
+        "item": {
+          "type": "markdown",
+          "id": "50e1580438e5c27b",
+          "text": "Each block with a problem also has a small ✖︎ button. Click it to read the message under the block, as in Mech itself. Red is something wrong. Amber is something missing or something that will never run."
+        },
+        "date": 1791140209244,
+        "after": "a7197c995176de98"
+      },
+      {
+        "type": "add",
+        "id": "a9019fe79892077b",
+        "item": {
+          "type": "markdown",
+          "id": "a9019fe79892077b",
+          "text": "## Lines that are not blocks"
+        },
+        "date": 1791140209245,
+        "after": "50e1580438e5c27b"
+      },
+      {
+        "type": "add",
+        "id": "0aba7e6f6fd1e072",
+        "item": {
+          "type": "markdown",
+          "id": "0aba7e6f6fd1e072",
+          "text": "- A **blank line** is drawn as a faint \"blank line\" tile. Mech ignores it, but lines indented under it never run.\n- A line that starts with a capital word Mech does not know is drawn red: \"CLACK doesn't name a block we know.\"\n- A line that does not start with a capital word is drawn red: \"Expected line to begin with all-caps keyword.\"\n- Lines indented under nothing are drawn inside a red dashed box marked \"never runs\".\n- Lines indented under a block that does not use them are drawn faded."
+        },
+        "date": 1791140209246,
+        "after": "a9019fe79892077b"
+      },
+      {
+        "type": "add",
+        "id": "a8e7d91d4e4637a0",
+        "item": {
+          "type": "markdown",
+          "id": "a8e7d91d4e4637a0",
+          "text": "These match what Mech does with the same text."
+        },
+        "date": 1791140209247,
+        "after": "0aba7e6f6fd1e072"
+      },
+      {
+        "type": "add",
+        "id": "635323500ab6c5fe",
+        "item": {
+          "type": "markdown",
+          "id": "635323500ab6c5fe",
+          "text": "## Ward's handbook scripts"
+        },
+        "date": 1791140209248,
+        "after": "a8e7d91d4e4637a0"
+      },
+      {
+        "type": "add",
+        "id": "cd66225cb9974df1",
+        "item": {
+          "type": "markdown",
+          "id": "cd66225cb9974df1",
+          "text": "The **Handbook script** menu holds all 61 Mech scripts from mech.fed.wiki, as they were in October 2026. Choosing one replaces the script; Undo brings yours back. Several are Ward's tests and are meant to show errors."
+        },
+        "date": 1791140209249,
+        "after": "635323500ab6c5fe"
+      },
+      {
+        "type": "add",
+        "id": "c4e85a943fe11e43",
+        "item": {
+          "type": "markdown",
+          "id": "c4e85a943fe11e43",
+          "text": "## Dropping a wiki page link"
+        },
+        "date": 1791140209250,
+        "after": "cd66225cb9974df1"
+      },
+      {
+        "type": "add",
+        "id": "aebbe2556b74433b",
+        "item": {
+          "type": "markdown",
+          "id": "aebbe2556b74433b",
+          "text": "Drop a link to a wiki page onto the script, for example from a browser's address bar. Mech Blocks adds `FROM site/slug` at the blue line, ready to hold the blocks that use that page. This has not yet been tried with links dragged from a FedWiki page itself."
+        },
+        "date": 1791140209251,
+        "after": "c4e85a943fe11e43"
+      },
+      {
+        "type": "add",
+        "id": "56356c700bd34a38",
+        "item": {
+          "type": "markdown",
+          "id": "56356c700bd34a38",
+          "text": "## Copy block catalog"
+        },
+        "date": 1791140209252,
+        "after": "aebbe2556b74433b"
+      },
+      {
+        "type": "add",
+        "id": "4c0c3e84636c5a72",
+        "item": {
+          "type": "markdown",
+          "id": "4c0c3e84636c5a72",
+          "text": "**Copy block catalog** copies the list Mech Blocks uses: every block, what it needs, what it makes and what it may hold, as JSON. It was built by reading Ward's code. It is offered to Ward as a list Mech could carry itself, so that tools like this one would not have to work it out."
+        },
+        "date": 1791140209253,
+        "after": "56356c700bd34a38"
+      },
+      {
+        "type": "add",
+        "id": "5c5938b60dae9818",
+        "item": {
+          "type": "markdown",
+          "id": "5c5938b60dae9818",
+          "text": "## Running a script"
+        },
+        "date": 1791140209254,
+        "after": "4c0c3e84636c5a72"
+      },
+      {
+        "type": "add",
+        "id": "18fb920e7db1bb3e",
+        "item": {
+          "type": "markdown",
+          "id": "18fb920e7db1bb3e",
+          "text": "Mech Blocks does not run scripts. To run one:"
+        },
+        "date": 1791140209255,
+        "after": "5c5938b60dae9818"
+      },
+      {
+        "type": "add",
+        "id": "7ad74ac8d4de51ed",
+        "item": {
+          "type": "markdown",
+          "id": "7ad74ac8d4de51ed",
+          "text": "1. Click **Copy Mech text**.\n2. On a FedWiki page, on a site where the Mech plugin is installed, add a Mech item, or double-click an existing one.\n3. Paste the text and click outside the item to save.\n4. Click ▶ on the page."
+        },
+        "date": 1791140209256,
+        "after": "18fb920e7db1bb3e"
+      },
+      {
+        "type": "add",
+        "id": "2795401f9718fd79",
+        "item": {
+          "type": "markdown",
+          "id": "2795401f9718fd79",
+          "text": "## What it does not do"
+        },
+        "date": 1791140209257,
+        "after": "7ad74ac8d4de51ed"
+      },
+      {
+        "type": "add",
+        "id": "c98807f371f94190",
+        "item": {
+          "type": "markdown",
+          "id": "c98807f371f94190",
+          "text": "- It does not run Mech, so it shows no live results.\n- It cannot check what CODE functions or PLUGIN blocks do.\n- It cannot know whether a site answers, a page exists or a neighborhood has pages, until the script runs.\n- It is not yet a FedWiki plugin. It is a standalone page for exploring the idea."
+        },
+        "date": 1791140209258,
+        "after": "2795401f9718fd79"
+      },
+      {
+        "type": "add",
+        "id": "89d9e58061e0de77",
+        "item": {
+          "type": "markdown",
+          "id": "89d9e58061e0de77",
+          "text": "## For developers"
+        },
+        "date": 1791140209259,
+        "after": "c98807f371f94190"
+      },
+      {
+        "type": "add",
+        "id": "e437c7a138611f5d",
+        "item": {
+          "type": "markdown",
+          "id": "e437c7a138611f5d",
+          "text": "The checks and the text conversion are plain functions inside the page. `node tools/test-mech-blocks.js` runs more than 5,500 checks against them. They cover every handbook script coming back byte for byte, nesting exactly as Ward's interpreter does, over 1,400 block moves, the fit rule, the blue line and the lamps."
+        },
+        "date": 1791140209260,
+        "after": "89d9e58061e0de77"
+      },
+      {
+        "type": "add",
+        "id": "18c44a58078b8a67",
+        "item": {
+          "type": "markdown",
+          "id": "18c44a58078b8a67",
+          "text": "*Marc Pierson and Claude Opus 5.5 · October 2026*",
+          "attribution": true
+        },
+        "date": 1791140209244,
+        "after": "73fa86bd761f9322"
+      }
+    ]
+  },
+  "mech-blocks-reference": {
+    "title": "Mech Blocks Reference",
+    "story": [
+      {
+        "type": "markdown",
+        "text": "Every block Mech knows, as Mech Blocks understands it from reading Ward Cunningham's code in October 2026. The descriptions follow Ward's [[Catalog of Mech Blocks]]. How to use the tool is in the [[Mech Blocks Manual]].",
+        "id": "58ec2542032c92db"
+      },
+      {
+        "type": "markdown",
+        "id": "7a6039a8dcddeb0b",
+        "text": "*Marc Pierson and Claude Opus 5.5 · October 2026*",
+        "attribution": true
+      },
+      {
+        "type": "markdown",
+        "text": "**Needs** is what a block reads from the shared state, which a block above it must make. **Makes** is what it writes there for blocks below. **Holds** is what may be indented under it.",
+        "id": "0c0e7a3c5ad50a17"
+      },
+      {
+        "type": "markdown",
+        "text": "## Blocks that run in the browser",
+        "id": "d6133ea7904276d6"
+      },
+      {
+        "type": "html",
+        "text": "<table>\n<tr><th>Block</th><th>What it does</th><th>Needs</th><th>Makes</th><th>Holds</th></tr>\n<tr><td>CLICK</td><td>Offer to proceed once user clicks.</td><td>—</td><td>—</td><td>blocks (must)</td></tr>\n<tr><td>TICK</td><td>Proceed repeatedly once user clicks.</td><td>—</td><td>🌡 tick, for the blocks inside</td><td>blocks (must)</td></tr>\n<tr><td>UNTIL</td><td>Stop TICKing once a word turns up.</td><td>🌡 tick; 🔗 aspect</td><td>—</td><td>blocks, if you like</td></tr>\n<tr><td>SLEEP</td><td>Suspend a sequence of blocks.</td><td>—</td><td>—</td><td>blocks, if you like</td></tr>\n<tr><td>TOGETHER</td><td>Start all blocks at once.</td><td>—</td><td>—</td><td>blocks (must)</td></tr>\n<tr><td>FROM</td><td>Fetch a page for the blocks indented below.</td><td>—</td><td>🏘 page</td><td>blocks (must)</td></tr>\n<tr><td>NEIGHBORS</td><td>Retrieve available neighborhood sitemaps.</td><td>—</td><td>🏘 neighborhood</td><td>lines of data</td></tr>\n<tr><td>WALK</td><td>Explore the neighborhood link graph.</td><td>🏘 neighborhood</td><td>🔗 aspect</td><td>nothing</td></tr>\n<tr><td>RANDOM</td><td>Select a random page from the neighbors.</td><td>🏘 neighborhood</td><td>🏘 info</td><td>nothing</td></tr>\n<tr><td>ROSTER</td><td>Make a Roster for the current neighborhood.</td><td>🏘 neighborhood</td><td>☰ items</td><td>nothing</td></tr>\n<tr><td>LINEUP</td><td>Make a page from the current lineup.</td><td>—</td><td>☰ items</td><td>nothing</td></tr>\n<tr><td>SHOW</td><td>Add an existing page to the lineup. Shows a result.</td><td>🏘 info when no page is named</td><td>—</td><td>nothing</td></tr>\n<tr><td>DELTA</td><td>Apply recent remote site changes.</td><td>🖥 actions for apply</td><td>🖥 recent for have; 🏘 page for apply</td><td>nothing</td></tr>\n<tr><td>SOURCE</td><td>Read a data source from the lineup.</td><td>—</td><td>the topic named, such as 🔗 marker</td><td>blocks, if you like</td></tr>\n<tr><td>FILE</td><td>User selects one of the available files.</td><td>📄 assets</td><td>📄 the file text, named by the suffix as typed, for the blocks inside</td><td>blocks (must)</td></tr>\n<tr><td>KWIC</td><td>Construct a Keyword-In-Context index.</td><td>📄 tsv</td><td>☰ items</td><td>lines of data</td></tr>\n<tr><td>SENSOR</td><td>Read sensor data from a named endpoint.</td><td>🏘 page</td><td>🌡 temperature</td><td>blocks, if you like</td></tr>\n<tr><td>CODE</td><td>Run JavaScript from a Code item on this page.</td><td>—</td><td>◆ whatever its function sets</td><td>lines of data</td></tr>\n<tr><td>HELLO</td><td>Add a happy face each time run. Shows a result.</td><td>—</td><td>—</td><td>nothing</td></tr>\n<tr><td>REPORT</td><td>Report a measurement in place in the item. Shows a result.</td><td>🌡 temperature, or the key named after REPORT</td><td>—</td><td>nothing</td></tr>\n<tr><td>PREVIEW</td><td>Display computed state as a ghost page. Shows a result.</td><td>🔗 marker for map; 🔗 aspect for graph; ☰ items for items; 🏘 page for page</td><td>—</td><td>nothing</td></tr>\n<tr><td>POPUP</td><td>Open a pop-up window with various contents. Shows a result.</td><td>🖥 commons for images</td><td>—</td><td>nothing</td></tr>\n<tr><td>SOLO</td><td>Launch the Solo plugin pop-up viewer. Shows a result.</td><td>🔗 aspect</td><td>—</td><td>nothing</td></tr>\n<tr><td>PRINT</td><td>Compose a printable story and garden. Shows a result.</td><td>🔗 aspect; 🏘 neighborhood</td><td>☰ items</td><td>nothing</td></tr>\n<tr><td>DOWNLOAD</td><td>Download state as a file. Shows a result.</td><td>📄 the state named by the file ending</td><td>—</td><td>nothing</td></tr>\n<tr><td>GET</td><td>Await a result from the server.</td><td>—</td><td>🖥 result</td><td>server blocks (must)</td></tr>\n<tr><td>PLUGIN</td><td>Await a result from an installed plugin.</td><td>—</td><td>🖥 result</td><td>the plugin's blocks (must)</td></tr>\n<tr><td>LISTEN</td><td>Wait for a specific message.</td><td>—</td><td>—</td><td>nothing</td></tr>\n<tr><td>MESSAGE</td><td>Send a specific message.</td><td>—</td><td>—</td><td>nothing</td></tr>\n<tr><td>FORWARD</td><td>Move the drawing \"turtle\" forward.</td><td>—</td><td>✏️ turtle</td><td>nothing</td></tr>\n<tr><td>TURN</td><td>Turn the drawing \"turtle\".</td><td>—</td><td>✏️ turtle</td><td>nothing</td></tr>\n</table>",
+        "id": "697754d2175e7c58"
+      },
+      {
+        "type": "markdown",
+        "text": "## Blocks that run on the server, inside GET",
+        "id": "8729e8e08568e8e1"
+      },
+      {
+        "type": "html",
+        "text": "<table>\n<tr><th>Block</th><th>What it does</th><th>Needs</th><th>Makes</th></tr>\n<tr><td>HELLO</td><td>Add a happy face each time run.</td><td>—</td><td>—</td></tr>\n<tr><td>UPTIME</td><td>Report time the server has run.</td><td>—</td><td>—</td></tr>\n<tr><td>SLEEP</td><td>Suspend a sequence of blocks.</td><td>—</td><td>—</td></tr>\n<tr><td>COMMONS</td><td>Report image files and byte count.</td><td>—</td><td>🖥 commons</td></tr>\n<tr><td>DELTA</td><td>Retrieve recent site changes.</td><td>🖥 recent</td><td>🖥 actions</td></tr>\n</table>",
+        "id": "4392c7ce2fff6c64"
+      },
+      {
+        "type": "markdown",
+        "text": "GET sends only the state named after it to the server, such as `GET recent`. Whatever the server blocks make comes back for the blocks after GET.",
+        "id": "e14e413f016f3e7a"
+      },
+      {
+        "type": "markdown",
+        "text": "## Notes",
+        "id": "4b6e2f7349ff0cec"
+      },
+      {
+        "type": "markdown",
+        "text": "- A block that is missing what it needs stops with a ✖︎ and makes nothing, so blocks after it that needed its result stop too.\n- FILE stores the file's text under its argument exactly as typed. `FILE tsv` makes tsv, which KWIC and DOWNLOAD can use. `FILE .tsv` stores it under \".tsv\", which they cannot find.\n- CODE runs for anyone only when it sits directly inside CLICK or TICK. Elsewhere it runs only for the page owner.\n- [[CODE]] and [[DOWNLOAD]] had no handbook pages; pages for them were drafted in October 2026.",
+        "id": "57e26cc4b2180ab3"
+      }
+    ],
+    "journal": [
+      {
+        "type": "create",
+        "item": {
+          "title": "Mech Blocks Reference",
+          "story": []
+        },
+        "date": 1791140209206,
+        "author": "Marc Pierson with Claude Opus 5.5"
+      },
+      {
+        "type": "add",
+        "id": "58ec2542032c92db",
+        "item": {
+          "type": "markdown",
+          "id": "58ec2542032c92db",
+          "text": "Every block Mech knows, as Mech Blocks understands it from reading Ward Cunningham's code in October 2026. The descriptions follow Ward's [[Catalog of Mech Blocks]]. How to use the tool is in the [[Mech Blocks Manual]]."
+        },
+        "date": 1791140209207
+      },
+      {
+        "type": "add",
+        "id": "0c0e7a3c5ad50a17",
+        "item": {
+          "type": "markdown",
+          "id": "0c0e7a3c5ad50a17",
+          "text": "**Needs** is what a block reads from the shared state, which a block above it must make. **Makes** is what it writes there for blocks below. **Holds** is what may be indented under it."
+        },
+        "date": 1791140209208,
+        "after": "58ec2542032c92db"
+      },
+      {
+        "type": "add",
+        "id": "d6133ea7904276d6",
+        "item": {
+          "type": "markdown",
+          "id": "d6133ea7904276d6",
+          "text": "## Blocks that run in the browser"
+        },
+        "date": 1791140209209,
+        "after": "0c0e7a3c5ad50a17"
+      },
+      {
+        "type": "add",
+        "id": "697754d2175e7c58",
+        "item": {
+          "type": "html",
+          "id": "697754d2175e7c58",
+          "text": "<table>\n<tr><th>Block</th><th>What it does</th><th>Needs</th><th>Makes</th><th>Holds</th></tr>\n<tr><td>CLICK</td><td>Offer to proceed once user clicks.</td><td>—</td><td>—</td><td>blocks (must)</td></tr>\n<tr><td>TICK</td><td>Proceed repeatedly once user clicks.</td><td>—</td><td>🌡 tick, for the blocks inside</td><td>blocks (must)</td></tr>\n<tr><td>UNTIL</td><td>Stop TICKing once a word turns up.</td><td>🌡 tick; 🔗 aspect</td><td>—</td><td>blocks, if you like</td></tr>\n<tr><td>SLEEP</td><td>Suspend a sequence of blocks.</td><td>—</td><td>—</td><td>blocks, if you like</td></tr>\n<tr><td>TOGETHER</td><td>Start all blocks at once.</td><td>—</td><td>—</td><td>blocks (must)</td></tr>\n<tr><td>FROM</td><td>Fetch a page for the blocks indented below.</td><td>—</td><td>🏘 page</td><td>blocks (must)</td></tr>\n<tr><td>NEIGHBORS</td><td>Retrieve available neighborhood sitemaps.</td><td>—</td><td>🏘 neighborhood</td><td>lines of data</td></tr>\n<tr><td>WALK</td><td>Explore the neighborhood link graph.</td><td>🏘 neighborhood</td><td>🔗 aspect</td><td>nothing</td></tr>\n<tr><td>RANDOM</td><td>Select a random page from the neighbors.</td><td>🏘 neighborhood</td><td>🏘 info</td><td>nothing</td></tr>\n<tr><td>ROSTER</td><td>Make a Roster for the current neighborhood.</td><td>🏘 neighborhood</td><td>☰ items</td><td>nothing</td></tr>\n<tr><td>LINEUP</td><td>Make a page from the current lineup.</td><td>—</td><td>☰ items</td><td>nothing</td></tr>\n<tr><td>SHOW</td><td>Add an existing page to the lineup. Shows a result.</td><td>🏘 info when no page is named</td><td>—</td><td>nothing</td></tr>\n<tr><td>DELTA</td><td>Apply recent remote site changes.</td><td>🖥 actions for apply</td><td>🖥 recent for have; 🏘 page for apply</td><td>nothing</td></tr>\n<tr><td>SOURCE</td><td>Read a data source from the lineup.</td><td>—</td><td>the topic named, such as 🔗 marker</td><td>blocks, if you like</td></tr>\n<tr><td>FILE</td><td>User selects one of the available files.</td><td>📄 assets</td><td>📄 the file text, named by the suffix as typed, for the blocks inside</td><td>blocks (must)</td></tr>\n<tr><td>KWIC</td><td>Construct a Keyword-In-Context index.</td><td>📄 tsv</td><td>☰ items</td><td>lines of data</td></tr>\n<tr><td>SENSOR</td><td>Read sensor data from a named endpoint.</td><td>🏘 page</td><td>🌡 temperature</td><td>blocks, if you like</td></tr>\n<tr><td>CODE</td><td>Run JavaScript from a Code item on this page.</td><td>—</td><td>◆ whatever its function sets</td><td>lines of data</td></tr>\n<tr><td>HELLO</td><td>Add a happy face each time run. Shows a result.</td><td>—</td><td>—</td><td>nothing</td></tr>\n<tr><td>REPORT</td><td>Report a measurement in place in the item. Shows a result.</td><td>🌡 temperature, or the key named after REPORT</td><td>—</td><td>nothing</td></tr>\n<tr><td>PREVIEW</td><td>Display computed state as a ghost page. Shows a result.</td><td>🔗 marker for map; 🔗 aspect for graph; ☰ items for items; 🏘 page for page</td><td>—</td><td>nothing</td></tr>\n<tr><td>POPUP</td><td>Open a pop-up window with various contents. Shows a result.</td><td>🖥 commons for images</td><td>—</td><td>nothing</td></tr>\n<tr><td>SOLO</td><td>Launch the Solo plugin pop-up viewer. Shows a result.</td><td>🔗 aspect</td><td>—</td><td>nothing</td></tr>\n<tr><td>PRINT</td><td>Compose a printable story and garden. Shows a result.</td><td>🔗 aspect; 🏘 neighborhood</td><td>☰ items</td><td>nothing</td></tr>\n<tr><td>DOWNLOAD</td><td>Download state as a file. Shows a result.</td><td>📄 the state named by the file ending</td><td>—</td><td>nothing</td></tr>\n<tr><td>GET</td><td>Await a result from the server.</td><td>—</td><td>🖥 result</td><td>server blocks (must)</td></tr>\n<tr><td>PLUGIN</td><td>Await a result from an installed plugin.</td><td>—</td><td>🖥 result</td><td>the plugin's blocks (must)</td></tr>\n<tr><td>LISTEN</td><td>Wait for a specific message.</td><td>—</td><td>—</td><td>nothing</td></tr>\n<tr><td>MESSAGE</td><td>Send a specific message.</td><td>—</td><td>—</td><td>nothing</td></tr>\n<tr><td>FORWARD</td><td>Move the drawing \"turtle\" forward.</td><td>—</td><td>✏️ turtle</td><td>nothing</td></tr>\n<tr><td>TURN</td><td>Turn the drawing \"turtle\".</td><td>—</td><td>✏️ turtle</td><td>nothing</td></tr>\n</table>"
+        },
+        "date": 1791140209210,
+        "after": "d6133ea7904276d6"
+      },
+      {
+        "type": "add",
+        "id": "8729e8e08568e8e1",
+        "item": {
+          "type": "markdown",
+          "id": "8729e8e08568e8e1",
+          "text": "## Blocks that run on the server, inside GET"
+        },
+        "date": 1791140209211,
+        "after": "697754d2175e7c58"
+      },
+      {
+        "type": "add",
+        "id": "4392c7ce2fff6c64",
+        "item": {
+          "type": "html",
+          "id": "4392c7ce2fff6c64",
+          "text": "<table>\n<tr><th>Block</th><th>What it does</th><th>Needs</th><th>Makes</th></tr>\n<tr><td>HELLO</td><td>Add a happy face each time run.</td><td>—</td><td>—</td></tr>\n<tr><td>UPTIME</td><td>Report time the server has run.</td><td>—</td><td>—</td></tr>\n<tr><td>SLEEP</td><td>Suspend a sequence of blocks.</td><td>—</td><td>—</td></tr>\n<tr><td>COMMONS</td><td>Report image files and byte count.</td><td>—</td><td>🖥 commons</td></tr>\n<tr><td>DELTA</td><td>Retrieve recent site changes.</td><td>🖥 recent</td><td>🖥 actions</td></tr>\n</table>"
+        },
+        "date": 1791140209212,
+        "after": "8729e8e08568e8e1"
+      },
+      {
+        "type": "add",
+        "id": "e14e413f016f3e7a",
+        "item": {
+          "type": "markdown",
+          "id": "e14e413f016f3e7a",
+          "text": "GET sends only the state named after it to the server, such as `GET recent`. Whatever the server blocks make comes back for the blocks after GET."
+        },
+        "date": 1791140209213,
+        "after": "4392c7ce2fff6c64"
+      },
+      {
+        "type": "add",
+        "id": "4b6e2f7349ff0cec",
+        "item": {
+          "type": "markdown",
+          "id": "4b6e2f7349ff0cec",
+          "text": "## Notes"
+        },
+        "date": 1791140209214,
+        "after": "e14e413f016f3e7a"
+      },
+      {
+        "type": "add",
+        "id": "57e26cc4b2180ab3",
+        "item": {
+          "type": "markdown",
+          "id": "57e26cc4b2180ab3",
+          "text": "- A block that is missing what it needs stops with a ✖︎ and makes nothing, so blocks after it that needed its result stop too.\n- FILE stores the file's text under its argument exactly as typed. `FILE tsv` makes tsv, which KWIC and DOWNLOAD can use. `FILE .tsv` stores it under \".tsv\", which they cannot find.\n- CODE runs for anyone only when it sits directly inside CLICK or TICK. Elsewhere it runs only for the page owner.\n- [[CODE]] and [[DOWNLOAD]] had no handbook pages; pages for them were drafted in October 2026."
+        },
+        "date": 1791140209215,
+        "after": "4b6e2f7349ff0cec"
+      },
+      {
+        "type": "add",
+        "id": "7a6039a8dcddeb0b",
+        "item": {
+          "type": "markdown",
+          "id": "7a6039a8dcddeb0b",
+          "text": "*Marc Pierson and Claude Opus 5.5 · October 2026*",
+          "attribution": true
+        },
+        "date": 1791140209244,
+        "after": "58ec2542032c92db"
+      }
+    ]
+  }
+}
