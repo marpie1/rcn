@@ -63,6 +63,10 @@ Keep labels to one or two words wherever possible and **put the gloss in the leg
 
 Anything in a node's or edge's `note` is written into the exported SVG as a `<title>` child, prefixed with 📌. Browsers render that as a native tooltip, so **the same field gives hover annotations both inside the Graph Tool and in any HTML document that inlines the exported SVG**. There is no second annotation mechanism to build. Annotate every node and edge and the exported diagram carries its own commentary. Verified 2026-08-17 across four diagrams (12, 17, 24 and 23 notes).
 
+### `backdrop: true` — a container box drawn behind the arrows
+
+Edges render below every node, so a filled box drawn round other nodes (Ostrom's "External Variables" around the "Action Situation") tints every arrow that crosses it, and an opaque one hides them. Give such a box `"backdrop": true` and it renders in its own layer **under** the edges: the arrows keep their colours and the fill can be solid. Backdrops stack among themselves in array order, so list the outermost first. Opt-in per node; a node without it behaves exactly as before. Added 2026-10-04 for docs/ostrom-nobel/.
+
 ## Edges
 
 | Field | Type | Required | Notes |
