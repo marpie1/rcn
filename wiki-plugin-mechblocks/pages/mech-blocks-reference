@@ -4,68 +4,68 @@
     {
       "type": "markdown",
       "text": "Every block Mech knows, as Mech Blocks understands it from reading Ward Cunningham's code in October 2026. The descriptions follow Ward's [[Catalog of Mech Blocks]]. How to use the tool is in the [[Mech Blocks Manual]].",
-      "id": "0f278a7363cf2632"
+      "id": "47773768bea78372"
     },
     {
       "type": "markdown",
-      "id": "42e1f92e68202520",
+      "id": "3aaa4f4f9af9dfbb",
       "text": "*Marc Pierson and Claude Opus 5.5 · October 2026*",
       "attribution": true
     },
     {
       "type": "markdown",
-      "text": "**Needs** is what a block reads from the shared state, which a block above it must make. **Makes** is what it writes there for blocks below. **Holds** is what may be indented under it.",
-      "id": "d938235c27f93321"
+      "text": "**Needs** is what a block reads from the shared state, which a block above it must make. **Makes** is what it writes there for blocks below. What a block may hold, indented under it, is at the end of its description.",
+      "id": "9cb5ae42e124773a"
     },
     {
       "type": "markdown",
       "text": "## Blocks that run in the browser",
-      "id": "a40ffbfded3a99fb"
+      "id": "b7dbb74c770683cc"
     },
     {
       "type": "html",
-      "text": "<table>\n<tr><th>Block</th><th>What it does</th><th>Needs</th><th>Makes</th><th>Holds</th></tr>\n<tr><td>CLICK</td><td>Offer to proceed once user clicks.</td><td>—</td><td>—</td><td>blocks (must)</td></tr>\n<tr><td>TICK</td><td>Proceed repeatedly once user clicks.</td><td>—</td><td>🌡 tick, for the blocks inside</td><td>blocks (must)</td></tr>\n<tr><td>UNTIL</td><td>Stop TICKing once a word turns up.</td><td>🌡 tick; 🔗 aspect</td><td>—</td><td>blocks, if you like</td></tr>\n<tr><td>SLEEP</td><td>Suspend a sequence of blocks.</td><td>—</td><td>—</td><td>blocks, if you like</td></tr>\n<tr><td>TOGETHER</td><td>Start all blocks at once.</td><td>—</td><td>—</td><td>blocks (must)</td></tr>\n<tr><td>FROM</td><td>Fetch a page for the blocks indented below.</td><td>—</td><td>🏘 page</td><td>blocks (must)</td></tr>\n<tr><td>NEIGHBORS</td><td>Retrieve available neighborhood sitemaps.</td><td>—</td><td>🏘 neighborhood</td><td>lines of data</td></tr>\n<tr><td>WALK</td><td>Explore the neighborhood link graph.</td><td>🏘 neighborhood</td><td>🔗 aspect</td><td>nothing</td></tr>\n<tr><td>RANDOM</td><td>Select a random page from the neighbors.</td><td>🏘 neighborhood</td><td>🏘 info</td><td>nothing</td></tr>\n<tr><td>ROSTER</td><td>Make a Roster for the current neighborhood.</td><td>🏘 neighborhood</td><td>☰ items</td><td>nothing</td></tr>\n<tr><td>LINEUP</td><td>Make a page from the current lineup.</td><td>—</td><td>☰ items</td><td>nothing</td></tr>\n<tr><td>SHOW</td><td>Add an existing page to the lineup. Shows a result.</td><td>🏘 info when no page is named</td><td>—</td><td>nothing</td></tr>\n<tr><td>DELTA</td><td>Apply recent remote site changes.</td><td>🖥 actions for apply</td><td>🖥 recent for have; 🏘 page for apply</td><td>nothing</td></tr>\n<tr><td>SOURCE</td><td>Read a data source from the lineup.</td><td>—</td><td>the topic named, such as 🔗 marker</td><td>blocks, if you like</td></tr>\n<tr><td>FILE</td><td>User selects one of the available files.</td><td>📄 assets</td><td>📄 the file text, named by the suffix as typed, for the blocks inside</td><td>blocks (must)</td></tr>\n<tr><td>KWIC</td><td>Construct a Keyword-In-Context index.</td><td>📄 tsv</td><td>☰ items</td><td>lines of data</td></tr>\n<tr><td>SENSOR</td><td>Read sensor data from a named endpoint.</td><td>🏘 page</td><td>🌡 temperature</td><td>blocks, if you like</td></tr>\n<tr><td>CODE</td><td>Run JavaScript from a Code item on this page.</td><td>—</td><td>◆ whatever its function sets</td><td>lines of data</td></tr>\n<tr><td>HELLO</td><td>Add a happy face each time run. Shows a result.</td><td>—</td><td>—</td><td>nothing</td></tr>\n<tr><td>REPORT</td><td>Report a measurement in place in the item. Shows a result.</td><td>🌡 temperature, or the key named after REPORT</td><td>—</td><td>nothing</td></tr>\n<tr><td>PREVIEW</td><td>Display computed state as a ghost page. Shows a result.</td><td>🔗 marker for map; 🔗 aspect for graph; ☰ items for items; 🏘 page for page</td><td>—</td><td>nothing</td></tr>\n<tr><td>POPUP</td><td>Open a pop-up window with various contents. Shows a result.</td><td>🖥 commons for images</td><td>—</td><td>nothing</td></tr>\n<tr><td>SOLO</td><td>Launch the Solo plugin pop-up viewer. Shows a result.</td><td>🔗 aspect</td><td>—</td><td>nothing</td></tr>\n<tr><td>PRINT</td><td>Compose a printable story and garden. Shows a result.</td><td>🔗 aspect; 🏘 neighborhood</td><td>☰ items</td><td>nothing</td></tr>\n<tr><td>DOWNLOAD</td><td>Download state as a file. Shows a result.</td><td>📄 the state named by the file ending</td><td>—</td><td>nothing</td></tr>\n<tr><td>GET</td><td>Await a result from the server.</td><td>—</td><td>🖥 result</td><td>server blocks (must)</td></tr>\n<tr><td>PLUGIN</td><td>Await a result from an installed plugin.</td><td>—</td><td>🖥 result</td><td>the plugin's blocks (must)</td></tr>\n<tr><td>LISTEN</td><td>Wait for a specific message.</td><td>—</td><td>—</td><td>nothing</td></tr>\n<tr><td>MESSAGE</td><td>Send a specific message.</td><td>—</td><td>—</td><td>nothing</td></tr>\n<tr><td>FORWARD</td><td>Move the drawing \"turtle\" forward.</td><td>—</td><td>✏️ turtle</td><td>nothing</td></tr>\n<tr><td>TURN</td><td>Turn the drawing \"turtle\".</td><td>—</td><td>✏️ turtle</td><td>nothing</td></tr>\n</table>",
-      "id": "8bbcae43aebb8333"
+      "text": "<table style=\"border-collapse:collapse;width:100%\">\n<tr><th style=\"width:1%;white-space:nowrap;text-align:left;padding:4px 6px;border-bottom:2px solid #999\">Block</th><th style=\"text-align:left;padding:4px 6px;border-bottom:2px solid #999\">What it does</th><th style=\"text-align:left;padding:4px 6px;border-bottom:2px solid #999\">Needs and makes</th></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">CLICK</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Offer to proceed once user clicks. Holds blocks, and must.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">TICK</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Proceed repeatedly once user clicks. Holds blocks, and must.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🌡 tick, for the blocks inside</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">UNTIL</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Stop TICKing once a word turns up. May hold blocks.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🌡 tick; 🔗 aspect</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">SLEEP</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Suspend a sequence of blocks. May hold blocks.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">TOGETHER</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Start all blocks at once. Holds blocks, and must.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">FROM</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Fetch a page for the blocks indented below. Holds blocks, and must.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🏘 page</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">NEIGHBORS</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Retrieve available neighborhood sitemaps. Holds lines of data.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🏘 neighborhood</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">WALK</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Explore the neighborhood link graph.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🏘 neighborhood · makes 🔗 aspect</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">RANDOM</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Select a random page from the neighbors.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🏘 neighborhood · makes 🏘 info</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">ROSTER</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Make a Roster for the current neighborhood.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🏘 neighborhood · makes ☰ items</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">LINEUP</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Make a page from the current lineup.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes ☰ items</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">SHOW</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Add an existing page to the lineup. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🏘 info when no page is named</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">DELTA</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Apply recent remote site changes.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🖥 actions for apply · makes 🖥 recent for have; 🏘 page for apply</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">SOURCE</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Read a data source from the lineup. May hold blocks.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes the topic named, such as 🔗 marker</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">FILE</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">User selects one of the available files. Holds blocks, and must.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 📄 assets · makes 📄 the file text, named by the suffix as typed, for the blocks inside</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">KWIC</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Construct a Keyword-In-Context index. Holds lines of data.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 📄 tsv · makes ☰ items</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">SENSOR</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Read sensor data from a named endpoint. May hold blocks.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🏘 page · makes 🌡 temperature</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">CODE</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Run JavaScript from a Code item on this page. Holds lines of data.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes ◆ whatever its function sets</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">HELLO</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Add a happy face each time run. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">REPORT</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Report a measurement in place in the item. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🌡 temperature, or the key named after REPORT</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">PREVIEW</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Display computed state as a ghost page. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🔗 marker for map; 🔗 aspect for graph; ☰ items for items; 🏘 page for page</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">POPUP</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Open a pop-up window with various contents. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🖥 commons for images</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">SOLO</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Launch the Solo plugin pop-up viewer. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🔗 aspect</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">PRINT</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Compose a printable story and garden. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🔗 aspect; 🏘 neighborhood · makes ☰ items</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">DOWNLOAD</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Download state as a file. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 📄 the state named by the file ending</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">GET</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Await a result from the server. Holds server blocks, and must.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🖥 result</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">PLUGIN</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Await a result from an installed plugin. Holds the plugin's blocks, and must.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🖥 result</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">LISTEN</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Wait for a specific message.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">MESSAGE</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Send a specific message.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">FORWARD</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Move the drawing \"turtle\" forward.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes ✏️ turtle</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">TURN</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Turn the drawing \"turtle\".</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes ✏️ turtle</td></tr>\n</table>",
+      "id": "324cc558a4b78d5a"
     },
     {
       "type": "markdown",
       "text": "## Blocks that run on the server, inside GET",
-      "id": "9c580823528c9396"
+      "id": "0265b47da579d647"
     },
     {
       "type": "html",
-      "text": "<table>\n<tr><th>Block</th><th>What it does</th><th>Needs</th><th>Makes</th></tr>\n<tr><td>HELLO</td><td>Add a happy face each time run.</td><td>—</td><td>—</td></tr>\n<tr><td>UPTIME</td><td>Report time the server has run.</td><td>—</td><td>—</td></tr>\n<tr><td>SLEEP</td><td>Suspend a sequence of blocks.</td><td>—</td><td>—</td></tr>\n<tr><td>COMMONS</td><td>Report image files and byte count.</td><td>—</td><td>🖥 commons</td></tr>\n<tr><td>DELTA</td><td>Retrieve recent site changes.</td><td>🖥 recent</td><td>🖥 actions</td></tr>\n</table>",
-      "id": "4f91bb0c6d5e788a"
+      "text": "<table style=\"border-collapse:collapse;width:100%\">\n<tr><th style=\"width:1%;white-space:nowrap;text-align:left;padding:4px 6px;border-bottom:2px solid #999\">Block</th><th style=\"text-align:left;padding:4px 6px;border-bottom:2px solid #999\">What it does</th><th style=\"text-align:left;padding:4px 6px;border-bottom:2px solid #999\">Needs and makes</th></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">HELLO</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Add a happy face each time run.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">UPTIME</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Report time the server has run.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">SLEEP</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Suspend a sequence of blocks.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">COMMONS</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Report image files and byte count.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🖥 commons</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">DELTA</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Retrieve recent site changes.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🖥 recent · makes 🖥 actions</td></tr>\n</table>",
+      "id": "9c80f08e3fa7532b"
     },
     {
       "type": "markdown",
       "text": "GET sends only the state named after it to the server, such as `GET recent`. Whatever the server blocks make comes back for the blocks after GET.",
-      "id": "b48f1258b290f34c"
+      "id": "ba679e5971940eaa"
     },
     {
       "type": "markdown",
       "text": "## Blocks that run inside PLUGIN rcn",
-      "id": "0ce9ac54fdec9dfc"
+      "id": "bc7a02575122449a"
     },
     {
       "type": "markdown",
       "text": "These come with the Mech Blocks plugin and read RCN data held on the same site.",
-      "id": "3e9afdd5c52818cb"
+      "id": "dc8dcb3fbea8bf56"
     },
     {
       "type": "html",
-      "text": "<table>\n<tr><th>Block</th><th>What it does</th><th>Needs</th><th>Makes</th></tr>\n<tr><td>PROJECTIONS</td><td>List the Layer 1 folders on this site.</td><td>—</td><td>☰ items</td></tr>\n<tr><td>PROJECTION</td><td>A Layer 1 folder's graph, as an aspect; kinds after the name keep only those.</td><td>—</td><td>🔗 aspect</td></tr>\n<tr><td>BADGES</td><td>SODOTO badges on this site's pages: people and the skills they hold; words after it keep matching skills.</td><td>—</td><td>🔗 aspect; ☰ items</td></tr>\n<tr><td>HELLO</td><td>Proves the rcn plugin answers.</td><td>—</td><td>—</td></tr>\n</table>",
-      "id": "2617143a00cedbdd"
+      "text": "<table style=\"border-collapse:collapse;width:100%\">\n<tr><th style=\"width:1%;white-space:nowrap;text-align:left;padding:4px 6px;border-bottom:2px solid #999\">Block</th><th style=\"text-align:left;padding:4px 6px;border-bottom:2px solid #999\">What it does</th><th style=\"text-align:left;padding:4px 6px;border-bottom:2px solid #999\">Needs and makes</th></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">PROJECTIONS</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">List the Layer 1 folders on this site.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes ☰ items</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">PROJECTION</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">A Layer 1 folder's graph, as an aspect; kinds after the name keep only those.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🔗 aspect</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">BADGES</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">SODOTO badges on this site's pages: people and the skills they hold; words after it keep matching skills.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🔗 aspect; ☰ items</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">HELLO</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Proves the rcn plugin answers.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n</table>",
+      "id": "b10f0ecdcefde6d3"
     },
     {
       "type": "markdown",
       "text": "## Notes",
-      "id": "0295ea62682123e9"
+      "id": "a62643fd6bb80291"
     },
     {
       "type": "markdown",
       "text": "- A block that is missing what it needs stops with a ✖︎ and makes nothing, so blocks after it that needed its result stop too.\n- FILE stores the file's text under its argument exactly as typed. `FILE tsv` makes tsv, which KWIC and DOWNLOAD can use. `FILE .tsv` stores it under \".tsv\", which they cannot find.\n- CODE runs for anyone only when it sits directly inside CLICK or TICK. Elsewhere it runs only for the page owner.\n- [[CODE]] and [[DOWNLOAD]] had no handbook pages; pages for them were drafted in October 2026.",
-      "id": "cf536f20e44a1f69"
+      "id": "6b22df058b325787"
     }
   ],
   "journal": [
@@ -75,151 +75,151 @@
         "title": "Mech Blocks Reference",
         "story": []
       },
-      "date": 1791162862194,
+      "date": 1791172772820,
       "author": "Marc Pierson with Claude Opus 5.5"
     },
     {
       "type": "add",
-      "id": "0f278a7363cf2632",
+      "id": "47773768bea78372",
       "item": {
         "type": "markdown",
-        "id": "0f278a7363cf2632",
+        "id": "47773768bea78372",
         "text": "Every block Mech knows, as Mech Blocks understands it from reading Ward Cunningham's code in October 2026. The descriptions follow Ward's [[Catalog of Mech Blocks]]. How to use the tool is in the [[Mech Blocks Manual]]."
       },
-      "date": 1791162862195
+      "date": 1791172772821
     },
     {
       "type": "add",
-      "id": "d938235c27f93321",
+      "id": "9cb5ae42e124773a",
       "item": {
         "type": "markdown",
-        "id": "d938235c27f93321",
-        "text": "**Needs** is what a block reads from the shared state, which a block above it must make. **Makes** is what it writes there for blocks below. **Holds** is what may be indented under it."
+        "id": "9cb5ae42e124773a",
+        "text": "**Needs** is what a block reads from the shared state, which a block above it must make. **Makes** is what it writes there for blocks below. What a block may hold, indented under it, is at the end of its description."
       },
-      "date": 1791162862196,
-      "after": "0f278a7363cf2632"
+      "date": 1791172772822,
+      "after": "47773768bea78372"
     },
     {
       "type": "add",
-      "id": "a40ffbfded3a99fb",
+      "id": "b7dbb74c770683cc",
       "item": {
         "type": "markdown",
-        "id": "a40ffbfded3a99fb",
+        "id": "b7dbb74c770683cc",
         "text": "## Blocks that run in the browser"
       },
-      "date": 1791162862197,
-      "after": "d938235c27f93321"
+      "date": 1791172772823,
+      "after": "9cb5ae42e124773a"
     },
     {
       "type": "add",
-      "id": "8bbcae43aebb8333",
+      "id": "324cc558a4b78d5a",
       "item": {
         "type": "html",
-        "id": "8bbcae43aebb8333",
-        "text": "<table>\n<tr><th>Block</th><th>What it does</th><th>Needs</th><th>Makes</th><th>Holds</th></tr>\n<tr><td>CLICK</td><td>Offer to proceed once user clicks.</td><td>—</td><td>—</td><td>blocks (must)</td></tr>\n<tr><td>TICK</td><td>Proceed repeatedly once user clicks.</td><td>—</td><td>🌡 tick, for the blocks inside</td><td>blocks (must)</td></tr>\n<tr><td>UNTIL</td><td>Stop TICKing once a word turns up.</td><td>🌡 tick; 🔗 aspect</td><td>—</td><td>blocks, if you like</td></tr>\n<tr><td>SLEEP</td><td>Suspend a sequence of blocks.</td><td>—</td><td>—</td><td>blocks, if you like</td></tr>\n<tr><td>TOGETHER</td><td>Start all blocks at once.</td><td>—</td><td>—</td><td>blocks (must)</td></tr>\n<tr><td>FROM</td><td>Fetch a page for the blocks indented below.</td><td>—</td><td>🏘 page</td><td>blocks (must)</td></tr>\n<tr><td>NEIGHBORS</td><td>Retrieve available neighborhood sitemaps.</td><td>—</td><td>🏘 neighborhood</td><td>lines of data</td></tr>\n<tr><td>WALK</td><td>Explore the neighborhood link graph.</td><td>🏘 neighborhood</td><td>🔗 aspect</td><td>nothing</td></tr>\n<tr><td>RANDOM</td><td>Select a random page from the neighbors.</td><td>🏘 neighborhood</td><td>🏘 info</td><td>nothing</td></tr>\n<tr><td>ROSTER</td><td>Make a Roster for the current neighborhood.</td><td>🏘 neighborhood</td><td>☰ items</td><td>nothing</td></tr>\n<tr><td>LINEUP</td><td>Make a page from the current lineup.</td><td>—</td><td>☰ items</td><td>nothing</td></tr>\n<tr><td>SHOW</td><td>Add an existing page to the lineup. Shows a result.</td><td>🏘 info when no page is named</td><td>—</td><td>nothing</td></tr>\n<tr><td>DELTA</td><td>Apply recent remote site changes.</td><td>🖥 actions for apply</td><td>🖥 recent for have; 🏘 page for apply</td><td>nothing</td></tr>\n<tr><td>SOURCE</td><td>Read a data source from the lineup.</td><td>—</td><td>the topic named, such as 🔗 marker</td><td>blocks, if you like</td></tr>\n<tr><td>FILE</td><td>User selects one of the available files.</td><td>📄 assets</td><td>📄 the file text, named by the suffix as typed, for the blocks inside</td><td>blocks (must)</td></tr>\n<tr><td>KWIC</td><td>Construct a Keyword-In-Context index.</td><td>📄 tsv</td><td>☰ items</td><td>lines of data</td></tr>\n<tr><td>SENSOR</td><td>Read sensor data from a named endpoint.</td><td>🏘 page</td><td>🌡 temperature</td><td>blocks, if you like</td></tr>\n<tr><td>CODE</td><td>Run JavaScript from a Code item on this page.</td><td>—</td><td>◆ whatever its function sets</td><td>lines of data</td></tr>\n<tr><td>HELLO</td><td>Add a happy face each time run. Shows a result.</td><td>—</td><td>—</td><td>nothing</td></tr>\n<tr><td>REPORT</td><td>Report a measurement in place in the item. Shows a result.</td><td>🌡 temperature, or the key named after REPORT</td><td>—</td><td>nothing</td></tr>\n<tr><td>PREVIEW</td><td>Display computed state as a ghost page. Shows a result.</td><td>🔗 marker for map; 🔗 aspect for graph; ☰ items for items; 🏘 page for page</td><td>—</td><td>nothing</td></tr>\n<tr><td>POPUP</td><td>Open a pop-up window with various contents. Shows a result.</td><td>🖥 commons for images</td><td>—</td><td>nothing</td></tr>\n<tr><td>SOLO</td><td>Launch the Solo plugin pop-up viewer. Shows a result.</td><td>🔗 aspect</td><td>—</td><td>nothing</td></tr>\n<tr><td>PRINT</td><td>Compose a printable story and garden. Shows a result.</td><td>🔗 aspect; 🏘 neighborhood</td><td>☰ items</td><td>nothing</td></tr>\n<tr><td>DOWNLOAD</td><td>Download state as a file. Shows a result.</td><td>📄 the state named by the file ending</td><td>—</td><td>nothing</td></tr>\n<tr><td>GET</td><td>Await a result from the server.</td><td>—</td><td>🖥 result</td><td>server blocks (must)</td></tr>\n<tr><td>PLUGIN</td><td>Await a result from an installed plugin.</td><td>—</td><td>🖥 result</td><td>the plugin's blocks (must)</td></tr>\n<tr><td>LISTEN</td><td>Wait for a specific message.</td><td>—</td><td>—</td><td>nothing</td></tr>\n<tr><td>MESSAGE</td><td>Send a specific message.</td><td>—</td><td>—</td><td>nothing</td></tr>\n<tr><td>FORWARD</td><td>Move the drawing \"turtle\" forward.</td><td>—</td><td>✏️ turtle</td><td>nothing</td></tr>\n<tr><td>TURN</td><td>Turn the drawing \"turtle\".</td><td>—</td><td>✏️ turtle</td><td>nothing</td></tr>\n</table>"
+        "id": "324cc558a4b78d5a",
+        "text": "<table style=\"border-collapse:collapse;width:100%\">\n<tr><th style=\"width:1%;white-space:nowrap;text-align:left;padding:4px 6px;border-bottom:2px solid #999\">Block</th><th style=\"text-align:left;padding:4px 6px;border-bottom:2px solid #999\">What it does</th><th style=\"text-align:left;padding:4px 6px;border-bottom:2px solid #999\">Needs and makes</th></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">CLICK</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Offer to proceed once user clicks. Holds blocks, and must.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">TICK</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Proceed repeatedly once user clicks. Holds blocks, and must.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🌡 tick, for the blocks inside</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">UNTIL</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Stop TICKing once a word turns up. May hold blocks.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🌡 tick; 🔗 aspect</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">SLEEP</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Suspend a sequence of blocks. May hold blocks.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">TOGETHER</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Start all blocks at once. Holds blocks, and must.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">FROM</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Fetch a page for the blocks indented below. Holds blocks, and must.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🏘 page</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">NEIGHBORS</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Retrieve available neighborhood sitemaps. Holds lines of data.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🏘 neighborhood</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">WALK</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Explore the neighborhood link graph.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🏘 neighborhood · makes 🔗 aspect</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">RANDOM</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Select a random page from the neighbors.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🏘 neighborhood · makes 🏘 info</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">ROSTER</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Make a Roster for the current neighborhood.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🏘 neighborhood · makes ☰ items</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">LINEUP</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Make a page from the current lineup.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes ☰ items</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">SHOW</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Add an existing page to the lineup. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🏘 info when no page is named</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">DELTA</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Apply recent remote site changes.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🖥 actions for apply · makes 🖥 recent for have; 🏘 page for apply</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">SOURCE</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Read a data source from the lineup. May hold blocks.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes the topic named, such as 🔗 marker</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">FILE</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">User selects one of the available files. Holds blocks, and must.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 📄 assets · makes 📄 the file text, named by the suffix as typed, for the blocks inside</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">KWIC</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Construct a Keyword-In-Context index. Holds lines of data.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 📄 tsv · makes ☰ items</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">SENSOR</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Read sensor data from a named endpoint. May hold blocks.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🏘 page · makes 🌡 temperature</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">CODE</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Run JavaScript from a Code item on this page. Holds lines of data.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes ◆ whatever its function sets</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">HELLO</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Add a happy face each time run. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">REPORT</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Report a measurement in place in the item. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🌡 temperature, or the key named after REPORT</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">PREVIEW</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Display computed state as a ghost page. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🔗 marker for map; 🔗 aspect for graph; ☰ items for items; 🏘 page for page</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">POPUP</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Open a pop-up window with various contents. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🖥 commons for images</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">SOLO</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Launch the Solo plugin pop-up viewer. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🔗 aspect</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">PRINT</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Compose a printable story and garden. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🔗 aspect; 🏘 neighborhood · makes ☰ items</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">DOWNLOAD</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Download state as a file. Shows a result.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 📄 the state named by the file ending</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">GET</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Await a result from the server. Holds server blocks, and must.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🖥 result</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">PLUGIN</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Await a result from an installed plugin. Holds the plugin's blocks, and must.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🖥 result</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">LISTEN</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Wait for a specific message.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">MESSAGE</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Send a specific message.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">FORWARD</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Move the drawing \"turtle\" forward.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes ✏️ turtle</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">TURN</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Turn the drawing \"turtle\".</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes ✏️ turtle</td></tr>\n</table>"
       },
-      "date": 1791162862198,
-      "after": "a40ffbfded3a99fb"
+      "date": 1791172772824,
+      "after": "b7dbb74c770683cc"
     },
     {
       "type": "add",
-      "id": "9c580823528c9396",
+      "id": "0265b47da579d647",
       "item": {
         "type": "markdown",
-        "id": "9c580823528c9396",
+        "id": "0265b47da579d647",
         "text": "## Blocks that run on the server, inside GET"
       },
-      "date": 1791162862199,
-      "after": "8bbcae43aebb8333"
+      "date": 1791172772825,
+      "after": "324cc558a4b78d5a"
     },
     {
       "type": "add",
-      "id": "4f91bb0c6d5e788a",
+      "id": "9c80f08e3fa7532b",
       "item": {
         "type": "html",
-        "id": "4f91bb0c6d5e788a",
-        "text": "<table>\n<tr><th>Block</th><th>What it does</th><th>Needs</th><th>Makes</th></tr>\n<tr><td>HELLO</td><td>Add a happy face each time run.</td><td>—</td><td>—</td></tr>\n<tr><td>UPTIME</td><td>Report time the server has run.</td><td>—</td><td>—</td></tr>\n<tr><td>SLEEP</td><td>Suspend a sequence of blocks.</td><td>—</td><td>—</td></tr>\n<tr><td>COMMONS</td><td>Report image files and byte count.</td><td>—</td><td>🖥 commons</td></tr>\n<tr><td>DELTA</td><td>Retrieve recent site changes.</td><td>🖥 recent</td><td>🖥 actions</td></tr>\n</table>"
+        "id": "9c80f08e3fa7532b",
+        "text": "<table style=\"border-collapse:collapse;width:100%\">\n<tr><th style=\"width:1%;white-space:nowrap;text-align:left;padding:4px 6px;border-bottom:2px solid #999\">Block</th><th style=\"text-align:left;padding:4px 6px;border-bottom:2px solid #999\">What it does</th><th style=\"text-align:left;padding:4px 6px;border-bottom:2px solid #999\">Needs and makes</th></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">HELLO</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Add a happy face each time run.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">UPTIME</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Report time the server has run.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">SLEEP</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Suspend a sequence of blocks.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">COMMONS</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Report image files and byte count.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🖥 commons</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">DELTA</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Retrieve recent site changes.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">needs 🖥 recent · makes 🖥 actions</td></tr>\n</table>"
       },
-      "date": 1791162862200,
-      "after": "9c580823528c9396"
+      "date": 1791172772826,
+      "after": "0265b47da579d647"
     },
     {
       "type": "add",
-      "id": "b48f1258b290f34c",
+      "id": "ba679e5971940eaa",
       "item": {
         "type": "markdown",
-        "id": "b48f1258b290f34c",
+        "id": "ba679e5971940eaa",
         "text": "GET sends only the state named after it to the server, such as `GET recent`. Whatever the server blocks make comes back for the blocks after GET."
       },
-      "date": 1791162862201,
-      "after": "4f91bb0c6d5e788a"
+      "date": 1791172772827,
+      "after": "9c80f08e3fa7532b"
     },
     {
       "type": "add",
-      "id": "0ce9ac54fdec9dfc",
+      "id": "bc7a02575122449a",
       "item": {
         "type": "markdown",
-        "id": "0ce9ac54fdec9dfc",
+        "id": "bc7a02575122449a",
         "text": "## Blocks that run inside PLUGIN rcn"
       },
-      "date": 1791162862202,
-      "after": "b48f1258b290f34c"
+      "date": 1791172772828,
+      "after": "ba679e5971940eaa"
     },
     {
       "type": "add",
-      "id": "3e9afdd5c52818cb",
+      "id": "dc8dcb3fbea8bf56",
       "item": {
         "type": "markdown",
-        "id": "3e9afdd5c52818cb",
+        "id": "dc8dcb3fbea8bf56",
         "text": "These come with the Mech Blocks plugin and read RCN data held on the same site."
       },
-      "date": 1791162862203,
-      "after": "0ce9ac54fdec9dfc"
+      "date": 1791172772829,
+      "after": "bc7a02575122449a"
     },
     {
       "type": "add",
-      "id": "2617143a00cedbdd",
+      "id": "b10f0ecdcefde6d3",
       "item": {
         "type": "html",
-        "id": "2617143a00cedbdd",
-        "text": "<table>\n<tr><th>Block</th><th>What it does</th><th>Needs</th><th>Makes</th></tr>\n<tr><td>PROJECTIONS</td><td>List the Layer 1 folders on this site.</td><td>—</td><td>☰ items</td></tr>\n<tr><td>PROJECTION</td><td>A Layer 1 folder's graph, as an aspect; kinds after the name keep only those.</td><td>—</td><td>🔗 aspect</td></tr>\n<tr><td>BADGES</td><td>SODOTO badges on this site's pages: people and the skills they hold; words after it keep matching skills.</td><td>—</td><td>🔗 aspect; ☰ items</td></tr>\n<tr><td>HELLO</td><td>Proves the rcn plugin answers.</td><td>—</td><td>—</td></tr>\n</table>"
+        "id": "b10f0ecdcefde6d3",
+        "text": "<table style=\"border-collapse:collapse;width:100%\">\n<tr><th style=\"width:1%;white-space:nowrap;text-align:left;padding:4px 6px;border-bottom:2px solid #999\">Block</th><th style=\"text-align:left;padding:4px 6px;border-bottom:2px solid #999\">What it does</th><th style=\"text-align:left;padding:4px 6px;border-bottom:2px solid #999\">Needs and makes</th></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">PROJECTIONS</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">List the Layer 1 folders on this site.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes ☰ items</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">PROJECTION</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">A Layer 1 folder's graph, as an aspect; kinds after the name keep only those.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🔗 aspect</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">BADGES</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">SODOTO badges on this site's pages: people and the skills they hold; words after it keep matching skills.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">makes 🔗 aspect; ☰ items</td></tr>\n<tr><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">HELLO</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">Proves the rcn plugin answers.</td><td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">—</td></tr>\n</table>"
       },
-      "date": 1791162862204,
-      "after": "3e9afdd5c52818cb"
+      "date": 1791172772830,
+      "after": "dc8dcb3fbea8bf56"
     },
     {
       "type": "add",
-      "id": "0295ea62682123e9",
+      "id": "a62643fd6bb80291",
       "item": {
         "type": "markdown",
-        "id": "0295ea62682123e9",
+        "id": "a62643fd6bb80291",
         "text": "## Notes"
       },
-      "date": 1791162862205,
-      "after": "2617143a00cedbdd"
+      "date": 1791172772831,
+      "after": "b10f0ecdcefde6d3"
     },
     {
       "type": "add",
-      "id": "cf536f20e44a1f69",
+      "id": "6b22df058b325787",
       "item": {
         "type": "markdown",
-        "id": "cf536f20e44a1f69",
+        "id": "6b22df058b325787",
         "text": "- A block that is missing what it needs stops with a ✖︎ and makes nothing, so blocks after it that needed its result stop too.\n- FILE stores the file's text under its argument exactly as typed. `FILE tsv` makes tsv, which KWIC and DOWNLOAD can use. `FILE .tsv` stores it under \".tsv\", which they cannot find.\n- CODE runs for anyone only when it sits directly inside CLICK or TICK. Elsewhere it runs only for the page owner.\n- [[CODE]] and [[DOWNLOAD]] had no handbook pages; pages for them were drafted in October 2026."
       },
-      "date": 1791162862206,
-      "after": "0295ea62682123e9"
+      "date": 1791172772832,
+      "after": "a62643fd6bb80291"
     },
     {
       "type": "add",
-      "id": "42e1f92e68202520",
+      "id": "3aaa4f4f9af9dfbb",
       "item": {
         "type": "markdown",
-        "id": "42e1f92e68202520",
+        "id": "3aaa4f4f9af9dfbb",
         "text": "*Marc Pierson and Claude Opus 5.5 · October 2026*",
         "attribution": true
       },
-      "date": 1791162862242,
-      "after": "0f278a7363cf2632"
+      "date": 1791172772858,
+      "after": "47773768bea78372"
     }
   ]
 }

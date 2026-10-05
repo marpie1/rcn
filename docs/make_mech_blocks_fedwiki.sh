@@ -17,6 +17,11 @@ const m=Object.assign(JSON.parse(fs.readFileSync(T+"/a.json")),JSON.parse(fs.rea
 const LINE=/^\*Marc Pierson and Claude .* · .* \d{4}\*$/;
 for(const p of Object.values(m)){
   p.story=p.story.filter(i=>!LINE.test(i.text.trim()));
+  // grid tables: full width, padded, ruled rows, so they read in a narrow column
+  for(const i of p.story) if(i.type=="html") i.text=i.text.replace("<table>","<table style=\"border-collapse:collapse;width:100%\">")
+    .replace(/<th>/g,"<th style=\"text-align:left;padding:4px 6px;border-bottom:2px solid #999\">")
+    .replace(/<td>/g,"<td style=\"padding:4px 6px;vertical-align:top;border-bottom:1px solid #ddd\">")
+    .replace("<th style=\"", "<th style=\"width:1%;white-space:nowrap;");  // block column only as wide as the names
   for(const it of p.story){const r=it.text.match(/^```\w*\n([\s\S]*?)\n```$/); if(r){it.type="code";it.text=r[1];}}
   const t0=p.journal[0].date;
   p.journal=[p.journal[0], ...p.story.map((it,k)=>({type:"add",id:it.id,item:{type:it.type,id:it.id,text:it.text},date:t0+k+1,...(k?{after:p.story[k-1].id}:{})}))];

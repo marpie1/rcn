@@ -4,143 +4,143 @@
     {
       "type": "markdown",
       "text": "Mech Blocks lets you build a small wiki program by snapping blocks together, the way children build programs in Scratch. It sits on top of Mech, which Ward Cunningham wrote so that a FedWiki page can carry a little program that runs when you read it.",
-      "id": "0a503111fed8530f"
+      "id": "b1b7f8f8aef932aa"
     },
     {
       "type": "markdown",
-      "id": "36532531f92999cc",
+      "id": "d70c11786f38eba5",
       "text": "*Marc Pierson and Claude Opus 5.5 · October 2026*",
       "attribution": true
     },
     {
       "type": "markdown",
       "text": "It changes nothing in Mech itself. It comes two ways: as one web page, `tools/mech-blocks.html`, that you open in a browser, and as a wiki plugin, `wiki-plugin-mechblocks`, which puts a Mech Blocks item beside the Mech items on a FedWiki page.",
-      "id": "e81b7ef1e3dbd031"
+      "id": "60fbb87d893f3928"
     },
     {
       "type": "markdown",
       "text": "## What Mech does",
-      "id": "c24b0c25a0b7c1fb"
+      "id": "5a09262558d1c621"
     },
     {
       "type": "markdown",
       "text": "A Mech program is a few lines of capital words. Each line is a block that does one thing. A line indented under another line belongs to it. Ward's handbook at mech.fed.wiki has about sixty of them.",
-      "id": "8e1dcb549b151f52"
+      "id": "0f4293b493ce4555"
     },
     {
       "type": "code",
       "text": "CLICK\n NEIGHBORS fed.wiki\n WALK 10 steps\n PREVIEW graph",
-      "id": "19867c42e24553b5"
+      "id": "127dcb6aa6ba62fd"
     },
     {
       "type": "markdown",
       "text": "Read it top to bottom. CLICK puts a ▶ button on the page and waits. NEIGHBORS gathers the list of every page on the nearby wiki sites. WALK follows links through those pages ten steps at a time and keeps what it finds as small graphs. PREVIEW graph opens those graphs as a page you can look at.",
-      "id": "4c946f448f73473c"
+      "id": "301a68f49b5a0e43"
     },
     {
       "type": "markdown",
       "text": "The blocks pass things to each other through a shared notebook that Mech calls \"state\". NEIGHBORS writes the neighborhood into it. WALK reads the neighborhood and writes graphs. PREVIEW reads the graphs. Put WALK before NEIGHBORS and WALK finds nothing to read.",
-      "id": "7a822e291e3827f7"
+      "id": "714ef9b8176b0a04"
     },
     {
       "type": "markdown",
       "text": "## Why blocks",
-      "id": "5c09a8032fdbec9f"
+      "id": "d9a4c6264e2adf94"
     },
     {
       "type": "markdown",
       "text": "Typing these lines is easy for Ward and hard for nearly everyone else. Spaces matter, the capital words have to be spelled exactly, and a mistake only shows up after you click ▶.",
-      "id": "a3a9632078896988"
+      "id": "e654caaa589bc267"
     },
     {
       "type": "markdown",
       "text": "Mech Blocks keeps Ward's text exactly as it is and puts a second view beside it. You drag blocks instead of typing, and the text rewrites itself as you go. The text is still what FedWiki stores, so a script built from blocks runs anywhere Mech runs.",
-      "id": "0d34d93dade19e9b"
+      "id": "0ae5a5c471cc320e"
     },
     {
       "type": "markdown",
       "text": "## What you see",
-      "id": "151830bf55edecde"
+      "id": "182e590e9f5ca803"
     },
     {
       "type": "markdown",
       "text": "Every block says what it **needs** and what it **makes**, with a small picture and a word. WALK says \"needs 🏘 neighborhood\" and \"makes 🔗 aspect\". When the picture you need is made by a block above you, the block fits.",
-      "id": "8428de93fdd1cd1e"
+      "id": "e485304891520abf"
     },
     {
       "type": "markdown",
       "text": "Three lamps above the script answer three plain questions:",
-      "id": "37120fb7dcad6473"
+      "id": "62ba330f7c562083"
     },
     {
       "type": "markdown",
       "text": "- **Fits together**: does every block have what it needs?\n- **Ready to start**: can anyone start it, not just the page owner?\n- **Ends in a result**: will something show at the end?",
-      "id": "30798ef2e3642ae0"
+      "id": "3080565203b784da"
     },
     {
       "type": "markdown",
       "text": "In **beginner mode**, blocks that cannot go at the blue \"next block goes here\" line are greyed out, and a block that would not fit cannot be dropped. The tool says why: \"WALK expects neighborhood, like from NEIGHBORS.\"",
-      "id": "7b60f3d1ddb9972d"
+      "id": "3464629ff8a9b628"
     },
     {
       "type": "markdown",
       "text": "## Try it in three minutes",
-      "id": "96fa5226933f33e8"
+      "id": "8147ca1e8f310e85"
     },
     {
       "type": "markdown",
       "text": "1. Open `tools/mech-blocks.html`. Clear the text box on the right.\n2. Tap CLICK, then NEIGHBORS, then WALK, then PREVIEW in the block list on the left. Each one lands at the blue line.\n3. Watch the three lamps turn green, and the text on the right become the script above.\n4. Now drag WALK above NEIGHBORS. Beginner mode refuses and tells you why.\n5. Turn beginner mode off and try again. This time the drop goes through, the bar turns amber, and the lamps go out with the reason.",
-      "id": "d8516bdaba29f1d5"
+      "id": "480eb0c69fb70839"
     },
     {
       "type": "markdown",
       "text": "## In the wiki",
-      "id": "b3e075567f7d7761"
+      "id": "adda6e344029c8ea"
     },
     {
       "type": "markdown",
       "text": "On a site with the plugin, place a Mech Blocks item on a page that has Mech items. For each Mech item it offers:",
-      "id": "8ab29acc58bacee2"
+      "id": "b8bdcbfc2a945d3e"
     },
     {
       "type": "markdown",
       "text": "- **Edit in blocks**: the block view in a new window. **Save to wiki** puts the script back into the Mech item, where Ward's Mech runs it as usual.\n- **Watch it run**: runs the script with Ward's own blocks, and draws the shared notebook as it fills. There is an oval for each thing the blocks pass along, a solid line from the block that wrote it, and a dashed line to each block that read it.\n- **Graph Tool**: once a run has made graphs, draws them in the RCN Graph Tool.",
-      "id": "3fd2550f0179ed7e"
+      "id": "221376231ed5b92f"
     },
     {
       "type": "markdown",
       "text": "The plugin also answers `PLUGIN rcn` with blocks for RCN data on the site: `PROJECTIONS`, `PROJECTION` for Layer 1 folders, and `BADGES` for SODOTO badges.",
-      "id": "18e8d070af664dda"
+      "id": "1858f15e560121f2"
     },
     {
       "type": "markdown",
       "text": "## What it cannot promise",
-      "id": "40bbbef6c84c1e28"
+      "id": "40bea8c5ad241a99"
     },
     {
       "type": "markdown",
       "text": "Green lamps mean the script is put together right. They cannot promise a result, because some things only show up when it runs: a wiki site that does not answer, an empty neighborhood, a sensor that is off. Mech's own ✖︎ messages cover those.",
-      "id": "37a2d3ee57b2efa5"
+      "id": "11b040c948fdfc8e"
     },
     {
       "type": "markdown",
       "text": "The page on its own does not run Mech. In the wiki, Watch it run does, or copy the text into any Mech item.",
-      "id": "3780870eba37d264"
+      "id": "39c201c3f07fe965"
     },
     {
       "type": "markdown",
       "text": "## Where it came from",
-      "id": "61d4e7665a43fa90"
+      "id": "af071c8e20b5bf11"
     },
     {
       "type": "markdown",
       "text": "Ward named three inspirations: Scratch, where blocks only fit where they belong; Snap!, where blocks pass data to each other; and Etoys, where you pull pieces from the things on the screen. Mech Blocks borrows one idea from each, and its checks use the trouble messages from Ward's own code, applied before running instead of after.",
-      "id": "3b251bd8d0dbc3f8"
+      "id": "74019dbf8830569e"
     },
     {
       "type": "markdown",
       "text": "The [[Mech Blocks Manual]] explains every part of the screen. The [[Mech Blocks Reference]] lists every block with what it needs and makes. [[About Mechblocks Plugin]] has working examples to click.",
-      "id": "ac6caa5448a64de7"
+      "id": "8f6c9764107368de"
     }
   ],
   "journal": [
@@ -150,316 +150,316 @@
         "title": "Mech Blocks Introduction",
         "story": []
       },
-      "date": 1791162862162,
+      "date": 1791172772797,
       "author": "Marc Pierson with Claude Opus 5.5"
     },
     {
       "type": "add",
-      "id": "0a503111fed8530f",
+      "id": "b1b7f8f8aef932aa",
       "item": {
         "type": "markdown",
-        "id": "0a503111fed8530f",
+        "id": "b1b7f8f8aef932aa",
         "text": "Mech Blocks lets you build a small wiki program by snapping blocks together, the way children build programs in Scratch. It sits on top of Mech, which Ward Cunningham wrote so that a FedWiki page can carry a little program that runs when you read it."
       },
-      "date": 1791162862163
+      "date": 1791172772798
     },
     {
       "type": "add",
-      "id": "e81b7ef1e3dbd031",
+      "id": "60fbb87d893f3928",
       "item": {
         "type": "markdown",
-        "id": "e81b7ef1e3dbd031",
+        "id": "60fbb87d893f3928",
         "text": "It changes nothing in Mech itself. It comes two ways: as one web page, `tools/mech-blocks.html`, that you open in a browser, and as a wiki plugin, `wiki-plugin-mechblocks`, which puts a Mech Blocks item beside the Mech items on a FedWiki page."
       },
-      "date": 1791162862164,
-      "after": "0a503111fed8530f"
+      "date": 1791172772799,
+      "after": "b1b7f8f8aef932aa"
     },
     {
       "type": "add",
-      "id": "c24b0c25a0b7c1fb",
+      "id": "5a09262558d1c621",
       "item": {
         "type": "markdown",
-        "id": "c24b0c25a0b7c1fb",
+        "id": "5a09262558d1c621",
         "text": "## What Mech does"
       },
-      "date": 1791162862165,
-      "after": "e81b7ef1e3dbd031"
+      "date": 1791172772800,
+      "after": "60fbb87d893f3928"
     },
     {
       "type": "add",
-      "id": "8e1dcb549b151f52",
+      "id": "0f4293b493ce4555",
       "item": {
         "type": "markdown",
-        "id": "8e1dcb549b151f52",
+        "id": "0f4293b493ce4555",
         "text": "A Mech program is a few lines of capital words. Each line is a block that does one thing. A line indented under another line belongs to it. Ward's handbook at mech.fed.wiki has about sixty of them."
       },
-      "date": 1791162862166,
-      "after": "c24b0c25a0b7c1fb"
+      "date": 1791172772801,
+      "after": "5a09262558d1c621"
     },
     {
       "type": "add",
-      "id": "19867c42e24553b5",
+      "id": "127dcb6aa6ba62fd",
       "item": {
         "type": "code",
-        "id": "19867c42e24553b5",
+        "id": "127dcb6aa6ba62fd",
         "text": "CLICK\n NEIGHBORS fed.wiki\n WALK 10 steps\n PREVIEW graph"
       },
-      "date": 1791162862167,
-      "after": "8e1dcb549b151f52"
+      "date": 1791172772802,
+      "after": "0f4293b493ce4555"
     },
     {
       "type": "add",
-      "id": "4c946f448f73473c",
+      "id": "301a68f49b5a0e43",
       "item": {
         "type": "markdown",
-        "id": "4c946f448f73473c",
+        "id": "301a68f49b5a0e43",
         "text": "Read it top to bottom. CLICK puts a ▶ button on the page and waits. NEIGHBORS gathers the list of every page on the nearby wiki sites. WALK follows links through those pages ten steps at a time and keeps what it finds as small graphs. PREVIEW graph opens those graphs as a page you can look at."
       },
-      "date": 1791162862168,
-      "after": "19867c42e24553b5"
+      "date": 1791172772803,
+      "after": "127dcb6aa6ba62fd"
     },
     {
       "type": "add",
-      "id": "7a822e291e3827f7",
+      "id": "714ef9b8176b0a04",
       "item": {
         "type": "markdown",
-        "id": "7a822e291e3827f7",
+        "id": "714ef9b8176b0a04",
         "text": "The blocks pass things to each other through a shared notebook that Mech calls \"state\". NEIGHBORS writes the neighborhood into it. WALK reads the neighborhood and writes graphs. PREVIEW reads the graphs. Put WALK before NEIGHBORS and WALK finds nothing to read."
       },
-      "date": 1791162862169,
-      "after": "4c946f448f73473c"
+      "date": 1791172772804,
+      "after": "301a68f49b5a0e43"
     },
     {
       "type": "add",
-      "id": "5c09a8032fdbec9f",
+      "id": "d9a4c6264e2adf94",
       "item": {
         "type": "markdown",
-        "id": "5c09a8032fdbec9f",
+        "id": "d9a4c6264e2adf94",
         "text": "## Why blocks"
       },
-      "date": 1791162862170,
-      "after": "7a822e291e3827f7"
+      "date": 1791172772805,
+      "after": "714ef9b8176b0a04"
     },
     {
       "type": "add",
-      "id": "a3a9632078896988",
+      "id": "e654caaa589bc267",
       "item": {
         "type": "markdown",
-        "id": "a3a9632078896988",
+        "id": "e654caaa589bc267",
         "text": "Typing these lines is easy for Ward and hard for nearly everyone else. Spaces matter, the capital words have to be spelled exactly, and a mistake only shows up after you click ▶."
       },
-      "date": 1791162862171,
-      "after": "5c09a8032fdbec9f"
+      "date": 1791172772806,
+      "after": "d9a4c6264e2adf94"
     },
     {
       "type": "add",
-      "id": "0d34d93dade19e9b",
+      "id": "0ae5a5c471cc320e",
       "item": {
         "type": "markdown",
-        "id": "0d34d93dade19e9b",
+        "id": "0ae5a5c471cc320e",
         "text": "Mech Blocks keeps Ward's text exactly as it is and puts a second view beside it. You drag blocks instead of typing, and the text rewrites itself as you go. The text is still what FedWiki stores, so a script built from blocks runs anywhere Mech runs."
       },
-      "date": 1791162862172,
-      "after": "a3a9632078896988"
+      "date": 1791172772807,
+      "after": "e654caaa589bc267"
     },
     {
       "type": "add",
-      "id": "151830bf55edecde",
+      "id": "182e590e9f5ca803",
       "item": {
         "type": "markdown",
-        "id": "151830bf55edecde",
+        "id": "182e590e9f5ca803",
         "text": "## What you see"
       },
-      "date": 1791162862173,
-      "after": "0d34d93dade19e9b"
+      "date": 1791172772808,
+      "after": "0ae5a5c471cc320e"
     },
     {
       "type": "add",
-      "id": "8428de93fdd1cd1e",
+      "id": "e485304891520abf",
       "item": {
         "type": "markdown",
-        "id": "8428de93fdd1cd1e",
+        "id": "e485304891520abf",
         "text": "Every block says what it **needs** and what it **makes**, with a small picture and a word. WALK says \"needs 🏘 neighborhood\" and \"makes 🔗 aspect\". When the picture you need is made by a block above you, the block fits."
       },
-      "date": 1791162862174,
-      "after": "151830bf55edecde"
+      "date": 1791172772809,
+      "after": "182e590e9f5ca803"
     },
     {
       "type": "add",
-      "id": "37120fb7dcad6473",
+      "id": "62ba330f7c562083",
       "item": {
         "type": "markdown",
-        "id": "37120fb7dcad6473",
+        "id": "62ba330f7c562083",
         "text": "Three lamps above the script answer three plain questions:"
       },
-      "date": 1791162862175,
-      "after": "8428de93fdd1cd1e"
+      "date": 1791172772810,
+      "after": "e485304891520abf"
     },
     {
       "type": "add",
-      "id": "30798ef2e3642ae0",
+      "id": "3080565203b784da",
       "item": {
         "type": "markdown",
-        "id": "30798ef2e3642ae0",
+        "id": "3080565203b784da",
         "text": "- **Fits together**: does every block have what it needs?\n- **Ready to start**: can anyone start it, not just the page owner?\n- **Ends in a result**: will something show at the end?"
       },
-      "date": 1791162862176,
-      "after": "37120fb7dcad6473"
+      "date": 1791172772811,
+      "after": "62ba330f7c562083"
     },
     {
       "type": "add",
-      "id": "7b60f3d1ddb9972d",
+      "id": "3464629ff8a9b628",
       "item": {
         "type": "markdown",
-        "id": "7b60f3d1ddb9972d",
+        "id": "3464629ff8a9b628",
         "text": "In **beginner mode**, blocks that cannot go at the blue \"next block goes here\" line are greyed out, and a block that would not fit cannot be dropped. The tool says why: \"WALK expects neighborhood, like from NEIGHBORS.\""
       },
-      "date": 1791162862177,
-      "after": "30798ef2e3642ae0"
+      "date": 1791172772812,
+      "after": "3080565203b784da"
     },
     {
       "type": "add",
-      "id": "96fa5226933f33e8",
+      "id": "8147ca1e8f310e85",
       "item": {
         "type": "markdown",
-        "id": "96fa5226933f33e8",
+        "id": "8147ca1e8f310e85",
         "text": "## Try it in three minutes"
       },
-      "date": 1791162862178,
-      "after": "7b60f3d1ddb9972d"
+      "date": 1791172772813,
+      "after": "3464629ff8a9b628"
     },
     {
       "type": "add",
-      "id": "d8516bdaba29f1d5",
+      "id": "480eb0c69fb70839",
       "item": {
         "type": "markdown",
-        "id": "d8516bdaba29f1d5",
+        "id": "480eb0c69fb70839",
         "text": "1. Open `tools/mech-blocks.html`. Clear the text box on the right.\n2. Tap CLICK, then NEIGHBORS, then WALK, then PREVIEW in the block list on the left. Each one lands at the blue line.\n3. Watch the three lamps turn green, and the text on the right become the script above.\n4. Now drag WALK above NEIGHBORS. Beginner mode refuses and tells you why.\n5. Turn beginner mode off and try again. This time the drop goes through, the bar turns amber, and the lamps go out with the reason."
       },
-      "date": 1791162862179,
-      "after": "96fa5226933f33e8"
+      "date": 1791172772814,
+      "after": "8147ca1e8f310e85"
     },
     {
       "type": "add",
-      "id": "b3e075567f7d7761",
+      "id": "adda6e344029c8ea",
       "item": {
         "type": "markdown",
-        "id": "b3e075567f7d7761",
+        "id": "adda6e344029c8ea",
         "text": "## In the wiki"
       },
-      "date": 1791162862180,
-      "after": "d8516bdaba29f1d5"
+      "date": 1791172772815,
+      "after": "480eb0c69fb70839"
     },
     {
       "type": "add",
-      "id": "8ab29acc58bacee2",
+      "id": "b8bdcbfc2a945d3e",
       "item": {
         "type": "markdown",
-        "id": "8ab29acc58bacee2",
+        "id": "b8bdcbfc2a945d3e",
         "text": "On a site with the plugin, place a Mech Blocks item on a page that has Mech items. For each Mech item it offers:"
       },
-      "date": 1791162862181,
-      "after": "b3e075567f7d7761"
+      "date": 1791172772816,
+      "after": "adda6e344029c8ea"
     },
     {
       "type": "add",
-      "id": "3fd2550f0179ed7e",
+      "id": "221376231ed5b92f",
       "item": {
         "type": "markdown",
-        "id": "3fd2550f0179ed7e",
+        "id": "221376231ed5b92f",
         "text": "- **Edit in blocks**: the block view in a new window. **Save to wiki** puts the script back into the Mech item, where Ward's Mech runs it as usual.\n- **Watch it run**: runs the script with Ward's own blocks, and draws the shared notebook as it fills. There is an oval for each thing the blocks pass along, a solid line from the block that wrote it, and a dashed line to each block that read it.\n- **Graph Tool**: once a run has made graphs, draws them in the RCN Graph Tool."
       },
-      "date": 1791162862182,
-      "after": "8ab29acc58bacee2"
+      "date": 1791172772817,
+      "after": "b8bdcbfc2a945d3e"
     },
     {
       "type": "add",
-      "id": "18e8d070af664dda",
+      "id": "1858f15e560121f2",
       "item": {
         "type": "markdown",
-        "id": "18e8d070af664dda",
+        "id": "1858f15e560121f2",
         "text": "The plugin also answers `PLUGIN rcn` with blocks for RCN data on the site: `PROJECTIONS`, `PROJECTION` for Layer 1 folders, and `BADGES` for SODOTO badges."
       },
-      "date": 1791162862183,
-      "after": "3fd2550f0179ed7e"
+      "date": 1791172772818,
+      "after": "221376231ed5b92f"
     },
     {
       "type": "add",
-      "id": "40bbbef6c84c1e28",
+      "id": "40bea8c5ad241a99",
       "item": {
         "type": "markdown",
-        "id": "40bbbef6c84c1e28",
+        "id": "40bea8c5ad241a99",
         "text": "## What it cannot promise"
       },
-      "date": 1791162862184,
-      "after": "18e8d070af664dda"
+      "date": 1791172772819,
+      "after": "1858f15e560121f2"
     },
     {
       "type": "add",
-      "id": "37a2d3ee57b2efa5",
+      "id": "11b040c948fdfc8e",
       "item": {
         "type": "markdown",
-        "id": "37a2d3ee57b2efa5",
+        "id": "11b040c948fdfc8e",
         "text": "Green lamps mean the script is put together right. They cannot promise a result, because some things only show up when it runs: a wiki site that does not answer, an empty neighborhood, a sensor that is off. Mech's own ✖︎ messages cover those."
       },
-      "date": 1791162862185,
-      "after": "40bbbef6c84c1e28"
+      "date": 1791172772820,
+      "after": "40bea8c5ad241a99"
     },
     {
       "type": "add",
-      "id": "3780870eba37d264",
+      "id": "39c201c3f07fe965",
       "item": {
         "type": "markdown",
-        "id": "3780870eba37d264",
+        "id": "39c201c3f07fe965",
         "text": "The page on its own does not run Mech. In the wiki, Watch it run does, or copy the text into any Mech item."
       },
-      "date": 1791162862186,
-      "after": "37a2d3ee57b2efa5"
+      "date": 1791172772821,
+      "after": "11b040c948fdfc8e"
     },
     {
       "type": "add",
-      "id": "61d4e7665a43fa90",
+      "id": "af071c8e20b5bf11",
       "item": {
         "type": "markdown",
-        "id": "61d4e7665a43fa90",
+        "id": "af071c8e20b5bf11",
         "text": "## Where it came from"
       },
-      "date": 1791162862187,
-      "after": "3780870eba37d264"
+      "date": 1791172772822,
+      "after": "39c201c3f07fe965"
     },
     {
       "type": "add",
-      "id": "3b251bd8d0dbc3f8",
+      "id": "74019dbf8830569e",
       "item": {
         "type": "markdown",
-        "id": "3b251bd8d0dbc3f8",
+        "id": "74019dbf8830569e",
         "text": "Ward named three inspirations: Scratch, where blocks only fit where they belong; Snap!, where blocks pass data to each other; and Etoys, where you pull pieces from the things on the screen. Mech Blocks borrows one idea from each, and its checks use the trouble messages from Ward's own code, applied before running instead of after."
       },
-      "date": 1791162862188,
-      "after": "61d4e7665a43fa90"
+      "date": 1791172772823,
+      "after": "af071c8e20b5bf11"
     },
     {
       "type": "add",
-      "id": "ac6caa5448a64de7",
+      "id": "8f6c9764107368de",
       "item": {
         "type": "markdown",
-        "id": "ac6caa5448a64de7",
+        "id": "8f6c9764107368de",
         "text": "The [[Mech Blocks Manual]] explains every part of the screen. The [[Mech Blocks Reference]] lists every block with what it needs and makes. [[About Mechblocks Plugin]] has working examples to click."
       },
-      "date": 1791162862189,
-      "after": "3b251bd8d0dbc3f8"
+      "date": 1791172772824,
+      "after": "74019dbf8830569e"
     },
     {
       "type": "add",
-      "id": "36532531f92999cc",
+      "id": "d70c11786f38eba5",
       "item": {
         "type": "markdown",
-        "id": "36532531f92999cc",
+        "id": "d70c11786f38eba5",
         "text": "*Marc Pierson and Claude Opus 5.5 · October 2026*",
         "attribution": true
       },
-      "date": 1791162862242,
-      "after": "0a503111fed8530f"
+      "date": 1791172772858,
+      "after": "b1b7f8f8aef932aa"
     }
   ]
 }
