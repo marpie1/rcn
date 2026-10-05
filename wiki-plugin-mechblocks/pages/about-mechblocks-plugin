@@ -13,58 +13,63 @@
       "attribution": true
     },
     {
-      "type": "markdown",
+      "type": "paragraph",
       "id": "5a17e00000000003",
+      "text": "See [https://github.com/marpie1/rcn/tree/master/wiki-plugin-mechblocks GitHub] for plugin source."
+    },
+    {
+      "type": "markdown",
+      "id": "5a17e00000000004",
       "text": "Help: [[Mech Blocks Introduction]] · [[Mech Blocks Manual]] · [[Mech Blocks Reference]] · [Slides (PPTX)](/plugin/mechblocks/rcn-mech-blocks-intro.pptx)"
     },
     {
       "type": "paragraph",
-      "id": "5a17e00000000004",
+      "id": "5a17e00000000005",
       "text": "Watch the notebook: an oval for each thing the blocks pass along, a solid line from the block that wrote it, a dashed line to each block that read it, and red when a block looked for something that was not there. When the run has made graphs, Graph Tool draws them in the RCN Graph Tool."
     },
     {
       "type": "mech",
-      "id": "5a17e00000000005",
+      "id": "5a17e00000000006",
       "text": "CLICK\n NEIGHBORS\n WALK 6 steps\n PREVIEW graph"
     },
     {
       "type": "paragraph",
-      "id": "5a17e00000000006",
+      "id": "5a17e00000000007",
       "text": "PLUGIN rcn adds server blocks for RCN data on this site. PROJECTIONS lists the Layer 1 folders, PROJECTION whatcom makes one into graphs (PROJECTION whatcom Person Program keeps those kinds), and BADGES gathers the SODOTO badges on this site's pages."
     },
     {
       "type": "mech",
-      "id": "5a17e00000000007",
+      "id": "5a17e00000000008",
       "text": "CLICK\n PLUGIN rcn\n  PROJECTIONS\n  BADGES\n PREVIEW items"
     },
     {
       "type": "mech",
-      "id": "5a17e00000000008",
+      "id": "5a17e00000000009",
       "text": "CLICK\n PLUGIN rcn\n  PROJECTION whatcom Person Program\n SOLO"
     },
     {
       "type": "mechblocks",
-      "id": "5a17e00000000009",
+      "id": "5a17e0000000000a",
       "text": ""
     },
     {
       "type": "paragraph",
-      "id": "5a17e0000000000a",
+      "id": "5a17e0000000000b",
       "text": "Without this plugin, ordinary Mech can still draw its graphs in the Graph Tool: the Code item below defines graphtool, and CODE graphtool sends state.aspect there."
     },
     {
       "type": "mech",
-      "id": "5a17e0000000000b",
+      "id": "5a17e0000000000c",
       "text": "CLICK\n NEIGHBORS\n WALK 6 steps\n CODE graphtool"
     },
     {
       "type": "code",
-      "id": "5a17e0000000000c",
+      "id": "5a17e0000000000d",
       "text": "// Turn Mech's state.aspect into an RCN Graph Tool model.\n//\n// state.aspect is what WALK, SOURCE aspect and the rcn server blocks leave:\n//   [{ id, source, result: [{ name, graph: { nodes:[{type, props:{name}}], rels:[{type, from, to}] } }] }]\n// The Graph Tool wants { version, modelName, nodes:[{id,label,x,y,w,h,...}], edges:[{src,tgt,...}] }.\n// Nodes are merged across every aspect by type + name, so a page reached by two\n// walks is one box. Layout: one column per node type, most-connected at the top.\n\nconst PALETTE = ['#1d4ed8', '#15803d', '#b45309', '#7c3aed', '#be185d', '#0f766e', '#c2410c', '#4b5563']\n\nfunction aspectGraphs(aspect) {\n  const out = []\n  for (const each of aspect || []) {\n    for (const r of each.result || []) if (r && r.graph && r.graph.nodes) out.push({ name: r.name, graph: r.graph, source: each.source || each.id })\n  }\n  return out\n}\n\nfunction aspectToGraphJSON(aspect, title = 'Mech aspect', { maxNodes = 400 } = {}) {\n  const graphs = aspectGraphs(aspect)\n  const nodes = new Map()          // key type\\0name -> node\n  const edges = new Map()          // key src\\0tgt\\0type -> edge\n  const degree = new Map()\n  let dropped = 0\n  const keyOf = n => `${n.type || 'Node'}\\u0000${(n.props && n.props.name) || ''}`\n  for (const { graph } of graphs) {\n    const ids = graph.nodes.map(n => {\n      const k = keyOf(n)\n      if (!nodes.has(k)) {\n        if (nodes.size >= maxNodes) { dropped++; return null }\n        nodes.set(k, { key: k, type: n.type || 'Node', name: (n.props && n.props.name) || '(unnamed)', props: n.props || {} })\n      }\n      return k\n    })\n    for (const r of graph.rels || []) {\n      const a = ids[r.from], b = ids[r.to]\n      if (!a || !b) continue\n      const ek = `${a}\\u0000${b}\\u0000${r.type || ''}`\n      if (edges.has(ek)) continue\n      edges.set(ek, { a, b, type: r.type || '' })\n      degree.set(a, (degree.get(a) || 0) + 1)\n      degree.set(b, (degree.get(b) || 0) + 1)\n    }\n  }\n\n  const types = [...new Set([...nodes.values()].map(n => n.type))]\n  const colorOf = t => PALETTE[types.indexOf(t) % PALETTE.length]\n  const idOf = new Map()\n  const outNodes = []\n  types.forEach((t, col) => {\n    const list = [...nodes.values()].filter(n => n.type == t)\n      .sort((x, y) => (degree.get(y.key) || 0) - (degree.get(x.key) || 0) || x.name.localeCompare(y.name))\n    list.forEach((n, row) => {\n      const id = `n${outNodes.length + 1}`\n      idOf.set(n.key, id)\n      const w = Math.min(220, Math.max(96, 18 + n.name.length * 7))\n      outNodes.push({\n        id, label: n.name, x: 160 + col * 280, y: 80 + row * 70, w, h: 48,\n        shape: 'rounded', note: `${t} · from Mech`, props: { mechType: t, ...flat(n.props) },\n        fontSize: 12, fontColor: '#000000', color: '#ffffff', borderColor: colorOf(t),\n        borderWidth: 2, borderDash: 'solid', extraLabels: [], icon: '',\n      })\n    })\n  })\n  const outEdges = [...edges.values()].map((e, i) => ({\n    id: `e${i + 1}`, src: idOf.get(e.a), tgt: idOf.get(e.b), label: e.type,\n    arrowDir: 'forward', color: '#64748b', width: 1.5, dash: 'solid', fontSize: 10,\n    fontColor: '#000000', curved: true, polarity: 'none', props: {},\n  }))\n\n  const sources = [...new Set(graphs.map(g => g.source).filter(Boolean))]\n  return {\n    version: '1.0', mode: 'select', modelName: title, canvasBg: '#ffffff',\n    modelNote: `Drawn from Mech state.aspect: ${graphs.length} aspect${graphs.length == 1 ? '' : 's'}` +\n      (sources.length ? ` from ${sources.join('; ')}` : '') + `. Columns are node types: ${types.join(', ')}.` +\n      (dropped ? ` ${dropped} nodes beyond the first ${maxNodes} were left out.` : ''),\n    graphAttrs: {}, cldLoopNames: {}, legendEntries: [], legendVisible: false, legendCollapsed: false,\n    customSymbols: [], nodes: outNodes, edges: outEdges, lines: [], metaEdges: [],\n  }\n}\n\n// props become strings so the Graph Tool's property panel can show them\nfunction flat(props) {\n  const out = {}\n  for (const [k, v] of Object.entries(props || {})) {\n    if (k == 'name') continue\n    out[k] = typeof v == 'object' ? JSON.stringify(v) : String(v)\n  }\n  return out\n}\n\n// CODE graphtool -- send state.aspect to the RCN Graph Tool in a new window.\nexport function graphtool(where) {\n  if (!this.aspect) return this.api.trouble('graphtool expects \"aspect\", like from WALK or PLUGIN rcn.')\n  const url = where || (/(^|\\.)localhost$/.test(location.hostname)\n    ? 'http://localhost:8765/tools/graph-tool-v22.html'\n    : 'https://marc.relocalizecreativity.net/assets/Drag/graph-tool-v22.html')\n  const graphJSON = aspectToGraphJSON(this.aspect, this.context.title + ' - Mech aspect')\n  const popup = window.open(url, 'rcngraph', 'popup,height=820,width=1440')\n  if (!popup) return this.api.trouble('The browser blocked the Graph Tool window. Allow pop-ups for this wiki.')\n  const ready = e => {\n    if (e.source !== popup || !e.data || e.data.action !== 'graphToolReady') return\n    popup.postMessage({ action: 'loadGraph', graphJSON, pageTitle: graphJSON.modelName }, '*')\n    window.removeEventListener('message', ready)\n  }\n  window.addEventListener('message', ready)\n  return graphJSON.nodes.length + ' nodes sent to the Graph Tool'\n}\n"
     },
     {
       "type": "paragraph",
-      "id": "5a17e0000000000d",
+      "id": "5a17e0000000000e",
       "text": "Mech is Ward Cunningham's work: github.com/WardCunningham/wiki-plugin-mech, handbook at mech.fed.wiki. Mech Blocks bundles his interpreter under its MIT licence."
     }
   ],
@@ -104,9 +109,9 @@
       "type": "add",
       "id": "5a17e00000000003",
       "item": {
-        "type": "markdown",
+        "type": "paragraph",
         "id": "5a17e00000000003",
-        "text": "Help: [[Mech Blocks Introduction]] · [[Mech Blocks Manual]] · [[Mech Blocks Reference]] · [Slides (PPTX)](/plugin/mechblocks/rcn-mech-blocks-intro.pptx)"
+        "text": "See [https://github.com/marpie1/rcn/tree/master/wiki-plugin-mechblocks GitHub] for plugin source."
       },
       "date": 1791115200003,
       "after": "5a17e00000000002"
@@ -115,9 +120,9 @@
       "type": "add",
       "id": "5a17e00000000004",
       "item": {
-        "type": "paragraph",
+        "type": "markdown",
         "id": "5a17e00000000004",
-        "text": "Watch the notebook: an oval for each thing the blocks pass along, a solid line from the block that wrote it, a dashed line to each block that read it, and red when a block looked for something that was not there. When the run has made graphs, Graph Tool draws them in the RCN Graph Tool."
+        "text": "Help: [[Mech Blocks Introduction]] · [[Mech Blocks Manual]] · [[Mech Blocks Reference]] · [Slides (PPTX)](/plugin/mechblocks/rcn-mech-blocks-intro.pptx)"
       },
       "date": 1791115200004,
       "after": "5a17e00000000003"
@@ -126,9 +131,9 @@
       "type": "add",
       "id": "5a17e00000000005",
       "item": {
-        "type": "mech",
+        "type": "paragraph",
         "id": "5a17e00000000005",
-        "text": "CLICK\n NEIGHBORS\n WALK 6 steps\n PREVIEW graph"
+        "text": "Watch the notebook: an oval for each thing the blocks pass along, a solid line from the block that wrote it, a dashed line to each block that read it, and red when a block looked for something that was not there. When the run has made graphs, Graph Tool draws them in the RCN Graph Tool."
       },
       "date": 1791115200005,
       "after": "5a17e00000000004"
@@ -137,9 +142,9 @@
       "type": "add",
       "id": "5a17e00000000006",
       "item": {
-        "type": "paragraph",
+        "type": "mech",
         "id": "5a17e00000000006",
-        "text": "PLUGIN rcn adds server blocks for RCN data on this site. PROJECTIONS lists the Layer 1 folders, PROJECTION whatcom makes one into graphs (PROJECTION whatcom Person Program keeps those kinds), and BADGES gathers the SODOTO badges on this site's pages."
+        "text": "CLICK\n NEIGHBORS\n WALK 6 steps\n PREVIEW graph"
       },
       "date": 1791115200006,
       "after": "5a17e00000000005"
@@ -148,9 +153,9 @@
       "type": "add",
       "id": "5a17e00000000007",
       "item": {
-        "type": "mech",
+        "type": "paragraph",
         "id": "5a17e00000000007",
-        "text": "CLICK\n PLUGIN rcn\n  PROJECTIONS\n  BADGES\n PREVIEW items"
+        "text": "PLUGIN rcn adds server blocks for RCN data on this site. PROJECTIONS lists the Layer 1 folders, PROJECTION whatcom makes one into graphs (PROJECTION whatcom Person Program keeps those kinds), and BADGES gathers the SODOTO badges on this site's pages."
       },
       "date": 1791115200007,
       "after": "5a17e00000000006"
@@ -161,7 +166,7 @@
       "item": {
         "type": "mech",
         "id": "5a17e00000000008",
-        "text": "CLICK\n PLUGIN rcn\n  PROJECTION whatcom Person Program\n SOLO"
+        "text": "CLICK\n PLUGIN rcn\n  PROJECTIONS\n  BADGES\n PREVIEW items"
       },
       "date": 1791115200008,
       "after": "5a17e00000000007"
@@ -170,9 +175,9 @@
       "type": "add",
       "id": "5a17e00000000009",
       "item": {
-        "type": "mechblocks",
+        "type": "mech",
         "id": "5a17e00000000009",
-        "text": ""
+        "text": "CLICK\n PLUGIN rcn\n  PROJECTION whatcom Person Program\n SOLO"
       },
       "date": 1791115200009,
       "after": "5a17e00000000008"
@@ -181,9 +186,9 @@
       "type": "add",
       "id": "5a17e0000000000a",
       "item": {
-        "type": "paragraph",
+        "type": "mechblocks",
         "id": "5a17e0000000000a",
-        "text": "Without this plugin, ordinary Mech can still draw its graphs in the Graph Tool: the Code item below defines graphtool, and CODE graphtool sends state.aspect there."
+        "text": ""
       },
       "date": 1791115200010,
       "after": "5a17e00000000009"
@@ -192,9 +197,9 @@
       "type": "add",
       "id": "5a17e0000000000b",
       "item": {
-        "type": "mech",
+        "type": "paragraph",
         "id": "5a17e0000000000b",
-        "text": "CLICK\n NEIGHBORS\n WALK 6 steps\n CODE graphtool"
+        "text": "Without this plugin, ordinary Mech can still draw its graphs in the Graph Tool: the Code item below defines graphtool, and CODE graphtool sends state.aspect there."
       },
       "date": 1791115200011,
       "after": "5a17e0000000000a"
@@ -203,9 +208,9 @@
       "type": "add",
       "id": "5a17e0000000000c",
       "item": {
-        "type": "code",
+        "type": "mech",
         "id": "5a17e0000000000c",
-        "text": "// Turn Mech's state.aspect into an RCN Graph Tool model.\n//\n// state.aspect is what WALK, SOURCE aspect and the rcn server blocks leave:\n//   [{ id, source, result: [{ name, graph: { nodes:[{type, props:{name}}], rels:[{type, from, to}] } }] }]\n// The Graph Tool wants { version, modelName, nodes:[{id,label,x,y,w,h,...}], edges:[{src,tgt,...}] }.\n// Nodes are merged across every aspect by type + name, so a page reached by two\n// walks is one box. Layout: one column per node type, most-connected at the top.\n\nconst PALETTE = ['#1d4ed8', '#15803d', '#b45309', '#7c3aed', '#be185d', '#0f766e', '#c2410c', '#4b5563']\n\nfunction aspectGraphs(aspect) {\n  const out = []\n  for (const each of aspect || []) {\n    for (const r of each.result || []) if (r && r.graph && r.graph.nodes) out.push({ name: r.name, graph: r.graph, source: each.source || each.id })\n  }\n  return out\n}\n\nfunction aspectToGraphJSON(aspect, title = 'Mech aspect', { maxNodes = 400 } = {}) {\n  const graphs = aspectGraphs(aspect)\n  const nodes = new Map()          // key type\\0name -> node\n  const edges = new Map()          // key src\\0tgt\\0type -> edge\n  const degree = new Map()\n  let dropped = 0\n  const keyOf = n => `${n.type || 'Node'}\\u0000${(n.props && n.props.name) || ''}`\n  for (const { graph } of graphs) {\n    const ids = graph.nodes.map(n => {\n      const k = keyOf(n)\n      if (!nodes.has(k)) {\n        if (nodes.size >= maxNodes) { dropped++; return null }\n        nodes.set(k, { key: k, type: n.type || 'Node', name: (n.props && n.props.name) || '(unnamed)', props: n.props || {} })\n      }\n      return k\n    })\n    for (const r of graph.rels || []) {\n      const a = ids[r.from], b = ids[r.to]\n      if (!a || !b) continue\n      const ek = `${a}\\u0000${b}\\u0000${r.type || ''}`\n      if (edges.has(ek)) continue\n      edges.set(ek, { a, b, type: r.type || '' })\n      degree.set(a, (degree.get(a) || 0) + 1)\n      degree.set(b, (degree.get(b) || 0) + 1)\n    }\n  }\n\n  const types = [...new Set([...nodes.values()].map(n => n.type))]\n  const colorOf = t => PALETTE[types.indexOf(t) % PALETTE.length]\n  const idOf = new Map()\n  const outNodes = []\n  types.forEach((t, col) => {\n    const list = [...nodes.values()].filter(n => n.type == t)\n      .sort((x, y) => (degree.get(y.key) || 0) - (degree.get(x.key) || 0) || x.name.localeCompare(y.name))\n    list.forEach((n, row) => {\n      const id = `n${outNodes.length + 1}`\n      idOf.set(n.key, id)\n      const w = Math.min(220, Math.max(96, 18 + n.name.length * 7))\n      outNodes.push({\n        id, label: n.name, x: 160 + col * 280, y: 80 + row * 70, w, h: 48,\n        shape: 'rounded', note: `${t} · from Mech`, props: { mechType: t, ...flat(n.props) },\n        fontSize: 12, fontColor: '#000000', color: '#ffffff', borderColor: colorOf(t),\n        borderWidth: 2, borderDash: 'solid', extraLabels: [], icon: '',\n      })\n    })\n  })\n  const outEdges = [...edges.values()].map((e, i) => ({\n    id: `e${i + 1}`, src: idOf.get(e.a), tgt: idOf.get(e.b), label: e.type,\n    arrowDir: 'forward', color: '#64748b', width: 1.5, dash: 'solid', fontSize: 10,\n    fontColor: '#000000', curved: true, polarity: 'none', props: {},\n  }))\n\n  const sources = [...new Set(graphs.map(g => g.source).filter(Boolean))]\n  return {\n    version: '1.0', mode: 'select', modelName: title, canvasBg: '#ffffff',\n    modelNote: `Drawn from Mech state.aspect: ${graphs.length} aspect${graphs.length == 1 ? '' : 's'}` +\n      (sources.length ? ` from ${sources.join('; ')}` : '') + `. Columns are node types: ${types.join(', ')}.` +\n      (dropped ? ` ${dropped} nodes beyond the first ${maxNodes} were left out.` : ''),\n    graphAttrs: {}, cldLoopNames: {}, legendEntries: [], legendVisible: false, legendCollapsed: false,\n    customSymbols: [], nodes: outNodes, edges: outEdges, lines: [], metaEdges: [],\n  }\n}\n\n// props become strings so the Graph Tool's property panel can show them\nfunction flat(props) {\n  const out = {}\n  for (const [k, v] of Object.entries(props || {})) {\n    if (k == 'name') continue\n    out[k] = typeof v == 'object' ? JSON.stringify(v) : String(v)\n  }\n  return out\n}\n\n// CODE graphtool -- send state.aspect to the RCN Graph Tool in a new window.\nexport function graphtool(where) {\n  if (!this.aspect) return this.api.trouble('graphtool expects \"aspect\", like from WALK or PLUGIN rcn.')\n  const url = where || (/(^|\\.)localhost$/.test(location.hostname)\n    ? 'http://localhost:8765/tools/graph-tool-v22.html'\n    : 'https://marc.relocalizecreativity.net/assets/Drag/graph-tool-v22.html')\n  const graphJSON = aspectToGraphJSON(this.aspect, this.context.title + ' - Mech aspect')\n  const popup = window.open(url, 'rcngraph', 'popup,height=820,width=1440')\n  if (!popup) return this.api.trouble('The browser blocked the Graph Tool window. Allow pop-ups for this wiki.')\n  const ready = e => {\n    if (e.source !== popup || !e.data || e.data.action !== 'graphToolReady') return\n    popup.postMessage({ action: 'loadGraph', graphJSON, pageTitle: graphJSON.modelName }, '*')\n    window.removeEventListener('message', ready)\n  }\n  window.addEventListener('message', ready)\n  return graphJSON.nodes.length + ' nodes sent to the Graph Tool'\n}\n"
+        "text": "CLICK\n NEIGHBORS\n WALK 6 steps\n CODE graphtool"
       },
       "date": 1791115200012,
       "after": "5a17e0000000000b"
@@ -214,12 +219,23 @@
       "type": "add",
       "id": "5a17e0000000000d",
       "item": {
-        "type": "paragraph",
+        "type": "code",
         "id": "5a17e0000000000d",
-        "text": "Mech is Ward Cunningham's work: github.com/WardCunningham/wiki-plugin-mech, handbook at mech.fed.wiki. Mech Blocks bundles his interpreter under its MIT licence."
+        "text": "// Turn Mech's state.aspect into an RCN Graph Tool model.\n//\n// state.aspect is what WALK, SOURCE aspect and the rcn server blocks leave:\n//   [{ id, source, result: [{ name, graph: { nodes:[{type, props:{name}}], rels:[{type, from, to}] } }] }]\n// The Graph Tool wants { version, modelName, nodes:[{id,label,x,y,w,h,...}], edges:[{src,tgt,...}] }.\n// Nodes are merged across every aspect by type + name, so a page reached by two\n// walks is one box. Layout: one column per node type, most-connected at the top.\n\nconst PALETTE = ['#1d4ed8', '#15803d', '#b45309', '#7c3aed', '#be185d', '#0f766e', '#c2410c', '#4b5563']\n\nfunction aspectGraphs(aspect) {\n  const out = []\n  for (const each of aspect || []) {\n    for (const r of each.result || []) if (r && r.graph && r.graph.nodes) out.push({ name: r.name, graph: r.graph, source: each.source || each.id })\n  }\n  return out\n}\n\nfunction aspectToGraphJSON(aspect, title = 'Mech aspect', { maxNodes = 400 } = {}) {\n  const graphs = aspectGraphs(aspect)\n  const nodes = new Map()          // key type\\0name -> node\n  const edges = new Map()          // key src\\0tgt\\0type -> edge\n  const degree = new Map()\n  let dropped = 0\n  const keyOf = n => `${n.type || 'Node'}\\u0000${(n.props && n.props.name) || ''}`\n  for (const { graph } of graphs) {\n    const ids = graph.nodes.map(n => {\n      const k = keyOf(n)\n      if (!nodes.has(k)) {\n        if (nodes.size >= maxNodes) { dropped++; return null }\n        nodes.set(k, { key: k, type: n.type || 'Node', name: (n.props && n.props.name) || '(unnamed)', props: n.props || {} })\n      }\n      return k\n    })\n    for (const r of graph.rels || []) {\n      const a = ids[r.from], b = ids[r.to]\n      if (!a || !b) continue\n      const ek = `${a}\\u0000${b}\\u0000${r.type || ''}`\n      if (edges.has(ek)) continue\n      edges.set(ek, { a, b, type: r.type || '' })\n      degree.set(a, (degree.get(a) || 0) + 1)\n      degree.set(b, (degree.get(b) || 0) + 1)\n    }\n  }\n\n  const types = [...new Set([...nodes.values()].map(n => n.type))]\n  const colorOf = t => PALETTE[types.indexOf(t) % PALETTE.length]\n  const idOf = new Map()\n  const outNodes = []\n  types.forEach((t, col) => {\n    const list = [...nodes.values()].filter(n => n.type == t)\n      .sort((x, y) => (degree.get(y.key) || 0) - (degree.get(x.key) || 0) || x.name.localeCompare(y.name))\n    list.forEach((n, row) => {\n      const id = `n${outNodes.length + 1}`\n      idOf.set(n.key, id)\n      const w = Math.min(220, Math.max(96, 18 + n.name.length * 7))\n      outNodes.push({\n        id, label: n.name, x: 160 + col * 280, y: 80 + row * 70, w, h: 48,\n        shape: 'rounded', note: `${t} · from Mech`, props: { mechType: t, ...flat(n.props) },\n        fontSize: 12, fontColor: '#000000', color: '#ffffff', borderColor: colorOf(t),\n        borderWidth: 2, borderDash: 'solid', extraLabels: [], icon: '',\n      })\n    })\n  })\n  const outEdges = [...edges.values()].map((e, i) => ({\n    id: `e${i + 1}`, src: idOf.get(e.a), tgt: idOf.get(e.b), label: e.type,\n    arrowDir: 'forward', color: '#64748b', width: 1.5, dash: 'solid', fontSize: 10,\n    fontColor: '#000000', curved: true, polarity: 'none', props: {},\n  }))\n\n  const sources = [...new Set(graphs.map(g => g.source).filter(Boolean))]\n  return {\n    version: '1.0', mode: 'select', modelName: title, canvasBg: '#ffffff',\n    modelNote: `Drawn from Mech state.aspect: ${graphs.length} aspect${graphs.length == 1 ? '' : 's'}` +\n      (sources.length ? ` from ${sources.join('; ')}` : '') + `. Columns are node types: ${types.join(', ')}.` +\n      (dropped ? ` ${dropped} nodes beyond the first ${maxNodes} were left out.` : ''),\n    graphAttrs: {}, cldLoopNames: {}, legendEntries: [], legendVisible: false, legendCollapsed: false,\n    customSymbols: [], nodes: outNodes, edges: outEdges, lines: [], metaEdges: [],\n  }\n}\n\n// props become strings so the Graph Tool's property panel can show them\nfunction flat(props) {\n  const out = {}\n  for (const [k, v] of Object.entries(props || {})) {\n    if (k == 'name') continue\n    out[k] = typeof v == 'object' ? JSON.stringify(v) : String(v)\n  }\n  return out\n}\n\n// CODE graphtool -- send state.aspect to the RCN Graph Tool in a new window.\nexport function graphtool(where) {\n  if (!this.aspect) return this.api.trouble('graphtool expects \"aspect\", like from WALK or PLUGIN rcn.')\n  const url = where || (/(^|\\.)localhost$/.test(location.hostname)\n    ? 'http://localhost:8765/tools/graph-tool-v22.html'\n    : 'https://marc.relocalizecreativity.net/assets/Drag/graph-tool-v22.html')\n  const graphJSON = aspectToGraphJSON(this.aspect, this.context.title + ' - Mech aspect')\n  const popup = window.open(url, 'rcngraph', 'popup,height=820,width=1440')\n  if (!popup) return this.api.trouble('The browser blocked the Graph Tool window. Allow pop-ups for this wiki.')\n  const ready = e => {\n    if (e.source !== popup || !e.data || e.data.action !== 'graphToolReady') return\n    popup.postMessage({ action: 'loadGraph', graphJSON, pageTitle: graphJSON.modelName }, '*')\n    window.removeEventListener('message', ready)\n  }\n  window.addEventListener('message', ready)\n  return graphJSON.nodes.length + ' nodes sent to the Graph Tool'\n}\n"
       },
       "date": 1791115200013,
       "after": "5a17e0000000000c"
+    },
+    {
+      "type": "add",
+      "id": "5a17e0000000000e",
+      "item": {
+        "type": "paragraph",
+        "id": "5a17e0000000000e",
+        "text": "Mech is Ward Cunningham's work: github.com/WardCunningham/wiki-plugin-mech, handbook at mech.fed.wiki. Mech Blocks bundles his interpreter under its MIT licence."
+      },
+      "date": 1791115200014,
+      "after": "5a17e0000000000d"
     }
   ]
 }

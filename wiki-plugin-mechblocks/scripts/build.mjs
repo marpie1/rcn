@@ -80,6 +80,7 @@ const id = () => (0x5a17e00000000000n + BigInt(++n)).toString(16)
 const story = [
   ['paragraph', 'Mech Blocks works beside Ward Cunningham\'s Mech items. For each Mech item on its page it offers Edit in blocks, which opens the Mech Blocks tool and saves the script back, and Watch it run, which runs the script with Ward\'s own blocks and draws the shared notebook as it fills.'],
   ['markdown', CREDIT, { attribution: true }],
+  ['paragraph', 'See [https://github.com/marpie1/rcn/tree/master/wiki-plugin-mechblocks GitHub] for plugin source.'],
   ['markdown', 'Help: [[Mech Blocks Introduction]] · [[Mech Blocks Manual]] · [[Mech Blocks Reference]] · [Slides (PPTX)](/plugin/mechblocks/rcn-mech-blocks-intro.pptx)'],
   ['paragraph', 'Watch the notebook: an oval for each thing the blocks pass along, a solid line from the block that wrote it, a dashed line to each block that read it, and red when a block looked for something that was not there. When the run has made graphs, Graph Tool draws them in the RCN Graph Tool.'],
   ['mech', 'CLICK\n NEIGHBORS\n WALK 6 steps\n PREVIEW graph'],
