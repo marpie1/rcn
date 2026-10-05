@@ -630,6 +630,35 @@ function injectStyle() {
   document.head.appendChild(s)
 }
 
+
+// ⓘ — this plugin's About page in one click. FedWiki opens it with Cmd/Ctrl-I,
+// but only from the item's text editor, which people seldom open when the real
+// work happens elsewhere. Redraws empty the item, so the mark puts itself back.
+function aboutMark ($item, type) {
+  const el = $item.get(0)
+  if (!el || el.__aboutMark) return
+  el.__aboutMark = true
+  if (getComputedStyle(el).position === 'static') el.style.position = 'relative'
+  const add = () => {
+    if (el.querySelector(':scope > .rcn-about')) return
+    const a = document.createElement('a')
+    a.className = 'rcn-about'
+    a.href = '/view/about-' + type + '-plugin'
+    a.title = 'About this plugin'
+    a.textContent = 'ⓘ'
+    a.style.cssText = 'position:absolute;top:0;right:-18px;z-index:1000;font:15px/1 system-ui,sans-serif;color:#64748b;text-decoration:none;cursor:pointer;background:rgba(255,255,255,.75);border-radius:50%;padding:1px 2px'
+    a.addEventListener('click', e => {
+      e.preventDefault()
+      e.stopPropagation()
+      wiki.doInternalLink('about ' + type + ' plugin', $item.parents('.page:first'))
+    })
+    a.addEventListener('dblclick', e => e.stopPropagation())
+    el.appendChild(a)
+  }
+  add()
+  new MutationObserver(add).observe(el, { childList: true })
+}
+
 if (typeof window !== 'undefined') {
   window.plugins = window.plugins || {}
   const outlinerPlugin = {
@@ -643,6 +672,7 @@ if (typeof window !== 'undefined') {
       )
     },
     bind($item, item) {
+      aboutMark($item, 'rcnoutliner')
       $item.on('click', e => e.stopPropagation())
       $item.on('dblclick', e => e.stopPropagation())
       // Stop Tab/Enter/Backspace from reaching FedWiki's document-level handlers
