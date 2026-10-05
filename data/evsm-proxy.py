@@ -10,6 +10,23 @@ Then open evsm-aggregator.html via http://localhost:8765
 import os, json, urllib.request, urllib.error
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
+
+def load_neo4j_password():
+    # Same two homes as substrate/db.py: the process environment wins, then
+    # ~/rcn/.env.neo4j (gitignored). Never inline the password here.
+    if os.environ.get('NEO4J_PASSWORD'):
+        return os.environ['NEO4J_PASSWORD']
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env.neo4j')
+    try:
+        with open(path) as fh:
+            for line in fh:
+                key, _, value = line.strip().partition('=')
+                if key.strip() == 'NEO4J_PASSWORD':
+                    return value.strip()
+    except OSError:
+        pass
+    return None
+
 PORT = 8765
 API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 eVSM_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -80,7 +97,7 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 data = json.loads(body)
                 contract = data.get('contract', {})
-                neo4j_password = 'sucramsucram'
+                neo4j_password = load_neo4j_password()
                 results = {'neo4j': None, 'fedwiki': [], 'errors': []}
 
                 cid     = contract.get('id','')
@@ -117,6 +134,8 @@ MERGE (pe)-[:PERFORMER_IN]->(c)
                         'version': contract.get('version','0.1')
                     }
                     neo4j_body = json.dumps({'statements':[{'statement':cypher,'parameters':params}]}).encode()
+                    if not neo4j_password:
+                        raise RuntimeError('no Neo4j password: set NEO4J_PASSWORD or write ~/rcn/.env.neo4j')
                     token = base64.b64encode(f'neo4j:{neo4j_password}'.encode()).decode()
                     req = urllib.request.Request(
                         'http://localhost:7474/db/neo4j/tx/commit',
