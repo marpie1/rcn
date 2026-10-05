@@ -13,7 +13,7 @@ makes, the three lamps, beginner mode — and is plain about the limit: green
 lamps mean put together right, not a guaranteed result.
 
 Every number is real: 61 handbook scripts from mech.fed.wiki, 1,433 moves and
-5,535 checks from tools/test-mech-blocks.js (October 2026). Block names, needs
+5,544 checks from tools/test-mech-blocks.js (October 2026). Block names, needs
 and makes come from the CATALOG in tools/mech-blocks.html.
 """
 
@@ -370,7 +370,7 @@ label(sl, 'what you drag', 5.95, 4.42, 3.2, 11, INK3, PP_ALIGN.CENTER, bold=Fals
 for i, (big, small) in enumerate([('61', 'handbook scripts come back byte for byte'),
                                   ('61', 'nest exactly as Ward\'s own interpreter nests them'),
                                   ('1,433', 'block moves keep every line and every block\'s shape'),
-                                  ('5,535', 'automated checks pass')]):
+                                  ('5,544', 'automated checks pass')]):
     y = 2.05 + i * 0.62
     txt(sl, big, 9.5, y, 1.25, 0.6, size=26, bold=True, color=GRN, align=PP_ALIGN.RIGHT)
     txt(sl, small, 10.85, y + 0.06, 2.1, 0.6, size=11.5, color=INK2, spacing=1.0)
@@ -516,7 +516,27 @@ for i, (h, b) in enumerate([
 footer(sl, nxt())
 
 # ═════════════════════════════════════════════════════════════════════════════
-# 11 — What it is and is not
+# 11 — In the wiki
+# ═════════════════════════════════════════════════════════════════════════════
+sl = slide()
+kicker(sl, 'Now in FedWiki', GRN)
+title(sl, 'The Mech Blocks plugin, beside Ward\'s Mech')
+for i, (h, b, col) in enumerate([
+        ('Edit in blocks', 'A Mech Blocks item lists the Mech items on its page. Edit opens this block view in a new '
+                           'window; Save to wiki puts the script back as an ordinary edit, and Ward\'s Mech runs it.', CTRL),
+        ('Watch it run', 'Runs the script with Ward\'s own blocks and draws the shared notebook as it fills. Tried on '
+                         'a real wiki: NEIGHBORS wrote 1,805 pages, WALK read them and wrote graphs, PREVIEW read those.', WEB),
+        ('Graph Tool', 'Once a run has made graphs, one click draws them in the RCN Graph Tool. Plain Mech can do the '
+                       'same with CODE graphtool, no plugin needed.', SHOW),
+        ('PLUGIN rcn', 'Server blocks for RCN data on the site: PROJECTION turns a Layer 1 folder into graphs, BADGES '
+                       'gathers SODOTO badges. On a local test site: 10 badges, 3 people, 8 skills.', SERV)]):
+    card(sl, 0.85 + (i % 2) * 5.9, 2.0 + (i // 2) * 2.25, 5.65, 2.05, h, b, accent=col, bodysize=13)
+txt(sl, 'On npm as wiki-plugin-mechblocks, and running on Wiki Café since October 4 2026.',
+    0.85, 6.55, 11.6, 0.4, size=13, italic=True, color=INK2)
+footer(sl, nxt())
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 12 — What it is and is not
 # ═════════════════════════════════════════════════════════════════════════════
 sl = slide()
 kicker(sl, 'Honest scope', INK2)
@@ -525,18 +545,19 @@ card(sl, 0.85, 2.0, 5.7, 3.3, 'It is',
      '— One web page, tools/mech-blocks.html, that works offline.\n'
      '— A drag-and-tap editor for Mech text, with Ward\'s 61 handbook scripts to explore.\n'
      '— Checks before running, in Ward\'s words.\n'
+     '— A wiki plugin, wiki-plugin-mechblocks, running on Wiki Café.\n'
      '— An introduction, a manual and a block reference, as FedWiki pages.\n'
-     '— Tested: 5,535 automated checks, and real drags and taps in a browser.', accent=GRN, bodysize=14)
+     '— Tested: 5,544 automated checks, and real drags and taps in a browser.', accent=GRN, bodysize=14)
 card(sl, 6.85, 2.0, 5.6, 3.3, 'It is not',
-     '— It does not run Mech. Copy the text into a Mech item to run it.\n'
-     '— It cannot see what CODE functions or PLUGIN blocks do.\n'
+     '— The page on its own does not run Mech. In the wiki, Watch it run does.\n'
+     '— It cannot see what CODE functions or other plugins do.\n'
      '— It cannot know whether a site answers until the script runs.\n'
-     '— Not yet a FedWiki plugin.\n'
+     '— PLUGIN rcn reads only its own site: Layer 1 folders must be uploaded first.\n'
      '— Not a change to anything in use: Mech, the wikis and the RCN tools are untouched.', accent=RED, bodysize=14)
 footer(sl, nxt())
 
 # ═════════════════════════════════════════════════════════════════════════════
-# 12 — Next
+# 13 — Next
 # ═════════════════════════════════════════════════════════════════════════════
 sl = slide(ACC_DK)
 rect(sl, 0.85, 1.3, 1.6, 0.06, CTRL)
@@ -544,11 +565,12 @@ txt(sl, 'What could come next', 0.85, 1.6, 11, 0.8, size=34, bold=True, color=WH
 for i, (h, b) in enumerate([
         ('Talk with Ward', 'Bring the CODE and DOWNLOAD pages, the three findings and the catalog. Ask whether '
                            'he sees blocks as a view onto his text, or a replacement for it.'),
-        ('Put it where people can try it', 'Post the page on NDC Assets so Ward and NDC groups can use it '
-                                           'before any decision.'),
-        ('Draw what Mech finds', 'WALK already makes graphs of the neighborhood. Hand them to the RCN Graph '
-                                 'Tool, Map or Timeline: Mech finds, our tools draw.'),
-        ('Then, a plugin', 'A block view that opens on any Mech item in FedWiki, once Ward has answered.')]):
+        ('Upload the Layer 1 folders', 'Put the whatcom and other Layer 1 folders in a site\'s assets, so '
+                                       'PROJECTION works on Wiki Café as it does locally.'),
+        ('Map and Timeline next', 'The Graph Tool already draws what Mech finds. Markers could go to the RCN Map, '
+                                  'and page dates to the Timeline.'),
+        ('The SODOTO farm', 'Its image runs an older wiki without Mech. Adding both would bring BADGES to where '
+                            'the badges live.')]):
     y = 2.65 + i * 0.95
     rect(sl, 0.85, y, 0.055, 0.85, CTRL)
     txt(sl, h, 1.15, y + 0.02, 4.0, 0.45, size=17, bold=True, color=WHITE)

@@ -42,6 +42,8 @@
   button:hover { background: var(--soft); }
   select { max-width: 340px; }
   .flash-msg { font-size: 14px; color: var(--green); font-weight: 700; }
+  .help-links { font-size: 14px; }
+  .help-links a { color: var(--blue); }
   #saveWiki { background: #000; color: #fff; }
   #saveWiki:hover { background: #333; }
 
@@ -148,6 +150,7 @@
   <button id="copyText">Copy Mech text</button>
   <button id="copyCatalog" title="The machine-readable block list proposed for Mech's blocks.js">Copy block catalog</button>
   <button id="saveWiki" hidden title="Write this script back into the Mech item on the wiki page">Save to wiki</button>
+  <span class="help-links">Help: <a id="docIntro" target="_blank" rel="noopener">Introduction ↗</a> · <a id="docManual" target="_blank" rel="noopener">Manual ↗</a> · <a id="docReference" target="_blank" rel="noopener">Reference ↗</a> · <a id="docSlides">Slides (PPTX) ↓</a></span>
   <span class="flash-msg" id="flash"></span>
 </div>
 <main>
@@ -1056,6 +1059,19 @@ sel.addEventListener('change', () => {
   setText(corpus[+sel.value].text);
 });
 
+// Help links. On its own the page points at the copies on Wiki Café, which come
+// with the Mech Blocks plugin; opened by the plugin, it points at that wiki.
+function setDocs(docs) {
+  for (const [id, key] of [['docIntro', 'introduction'], ['docManual', 'manual'], ['docReference', 'reference'], ['docSlides', 'slides']])
+    if (docs[key]) $('#' + id).href = docs[key];
+}
+setDocs({
+  introduction: 'https://marc.relocalizecreativity.net/view/mech-blocks-introduction',
+  manual: 'https://marc.relocalizecreativity.net/view/mech-blocks-manual',
+  reference: 'https://marc.relocalizecreativity.net/view/mech-blocks-reference',
+  slides: 'https://marc.relocalizecreativity.net/plugin/mechblocks/rcn-mech-blocks-intro.pptx',
+});
+
 // Opened by the Mech Blocks wiki plugin: load that Mech item, and Save writes it back.
 if (window.opener) {
   window.opener.postMessage({ toolType: 'mech-blocks', action: 'mechBlocksReady' }, '*');
@@ -1072,6 +1088,7 @@ if (window.opener) {
       $('#saveWiki').textContent = d.isNew ? 'Add to wiki page' : 'Save to wiki';
       flash(d.isNew ? 'New Mech item for ' + d.title : 'Editing a Mech item on ' + d.title);
       fromWiki = true;
+      if (d.docs) setDocs(d.docs);
     }
     if (d.action == 'saved') { flash('Saved to the wiki page'); $('#saveWiki').textContent = 'Save to wiki'; }
   });

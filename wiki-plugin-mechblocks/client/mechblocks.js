@@ -1,4 +1,4 @@
-/* wiki-plugin-mechblocks 0.1.0 — includes Ward Cunningham's Mech interpreter (MIT), see vendor/mech */
+/* wiki-plugin-mechblocks 0.1.1 — includes Ward Cunningham's Mech interpreter (MIT), see vendor/mech */
 (() => {
   // src/mech-shim.mjs
   var uniq = (value, index, self) => self.indexOf(value) === index;
@@ -3569,6 +3569,8 @@ ${explain[counter] || ""}`, id: hash(heading) });
   button:hover { background: var(--soft); }
   select { max-width: 340px; }
   .flash-msg { font-size: 14px; color: var(--green); font-weight: 700; }
+  .help-links { font-size: 14px; }
+  .help-links a { color: var(--blue); }
   #saveWiki { background: #000; color: #fff; }
   #saveWiki:hover { background: #333; }
 
@@ -3675,6 +3677,7 @@ ${explain[counter] || ""}`, id: hash(heading) });
   <button id="copyText">Copy Mech text</button>
   <button id="copyCatalog" title="The machine-readable block list proposed for Mech's blocks.js">Copy block catalog</button>
   <button id="saveWiki" hidden title="Write this script back into the Mech item on the wiki page">Save to wiki</button>
+  <span class="help-links">Help: <a id="docIntro" target="_blank" rel="noopener">Introduction \u2197</a> \xB7 <a id="docManual" target="_blank" rel="noopener">Manual \u2197</a> \xB7 <a id="docReference" target="_blank" rel="noopener">Reference \u2197</a> \xB7 <a id="docSlides">Slides (PPTX) \u2193</a></span>
   <span class="flash-msg" id="flash"></span>
 </div>
 <main>
@@ -4583,6 +4586,19 @@ sel.addEventListener('change', () => {
   setText(corpus[+sel.value].text);
 });
 
+// Help links. On its own the page points at the copies on Wiki Caf\xE9, which come
+// with the Mech Blocks plugin; opened by the plugin, it points at that wiki.
+function setDocs(docs) {
+  for (const [id, key] of [['docIntro', 'introduction'], ['docManual', 'manual'], ['docReference', 'reference'], ['docSlides', 'slides']])
+    if (docs[key]) $('#' + id).href = docs[key];
+}
+setDocs({
+  introduction: 'https://marc.relocalizecreativity.net/view/mech-blocks-introduction',
+  manual: 'https://marc.relocalizecreativity.net/view/mech-blocks-manual',
+  reference: 'https://marc.relocalizecreativity.net/view/mech-blocks-reference',
+  slides: 'https://marc.relocalizecreativity.net/plugin/mechblocks/rcn-mech-blocks-intro.pptx',
+});
+
 // Opened by the Mech Blocks wiki plugin: load that Mech item, and Save writes it back.
 if (window.opener) {
   window.opener.postMessage({ toolType: 'mech-blocks', action: 'mechBlocksReady' }, '*');
@@ -4599,6 +4615,7 @@ if (window.opener) {
       $('#saveWiki').textContent = d.isNew ? 'Add to wiki page' : 'Save to wiki';
       flash(d.isNew ? 'New Mech item for ' + d.title : 'Editing a Mech item on ' + d.title);
       fromWiki = true;
+      if (d.docs) setDocs(d.docs);
     }
     if (d.action == 'saved') { flash('Saved to the wiki page'); $('#saveWiki').textContent = 'Save to wiki'; }
   });
@@ -4622,6 +4639,9 @@ if (!fromWiki) setText(corpus[+sel.value].text);
   // src/mechblocks.mjs
   var LOCAL = /(^|\.)localhost$/.test(window.location.hostname);
   var GRAPH_URL = LOCAL ? "http://localhost:8765/tools/graph-tool-v22.html" : "https://marc.relocalizecreativity.net/assets/Drag/graph-tool-v22.html";
+  var SLIDES = "/plugin/mechblocks/rcn-mech-blocks-intro.pptx";
+  var DOCS = [["Introduction", "Mech Blocks Introduction"], ["Manual", "Mech Blocks Manual"], ["Reference", "Mech Blocks Reference"]];
+  var slugOf = (title) => title.replace(/\s/g, "-").replace(/[^A-Za-z0-9-]/g, "").toLowerCase();
   var esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var FAMILY = [
     [["neighborhood", "page", "info"], "#1d4ed8", "sites and pages"],
@@ -4657,6 +4677,7 @@ if (!fromWiki) setText(corpus[+sel.value].text);
 .mechblocks .mb-row code { font-size:12px; white-space:pre; display:block; margin-bottom:5px; color:#333; max-height:4.6em; overflow:hidden; }
 .mechblocks button { cursor:pointer; font-size:13px; margin-right:4px; }
 .mechblocks .mb-none { color:#666; font-style:italic; }
+.mechblocks .mb-help { font-size:12px; margin:-2px 0 6px; }
 .mb-nb { margin-top:10px; background:#fff; border:1px solid #ccc; border-radius:6px; padding:8px; }
 .mb-nb-bar { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:6px; font-size:13px; }
 .mb-nb-body { position:relative; display:flex; gap:56px; align-items:flex-start; }
@@ -4681,11 +4702,37 @@ if (!fromWiki) setText(corpus[+sel.value].text);
     $item.append(`
     <div class="mechblocks">
       <div class="mb-head"><b>Mech Blocks</b><span><button class="mb-refresh" title="Look again for Mech items on this page">\u21BB</button><button class="mb-new">\uFF0B New Mech in blocks \u2197</button></span></div>
+      <div class="mb-help">${DOCS.map(([label, title]) => `<a class="mb-doc" href="/view/${slugOf(title)}" data-title="${esc(title)}">${label}</a>`).join(" \xB7 ")} \xB7 <a href="${SLIDES}" download>Slides (PPTX) \u2193</a></div>
       <div class="mb-list"></div>
       <div class="mb-notebook"></div>
     </div>`);
   }
+  function aboutMark($item, type) {
+    const el = $item.get(0);
+    if (!el || el.__aboutMark) return;
+    el.__aboutMark = true;
+    if (getComputedStyle(el).position === "static") el.style.position = "relative";
+    const add = () => {
+      if (el.querySelector(":scope > .rcn-about")) return;
+      const a = document.createElement("a");
+      a.className = "rcn-about";
+      a.href = "/view/about-" + type + "-plugin";
+      a.title = "About this plugin";
+      a.textContent = "\u24D8";
+      a.style.cssText = "position:absolute;top:0;right:-18px;z-index:1000;font:15px/1 system-ui,sans-serif;color:#64748b;text-decoration:none;cursor:pointer;background:rgba(255,255,255,.75);border-radius:50%;padding:1px 2px";
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        wiki.doInternalLink("about " + type + " plugin", $item.parents(".page:first"));
+      });
+      a.addEventListener("dblclick", (e) => e.stopPropagation());
+      el.appendChild(a);
+    };
+    add();
+    new MutationObserver(add).observe(el, { childList: true });
+  }
   function bind($item, item) {
+    aboutMark($item, "mechblocks");
     const $page = $item.parents(".page:first");
     const pageEl = $page[0];
     if (pageEl && !pageEl.dataset.key && $page.data("key")) pageEl.dataset.key = $page.data("key");
@@ -4703,7 +4750,14 @@ if (!fromWiki) setText(corpus[+sel.value].text);
       const mech = mechItems($page).find((m) => m.id == id);
       if (mech) watch($item, $page, mech);
     });
-    $item.on("dblclick", ".mb-head b", () => wiki.textEditor($item, item));
+    $item.on("dblclick", (e) => {
+      if ($(e.target).closest("button, a, .mb-nb").length) return;
+      wiki.textEditor($item, item);
+    });
+    $item.on("click", ".mb-doc", (e) => {
+      e.preventDefault();
+      wiki.doInternalLink($(e.target).data("title"), $page);
+    });
   }
   function mechItems($page) {
     const found = /* @__PURE__ */ new Map();
@@ -4751,7 +4805,9 @@ if (!fromWiki) setText(corpus[+sel.value].text);
     if (data.toolType != "mech-blocks") return;
     if (data.action == "mechBlocksReady") {
       const title = editor.$page.data("data")?.title || "";
-      editor.popup.postMessage({ toolType: "mech-blocks", action: "loadMech", text: editor.text, title, isNew: !editor.id }, "*");
+      const docs = Object.fromEntries(DOCS.map(([label, t]) => [label.toLowerCase(), `${location.origin}/view/${slugOf(t)}`]));
+      docs.slides = location.origin + SLIDES;
+      editor.popup.postMessage({ toolType: "mech-blocks", action: "loadMech", text: editor.text, title, isNew: !editor.id, docs }, "*");
     }
     if (data.action == "saveMech") {
       const text = String(data.text);

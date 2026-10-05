@@ -12,6 +12,18 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 await fs.mkdir(path.join(root, 'build'), { recursive: true })
 await fs.copyFile(path.join(root, '..', 'tools', 'mech-blocks.html'), path.join(root, 'build', 'mech-blocks.html'))
 
+// The introduction, manual and reference travel with the plugin as wiki pages,
+// built from tools/mech-blocks-*.md by docs/make_mech_blocks_fedwiki.sh, and the
+// deck travels as a file the server hands out. So the Help links work on every
+// site that has the plugin, with nothing to upload.
+const docPages = JSON.parse(await fs.readFile(path.join(root, '..', 'docs', 'fedwiki-pages', 'mech-blocks.json'), 'utf8'))
+await fs.mkdir(path.join(root, 'pages'), { recursive: true })
+for (const [slug, page] of Object.entries(docPages))
+  await fs.writeFile(path.join(root, 'pages', slug), JSON.stringify(page, null, 2))
+await fs.mkdir(path.join(root, 'docs'), { recursive: true })
+await fs.copyFile(path.join(root, '..', 'tools', 'rcn-mech-blocks-intro.pptx'), path.join(root, 'docs', 'rcn-mech-blocks-intro.pptx'))
+console.log(`pages: ${Object.keys(docPages).join(', ')}; docs/rcn-mech-blocks-intro.pptx`)
+
 const shim = {
   name: 'mech-shim',
   setup(build) {
@@ -68,6 +80,7 @@ const id = () => (0x5a17e00000000000n + BigInt(++n)).toString(16)
 const story = [
   ['paragraph', 'Mech Blocks works beside Ward Cunningham\'s Mech items. For each Mech item on its page it offers Edit in blocks, which opens the Mech Blocks tool and saves the script back, and Watch it run, which runs the script with Ward\'s own blocks and draws the shared notebook as it fills.'],
   ['markdown', CREDIT, { attribution: true }],
+  ['markdown', 'Help: [[Mech Blocks Introduction]] · [[Mech Blocks Manual]] · [[Mech Blocks Reference]] · [Slides (PPTX)](/plugin/mechblocks/rcn-mech-blocks-intro.pptx)'],
   ['paragraph', 'Watch the notebook: an oval for each thing the blocks pass along, a solid line from the block that wrote it, a dashed line to each block that read it, and red when a block looked for something that was not there. When the run has made graphs, Graph Tool draws them in the RCN Graph Tool.'],
   ['mech', 'CLICK\n NEIGHBORS\n WALK 6 steps\n PREVIEW graph'],
   ['paragraph', 'PLUGIN rcn adds server blocks for RCN data on this site. PROJECTIONS lists the Layer 1 folders, PROJECTION whatcom makes one into graphs (PROJECTION whatcom Person Program keeps those kinds), and BADGES gathers the SODOTO badges on this site\'s pages.'],

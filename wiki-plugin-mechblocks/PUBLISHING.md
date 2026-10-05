@@ -55,4 +55,15 @@ Then open `https://marc.relocalizecreativity.net/view/about-mechblocks-plugin` a
 
 ## Later versions
 
-Bump `version` in `package.json`, then `npm publish --access=public`, then ask Christian for `npm update -g wiki-plugin-mechblocks` and a restart. Plugin scripts are cached for about an hour, so force-reload before judging a change.
+Marc installs plugins on Wiki Café himself.
+
+1. Bump `version` in `package.json`.
+2. Run `npm publish --access=public`.
+3. On Wiki Café, run `npm update -g wiki-plugin-mechblocks` and restart the wiki.
+
+Plugin scripts are cached for about an hour, so force-reload before judging a change.
+
+Not every change needs a new version:
+
+- **Introduction, Manual, Reference:** edit the pages in the wiki. The site's own copy replaces the one the plugin brings.
+- **Slides:** upload a new `rcn-mech-blocks-intro.pptx` with an Assets item named `mechblocks`. The Slides link sends that copy in place of the plugin's.

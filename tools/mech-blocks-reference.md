@@ -54,6 +54,17 @@ Every block Mech knows, as Mech Blocks understands it from reading Ward Cunningh
 
 GET sends only the state named after it to the server, such as `GET recent`. Whatever the server blocks make comes back for the blocks after GET.
 
+## Blocks that run inside PLUGIN rcn
+
+These come with the Mech Blocks plugin and read RCN data held on the same site.
+
+| Block | What it does | Needs | Makes |
+|---|---|---|---|
+| PROJECTIONS | List the Layer 1 folders on this site. | — | ☰ items |
+| PROJECTION | A Layer 1 folder's graph, as an aspect; kinds after the name keep only those. | — | 🔗 aspect |
+| BADGES | SODOTO badges on this site's pages: people and the skills they hold; words after it keep matching skills. | — | 🔗 aspect; ☰ items |
+| HELLO | Proves the rcn plugin answers. | — | — |
+
 ## Notes
 
 - A block that is missing what it needs stops with a ✖︎ and makes nothing, so blocks after it that needed its result stop too.

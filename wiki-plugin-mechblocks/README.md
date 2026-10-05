@@ -14,6 +14,13 @@ A Federated Wiki plugin that works beside Ward Cunningham's [Mech](https://githu
   - `PROJECTION whatcom [kinds…]` turns one into an aspect.
   - `BADGES [words…]` gathers the SODOTO badges on the site's pages as people, skills and a list of items.
 
+## Help links
+
+The Mech Blocks item, and the block tool it opens, link to an Introduction, a Manual, a block Reference and the Slides.
+
+- **The three documents** are wiki pages that come with the plugin (`pages/mech-blocks-*`), built from `tools/mech-blocks-*.md`. Like any page a plugin brings, a page of the same name on the site takes its place. So edit them in the wiki, and the site's copy is the one people see, with no new plugin version.
+- **The slides** come from `/plugin/mechblocks/rcn-mech-blocks-intro.pptx`. That route sends the copy in the site's own assets, under `assets/mechblocks/`, if one has been uploaded there with an Assets item named `mechblocks`. Otherwise it sends the copy that came with the plugin. To update the slides, upload the new file there.
+
 The About page (`pages/about-mechblocks-plugin`) carries working examples. It also carries a Code item defining `graphtool`, so ordinary Mech, without this plugin, can send its graphs to the Graph Tool with `CODE graphtool`.
 
 ## How it is built
@@ -22,7 +29,7 @@ The About page (`pages/about-mechblocks-plugin`) carries working examples. It al
 
 Watching works by giving each block its own view of the one state object: a Proxy that reports reads, writes and deletes tagged with that block (`src/trace.mjs`). Each block's `emit` is wrapped in our bundled copy only.
 
-`npm test` runs 15 tests: the tracer, the aspect converter, the server blocks against a fixture site, and the About page's Code item loading the way Ward's CODE loads it.
+`npm test` runs 17 tests: the tracer, the aspect converter, the server blocks against a fixture site, the slides route and help pages, and the About page's Code item loading the way Ward's CODE loads it.
 
 ## Known limits
 
@@ -30,4 +37,4 @@ Watching works by giving each block its own view of the one state object: a Prox
 - `PLUGIN rcn` reads only this site: its pages for BADGES and its assets for PROJECTION. Badges on other people's SODOTO sites are not gathered.
 - There are no relationship-record blocks. That design has no code until it is agreed.
 - Watch it run really runs the script: PREVIEW opens pages, DOWNLOAD downloads, and SHOW changes the lineup.
-- Not published to npm. To try it locally, symlink it into the wiki's `node_modules` like the other RCN plugins, and restart the wiki.
+- On npm, and installed on the main Wiki Café farm. To try it locally, symlink it into the wiki's `node_modules` like the other RCN plugins, and restart the wiki.

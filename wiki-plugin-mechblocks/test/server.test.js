@@ -74,10 +74,35 @@ test('unknown blocks and lower-case lines are named, as Mech would', async () =>
   assert.match(mech[1].trouble, /all-caps/)
 })
 
-test('the HTTP route decodes what Mech sends and answers in Mech\'s shape', async () => {
+function routes(argv) {
   const { startServer } = require('../server/server.js')
-  let handler
-  startServer({ app: { get: (route, h) => { assert.strictEqual(route, '/plugin/rcn/mech'); handler = h } }, argv: { db: ctx.pages, data: site } })
+  const got = {}
+  startServer({ app: { get: (route, h) => { got[route] = h } }, argv })
+  return got
+}
+
+test('the slides come from the site\'s assets when uploaded there, else from the plugin', () => {
+  const fs = require('fs'), os = require('os')
+  const deck = '/plugin/mechblocks/rcn-mech-blocks-intro.pptx'
+  const sent = argv => { let f; routes(argv)[deck]({}, { type() {}, sendFile: x => { f = x } }); return f }
+  assert.match(sent({ db: ctx.pages, data: site }), /wiki-plugin-mechblocks\/docs\/rcn-mech-blocks-intro\.pptx$/)
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mb-'))
+  fs.mkdirSync(path.join(tmp, 'assets', 'mechblocks'), { recursive: true })
+  fs.writeFileSync(path.join(tmp, 'assets', 'mechblocks', 'rcn-mech-blocks-intro.pptx'), 'x')
+  assert.strictEqual(sent({ db: ctx.pages, data: tmp }), path.join(tmp, 'assets', 'mechblocks', 'rcn-mech-blocks-intro.pptx'))
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'docs', 'rcn-mech-blocks-intro.pptx')), 'the plugin carries its own copy')
+})
+
+test('the help pages come with the plugin, credit line second', () => {
+  for (const slug of ['mech-blocks-introduction', 'mech-blocks-manual', 'mech-blocks-reference']) {
+    const page = JSON.parse(require('fs').readFileSync(path.join(__dirname, '..', 'pages', slug), 'utf8'))
+    assert.ok(page.story.length > 5, slug)
+    assert.ok(page.story[1].attribution, `${slug}: credit line second`)
+  }
+})
+
+test('the HTTP route decodes what Mech sends and answers in Mech\'s shape', async () => {
+  const handler = routes({ db: ctx.pages, data: site })['/plugin/rcn/mech']
   const body = [{ command: 'PROJECTION demo', key: 'x.0' }]
   const b64 = s => Buffer.from(JSON.stringify(s), 'latin1').toString('base64')
   let sent

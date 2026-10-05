@@ -12,7 +12,7 @@ It opens with one of Ward's handbook scripts already loaded, so there is somethi
 
 ## The four parts of the screen
 
-- **The bar along the top**: a menu of Ward's handbook scripts, the beginner mode switch, Undo, Copy Mech text, and Copy block catalog.
+- **The bar along the top**: a menu of Ward's handbook scripts, the beginner mode switch, Undo, Copy Mech text, Copy block catalog, Save to wiki when the plugin opened it, and the Help links.
 - **Blocks**, on the left: every block, grouped by colour. Control is brown, Pages and neighbors blue, Data teal, Show results green, Server purple, Messages pink, Turtle drawing grey.
 - **Script**, in the middle: your program as blocks, with the three lamps above it.
 - **Mech text and Before you run it**, on the right: the same program as Ward's text, and a list of everything that can be seen to be wrong before it runs.
@@ -55,7 +55,7 @@ A few blocks hold lines of data rather than blocks:
 
 These lines are drawn with a dashed border.
 
-GET holds blocks that run on the wiki server. The server blocks are at the bottom of the list, marked "in GET", and only fit inside GET. PLUGIN holds blocks that another plugin runs; Mech Blocks cannot check those.
+GET holds blocks that run on the wiki server. The server blocks are at the bottom of the list, marked "in GET", and only fit inside GET. PLUGIN holds blocks that another plugin runs. Mech Blocks knows the blocks of `PLUGIN rcn`, described below, and checks them. For any other plugin it cannot tell what comes back, so later needs are shown as "may come from the plugin" rather than as problems.
 
 ## Changing the words after a block
 
@@ -156,7 +156,7 @@ Drop a link to a wiki page onto the script, for example from a browser's address
 
 ## Running a script
 
-Mech Blocks does not run scripts. To run one:
+In the wiki, use **Watch it run** or **Save to wiki**, both described below. From the page on its own:
 
 1. Click **Copy Mech text**.
 2. On a FedWiki page, on a site where the Mech plugin is installed, add a Mech item, or double-click an existing one.
@@ -165,13 +165,49 @@ Mech Blocks does not run scripts. To run one:
 
 ## What it does not do
 
-- It does not run Mech, so it shows no live results.
-- It cannot check what CODE functions or PLUGIN blocks do.
+- The page on its own does not run Mech. In the wiki, Watch it run does.
+- It cannot check what CODE functions do, or what plugins other than rcn do.
 - It cannot know whether a site answers, a page exists or a neighborhood has pages, until the script runs.
-- It is not yet a FedWiki plugin. It is a standalone page for exploring the idea.
+
+## In the wiki: the Mech Blocks item
+
+The plugin `wiki-plugin-mechblocks` puts Mech Blocks on any FedWiki site where it is installed, beside Ward's Mech plugin. From the Factory menu, add a **Mechblocks** item to a page with Mech items. It lists each Mech item with its first lines and two buttons.
+
+**Edit in blocks ↗** opens this same screen in a new window, holding that item's script. The button in the top bar reads **Save to wiki**. Each save puts the script back into the Mech item as an ordinary edit in the page's history, and Ward's Mech draws it again. **＋ New Mech in blocks** opens an empty script; its button reads **Add to wiki page**, and adds a new Mech item after the Mech Blocks item.
+
+**Watch it run** runs the script inside the Mech Blocks item, with Ward's own blocks. Click ▶ in the script to start it. As it runs:
+
+- each block glows while it works;
+- an oval appears for each thing the blocks pass along, coloured by family as in the needs and makes labels;
+- a solid line runs from the block that wrote it, and a dashed line to each block that read it;
+- a line is red when a block needed something that was not there and stopped; grey when a block only looked for something it could do without;
+- a running list under the drawing says the same in words: "NEIGHBORS wrote neighborhood", "WALK read neighborhood".
+
+Hover over an oval to see what it holds now and which block last wrote it. Watching really runs the script: PREVIEW opens pages, DOWNLOAD downloads, SHOW changes the lineup.
+
+**Graph Tool ↗** lights up once a run has made graphs (`aspect`, from WALK, SOURCE aspect or PLUGIN rcn). It opens the RCN Graph Tool with those graphs drawn, one column for each kind of node.
+
+Without the plugin, a Mech script can still send its graphs to the Graph Tool. The Code item on [[About Mechblocks Plugin]] defines `graphtool`; copy it to a page and put `CODE graphtool` directly inside CLICK.
+
+## PLUGIN rcn
+
+The plugin answers `PLUGIN rcn` with blocks that read RCN data held on the same site. Indent them under `PLUGIN rcn`:
+
+| Block | What it does | Makes |
+|---|---|---|
+| PROJECTIONS | Lists the Layer 1 folders in the site's assets (`rcn-table/<name>/graph.json`). | ☰ items |
+| PROJECTION whatcom | Turns that folder into graphs. Add kinds to keep only those: `PROJECTION whatcom Person Program`. | 🔗 aspect |
+| BADGES | Gathers the SODOTO badges on the site's pages, as people and skills. Add words to keep only matching skills: `BADGES diagram`. | 🔗 aspect, ☰ items |
+| HELLO | Shows that the plugin answers. | — |
+
+They read only the site they run on. A Layer 1 folder must be uploaded to that site's assets before PROJECTION can find it.
+
+## Help links
+
+The top bar has links to the [[Mech Blocks Introduction]], this manual, the [[Mech Blocks Reference]] and the slides. In the wiki they open the copies that come with the plugin. On their own, they open the copies on Wiki Café.
 
 ## For developers
 
-The checks and the text conversion are plain functions inside the page. `node tools/test-mech-blocks.js` runs more than 5,500 checks against them. They cover every handbook script coming back byte for byte, nesting exactly as Ward's interpreter does, over 1,400 block moves, the fit rule, the blue line and the lamps.
+The checks and the text conversion are plain functions inside the page. `node tools/test-mech-blocks.js` runs more than 5,500 checks against them, and `npm test` in `wiki-plugin-mechblocks` runs the plugin's own. They cover every handbook script coming back byte for byte, nesting exactly as Ward's interpreter does, over 1,400 block moves, the fit rule, the blue line and the lamps.
 
 *Marc Pierson and Claude Opus 5.5 · October 2026*

@@ -24,6 +24,11 @@ const GRAPH_URL = LOCAL
   ? 'http://localhost:8765/tools/graph-tool-v22.html'
   : 'https://marc.relocalizecreativity.net/assets/Drag/graph-tool-v22.html'
 
+// Help: the pages and slides that come with the plugin, on this site.
+const SLIDES = '/plugin/mechblocks/rcn-mech-blocks-intro.pptx'
+const DOCS = [['Introduction', 'Mech Blocks Introduction'], ['Manual', 'Mech Blocks Manual'], ['Reference', 'Mech Blocks Reference']]
+const slugOf = title => title.replace(/\s/g, '-').replace(/[^A-Za-z0-9-]/g, '').toLowerCase()
+
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
 // Families as in the Mech Blocks tool: one colour per kind of thing in the notebook.
@@ -66,6 +71,7 @@ const STYLE = `
 .mechblocks .mb-row code { font-size:12px; white-space:pre; display:block; margin-bottom:5px; color:#333; max-height:4.6em; overflow:hidden; }
 .mechblocks button { cursor:pointer; font-size:13px; margin-right:4px; }
 .mechblocks .mb-none { color:#666; font-style:italic; }
+.mechblocks .mb-help { font-size:12px; margin:-2px 0 6px; }
 .mb-nb { margin-top:10px; background:#fff; border:1px solid #ccc; border-radius:6px; padding:8px; }
 .mb-nb-bar { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:6px; font-size:13px; }
 .mb-nb-body { position:relative; display:flex; gap:56px; align-items:flex-start; }
@@ -93,12 +99,43 @@ function emit($item, item) {
   $item.append(`
     <div class="mechblocks">
       <div class="mb-head"><b>Mech Blocks</b><span><button class="mb-refresh" title="Look again for Mech items on this page">↻</button><button class="mb-new">＋ New Mech in blocks ↗</button></span></div>
+      <div class="mb-help">${DOCS.map(([label, title]) => `<a class="mb-doc" href="/view/${slugOf(title)}" data-title="${esc(title)}">${label}</a>`).join(' · ')} · <a href="${SLIDES}" download>Slides (PPTX) ↓</a></div>
       <div class="mb-list"></div>
       <div class="mb-notebook"></div>
     </div>`)
 }
 
+
+// ⓘ — this plugin's About page in one click. FedWiki opens it with Cmd/Ctrl-I,
+// but only from the item's text editor, which people seldom open when the real
+// work happens elsewhere. Redraws empty the item, so the mark puts itself back.
+function aboutMark ($item, type) {
+  const el = $item.get(0)
+  if (!el || el.__aboutMark) return
+  el.__aboutMark = true
+  if (getComputedStyle(el).position === 'static') el.style.position = 'relative'
+  const add = () => {
+    if (el.querySelector(':scope > .rcn-about')) return
+    const a = document.createElement('a')
+    a.className = 'rcn-about'
+    a.href = '/view/about-' + type + '-plugin'
+    a.title = 'About this plugin'
+    a.textContent = 'ⓘ'
+    a.style.cssText = 'position:absolute;top:0;right:-18px;z-index:1000;font:15px/1 system-ui,sans-serif;color:#64748b;text-decoration:none;cursor:pointer;background:rgba(255,255,255,.75);border-radius:50%;padding:1px 2px'
+    a.addEventListener('click', e => {
+      e.preventDefault()
+      e.stopPropagation()
+      wiki.doInternalLink('about ' + type + ' plugin', $item.parents('.page:first'))
+    })
+    a.addEventListener('dblclick', e => e.stopPropagation())
+    el.appendChild(a)
+  }
+  add()
+  new MutationObserver(add).observe(el, { childList: true })
+}
+
 function bind($item, item) {
+  aboutMark($item, 'mechblocks')
   const $page = $item.parents('.page:first')
   // Ward's CODE, SHOW and lineup walks read the page key from the data-key
   // attribute, which wiki-client sets from 0.24 on. Older clients keep it only in
@@ -119,7 +156,17 @@ function bind($item, item) {
     const mech = mechItems($page).find(m => m.id == id)
     if (mech) watch($item, $page, mech)
   })
-  $item.on('dblclick', '.mb-head b', () => wiki.textEditor($item, item))
+  // double-click opens the item's editor, as on any FedWiki item (and there,
+  // Cmd/Ctrl-I opens About Mechblocks Plugin); not on buttons, links or a run
+  $item.on('dblclick', e => {
+    if ($(e.target).closest('button, a, .mb-nb').length) return
+    wiki.textEditor($item, item)
+  })
+  // the docs open beside this page in the lineup, as wiki links do
+  $item.on('click', '.mb-doc', e => {
+    e.preventDefault()
+    wiki.doInternalLink($(e.target).data('title'), $page)
+  })
 }
 
 // The page's Mech items: those drawn on the page (newest data, page order) plus
@@ -171,7 +218,9 @@ window.addEventListener('message', event => {
   if (data.toolType != 'mech-blocks') return
   if (data.action == 'mechBlocksReady') {
     const title = editor.$page.data('data')?.title || ''
-    editor.popup.postMessage({ toolType: 'mech-blocks', action: 'loadMech', text: editor.text, title, isNew: !editor.id }, '*')
+    const docs = Object.fromEntries(DOCS.map(([label, t]) => [label.toLowerCase(), `${location.origin}/view/${slugOf(t)}`]))
+    docs.slides = location.origin + SLIDES
+    editor.popup.postMessage({ toolType: 'mech-blocks', action: 'loadMech', text: editor.text, title, isNew: !editor.id, docs }, '*')
   }
   if (data.action == 'saveMech') {
     const text = String(data.text)

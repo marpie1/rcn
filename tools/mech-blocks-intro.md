@@ -4,7 +4,7 @@
 
 Mech Blocks lets you build a small wiki program by snapping blocks together, the way children build programs in Scratch. It sits on top of Mech, which Ward Cunningham wrote so that a FedWiki page can carry a little program that runs when you read it.
 
-This is an exploration. It changes nothing in Mech, nothing on any wiki, and nothing in the RCN tools people use now. It is one web page, `tools/mech-blocks.html`, that you open in a browser.
+It changes nothing in Mech itself. It comes two ways: as one web page, `tools/mech-blocks.html`, that you open in a browser, and as a wiki plugin, `wiki-plugin-mechblocks`, which puts a Mech Blocks item beside the Mech items on a FedWiki page.
 
 ## What Mech does
 
@@ -47,16 +47,26 @@ In **beginner mode**, blocks that cannot go at the blue "next block goes here" l
 4. Now drag WALK above NEIGHBORS. Beginner mode refuses and tells you why.
 5. Turn beginner mode off and try again. This time the drop goes through, the bar turns amber, and the lamps go out with the reason.
 
+## In the wiki
+
+On a site with the plugin, place a Mech Blocks item on a page that has Mech items. For each Mech item it offers:
+
+- **Edit in blocks**: the block view in a new window. **Save to wiki** puts the script back into the Mech item, where Ward's Mech runs it as usual.
+- **Watch it run**: runs the script with Ward's own blocks, and draws the shared notebook as it fills. There is an oval for each thing the blocks pass along, a solid line from the block that wrote it, and a dashed line to each block that read it.
+- **Graph Tool**: once a run has made graphs, draws them in the RCN Graph Tool.
+
+The plugin also answers `PLUGIN rcn` with blocks for RCN data on the site: `PROJECTIONS`, `PROJECTION` for Layer 1 folders, and `BADGES` for SODOTO badges.
+
 ## What it cannot promise
 
 Green lamps mean the script is put together right. They cannot promise a result, because some things only show up when it runs: a wiki site that does not answer, an empty neighborhood, a sensor that is off. Mech's own ✖︎ messages cover those.
 
-Mech Blocks does not run Mech. To run a script, copy the text into a Mech item on a wiki page.
+The page on its own does not run Mech. In the wiki, Watch it run does, or copy the text into any Mech item.
 
 ## Where it came from
 
 Ward named three inspirations: Scratch, where blocks only fit where they belong; Snap!, where blocks pass data to each other; and Etoys, where you pull pieces from the things on the screen. Mech Blocks borrows one idea from each, and its checks use the trouble messages from Ward's own code, applied before running instead of after.
 
-The [[Mech Blocks Manual]] explains every part of the screen. The [[Mech Blocks Reference]] lists every block with what it needs and makes.
+The [[Mech Blocks Manual]] explains every part of the screen. The [[Mech Blocks Reference]] lists every block with what it needs and makes. [[About Mechblocks Plugin]] has working examples to click.
 
 *Marc Pierson and Claude Opus 5.5 · October 2026*
